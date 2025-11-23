@@ -1,10 +1,11 @@
 {
-  "name": "iquote4all",
+  "name": "mindshift-books",
   "version": "1.0.0",
-  "description": "Landing page eBook store for iQuote4all",
+  "description": "MindShift Books — Multi-ebook Store with Paystack + Firebase",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "nodemon server.js"
   },
   "dependencies": {
     "express": "^4.18.2",
@@ -12,13 +13,12 @@
     "node-fetch": "^2.6.7",
     "body-parser": "^1.20.2",
     "dotenv": "^16.3.1",
-    "cors": "^2.8.5",
-    "nodemailer": "^6.9.4"
+    "cors": "^2.8.5"
   },
   "engines": {
     "node": "20.x"
   },
-  "keywords": [],
-  "author": "Your Name",
+  "keywords": ["ebooks", "paystack", "mindshift", "store", "firebase"],
+  "author": "Tomiwa",
   "license": "MIT"
 }
