@@ -57,46 +57,61 @@
 </head>
 <body>
 
-<header style="display:flex;flex-direction:column;gap:10px;">
+<header>
 
-  <!-- ROW 1: Logo + Hamburger -->
-  <div style="display:flex;justify-content:space-between;align-items:center;width:100%;">
+  <!-- ROW 1 -->
+  <div style="display:flex;justify-content:space-between;align-items:center;">
     <h1 style="display:flex;align-items:center;gap:10px;">
-      <img src="MINDSHIFT.jpg" alt="MindShift logo" style="width:36px;height:36px;border-radius:6px;">
-      <span style="display:inline-block;vertical-align:middle">MindShift Books</span>
+      <img src="MINDSHIFT.jpg" alt="MindShift logo"
+        style="width:36px;height:36px;border-radius:6px;">
+      <span>MindShift Books</span>
     </h1>
 
-    <div class="hamburger" onclick="toggleSidebar()" aria-label="Open menu" role="button">
+    <div class="hamburger" onclick="toggleSidebar()">
       <i class="fas fa-bars"></i>
     </div>
   </div>
 
-  <!-- ROW 2: Amazon-style Search Bar -->
+  <!-- ROW 2 — SEARCH -->
   <div style="width:100%;display:flex;justify-content:center;">
-    <div class="search-wrapper" role="search" aria-label="Search books">
-      <input
-        id="searchInput"
-        type="text"
-        placeholder="Search books..."
-        oninput="showSuggestions()"
-        onkeydown="if(event.key==='Enter'){ performSearch(); }"
-        autocomplete="off"
-      />
-      <button id="searchBtn" onclick="performSearch()" aria-label="Search">
+    <div class="search-wrapper">
+      <input id="searchInput" type="text" placeholder="Search books..."
+        oninput="showSuggestions()" autocomplete="off"/>
+      <button id="searchBtn" onclick="performSearch()">
         <i class="fas fa-search search-icon"></i>
       </button>
-
-      <div id="suggestionsBox" class="suggestions" role="listbox" aria-hidden="true"></div>
+      <div id="suggestionsBox" class="suggestions"></div>
     </div>
   </div>
 
 </header>
 
-
-
   <style>
+/* ---------------- HEADER FIX ---------------- */
+header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  z-index: 1000;
 
-/* SEARCH (compact, non-intrusive) */
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  padding: 16px 26px 20px; /* extra bottom space for search bar */
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+/* Push whole page down so header doesn't cover content */
+body {
+  padding-top: 150px; /* perfect for logo + search bar */
+}
+
+
+
+/* ---------------- SEARCH BAR ---------------- */
 .search-wrapper {
   position: relative;
   display: flex;
@@ -105,10 +120,10 @@
   background: #eef2f6;
   padding: 6px 8px;
   border-radius: 12px;
-  width: 420px;              /* desktop width */
-  max-width: calc(100% - 160px); /* adapt to small screens */
+  width: 420px;                 /* desktop width */
+  max-width: calc(100% - 40px);
   box-shadow: 0 6px 18px rgba(2,6,23,0.04);
-  margin: 0 12px;
+  margin: 0 auto;               /* center under logo */
 }
 
 .search-wrapper input {
@@ -128,7 +143,7 @@
   background: linear-gradient(90deg,#4f46e5,#06b6d4);
   border: none;
   color: #fff;
-  padding: 8px;
+  padding: 8px 10px;
   border-radius: 10px;
   cursor: pointer;
   font-size: 1rem;
@@ -140,7 +155,9 @@
   height: 16px;
 }
 
-/* Suggestions dropdown */
+
+
+/* ---------------- SUGGESTIONS DROPDOWN ---------------- */
 .suggestions {
   position: absolute;
   top: calc(100% + 8px);
@@ -167,21 +184,47 @@
   color: #0f172a;
 }
 
-.suggestions .item:last-child { border-bottom: none; }
-.suggestions .item:hover { background: #f1f5f9; }
+.suggestions .item:last-child {
+  border-bottom: none;
+}
 
-/* suggestion small meta text */
-.suggestions .meta { font-size:0.8rem; color: #6b7280; margin-left:auto; }
+.suggestions .item:hover {
+  background: #f1f5f9;
+}
 
-/* Responsive adjustments */
+.suggestions .meta {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-left: auto;
+}
+
+
+
+/* ---------------- RESPONSIVE (Mobile Perfect) ---------------- */
 @media (max-width: 860px) {
-  .search-wrapper { width: 320px; margin: 0 8px; }
+  .search-wrapper {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+  }
 }
-@media (max-width: 520px) {
-  .search-wrapper { width: calc(100% - 92px); }
-  header { padding: 12px 14px; }
+
+@media (max-width: 600px) {
+  .search-wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  header {
+    padding: 14px 14px 18px;
+  }
 }
-    
+
+@media (max-width: 450px) {
+  .search-wrapper {
+    padding: 6px 6px;
+  }
+}
   </style>
 
 <aside class="sidebar" id="sidebar" aria-hidden="true">
@@ -264,6 +307,7 @@
 
 </body>
 </html>
+
 
 
 
