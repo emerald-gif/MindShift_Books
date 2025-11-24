@@ -57,13 +57,13 @@
 </head>
 <body>
 
-<header>
+<header style="display:flex;flex-direction:column;gap:10px;">
 
-  <!-- FIRST ROW -->
+  <!-- ROW 1: Logo + Hamburger -->
   <div style="display:flex;justify-content:space-between;align-items:center;width:100%;">
     <h1 style="display:flex;align-items:center;gap:10px;">
       <img src="MINDSHIFT.jpg" alt="MindShift logo" style="width:36px;height:36px;border-radius:6px;">
-      <span>MindShift Books</span>
+      <span style="display:inline-block;vertical-align:middle">MindShift Books</span>
     </h1>
 
     <div class="hamburger" onclick="toggleSidebar()" aria-label="Open menu" role="button">
@@ -71,23 +71,23 @@
     </div>
   </div>
 
-  <!-- SECOND ROW (SEARCH) -->
-  <div class="search-wrapper" role="search" aria-label="Search books"
-       style="margin-top:10px;width:100%;">
-    <input
-      id="searchInput"
-      type="text"
-      placeholder="Search books, e.g. 'persuasion'..."
-      oninput="showSuggestions()"
-      onkeydown="if(event.key==='Enter'){ performSearch(); }"
-      autocomplete="off"
-      aria-autocomplete="list"
-    />
-    <button id="searchBtn" onclick="performSearch()" aria-label="Search">
-      <i class="fas fa-search search-icon"></i>
-    </button>
+  <!-- ROW 2: Amazon-style Search Bar -->
+  <div style="width:100%;display:flex;justify-content:center;">
+    <div class="search-wrapper" role="search" aria-label="Search books">
+      <input
+        id="searchInput"
+        type="text"
+        placeholder="Search books..."
+        oninput="showSuggestions()"
+        onkeydown="if(event.key==='Enter'){ performSearch(); }"
+        autocomplete="off"
+      />
+      <button id="searchBtn" onclick="performSearch()" aria-label="Search">
+        <i class="fas fa-search search-icon"></i>
+      </button>
 
-    <div id="suggestionsBox" class="suggestions" role="listbox" aria-hidden="true"></div>
+      <div id="suggestionsBox" class="suggestions" role="listbox" aria-hidden="true"></div>
+    </div>
   </div>
 
 </header>
@@ -264,6 +264,7 @@
 
 </body>
 </html>
+
 
 
 
