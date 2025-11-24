@@ -153,6 +153,84 @@ async function verifyPayment(reference, purchaserEmail){
   }catch(e){ console.error(e); alert('Verification request failed.'); }
 }
 
+
+
+// === SEARCH SYSTEM ===
+
+function showSuggestions() {
+  const query = document.getElementById('searchInput').value.trim().toLowerCase();
+  const box = document.getElementById('suggestionsBox');
+
+  if (!query) {
+    box.style.display = 'none';
+    box.innerHTML = '';
+    return;
+  }
+
+  const matches = PRODUCTS.filter(p =>
+    p.title.toLowerCase().includes(query)
+  );
+
+  if (matches.length === 0) {
+    box.style.display = 'none';
+    return;
+  }
+
+  box.innerHTML = matches
+    .map(m => `<div onclick="selectSuggestion('${m.id}')">${m.title}</div>`)
+    .join('');
+
+  box.style.display = 'block';
+}
+
+function selectSuggestion(productId) {
+  document.getElementById('suggestionsBox').style.display = 'none';
+  const product = PRODUCTS.find(p => p.id === productId);
+
+  if (product) {
+    // Scroll to product or open review
+    openReview(product.id);
+  }
+}
+
+function performSearch() {
+  const query = document.getElementById('searchInput').value.trim().toLowerCase();
+  if (!query) {
+    renderProducts();
+    return;
+  }
+
+  const filtered = PRODUCTS.filter(p =>
+    p.title.toLowerCase().includes(query)
+  );
+
+  const grid = document.getElementById('productGrid');
+  grid.innerHTML = '';
+
+  if (filtered.length === 0) {
+    grid.innerHTML = `<div style="padding:20px;">No books found for "${query}"</div>`;
+    return;
+  }
+
+  filtered.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'product-card';
+    card.innerHTML = `
+      <img src="${p.cover}" class="ebook-cover" alt="${p.title}" />
+      <div class="title">${p.title}</div>
+      <div class="price">$${Number(p.priceUSD).toFixed(2)}</div>
+      <button class="btn buy-btn" onclick="openCheckoutModal('${p.id}')">Buy eBook</button>
+    `;
+    grid.appendChild(card);
+  });
+
+  document.getElementById('suggestionsBox').style.display = 'none';
+}
+
+
+
+
+
 // expose to window
 window.toggleSidebar = toggleSidebar;
 window.openMyOrders = openMyOrders;
