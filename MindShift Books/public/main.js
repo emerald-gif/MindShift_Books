@@ -155,60 +155,87 @@ async function verifyPayment(reference, purchaserEmail){
 
 
 
-// === SEARCH SYSTEM ===
 
+
+
+
+
+/* ===========================
+   SEARCH + LIVE SUGGESTIONS
+   =========================== */
+
+function formatPriceUSD(p) {
+  return (p && typeof p === 'object' && p.priceUSD) ? `$${Number(p.priceUSD).toFixed(2)}` : '';
+}
+
+// show suggestions (called on input)
 function showSuggestions() {
-  const query = document.getElementById('searchInput').value.trim().toLowerCase();
+  const q = (document.getElementById('searchInput').value || '').trim().toLowerCase();
   const box = document.getElementById('suggestionsBox');
 
-  if (!query) {
+  if (!q) {
     box.style.display = 'none';
     box.innerHTML = '';
     return;
   }
 
+  // find up to 8 matches by title (also check id)
   const matches = PRODUCTS.filter(p =>
-    p.title.toLowerCase().includes(query)
-  );
+    (p.title || '').toLowerCase().includes(q) || (p.id || '').toLowerCase().includes(q)
+  ).slice(0, 8);
 
-  if (matches.length === 0) {
+  if (!matches.length) {
     box.style.display = 'none';
+    box.innerHTML = '';
     return;
   }
 
-  box.innerHTML = matches
-    .map(m => `<div onclick="selectSuggestion('${m.id}')">${m.title}</div>`)
-    .join('');
+  box.innerHTML = matches.map(m => {
+    const price = formatPriceUSD(m);
+    // show small meta like price to the right
+    return `<div class="item" role="option" onclick="selectSuggestionAndFilter('${m.id.replace(/'/g, "\\'")}')">
+              <div class="label">${escapeHtml(m.title)}</div>
+              <div class="meta">${price}</div>
+            </div>`;
+  }).join('');
 
   box.style.display = 'block';
+  box.setAttribute('aria-hidden', 'false');
 }
 
-function selectSuggestion(productId) {
-  document.getElementById('suggestionsBox').style.display = 'none';
+// when suggestion clicked -> set input and run performSearch (filter in-place)
+function selectSuggestionAndFilter(productId) {
   const product = PRODUCTS.find(p => p.id === productId);
-
-  if (product) {
-    // Scroll to product or open review
-    openReview(product.id);
-  }
+  if (!product) return;
+  // set input to the product title (so user sees the selection)
+  document.getElementById('searchInput').value = product.title;
+  // hide suggestions
+  const box = document.getElementById('suggestionsBox');
+  box.style.display = 'none';
+  box.innerHTML = '';
+  // perform in-place filter using the current input
+  performSearch();
 }
 
+// performSearch: filters the grid in-place (no navigation)
 function performSearch() {
-  const query = document.getElementById('searchInput').value.trim().toLowerCase();
+  const query = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+  const grid = document.getElementById('productGrid');
+
+  // if empty, re-render all products
   if (!query) {
     renderProducts();
     return;
   }
 
+  // filter by title or id (partial match)
   const filtered = PRODUCTS.filter(p =>
-    p.title.toLowerCase().includes(query)
+    (p.title || '').toLowerCase().includes(query) || (p.id || '').toLowerCase().includes(query)
   );
 
-  const grid = document.getElementById('productGrid');
   grid.innerHTML = '';
-
-  if (filtered.length === 0) {
-    grid.innerHTML = `<div style="padding:20px;">No books found for "${query}"</div>`;
+  if (!filtered.length) {
+    grid.innerHTML = `<div style="padding:20px;grid-column:1/-1">No books found for "<strong>${escapeHtml(query)}</strong>"</div>`;
     return;
   }
 
@@ -216,18 +243,41 @@ function performSearch() {
     const card = document.createElement('div');
     card.className = 'product-card';
     card.innerHTML = `
-      <img src="${p.cover}" class="ebook-cover" alt="${p.title}" />
-      <div class="title">${p.title}</div>
+      <img src="${p.cover}" class="ebook-cover" alt="${escapeHtml(p.title)}" />
+      <div class="title">${escapeHtml(p.title)}</div>
       <div class="price">$${Number(p.priceUSD).toFixed(2)}</div>
-      <button class="btn buy-btn" onclick="openCheckoutModal('${p.id}')">Buy eBook</button>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn review-btn" onclick="openReview('${p.id}')">Read Review</button>
+        <button class="btn buy-btn" onclick="openCheckoutModal('${p.id}')">Buy eBook</button>
+      </div>
     `;
     grid.appendChild(card);
   });
-
-  document.getElementById('suggestionsBox').style.display = 'none';
+  // hide suggestions if open
+  const box = document.getElementById('suggestionsBox');
+  if (box) { box.style.display = 'none'; box.innerHTML = ''; box.setAttribute('aria-hidden', 'true'); }
 }
 
+// close suggestions when clicking outside
+document.addEventListener('click', function (ev) {
+  const box = document.getElementById('suggestionsBox');
+  const wrapper = document.querySelector('.search-wrapper');
+  if (!box || !wrapper) return;
+  if (wrapper.contains(ev.target)) return; // clicked inside search area
+  box.style.display = 'none';
+  box.innerHTML = '';
+});
 
+// tiny HTML escape to avoid breaking markup
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 
 
