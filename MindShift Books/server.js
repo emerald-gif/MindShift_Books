@@ -92,10 +92,10 @@ async function getExchangeRate() {
 const PRODUCTS = {
   'mindshift-101': {
     id: 'mindshift-101',
-    title: 'Begin',
-    priceUSD: 9.99,
-    coverPath: 'PAGE.jpg',
-    pdfPath: 'files/mindshift-101.pdf',
+    title: 'The Psychology of Persuasion',
+    priceUSD: 3.99,
+    coverPath: 'The psychology of persuasion.jpg',
+    pdfPath: 'files/The Psychology of Persuasion.pdf',
     reviewImages: ['PAGE.jpg']
   },
   'mindshift-advanced': {
