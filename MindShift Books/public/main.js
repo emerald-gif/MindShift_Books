@@ -45,8 +45,8 @@ initConfigAndPaystack();
 
 function toggleSidebar(){ const sidebar = document.getElementById('sidebar'); sidebar.style.left = sidebar.style.left === '0px' ? '-280px' : '0px'; }
 function openMyOrders(){ window.location.href = '/my-order.html'; }
-function openContact(){ alert('Contact: mindshiftbooks@example.com'); }
-function followYoutube(){ window.open('https://youtube.com'); }
+function openContact(){ alert('Contact: mindshiftbooks.online@gmail.com'); }
+function followYoutube(){ window.open('https://www.youtube.com/@MindShift_Books'); }
 
 // Fetch products from server
 async function fetchProducts() {
