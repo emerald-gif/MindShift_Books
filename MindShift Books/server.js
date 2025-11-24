@@ -100,18 +100,18 @@ const PRODUCTS = {
   },
   'mindshift-advanced': {
     id: 'mindshift-advanced',
-    title: 'Advanced Habits',
-    priceUSD: 12.99,
-    coverPath: 'PAGE1.jpg',
-    pdfPath: 'files/mindshift-advanced.pdf',
+    title: 'The Psychology Of Money',
+    priceUSD: 3.5,
+    coverPath: 'The psychology of money.jpg',
+    pdfPath: 'files/the-psychology-of-money-by-morgan-housel.pdf',
     reviewImages: ['PAGE1.jpg','PAGE2.jpg']
   },
-  'ultimate-quote-bundle': {
-    id: 'ultimate-quote-bundle',
-    title: 'The Ultimate Quote Bundle',
-    priceUSD: 15.99,
-    coverPath: 'PAGE2.jpg',
-    pdfPath: 'files/quote-bundle.pdf',
+  'Think And Grow Rich': {
+    id: 'Think And Grow Rich',
+    title: 'Think And Grow Rich',
+    priceUSD: 2.99,
+    coverPath: 'Think and grow rich.jpg',
+    pdfPath: 'files/Think-And-Grow-Rich_2011-06.pdf',
     reviewImages: ['PAGE2.jpg']
   }
   // add more products here (only change server.js)
