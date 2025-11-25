@@ -15,61 +15,176 @@
   <style>
     :root{ --primary:#0f172a; --accent:#06b6d4; --bg:#f8fafc; }
     *{box-sizing:border-box;margin:0;padding:0;font-family:'Inter',sans-serif}
-    body{background:linear-gradient(180deg,#f8fafc 0%, #eef2f7 100%);min-height:100vh;color:var(--primary)}
-    header{position:fixed;top:0;left:0;right:0;padding:16px 26px;background:white;display:flex;justify-content:space-between;align-items:center;z-index:1000;box-shadow:0 2px 12px rgba(0,0,0,0.06)}
-    header h1{font-size:1.45rem;font-weight:700;color:var(--primary);display:flex;align-items:center;gap:10px}
-    .hamburger{font-size:1.3rem;cursor:pointer;color:#1e293b}
-    .sidebar{position:fixed;top:0;left:-280px;width:260px;height:100%;background:#1f2937;padding-top:80px;transition:.45s;z-index:999;border-right:1px solid rgba(255,255,255,0.04)}
-    .sidebar ul{list-style:none}
-    .sidebar li{padding:18px 26px;color:white;font-size:1.05rem;cursor:pointer;font-weight:600;border-bottom:1px solid rgba(255,255,255,0.06)}
-    main{padding:120px 20px 120px;max-width:1100px;margin:0 auto}
 
-    /* product grid */
-/* product grid - EXACTLY 2 per row */
-.product-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr); /* 2 equal columns */
-  gap: 18px;
-}
-
-/* Mobile: 1 per row to avoid squeezing */
-@media (max-width: 480px) {
-  .product-grid {
-    grid-template-columns: 1fr; 
-  }
-}
-    .product-card{background:white;padding:18px;border-radius:14px;box-shadow:0 18px 40px rgba(0,0,0,0.06);display:flex;flex-direction:column;align-items:center;gap:12px}
-
-    /* smaller hardcover */
-    .ebook-cover{width:160px;height:220px;object-fit:cover;border-radius:8px;box-shadow:0 10px 24px rgba(15,23,42,0.06)}
-
-    .title{font-weight:700;text-align:center}
-    .price{font-weight:800;font-size:1.05rem}
-    .btn{padding:10px 16px;border-radius:10px;border:none;font-weight:700;cursor:pointer}
-    .buy-btn{background:linear-gradient(90deg,#4f46e5,#06b6d4);color:white}
-    .review-btn{border:2px solid rgba(15,23,42,0.06);background:white;color:var(--primary)}
-
-    .muted{font-size:.9rem;color:#6b7280}
-    .modal-backdrop{position:fixed;inset:0;display:none;background:rgba(2,6,23,0.45);justify-content:center;align-items:center;z-index:2000}
-    .modal{background:white;width:420px;max-width:92%;padding:22px;border-radius:14px}
-
-    footer{margin-top:40px;background:#0f172a;padding:24px;border-radius:14px;display:flex;justify-content:space-between;color:white}
-
-    /* small utilities */
-    .center{display:flex;align-items:center;justify-content:center}
-    .loader { border:4px solid rgba(0,0,0,0.06); border-top:4px solid var(--accent); border-radius:50%; width:32px; height:32px; animation:spin 1s linear infinite; }
-    @keyframes spin{ to { transform:rotate(360deg);} }
-
-    @media (max-width: 520px) {
-      .ebook-cover { width: 120px; height: 165px; }
-      header h1 { font-size: 1.05rem; }
-      .product-card { padding: 12px; }
+    body{
+        background:linear-gradient(180deg,#f8fafc 0%, #eef2f7 100%);
+        min-height:100vh;
+        color:var(--primary);
     }
 
-    .sidebar {
-  z-index: 3000;  /* higher than header */
-}
-  </style>
+    header{
+        position:fixed;
+        top:0;left:0;right:0;
+        padding:16px 26px;
+        background:white;
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        z-index:1000;
+        box-shadow:0 2px 12px rgba(0,0,0,0.06);
+    }
+
+    header h1{
+        font-size:1.45rem;
+        font-weight:700;
+        color:var(--primary);
+        display:flex;
+        align-items:center;
+        gap:10px;
+    }
+
+    .hamburger{
+        font-size:1.3rem;
+        cursor:pointer;
+        color:#1e293b;
+    }
+
+    .sidebar{
+        position:fixed;
+        top:0;
+        left:-280px;
+        width:260px;
+        height:100%;
+        background:#1f2937;
+        padding-top:80px;
+        transition:.45s;
+        z-index:3000;
+        border-right:1px solid rgba(255,255,255,0.04);
+    }
+    .sidebar ul{list-style:none}
+    .sidebar li{
+        padding:18px 26px;
+        color:white;
+        font-size:1.05rem;
+        cursor:pointer;
+        font-weight:600;
+        border-bottom:1px solid rgba(255,255,255,0.06)
+    }
+
+    main{
+        padding:120px 20px 120px;
+        max-width:1100px;
+        margin:0 auto;
+    }
+
+    /* -------------------------------
+       PRODUCT GRID — ALWAYS 2 PER ROW
+       ------------------------------- */
+    .product-grid{
+        display:grid;
+        grid-template-columns:repeat(2, 1fr); /* ALWAYS 2 per row */
+        gap:18px;
+    }
+
+    /* Do NOT switch to 1 column — user requested 2 on ALL phones */
+    /* No @media override needed */
+
+    /* -------------------------------
+       PRODUCT CARD
+       ------------------------------- */
+    .product-card{
+        background:white;
+        padding:18px;
+        border-radius:14px;
+        box-shadow:0 18px 40px rgba(0,0,0,0.06);
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        gap:12px;
+    }
+
+    /* Book image */
+    .ebook-cover{
+        width:150px;
+        height:210px;
+        object-fit:cover;
+        border-radius:8px;
+        box-shadow:0 10px 24px rgba(15,23,42,0.06);
+    }
+
+    .title{font-weight:700;text-align:center;font-size:0.95rem}
+    .price{font-weight:800;font-size:1rem}
+
+    .btn{
+        padding:10px 16px;
+        border-radius:10px;
+        border:none;
+        font-weight:700;
+        cursor:pointer;
+    }
+
+    .buy-btn{
+        background:linear-gradient(90deg,#4f46e5,#06b6d4);
+        color:white;
+    }
+
+    .review-btn{
+        border:2px solid rgba(15,23,42,0.06);
+        background:white;
+        color:var(--primary);
+    }
+
+    .muted{font-size:.9rem;color:#6b7280}
+
+    /* Modal */
+    .modal-backdrop{
+        position:fixed;
+        inset:0;
+        display:none;
+        background:rgba(2,6,23,0.45);
+        justify-content:center;
+        align-items:center;
+        z-index:2000
+    }
+
+    .modal{
+        background:white;
+        width:420px;
+        max-width:92%;
+        padding:22px;
+        border-radius:14px;
+    }
+
+    footer{
+        margin-top:40px;
+        background:#0f172a;
+        padding:24px;
+        border-radius:14px;
+        display:flex;
+        justify-content:space-between;
+        color:white;
+    }
+
+    /* Loader */
+    .center{display:flex;align-items:center;justify-content:center}
+    .loader{
+        border:4px solid rgba(0,0,0,0.06);
+        border-top:4px solid var(--accent);
+        border-radius:50%;
+        width:32px;height:32px;
+        animation:spin 1s linear infinite;
+    }
+    @keyframes spin{ to { transform:rotate(360deg);} }
+
+    /* Keep cards readable on very small screens */
+    @media (max-width:420px){
+        .ebook-cover{
+            width:130px;
+            height:185px;
+        }
+        .product-card{ padding:14px; }
+    }
+</style>
 </head>
 <body>
 
@@ -344,6 +459,7 @@ header {
 
 </body>
 </html>
+
 
 
 
