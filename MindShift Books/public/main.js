@@ -135,47 +135,110 @@ function openReview(productId){
   window.location.href = `/review.html?id=${encodeURIComponent(productId)}`;
 }
 
-// Modal and payment logic
-const modalBackdrop = () => document.getElementById('modalBackdrop');
+// Modal and payment logic (FINAL FIXED VERSION)
+function modalBackdrop() {
+  return document.getElementById('modalBackdrop');
+}
 
-function openCheckoutModal(productId){
+// Open modal as REAL overlay
+function openCheckoutModal(productId) {
   selectedProduct = PRODUCTS.find(x => x.id === productId);
-  if(!selectedProduct) { alert('Product not found'); return; }
+  if (!selectedProduct) { 
+    alert('Product not found'); 
+    return; 
+  }
+
+  // Fill modal values
   const mbTitle = document.getElementById('modalBookTitle');
   const mbPrice = document.getElementById('modalPrice');
+
   if (mbTitle) mbTitle.textContent = selectedProduct.title;
   if (mbPrice) mbPrice.textContent = `Price: ${formatPriceUSD(selectedProduct.priceUSD)}`;
+
+  // Clear input
   const buyerEmailEl = document.getElementById('buyerEmail');
   const buyerNameEl = document.getElementById('buyerName');
   if (buyerEmailEl) buyerEmailEl.value = '';
   if (buyerNameEl) buyerNameEl.value = '';
+
+  // Show modal properly (no more inline display)
   const modal = modalBackdrop();
-  if (modal) modal.style.display = 'flex';
+  if (!modal) return;
+
+  modal.classList.add('show');
+  modal.setAttribute('aria-hidden', 'false');
+
+  // Disable page scroll
+  document.body.style.overflow = 'hidden';
 }
-function closeCheckoutModal(){ const m = modalBackdrop(); if (m) m.style.display = 'none'; }
 
-async function proceedToPayment(){
-  const email = (document.getElementById('buyerEmail') || {value:''}).value.trim();
-  const name = (document.getElementById('buyerName') || {value:''}).value.trim();
-  if(!email || !/^\S+@\S+\.\S+$/.test(email)){ alert('Please enter a valid email'); return; }
-  if(!selectedProduct){ alert('No product selected'); return; }
+// Close modal
+function closeCheckoutModal() {
+  const modal = modalBackdrop();
+  if (!modal) return;
 
-  const btn = document.getElementById('modalProceedBtn'); if (btn) { btn.disabled = true; btn.textContent = 'Preparing...'; }
+  modal.classList.remove('show');
+  modal.setAttribute('aria-hidden', 'true');
+
+  // Restore page scroll
+  document.body.style.overflow = '';
+}
+
+// Close modal by clicking outside
+document.addEventListener('click', function (e) {
+  const modal = modalBackdrop();
+  if (!modal) return;
+  if (modal.getAttribute('aria-hidden') === 'true') return;
+
+  // If clicked directly on the dark backdrop
+  if (e.target === modal) closeCheckoutModal();
+});
+
+// Close modal with ESC key
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') closeCheckoutModal();
+});
+
+
+// ------------------ PAYMENT LOGIC ------------------ //
+
+async function proceedToPayment() {
+  const email = (document.getElementById('buyerEmail') || { value: '' }).value.trim();
+  const name  = (document.getElementById('buyerName') || { value: '' }).value.trim();
+
+  if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+    alert('Please enter a valid email');
+    return;
+  }
+  if (!selectedProduct) {
+    alert('No product selected');
+    return;
+  }
+
+  const btn = document.getElementById('modalProceedBtn');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Preparing...';
+  }
 
   try {
     const resp = await fetch('/api/pay', {
-      method: 'POST', headers:{'Content-Type':'application/json'},
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, productId: selectedProduct.id })
     });
+
     const data = await resp.json();
-    if(!resp.ok) throw new Error(data.error || 'Payment initialization failed');
+    if (!resp.ok) throw new Error(data.error || 'Payment initialization failed');
 
     const { reference, amount } = data;
 
     const timeoutAt = Date.now() + 5000;
-    while(!PAYSTACK_READY && Date.now() < timeoutAt) await new Promise(r=>setTimeout(r,100));
-    if(!window.PaystackPop) throw new Error('Paystack not available');
-    if(!PAYSTACK_PUBLIC_KEY) throw new Error('Missing Paystack public key');
+    while (!PAYSTACK_READY && Date.now() < timeoutAt)
+      await new Promise(r => setTimeout(r, 100));
+
+    if (!window.PaystackPop) throw new Error('Paystack not available');
+    if (!PAYSTACK_PUBLIC_KEY) throw new Error('Missing Paystack public key');
 
     const handler = PaystackPop.setup({
       key: PAYSTACK_PUBLIC_KEY,
@@ -183,33 +246,66 @@ async function proceedToPayment(){
       amount: Math.round(Number(amount) * 100),
       currency: 'NGN',
       ref: reference,
-      metadata: { custom_fields:[{ display_name:'Buyer name', variable_name:'buyer_name', value: name||'' }], productId: selectedProduct.id },
-      callback: function(response){ verifyPayment(response.reference, email); },
-      onClose: function(){ if (btn) { btn.disabled=false; btn.textContent='Proceed to Payment'; } alert('Payment closed.'); }
+      metadata: {
+        custom_fields: [
+          {
+            display_name: 'Buyer name',
+            variable_name: 'buyer_name',
+            value: name || ''
+          }
+        ],
+        productId: selectedProduct.id
+      },
+      callback: function(response) {
+        verifyPayment(response.reference, email);
+      },
+      onClose: function() {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = 'Proceed to Payment';
+        }
+        alert('Payment closed.');
+      }
     });
+
     handler.openIframe();
 
-  } catch(err) {
+  } catch (err) {
     console.error(err);
     alert(err.message || 'Payment failed');
+
   } finally {
-    if (btn) { btn.disabled=false; btn.textContent='Proceed to Payment'; }
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Proceed to Payment';
+    }
   }
 }
 
-async function verifyPayment(reference, purchaserEmail){
-  try{
-    const res = await fetch('/api/verify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ reference, purchaserEmail }) });
+
+async function verifyPayment(reference, purchaserEmail) {
+  try {
+    const res = await fetch('/api/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reference, purchaserEmail })
+    });
+
     const data = await res.json();
-    if(res.ok && data.status === 'success'){
+
+    if (res.ok && data.status === 'success') {
       alert('Payment successful! The file will be emailed shortly.');
       window.location.href = '/';
     } else {
-      console.warn('verify failed', data); alert('Verification failed. Contact support.');
+      console.warn('verify failed', data);
+      alert('Verification failed. Contact support.');
     }
-  }catch(e){ console.error(e); alert('Verification request failed.'); }
-}
 
+  } catch (e) {
+    console.error(e);
+    alert('Verification request failed.');
+  }
+}
 /* ===========================
 SEARCH + SUGGESTIONS
 =========================== */
