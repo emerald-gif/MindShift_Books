@@ -83,6 +83,45 @@ footer .brand{font-weight:700;font-size:1.1rem;color:#fbbf24}
 
 /* small screens: grid becomes 2 across (same), search fits */
 @media (max-width:860px){ .search-wrapper{width:100%;max-width:100%;margin:0} }
+
+
+/* Modal backdrop & dialog (overlay) */
+.modal-backdrop {
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: none; /* hidden by default */
+  justify-content: center;
+  align-items: center;
+  background: rgba(2, 6, 23, 0.55);
+  z-index: 99999; /* very high so it overlays everything */
+  padding: 24px; /* give dialog breathing room on mobile */
+  overflow-y: auto; /* allow internal scroll for very small screens */
+}
+
+/* Dialog itself */
+.modal {
+  background: #fff;
+  width: 520px;
+  max-width: 100%;
+  border-radius: 14px;
+  padding: 22px;
+  box-shadow: 0 18px 40px rgba(0,0,0,0.16);
+  transform-origin: center;
+}
+
+/* When backdrop is visible we add a small appear animation */
+.modal-backdrop.show { display: flex; animation: fadeIn 180ms ease; }
+@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+
+/* Make sure modal elements don't push layout */
+.modal * { box-sizing: border-box; }
+
+/* Accessibility: visually hide but keep available if aria-hidden toggled */
+[aria-hidden="true"].modal-backdrop { display: none !important; }
+    
 </style>
 
   
@@ -332,10 +371,11 @@ header {
   </footer>
 </main>
 
-<!-- CHECKOUT MODAL -->
-<div class="modal-backdrop" id="modalBackdrop" aria-hidden="true">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="checkout-title">
+<!-- CHECKOUT MODAL (place this just before closing </body>) -->
+<div class="modal-backdrop" id="modalBackdrop" aria-hidden="true" role="dialog" aria-modal="true">
+  <div class="modal" role="document" aria-labelledby="checkout-title">
     <h3 id="checkout-title" style="color:var(--primary);margin-bottom:6px;">Checkout</h3>
+
     <div class="muted">Book: <strong id="modalBookTitle">—</strong></div>
     <div style="margin-top:8px;font-weight:700;" id="modalPrice">Price: $0.00</div>
 
@@ -350,11 +390,13 @@ header {
     </div>
 
     <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:12px;">
-      <button class="btn review-btn" onclick="closeCheckoutModal()">Cancel</button>
-      <button class="btn buy-btn" id="modalProceedBtn" onclick="proceedToPayment()">Proceed to Payment</button>
+      <button class="btn review-btn" id="modalCancelBtn">Cancel</button>
+      <button class="btn buy-btn" id="modalProceedBtn">Proceed to Payment</button>
     </div>
 
-    <div class="muted" style="margin-top:12px;">After payment you'll be redirected and the PDF will be emailed automaticall,or you can check MY ORDER section</div>
+    <div class="muted" style="margin-top:12px;">
+      After payment you'll be redirected and the PDF will be emailed automatically, or you can check MY ORDER section.
+    </div>
   </div>
 </div>
 
@@ -381,6 +423,7 @@ adjustMainPadding();
 
 </body>
 </html>
+
 
 
 
