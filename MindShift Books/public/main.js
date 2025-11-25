@@ -243,14 +243,15 @@ function performSearch() {
     const card = document.createElement('div');
     card.className = 'product-card';
     card.innerHTML = `
-      <img src="${p.cover}" class="ebook-cover" alt="${escapeHtml(p.title)}" />
-      <div class="title">${escapeHtml(p.title)}</div>
-      <div class="price">$${Number(p.priceUSD).toFixed(2)}</div>
-      <div style="display:flex;gap:8px;margin-top:8px">
-        <button class="btn review-btn" onclick="openReview('${p.id}')">Read Review</button>
-        <button class="btn buy-btn" onclick="openCheckoutModal('${p.id}')">Buy eBook</button>
-      </div>
-    `;
+  <img src="${p.cover}" class="ebook-cover" alt="${escapeHtml(p.title)}" />
+  <div class="title">${escapeHtml(p.title)}</div>
+  <div class="price">$${Number(p.priceUSD).toFixed(2)}</div>
+
+  <div class="card-actions">
+    <button class="btn review-btn" onclick="openReview('${p.id}')">Read Review</button>
+    <button class="btn buy-btn" onclick="openCheckoutModal('${p.id}')">Buy eBook</button>
+  </div>
+`;
     grid.appendChild(card);
   });
   // hide suggestions if open
