@@ -1,5 +1,5 @@
 // public/main.js
-// Loads products from server (/api/products) - no local PRODUCTS array anymore
+// Loads products from server (/api/products)
 
 // FIREBASE CONFIG (unchanged)
 const firebaseConfig = {
@@ -39,14 +39,22 @@ async function initConfigAndPaystack() {
       });
     }
     PAYSTACK_READY = true;
-  } catch (e) { console.warn('config init failed', e); }
+  } catch (e) {
+    console.warn('config init failed', e);
+  }
 }
 initConfigAndPaystack();
 
-function toggleSidebar(){ const sidebar = document.getElementById('sidebar'); sidebar.style.left = sidebar.style.left === '0px' ? '-280px' : '0px'; }
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const open = sidebar.getAttribute('data-open') === 'true';
+  sidebar.setAttribute('data-open', open ? 'false' : 'true');
+  sidebar.style.left = open ? '-300px' : '0px';
+  sidebar.setAttribute('aria-hidden', open ? 'true' : 'false');
+}
 function openMyOrders(){ window.location.href = '/my-order.html'; }
 function openContact(){ alert('Contact: mindshiftbooks.online@gmail.com'); }
-function followYoutube(){ window.open('https://www.youtube.com/@MindShift_Books'); }
+function followYoutube(){ window.open('https://www.youtube.com/@MindShift_Books', '_blank'); }
 
 // Fetch products from server
 async function fetchProducts() {
@@ -57,23 +65,51 @@ async function fetchProducts() {
     renderProducts();
   } catch (e) {
     console.error('Failed to fetch products', e);
-    document.getElementById('productGrid').innerHTML = '<div style="padding:20px;">Failed to load products.</div>';
+    const el = document.getElementById('productGrid');
+    if (el) el.innerHTML = '<div style="padding:20px;">Failed to load products.</div>';
   }
 }
 
+// safe escape for HTML content
+function escapeHtml(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// helper to format price
+function formatPriceUSD(p) {
+  if (!p) return '';
+  const n = Number(p);
+  if (Number.isNaN(n)) return '';
+  return `$${n.toFixed(2)}`;
+}
+
 // Render product grid from PRODUCTS (from server)
-function renderProducts(){
+function renderProducts() {
   const grid = document.getElementById('productGrid');
+  if (!grid) return;
   grid.innerHTML = '';
+
+  if (!PRODUCTS.length) {
+    grid.innerHTML = '<div class="center" style="grid-column:1/-1;padding:24px;"><div class="muted">No books available.</div></div>';
+    return;
+  }
+
   PRODUCTS.forEach(p => {
-    const card = document.createElement('div'); card.className = 'product-card';
+    const card = document.createElement('div');
+    card.className = 'product-card';
     card.innerHTML = `
-      <img src="${p.cover}" class="ebook-cover" alt="${p.title}" />
-      <div class="title">${p.title}</div>
-      <div class="price">$${Number(p.priceUSD).toFixed(2)}</div>
-      <div style="display:flex;gap:8px;margin-top:8px">
-        <button class="btn review-btn" onclick="openReview('${p.id}')">Read Review</button>
-        <button class="btn buy-btn" onclick="openCheckoutModal('${p.id}')">Buy eBook</button>
+      <img src="${escapeHtml(p.cover || '')}" class="ebook-cover" alt="${escapeHtml(p.title || 'ebook')}"/>
+      <div class="title">${escapeHtml(p.title || '')}</div>
+      <div class="price">${formatPriceUSD(p.priceUSD)}</div>
+      <div class="card-actions button-group" style="width:100%;">
+        <button class="btn review-btn" data-product-id="${escapeHtml(p.id || '')}" data-action="review">Read Review</button>
+        <button class="btn buy-btn" data-product-id="${escapeHtml(p.id || '')}" data-action="buy">Buy eBook</button>
       </div>
     `;
     grid.appendChild(card);
@@ -83,23 +119,40 @@ function renderProducts(){
 // initial load
 fetchProducts();
 
+// Delegated click handler for product buttons (avoids inline onclick and quoting issues)
+document.addEventListener('click', function (ev) {
+  const btn = ev.target.closest('button[data-action]');
+  if (!btn) return;
+  const action = btn.getAttribute('data-action');
+  const productId = btn.getAttribute('data-product-id');
+  if (action === 'review') openReview(productId);
+  if (action === 'buy') openCheckoutModal(productId);
+});
+
 // Review navigation
 function openReview(productId){
+  if (!productId) return;
   window.location.href = `/review.html?id=${encodeURIComponent(productId)}`;
 }
 
-// Modal and payment logic: when user clicks buy, we still send productId to /api/pay
-const modalBackdrop = document.getElementById('modalBackdrop');
+// Modal and payment logic
+const modalBackdrop = () => document.getElementById('modalBackdrop');
+
 function openCheckoutModal(productId){
-  selectedProduct = PRODUCTS.find(x=>x.id===productId);
+  selectedProduct = PRODUCTS.find(x => x.id === productId);
   if(!selectedProduct) { alert('Product not found'); return; }
-  document.getElementById('modalBookTitle').textContent = selectedProduct.title;
-  document.getElementById('modalPrice').textContent = `Price: $${Number(selectedProduct.priceUSD).toFixed(2)}`;
-  document.getElementById('buyerEmail').value = '';
-  document.getElementById('buyerName').value = '';
-  modalBackdrop.style.display = 'flex';
+  const mbTitle = document.getElementById('modalBookTitle');
+  const mbPrice = document.getElementById('modalPrice');
+  if (mbTitle) mbTitle.textContent = selectedProduct.title;
+  if (mbPrice) mbPrice.textContent = `Price: ${formatPriceUSD(selectedProduct.priceUSD)}`;
+  const buyerEmailEl = document.getElementById('buyerEmail');
+  const buyerNameEl = document.getElementById('buyerName');
+  if (buyerEmailEl) buyerEmailEl.value = '';
+  if (buyerNameEl) buyerNameEl.value = '';
+  const modal = modalBackdrop();
+  if (modal) modal.style.display = 'flex';
 }
-function closeCheckoutModal(){ modalBackdrop.style.display = 'none'; }
+function closeCheckoutModal(){ const m = modalBackdrop(); if (m) m.style.display = 'none'; }
 
 async function proceedToPayment(){
   const email = (document.getElementById('buyerEmail') || {value:''}).value.trim();
@@ -107,7 +160,7 @@ async function proceedToPayment(){
   if(!email || !/^\S+@\S+\.\S+$/.test(email)){ alert('Please enter a valid email'); return; }
   if(!selectedProduct){ alert('No product selected'); return; }
 
-  const btn = document.getElementById('modalProceedBtn'); btn.disabled = true; btn.textContent = 'Preparing...';
+  const btn = document.getElementById('modalProceedBtn'); if (btn) { btn.disabled = true; btn.textContent = 'Preparing...'; }
 
   try {
     const resp = await fetch('/api/pay', {
@@ -132,12 +185,16 @@ async function proceedToPayment(){
       ref: reference,
       metadata: { custom_fields:[{ display_name:'Buyer name', variable_name:'buyer_name', value: name||'' }], productId: selectedProduct.id },
       callback: function(response){ verifyPayment(response.reference, email); },
-      onClose: function(){ btn.disabled=false; btn.textContent='Proceed to Payment'; alert('Payment closed.'); }
+      onClose: function(){ if (btn) { btn.disabled=false; btn.textContent='Proceed to Payment'; } alert('Payment closed.'); }
     });
     handler.openIframe();
 
-  } catch(err){ console.error(err); alert(err.message || 'Payment failed'); }
-  btn.disabled=false; btn.textContent='Proceed to Payment';
+  } catch(err) {
+    console.error(err);
+    alert(err.message || 'Payment failed');
+  } finally {
+    if (btn) { btn.disabled=false; btn.textContent='Proceed to Payment'; }
+  }
 }
 
 async function verifyPayment(reference, purchaserEmail){
@@ -153,82 +210,56 @@ async function verifyPayment(reference, purchaserEmail){
   }catch(e){ console.error(e); alert('Verification request failed.'); }
 }
 
-
-
-
-
-
-
-
 /* ===========================
-   SEARCH + LIVE SUGGESTIONS
-   =========================== */
+SEARCH + SUGGESTIONS
+=========================== */
 
-function formatPriceUSD(p) {
-  return (p && typeof p === 'object' && p.priceUSD) ? `$${Number(p.priceUSD).toFixed(2)}` : '';
-}
-
-// show suggestions (called on input)
 function showSuggestions() {
   const q = (document.getElementById('searchInput').value || '').trim().toLowerCase();
   const box = document.getElementById('suggestionsBox');
 
-  if (!q) {
-    box.style.display = 'none';
-    box.innerHTML = '';
-    return;
-  }
+  if (!box) return;
+  if (!q) { box.style.display = 'none'; box.innerHTML = ''; return; }
 
-  // find up to 8 matches by title (also check id)
   const matches = PRODUCTS.filter(p =>
     (p.title || '').toLowerCase().includes(q) || (p.id || '').toLowerCase().includes(q)
   ).slice(0, 8);
 
-  if (!matches.length) {
-    box.style.display = 'none';
-    box.innerHTML = '';
-    return;
-  }
+  if (!matches.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
 
   box.innerHTML = matches.map(m => {
-    const price = formatPriceUSD(m);
-    // show small meta like price to the right
-    return `<div class="item" role="option" onclick="selectSuggestionAndFilter('${m.id.replace(/'/g, "\\'")}')">
-              <div class="label">${escapeHtml(m.title)}</div>
-              <div class="meta">${price}</div>
-            </div>`;
+    return `<div class="item" role="option" data-product-id="${escapeHtml(m.id || '')}">` +
+             `<div class="label">${escapeHtml(m.title)}</div>` +
+             `<div class="meta">${formatPriceUSD(m.priceUSD)}</div>` +
+           `</div>`;
   }).join('');
 
   box.style.display = 'block';
   box.setAttribute('aria-hidden', 'false');
 }
 
-// when suggestion clicked -> set input and run performSearch (filter in-place)
-function selectSuggestionAndFilter(productId) {
-  const product = PRODUCTS.find(p => p.id === productId);
+// suggestion click -> set input & filter
+document.getElementById('suggestionsBox')?.addEventListener('click', function(ev){
+  const item = ev.target.closest('.item');
+  if (!item) return;
+  const id = item.getAttribute('data-product-id');
+  if (!id) return;
+  const product = PRODUCTS.find(p => p.id === id);
   if (!product) return;
-  // set input to the product title (so user sees the selection)
   document.getElementById('searchInput').value = product.title;
   // hide suggestions
   const box = document.getElementById('suggestionsBox');
-  box.style.display = 'none';
-  box.innerHTML = '';
-  // perform in-place filter using the current input
+  if (box) { box.style.display = 'none'; box.innerHTML = ''; box.setAttribute('aria-hidden','true'); }
   performSearch();
-}
+});
 
 // performSearch: filters the grid in-place (no navigation)
 function performSearch() {
   const query = (document.getElementById('searchInput').value || '').trim().toLowerCase();
   const grid = document.getElementById('productGrid');
 
-  // if empty, re-render all products
-  if (!query) {
-    renderProducts();
-    return;
-  }
+  if (!query) { renderProducts(); return; }
 
-  // filter by title or id (partial match)
   const filtered = PRODUCTS.filter(p =>
     (p.title || '').toLowerCase().includes(query) || (p.id || '').toLowerCase().includes(query)
   );
@@ -243,44 +274,57 @@ function performSearch() {
     const card = document.createElement('div');
     card.className = 'product-card';
     card.innerHTML = `
-  <img src="${p.cover}" class="ebook-cover" alt="${escapeHtml(p.title)}" />
-  <div class="title">${escapeHtml(p.title)}</div>
-  <div class="price">$${Number(p.priceUSD).toFixed(2)}</div>
-
-  <div class="card-actions">
-    <button class="btn review-btn" onclick="openReview('${p.id}')">Read Review</button>
-    <button class="btn buy-btn" onclick="openCheckoutModal('${p.id}')">Buy eBook</button>
-  </div>
-`;
+      <img src="${escapeHtml(p.cover || '')}" class="ebook-cover" alt="${escapeHtml(p.title)}" />
+      <div class="title">${escapeHtml(p.title)}</div>
+      <div class="price">${formatPriceUSD(p.priceUSD)}</div>
+      <div class="card-actions button-group" style="width:100%;">
+        <button class="btn review-btn" data-product-id="${escapeHtml(p.id || '')}" data-action="review">Read Review</button>
+        <button class="btn buy-btn" data-product-id="${escapeHtml(p.id || '')}" data-action="buy">Buy eBook</button>
+      </div>
+    `;
     grid.appendChild(card);
   });
-  // hide suggestions if open
+
   const box = document.getElementById('suggestionsBox');
   if (box) { box.style.display = 'none'; box.innerHTML = ''; box.setAttribute('aria-hidden', 'true'); }
 }
 
-// close suggestions when clicking outside
+// close suggestions / close sidebar on outside click
 document.addEventListener('click', function (ev) {
   const box = document.getElementById('suggestionsBox');
   const wrapper = document.querySelector('.search-wrapper');
-  if (!box || !wrapper) return;
-  if (wrapper.contains(ev.target)) return; // clicked inside search area
-  box.style.display = 'none';
-  box.innerHTML = '';
+  if (box && wrapper) {
+    if (!wrapper.contains(ev.target)) {
+      box.style.display = 'none';
+      box.innerHTML = '';
+    }
+  }
+
+  // sidebar close on outside click
+  const sidebar = document.getElementById('sidebar');
+  const hamburger = document.querySelector('.hamburger');
+  if (sidebar && sidebar.getAttribute('data-open') === 'true') {
+    if (!sidebar.contains(ev.target) && hamburger && !hamburger.contains(ev.target)) {
+      sidebar.setAttribute('data-open', 'false');
+      sidebar.style.left = '-300px';
+      sidebar.setAttribute('aria-hidden', 'true');
+    }
+  }
 });
 
-// tiny HTML escape to avoid breaking markup
-function escapeHtml(str) {
-  if (!str) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
-
+// close sidebar on ESC
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar && sidebar.getAttribute('data-open') === 'true') {
+      sidebar.setAttribute('data-open', 'false');
+      sidebar.style.left = '-300px';
+      sidebar.setAttribute('aria-hidden', 'true');
+    }
+    const modal = modalBackdrop();
+    if (modal && modal.style.display === 'flex') modal.style.display = 'none';
+  }
+});
 
 // expose to window
 window.toggleSidebar = toggleSidebar;
@@ -291,3 +335,5 @@ window.openCheckoutModal = openCheckoutModal;
 window.closeCheckoutModal = closeCheckoutModal;
 window.proceedToPayment = proceedToPayment;
 window.openReview = openReview;
+window.showSuggestions = showSuggestions;
+window.performSearch = performSearch;
