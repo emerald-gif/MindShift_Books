@@ -306,6 +306,54 @@ async function verifyPayment(reference, purchaserEmail) {
     alert('Verification request failed.');
   }
 }
+
+// ====== Modal button wiring & safety helpers ======
+function _wireModalButtons() {
+  const cancelBtn = document.getElementById('modalCancelBtn');
+  const proceedBtn = document.getElementById('modalProceedBtn');
+  const modalEl = document.querySelector('.modal');
+  const backdrop = document.getElementById('modalBackdrop');
+
+  if (modalEl) {
+    // prevent clicks inside the dialog from bubbling to document click handlers
+    modalEl.addEventListener('click', function(ev) { ev.stopPropagation(); });
+  }
+
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', function(ev) {
+      ev.preventDefault();
+      console.log('Modal: Cancel clicked');
+      closeCheckoutModal();
+    });
+  }
+
+  if (proceedBtn) {
+    proceedBtn.addEventListener('click', function(ev) {
+      ev.preventDefault();
+      console.log('Modal: Proceed clicked');
+      // call the existing payment function
+      proceedToPayment();
+    });
+  }
+
+  // Optional: also close when user clicks on the backdrop (already handled, but safe)
+  if (backdrop) {
+    backdrop.addEventListener('click', function(ev) {
+      if (ev.target === backdrop) {
+        closeCheckoutModal();
+      }
+    });
+  }
+}
+
+// Wire after DOM ready (the modal exists in your HTML near bottom)
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', _wireModalButtons);
+} else {
+  _wireModalButtons();
+}
+
+      
 /* ===========================
 SEARCH + SUGGESTIONS
 =========================== */
