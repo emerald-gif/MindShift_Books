@@ -90,6 +90,8 @@ async function getExchangeRate() {
 // ----------------- PRODUCTS (single source: edit here) -----------------
 // Make sure coverPath starts with /images/... and pdfPath with files/...
 const PRODUCTS = {
+
+  
   'mindshift-101': {
     id: 'mindshift-101',
     title: 'The Psychology of Persuasion',
@@ -97,7 +99,10 @@ const PRODUCTS = {
     coverPath: 'The psychology of persuasion.jpg',
     pdfPath: 'files/The Psychology of Persuasion.pdf',
     reviewImages: ['PAGE.jpg']
+
+    
   },
+  
   'mindshift-advanced': {
     id: 'mindshift-advanced',
     title: 'The Psychology Of Money',
@@ -105,7 +110,13 @@ const PRODUCTS = {
     coverPath: 'The psychology of money.jpg',
     pdfPath: 'files/the-psychology-of-money-by-morgan-housel.pdf',
     reviewImages: ['PAGE1.jpg','PAGE2.jpg']
+
+
+    
   },
+
+
+  
   'Think And Grow Rich': {
     id: 'Think And Grow Rich',
     title: 'Think And Grow Rich',
@@ -113,7 +124,46 @@ const PRODUCTS = {
     coverPath: 'Think and grow rich.jpg',
     pdfPath: 'files/Think-And-Grow-Rich_2011-06.pdf',
     reviewImages: ['PAGE2.jpg']
+  },
+
+
+   
+  'Rich Dad Poor Dad': {
+    id: 'Rich Dad Poor Dad',
+    title: 'Rich Dad Poor Dad',
+    priceUSD: 1.99,
+    coverPath: 'Rich dad poor dad.jpg',
+    pdfPath: 'files/rich-dad-poor-dad.pdf',
+    reviewImages: ['PAGE.jpg']
+
+    
+  },
+  
+  'Atomic Habit': {
+    id: 'Atomic Habit',
+    title: 'Atomic Habit',
+    priceUSD: 2.5,
+    coverPath: 'Atomic habit.jpg',
+    pdfPath: 'files/Atomic habits ( PDFDrive ).pdf',
+    reviewImages: ['PAGE1.jpg','PAGE2.jpg']
+
+
+    
+  },
+
+
+  
+  'The Laws Of Human Nature': {
+    id: 'The Laws Of Human Nature',
+    title: 'The Laws Of Human Nature',
+    priceUSD: 1.99,
+    coverPath: 'The laws of human nature.jpg',
+    pdfPath: 'files/The-Laws-of-Human-Nature.pdf',
+    reviewImages: ['PAGE2.jpg']
   }
+
+  
+  
   // add more products here (only change server.js)
 };
 // -----------------------------------------------------------------------
