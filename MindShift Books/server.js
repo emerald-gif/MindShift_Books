@@ -116,6 +116,20 @@ const PRODUCTS = {
   },
 
 
+
+    'Games People Play': {
+    id: 'Games People Play',
+    title: 'Games People Play',
+    priceUSD: 3.99,
+    coverPath: 'Games people play.jpg',
+    pdfPath: 'files/Games people play.pdf',
+    reviewImages: ['PAGE1.jpg','PAGE2.jpg']
+
+
+    
+  },
+
+
   
   'Think And Grow Rich': {
     id: 'Think And Grow Rich',
@@ -140,9 +154,9 @@ const PRODUCTS = {
   },
 
 
-     'Read Prople Like A Book': {
-    id: 'Read Prople Like A Book',
-    title: 'Read Prople Like A Book',
+     'Read People Like A Book': {
+    id: 'Read People Like A Book',
+    title: 'Read People Like A Book',
     priceUSD: 2.99,
     coverPath: 'Read people like a book.jpg',
     pdfPath: 'files/read-people-like-a-book.pdf',
