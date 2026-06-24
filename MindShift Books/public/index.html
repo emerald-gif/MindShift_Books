@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MindShift Books | eBook Store</title>
+  <meta name="description" content="MindShift Books — Transformative eBooks. Instant delivery after payment." />
+  
+  <link rel="shortcut icon" href="MINDSHIFT.jpg" type="image/jpg">
+
+  <!-- Fonts & icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+:root{ --primary:#0f172a; --accent:#06b6d4; --bg:#f8fafc; }
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Inter',sans-serif}
+body{background:linear-gradient(180deg,#f8fafc 0%, #eef2f7 100%);min-height:100vh;color:var(--primary);}
+
+/* Header: fixed, predictable height to avoid CLS */
+header{
+  position:fixed;top:0;left:0;right:0;
+  background:white;z-index:1000;
+  display:flex;flex-direction:column;gap:10px;
+  padding:16px 20px 18px;
+  box-shadow:0 2px 12px rgba(0,0,0,0.06);
+}
+
+/* Reserve space for fixed header so content doesn't jump.
+   We'll also adjust via JS on load/resize for precision. */
+main{ max-width:1100px;margin:0 auto;padding-left:16px;padding-right:16px;}
+
+/* header top row */
+.header-top{display:flex;align-items:center;justify-content:space-between;width:100%}
+header h1{font-size:1.45rem;font-weight:700;display:flex;align-items:center;gap:10px}
+
+/* SEARCH */
+.search-wrapper{position:relative;display:flex;align-items:center;gap:8px;background:#eef2f6;padding:8px;border-radius:12px;width:420px;max-width:calc(100% - 40px);margin:0 auto;box-shadow:0 6px 18px rgba(2,6,23,0.04)}
+.search-wrapper input{flex:1;border:none;outline:none;background:transparent;font-size:0.95rem;padding:6px 8px;color:var(--primary)}
+.search-wrapper button{display:inline-flex;align-items:center;justify-content:center;background:linear-gradient(90deg,#4f46e5,#06b6d4);border:none;color:#fff;padding:8px 10px;border-radius:10px;cursor:pointer;box-shadow:0 8px 20px rgba(79,70,229,0.12)}
+.search-wrapper .search-icon{width:16px;height:16px}
+
+/* Suggestions */
+.suggestions{position:absolute;top:calc(100% + 8px);left:0;right:0;background:#fff;border-radius:10px;box-shadow:0 12px 36px rgba(2,6,23,0.12);z-index:1200;display:none;max-height:220px;overflow:auto}
+.suggestions .item{padding:10px 12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(15,23,42,0.03);font-size:0.95rem;color:#0f172a;cursor:pointer}
+.suggestions .meta{margin-left:auto;font-size:0.8rem;color:#6b7280}
+.suggestions .item:hover{background:#f1f5f9}
+
+/* Sidebar */
+.sidebar{position:fixed;top:0;left:-300px;width:280px;height:100%;background:#111827;padding-top:84px;transition:left 0.32s ease;z-index:2000;border-right:1px solid rgba(255,255,255,0.04);color:#fff}
+.sidebar .logo-row{display:flex;align-items:center;gap:12px;padding:18px 20px;position:absolute;top:16px;left:12px}
+.sidebar img{width:36px;height:36px;border-radius:6px}
+.sidebar ul{list-style:none;margin-top:8px}
+.sidebar li{padding:16px 20px;font-weight:600;border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer}
+
+/* Product grid */
+.product-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+
+/* Cards */
+.product-card{background:white;padding:16px;border-radius:14px;box-shadow:0 18px 40px rgba(0,0,0,0.06);display:flex;flex-direction:column;align-items:center;gap:10px}
+.ebook-cover{width:140px;height:200px;object-fit:cover;border-radius:8px}
+@media (max-width:480px){ .ebook-cover{width:110px;height:160px} }
+
+/* title price */
+.title{font-weight:700;text-align:center;font-size:.95rem}
+.price{font-weight:800;font-size:1rem;color:#0f172a}
+
+/* actions — default horizontal, stack on small width */
+.button-group{display:flex;gap:8px;width:100%}
+.button-group .btn{flex:1}
+@media (max-width:480px){ .button-group{flex-direction:column} }
+
+/* buttons */
+.btn{padding:10px 14px;border-radius:10px;border:none;font-weight:700;cursor:pointer;width:100%}
+.buy-btn{background:linear-gradient(90deg,#4f46e5,#06b6d4);color:white}
+.review-btn{border:2px solid rgba(15,23,42,0.06);background:white;color:var(--primary)}
+
+/* footer */
+/* ---------------- FULL SITE FOOTER (edge-to-edge) ---------------- */
+.site-footer{margin-top:48px;background:#0f172a;color:#fff;width:100%;}
+.footer-top{display:flex;flex-wrap:wrap;gap:36px;max-width:1100px;margin:0 auto;padding:44px 36px 32px;box-sizing:border-box;}
+.footer-col{flex:1 1 220px;min-width:0;}
+.footer-brand{flex:1.5 1 260px;}
+.footer-logo-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.footer-logo-row img{width:34px;height:34px;border-radius:7px;}
+.footer-logo-row span{font-weight:700;font-size:1.1rem;color:#fbbf24;}
+.footer-tagline{color:#e2e8f0;font-size:0.92rem;margin:0 0 10px;}
+.footer-blurb{color:#94a3b8;font-size:0.85rem;line-height:1.6;margin:0;max-width:320px;}
+.footer-heading{font-weight:700;font-size:0.85rem;letter-spacing:0.04em;text-transform:uppercase;color:#94a3b8;margin-bottom:14px;}
+.footer-links{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:10px;}
+.footer-links a{color:#e2e8f0;text-decoration:none;font-size:0.92rem;transition:color 150ms ease;}
+.footer-links a:hover{color:#06b6d4;}
+.footer-contact-link{display:inline-flex;align-items:center;gap:8px;word-break:break-all;}
+.footer-social{display:flex;gap:10px;}
+.social-btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:38px;height:38px;border-radius:50%;
+  background:rgba(255,255,255,0.06);color:#e2e8f0;
+  transition:background-color 150ms ease,color 150ms ease,transform 150ms ease;
+}
+.social-btn:hover{background:linear-gradient(90deg,#4f46e5,#06b6d4);color:#fff;transform:translateY(-2px);}
+.footer-bottom{
+  border-top:1px solid rgba(255,255,255,0.08);
+  padding:20px 36px;max-width:1100px;margin:0 auto;
+  display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;
+  color:#64748b;font-size:0.82rem;box-sizing:border-box;
+}
+.footer-secure{display:flex;align-items:center;gap:6px;color:#94a3b8;}
+@media (max-width:760px){
+  .footer-top{flex-direction:column;gap:28px;}
+  .footer-bottom{flex-direction:column;align-items:flex-start;}
+}
+footer .brand{font-weight:700;font-size:1.1rem;color:#fbbf24}
+.muted{font-size:.9rem;color:#6b7280}
+
+/* ---------------- SECTION HEADERS (Our Books / Featured) ---------------- */
+.section-head{display:flex;align-items:flex-start;gap:14px;margin-bottom:20px;flex-wrap:wrap;}
+.section-head h2{margin:0 0 4px;font-size:1.25rem;color:var(--primary);}
+.section-head-icon{
+  width:44px;height:44px;border-radius:12px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+}
+.section-head-icon--brand{
+  background:linear-gradient(135deg,#4f46e5,#06b6d4);color:#fff;
+  box-shadow:0 8px 18px rgba(79,70,229,0.28);
+}
+.section-head-icon--warm{background:#fff3e0;color:#f59e0b;}
+.section-badge{
+  background:linear-gradient(90deg,#4f46e5,#06b6d4);color:#fff;
+  font-weight:700;font-size:0.78rem;padding:7px 14px;border-radius:999px;
+  white-space:nowrap;align-self:flex-start;
+}
+
+/* small screens: grid becomes 2 across (same), search fits */
+@media (max-width:860px){ .search-wrapper{width:100%;max-width:100%;margin:0} }
+
+/* Cart icon + badge */
+.icon-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;border:none;background:transparent;color:#1e293b;cursor:pointer;transition:background-color 150ms ease,color 150ms ease;padding:0;}
+.icon-btn:hover{background-color:#f1f5f9;color:#4f46e5;}
+.icon-btn:active{background-color:#e6e9ee;}
+.cart-badge{
+  position:absolute;top:-9px;right:-11px;
+  background:linear-gradient(90deg,#4f46e5,#06b6d4);
+  color:#fff;font-size:0.68rem;font-weight:700;
+  min-width:18px;height:18px;border-radius:999px;
+  display:flex;align-items:center;justify-content:center;
+  padding:0 4px;line-height:1;
+}
+
+/* Full-screen cart overlay */
+.cart-overlay{
+  position:fixed;inset:0;background:#fff;z-index:5000;
+  display:none;flex-direction:column;
+  padding:22px 18px 32px;overflow-y:auto;
+  opacity:0;transform:translateY(18px);
+  transition:opacity 220ms ease,transform 220ms cubic-bezier(.16,1,.3,1);
+}
+.cart-overlay.show{display:flex;opacity:1;transform:translateY(0);}
+[aria-hidden="true"].cart-overlay { display: none !important; }
+.cart-overlay-inner{max-width:640px;width:100%;margin:0 auto;}
+.cart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+.cart-header h2{font-size:1.25rem;color:var(--primary);display:flex;align-items:baseline;gap:8px;}
+.cart-item-count{font-size:0.82rem;font-weight:600;color:#94a3b8;}
+.cart-close{background:none;border:none;cursor:pointer;color:#64748b;padding:8px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;transition:background-color 150ms ease,color 150ms ease;}
+.cart-close:hover{background-color:#f1f5f9;color:#0f172a;}
+
+.cart-items-list{display:flex;flex-direction:column;gap:12px;margin-bottom:22px;}
+.cart-item{
+  display:flex;align-items:center;gap:12px;
+  background:#fff;border-radius:12px;padding:12px 14px;
+  border:1px solid #eef2f7;
+  box-shadow:0 4px 14px rgba(15,23,42,0.04);
+  transition:box-shadow 150ms ease;
+}
+.cart-item:hover{box-shadow:0 8px 22px rgba(15,23,42,0.08);}
+.cart-item img{width:46px;height:64px;object-fit:cover;border-radius:6px;flex-shrink:0;box-shadow:0 2px 6px rgba(15,23,42,0.12);}
+.cart-item-info{flex:1;min-width:0;}
+.cart-item-title{font-weight:700;font-size:0.92rem;color:var(--primary);}
+.cart-item-price{color:#6b7280;font-size:0.85rem;margin-top:2px;}
+.cart-item-remove{background:none;border:none;color:#94a3b8;cursor:pointer;padding:8px;flex-shrink:0;border-radius:50%;display:inline-flex;transition:background-color 150ms ease,color 150ms ease;}
+.cart-item-remove:hover{background-color:#fef2f2;color:#ef4444;}
+
+/* Premium empty-cart state */
+.cart-empty{text-align:center;padding:48px 16px 24px;color:#94a3b8;}
+.cart-empty svg{margin-bottom:14px;color:#cbd5e1;}
+.cart-empty h3{font-size:1.05rem;color:var(--primary);margin:0 0 6px;}
+.cart-empty p{font-size:0.9rem;margin:0 0 20px;color:#94a3b8;}
+
+.cart-summary{border-top:1px solid rgba(15,23,42,0.08);padding-top:18px;}
+.cart-total-row{display:flex;justify-content:space-between;font-weight:800;font-size:1.25rem;margin-bottom:18px;color:var(--primary);}
+.checkout-heading{font-weight:700;font-size:0.85rem;letter-spacing:0.03em;text-transform:uppercase;color:#94a3b8;margin-bottom:4px;}
+
+.input-icon-field{position:relative;}
+.input-icon-field .input-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;pointer-events:none;}
+.input-icon-field input{padding-left:38px !important;}
+
+.cart-summary input{
+  width:100%;padding:11px 12px;margin-top:6px;border-radius:10px;
+  border:1.5px solid #e6e9ee;font-size:0.95rem;
+  transition:border-color 150ms ease,box-shadow 150ms ease;
+}
+.cart-summary input:focus{outline:none;border-color:#4f46e5;box-shadow:0 0 0 3px rgba(79,70,229,0.10);}
+.field-hint{font-size:0.8rem;margin-top:6px;}
+
+.checkout-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;font-size:1rem;}
+.checkout-trust{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  margin-top:14px;color:#94a3b8;font-size:0.82rem;
+}
+</style>
+
+
+  
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <h1 style="display:flex;align-items:center;gap:10px;margin:0;">
+      <img src="MINDSHIFT.jpg" alt="MindShift logo" style="width:36px;height:36px;border-radius:6px;">
+      <span>MindShift Books</span>
+    </h1>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <button type="button" class="icon-btn" id="cartIcon" aria-label="View cart">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+        <span class="cart-badge" id="cartBadge" style="display:none;">0</span>
+      </button>
+      <button type="button" class="icon-btn" onclick="toggleSidebar()" aria-label="Open menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="22" height="22"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="search-wrapper" role="search" aria-label="Search books">
+    <svg class="search-icon-prefix" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+    <input
+      id="searchInput"
+      type="text"
+      placeholder="Search books"
+      oninput="showSuggestions()"
+      onkeydown="if(event.key==='Enter'){ performSearch(); }"
+      autocomplete="off"
+      aria-autocomplete="list"
+    />
+    <button id="searchBtn" onclick="performSearch()" aria-label="Search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+    </button>
+    <div id="suggestionsBox" class="suggestions" role="listbox" aria-hidden="true"></div>
+  </div>
+</header>
+
+
+  
+  <style>
+/* ---------------- HEADER FIX ---------------- */
+header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  z-index: 1000;
+
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  padding: 16px 26px 20px; /* extra bottom space for search bar */
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+/* Push whole page down so header doesn't cover content */
+
+
+
+
+/* ---------------- SEARCH BAR ---------------- */
+.search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #eef2f6;
+  padding: 6px 8px;
+  border-radius: 12px;
+  width: 420px;                 /* desktop width */
+  max-width: calc(100% - 40px);
+  box-shadow: 0 6px 18px rgba(2,6,23,0.04);
+  margin: 0 auto;               /* center under logo */
+}
+
+.search-wrapper input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.95rem;
+  color: var(--primary);
+  padding: 6px 8px;
+}
+
+.search-wrapper button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(90deg,#4f46e5,#06b6d4);
+  border: none;
+  color: #fff;
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 1rem;
+  box-shadow: 0 8px 20px rgba(79,70,229,0.12);
+}
+
+.search-wrapper .search-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.search-wrapper .search-icon-prefix {
+  width: 16px;
+  height: 16px;
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+
+
+/* ---------------- SUGGESTIONS DROPDOWN ---------------- */
+.suggestions {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: #fff;
+  width: 100%;
+  border-radius: 10px;
+  box-shadow: 0 12px 36px rgba(2,6,23,0.12);
+  z-index: 1200;
+  display: none;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.suggestions .item {
+  padding: 10px 12px;
+  cursor: pointer;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  border-bottom: 1px solid rgba(15,23,42,0.03);
+  font-size: 0.95rem;
+  color: #0f172a;
+}
+
+.suggestions .item:last-child {
+  border-bottom: none;
+}
+
+.suggestions .item:hover {
+  background: #f1f5f9;
+}
+
+.suggestions .meta {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-left: auto;
+}
+
+
+
+/* ---------------- RESPONSIVE (Mobile Perfect) ---------------- */
+@media (max-width: 860px) {
+  .search-wrapper {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+  }
+}
+
+@media (max-width: 600px) {
+  .search-wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  header {
+    padding: 14px 14px 18px;
+  }
+}
+
+@media (max-width: 450px) {
+  .search-wrapper {
+    padding: 6px 6px;
+  }
+}
+
+   /* Force logo left + hamburger right */
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+/* Ensure search sits cleanly under top row */
+header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+} 
+    
+  </style>
+
+<aside class="sidebar" id="sidebar" aria-hidden="true" data-open="false">
+  <div class="logo-row">
+    <img src="MINDSHIFT.jpg" alt="logo">
+    <div style="font-weight:700">MindShift Books</div>
+  </div>
+
+  <ul>
+    <li onclick="openMyOrders()">My Orders</li>
+    <li onclick="openContact()">Contact Us</li>
+    <li onclick="followYoutube()">Follow us on YouTube</li>
+  </ul>
+
+  <div style="position:absolute;bottom:18px;left:18px;right:18px;color:#9ca3af;font-size:0.9rem;">
+    <div>© 2026 MindShift Books</div>
+    <div style="margin-top:6px">Shift your thinking, change your life.</div>
+  </div>
+</aside>
+
+<main>
+  <section class="hero" id="ourBooksSection" aria-labelledby="our-books-h">
+    <div class="section-head">
+      <div class="section-head-icon section-head-icon--brand" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+      </div>
+      <div>
+        <h2 id="our-books-h">Our Books</h2>
+        <div class="muted">Original guides written by MindShift Books.</div>
+      </div>
+    </div>
+
+    <!-- our books grid -->
+    <div id="ourBooksGrid" class="product-grid" aria-live="polite">
+      <div class="center" style="grid-column: 1 / -1; padding:24px;">
+        <div style="display:flex;gap:12px;align-items:center;">
+          <div class="loader" aria-hidden="true"></div>
+          <div class="muted">Loading books...</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="hero" id="featuredSection" aria-labelledby="featured-h" style="margin-top:28px">
+    <div class="section-head">
+      <div class="section-head-icon section-head-icon--warm" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></svg>
+      </div>
+      <div style="flex:1;">
+        <h2 id="featured-h">Featured Books by Other Authors</h2>
+        <div class="muted">Choose any eBook. Get ebook instantly after payment.</div>
+      </div>
+
+      <div class="section-badge">Best Books Of 2026</div>
+    </div>
+
+    <!-- featured product grid -->
+    <div id="featuredGrid" class="product-grid" aria-live="polite">
+      <div class="center" style="grid-column: 1 / -1; padding:24px;">
+        <div style="display:flex;gap:12px;align-items:center;">
+          <div class="loader" aria-hidden="true"></div>
+          <div class="muted">Loading books...</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="hero" id="searchResultsSection" aria-labelledby="search-h" style="margin-top:28px;display:none;">
+    <div style="margin-bottom:18px;">
+      <h2 id="search-h" style="margin-bottom:6px">Search Results</h2>
+    </div>
+    <div id="searchGrid" class="product-grid" aria-live="polite"></div>
+  </section>
+</main>
+
+  <footer class="site-footer">
+    <div class="footer-top">
+
+      <div class="footer-col footer-brand">
+        <div class="footer-logo-row">
+          <img src="MINDSHIFT.jpg" alt="MindShift Books logo">
+          <span>MindShift Books</span>
+        </div>
+        <p class="footer-tagline">Shift your thinking, change your life.</p>
+        <p class="footer-blurb">Curated eBooks on psychology, money, and personal growth — read instantly, no waiting.</p>
+      </div>
+
+      <div class="footer-col">
+        <div class="footer-heading">Quick Links</div>
+        <ul class="footer-links">
+          <li><a href="/index.html">Browse Books</a></li>
+          <li><a href="javascript:void(0)" onclick="openMyOrders()">My Orders</a></li>
+          <li><a href="javascript:void(0)" onclick="openContact()">Contact Us</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <div class="footer-heading">Get In Touch</div>
+        <ul class="footer-links">
+          <li>
+            <a href="mailto:contact@mindshiftbooks.online" class="footer-contact-link">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+              contact@mindshiftbooks.online
+            </a>
+          </li>
+        </ul>
+
+        <div class="footer-heading" style="margin-top:18px;">Follow Us</div>
+        <div class="footer-social">
+          <a href="https://www.youtube.com/@MindShift_Books" target="_blank" rel="noopener" class="social-btn" aria-label="MindShift Books on YouTube">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M23.498 6.186a2.994 2.994 0 0 0-2.112-2.112C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.386.529A2.994 2.994 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a2.994 2.994 0 0 0 2.112 2.112c1.881.529 9.386.529 9.386.529s7.505 0 9.386-.529a2.994 2.994 0 0 0 2.112-2.112C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"></path></svg>
+          </a>
+          <!-- TODO: swap href for the real X (Twitter) profile URL once it's provided -->
+          <a href="#" class="social-btn" aria-label="MindShift Books on X" title="Link coming soon">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z"></path></svg>
+          </a>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="footer-bottom">
+      <div>© 2026 MindShift Books. All rights reserved.</div>
+      <div class="footer-secure">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+        Secure checkout powered by Paystack
+      </div>
+    </div>
+  </footer>
+
+<!-- FULL-SCREEN CART OVERLAY (replaces the old single-book checkout modal) -->
+<div class="cart-overlay" id="cartOverlay" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="cart-title">
+  <div class="cart-overlay-inner">
+    <div class="cart-header">
+      <h2 id="cart-title">Your Cart <span id="cartItemCount" class="cart-item-count"></span></h2>
+      <button class="cart-close" id="cartCloseBtn" aria-label="Close cart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+    </div>
+
+    <div id="cartItemsList" class="cart-items-list"></div>
+
+    <div class="cart-summary" id="cartSummary">
+      <div class="cart-total-row">
+        <span>Total</span>
+        <span id="cartTotalPrice">$0.00</span>
+      </div>
+
+      <div class="checkout-heading">Checkout details</div>
+
+      <div class="field input-icon-field" style="margin-top:10px;">
+        <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        <input id="cartBuyerName" type="text" placeholder="Full name" aria-label="Full name" required/>
+      </div>
+
+      <div class="field input-icon-field" style="margin-top:10px;">
+        <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+        <input id="cartBuyerEmail" type="email" placeholder="you@example.com" aria-label="Email address" required/>
+      </div>
+      <div class="muted field-hint">Your eBooks will be emailed to this address.</div>
+
+      <button class="btn buy-btn checkout-btn" id="cartProceedBtn" style="margin-top:18px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+        Proceed to Payment
+      </button>
+
+      <div class="checkout-trust">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+        Payments secured by Paystack
+      </div>
+
+      <div class="muted" style="margin-top:8px;text-align:center;font-size:0.82rem;">
+        You'll be redirected after payment and your PDFs will be emailed automatically — or check anytime under My Orders.
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+  <script>
+function adjustMainPadding(){
+  const header = document.querySelector('header');
+  const main = document.querySelector('main');
+  if (!header || !main) return;
+  const h = header.getBoundingClientRect().height;
+  main.style.paddingTop = (h + 16) + 'px'; // little breathing room
+}
+window.addEventListener('load', adjustMainPadding);
+window.addEventListener('resize', adjustMainPadding);
+adjustMainPadding();
+</script>
+
+<!-- Firebase + EmailJS + Main script -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://cdn.emailjs.com/sdk/3.2/email.min.js"></script>
+<script src="/main.js"></script>
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
