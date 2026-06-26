@@ -1,265 +1,948 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>MindShift Books | eBook Store</title>
-  <meta name="description" content="MindShift Books — Transformative eBooks. Instant delivery after payment." />
-  
-  <link rel="shortcut icon" href="MINDSHIFT.jpg" type="image/jpg">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MAJ Media Academy — Get Skilled in Social Media Management & Land Clients | Cohort 6</title>
+<meta name="description" content="Get skilled in Social Media Management and land clients in 4 weeks. Learn strategy, content, ads & client management with MAJ Media Academy. Cohort 6 starts July 29, 2026." />
 
-  <!-- Fonts & icons -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<!-- Open Graph -->
+<meta property="og:title" content="MAJ Media Academy — Get Skilled in Social Media Management & Land Clients" />
+<meta property="og:description" content="Learn how to grow brands online and build a profitable career in 4 weeks. Cohort 6 starts July 29, 2026." />
+<meta property="og:image" content="MAJ Media Academy logo .png" />
+<meta property="og:type" content="website" />
 
-  <link rel="stylesheet" href="styles.css">
+<link rel="icon" href="MAJ Media Academy logo .png" />
 
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 
-  
+<!-- Swiper -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+
+<style>
+  /* ============ TOKENS ============ */
+  :root{
+    --navy-950:#071227;
+    --navy-800:#0E2A4D;
+    --navy-700:#123866;
+    --navy-100:#E8EEF6;
+    --gold-600:#A9801F;
+    --gold-500:#CDA434;
+    --gold-300:#E4C262;
+    --gold-100:#FBF1D8;
+    --paper:#FAFAF9;
+    --white:#FFFFFF;
+    --ink-900:#0B1220;
+    --ink-600:#4A5568;
+    --ink-400:#94A0B3;
+    --line:#E6E8EC;
+
+    --font-display:'Bricolage Grotesque', 'Inter', sans-serif;
+    --font-body:'Inter', sans-serif;
+    --font-mono:'JetBrains Mono', monospace;
+
+    --maxw:1180px;
+    --radius-lg:28px;
+    --radius-md:18px;
+    --radius-sm:10px;
+    --shadow-soft:0 20px 50px -20px rgba(7,18,39,0.18);
+    --shadow-card:0 12px 30px -14px rgba(7,18,39,0.16);
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;overflow-x:hidden;width:100%;}
+  body{
+    margin:0;
+    width:100%;
+    overflow-x:hidden;
+    font-family:var(--font-body);
+    color:var(--ink-900);
+    background:var(--white);
+    -webkit-font-smoothing:antialiased;
+  }
+  img{max-width:100%;display:block;}
+  a{color:inherit;text-decoration:none;}
+  ul{margin:0;padding:0;list-style:none;}
+  h1,h2,h3{font-family:var(--font-display);margin:0;line-height:1.05;font-weight:700;}
+  p{margin:0;}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px;}
+  .eyebrow{
+    font-family:var(--font-mono);
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--gold-600);
+  }
+  .btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    padding:15px 28px;
+    border-radius:100px;
+    font-weight:700;
+    font-size:15px;
+    cursor:pointer;
+    border:1.5px solid transparent;
+    transition:transform .18s ease, box-shadow .18s ease, background .18s ease;
+    white-space:nowrap;
+  }
+  .btn:hover{transform:translateY(-2px);}
+  .btn-gold{background:var(--gold-500);color:var(--navy-950);box-shadow:0 14px 28px -12px rgba(205,164,52,0.55);}
+  .btn-gold:hover{background:var(--gold-300);}
+  .btn-navy{background:var(--navy-800);color:var(--white);}
+  .btn-navy:hover{background:var(--navy-950);}
+  .btn-outline{background:transparent;border-color:var(--navy-800);color:var(--navy-800);}
+  .btn-outline:hover{background:var(--navy-800);color:var(--white);}
+  .btn-ghost-white{background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.35);color:var(--white);}
+  .btn-ghost-white:hover{background:rgba(255,255,255,0.18);}
+
+  .section-head{max-width:680px;}
+  .section-head h2{font-size:clamp(28px,4vw,42px);margin-top:10px;}
+  .section-head p{margin-top:14px;color:var(--ink-600);font-size:16.5px;line-height:1.6;}
+  .section-head.center{margin:0 auto;text-align:center;}
+
+  /* ============ NAV ============ */
+  .nav{
+    position:sticky;top:0;z-index:50;
+    background:rgba(255,255,255,0.88);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .nav-inner{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 24px;max-width:var(--maxw);margin:0 auto;
+  }
+  .brand{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-weight:700;font-size:17px;}
+  .brand img{height:54px;width:auto;}
+  .brand-text{font-family:var(--font-display);font-weight:700;font-size:15px;color:var(--navy-950);line-height:1.15;letter-spacing:-0.01em;}
+  .nav-links{display:flex;gap:30px;align-items:center;}
+  .nav-links a{font-size:14.5px;font-weight:600;color:var(--ink-600);}
+  .nav-links a:hover{color:var(--navy-900);}
+  .nav-cta{display:flex;align-items:center;gap:14px;}
+  .nav-cta .btn-gold{padding:9px 18px;font-size:13px;}
+  .nav-toggle{display:none;background:none;border:none;cursor:pointer;padding:6px;}
+  .nav-toggle span{display:block;width:18px;height:2px;background:var(--navy-950);margin:4px 0;border-radius:2px;}
+
+  @media (max-width:900px){
+    .nav-links{
+      position:absolute;top:100%;left:0;right:0;background:var(--white);
+      flex-direction:column;gap:0;border-bottom:1px solid var(--line);
+      max-height:0;overflow:hidden;transition:max-height .25s ease;
+    }
+    .nav-links.open{max-height:420px;}
+    .nav-links a{display:block;padding:14px 24px;border-top:1px solid var(--line);width:100%;}
+    .nav-toggle{display:block;}
+    .nav-cta .btn-outline{display:none;}
+  }
+
+  /* ============ HERO ============ */
+  .hero{
+    position:relative;overflow:hidden;
+    padding:72px 0 60px;
+    background:
+      radial-gradient(900px 500px at 85% -10%, rgba(205,164,52,0.10), transparent 60%),
+      radial-gradient(700px 500px at -5% 110%, rgba(18,56,102,0.06), transparent 60%);
+  }
+  .hero-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:48px;align-items:center;}
+  .hero-pill{
+    display:inline-flex;align-items:center;gap:8px;
+    background:var(--navy-950);color:var(--gold-300);
+    font-family:var(--font-mono);font-size:12px;font-weight:600;letter-spacing:.08em;
+    padding:8px 16px;border-radius:100px;text-transform:uppercase;
+  }
+  .hero-pill .dot{width:7px;height:7px;border-radius:50%;background:var(--gold-300);box-shadow:0 0 0 4px rgba(228,194,98,.25);}
+  .hero h1{
+    font-size:clamp(36px,5.6vw,60px);
+    margin-top:20px;color:var(--navy-950);
+    letter-spacing:-0.01em;
+  }
+  .hero h1 .hl{
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 20'%3E%3Cpath d='M2 14 Q100 -2 198 14' stroke='%23CDA434' stroke-width='5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;
+    background-position:0 100%;
+    background-size:100% 16px;
+    padding-bottom:12px;
+    box-decoration-break:clone;
+    -webkit-box-decoration-break:clone;
+  }
+  .hero-sub{margin-top:22px;font-size:18px;line-height:1.65;color:var(--ink-600);max-width:560px;}
+  .hero-proof-strip{display:flex;gap:10px;margin-top:22px;}
+  .hero-proof-strip img{
+    width:84px;height:84px;object-fit:cover;border-radius:12px;
+    border:2px solid var(--white);box-shadow:var(--shadow-card);
+  }
+  .hero-actions{display:flex;align-items:center;gap:18px;margin-top:32px;flex-wrap:wrap;}
+  .hero-meta{margin-top:18px;font-size:13.5px;color:var(--ink-400);font-family:var(--font-mono);letter-spacing:.02em;line-height:1.6;}
+  .hero-meta strong{color:var(--navy-800);}
+  .hero-meta .nowrap-chunk{white-space:nowrap;}
+  .hero-meta .meta-dot{opacity:.45;}
+
+  .hero-visual{position:relative;}
+  .hero-card-stack{position:relative;height:420px;}
+  .proof-card{
+    position:absolute;background:var(--white);border:1px solid var(--line);
+    border-radius:var(--radius-md);padding:20px 22px;box-shadow:var(--shadow-card);
+    width:240px;
+  }
+  .proof-card .num{font-family:var(--font-display);font-size:30px;font-weight:800;color:var(--navy-950);}
+  .proof-card .lbl{font-size:13px;color:var(--ink-600);margin-top:4px;}
+  .proof-card.c1{top:0;right:30px;z-index:3;}
+  .proof-card.c2{top:150px;right:140px;z-index:2;border-color:rgba(205,164,52,.45);}
+  .proof-card.c3{top:300px;right:0;z-index:1;}
+  .hero-arc-bg{position:absolute;inset:-40px -10px auto auto;z-index:0;opacity:.9;}
+
+  @media (max-width:900px){
+    .hero-grid{grid-template-columns:1fr;}
+    .hero-card-stack{height:auto;display:flex;flex-direction:column;gap:14px;margin-top:20px;}
+    .proof-card{position:static;width:100%;}
+  }
+
+  /* ============ WHY JOIN ============ */
+  .why{padding:90px 0;background:var(--paper);}
+  .why-grid{display:grid;grid-template-columns:.95fr 1.05fr;gap:56px;align-items:flex-start;}
+  .why-checklist{display:grid;gap:14px;margin-top:30px;}
+  .check-item{display:flex;gap:14px;align-items:flex-start;background:var(--white);border:1px solid var(--line);border-radius:var(--radius-sm);padding:16px 18px;}
+  .check-icon{flex:none;width:30px;height:30px;border-radius:50%;background:var(--navy-950);display:flex;align-items:center;justify-content:center;}
+  .check-icon svg{width:15px;height:15px;}
+  .check-item p{font-size:15.5px;font-weight:600;color:var(--navy-950);}
+  .why-cta{margin-top:28px;}
+  .section-proof{margin-top:28px;max-width:360px;}
+
+  @media (max-width:900px){.why-grid{grid-template-columns:1fr;}}
+
+  /* ============ AUDIENCE ============ */
+  .audience{padding:90px 0;}
+  .audience-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:36px;}
+  .audience-chip{
+    border:1.5px solid var(--line);border-radius:var(--radius-md);
+    padding:22px 18px;transition:border-color .2s, transform .2s;
+  }
+  .audience-chip:hover{border-color:var(--gold-500);transform:translateY(-3px);}
+  .audience-chip .ic{width:34px;height:34px;margin-bottom:12px;}
+  .audience-chip p{font-size:14.5px;font-weight:600;color:var(--navy-950);line-height:1.4;}
+  @media (max-width:900px){.audience-grid{grid-template-columns:repeat(2,1fr);}}
+  .audience-cta{margin-top:36px;text-align:center;}
+
+  /* ============ CURRICULUM ============ */
+  .curriculum{padding:90px 0;background:var(--navy-950);color:var(--white);position:relative;overflow:hidden;}
+  .curriculum .eyebrow{color:var(--gold-300);}
+  .curriculum .section-head h2{color:var(--white);}
+  .curriculum .section-head p{color:rgba(255,255,255,0.65);}
+  .syllabus{margin-top:40px;display:grid;gap:0;}
+  .syllabus-row{
+    display:grid;grid-template-columns:70px 1fr;gap:24px;align-items:center;
+    padding:20px 0;border-top:1px solid rgba(255,255,255,0.12);
+  }
+  .syllabus-row:last-child{border-bottom:1px solid rgba(255,255,255,0.12);}
+  .syllabus-row .idx{font-family:var(--font-mono);font-size:14px;color:var(--gold-300);font-weight:700;}
+  .syllabus-row .name{font-size:18px;font-weight:600;}
+  .syllabus-row.highlight .name{color:var(--gold-300);}
+  .curriculum-cta{margin-top:40px;}
+
+  /* ============ PERKS ============ */
+  .perks{padding:90px 0;background:var(--paper);}
+  .perks-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:38px;}
+  .perk-card{background:var(--white);border:1px solid var(--line);border-radius:var(--radius-md);padding:24px;}
+  .perk-card .ic{width:38px;height:38px;border-radius:10px;background:var(--gold-100);display:flex;align-items:center;justify-content:center;margin-bottom:14px;}
+  .perk-card .ic svg{width:19px;height:19px;}
+  .perk-card h3{font-size:16px;font-weight:700;color:var(--navy-950);font-family:var(--font-body);}
+  .perks-cta{margin-top:36px;text-align:center;}
+  @media (max-width:900px){.perks-grid{grid-template-columns:repeat(2,1fr);}}
+  @media (max-width:560px){.perks-grid{grid-template-columns:1fr;}}
+
+  /* ============ INSTRUCTOR ============ */
+  .instructor{padding:100px 0;overflow:hidden;}
+  .instructor-heading{font-size:clamp(28px,4vw,42px);color:var(--navy-950);margin-bottom:48px;}
+  .instructor-grid{display:grid;grid-template-columns:.8fr 1.2fr;gap:60px;align-items:center;}
+  .instructor-photo-wrap{position:relative;}
+  .instructor-photo-wrap .arc-deco{position:absolute;top:-26px;left:-26px;width:120%;z-index:0;opacity:.9;}
+  .instructor-photo{
+    position:relative;z-index:1;border-radius:var(--radius-lg);
+    overflow:hidden;border:6px solid var(--white);box-shadow:var(--shadow-soft);
+    aspect-ratio:4/5;
+  }
+  .instructor-photo img{width:100%;height:100%;object-fit:cover;}
+  .instructor-name{font-size:clamp(26px,3vw,34px);margin:0;}
+  .instructor-role{color:var(--gold-600);font-weight:700;font-size:15px;margin-top:6px;}
+  .instructor-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:14px;margin:30px 0;}
+  .stat-box{border-left:3px solid var(--gold-500);padding-left:14px;}
+  .stat-box .n{font-family:var(--font-display);font-weight:800;font-size:24px;color:var(--navy-950);}
+  .stat-box .l{font-size:12.5px;color:var(--ink-600);margin-top:2px;line-height:1.3;}
+  .instructor-bullets{display:grid;gap:10px;margin-top:10px;}
+  .instructor-bullets li{display:flex;gap:10px;font-size:15px;color:var(--ink-600);}
+  .instructor-bullets li::before{content:'';flex:none;width:6px;height:6px;border-radius:50%;background:var(--gold-500);margin-top:8px;}
+  @media (max-width:900px){.instructor-grid{grid-template-columns:1fr;}.instructor-stats{grid-template-columns:repeat(2,1fr);}}
+
+  /* ============ TESTIMONIALS ============ */
+  .testimonials{padding:100px 0 60px;background:var(--navy-950);color:var(--white);}
+  .testimonials .eyebrow{color:var(--gold-300);}
+  .testimonials .section-head h2{color:var(--white);}
+  .testimonials .section-head p{color:rgba(255,255,255,0.65);}
+
+  .video-block{margin-top:50px;}
+  .video-block-head{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:14px;margin-bottom:24px;}
+  .video-block-head h3{font-size:20px;color:var(--white);}
+  .video-card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:var(--radius-md);overflow:hidden;}
+  .video-frame{position:relative;width:100%;aspect-ratio:16/9;background:#000;}
+  .video-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0;}
+  .video-card-label{padding:14px 16px;font-size:14px;font-weight:600;color:rgba(255,255,255,0.85);}
+
+  /* pagination + arrows now live in a row below each carousel, not overlaid on the slides */
+  .swiper-nav{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:18px;}
+  .swiper-pagination{
+    position:static !important;width:auto !important;
+    display:flex;align-items:center;justify-content:center;gap:7px;
+  }
+  .swiper-pagination-bullet{
+    background:rgba(255,255,255,0.3);opacity:1;width:7px;height:7px;margin:0 !important;
+    border-radius:100px;transition:width .25s ease, background .25s ease;
+  }
+  .swiper-pagination-bullet-active{background:var(--gold-500);width:22px;}
+  .swiper-button-next, .swiper-button-prev{
+    position:static !important;margin:0 !important;top:auto !important;
+    width:32px;height:32px;border-radius:50%;
+    background:rgba(255,255,255,0.06);
+    color:var(--gold-300) !important;
+  }
+  .swiper-button-next::after, .swiper-button-prev::after{font-size:13px !important;font-weight:700;}
+  .swiper-button-disabled{opacity:.3 !important;}
+  .light-swiper .swiper-pagination-bullet{background:rgba(7,18,39,0.18);}
+  .light-swiper .swiper-pagination-bullet-active{background:var(--navy-800);}
+  .light-swiper .swiper-button-next, .light-swiper .swiper-button-prev{
+    background:rgba(7,18,39,0.05);color:var(--navy-800) !important;
+  }
+
+  .testimonial-divider{height:1px;background:rgba(255,255,255,0.1);margin:56px 0 0;}
+
+  .testi-category{margin-top:56px;}
+  .testi-category-title{
+    font-size:clamp(20px,2.4vw,24px);color:var(--white);
+    display:flex;align-items:center;gap:12px;
+  }
+  .testi-category-title::after{content:'';flex:1;height:1px;background:rgba(255,255,255,0.12);}
+  .testi-quote{
+    font-size:16px;color:rgba(255,255,255,0.85);max-width:620px;margin:12px 0 28px;
+    font-style:italic;padding-left:18px;border-left:2px solid var(--gold-500);
+  }
+  .testi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;}
+
+  .testi-card{
+    background:var(--white);border-radius:var(--radius-md);overflow:hidden;
+    box-shadow:var(--shadow-card);display:flex;flex-direction:column;
+  }
+  .testi-img-wrap{background:var(--navy-100);}
+  .testi-img-wrap img{width:100%;height:auto;display:block;}
+  .testi-caption{padding:16px 18px;border-top:1px solid var(--line);}
+  .testi-caption p{font-size:13.5px;color:var(--ink-600);line-height:1.5;font-style:italic;}
+  .testi-attr{
+    display:block;margin-top:10px;font-family:var(--font-mono);font-size:11px;
+    font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--gold-600);
+  }
+
+  .yt-channel-link{display:inline-flex;align-items:center;gap:8px;margin-top:18px;font-size:14px;font-weight:600;color:var(--gold-300);}
+  .yt-channel-link svg{width:16px;height:16px;}
+
+  /* ============ PRICING ============ */
+  .pricing{padding:100px 0;background:var(--paper);}
+  .pricing-card{
+    max-width:880px;margin:44px auto 0;background:var(--white);border:1.5px solid var(--navy-950);
+    border-radius:var(--radius-lg);overflow:hidden;display:grid;grid-template-columns:1fr 1fr;
+    box-shadow:var(--shadow-soft);
+  }
+  .pricing-left{padding:44px;border-right:1px solid var(--line);}
+  .pricing-left .fee-label{font-family:var(--font-mono);font-size:12px;letter-spacing:.1em;color:var(--ink-400);text-transform:uppercase;}
+  .pricing-left .fee{font-family:var(--font-display);font-size:48px;font-weight:800;color:var(--navy-950);margin-top:8px;}
+  .pricing-left .fee-note{font-size:13px;color:var(--ink-600);margin-top:6px;}
+  .pricing-left .fee-note strong{color:var(--gold-600);}
+  .pricing-left .deadline{margin-top:24px;background:var(--gold-100);border-radius:var(--radius-sm);padding:12px 16px;font-size:13.5px;color:var(--gold-600);font-weight:700;}
+  .pricing-left .btn{margin-top:26px;width:100%;}
+  .pricing-right{padding:44px;}
+  .spec-row{display:flex;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--line);font-size:14.5px;}
+  .spec-row:last-child{border-bottom:none;}
+  .spec-row .k{color:var(--ink-600);}
+  .spec-row .v{font-weight:700;color:var(--navy-950);text-align:right;}
+  .pricing-fineprint{text-align:center;margin-top:18px;font-size:12.5px;color:var(--ink-400);}
+  @media (max-width:760px){.pricing-card{grid-template-columns:1fr;}.pricing-left{border-right:none;border-bottom:1px solid var(--line);}}
+
+  /* ============ FAQ ============ */
+  .faq{padding:90px 0;}
+  .faq-list{max-width:760px;margin:40px auto 0;}
+  .faq-item{border-bottom:1px solid var(--line);}
+  .faq-item summary{
+    list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;
+    padding:22px 0;font-size:16.5px;font-weight:600;color:var(--navy-950);
+  }
+  .faq-item summary::-webkit-details-marker{display:none;}
+  .faq-item .plus{flex:none;width:24px;height:24px;position:relative;}
+  .faq-item .plus::before,.faq-item .plus::after{
+    content:'';position:absolute;background:var(--navy-950);border-radius:2px;
+  }
+  .faq-item .plus::before{width:14px;height:2px;top:11px;left:5px;}
+  .faq-item .plus::after{width:2px;height:14px;top:5px;left:11px;transition:transform .2s;}
+  .faq-item[open] .plus::after{transform:rotate(90deg);}
+  .faq-item p{padding:0 0 22px;color:var(--ink-600);font-size:15px;line-height:1.65;max-width:640px;}
+
+  /* ============ CTA BAND ============ */
+  .cta-band{
+    padding:80px 0;background:var(--navy-950);color:var(--white);text-align:center;position:relative;overflow:hidden;
+  }
+  .cta-band h2{font-size:clamp(28px,4vw,42px);color:var(--white);}
+  .cta-band p{margin-top:14px;color:rgba(255,255,255,0.7);font-size:16px;max-width:520px;margin-left:auto;margin-right:auto;}
+  .cta-band .actions{margin-top:30px;display:flex;justify-content:center;gap:16px;flex-wrap:wrap;}
+
+  /* ============ FOOTER ============ */
+  .site-footer{background:var(--white);border-top:1px solid var(--line);padding:60px 0 30px;}
+  .footer-top{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:40px;}
+  .footer-brand img{height:46px;}
+  .footer-brand p{margin-top:14px;font-size:14px;color:var(--ink-600);max-width:300px;line-height:1.6;}
+  .footer-col h4{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-400);font-family:var(--font-mono);margin-bottom:14px;}
+  .footer-col a{display:block;font-size:14.5px;color:var(--ink-600);margin-bottom:10px;}
+  .footer-col a:hover{color:var(--navy-950);}
+  .footer-whatsapp{display:inline-flex;align-items:center;gap:8px;margin-top:6px;font-weight:700;color:var(--navy-950);}
+  .footer-whatsapp img{height:22px;width:22px;border-radius:50%;}
+  .footer-bottom{margin-top:46px;padding-top:22px;border-top:1px solid var(--line);display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;font-size:12.5px;color:var(--ink-400);}
+  @media (max-width:760px){.footer-top{grid-template-columns:1fr;gap:30px;}}
+
+  /* ============ WHATSAPP FLOAT ============ */
+  .wa-float{
+    position:fixed;bottom:24px;right:24px;z-index:60;
+    width:58px;height:58px;border-radius:50%;overflow:hidden;
+    box-shadow:0 14px 28px -10px rgba(7,18,39,0.4);
+    border:3px solid var(--white);
+  }
+  .wa-float img{width:100%;height:100%;object-fit:cover;}
+
+  /* ============ REVEAL ANIM ============ */
+  .reveal{opacity:0;transform:translateY(18px);transition:opacity .6s ease, transform .6s ease;}
+  .reveal.is-visible{opacity:1;transform:translateY(0);}
+
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none !important; scroll-behavior:auto !important;}
+    .reveal{opacity:1;transform:none;}
+  }
+
+  :focus-visible{outline:3px solid var(--gold-500);outline-offset:2px;}
+</style>
 </head>
 <body>
 
-<header>
-  <div class="header-top">
-    <h1 style="display:flex;align-items:center;gap:10px;margin:0;">
-      <img src="MINDSHIFT.jpg" alt="MindShift logo" style="width:36px;height:36px;border-radius:6px;">
-      <span>MindShift Books</span>
-    </h1>
-    <div style="display:flex;align-items:center;gap:6px;">
-      <button type="button" class="icon-btn" id="cartIcon" aria-label="View cart">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
-        <span class="cart-badge" id="cartBadge" style="display:none;">0</span>
-      </button>
-      <button type="button" class="icon-btn" onclick="toggleSidebar()" aria-label="Open menu">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="22" height="22"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+<!-- ============ NAV ============ -->
+<header class="nav">
+  <div class="nav-inner">
+    <a href="#top" class="brand">
+      <img src="MAJ Media Academy logo .png" alt="MAJ Media Academy logo" />
+      <span class="brand-text">MAJ Media<br>Academy</span>
+    </a>
+    <nav class="nav-links" id="navLinks">
+      <a href="#why">Why Join</a>
+      <a href="#curriculum">Curriculum</a>
+      <a href="#instructor">Instructor</a>
+      <a href="#testimonials">Testimonials</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <div class="nav-cta">
+      <a href="#pricing" class="btn btn-outline">See Pricing</a>
+      <a href="https://nestuge.com/checkout?items=%5B%7B%22id%22%3A%22pr_mqs0b3r0fzztdzj83u9dmyiwglzgk%22%2C%22type%22%3A%22registration%22%2C%22plan%22%3A%22pl_mqsoksi9x6kebxlzv9jyrmesy9me4%22%2C%22count%22%3A1%2C%22affiliate%22%3Anull%7D%5D&currency=NGN&redirectUrl=https%3A%2F%2Fnestuge.com%2Fmajmediaacademy6" class="btn btn-gold">Enroll Now</a>
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
       </button>
     </div>
-  </div>
-
-  <div class="search-wrapper" role="search" aria-label="Search books">
-    <svg class="search-icon-prefix" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-    <input
-      id="searchInput"
-      type="text"
-      placeholder="Search books"
-      oninput="showSuggestions()"
-      onkeydown="if(event.key==='Enter'){ performSearch(); }"
-      autocomplete="off"
-      aria-autocomplete="list"
-    />
-    <button id="searchBtn" onclick="performSearch()" aria-label="Search">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-    </button>
-    <div id="suggestionsBox" class="suggestions" role="listbox" aria-hidden="true"></div>
   </div>
 </header>
 
+<!-- ============ HERO ============ -->
+<section class="hero" id="top">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="hero-pill"><span class="dot"></span> Cohort 6 · Enrolling Now</span>
+      <h1>
+        Get Skilled in Social Media Management & <span class="hl">Land Clients</span>.
+      </h1>
+      <p class="hero-sub">There's no reason why you should be earning less than ₦100k monthly when Social Media Managers are earning 6–7 figures monthly with just their skill alone. It's your turn too. Nothing stops you from joining our graduates who now dictate their terms to clients, do the work and earn BIG — mostly from the comfort of their homes.</p>
+      <div class="hero-proof-strip">
+        <img src="Job testimonials 2.jpeg" alt="Student testimonial about landing a paid internship" loading="eager" decoding="async" />
+        <img src="Job placement (1).jpg" alt="Student testimonial about securing a social media manager role" loading="eager" decoding="async" />
+      </div>
+      <div class="hero-actions">
+        <a href="https://nestuge.com/checkout?items=%5B%7B%22id%22%3A%22pr_mqs0b3r0fzztdzj83u9dmyiwglzgk%22%2C%22type%22%3A%22registration%22%2C%22plan%22%3A%22pl_mqsoksi9x6kebxlzv9jyrmesy9me4%22%2C%22count%22%3A1%2C%22affiliate%22%3Anull%7D%5D&currency=NGN&redirectUrl=https%3A%2F%2Fnestuge.com%2Fmajmediaacademy6" class="btn btn-gold">Lock in with Early Bird – ₦60,000</a>
+        <a href="#curriculum" class="btn btn-outline">See What You'll Learn</a>
+      </div>
+      <p class="hero-meta"><span class="nowrap-chunk">Cohort 6 starts <strong>July 29, 2026</strong></span> <span class="meta-dot">·</span> <span class="nowrap-chunk">Registration ends <strong>July 27, 2026</strong></span></p>
+    </div>
 
-  
-
-<aside class="sidebar" id="sidebar" aria-hidden="true" data-open="false">
-  <div class="logo-row">
-    <img src="MINDSHIFT.jpg" alt="logo">
-    <div style="font-weight:700">MindShift Books</div>
+    <div class="hero-visual">
+      <svg class="hero-arc-bg" width="340" height="340" viewBox="0 0 340 340" fill="none">
+        <path d="M30 250 A180 180 0 0 1 310 90" stroke="#0E2A4D" stroke-opacity="0.08" stroke-width="60" stroke-linecap="round"/>
+      </svg>
+      <div class="hero-card-stack">
+        <div class="proof-card c1 reveal">
+          <div class="num">500+</div>
+          <div class="lbl">Students trained in Social Media Management, Content & Ads</div>
+        </div>
+        <div class="proof-card c2 reveal">
+          <div class="num">5+</div>
+          <div class="lbl">Countries with mentored students</div>
+        </div>
+        <div class="proof-card c3 reveal">
+          <div class="num">7+</div>
+          <div class="lbl">Years of marketing & client management experience</div>
+        </div>
+      </div>
+    </div>
   </div>
+</section>
 
-  <ul>
-    <li onclick="openMyOrders()">My Orders</li>
-    <li onclick="openContact()">Contact Us</li>
-    <li onclick="followYoutube()">Follow us on YouTube</li>
-  </ul>
-
-  <div style="position:absolute;bottom:18px;left:18px;right:18px;color:#9ca3af;font-size:0.9rem;">
-    <div>© 2026 MindShift Books</div>
-    <div style="margin-top:6px">Shift your thinking, change your life.</div>
+<!-- ============ WHY JOIN ============ -->
+<section class="why" id="why">
+  <div class="wrap why-grid">
+    <div class="reveal">
+      <span class="eyebrow">Why This Training</span>
+      <h2 class="section-head" style="margin-top:10px;">Social media management is no longer just posting pictures.</h2>
+      <p style="margin-top:16px;color:var(--ink-600);font-size:16px;line-height:1.65;">Businesses need people who understand strategy, content creation, audience growth, advertising, and how to turn social media into a real business tool. This practical 4-week training is designed to give you the skills, confidence and strategy to manage accounts for businesses, build your portfolio, and start earning from your skills.</p>
+      <div class="why-cta"><a href="https://nestuge.com/checkout?items=%5B%7B%22id%22%3A%22pr_mqs0b3r0fzztdzj83u9dmyiwglzgk%22%2C%22type%22%3A%22registration%22%2C%22plan%22%3A%22pl_mqsoksi9x6kebxlzv9jyrmesy9me4%22%2C%22count%22%3A1%2C%22affiliate%22%3Anull%7D%5D&currency=NGN&redirectUrl=https%3A%2F%2Fnestuge.com%2Fmajmediaacademy6" class="btn btn-navy">Enroll Now</a></div>
+      <figure class="testi-card section-proof"><div class="testi-img-wrap"><img src="Overview review.jpg" alt="Student review of the training overview" loading="lazy" decoding="async"></div><figcaption class="testi-caption"><p>"It's not just about posting — it's the video quality, length and the hook that make audiences interact."</p><span class="testi-attr">— MAJ Media Academy</span></figcaption></figure>
+    </div>
+    <div class="reveal">
+      <span class="eyebrow">By The End, You'll Know How To</span>
+      <div class="why-checklist">
+        <div class="check-item"><span class="check-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#CDA434" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><p>Plan content that attracts and converts audiences</p></div>
+        <div class="check-item"><span class="check-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#CDA434" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><p>Manage social media pages professionally</p></div>
+        <div class="check-item"><span class="check-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#CDA434" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><p>Create content calendars for brands</p></div>
+        <div class="check-item"><span class="check-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#CDA434" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><p>Understand analytics and measure performance</p></div>
+        <div class="check-item"><span class="check-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#CDA434" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><p>Build a strong portfolio</p></div>
+        <div class="check-item"><span class="check-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#CDA434" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><p>Position yourself to get clients</p></div>
+        <div class="check-item"><span class="check-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#CDA434" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><p>Understand paid Ads</p></div>
+      </div>
+      <figure class="testi-card section-proof"><div class="testi-img-wrap"><img src="Paid ads review.jpg" alt="Student review of the paid ads class" loading="lazy" decoding="async"></div><figcaption class="testi-caption"><p>"A really important session — ads targeting, best platforms, and the best payment methods to run them."</p><span class="testi-attr">— MAJ Media Academy</span></figcaption></figure>
+    </div>
   </div>
-</aside>
+</section>
 
-<main>
-  <!-- Warming-up toast (hidden by default, shown by JS) -->
-  <div id="warmingToast" style="display:none;" class="warming-toast">
-    <span class="warming-dot"></span>
-    <span id="warmingMsg">Server warming up…</span>
+<!-- ============ AUDIENCE ============ -->
+<section class="audience" id="audience">
+  <div class="wrap">
+    <div class="section-head center reveal">
+      <span class="eyebrow">Who Is This Training For</span>
+      <h2>Built for anyone serious about changing their life in 2026</h2>
+    </div>
+    <div class="audience-grid">
+      <div class="audience-chip reveal"><svg class="ic" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="#0E2A4D" stroke-width="1.6"/><path d="M4 20c0-4 3.5-6 8-6s8 2 8 6" stroke="#0E2A4D" stroke-width="1.6"/></svg><p>Beginners interested in social media management</p></div>
+      <div class="audience-chip reveal"><svg class="ic" viewBox="0 0 24 24" fill="none"><rect x="4" y="9" width="16" height="11" rx="1.5" stroke="#0E2A4D" stroke-width="1.6"/><path d="M9 9V6a3 3 0 0 1 6 0v3" stroke="#0E2A4D" stroke-width="1.6"/></svg><p>Business owners who want to understand social media</p></div>
+      <div class="audience-chip reveal"><svg class="ic" viewBox="0 0 24 24" fill="none"><path d="M12 3l3 6 6 .8-4.5 4.2L18 20l-6-3.4L6 20l1.5-6-4.5-4.2L9 9z" stroke="#0E2A4D" stroke-width="1.6"/></svg><p>Existing social media managers who want to improve</p></div>
+      <div class="audience-chip reveal"><svg class="ic" viewBox="0 0 24 24" fill="none"><path d="M4 21c2-3 4-4 8-4s6 1 8 4" stroke="#0E2A4D" stroke-width="1.6"/><circle cx="12" cy="8" r="4" stroke="#0E2A4D" stroke-width="1.6"/><path d="M12 12v0" stroke="#0E2A4D" stroke-width="1.6"/></svg><p>Stay-at-home parents</p></div>
+      <div class="audience-chip reveal"><svg class="ic" viewBox="0 0 24 24" fill="none"><path d="M12 2v6M12 22v-6M2 12h6M22 12h-6" stroke="#0E2A4D" stroke-width="1.6" stroke-linecap="round"/></svg><p>Freelancers adding social media management as a service</p></div>
+      <div class="audience-chip reveal"><svg class="ic" viewBox="0 0 24 24" fill="none"><path d="M4 19V8l8-5 8 5v11" stroke="#0E2A4D" stroke-width="1.6"/><path d="M9 19v-6h6v6" stroke="#0E2A4D" stroke-width="1.6"/></svg><p>Jobseekers & fresh graduates</p></div>
+      <div class="audience-chip reveal"><svg class="ic" viewBox="0 0 24 24" fill="none"><path d="M3 12a9 9 0 1 0 9-9" stroke="#0E2A4D" stroke-width="1.6"/><path d="M3 12l4-2M3 12l3 3" stroke="#0E2A4D" stroke-width="1.6" stroke-linecap="round"/></svg><p>Those changing careers</p></div>
+      <div class="audience-chip reveal"><svg class="ic" viewBox="0 0 24 24" fill="none"><path d="M5 3v18l7-4 7 4V3z" stroke="#0E2A4D" stroke-width="1.6"/></svg><p>Anybody serious about changing their life in 2026</p></div>
+    </div>
+    <div class="audience-cta reveal"><a href="https://nestuge.com/checkout?items=%5B%7B%22id%22%3A%22pr_mqs0b3r0fzztdzj83u9dmyiwglzgk%22%2C%22type%22%3A%22registration%22%2C%22plan%22%3A%22pl_mqsoksi9x6kebxlzv9jyrmesy9me4%22%2C%22count%22%3A1%2C%22affiliate%22%3Anull%7D%5D&currency=NGN&redirectUrl=https%3A%2F%2Fnestuge.com%2Fmajmediaacademy6" class="btn btn-navy">I'm Ready For This</a></div>
   </div>
+</section>
 
-  <section class="hero" id="ourBooksSection" aria-labelledby="our-books-h">
-    <div class="section-head">
-      <div class="section-label-row">
-        <span class="section-accent"></span>
-        <h2 id="our-books-h">Our Books</h2>
-        <span class="section-pill section-pill--new">New Release</span>
+<!-- ============ CURRICULUM ============ -->
+<section class="curriculum" id="curriculum">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="eyebrow">The Syllabus</span>
+      <h2>What you'll learn during the training</h2>
+      <p>Solid classes that go beyond regular social media management and touch every topic now in hot demand.</p>
+    </div>
+    <div class="syllabus reveal">
+      <div class="syllabus-row"><span class="idx">01</span><span class="name">The Business of Social Media & Strategy</span></div>
+      <div class="syllabus-row"><span class="idx">02</span><span class="name">Content Pillars & Storytelling</span></div>
+      <div class="syllabus-row"><span class="idx">03</span><span class="name">Calendars & Content Planning</span></div>
+      <div class="syllabus-row"><span class="idx">04</span><span class="name">Copywriting in Social Media</span></div>
+      <div class="syllabus-row"><span class="idx">05</span><span class="name">Image Designing & Video Content Mastery</span></div>
+      <div class="syllabus-row"><span class="idx">06</span><span class="name">UGC, Influencing & Collaboration</span></div>
+      <div class="syllabus-row"><span class="idx">07</span><span class="name">Interpreting Insights & Reporting</span></div>
+      <div class="syllabus-row highlight"><span class="idx">08</span><span class="name">The Ultimate Ads Class</span></div>
+      <div class="syllabus-row"><span class="idx">09</span><span class="name">Portfolio Building, Job Application & Rates</span></div>
+      <div class="syllabus-row"><span class="idx">10</span><span class="name">Social Media Tools & Usage</span></div>
+      <div class="syllabus-row"><span class="idx">11</span><span class="name">Client Management & Growth</span></div>
+    </div>
+    <div class="curriculum-cta reveal"><a href="https://nestuge.com/checkout?items=%5B%7B%22id%22%3A%22pr_mqs0b3r0fzztdzj83u9dmyiwglzgk%22%2C%22type%22%3A%22registration%22%2C%22plan%22%3A%22pl_mqsoksi9x6kebxlzv9jyrmesy9me4%22%2C%22count%22%3A1%2C%22affiliate%22%3Anull%7D%5D&currency=NGN&redirectUrl=https%3A%2F%2Fnestuge.com%2Fmajmediaacademy6" class="btn btn-gold">Register Now</a></div>
+  </div>
+</section>
+
+<!-- ============ PERKS / WHAT YOU GET ============ -->
+<section class="perks">
+  <div class="wrap">
+    <div class="section-head center reveal">
+      <span class="eyebrow">What You Get When You Register</span>
+      <h2>Everything you need to start earning from this skill</h2>
+    </div>
+    <div class="perks-grid">
+      <div class="perk-card reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none"><path d="M15 10l5-3v10l-5-3M3 7h12v10H3z" stroke="#A9801F" stroke-width="1.6"/></svg></div><h3>Live instructor-led classes on Google Meet (twice weekly)</h3></div>
+      <div class="perk-card reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="2" stroke="#A9801F" stroke-width="1.6"/><path d="M9 9h6M9 13h6" stroke="#A9801F" stroke-width="1.6"/></svg></div><h3>Complete class recordings</h3></div>
+      <div class="perk-card reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2l3 7h7l-5.5 4.5L18.5 21 12 16.5 5.5 21l2-7.5L2 9h7z" stroke="#A9801F" stroke-width="1.6"/></svg></div><h3>1 year mentorship</h3></div>
+      <div class="perk-card reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none"><path d="M4 19V7l8-4 8 4v12" stroke="#A9801F" stroke-width="1.6"/><path d="M9 19v-6h6v6" stroke="#A9801F" stroke-width="1.6"/></svg></div><h3>Exclusive templates, tools & resources</h3></div>
+      <div class="perk-card reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none"><circle cx="8" cy="8" r="3" stroke="#A9801F" stroke-width="1.6"/><circle cx="17" cy="9" r="2.5" stroke="#A9801F" stroke-width="1.6"/><path d="M2 20c0-3.3 2.7-5 6-5s6 1.7 6 5" stroke="#A9801F" stroke-width="1.6"/></svg></div><h3>Access to a learning community</h3></div>
+      <div class="perk-card reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="9" r="5" stroke="#A9801F" stroke-width="1.6"/><path d="M8 14l-2 7 6-3 6 3-2-7" stroke="#A9801F" stroke-width="1.6"/></svg></div><h3>Certificate of completion</h3></div>
+      <div class="perk-card reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="14" rx="2" stroke="#A9801F" stroke-width="1.6"/><path d="M8 9h8M8 13h5" stroke="#A9801F" stroke-width="1.6"/></svg></div><h3>Portfolio guidance</h3></div>
+      <div class="perk-card reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none"><path d="M3 17l5-5 4 4 8-9" stroke="#A9801F" stroke-width="1.6"/></svg></div><h3>Practical Ads class</h3></div>
+      <div class="perk-card reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="7" width="18" height="13" rx="2" stroke="#A9801F" stroke-width="1.6"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="#A9801F" stroke-width="1.6"/></svg></div><h3>Internship opportunity</h3></div>
+      <div class="perk-card reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2v20M5 7l7-5 7 5M5 17l7 5 7-5" stroke="#A9801F" stroke-width="1.6"/></svg></div><h3>Business tips & advice from real-world scenarios</h3></div>
+    </div>
+    <div class="perks-cta reveal"><a href="https://nestuge.com/checkout?items=%5B%7B%22id%22%3A%22pr_mqs0b3r0fzztdzj83u9dmyiwglzgk%22%2C%22type%22%3A%22registration%22%2C%22plan%22%3A%22pl_mqsoksi9x6kebxlzv9jyrmesy9me4%22%2C%22count%22%3A1%2C%22affiliate%22%3Anull%7D%5D&currency=NGN&redirectUrl=https%3A%2F%2Fnestuge.com%2Fmajmediaacademy6" class="btn btn-navy">Register Now</a></div>
+    <figure class="testi-card section-proof reveal" style="margin:28px auto 0;">
+      <div class="testi-img-wrap"><img src="Business tips review.jpg" alt="Student review of the business and client-handling class" loading="lazy" decoding="async"></div>
+      <figcaption class="testi-caption"><p>"Answered all my questions on building a portfolio, cold pitching, and confidently selling myself."</p><span class="testi-attr">— MAJ Media Academy</span></figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ============ INSTRUCTOR ============ -->
+<section class="instructor" id="instructor">
+  <div class="wrap">
+    <h2 class="instructor-heading reveal">Meet Your Instructor</h2>
+    <div class="instructor-grid">
+      <div class="instructor-photo-wrap reveal">
+        <svg class="arc-deco" viewBox="0 0 300 300" fill="none"><path d="M20 240 A140 140 0 0 1 260 70" stroke="#CDA434" stroke-opacity="0.5" stroke-width="3" fill="none"/></svg>
+        <div class="instructor-photo">
+          <img src="Kafilah Jimoh.webp" alt="Kafilah Jimoh, Founder of MAJ Media Digital" loading="eager" decoding="async" fetchpriority="high" />
+        </div>
+      </div>
+      <div class="reveal">
+        <h3 class="instructor-name">Kafilah Jimoh</h3>
+        <p class="instructor-role">Founder, MAJ Media Digital · Senior Social Media Strategist</p>
+
+        <div class="instructor-stats">
+          <div class="stat-box"><div class="n">500+</div><div class="l">Students trained</div></div>
+          <div class="stat-box"><div class="n">7+</div><div class="l">Years in marketing & client management</div></div>
+          <div class="stat-box"><div class="n">300+</div><div class="l">Clients & businesses serviced</div></div>
+          <div class="stat-box"><div class="n">14+</div><div class="l">Industries strategized for</div></div>
+          <div class="stat-box"><div class="n">5+</div><div class="l">Countries with mentored students</div></div>
+        </div>
+
+        <ul class="instructor-bullets">
+          <li>MSc Digital Marketing & Business Transformation — Rome Business School</li>
+          <li>Built online presence and strategy for brands across 14+ industries</li>
+          <li>Copywriter, creator & storyteller</li>
+          <li>Sponsored ads expert — 300+ clients and businesses serviced so far</li>
+          <li>Mentored students across 5+ countries</li>
+        </ul>
+
+        <figure class="testi-card section-proof">
+          <div class="testi-img-wrap"><img src="About Coach.jpg" alt="Student appreciation message for the instructor" loading="lazy" decoding="async"></div>
+          <figcaption class="testi-caption"><p>"Thank you for your patience and for giving your best at every session — my first time joining a training like this."</p><span class="testi-attr">— MAJ Media Academy</span></figcaption>
+        </figure>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TESTIMONIALS ============ -->
+<section class="testimonials" id="testimonials">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="eyebrow">Student Results & Testimonials</span>
+      <h2>Our students don't just learn — they get hired.</h2>
+      <p>Real stories from real graduates: jobs landed, internships booked, and careers upgraded.</p>
+    </div>
+
+    <!-- Video testimonials -->
+    <div class="video-block reveal">
+      <div class="video-block-head">
+        <h3>Watch the testimonials</h3>
+        <a class="yt-channel-link" href="https://youtube.com/@majmediadigital?si=eNN_ilifhysfViVT" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 12s0-3.5-.4-5.2c-.3-1-1.1-1.8-2.1-2C17.7 4.3 12 4.3 12 4.3s-5.7 0-7.5.5c-1 .2-1.8 1-2.1 2C2 8.5 2 12 2 12s0 3.5.4 5.2c.3 1 1.1 1.7 2.1 2 1.8.5 7.5.5 7.5.5s5.7 0 7.5-.5c1-.3 1.8-1 2.1-2 .4-1.7.4-5.2.4-5.2zM10 15.5v-7l6 3.5z"/></svg>
+          All 6 testimonials on YouTube
+        </a>
+      </div>
+      <div class="swiper video-swiper">
+        <div class="swiper-wrapper">
+          <div class="swiper-slide">
+            <div class="video-card">
+              <div class="video-frame"><iframe src="https://www.youtube.com/embed/5rPHtUl1Ink" title="Student testimonial 1" allowfullscreen></iframe></div>
+              <div class="video-card-label">Student Testimonial 1</div>
+            </div>
+          </div>
+          <div class="swiper-slide">
+            <div class="video-card">
+              <div class="video-frame"><iframe src="https://www.youtube.com/embed/NP7k_AJSMIg" title="Student testimonial 2" allowfullscreen></iframe></div>
+              <div class="video-card-label">Student Testimonial 2</div>
+            </div>
+          </div>
+          <div class="swiper-slide">
+            <div class="video-card">
+              <div class="video-frame"><iframe src="https://www.youtube.com/embed/ncaJvI4jHMg" title="Student testimonial 3" allowfullscreen></iframe></div>
+              <div class="video-card-label">Student Testimonial 3</div>
+            </div>
+          </div>
+          <div class="swiper-slide">
+            <div class="video-card">
+              <div class="video-frame"><iframe src="https://www.youtube.com/embed/9-EdjmUInTY" title="Student testimonial 4" allowfullscreen></iframe></div>
+              <div class="video-card-label">Student Testimonial 4</div>
+            </div>
+          </div>
+          <div class="swiper-slide">
+            <div class="video-card">
+              <div class="video-frame"><iframe src="https://www.youtube.com/embed/1meqJd_-ewA" title="Student testimonial 5" allowfullscreen></iframe></div>
+              <div class="video-card-label">Student Testimonial 5</div>
+            </div>
+          </div>
+          <div class="swiper-slide">
+            <div class="video-card">
+              <div class="video-frame"><iframe src="https://www.youtube.com/embed/QNkXXCaqMsk" title="Student testimonial 6" allowfullscreen></iframe></div>
+              <div class="video-card-label">Student Testimonial 6</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="swiper-nav">
+        <div class="swiper-button-prev"></div>
+        <div class="swiper-pagination"></div>
+        <div class="swiper-button-next"></div>
       </div>
     </div>
 
-    <!-- our books grid -->
-    <div id="ourBooksGrid" class="product-grid" aria-live="polite">
-      <div class="skel-card"><div class="skel-img"></div><div class="skel-line w70"></div><div class="skel-line w45"></div><div class="skel-btn"></div></div>
-      <div class="skel-card"><div class="skel-img"></div><div class="skel-line w70"></div><div class="skel-line w45"></div><div class="skel-btn"></div></div>
-    </div>
-  </section>
+    <div class="testimonial-divider"></div>
 
-  <section class="hero" id="featuredSection" aria-labelledby="featured-h" style="margin-top:28px">
-    <div class="section-head">
-      <div class="section-label-row">
-        <span class="section-accent"></span>
-        <h2 id="featured-h">Recommended Reads</h2>
-        <span class="section-pill section-pill--warm">Best of 2026</span>
+    <!-- Jobs Landed -->
+    <div class="testi-category reveal">
+      <h3 class="testi-category-title">Jobs Landed</h3>
+      <p class="testi-quote">"Our students don't just learn — they get hired."</p>
+      <div class="testi-grid">
+        <figure class="testi-card"><div class="testi-img-wrap"><img src="Job testimonials international.jpg" alt="Student testimonial about landing an international client" loading="lazy" decoding="async"></div><figcaption class="testi-caption"><p>"From total beginner to managing an international client's social media — and getting paid for it."</p><span class="testi-attr">— MAJ Media Academy</span></figcaption></figure>
+        <figure class="testi-card"><div class="testi-img-wrap"><img src="Job testimonials 3.jpg" alt="Student testimonial with signed work contract" loading="lazy" decoding="async"></div><figcaption class="testi-caption"><p>"Signed and sealed — a completed social media management contract."</p><span class="testi-attr">— MAJ Media Academy</span></figcaption></figure>
+        <figure class="testi-card"><div class="testi-img-wrap"><img src="Job testimonials 4.jpg" alt="Student testimonial about starting a new role" loading="lazy" decoding="async"></div><figcaption class="testi-caption"><p>"Officially set to start her new social media role the following week."</p><span class="testi-attr">— MAJ Media Academy</span></figcaption></figure>
+        <figure class="testi-card"><div class="testi-img-wrap"><img src="Job testimonials 2 (1).jpg" alt="Student testimonial about a paid internship" loading="lazy" decoding="async"></div><figcaption class="testi-caption"><p>"Landed her first paid internship as a social media manager — and brought a friend along too."</p><span class="testi-attr">— MAJ Media Academy</span></figcaption></figure>
       </div>
     </div>
 
-    <!-- featured product grid -->
-    <div id="featuredGrid" class="product-grid" aria-live="polite">
-      <div class="skel-card"><div class="skel-img"></div><div class="skel-line w70"></div><div class="skel-line w45"></div><div class="skel-btn"></div></div>
-      <div class="skel-card"><div class="skel-img"></div><div class="skel-line w70"></div><div class="skel-line w45"></div><div class="skel-btn"></div></div>
-      <div class="skel-card"><div class="skel-img"></div><div class="skel-line w70"></div><div class="skel-line w45"></div><div class="skel-btn"></div></div>
+    <!-- Early Placements -->
+    <div class="testi-category reveal">
+      <h3 class="testi-category-title">Early Placements</h3>
+      <p class="testi-quote">"She was interested in the internship at the beginning — now she's booked and busy!"</p>
+      <div class="testi-grid">
+        <figure class="testi-card"><div class="testi-img-wrap"><img src="Internship opp 1.jpg" alt="Student expressing interest in an internship opportunity" loading="lazy" decoding="async"></div><figcaption class="testi-caption"><p>"It started with one message — I'm interested in the internship opportunity."</p><span class="testi-attr">— MAJ Media Academy</span></figcaption></figure>
+        <figure class="testi-card"><div class="testi-img-wrap"><img src="Job placement.jpg" alt="Student testimonial now booked with multiple clients" loading="lazy" decoding="async"></div><figcaption class="testi-caption"><p>"Now booked and busy — managing accounts for a startup, a nutritionist, and a crypto brand."</p><span class="testi-attr">— MAJ Media Academy</span></figcaption></figure>
+      </div>
     </div>
-  </section>
 
-  <section class="hero" id="searchResultsSection" aria-labelledby="search-h" style="margin-top:28px;display:none;">
-    <div style="margin-bottom:18px;">
-      <h2 id="search-h" style="margin-bottom:6px">Search Results</h2>
+    <!-- Community -->
+    <div class="testi-category reveal">
+      <h3 class="testi-category-title">Community</h3>
+      <p class="testi-quote">"Students have their own private learning community where they connect and grow after every session."</p>
+      <div class="testi-grid">
+        <figure class="testi-card"><div class="testi-img-wrap"><img src="Class feedback (community).jpg" alt="Student community discussing class takeaways" loading="lazy" decoding="async"></div><figcaption class="testi-caption"><p>"Live-class energy — students reflecting on the day's lessons together."</p><span class="testi-attr">— MAJ Media Academy</span></figcaption></figure>
+        <figure class="testi-card"><div class="testi-img-wrap"><img src="Class feedback (community) 2.jpg" alt="Student community class feedback" loading="lazy" decoding="async"></div><figcaption class="testi-caption"><p>"Today's session was a real eye-opener — straight from the community."</p><span class="testi-attr">— MAJ Media Academy</span></figcaption></figure>
+      </div>
     </div>
-    <div id="searchGrid" class="product-grid" aria-live="polite"></div>
-  </section>
-</main>
 
-  <footer class="site-footer">
+    <!-- Mentorship -->
+    <div class="testi-category reveal">
+      <h3 class="testi-category-title">Mentorship</h3>
+      <p class="testi-quote">"Direct mentorship support — private guidance straight from the instructor."</p>
+      <div class="testi-grid">
+        <figure class="testi-card"><div class="testi-img-wrap"><img src="Mentorship 1.jpg" alt="Mentorship voice note guidance" loading="lazy" decoding="async"></div><figcaption class="testi-caption"><p>"One-on-one voice notes and guidance, whenever a student needs direction."</p><span class="testi-attr">— MAJ Media Academy</span></figcaption></figure>
+        <figure class="testi-card"><div class="testi-img-wrap"><img src="Mentorship 2.jpg" alt="Mentorship guidance on client management" loading="lazy" decoding="async"></div><figcaption class="testi-caption"><p>"Helping students navigate real client situations, one question at a time."</p><span class="testi-attr">— MAJ Media Academy</span></figcaption></figure>
+      </div>
+    </div>
+
+    <!-- Career Upgrade -->
+    <div class="testi-category reveal">
+      <h3 class="testi-category-title">Career Upgrade</h3>
+      <p class="testi-quote">"Existing social media managers are always guaranteed to get better with this training."</p>
+      <div class="testi-grid">
+        <figure class="testi-card"><div class="testi-img-wrap"><img src="Career upgrade 1.jpg" alt="Career upgrade testimonial about video views" loading="lazy" decoding="async"></div><figcaption class="testi-caption"><p>"Applying what she learned, one of her videos crossed 500k views — and counting."</p><span class="testi-attr">— MAJ Media Academy</span></figcaption></figure>
+        <figure class="testi-card"><div class="testi-img-wrap"><img src="Career upgrade 2.jpg" alt="Career upgrade testimonial about new confidence" loading="lazy" decoding="async"></div><figcaption class="testi-caption"><p>"New to social media management, but stepped into the role anyway — and grew her confidence fast."</p><span class="testi-attr">— MAJ Media Academy</span></figcaption></figure>
+      </div>
+    </div>
+
+    <!-- Ads Class -->
+    <div class="testi-category reveal">
+      <h3 class="testi-category-title">Ads Class</h3>
+      <p class="testi-quote">"The Ads session remains one of the most practical and anticipated sessions in the entire program."</p>
+      <div class="testi-grid">
+        <figure class="testi-card"><div class="testi-img-wrap"><img src="Ads class feedback .jpg" alt="Ads class feedback testimonial" loading="lazy" decoding="async"></div><figcaption class="testi-caption"><p>"The media buying class I once paid for wasn't even this detailed."</p><span class="testi-attr">— MAJ Media Academy</span></figcaption></figure>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PRICING ============ -->
+<section class="pricing" id="pricing">
+  <div class="wrap">
+    <div class="section-head center reveal">
+      <span class="eyebrow">Cohort 6 Format</span>
+      <h2>Everything you need to know before you register</h2>
+    </div>
+    <div class="pricing-card reveal">
+      <div class="pricing-left">
+        <div class="fee-label">Early Bird Fee</div>
+        <div class="fee">₦60,000</div>
+        <div class="fee-note">Early bird ends <strong>July 13, 2026</strong> — then ₦65,000</div>
+        <div class="deadline">Registration closes July 27, 2026</div>
+        <a href="https://nestuge.com/checkout?items=%5B%7B%22id%22%3A%22pr_mqs0b3r0fzztdzj83u9dmyiwglzgk%22%2C%22type%22%3A%22registration%22%2C%22plan%22%3A%22pl_mqsoksi9x6kebxlzv9jyrmesy9me4%22%2C%22count%22%3A1%2C%22affiliate%22%3Anull%7D%5D&currency=NGN&redirectUrl=https%3A%2F%2Fnestuge.com%2Fmajmediaacademy6" class="btn btn-gold">Get Access Now</a>
+      </div>
+      <div class="pricing-right">
+        <div class="spec-row"><span class="k">Cohort 6 starts</span><span class="v">July 29, 2026</span></div>
+        <div class="spec-row"><span class="k">Live classes</span><span class="v">Wednesdays & Fridays</span></div>
+        <div class="spec-row"><span class="k">Training time</span><span class="v">6:00 – 8:00 PM (WAT)</span></div>
+        <div class="spec-row"><span class="k">Location</span><span class="v">Google Meet (Fully Online)</span></div>
+        <div class="spec-row"><span class="k">Duration</span><span class="v">4 Weeks</span></div>
+      </div>
+    </div>
+    <p class="pricing-fineprint">Note: All payments are final.</p>
+  </div>
+</section>
+
+<!-- ============ FAQ ============ -->
+<section class="faq" id="faq">
+  <div class="wrap">
+    <div class="section-head center reveal">
+      <span class="eyebrow">Frequently Asked Questions</span>
+      <h2>Still deciding? Start here.</h2>
+    </div>
+    <div class="faq-list reveal">
+      <details class="faq-item" open>
+        <summary>When does the training start?<span class="plus"></span></summary>
+        <p>Cohort 6 starts on July 29, 2026.</p>
+      </details>
+      <details class="faq-item">
+        <summary>How long is the training?<span class="plus"></span></summary>
+        <p>The training lasts 4 weeks.</p>
+      </details>
+      <details class="faq-item">
+        <summary>What days are classes held?<span class="plus"></span></summary>
+        <p>Classes are held every Wednesday and Friday.</p>
+      </details>
+      <details class="faq-item">
+        <summary>What time are classes?<span class="plus"></span></summary>
+        <p>Classes hold from 6:00 PM – 8:00 PM WAT.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Is the training online or physical?<span class="plus"></span></summary>
+        <p>The training is fully online, delivered live on Google Meet.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Do I need prior experience?<span class="plus"></span></summary>
+        <p>No. The training is beginner-friendly, but also valuable for existing social media managers who want to sharpen their skills.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Will I get a certificate?<span class="plus"></span></summary>
+        <p>Yes. Students who complete the training receive a certificate of completion.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Will classes be recorded?<span class="plus"></span></summary>
+        <p>Yes — you'll receive complete recordings of every class, so you can revisit any session at your own pace.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Will I get support after the training?<span class="plus"></span></summary>
+        <p>Yes. You'll get 1 year of mentorship, access to the learning community, and resources to help you apply what you've learned.</p>
+      </details>
+      <details class="faq-item">
+        <summary>How much is the training?<span class="plus"></span></summary>
+        <p>Early bird registration is ₦60,000, available until July 13, 2026. After that, the fee is ₦65,000 until registration closes on July 27, 2026.</p>
+      </details>
+      <details class="faq-item">
+        <summary>How do I register?<span class="plus"></span></summary>
+        <p>Click any "Register" or "Get Access Now" button, complete your payment at checkout, and you'll receive the next steps for joining the cohort.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CTA BAND ============ -->
+<section class="cta-band">
+  <div class="wrap reveal">
+    <span class="eyebrow" style="color:var(--gold-300);">Cohort 6 · Enrolling Now</span>
+    <h2 style="margin-top:10px;">Your career as a Certified Social Media Manager starts here.</h2>
+    <p>Join the cohort starting July 29, 2026 — registration closes July 27, 2026.</p>
+    <div class="actions">
+      <a href="https://nestuge.com/checkout?items=%5B%7B%22id%22%3A%22pr_mqs0b3r0fzztdzj83u9dmyiwglzgk%22%2C%22type%22%3A%22registration%22%2C%22plan%22%3A%22pl_mqsoksi9x6kebxlzv9jyrmesy9me4%22%2C%22count%22%3A1%2C%22affiliate%22%3Anull%7D%5D&currency=NGN&redirectUrl=https%3A%2F%2Fnestuge.com%2Fmajmediaacademy6" class="btn btn-gold">I'm Ready to Join</a>
+      <a href="https://wa.me/message/DI3TVMOO7SI2B1" class="btn btn-ghost-white" target="_blank" rel="noopener">
+        <img src="whatsapp.jpg" alt="" style="height:18px;width:18px;border-radius:50%;" />
+        Chat on WhatsApp
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer class="site-footer">
+  <div class="wrap">
     <div class="footer-top">
-
-      <div class="footer-col footer-brand">
-        <div class="footer-logo-row">
-          <img src="MINDSHIFT.jpg" alt="MindShift Books logo">
-          <span>MindShift Books</span>
-        </div>
-        <p class="footer-tagline">Shift your thinking, change your life.</p>
-        <p class="footer-blurb">Curated eBooks on psychology, money, and personal growth — read instantly, no waiting.</p>
+      <div class="footer-brand">
+        <img src="MAJ Media Academy logo .png" alt="MAJ Media Academy logo" />
+        <p>Practical, instructor-led social media management training for beginners, business owners and working professionals across Africa and beyond.</p>
+        <a class="footer-whatsapp" href="https://wa.me/message/DI3TVMOO7SI2B1" target="_blank" rel="noopener">
+          <img src="whatsapp.jpg" alt="WhatsApp" /> Still have questions? Chat with us
+        </a>
       </div>
-
       <div class="footer-col">
-        <div class="footer-heading">Quick Links</div>
-        <ul class="footer-links">
-          <li><a href="/index.html">Browse Books</a></li>
-          <li><a href="javascript:void(0)" onclick="openMyOrders()">My Orders</a></li>
-          <li><a href="javascript:void(0)" onclick="openContact()">Contact Us</a></li>
-        </ul>
+        <h4>Explore</h4>
+        <a href="#why">Why Join</a>
+        <a href="#curriculum">Curriculum</a>
+        <a href="#instructor">Instructor</a>
+        <a href="#testimonials">Testimonials</a>
+        <a href="#pricing">Pricing</a>
       </div>
-
       <div class="footer-col">
-        <div class="footer-heading">Get In Touch</div>
-        <ul class="footer-links">
-          <li>
-            <a href="mailto:contact@mindshiftbooks.online" class="footer-contact-link">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-              contact@mindshiftbooks.online
-            </a>
-          </li>
-        </ul>
-
-        <div class="footer-heading" style="margin-top:18px;">Follow Us</div>
-        <div class="footer-social">
-          <a href="https://www.youtube.com/@MindShift_Books" target="_blank" rel="noopener" class="social-btn" aria-label="MindShift Books on YouTube">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M23.498 6.186a2.994 2.994 0 0 0-2.112-2.112C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.386.529A2.994 2.994 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a2.994 2.994 0 0 0 2.112 2.112c1.881.529 9.386.529 9.386.529s7.505 0 9.386-.529a2.994 2.994 0 0 0 2.112-2.112C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"></path></svg>
-          </a>
-          <!-- TODO: swap href for the real X (Twitter) profile URL once it's provided -->
-          <a href="#" class="social-btn" aria-label="MindShift Books on X" title="Link coming soon">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z"></path></svg>
-          </a>
-        </div>
+        <h4>Cohort 6</h4>
+        <a href="#pricing">Starts July 29, 2026</a>
+        <a href="#pricing">Registration ends July 27, 2026</a>
+        <a href="https://youtube.com/@majmediadigital?si=eNN_ilifhysfViVT" target="_blank" rel="noopener">Watch testimonials on YouTube</a>
       </div>
-
     </div>
-
     <div class="footer-bottom">
-      <div>© 2026 MindShift Books. All rights reserved.</div>
-      <div class="footer-secure">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-        Secure checkout powered by Paystack
-      </div>
-    </div>
-  </footer>
-
-<!-- FULL-SCREEN CART OVERLAY (replaces the old single-book checkout modal) -->
-<div class="cart-overlay" id="cartOverlay" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="cart-title">
-  <div class="cart-overlay-inner">
-    <div class="cart-header">
-      <h2 id="cart-title">Your Cart <span id="cartItemCount" class="cart-item-count"></span></h2>
-      <button class="cart-close" id="cartCloseBtn" aria-label="Close cart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-    </div>
-
-    <div id="cartItemsList" class="cart-items-list"></div>
-
-    <div class="cart-summary" id="cartSummary">
-      <div class="cart-total-row">
-        <span>Total</span>
-        <span id="cartTotalPrice">$0.00</span>
-      </div>
-
-      <div class="checkout-heading">Checkout details</div>
-
-      <div class="field input-icon-field" style="margin-top:10px;">
-        <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-        <input id="cartBuyerName" type="text" placeholder="Full name" aria-label="Full name" required/>
-      </div>
-
-      <div class="field input-icon-field" style="margin-top:10px;">
-        <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-        <input id="cartBuyerEmail" type="email" placeholder="you@example.com" aria-label="Email address" required/>
-      </div>
-      <div class="muted field-hint">Your eBooks will be emailed to this address.</div>
-
-      <button class="btn buy-btn checkout-btn" id="cartProceedBtn" style="margin-top:18px;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-        Proceed to Payment
-      </button>
-
-      <div class="checkout-trust">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-        Payments secured by Paystack
-      </div>
-
-      <div class="muted" style="margin-top:8px;text-align:center;font-size:0.82rem;">
-        You'll be redirected after payment and your PDFs will be emailed automatically — or check anytime under My Orders.
-      </div>
+      <span>© 2026 MAJ Media Academy. All rights reserved.</span>
+      <span>All payments are final.</span>
     </div>
   </div>
-</div>
+</footer>
 
+<!-- ============ WHATSAPP FLOAT ============ -->
+<a class="wa-float" href="https://wa.me/message/DI3TVMOO7SI2B1" target="_blank" rel="noopener" aria-label="Chat on WhatsApp">
+  <img src="whatsapp.jpg" alt="WhatsApp" />
+</a>
 
+<!-- Swiper JS -->
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<script>
+  // Mobile nav toggle
+  const navToggle = document.getElementById('navToggle');
+  const navLinks = document.getElementById('navLinks');
+  navToggle.addEventListener('click', () => navLinks.classList.toggle('open'));
+  navLinks.querySelectorAll('a').forEach(a => a.addEventListener('click', () => navLinks.classList.remove('open')));
 
-  <script>
-function adjustMainPadding(){
-  const header = document.querySelector('header');
-  const main = document.querySelector('main');
-  if (!header || !main) return;
-  const h = header.getBoundingClientRect().height;
-  main.style.paddingTop = (h + 16) + 'px'; // little breathing room
-}
-window.addEventListener('load', adjustMainPadding);
-window.addEventListener('resize', adjustMainPadding);
-adjustMainPadding();
+  // Reveal on scroll
+  const revealEls = document.querySelectorAll('.reveal');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('is-visible');
+        io.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.12 });
+  revealEls.forEach(el => io.observe(el));
+
+  // Video testimonials swiper
+  // pagination/arrows now live in a .swiper-nav row right AFTER the carousel
+  // (a sibling, not a child), so we grab that sibling and query inside it.
+  const videoSwiperEl = document.querySelector('.video-swiper');
+  const videoNav = videoSwiperEl.nextElementSibling;
+  new Swiper(videoSwiperEl, {
+    slidesPerView: 1.05,
+    spaceBetween: 18,
+    pagination: { el: videoNav.querySelector('.swiper-pagination'), clickable: true },
+    navigation: {
+      nextEl: videoNav.querySelector('.swiper-button-next'),
+      prevEl: videoNav.querySelector('.swiper-button-prev')
+    },
+    breakpoints: {
+      640: { slidesPerView: 1.6 },
+      980: { slidesPerView: 2.4 }
+    }
+  });
 </script>
-
-<!-- Firebase + EmailJS + Main script -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="https://cdn.emailjs.com/sdk/3.2/email.min.js"></script>
-<script src="/main.js"></script>
-
-<div id="toastContainer"></div>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
