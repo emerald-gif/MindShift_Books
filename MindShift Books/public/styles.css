@@ -40,7 +40,42 @@ header h1{font-size:1.45rem;font-weight:700;display:flex;align-items:center;gap:
 
 /* Product grid */
 .product-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
-.product-grid .card:only-child{grid-column:1/-1;max-width:340px;margin:0 auto;width:100%;}
+
+/* Single book — spans both columns, horizontal layout so it fills the space naturally */
+.product-grid .product-card:only-child {
+  grid-column: 1 / -1;
+  width: 100%;
+  flex-direction: row;
+  align-items: center;
+  gap: 28px;
+  padding: 24px 28px;
+}
+.product-grid .product-card:only-child .ebook-cover {
+  width: 160px;
+  height: 220px;
+  flex-shrink: 0;
+}
+.product-grid .product-card:only-child .title,
+.product-grid .product-card:only-child .card-author {
+  text-align: left;
+}
+.product-grid .product-card:only-child .card-price-row {
+  justify-content: flex-start;
+}
+.product-grid .product-card:only-child .button-group {
+  max-width: 340px;
+}
+@media (max-width: 480px) {
+  .product-grid .product-card:only-child {
+    flex-direction: column;
+    align-items: center;
+    padding: 16px;
+  }
+  .product-grid .product-card:only-child .title,
+  .product-grid .product-card:only-child .card-author { text-align: center; }
+  .product-grid .product-card:only-child .card-price-row { justify-content: center; }
+  .product-grid .product-card:only-child .button-group { max-width: 100%; }
+}
 
 /* Cards */
 .product-card{background:white;padding:16px;border-radius:14px;box-shadow:0 18px 40px rgba(0,0,0,0.06);display:flex;flex-direction:column;align-items:center;gap:10px}
