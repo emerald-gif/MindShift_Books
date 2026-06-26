@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Book Details | MindShift Books</title>
+  <meta name="description" content="MindShift Books — book details, summary, and reviews." />
+  <link rel="shortcut icon" href="MINDSHIFT.jpg" type="image/jpg">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+
+  <style>
+    /* ── Preview Button ── */
+    .preview-btn {
+      background: #fff;
+      color: #4f46e5;
+      border: 2px solid #4f46e5 !important;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      font-weight: 700;
+      transition: background 0.18s, color 0.18s;
+    }
+    .preview-btn:hover {
+      background: #4f46e5;
+      color: #fff;
+    }
+
+    /* ── Preview Lightbox Modal ── */
+    .preview-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: rgba(241, 245, 249, 0.97);
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .preview-modal.open { display: flex; }
+
+    /* Top bar: title + close */
+    .preview-modal-topbar {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      background: #fff;
+      border-bottom: 1px solid #e6e9ee;
+      box-shadow: 0 2px 8px rgba(15,23,42,0.06);
+      z-index: 10;
+    }
+    .preview-modal-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .preview-modal-title svg { color: #4f46e5; }
+    .preview-modal-badge {
+      background: #f1f0fe;
+      color: #4f46e5;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 2px 9px;
+      border-radius: 20px;
+    }
+
+    .preview-modal-close {
+      background: #f1f5f9;
+      border: none;
+      border-radius: 50%;
+      width: 38px; height: 38px;
+      color: #475569;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s, color 0.15s;
+    }
+    .preview-modal-close:hover { background: #e2e8f0; color: #0f172a; }
+
+    /* Image area */
+    .preview-img-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 30px;
+    }
+    .preview-img-wrap img {
+      max-width: min(600px, 88vw);
+      max-height: 68vh;
+      object-fit: contain;
+      border-radius: 8px;
+      box-shadow: 0 4px 32px rgba(15,23,42,0.14), 0 1px 4px rgba(15,23,42,0.08);
+      user-select: none;
+      -webkit-user-drag: none;
+      background: #fff;
+    }
+
+    /* Side arrows */
+    .preview-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: #fff;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 50%;
+      width: 44px; height: 44px;
+      color: #374151;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 8px rgba(15,23,42,0.10);
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+      z-index: 10;
+    }
+    .preview-arrow:hover { background: #4f46e5; border-color: #4f46e5; color: #fff; }
+    .preview-arrow.prev { left: -58px; }
+    .preview-arrow.next { right: -58px; }
+
+    /* Bottom bar */
+    .preview-modal-bottombar {
+      margin-top: 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    .preview-indicator {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #64748b;
+      letter-spacing: 0.04em;
+    }
+    .preview-dots {
+      display: flex; gap: 6px;
+    }
+    .preview-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #cbd5e1;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.15s;
+    }
+    .preview-dot.active {
+      background: #4f46e5;
+      transform: scale(1.25);
+    }
+    .preview-dot:hover { background: #94a3b8; }
+
+    @media (max-width: 600px) {
+      .preview-arrow.prev { left: 2px; }
+      .preview-arrow.next { right: 2px; }
+      .preview-arrow { width: 36px; height: 36px; }
+      .preview-img-wrap img { max-width: 92vw; }
+    }
+
+    /* ── Review Form & List ── */
+    .review-form-section {
+      margin-bottom: 28px;
+    }
+    .review-form-section h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0 0 14px 0;
+    }
+    .review-field {
+      margin-bottom: 12px;
+    }
+    .review-field label {
+      display: block;
+      font-size: 0.84rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 5px;
+    }
+    .review-field input,
+    .review-field textarea {
+      width: 100%;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 10px 13px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      color: #0f172a;
+      background: #f8fafc;
+      box-sizing: border-box;
+      resize: none;
+      transition: border-color 0.15s;
+      outline: none;
+    }
+    .review-field input:focus,
+    .review-field textarea:focus {
+      border-color: #4f46e5;
+      background: #fff;
+    }
+    .review-submit-btn {
+      background: linear-gradient(90deg, #4f46e5, #06b6d4);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 11px 26px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      transition: opacity 0.15s;
+    }
+    .review-submit-btn:hover { opacity: 0.9; }
+
+    .review-success-msg {
+      display: none;
+      color: #059669;
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-top: 10px;
+      align-items: center;
+      gap: 6px;
+    }
+    .review-success-msg.show { display: flex; }
+
+    .review-divider {
+      border: none;
+      border-top: 1px solid #e6e9ee;
+      margin: 24px 0;
+    }
+
+    .review-list-heading {
+      font-size: 0.93rem;
+      font-weight: 700;
+      color: #374151;
+      margin: 0 0 14px 0;
+    }
+
+    .review-list { display: flex; flex-direction: column; gap: 14px; }
+
+    .review-card {
+      background: #f8fafc;
+      border-radius: 12px;
+      padding: 14px 16px;
+      border: 1px solid #e6e9ee;
+    }
+    .review-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 7px;
+    }
+    .review-card-name {
+      font-weight: 700;
+      font-size: 0.93rem;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .review-card-name::before {
+      content: '';
+      display: inline-block;
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #4f46e5, #06b6d4);
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-align: center;
+      line-height: 28px;
+    }
+    .review-card-date {
+      font-size: 0.78rem;
+      color: #9ca3af;
+    }
+    .review-card-text {
+      font-size: 0.92rem;
+      color: #374151;
+      line-height: 1.6;
+    }
+    .review-empty {
+      color: #9ca3af;
+      font-size: 0.9rem;
+      text-align: center;
+      padding: 18px 0 4px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <h1 style="display:flex;align-items:center;gap:10px;margin:0;">
+      <img src="MINDSHIFT.jpg" alt="MindShift logo" style="width:36px;height:36px;border-radius:6px;">
+      <span>MindShift Books</span>
+    </h1>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <button type="button" class="icon-btn" id="cartIcon" aria-label="View cart">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+        <span class="cart-badge" id="cartBadge" style="display:none;">0</span>
+      </button>
+      <button type="button" class="icon-btn" onclick="toggleSidebar()" aria-label="Open menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="22" height="22"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<aside class="sidebar" id="sidebar" aria-hidden="true" data-open="false">
+  <div class="logo-row">
+    <img src="MINDSHIFT.jpg" alt="logo">
+    <div style="font-weight:700">MindShift Books</div>
+  </div>
+  <ul>
+    <li onclick="window.location.href='/index.html'">Browse Books</li>
+    <li onclick="openMyOrders()">My Orders</li>
+    <li onclick="openContact()">Contact Us</li>
+    <li onclick="followYoutube()">Follow us on YouTube</li>
+  </ul>
+  <div style="position:absolute;bottom:18px;left:18px;right:18px;color:#9ca3af;font-size:0.9rem;">
+    <div>© 2026 MindShift Books</div>
+    <div style="margin-top:6px">Shift your thinking, change your life.</div>
+  </div>
+</aside>
+
+<main>
+  <div class="book-detail-wrap">
+    <a href="/index.html" class="book-back-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+      Back to Books
+    </a>
+    <div id="bookDetailRoot">
+      <div class="book-detail-skeleton">Loading book…</div>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-top">
+    <div class="footer-col footer-brand">
+      <div class="footer-logo-row">
+        <img src="MINDSHIFT.jpg" alt="MindShift Books logo">
+        <span>MindShift Books</span>
+      </div>
+      <p class="footer-tagline">Shift your thinking, change your life.</p>
+      <p class="footer-blurb">Curated eBooks on psychology, money, and personal growth — read instantly, no waiting.</p>
+    </div>
+    <div class="footer-col">
+      <div class="footer-heading">Quick Links</div>
+      <ul class="footer-links">
+        <li><a href="/index.html">Browse Books</a></li>
+        <li><a href="javascript:void(0)" onclick="openMyOrders()">My Orders</a></li>
+        <li><a href="javascript:void(0)" onclick="openContact()">Contact Us</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <div class="footer-heading">Get In Touch</div>
+      <ul class="footer-links">
+        <li>
+          <a href="mailto:contact@mindshiftbooks.online" class="footer-contact-link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+            contact@mindshiftbooks.online
+          </a>
+        </li>
+      </ul>
+      <div class="footer-heading" style="margin-top:18px;">Follow Us</div>
+      <div class="footer-social">
+        <a href="https://www.youtube.com/@MindShift_Books" target="_blank" rel="noopener" class="social-btn" aria-label="MindShift Books on YouTube">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M23.498 6.186a2.994 2.994 0 0 0-2.112-2.112C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.386.529A2.994 2.994 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a2.994 2.994 0 0 0 2.112 2.112c1.881.529 9.386.529 9.386.529s7.505 0 9.386-.529a2.994 2.994 0 0 0 2.112-2.112C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"></path></svg>
+        </a>
+        <a href="#" class="social-btn" aria-label="MindShift Books on X" title="Link coming soon">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z"></path></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div>© 2026 MindShift Books. All rights reserved.</div>
+    <div class="footer-secure">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+      Secure checkout powered by Paystack
+    </div>
+  </div>
+</footer>
+
+<!-- CART OVERLAY -->
+<div class="cart-overlay" id="cartOverlay" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="cart-title">
+  <div class="cart-overlay-inner">
+    <div class="cart-header">
+      <h2 id="cart-title">Your Cart <span id="cartItemCount" class="cart-item-count"></span></h2>
+      <button class="cart-close" id="cartCloseBtn" aria-label="Close cart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+    </div>
+    <div id="cartItemsList" class="cart-items-list"></div>
+    <div class="cart-summary" id="cartSummary">
+      <div class="cart-total-row">
+        <span>Total</span>
+        <span id="cartTotalPrice">$0.00</span>
+      </div>
+      <div class="checkout-heading">Checkout details</div>
+      <div class="field input-icon-field" style="margin-top:10px;">
+        <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        <input id="cartBuyerName" type="text" placeholder="Full name" aria-label="Full name" required/>
+      </div>
+      <div class="field input-icon-field" style="margin-top:10px;">
+        <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+        <input id="cartBuyerEmail" type="email" placeholder="you@example.com" aria-label="Email address" required/>
+      </div>
+      <div class="muted field-hint">Your eBooks will be emailed to this address.</div>
+      <button class="btn buy-btn checkout-btn" id="cartProceedBtn" style="margin-top:18px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+        Proceed to Payment
+      </button>
+      <div class="checkout-trust">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+        Payments secured by Paystack
+      </div>
+      <div class="muted" style="margin-top:8px;text-align:center;font-size:0.82rem;">
+        You'll be redirected after payment and your PDFs will be emailed automatically — or check anytime under My Orders.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PREVIEW LIGHTBOX MODAL
+═══════════════════════════════════════════ -->
+<div class="preview-modal" id="previewModal" role="dialog" aria-modal="true" aria-label="Book preview">
+
+  <!-- Top bar -->
+  <div class="preview-modal-topbar">
+    <div class="preview-modal-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+      Book Preview
+      <span class="preview-modal-badge" id="previewBadge">Page 1</span>
+    </div>
+    <button class="preview-modal-close" id="previewClose" aria-label="Close preview">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </button>
+  </div>
+
+  <!-- Image + arrows -->
+  <div class="preview-img-wrap" id="previewImgWrap">
+    <button class="preview-arrow prev" id="previewPrev" aria-label="Previous page">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="18" height="18"><polyline points="15 18 9 12 15 6"></polyline></svg>
+    </button>
+    <img id="previewImg" src="" alt="Book preview page" draggable="false"/>
+    <button class="preview-arrow next" id="previewNext" aria-label="Next page">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="18" height="18"><polyline points="9 18 15 12 9 6"></polyline></svg>
+    </button>
+  </div>
+
+  <!-- Bottom: indicator + dots -->
+  <div class="preview-modal-bottombar">
+    <div class="preview-indicator" id="previewIndicator">1 / 1</div>
+    <div class="preview-dots" id="previewDots"></div>
+  </div>
+
+</div>
+
+<script>
+function adjustMainPadding(){
+  const header = document.querySelector('header');
+  const main = document.querySelector('main');
+  if (!header || !main) return;
+  main.style.paddingTop = (header.getBoundingClientRect().height + 24) + 'px';
+}
+window.addEventListener('load', adjustMainPadding);
+window.addEventListener('resize', adjustMainPadding);
+adjustMainPadding();
+</script>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="/main.js"></script>
+
+<script>
+// ═══════════════════════════════════════════════════
+//  PREVIEW LIGHTBOX
+// ═══════════════════════════════════════════════════
+let _previewImages = [];
+let _previewIndex = 0;
+
+function openPreview() {
+  if (!_previewImages.length) return;
+  _previewIndex = 0;
+  renderPreviewSlide();
+  document.getElementById('previewModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closePreview() {
+  document.getElementById('previewModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function renderPreviewSlide() {
+  const total = _previewImages.length;
+  document.getElementById('previewImg').src = _previewImages[_previewIndex];
+  document.getElementById('previewIndicator').textContent = `${_previewIndex + 1} of ${total}`;
+  const badge = document.getElementById('previewBadge');
+  if (badge) badge.textContent = `Page ${_previewIndex + 1}`;
+
+  // dots
+  const dotsEl = document.getElementById('previewDots');
+  dotsEl.innerHTML = '';
+  _previewImages.forEach((_, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'preview-dot' + (i === _previewIndex ? ' active' : '');
+    dot.addEventListener('click', () => { _previewIndex = i; renderPreviewSlide(); });
+    dotsEl.appendChild(dot);
+  });
+
+  // hide arrows if only 1 image
+  document.getElementById('previewPrev').style.display = total <= 1 ? 'none' : '';
+  document.getElementById('previewNext').style.display = total <= 1 ? 'none' : '';
+  document.getElementById('previewDots').style.display = total <= 1 ? 'none' : '';
+}
+
+function previewGo(dir) {
+  const total = _previewImages.length;
+  _previewIndex = (_previewIndex + dir + total) % total;
+  renderPreviewSlide();
+}
+
+document.getElementById('previewClose').addEventListener('click', closePreview);
+document.getElementById('previewPrev').addEventListener('click', () => previewGo(-1));
+document.getElementById('previewNext').addEventListener('click', () => previewGo(1));
+
+// Close on backdrop click
+document.getElementById('previewModal').addEventListener('click', function(e) {
+  if (e.target === this) closePreview();
+});
+
+// Keyboard navigation
+document.addEventListener('keydown', function(e) {
+  const modal = document.getElementById('previewModal');
+  if (!modal.classList.contains('open')) return;
+  if (e.key === 'Escape') closePreview();
+  if (e.key === 'ArrowLeft') previewGo(-1);
+  if (e.key === 'ArrowRight') previewGo(1);
+});
+
+// Touch swipe support
+(function() {
+  let startX = null;
+  const wrap = document.getElementById('previewImgWrap');
+  wrap.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, { passive: true });
+  wrap.addEventListener('touchend', e => {
+    if (startX === null) return;
+    const diff = startX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 40) previewGo(diff > 0 ? 1 : -1);
+    startX = null;
+  }, { passive: true });
+})();
+
+
+// ═══════════════════════════════════════════════════
+//  REVIEWS (localStorage)
+// ═══════════════════════════════════════════════════
+function reviewsKey(bookId) { return 'ms_reviews_' + bookId; }
+
+function loadReviews(bookId) {
+  try {
+    return JSON.parse(localStorage.getItem(reviewsKey(bookId)) || '[]');
+  } catch(e) { return []; }
+}
+
+function saveReview(bookId, review) {
+  const reviews = loadReviews(bookId);
+  reviews.unshift(review); // newest first
+  localStorage.setItem(reviewsKey(bookId), JSON.stringify(reviews));
+}
+
+function formatReviewDate(iso) {
+  try {
+    return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  } catch(e) { return ''; }
+}
+
+function renderReviewList(bookId) {
+  const listEl = document.getElementById('reviewList');
+  if (!listEl) return;
+  const reviews = loadReviews(bookId);
+  if (!reviews.length) {
+    listEl.innerHTML = '<div class="review-empty">No reviews yet — be the first to leave one!</div>';
+    return;
+  }
+  listEl.innerHTML = reviews.map(r => {
+    const initial = (r.name || '?')[0].toUpperCase();
+    return `
+      <div class="review-card">
+        <div class="review-card-header">
+          <div class="review-card-name" style="--initial:'${initial}'">${escapeHtml(r.name)}</div>
+          <div class="review-card-date">${formatReviewDate(r.date)}</div>
+        </div>
+        <div class="review-card-text">${escapeHtml(r.text)}</div>
+      </div>`;
+  }).join('');
+
+  // Fix avatar initials via CSS content
+  listEl.querySelectorAll('.review-card-name').forEach(el => {
+    const initial = (el.textContent.trim()[0] || '?').toUpperCase();
+    const before = document.createElement('span');
+    before.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#4f46e5,#06b6d4);color:#fff;font-size:0.75rem;font-weight:800;flex-shrink:0;';
+    before.textContent = initial;
+    el.insertBefore(before, el.firstChild);
+  });
+}
+
+function initReviewForm(bookId) {
+  const form = document.getElementById('reviewForm');
+  const successMsg = document.getElementById('reviewSuccess');
+  if (!form) return;
+
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const nameVal = document.getElementById('reviewName').value.trim();
+    const textVal = document.getElementById('reviewText').value.trim();
+    if (!nameVal || !textVal) return;
+
+    saveReview(bookId, { name: nameVal, text: textVal, date: new Date().toISOString() });
+
+    form.reset();
+    successMsg.classList.add('show');
+    setTimeout(() => successMsg.classList.remove('show'), 3000);
+    renderReviewList(bookId);
+  });
+}
+
+
+// ═══════════════════════════════════════════════════
+//  BOOK DETAIL RENDERER
+// ═══════════════════════════════════════════════════
+function escapeHtml(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function bookIconSvg(name) {
+  const icons = {
+    author: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>',
+    format: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>',
+    language: '<circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>',
+    genre: '<path d="M20.59 13.41 11 23l-9-9 9.59-9.59A2 2 0 0 1 13 4h6a2 2 0 0 1 2 2v6a2 2 0 0 1-.41 1.41z"></path><circle cx="16.5" cy="7.5" r="1.5"></circle>'
+  };
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">${icons[name] || ''}</svg>`;
+}
+
+function renderBookDetail(prod) {
+  const root = document.getElementById('bookDetailRoot');
+  document.title = `${prod.title} | MindShift Books`;
+
+  // Store preview images globally
+  _previewImages = (prod.reviewImages || []);
+
+  const hasPreview = !!(prod.previewUrl || _previewImages.length > 0);
+  const previewOnclick = prod.previewUrl
+    ? `window.location.href='${prod.previewUrl}'`
+    : `openPreview()`;
+
+  // Price display — prefer NGN fixed price
+  const priceDisplay = prod.priceNGN
+    ? `₦${Number(prod.priceNGN).toLocaleString()}`
+    : prod.priceUSD ? `$${Number(prod.priceUSD).toFixed(2)}` : '';
+
+  // Reviews tab — count from localStorage
+  const storedReviews = loadReviews(prod.id || '');
+  const reviewCount = storedReviews.length;
+
+  root.innerHTML = `
+    <div class="book-hero">
+      <img class="book-hero-cover" src="${escapeHtml(prod.cover || '')}" alt="${escapeHtml(prod.title || '')}"/>
+      <div class="book-hero-info">
+        ${prod.genre ? `<div class="book-hero-genre">${escapeHtml(prod.genre)}</div>` : ''}
+        <h1>${escapeHtml(prod.title || '')}</h1>
+        <div class="book-hero-author">by <strong>${escapeHtml(prod.author || 'MindShift Books')}</strong></div>
+        ${prod.category === 'ours' && priceDisplay ? `<div class="book-hero-price">${priceDisplay}</div>` : ''}
+        <div class="book-hero-actions">
+          ${hasPreview ? `
+          <button class="btn preview-btn" onclick="${previewOnclick}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            Preview Book
+          </button>` : ''}
+          ${prod.category !== 'ours' && prod.externalUrl ? `
+          <a class="btn buy-btn find-on-amazon-btn" href="${escapeHtml(prod.externalUrl)}" target="_blank" rel="noopener noreferrer">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" style="margin-right:5px;vertical-align:-2px;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+            Find on Amazon
+          </a>` : `
+          <button class="btn buy-btn" data-product-id="${escapeHtml(prod.id || '')}" data-action="add-to-cart">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" style="vertical-align:-2px;margin-right:4px;"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+            Add to Cart
+          </button>`}
+        </div>
+      </div>
+    </div>
+
+    <div class="book-details-grid">
+      <div class="book-details-item">
+        <div class="bd-icon">${bookIconSvg('author')}</div>
+        <div class="bd-label">Author</div>
+        <div class="bd-value">${escapeHtml(prod.author || 'MindShift Books')}</div>
+      </div>
+      <div class="book-details-item">
+        <div class="bd-icon">${bookIconSvg('format')}</div>
+        <div class="bd-label">Format</div>
+        <div class="bd-value">PDF eBook</div>
+      </div>
+      <div class="book-details-item">
+        <div class="bd-icon">${bookIconSvg('language')}</div>
+        <div class="bd-label">Language</div>
+        <div class="bd-value">${escapeHtml(prod.language || 'English')}</div>
+      </div>
+      <div class="book-details-item">
+        <div class="bd-icon">${bookIconSvg('genre')}</div>
+        <div class="bd-label">Genre</div>
+        <div class="bd-value">${escapeHtml(prod.genre || '—')}</div>
+      </div>
+    </div>
+
+    <div class="book-tabs">
+      <button class="book-tab-btn active" id="tabDescriptionBtn">Description</button>
+      <button class="book-tab-btn" id="tabReviewsBtn">Reviews${reviewCount ? ` (${reviewCount})` : ''}</button>
+    </div>
+
+    <div class="book-tab-panel active" id="tabDescriptionPanel">
+      <div class="book-description">${escapeHtml(prod.description || 'No description available yet for this book.')}</div>
+    </div>
+
+    <div class="book-tab-panel" id="tabReviewsPanel">
+      <!-- Write a review -->
+      <div class="review-form-section">
+        <h3>Write a Review</h3>
+        <form id="reviewForm" autocomplete="off">
+          <div class="review-field">
+            <label for="reviewName">Your Name</label>
+            <input id="reviewName" type="text" placeholder="e.g. Tomiwa A." maxlength="60" required/>
+          </div>
+          <div class="review-field">
+            <label for="reviewText">Your Review</label>
+            <textarea id="reviewText" rows="4" placeholder="Share what you thought about this book…" maxlength="600" required></textarea>
+          </div>
+          <button type="submit" class="review-submit-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            Submit Review
+          </button>
+          <div class="review-success-msg" id="reviewSuccess">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Review posted — thanks!
+          </div>
+        </form>
+      </div>
+
+      <hr class="review-divider"/>
+
+      <!-- Existing reviews -->
+      <div class="review-list-heading" id="reviewListHeading">
+        ${reviewCount ? `${reviewCount} Review${reviewCount !== 1 ? 's' : ''}` : 'No reviews yet'}
+      </div>
+      <div class="review-list" id="reviewList"></div>
+    </div>
+  `;
+
+  // Tab switching
+  const descBtn = document.getElementById('tabDescriptionBtn');
+  const revBtn  = document.getElementById('tabReviewsBtn');
+  const descPanel = document.getElementById('tabDescriptionPanel');
+  const revPanel  = document.getElementById('tabReviewsPanel');
+
+  descBtn.addEventListener('click', () => {
+    descBtn.classList.add('active'); revBtn.classList.remove('active');
+    descPanel.classList.add('active'); revPanel.classList.remove('active');
+  });
+  revBtn.addEventListener('click', () => {
+    revBtn.classList.add('active'); descBtn.classList.remove('active');
+    revPanel.classList.add('active'); descPanel.classList.remove('active');
+  });
+
+  // Init reviews
+  renderReviewList(prod.id || '');
+  initReviewForm(prod.id || '');
+
+  // Keep review count in tab button in sync after new submissions
+  const origInit = document.getElementById('reviewForm').onsubmit;
+  document.getElementById('reviewForm').addEventListener('submit', () => {
+    setTimeout(() => {
+      const newCount = loadReviews(prod.id || '').length;
+      revBtn.textContent = `Reviews (${newCount})`;
+      const heading = document.getElementById('reviewListHeading');
+      if (heading) heading.textContent = `${newCount} Review${newCount !== 1 ? 's' : ''}`;
+    }, 50);
+  });
+}
+
+// ── Book detail cache (stale-while-revalidate) ──────────────────────
+const BOOK_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+
+function getCachedBook(id) {
+  try {
+    const raw = localStorage.getItem('ms_book_' + id);
+    if (!raw) return null;
+    const { ts, data } = JSON.parse(raw);
+    if (Date.now() - ts > BOOK_CACHE_TTL) return null;
+    return data;
+  } catch(e) { return null; }
+}
+
+function setCachedBook(id, data) {
+  try {
+    localStorage.setItem('ms_book_' + id, JSON.stringify({ ts: Date.now(), data }));
+  } catch(e) {}
+}
+
+async function loadBookDetail() {
+  const root = document.getElementById('bookDetailRoot');
+  const params = new URLSearchParams(location.search);
+  const id = params.get('id');
+
+  if (!id) {
+    root.innerHTML = `<div class="book-tab-panel active" style="display:block;">No book specified.</div>`;
+    return;
+  }
+
+  // 1. Render from cache instantly — no skeleton flash
+  const cached = getCachedBook(id);
+  if (cached) {
+    renderBookDetail(cached);
+  }
+
+  // 2. Fetch fresh in background
+  try {
+    const res = await fetch(`/api/product/${encodeURIComponent(id)}`);
+    const data = await res.json();
+    if (!res.ok || !data.product) {
+      if (!cached) root.innerHTML = `<div class="book-tab-panel active" style="display:block;">Book not found.</div>`;
+      return;
+    }
+    // Only re-render if data changed and user isn't mid-interaction
+    if (JSON.stringify(data.product) !== JSON.stringify(cached)) {
+      renderBookDetail(data.product);
+    }
+    setCachedBook(id, data.product);
+  } catch (e) {
+    console.error(e);
+    if (!cached) {
+      root.innerHTML = `<div class="book-tab-panel active" style="display:block;">Failed to load this book. Please try again.</div>`;
+    }
+  }
+}
+
+loadBookDetail();
+</script>
+
+</body>
+</html>
