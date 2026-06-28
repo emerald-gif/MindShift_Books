@@ -15,6 +15,13 @@ app.use(cors());
 app.use(bodyParser.json({ limit: '1mb' }));
 app.use(bodyParser.urlencoded({ extended: true }));
 
+// Clean URLs: redirect any request that still ends in .html to the extension-less version
+app.get(/\.html$/, (req, res, next) => {
+  const clean = req.path.replace(/\.html$/, '') || '/';
+  const qs = req.url.slice(req.path.length); // preserves ?query
+  return res.redirect(301, clean + qs);
+});
+
 // Serve static assets
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/files', express.static(path.join(__dirname, 'files')));
@@ -44,7 +51,7 @@ const PUBLIC_PDF_URL = process.env.PUBLIC_PDF_URL || null;
 const BREVO_API_KEY = process.env.BREVO_API_KEY || null; // set this in your environment
 const BREVO_TEMPLATE_ID = Number(process.env.BREVO_TEMPLATE_ID || 1); // single template, id 1
 const BREVO_SENDER_NAME = process.env.BREVO_SENDER_NAME || 'Mindshift Books';
-const BREVO_SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'contact@mindshiftbooks.online';
+const BREVO_SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'contact@mindshiftbooks.store';
 
 function toKobo(ngn) { return Math.round(Number(ngn) * 100); }
 
@@ -112,6 +119,7 @@ const PRODUCTS = {
     author: 'MindShift Books',
     genre: 'Business & Marketing',
     language: 'English',
+    pages: 100,
     // Placeholder — swap in your real description/sales copy whenever you're ready.
     description: 'A practical, step-by-step guide to landing paying clients through organic outreach, positioning, and relationship-building — without spending a dime on paid ads.'
   },
@@ -120,8 +128,8 @@ const PRODUCTS = {
     id: 'escape-your-environment-or-become-it',
     title: 'Escape Your Environment Or Become It',
     priceUSD: null,
-    priceNGN: 7500,          // TODO: confirm real price
-    originalPriceNGN: 15000, // TODO: confirm real "before discount" price
+    priceNGN: 7500,
+    originalPriceNGN: 15000,
     coverPath: 'escape.jpg',
     pdfPath: 'files/Escape_Your_Environment_Or_Become_It.pdf',
     previewUrl: '/escape-preview',
@@ -130,6 +138,7 @@ const PRODUCTS = {
     author: 'MindShift Books',
     genre: 'Personal Development',
     language: 'English',
+    pages: 105,
     // Placeholder — swap in your real description/sales copy whenever you're ready.
     description: 'A wake-up call for anyone whose surroundings are quietly shaping who they\'re becoming — a guide to recognizing the people, habits, and environments holding you back, and deliberately building ones that push you forward instead.'
   },
@@ -271,6 +280,7 @@ app.get('/api/products', (req, res) => {
       author: p.author || null,
       genre: p.genre || null,
       language: p.language || 'English',
+      pages: p.pages || null,
       externalUrl: p.externalUrl || null
     }));
     return res.json({ products: out });
@@ -300,6 +310,7 @@ app.get('/api/product/:id', (req, res) => {
       author: p.author || null,
       genre: p.genre || null,
       language: p.language || 'English',
+      pages: p.pages || null,
       description: p.description || null,
       externalUrl: p.externalUrl || null
     };
@@ -585,6 +596,15 @@ app.get('/gcwa-preview', (req, res) => {
 
 app.get('/escape-preview', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'escape-preview.html'));
+});
+
+// Other pages — explicit clean routes (no .html in the URL)
+app.get('/review', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'review.html'));
+});
+
+app.get('/my-order', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'my-order.html'));
 });
 
 // SPA fallback for index.html
