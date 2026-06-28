@@ -51,8 +51,8 @@ function toggleSidebar() {
   sidebar.style.left = open ? '-300px' : '0px';
   sidebar.setAttribute('aria-hidden', open ? 'true' : 'false');
 }
-function openMyOrders(){ window.location.href = '/my-order.html'; }
-function openContact(){ showToast('Contact us: mindshiftbooks.online@gmail.com', 'info', 6000); }
+function openMyOrders(){ window.location.href = '/my-order'; }
+function openContact(){ showToast('Contact us: contact@mindshiftbooks.store', 'info', 6000); }
 function followYoutube(){ window.open('https://www.youtube.com/@MindShift_Books', '_blank'); }
 
 // Fetch products from server
@@ -239,7 +239,7 @@ document.addEventListener('click', function (ev) {
 // Review navigation
 function openReview(productId){
   if (!productId) return;
-  window.location.href = `/review.html?id=${encodeURIComponent(productId)}`;
+  window.location.href = `/review?id=${encodeURIComponent(productId)}`;
 }
 
 // ====================================================================
