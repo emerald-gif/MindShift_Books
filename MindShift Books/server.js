@@ -116,6 +116,24 @@ const PRODUCTS = {
     description: 'A practical, step-by-step guide to landing paying clients through organic outreach, positioning, and relationship-building — without spending a dime on paid ads.'
   },
 
+  'escape-your-environment-or-become-it': {
+    id: 'escape-your-environment-or-become-it',
+    title: 'Escape Your Environment Or Become It',
+    priceUSD: null,
+    priceNGN: 7500,          // TODO: confirm real price
+    originalPriceNGN: 15000, // TODO: confirm real "before discount" price
+    coverPath: 'escape.jpg',
+    pdfPath: 'files/Escape_Your_Environment_Or_Become_It.pdf',
+    previewUrl: '/escape-preview',
+    reviewImages: [], // no reviews yet, add later
+    category: 'ours',
+    author: 'MindShift Books',
+    genre: 'Personal Development',
+    language: 'English',
+    // Placeholder — swap in your real description/sales copy whenever you're ready.
+    description: 'A wake-up call for anyone whose surroundings are quietly shaping who they\'re becoming — a guide to recognizing the people, habits, and environments holding you back, and deliberately building ones that push you forward instead.'
+  },
+
   // ---------------- FEATURED BOOKS BY OTHER AUTHORS ----------------
   'mindshift-101': {
     id: 'mindshift-101',
@@ -563,6 +581,10 @@ app.get('/debug/orders', async (req, res) => {
 // Preview pages — explicit routes so SPA fallback doesn't catch them
 app.get('/gcwa-preview', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'gcwa-preview.html'));
+});
+
+app.get('/escape-preview', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'escape-preview.html'));
 });
 
 // SPA fallback for index.html
