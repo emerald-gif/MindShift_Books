@@ -527,15 +527,29 @@ app.post('/api/verify', async (req, res) => {
           ? items[0].pdfUrl
           : items.map(it => `${it.title}: ${it.pdfUrl}`).join('\n');
 
-        const itemsHtml = items.map(it => `
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 12px 0;">
+        // Paystack's verify-transaction response includes `channel` and `paid_at`
+        // when a real key is configured; the dev-mode fallback above doesn't set
+        // these, so we degrade gracefully instead of asserting a method we don't know.
+        const channelLabels = {
+          card: 'Card', bank: 'Bank Account', bank_transfer: 'Bank Transfer',
+          ussd: 'USSD', qr: 'QR', mobile_money: 'Mobile Money', eft: 'EFT'
+        };
+        const paymentMethodDisplay = channelLabels[tx.channel] || 'Online payment';
+        const paidAtDisplay = new Date(tx.paid_at || tx.paidAt || Date.now())
+          .toLocaleString('en-NG', { day: '2-digit', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+
+        const itemsHtml = items.map((it, idx) => `
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0;">
             <tr>
-              <td style="background-color:#f8fafc;border-radius:10px;padding:14px 16px;">
+              <td style="padding:14px 0;${idx > 0 ? 'border-top:1px solid #eef2f7;' : ''}">
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                   <tr>
-                    <td style="font-family:'Inter',Arial,sans-serif;font-weight:700;font-size:15px;color:#0f172a;">${it.title}</td>
-                    <td align="right" style="white-space:nowrap;">
-                      <a href="${it.pdfUrl}" style="background-color:#4f46e5;background-image:linear-gradient(90deg,#4f46e5,#06b6d4);color:#ffffff;text-decoration:none;font-family:'Inter',Arial,sans-serif;font-weight:700;font-size:13px;padding:10px 18px;border-radius:8px;display:inline-block;">Download</a>
+                    <td style="vertical-align:middle;">
+                      <div style="font-family:'Inter',Arial,sans-serif;font-weight:700;font-size:14.5px;color:#0f172a;">${it.title}</div>
+                      <div style="font-family:'Inter',Arial,sans-serif;font-size:12px;color:#94a3b8;padding-top:2px;">PDF &middot; eBook</div>
+                    </td>
+                    <td align="right" style="white-space:nowrap;vertical-align:middle;">
+                      <a href="${it.pdfUrl}" style="background-color:#4f46e5;background-image:linear-gradient(90deg,#4f46e5,#06b6d4);color:#ffffff;text-decoration:none;font-family:'Inter',Arial,sans-serif;font-weight:700;font-size:12.5px;padding:9px 16px;border-radius:999px;display:inline-block;">Download</a>
                     </td>
                   </tr>
                 </table>
@@ -543,6 +557,8 @@ app.post('/api/verify', async (req, res) => {
             </tr>
           </table>
         `).join('');
+
+        const amountPaidDisplay = `₦${Number(ngnAmountPaid).toLocaleString()}`;
 
         const emailPayload = {
           sender: { name: BREVO_SENDER_NAME, email: BREVO_SENDER_EMAIL },
@@ -553,6 +569,9 @@ app.post('/api/verify', async (req, res) => {
             book_name: bookNames || 'Mindshift Books purchase',
             download_link: downloadLinks,
             items_html: itemsHtml,
+            amount_paid: amountPaidDisplay,
+            payment_method: paymentMethodDisplay,
+            paid_at: paidAtDisplay,
             reference: tx.reference
           }
         };
