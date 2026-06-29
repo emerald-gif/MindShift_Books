@@ -52,7 +52,7 @@ function toggleSidebar() {
   sidebar.setAttribute('aria-hidden', open ? 'true' : 'false');
 }
 function openMyOrders(){ window.location.href = '/my-order'; }
-function openContact(){ showToast('Contact us: contact@mindshiftbooks.store', 'info', 6000); }
+function openContact(){ showToast('Contact us: contact@mindshiftbooks.shop', 'info', 6000); }
 function followYoutube(){ window.open('https://www.youtube.com/@MindShift_Books', '_blank'); }
 
 // Fetch products from server
