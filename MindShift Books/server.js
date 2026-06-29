@@ -51,7 +51,7 @@ const PUBLIC_PDF_URL = process.env.PUBLIC_PDF_URL || null;
 const BREVO_API_KEY = process.env.BREVO_API_KEY || null; // set this in your environment
 const BREVO_TEMPLATE_ID = Number(process.env.BREVO_TEMPLATE_ID || 1); // single template, id 1
 const BREVO_SENDER_NAME = process.env.BREVO_SENDER_NAME || 'Mindshift Books';
-const BREVO_SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'contact@mindshiftbooks.store';
+const BREVO_SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'contact@mindshiftbooks.shop';
 
 function toKobo(ngn) { return Math.round(Number(ngn) * 100); }
 
