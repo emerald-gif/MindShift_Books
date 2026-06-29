@@ -490,6 +490,7 @@ app.post('/api/verify', async (req, res) => {
         productId: product.id,
         title: product.title,
         pdfUrl: `${publicBase}/${product.pdfPath.replace(/^\/+/, '')}`,
+        coverUrl: product.coverPath ? `${publicBase}/${product.coverPath.replace(/^\/+/, '')}` : null,
         priceUSD: product.priceUSD
       };
     }).filter(Boolean);
@@ -544,6 +545,10 @@ app.post('/api/verify', async (req, res) => {
               <td style="padding:14px 0;${idx > 0 ? 'border-top:1px solid #eef2f7;' : ''}">
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                   <tr>
+                    ${it.coverUrl ? `
+                    <td style="width:44px;padding-right:12px;vertical-align:middle;">
+                      <img src="${it.coverUrl}" width="44" alt="${it.title}" style="display:block;width:44px;border-radius:6px;border:1px solid #eef2f7;">
+                    </td>` : ''}
                     <td style="vertical-align:middle;">
                       <div style="font-family:'Inter',Arial,sans-serif;font-weight:700;font-size:14.5px;color:#0f172a;">${it.title}</div>
                       <div style="font-family:'Inter',Arial,sans-serif;font-size:12px;color:#94a3b8;padding-top:2px;">PDF &middot; eBook</div>
