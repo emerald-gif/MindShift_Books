@@ -631,6 +631,10 @@ app.get('/my-order', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'my-order.html'));
 });
 
+app.get('/support', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'support.html'));
+});
+
 // SPA fallback for index.html
 app.get('*', (req, res, next) => {
   if (req.method === 'GET' && req.headers.accept && req.headers.accept.indexOf('text/html') !== -1) {
