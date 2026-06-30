@@ -40,7 +40,19 @@ try {
   console.error('firebase-admin init FAILED:', e.message || e);
   console.error('Check that SERVICE_ACCOUNT_JSON is valid JSON with real newlines in private_key, and matches the mindshiftbooks-c4451 project.');
 }
-const db = admin.firestore ? admin.firestore() : null;
+
+// Optionally target a non-default Firestore database (e.g. a Standard-edition
+// database created alongside an Enterprise-edition "(default)" one). Leave
+// FIRESTORE_DATABASE_ID unset to use whatever Firestore considers "(default)".
+const FIRESTORE_DATABASE_ID = process.env.FIRESTORE_DATABASE_ID || null;
+const db = admin.apps.length
+  ? (FIRESTORE_DATABASE_ID
+      ? require('firebase-admin/firestore').getFirestore(admin.app(), FIRESTORE_DATABASE_ID)
+      : admin.firestore())
+  : null;
+if (FIRESTORE_DATABASE_ID) {
+  console.log('Firestore targeting non-default database:', FIRESTORE_DATABASE_ID);
+}
 
 // Paystack / email config
 const PAYSTACK_BASE = 'https://api.paystack.co';
