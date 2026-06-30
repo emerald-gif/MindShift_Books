@@ -348,6 +348,7 @@ app.get('/api/orders', async (req, res) => {
 
     // Query Firestore for orders matching email
     const snap = await db.collection('my_order').where('email', '==', email).orderBy('paidAt', 'desc').get();
+    const publicBase = process.env.PUBLIC_URL ? process.env.PUBLIC_URL.replace(/\/$/, '') : derivePublicUrl(req);
     const rows = [];
     snap.forEach(doc => {
       const d = doc.data();
@@ -356,18 +357,24 @@ app.get('/api/orders', async (req, res) => {
       // single-book purchase (legacy schema) or a multi-book cart checkout.
       let items;
       if (Array.isArray(d.items) && d.items.length) {
-        items = d.items.map(it => ({
-          productId: it.productId || null,
-          title: (it.productId && PRODUCTS[it.productId] && PRODUCTS[it.productId].title) || it.title || null,
-          pdfUrl: it.pdfUrl || null,
-          priceUSD: it.priceUSD || null
-        }));
+        items = d.items.map(it => {
+          const product = it.productId && PRODUCTS[it.productId];
+          return {
+            productId: it.productId || null,
+            title: (product && product.title) || it.title || null,
+            pdfUrl: it.pdfUrl || null,
+            coverUrl: (product && product.coverPath) ? `${publicBase}/${product.coverPath.replace(/^\/+/, '')}` : null,
+            priceUSD: it.priceUSD || null
+          };
+        });
       } else if (d.productId) {
         // legacy single-item order saved before the cart system existed
+        const product = PRODUCTS[d.productId];
         items = [{
           productId: d.productId,
-          title: (PRODUCTS[d.productId] && PRODUCTS[d.productId].title) || d.productTitle || null,
+          title: (product && product.title) || d.productTitle || null,
           pdfUrl: d.pdfUrl || null,
+          coverUrl: (product && product.coverPath) ? `${publicBase}/${product.coverPath.replace(/^\/+/, '')}` : null,
           priceUSD: d.usd_price || null
         }];
       } else {
