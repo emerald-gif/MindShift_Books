@@ -31,13 +31,14 @@ try {
   if (process.env.SERVICE_ACCOUNT_JSON) {
     const serviceAccount = JSON.parse(process.env.SERVICE_ACCOUNT_JSON);
     admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
-    console.log('firebase-admin initialized from SERVICE_ACCOUNT_JSON');
+    console.log('firebase-admin initialized from SERVICE_ACCOUNT_JSON, project_id =', serviceAccount.project_id);
   } else {
     admin.initializeApp();
     console.log('firebase-admin initialized from ADC/default credentials');
   }
 } catch (e) {
-  console.warn('firebase-admin init warning:', e.message || e);
+  console.error('firebase-admin init FAILED:', e.message || e);
+  console.error('Check that SERVICE_ACCOUNT_JSON is valid JSON with real newlines in private_key, and matches the mindshiftbooks-c4451 project.');
 }
 const db = admin.firestore ? admin.firestore() : null;
 
