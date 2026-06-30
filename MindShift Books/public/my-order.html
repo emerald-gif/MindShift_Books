@@ -73,6 +73,8 @@ main{ max-width:900px;margin:0 auto;padding-left:16px;padding-right:16px;padding
 @keyframes fadeIn{ from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
 
 .order-card h3{font-size:1.05rem;font-weight:700;margin-bottom:6px;color:var(--primary)}
+.order-card-cover-row{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+.order-card-cover{width:36px;height:36px;border-radius:6px;object-fit:cover;flex-shrink:0;border:1px solid #e2e8f0;}
 .order-card .meta{margin-bottom:10px;font-size:0.88rem;color:#6b7280;line-height:1.5}
 .pill{
   display:inline-block;background:#eef2f7;color:var(--primary);
@@ -122,8 +124,8 @@ footer .brand{font-weight:700;font-size:1.1rem;color:#fbbf24}
   background:#f8fafc;border-radius:10px;padding:14px;margin-bottom:10px;
   display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
 }
+.order-detail-item-cover{width:40px;height:40px;border-radius:6px;object-fit:cover;flex-shrink:0;border:1px solid #e2e8f0;}
 .order-detail-item-title{font-weight:700;flex:1;min-width:140px;}
-.order-detail-item-price{color:#6b7280;font-weight:700;}
 .order-detail-item .download{width:auto;padding:9px 16px;}
 </style>
 </head>
@@ -251,8 +253,8 @@ function openOrderDetail(order) {
 
   itemsEl.innerHTML = items.map(it => `
     <div class="order-detail-item">
+      ${it.coverUrl ? `<img class="order-detail-item-cover" src="${it.coverUrl}" alt="${escapeHtml(it.title || '')}">` : ''}
       <div class="order-detail-item-title">${escapeHtml(it.title || 'Untitled')}</div>
-      <div class="order-detail-item-price">$${Number(it.priceUSD || 0).toFixed(2)}</div>
       <a class="download" href="${it.pdfUrl || '#'}" target="_blank">Download</a>
     </div>
   `).join('');
@@ -316,7 +318,10 @@ btn.onclick = async () => {
         const pdfUrl = item.pdfUrl || "#";
 
         card.innerHTML = `
-          <h3>${escapeHtml(title)}</h3>
+          <div class="order-card-cover-row">
+            ${item.coverUrl ? `<img class="order-card-cover" src="${item.coverUrl}" alt="${escapeHtml(title)}">` : ''}
+            <h3 style="margin-bottom:0;">${escapeHtml(title)}</h3>
+          </div>
 
           <div class="meta">
             Ref: <strong>${escapeHtml(order.reference)}</strong><br>
@@ -359,7 +364,7 @@ btn.onclick = async () => {
 
   } catch (err) {
     console.error(err);
-    status.textContent = "Something went wrong. Try again.";
+    status.textContent = "Something went wrong: " + (err.message || "Unknown error") + ". Try again, or contact support if this keeps happening.";
   }
 };
 
