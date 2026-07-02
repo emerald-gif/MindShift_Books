@@ -617,11 +617,11 @@ app.post('/api/verify', payLimiter, async (req, res) => {
     if (!tx || tx.status !== 'success') return res.json({ status: 'failed', data: verifyJson });
 
     // SECURITY: always use Paystack's verified email — never trust a client-supplied one
-    // In live mode (PAYSTACK_SECRET_KEY set), tx.customer.email comes straight from
-    // Paystack's server, so it can't be spoofed by the buyer.
     const userEmail = (tx.customer && tx.customer.email) || null;
     if (!userEmail) return res.status(400).json({ error: 'Could not determine buyer email from payment provider' });
-    const buyerName = metadata.buyer_name || null;
+
+    const metadata = tx.metadata || {};
+    const buyerName = (metadata.custom_fields && metadata.custom_fields.find(f => f.variable_name === 'buyer_name')?.value) || purchaserEmail && purchaserEmail.split('@')[0] || null;
 
     // Support both the new cart metadata (productIds array) and the old
     // single-product metadata (productId) for transactions already in flight.
