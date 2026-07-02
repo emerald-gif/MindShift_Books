@@ -175,7 +175,7 @@ const PRODUCTS = {
     priceNGN: 7500,
     originalPriceNGN: 15000,
     coverPath: 'gcwa.jpg',
-    pdfPath: 'files/Getting_Clients_Without_Ads.pdf',
+    pdfPath: 'public/files/Getting_Clients_Without_Ads.pdf',
     previewUrl: '/gcwa-preview',
     reviewImages: [], // no reviews yet, add later
     category: 'ours',
@@ -193,7 +193,7 @@ const PRODUCTS = {
     priceNGN: 7500,
     originalPriceNGN: 15000,
     coverPath: 'escape.jpg',
-    pdfPath: 'files/Escape_Your_Environment_Or_Become_It.pdf',
+    pdfPath: 'public/files/Escape_Your_Environment_Or_Become_It.pdf',
     previewUrl: '/escape-preview',
     reviewImages: [], // no reviews yet, add later
     category: 'ours',
