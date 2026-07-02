@@ -183,8 +183,7 @@ const PRODUCTS = {
     genre: 'Business & Marketing',
     language: 'English',
     pages: 100,
-    // Placeholder — swap in your real description/sales copy whenever you're ready.
-    description: 'A practical, step-by-step guide to landing paying clients through organic outreach, positioning, and relationship-building — without spending a dime on paid ads.'
+    description: 'You have the skill. You do the work. And yet your pipeline is either empty, unpredictable, or completely dependent on who you happen to know that month. Getting Clients Without Ads is the full client acquisition playbook for freelancers, consultants, and agency owners who are done gambling on algorithms — with six interlocking engines covering positioning, offer building, outreach, content, referrals, and closing. No paid ads. No viral moments. No luck required.'
   },
 
   'escape-your-environment-or-become-it': {
@@ -202,8 +201,7 @@ const PRODUCTS = {
     genre: 'Personal Development',
     language: 'English',
     pages: 105,
-    // Placeholder — swap in your real description/sales copy whenever you're ready.
-    description: 'A wake-up call for anyone whose surroundings are quietly shaping who they\'re becoming — a guide to recognizing the people, habits, and environments holding you back, and deliberately building ones that push you forward instead.'
+    description: 'Your environment is not your background. It is the structure shaping every decision you make, every ambition you carry, and every ceiling you are willing to accept — most of the time without you ever noticing. Escape Your Environment Or Become It makes the invisible architecture visible and gives you the complete framework for changing it — whether your environment is actively working against you, or simply failing to push you forward. Change your environment. Change your life.'
   },
 
   // ---------------- FEATURED BOOKS BY OTHER AUTHORS ----------------
