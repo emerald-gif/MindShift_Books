@@ -418,6 +418,7 @@ async function proceedCartToPayment() {
       amount: Math.round(Number(amount) * 100),
       currency: 'NGN',
       ref: reference,
+      callback_url: window.location.origin + '/',
       metadata: {
         custom_fields: [
           {
@@ -493,6 +494,41 @@ if (document.readyState === 'loading') {
 } else {
   _wireCartButtons();
 }
+
+// ── Paystack redirect mode handler ──────────────────────────────────────────
+// On mobile, Paystack sometimes redirects to this page instead of calling the
+// inline popup callback. We detect that here and trigger verify automatically.
+(async function handlePaystackRedirect() {
+  const params = new URLSearchParams(window.location.search);
+  const reference = params.get('reference') || params.get('trxref');
+  if (!reference) return;
+
+  // Clean the URL immediately so a page refresh doesn't re-trigger this
+  const cleanUrl = window.location.pathname;
+  window.history.replaceState({}, document.title, cleanUrl);
+
+  showToast('Confirming your payment…', 'info', 8000);
+
+  try {
+    const res = await fetch('/api/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reference })
+    });
+
+    const data = await res.json();
+
+    if (res.ok && data.status === 'success') {
+      saveCart([]);
+      showToast('Payment confirmed! 🎉 Your book will be emailed to you shortly.', 'success', 8000);
+    } else {
+      showToast('Payment received but confirmation had an issue. Please check your email or visit My Orders.', 'error', 10000);
+    }
+  } catch (e) {
+    console.error('Redirect verify error:', e);
+    showToast('Could not confirm payment automatically. Please check My Orders or contact support.', 'error', 10000);
+  }
+})();
       
 /* ===========================
 SEARCH + SUGGESTIONS
