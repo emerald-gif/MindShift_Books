@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+# Don't index private/functional pages
+Disallow: /my-order
+Disallow: /dl/
+Disallow: /api/
+
+Sitemap: https://mindshiftbooks.shop/sitemap.xml
