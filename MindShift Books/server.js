@@ -585,7 +585,7 @@ app.post('/api/pay', payLimiter, async (req, res) => {
     return res.json({ authorization_url: initJson.data.authorization_url, reference: initJson.data.reference, amount: ngnAmount });
   } catch (err) {
     console.error('/api/pay error', err);
-    return res.status(500).json({ error: err.message || 'Server error' });
+    return res.status(500).json({ error: 'Payment initialization failed. Please try again.' });
   }
 });
 
@@ -773,6 +773,10 @@ app.get('/my-order', (req, res) => {
 
 app.get('/support', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'support.html'));
+});
+
+app.get('/legal', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'legal.html'));
 });
 
 // SPA fallback for index.html
