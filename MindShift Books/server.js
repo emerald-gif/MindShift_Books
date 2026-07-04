@@ -779,6 +779,39 @@ app.get('/legal', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'legal.html'));
 });
 
+// Structured data endpoint — Google uses this for rich results / image search
+app.get('/schema/:productId', (req, res) => {
+  const product = PRODUCTS[req.params.productId];
+  if (!product) return res.status(404).json({ error: 'Not found' });
+  const publicBase = process.env.PUBLIC_URL || 'https://mindshiftbooks.shop';
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'Book',
+    name: product.title,
+    author: { '@type': 'Person', name: product.author || 'MindShift Books' },
+    publisher: { '@type': 'Organization', name: 'MindShift Books', url: publicBase },
+    image: product.coverPath ? `${publicBase}/${product.coverPath}` : undefined,
+    description: product.description || undefined,
+    inLanguage: product.language || 'en',
+    numberOfPages: product.pages || undefined,
+    genre: product.genre || undefined,
+    offers: {
+      '@type': 'Offer',
+      priceCurrency: 'NGN',
+      price: product.priceNGN || 0,
+      availability: 'https://schema.org/InStock',
+      url: `${publicBase}/review?id=${product.id}`
+    }
+  };
+  res.setHeader('Content-Type', 'application/ld+json');
+  res.json(schema);
+});
+
+// 404 handler — must be last, after all other routes
+app.use((req, res) => {
+  res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
+});
+
 // SPA fallback for index.html
 app.get('*', (req, res, next) => {
   if (req.method === 'GET' && req.headers.accept && req.headers.accept.indexOf('text/html') !== -1) {
