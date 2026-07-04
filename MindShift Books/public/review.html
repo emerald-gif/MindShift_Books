@@ -882,6 +882,32 @@ async function loadBookDetail() {
       renderBookDetail(data.product);
     }
     setCachedBook(id, data.product);
+
+    // Inject Book schema for Google rich results / image indexing
+    const prod = data.product;
+    const schemaEl = document.getElementById('bookSchema') || document.createElement('script');
+    schemaEl.id = 'bookSchema';
+    schemaEl.type = 'application/ld+json';
+    schemaEl.textContent = JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'Book',
+      name: prod.title,
+      author: { '@type': 'Person', name: prod.author || 'MindShift Books' },
+      publisher: { '@type': 'Organization', name: 'MindShift Books', url: 'https://mindshiftbooks.shop' },
+      image: prod.cover || undefined,
+      description: prod.description || undefined,
+      inLanguage: prod.language || 'en',
+      numberOfPages: prod.pages || undefined,
+      genre: prod.genre || undefined,
+      offers: {
+        '@type': 'Offer',
+        priceCurrency: 'NGN',
+        price: prod.priceNGN || 0,
+        availability: 'https://schema.org/InStock',
+        url: `https://mindshiftbooks.shop/review?id=${encodeURIComponent(prod.id)}`
+      }
+    });
+    if (!document.getElementById('bookSchema')) document.head.appendChild(schemaEl);
   } catch (e) {
     console.error(e);
     if (!cached) {

@@ -623,3 +623,59 @@ header {
   to { opacity: 0; transform: translateY(8px) scale(0.95); }
 }
 .toast.hiding { animation: toastOut 0.25s ease forwards; }
+
+/* ── Our Books — no-container cover-first layout ─────────────────────────── */
+/* The grid stays 2-column but each item has no background/shadow box */
+.our-book-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  cursor: default;
+}
+
+.our-cover {
+  width: 100%;
+  aspect-ratio: 2/3;
+  object-fit: cover;
+  border-radius: 10px;
+  display: block;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.18), 0 3px 8px rgba(0,0,0,0.10);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.our-book-item:hover .our-cover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 48px rgba(0,0,0,0.22), 0 4px 12px rgba(0,0,0,0.12);
+}
+
+.our-title {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: var(--primary);
+  margin: 12px 0 6px;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.our-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  width: 100%;
+  margin-top: 10px;
+}
+.our-actions .btn {
+  font-size: 0.82rem;
+  padding: 9px 10px;
+}
+
+.our-preview-link {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.78rem;
+  color: #4f46e5;
+  font-weight: 700;
+  text-decoration: none;
+  letter-spacing: 0.01em;
+}
+.our-preview-link:hover { text-decoration: underline; }

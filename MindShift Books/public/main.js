@@ -150,7 +150,7 @@ function productCardInner(p) {
   const isFeatured = p.category !== 'ours';
 
   if (isFeatured) {
-    // Recommended read — no price, no cart, just link out
+    // Recommended read — compact grid card with container
     return `
       <img src="${escapeHtml(p.cover || '')}" class="ebook-cover" alt="${escapeHtml(p.title || 'ebook')}"/>
       <div class="title">${escapeHtml(p.title || '')}</div>
@@ -165,24 +165,27 @@ function productCardInner(p) {
     `;
   }
 
-  // Our book — full purchase flow
+  // Our book — no container, just cover + content below
+  const price = formatPrice(p);
+  const orig = p.originalPriceNGN ? `₦${Number(p.originalPriceNGN).toLocaleString()}` : null;
+  const pct  = (p.originalPriceNGN && p.priceNGN) ? Math.round((1 - p.priceNGN / p.originalPriceNGN) * 100) : null;
+
   return `
-    <img src="${escapeHtml(p.cover || '')}" class="ebook-cover" alt="${escapeHtml(p.title || 'ebook')}"/>
-    <div class="title">${escapeHtml(p.title || '')}</div>
-    ${(() => {
-      const price = formatPrice(p);
-      const orig = p.originalPriceNGN ? `₦${Number(p.originalPriceNGN).toLocaleString()}` : null;
-      const pct  = (p.originalPriceNGN && p.priceNGN) ? Math.round((1 - p.priceNGN / p.originalPriceNGN) * 100) : null;
-      return `<div class="card-price-row">
-        <span class="card-price">${price}</span>
-        ${orig ? `<span class="card-price-old">${orig}</span>` : ''}
-        ${pct  ? `<span class="card-discount-badge">${pct}% OFF</span>` : ''}
-      </div>`;
-    })()}
-    <div class="card-actions button-group" style="width:100%;">
-      <button class="btn review-btn" data-product-id="${escapeHtml(p.id || '')}" data-action="review">Book Details</button>
-      <button class="btn buy-btn" data-product-id="${escapeHtml(p.id || '')}" data-action="add-to-cart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" style="vertical-align:-2px;margin-right:4px;"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>Add to Cart</button>
+    <img src="${escapeHtml(p.cover || '')}" class="our-cover" alt="${escapeHtml(p.title || 'ebook')}"/>
+    <div class="our-title">${escapeHtml(p.title || '')}</div>
+    <div class="card-price-row">
+      <span class="card-price">${price}</span>
+      ${orig ? `<span class="card-price-old">${orig}</span>` : ''}
+      ${pct  ? `<span class="card-discount-badge">${pct}% OFF</span>` : ''}
     </div>
+    <div class="our-actions">
+      <button class="btn buy-btn" data-product-id="${escapeHtml(p.id || '')}" data-action="add-to-cart">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" style="vertical-align:-2px;margin-right:4px;"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+        Add to Cart
+      </button>
+      <button class="btn review-btn" data-product-id="${escapeHtml(p.id || '')}" data-action="review">Details</button>
+    </div>
+    ${p.previewUrl ? `<a href="${escapeHtml(p.previewUrl)}" class="our-preview-link">Read free preview →</a>` : ''}
   `;
 }
 
@@ -194,9 +197,10 @@ function renderGrid(grid, list, emptyMessage) {
     grid.innerHTML = `<div class="center" style="grid-column:1/-1;padding:24px;"><div class="muted">${emptyMessage || 'No books available.'}</div></div>`;
     return;
   }
+  const isOurBooks = grid.id === 'ourBooksGrid';
   list.forEach(p => {
     const card = document.createElement('div');
-    card.className = 'product-card';
+    card.className = isOurBooks ? 'our-book-item' : 'product-card';
     card.innerHTML = productCardInner(p);
     grid.appendChild(card);
   });
