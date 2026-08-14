@@ -489,7 +489,7 @@ header {
 .book-tab-btn.active{color:#4f46e5;border-bottom-color:#4f46e5;}
 .book-tab-panel{display:none;background:#fff;border-radius:16px;padding:24px;box-shadow:0 18px 40px rgba(0,0,0,0.06);}
 .book-tab-panel.active{display:block;}
-.book-description{font-size:0.95rem;line-height:1.75;color:#475569;}
+.book-description{font-size:0.95rem;line-height:1.75;color:#475569;white-space:pre-line;}
 .book-reviews-grid{display:flex;flex-wrap:wrap;gap:10px;}
 .book-reviews-grid img{width:140px;height:140px;object-fit:cover;border-radius:10px;box-shadow:0 4px 14px rgba(15,23,42,0.1);cursor:pointer;}
 .book-reviews-empty{color:#94a3b8;font-size:0.9rem;}
