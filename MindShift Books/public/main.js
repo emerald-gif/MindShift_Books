@@ -1,6 +1,33 @@
 // public/main.js
 // Loads products from server (/api/products)
 
+// ── First-party page-view tracking (no third-party pixels/cookies) ─────────
+// Fires once per page load to /api/track. No IP, no cookies, no cross-site
+// identifiers — just type + path + which book (if any). Powers the admin
+// dashboard's view counts.
+(function trackPageView() {
+  try {
+    const path = location.pathname;
+    const params = new URLSearchParams(location.search);
+    let type = 'page';
+    if (path === '/' || path === '/index') type = 'home';
+    else if (path === '/review') type = 'review';
+
+    const payload = JSON.stringify({
+      type,
+      path,
+      productId: params.get('id') || null,
+      ref: document.referrer || null
+    });
+
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon('/api/track', new Blob([payload], { type: 'application/json' }));
+    } else {
+      fetch('/api/track', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, keepalive: true }).catch(() => {});
+    }
+  } catch (e) { /* analytics must never break the page */ }
+})();
+
 // FIREBASE CONFIG
 const firebaseConfig = {
   apiKey: "AIzaSyDTn70s1_uIiSOR6lPLY_nKh8Ff1FViFCs",

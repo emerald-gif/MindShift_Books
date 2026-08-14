@@ -321,6 +321,20 @@
 <!-- PAGE COUNTER PILL -->
 <div class="page-pill" id="pagePill">Page 1</div>
 
+<!-- First-party page-view tracking (no third-party pixels/cookies) -->
+<script>
+  (function () {
+    try {
+      const payload = JSON.stringify({ type: 'preview', path: location.pathname, productId: 'escape-your-environment-or-become-it', ref: document.referrer || null });
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon('/api/track', new Blob([payload], { type: 'application/json' }));
+      } else {
+        fetch('/api/track', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, keepalive: true }).catch(() => {});
+      }
+    } catch (e) {}
+  })();
+</script>
+
 <!-- PDF.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>
