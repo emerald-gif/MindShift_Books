@@ -20,6 +20,12 @@
   </url>
 
   <url>
+    <loc>https://mindshiftbooks.shop/review?id=the-money-mindset-gap</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
     <loc>https://mindshiftbooks.shop/gcwa-preview</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -27,6 +33,12 @@
 
   <url>
     <loc>https://mindshiftbooks.shop/escape-preview</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://mindshiftbooks.shop/mmg-preview</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
