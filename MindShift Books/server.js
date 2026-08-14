@@ -204,6 +204,24 @@ const PRODUCTS = {
     description: 'Your environment is not your background. It is the structure shaping every decision you make, every ambition you carry, and every ceiling you are willing to accept — most of the time without you ever noticing. Escape Your Environment Or Become It makes the invisible architecture visible and gives you the complete framework for changing it — whether your environment is actively working against you, or simply failing to push you forward. Change your environment. Change your life.'
   },
 
+  'the-money-mindset-gap': {
+    id: 'the-money-mindset-gap',
+    title: 'The Money Mindset Gap',
+    priceUSD: null,
+    priceNGN: 6000,
+    originalPriceNGN: 12000,
+    coverPath: 'mmg.jpg',
+    pdfPath: 'public/files/The_Money_Mindset_Gap.pdf',
+    previewUrl: '/mmg-preview',
+    reviewImages: [], // no reviews yet, add later
+    category: 'ours',
+    author: 'MindShift Books',
+    genre: 'Personal Finance',
+    language: 'English',
+    pages: 70,
+    description: 'REPLACE WITH YOUR OWN 2-4 SENTENCE DESCRIPTION — same style as the other two book blurbs above.'
+  },
+
   // ---------------- FEATURED BOOKS BY OTHER AUTHORS ----------------
   'mindshift-101': {
     id: 'mindshift-101',
@@ -760,6 +778,10 @@ app.get('/gcwa-preview', (req, res) => {
 
 app.get('/escape-preview', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'escape-preview.html'));
+});
+
+app.get('/mmg-preview', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'mmg-preview.html'));
 });
 
 // Other pages — explicit clean routes (no .html in the URL)
