@@ -9,7 +9,6 @@ const admin = require('firebase-admin');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const crypto = require('crypto');
-const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -117,43 +116,88 @@ const BREVO_TEMPLATE_ID = Number(process.env.BREVO_TEMPLATE_ID || 1); // single 
 const BREVO_SENDER_NAME = process.env.BREVO_SENDER_NAME || 'Mindshift Books';
 const BREVO_SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'contact@mindshiftbooks.shop';
 
-// Admin dashboard credentials (Basic Auth). Set ADMIN_PASSWORD as a Render env
-// var — the dashboard refuses to serve anything until it's set, so there's no
-// accidental "default password" exposure.
+// Admin dashboard credentials + session (cookie-based — no browser Basic Auth
+// popup). Set ADMIN_PASSWORD as a Render env var — the dashboard refuses to
+// serve anything until it's set, so there's no accidental "default password"
+// exposure.
 const ADMIN_USER = process.env.ADMIN_USER || 'admin';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || null;
 if (!ADMIN_PASSWORD) {
   console.warn('ADMIN_PASSWORD not set — /admin dashboard is disabled until it is configured.');
 }
 
-function adminAuth(req, res, next) {
-  if (!ADMIN_PASSWORD) {
-    return res.status(503).type('text/plain').send('Admin dashboard not configured. Set ADMIN_PASSWORD on the server.');
-  }
-  const header = req.headers.authorization || '';
-  const [scheme, encoded] = header.split(' ');
-  if (scheme !== 'Basic' || !encoded) {
-    res.setHeader('WWW-Authenticate', 'Basic realm="MindShift Admin"');
-    return res.status(401).send('Authentication required.');
-  }
-  let user = '', pass = '';
-  try {
-    const decoded = Buffer.from(encoded, 'base64').toString('utf8');
-    const sep = decoded.indexOf(':');
-    user = sep === -1 ? decoded : decoded.slice(0, sep);
-    pass = sep === -1 ? '' : decoded.slice(sep + 1);
-  } catch { /* falls through to auth failure below */ }
+// Session secret signs a short-lived cookie so admin/dashboard.html doesn't
+// need to keep re-sending credentials on every request. Ephemeral fallback
+// mirrors the DOWNLOAD_SECRET pattern below — set the env var on Render so
+// admins don't get logged out on every restart.
+const ADMIN_SESSION_SECRET = process.env.ADMIN_SESSION_SECRET || (() => {
+  const s = crypto.randomBytes(32).toString('hex');
+  console.warn('ADMIN_SESSION_SECRET not set — using an ephemeral secret. Set this env var on Render or admin logins will be forced to re-login on every restart.');
+  return s;
+})();
+const ADMIN_SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 days, in seconds
 
-  const userBuf = Buffer.from(user);
-  const passBuf = Buffer.from(pass);
+function mintAdminSession() {
+  const expiry = Date.now() + ADMIN_SESSION_MAX_AGE * 1000;
+  const payload = `admin|${expiry}`;
+  const sig = crypto.createHmac('sha256', ADMIN_SESSION_SECRET).update(payload).digest('hex').slice(0, 32);
+  return Buffer.from(`${payload}|${sig}`).toString('base64url');
+}
+
+function validateAdminSession(token) {
+  try {
+    const decoded = Buffer.from(token, 'base64url').toString('utf8');
+    const parts = decoded.split('|');
+    if (parts.length !== 3) return false;
+    const [tag, expiryStr, sig] = parts;
+    if (tag !== 'admin') return false;
+    const expected = crypto.createHmac('sha256', ADMIN_SESSION_SECRET).update(`${tag}|${expiryStr}`).digest('hex').slice(0, 32);
+    if (sig.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return false;
+    const expiry = Number(expiryStr);
+    return Number.isFinite(expiry) && Date.now() <= expiry;
+  } catch { return false; }
+}
+
+function parseCookies(req) {
+  const header = req.headers.cookie;
+  const out = {};
+  if (!header) return out;
+  header.split(';').forEach(pair => {
+    const idx = pair.indexOf('=');
+    if (idx === -1) return;
+    out[pair.slice(0, idx).trim()] = decodeURIComponent(pair.slice(idx + 1).trim());
+  });
+  return out;
+}
+
+function hasValidAdminSession(req) {
+  if (!ADMIN_PASSWORD) return false;
+  const cookies = parseCookies(req);
+  return !!(cookies.ms_admin && validateAdminSession(cookies.ms_admin));
+}
+
+function checkAdminCredentials(user, pass) {
+  const userBuf = Buffer.from(String(user || ''));
+  const passBuf = Buffer.from(String(pass || ''));
   const expectedUserBuf = Buffer.from(ADMIN_USER);
-  const expectedPassBuf = Buffer.from(ADMIN_PASSWORD);
+  const expectedPassBuf = Buffer.from(ADMIN_PASSWORD || '');
   const userOk = userBuf.length === expectedUserBuf.length && crypto.timingSafeEqual(userBuf, expectedUserBuf);
   const passOk = passBuf.length === expectedPassBuf.length && crypto.timingSafeEqual(passBuf, expectedPassBuf);
+  return userOk && passOk;
+}
 
-  if (userOk && passOk) return next();
-  res.setHeader('WWW-Authenticate', 'Basic realm="MindShift Admin"');
-  return res.status(401).send('Invalid credentials.');
+// Protects the /admin page: redirects to the branded login page if not signed in.
+function requireAdminPage(req, res, next) {
+  if (!ADMIN_PASSWORD) return res.status(503).type('text/plain').send('Admin dashboard not configured. Set ADMIN_PASSWORD on the server.');
+  if (hasValidAdminSession(req)) return next();
+  return res.redirect('/admin/login');
+}
+
+// Protects /api/admin/*: returns JSON so the dashboard's own JS can redirect on 401.
+function requireAdminApi(req, res, next) {
+  if (!ADMIN_PASSWORD) return res.status(503).json({ error: 'Admin dashboard not configured.' });
+  if (hasValidAdminSession(req)) return next();
+  return res.status(401).json({ error: 'Not authenticated' });
 }
 
 function toKobo(ngn) { return Math.round(Number(ngn) * 100); }
@@ -1011,41 +1055,8 @@ app.get('/mmg-preview', (req, res) => {
 });
 
 // Other pages — explicit clean routes (no .html in the URL)
-// Injects per-book Open Graph tags server-side so shared links show the
-// correct cover image, title, and description on WhatsApp/Twitter/Facebook/etc.
 app.get('/review', (req, res) => {
-  const publicBase = 'https://mindshiftbooks.shop';
-  const id = req.query.id;
-  const product = id && PRODUCTS[id];
-
-  let ogTitle = 'Book Details | MindShift Books';
-  let ogDescription = 'Read the summary, reviews, and details — then get your copy with instant PDF delivery.';
-  let ogImage = `${publicBase}/MINDSHIFT.jpg`;
-  let ogUrl = `${publicBase}/review`;
-
-  if (product) {
-    ogTitle = `${product.title} | MindShift Books`;
-    ogDescription = product.description
-      ? (product.description.length > 200 ? product.description.slice(0, 197) + '...' : product.description)
-      : ogDescription;
-    ogImage = `${publicBase}/${product.coverPath}`;
-    ogUrl = `${publicBase}/review?id=${encodeURIComponent(product.id)}`;
-  }
-
-  fs.readFile(path.join(__dirname, 'public', 'review.html'), 'utf8', (err, html) => {
-    if (err) {
-      console.error(err);
-      return res.sendFile(path.join(__dirname, 'public', 'review.html'));
-    }
-    const out = html
-      .split('__PAGE_TITLE__').join(ogTitle)
-      .split('__OG_TITLE__').join(ogTitle)
-      .split('__OG_DESCRIPTION__').join(ogDescription)
-      .split('__OG_IMAGE__').join(ogImage)
-      .split('__OG_URL__').join(ogUrl);
-    res.set('Content-Type', 'text/html');
-    res.send(out);
-  });
+  res.sendFile(path.join(__dirname, 'public', 'review.html'));
 });
 
 app.get('/my-order', (req, res) => {
@@ -1060,15 +1071,45 @@ app.get('/legal', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'legal.html'));
 });
 
-// ---------- Admin dashboard (Basic Auth — see adminAuth above) ----------
-// Deliberately served from an `admin/` folder OUTSIDE `public/`, so it is
-// never reachable via the static file server — only through this
-// auth-gated route.
-app.get('/admin', adminAuth, (req, res) => {
+// ---------- Admin dashboard (branded login page + signed session cookie) ----------
+// Both admin/login.html and admin/dashboard.html live OUTSIDE `public/`, so
+// they're never reachable via the static file server — only through these
+// auth-gated routes.
+const adminLoginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { error: 'Too many login attempts, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+app.get('/admin/login', (req, res) => {
+  if (!ADMIN_PASSWORD) return res.status(503).type('text/plain').send('Admin dashboard not configured. Set ADMIN_PASSWORD on the server.');
+  if (hasValidAdminSession(req)) return res.redirect('/admin');
+  res.sendFile(path.join(__dirname, 'admin', 'login.html'));
+});
+
+app.post('/admin/login', adminLoginLimiter, (req, res) => {
+  if (!ADMIN_PASSWORD) return res.status(503).json({ error: 'Admin dashboard not configured.' });
+  const { username, password } = req.body || {};
+  if (!checkAdminCredentials(username, password)) {
+    return res.status(401).json({ error: 'Incorrect username or password.' });
+  }
+  const token = mintAdminSession();
+  res.setHeader('Set-Cookie', `ms_admin=${token}; HttpOnly; Secure; SameSite=Lax; Max-Age=${ADMIN_SESSION_MAX_AGE}; Path=/`);
+  return res.json({ ok: true });
+});
+
+app.get('/admin/logout', (req, res) => {
+  res.setHeader('Set-Cookie', 'ms_admin=; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/');
+  res.redirect('/admin/login');
+});
+
+app.get('/admin', requireAdminPage, (req, res) => {
   res.sendFile(path.join(__dirname, 'admin', 'dashboard.html'));
 });
 
-app.use('/api/admin', adminAuth);
+app.use('/api/admin', requireAdminApi);
 
 // GET /api/admin/summary?days=30 — pageviews, downloads, and purchases,
 // each broken down per book, for the last N days.
