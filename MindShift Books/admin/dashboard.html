@@ -12,45 +12,86 @@
     --card: #ffffff; --border: #e5e7eb; --muted: #64748b;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
-  body { background: var(--bg); color: var(--primary); min-height: 100vh; padding: 20px 16px 60px; }
+  body { background: var(--bg); color: var(--primary); min-height: 100vh; padding-bottom: 60px; }
 
-  header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
-  header h1 { font-size: 1.4rem; font-weight: 800; }
-  header .sub { color: var(--muted); font-size: 0.85rem; margin-top: 2px; }
+  /* ── HEADER ── */
+  header {
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+    padding: 18px 20px;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;
+  }
+  .hd-brand { display: flex; align-items: center; gap: 12px; }
+  .hd-brand img { width: 38px; height: 38px; border-radius: 8px; }
+  .hd-brand .name { color: white; font-weight: 800; font-size: 1.05rem; }
+  .hd-brand .tag { color: #67e8f9; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
 
+  .hd-actions { display: flex; align-items: center; gap: 10px; }
   select {
-    padding: 8px 14px; border-radius: 10px; border: 1.5px solid var(--border);
-    background: white; font-weight: 600; font-size: 0.85rem; color: var(--primary);
+    padding: 9px 14px; border-radius: 10px; border: 1.5px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.08); color: white; font-weight: 600; font-size: 0.84rem;
   }
+  select option { color: #0f172a; }
+  .logout-link {
+    color: #94a3b8; font-size: 0.82rem; font-weight: 600; text-decoration: none;
+    padding: 9px 14px; border-radius: 10px; border: 1.5px solid rgba(255,255,255,0.12);
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .logout-link:hover { color: #67e8f9; border-color: rgba(103,232,249,0.4); }
 
-  .totals { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 28px; }
+  .page { max-width: 960px; margin: 0 auto; padding: 24px 16px 0; }
+
+  /* ── STAT CARDS ── */
+  .totals { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-bottom: 28px; }
   .stat-card {
-    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
-    padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+    padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    position: relative; overflow: hidden;
   }
-  .stat-card .label { font-size: 0.78rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
-  .stat-card .value { font-size: 1.6rem; font-weight: 800; margin-top: 6px; }
+  .stat-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, #4f46e5, #06b6d4);
+  }
+  .stat-card .icon { font-size: 1.3rem; margin-bottom: 8px; display: block; }
+  .stat-card .label { font-size: 0.76rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
+  .stat-card .value { font-size: 1.7rem; font-weight: 800; margin-top: 4px; }
 
-  .grid { display: grid; grid-template-columns: 1fr; gap: 20px; max-width: 900px; margin: 0 auto; }
+  /* ── PANELS ── */
+  .grid { display: grid; grid-template-columns: 1fr; gap: 18px; }
   @media (min-width: 760px) { .grid { grid-template-columns: 1fr 1fr; } }
 
   .panel {
     background: var(--card); border: 1px solid var(--border); border-radius: 16px;
-    padding: 18px 18px 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    padding: 20px 20px 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
   }
-  .panel h2 { font-size: 0.95rem; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .panel h2 {
+    font-size: 0.92rem; font-weight: 700; margin-bottom: 14px;
+    display: flex; align-items: center; gap: 8px; color: var(--primary);
+  }
   .panel h2 .emoji { font-size: 1rem; }
 
+  .bar-row { margin-bottom: 12px; }
+  .bar-row:last-child { margin-bottom: 0; }
+  .bar-row .bar-top {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+    font-size: 0.85rem; margin-bottom: 5px;
+  }
+  .bar-row .bar-label { font-weight: 600; color: var(--primary); }
+  .bar-row .bar-count { font-weight: 800; color: var(--indigo); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .bar-track { height: 7px; border-radius: 20px; background: #eef2f7; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 20px; background: linear-gradient(90deg, #4f46e5, #06b6d4); }
+
+  .empty { color: var(--muted); font-size: 0.85rem; padding: 8px 0 16px; }
+
+  .full-panel { grid-column: 1 / -1; }
   table { width: 100%; border-collapse: collapse; }
-  th, td { text-align: left; padding: 9px 4px; font-size: 0.85rem; border-bottom: 1px solid #f1f5f9; }
-  th { color: var(--muted); font-weight: 600; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.03em; }
+  th, td { text-align: left; padding: 9px 4px; font-size: 0.84rem; border-bottom: 1px solid #f1f5f9; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.03em; }
   td.num { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
   tr:last-child td { border-bottom: none; }
 
-  .empty { color: var(--muted); font-size: 0.85rem; padding: 14px 4px; }
-  .loading { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .loading { text-align: center; padding: 80px 20px; color: var(--muted); }
   .error-box {
-    max-width: 500px; margin: 60px auto; text-align: center; padding: 24px;
+    max-width: 480px; margin: 60px auto; text-align: center; padding: 24px;
     background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; color: #991b1b;
   }
 </style>
@@ -58,55 +99,62 @@
 <body>
 
 <header>
-  <div>
-    <h1>📊 Admin Dashboard</h1>
-    <div class="sub">MindShift Books — first-party analytics, no third-party tracking</div>
+  <div class="hd-brand">
+    <img src="/MINDSHIFT.jpg" alt="MindShift Books logo">
+    <div>
+      <div class="name">MindShift Books</div>
+      <div class="tag">Admin Dashboard</div>
+    </div>
   </div>
-  <select id="rangeSelect">
-    <option value="7">Last 7 days</option>
-    <option value="30" selected>Last 30 days</option>
-    <option value="90">Last 90 days</option>
-    <option value="365">Last 12 months</option>
-  </select>
+  <div class="hd-actions">
+    <select id="rangeSelect">
+      <option value="7">Last 7 days</option>
+      <option value="30" selected>Last 30 days</option>
+      <option value="90">Last 90 days</option>
+      <option value="365">Last 12 months</option>
+    </select>
+    <a href="/admin/logout" class="logout-link">Log out</a>
+  </div>
 </header>
 
-<div id="loadingWrap" class="loading">Loading stats…</div>
-<div id="content" style="display:none;">
+<div class="page">
+  <div id="loadingWrap" class="loading">Loading stats…</div>
 
-  <div class="totals">
-    <div class="stat-card"><div class="label">Page Views</div><div class="value" id="totalPageviews">0</div></div>
-    <div class="stat-card"><div class="label">Downloads</div><div class="value" id="totalDownloads">0</div></div>
-    <div class="stat-card"><div class="label">Orders</div><div class="value" id="totalOrders">0</div></div>
-    <div class="stat-card"><div class="label">Revenue</div><div class="value" id="totalRevenue">₦0</div></div>
+  <div id="content" style="display:none;">
+    <div class="totals">
+      <div class="stat-card"><span class="icon">👁️</span><div class="label">Page Views</div><div class="value" id="totalPageviews">0</div></div>
+      <div class="stat-card"><span class="icon">⬇️</span><div class="label">Downloads</div><div class="value" id="totalDownloads">0</div></div>
+      <div class="stat-card"><span class="icon">🛒</span><div class="label">Orders</div><div class="value" id="totalOrders">0</div></div>
+      <div class="stat-card"><span class="icon">💰</span><div class="label">Revenue</div><div class="value" id="totalRevenue">₦0</div></div>
+    </div>
+
+    <div class="grid">
+      <div class="panel">
+        <h2><span class="emoji">📖</span> Book Review Views</h2>
+        <div id="reviewViewsBars"></div>
+      </div>
+
+      <div class="panel">
+        <h2><span class="emoji">👀</span> Book Preview Views</h2>
+        <div id="previewViewsBars"></div>
+      </div>
+
+      <div class="panel">
+        <h2><span class="emoji">💵</span> Purchases by Book</h2>
+        <div id="purchasesBars"></div>
+      </div>
+
+      <div class="panel">
+        <h2><span class="emoji">📥</span> Downloads by Book</h2>
+        <div id="downloadsBars"></div>
+      </div>
+
+      <div class="panel full-panel">
+        <h2><span class="emoji">🌐</span> Top Pages</h2>
+        <table><thead><tr><th>Path</th><th class="num">Views</th></tr></thead><tbody id="topPagesBody"></tbody></table>
+      </div>
+    </div>
   </div>
-
-  <div class="grid">
-    <div class="panel">
-      <h2><span class="emoji">📖</span> Book Review Views</h2>
-      <table><thead><tr><th>Book</th><th class="num">Views</th></tr></thead><tbody id="reviewViewsBody"></tbody></table>
-    </div>
-
-    <div class="panel">
-      <h2><span class="emoji">👀</span> Book Preview Views</h2>
-      <table><thead><tr><th>Book</th><th class="num">Views</th></tr></thead><tbody id="previewViewsBody"></tbody></table>
-    </div>
-
-    <div class="panel">
-      <h2><span class="emoji">💰</span> Purchases by Book</h2>
-      <table><thead><tr><th>Book</th><th class="num">Purchases</th></tr></thead><tbody id="purchasesBody"></tbody></table>
-    </div>
-
-    <div class="panel">
-      <h2><span class="emoji">⬇️</span> Downloads by Book</h2>
-      <table><thead><tr><th>Book</th><th class="num">Downloads</th></tr></thead><tbody id="downloadsBody"></tbody></table>
-    </div>
-
-    <div class="panel" style="grid-column: 1 / -1;">
-      <h2><span class="emoji">🌐</span> Top Pages</h2>
-      <table><thead><tr><th>Path</th><th class="num">Views</th></tr></thead><tbody id="topPagesBody"></tbody></table>
-    </div>
-  </div>
-
 </div>
 
 <script>
@@ -115,6 +163,25 @@
   const rangeSelect = document.getElementById('rangeSelect');
 
   function fmtNgn(n) { return '₦' + Number(n || 0).toLocaleString(); }
+  function esc(s) { return (s || '').toString().replace(/</g, '&lt;'); }
+
+  function renderBars(containerId, rows) {
+    const el = document.getElementById(containerId);
+    if (!rows || !rows.length) {
+      el.innerHTML = '<div class="empty">No data yet for this range.</div>';
+      return;
+    }
+    const max = Math.max(...rows.map(r => r.count));
+    el.innerHTML = rows.slice(0, 8).map(r => `
+      <div class="bar-row">
+        <div class="bar-top">
+          <span class="bar-label">${esc(r.title)}</span>
+          <span class="bar-count">${r.count}</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill" style="width:${max ? Math.round((r.count / max) * 100) : 0}%"></div></div>
+      </div>
+    `).join('');
+  }
 
   function fillTable(bodyId, rows, labelKey, valueKey) {
     const tbody = document.getElementById(bodyId);
@@ -122,17 +189,17 @@
       tbody.innerHTML = '<tr><td colspan="2" class="empty">No data yet for this range.</td></tr>';
       return;
     }
-    tbody.innerHTML = rows.map(r =>
-      `<tr><td>${(r[labelKey] || '').toString().replace(/</g,'&lt;')}</td><td class="num">${r[valueKey]}</td></tr>`
-    ).join('');
+    tbody.innerHTML = rows.map(r => `<tr><td>${esc(r[labelKey])}</td><td class="num">${r[valueKey]}</td></tr>`).join('');
   }
 
   async function loadStats() {
     loadingWrap.style.display = 'block';
+    loadingWrap.textContent = 'Loading stats…';
     content.style.display = 'none';
     try {
       const days = rangeSelect.value;
       const res = await fetch(`/api/admin/summary?days=${days}`);
+      if (res.status === 401) { window.location.href = '/admin/login'; return; }
       if (!res.ok) throw new Error('Request failed: ' + res.status);
       const data = await res.json();
 
@@ -141,18 +208,16 @@
       document.getElementById('totalOrders').textContent = data.totals.orders.toLocaleString();
       document.getElementById('totalRevenue').textContent = fmtNgn(data.totals.revenueNgn);
 
-      fillTable('reviewViewsBody', data.reviewViews, 'title', 'count');
-      fillTable('previewViewsBody', data.previewViews, 'title', 'count');
-      fillTable('purchasesBody', data.purchases, 'title', 'count');
-      fillTable('downloadsBody', data.downloads, 'title', 'count');
+      renderBars('reviewViewsBars', data.reviewViews);
+      renderBars('previewViewsBars', data.previewViews);
+      renderBars('purchasesBars', data.purchases);
+      renderBars('downloadsBars', data.downloads);
       fillTable('topPagesBody', data.topPages, 'path', 'count');
 
       loadingWrap.style.display = 'none';
       content.style.display = 'block';
     } catch (err) {
-      loadingWrap.innerHTML = '';
-      loadingWrap.className = '';
-      loadingWrap.innerHTML = `<div class="error-box">Could not load stats.<br>${(err && err.message) || ''}</div>`;
+      loadingWrap.innerHTML = `<div class="error-box">Could not load stats.<br>${esc(err && err.message)}</div>`;
     }
   }
 

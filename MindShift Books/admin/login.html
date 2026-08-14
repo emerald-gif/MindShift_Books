@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>Admin Login — MindShift Books</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root { --accent: #06b6d4; --indigo: #4f46e5; }
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+  html, body { height: 100%; }
+  body {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+  }
+  .card {
+    width: 100%; max-width: 360px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px;
+    padding: 36px 28px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    backdrop-filter: blur(6px);
+  }
+  .brand { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 26px; }
+  .brand img { width: 46px; height: 46px; border-radius: 10px; }
+  .brand span { color: white; font-weight: 700; font-size: 1.05rem; }
+  .brand .tag { color: #67e8f9; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+
+  label { display: block; color: #94a3b8; font-size: 0.78rem; font-weight: 600; margin-bottom: 6px; margin-top: 16px; }
+  label:first-of-type { margin-top: 0; }
+  input {
+    width: 100%; padding: 12px 14px; border-radius: 10px;
+    border: 1.5px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.05); color: white; font-size: 0.92rem;
+    outline: none; transition: border-color 0.2s;
+  }
+  input::placeholder { color: #475569; }
+  input:focus { border-color: var(--accent); }
+
+  button {
+    width: 100%; margin-top: 22px; padding: 13px; border: none; border-radius: 12px;
+    background: linear-gradient(90deg, #4f46e5, #06b6d4);
+    color: white; font-weight: 700; font-size: 0.92rem; cursor: pointer;
+    box-shadow: 0 8px 24px rgba(79,70,229,0.35);
+    transition: opacity 0.2s, transform 0.15s;
+  }
+  button:hover { opacity: 0.92; transform: translateY(-1px); }
+  button:disabled { opacity: 0.6; cursor: default; transform: none; }
+
+  .error {
+    display: none; margin-top: 16px; padding: 10px 12px; border-radius: 8px;
+    background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.3);
+    color: #fca5a5; font-size: 0.82rem; text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="brand">
+    <img src="/MINDSHIFT.jpg" alt="MindShift Books logo">
+    <span>MindShift Books</span>
+    <div class="tag">Admin</div>
+  </div>
+
+  <form id="loginForm">
+    <label for="username">Username</label>
+    <input id="username" name="username" type="text" autocomplete="username" required autofocus>
+
+    <label for="password">Password</label>
+    <input id="password" name="password" type="password" autocomplete="current-password" required>
+
+    <div class="error" id="errorBox"></div>
+
+    <button type="submit" id="submitBtn">Sign In</button>
+  </form>
+</div>
+
+<script>
+  const form = document.getElementById('loginForm');
+  const errorBox = document.getElementById('errorBox');
+  const submitBtn = document.getElementById('submitBtn');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorBox.style.display = 'none';
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Signing in…';
+
+    try {
+      const res = await fetch('/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: document.getElementById('username').value,
+          password: document.getElementById('password').value
+        })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.ok) {
+        window.location.href = '/admin';
+        return;
+      }
+      errorBox.textContent = data.error || 'Incorrect username or password.';
+      errorBox.style.display = 'block';
+    } catch (err) {
+      errorBox.textContent = 'Could not reach the server. Try again.';
+      errorBox.style.display = 'block';
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Sign In';
+    }
+  });
+</script>
+
+</body>
+</html>
