@@ -9,6 +9,7 @@ const admin = require('firebase-admin');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const crypto = require('crypto');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -1010,8 +1011,41 @@ app.get('/mmg-preview', (req, res) => {
 });
 
 // Other pages — explicit clean routes (no .html in the URL)
+// Injects per-book Open Graph tags server-side so shared links show the
+// correct cover image, title, and description on WhatsApp/Twitter/Facebook/etc.
 app.get('/review', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'review.html'));
+  const publicBase = 'https://mindshiftbooks.shop';
+  const id = req.query.id;
+  const product = id && PRODUCTS[id];
+
+  let ogTitle = 'Book Details | MindShift Books';
+  let ogDescription = 'Read the summary, reviews, and details — then get your copy with instant PDF delivery.';
+  let ogImage = `${publicBase}/MINDSHIFT.jpg`;
+  let ogUrl = `${publicBase}/review`;
+
+  if (product) {
+    ogTitle = `${product.title} | MindShift Books`;
+    ogDescription = product.description
+      ? (product.description.length > 200 ? product.description.slice(0, 197) + '...' : product.description)
+      : ogDescription;
+    ogImage = `${publicBase}/${product.coverPath}`;
+    ogUrl = `${publicBase}/review?id=${encodeURIComponent(product.id)}`;
+  }
+
+  fs.readFile(path.join(__dirname, 'public', 'review.html'), 'utf8', (err, html) => {
+    if (err) {
+      console.error(err);
+      return res.sendFile(path.join(__dirname, 'public', 'review.html'));
+    }
+    const out = html
+      .split('__PAGE_TITLE__').join(ogTitle)
+      .split('__OG_TITLE__').join(ogTitle)
+      .split('__OG_DESCRIPTION__').join(ogDescription)
+      .split('__OG_IMAGE__').join(ogImage)
+      .split('__OG_URL__').join(ogUrl);
+    res.set('Content-Type', 'text/html');
+    res.send(out);
+  });
 });
 
 app.get('/my-order', (req, res) => {
