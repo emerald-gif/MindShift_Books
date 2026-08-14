@@ -116,6 +116,45 @@ const BREVO_TEMPLATE_ID = Number(process.env.BREVO_TEMPLATE_ID || 1); // single 
 const BREVO_SENDER_NAME = process.env.BREVO_SENDER_NAME || 'Mindshift Books';
 const BREVO_SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'contact@mindshiftbooks.shop';
 
+// Admin dashboard credentials (Basic Auth). Set ADMIN_PASSWORD as a Render env
+// var — the dashboard refuses to serve anything until it's set, so there's no
+// accidental "default password" exposure.
+const ADMIN_USER = process.env.ADMIN_USER || 'admin';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || null;
+if (!ADMIN_PASSWORD) {
+  console.warn('ADMIN_PASSWORD not set — /admin dashboard is disabled until it is configured.');
+}
+
+function adminAuth(req, res, next) {
+  if (!ADMIN_PASSWORD) {
+    return res.status(503).type('text/plain').send('Admin dashboard not configured. Set ADMIN_PASSWORD on the server.');
+  }
+  const header = req.headers.authorization || '';
+  const [scheme, encoded] = header.split(' ');
+  if (scheme !== 'Basic' || !encoded) {
+    res.setHeader('WWW-Authenticate', 'Basic realm="MindShift Admin"');
+    return res.status(401).send('Authentication required.');
+  }
+  let user = '', pass = '';
+  try {
+    const decoded = Buffer.from(encoded, 'base64').toString('utf8');
+    const sep = decoded.indexOf(':');
+    user = sep === -1 ? decoded : decoded.slice(0, sep);
+    pass = sep === -1 ? '' : decoded.slice(sep + 1);
+  } catch { /* falls through to auth failure below */ }
+
+  const userBuf = Buffer.from(user);
+  const passBuf = Buffer.from(pass);
+  const expectedUserBuf = Buffer.from(ADMIN_USER);
+  const expectedPassBuf = Buffer.from(ADMIN_PASSWORD);
+  const userOk = userBuf.length === expectedUserBuf.length && crypto.timingSafeEqual(userBuf, expectedUserBuf);
+  const passOk = passBuf.length === expectedPassBuf.length && crypto.timingSafeEqual(passBuf, expectedPassBuf);
+
+  if (userOk && passOk) return next();
+  res.setHeader('WWW-Authenticate', 'Basic realm="MindShift Admin"');
+  return res.status(401).send('Invalid credentials.');
+}
+
 function toKobo(ngn) { return Math.round(Number(ngn) * 100); }
 
 /**
@@ -201,7 +240,70 @@ const PRODUCTS = {
     genre: 'Personal Development',
     language: 'English',
     pages: 105,
-    description: 'Your environment is not your background. It is the structure shaping every decision you make, every ambition you carry, and every ceiling you are willing to accept — most of the time without you ever noticing. Escape Your Environment Or Become It makes the invisible architecture visible and gives you the complete framework for changing it — whether your environment is actively working against you, or simply failing to push you forward. Change your environment. Change your life.'
+    description: `Escape Your Environment or Become It
+
+Your Environment Is Shaping You. The Question Is: Is It Taking You Forward or Holding You Back?
+
+You may think your lack of progress is a motivation problem. Maybe you think you need more discipline. More confidence. More willpower.
+
+But what if the environment around you is quietly shaping your behavior, expectations, ambition, and even your perception of what is possible?
+
+Escape Your Environment or Become It explores one of the most overlooked forces behind personal growth: the environment you live in.
+
+Your friends. Your family dynamics. Your workplace. Your information diet. Your routines. Your physical surroundings. The expectations you have gradually accepted as normal.
+
+Over time, these forces can either expand your capacity—or quietly shrink your vision of what you can become.
+
+The Question This Book Forces You to Ask
+
+Is your environment difficult because it is helping you grow—or limiting because it is preventing you from growing?
+
+Not every uncomfortable environment is bad. A demanding job can develop you. A competitive environment can sharpen you. A difficult challenge can increase your capacity.
+
+But a limiting environment is different. It doesn't simply challenge you. It narrows what you believe is possible.
+
+Inside This Book, You'll Discover
+
+How your environment influences your ambition, behavior, and expectations.
+How to distinguish a difficult environment from a genuinely limiting environment.
+The five major environmental forces that can shape your trajectory.
+How the people around you can either expand or contract your belief in your own capability.
+Why changing your environment can sometimes produce more progress than simply trying harder.
+How scarcity, stress, and instability can consume the mental bandwidth needed to plan and build a better future.
+How to diagnose exactly what in your environment is holding you back.
+How to create an environment change map instead of making impulsive decisions.
+How to leave a limiting environment without necessarily abandoning the relationships that genuinely matter.
+
+You Will Also Learn How to Build Yourself From the Inside
+
+Changing your environment isn't enough if you haven't developed the internal capacity to operate differently.
+
+The book examines self-efficacy—your belief in your ability to successfully perform and handle challenging tasks—and explains how it can be deliberately strengthened through mastery experiences, observing others, credible encouragement, and managing the physiological response to challenging situations.
+
+This Book Is For You If...
+
+You constantly feel like:
+You're capable of more than your current circumstances allow.
+The people around you don't understand the direction you're trying to go.
+Your surroundings have started to feel smaller than your ambitions.
+You're repeatedly returning to the same patterns despite wanting to change.
+You're working hard but your environment keeps consuming your energy.
+You aren't sure whether you need more discipline—or a different environment.
+You want to change your circumstances without losing yourself in the process.
+
+The Real Cost of Staying
+
+A limiting environment doesn't only take away opportunities. It can consume the attention, energy, and cognitive bandwidth required to recognize and pursue those opportunities.
+
+And the longer you remain surrounded by the same expectations, limitations, and patterns, the easier it can become to mistake them for reality.
+
+You don't just live in an environment. Eventually, you can start becoming it.
+
+From Diagnosis to Escape
+
+This book doesn't simply tell you to "leave." It gives you a framework for understanding what is actually holding you back, identifying the highest-leverage change, and deliberately constructing an environment that supports the person you are trying to become.
+
+Understand Your Environment. Change What Limits You. Become Who You Were Capable of Becoming.`
   },
 
   'the-money-mindset-gap': {
@@ -219,7 +321,100 @@ const PRODUCTS = {
     genre: 'Personal Finance',
     language: 'English',
     pages: 70,
-    description: 'REPLACE WITH YOUR OWN 2-4 SENTENCE DESCRIPTION — same style as the other two book blurbs above.'
+    description: `The Money Mindset Gap
+
+Why Skilled People Stay Broke — And How to Finally Get Paid What You Are Worth
+
+You work hard. You have the skills. You deliver real results.
+
+So why does your income still feel disconnected from your ability?
+
+The Money Mindset Gap explores the hidden psychological gap between what your work is actually worth and what you consistently allow yourself to earn.
+
+This isn't another "work harder," "get rich quick," or "just charge more" book. It goes beneath the surface to examine the beliefs, money scripts, fear, identity, and habits that can quietly keep skilled professionals underpaid.
+
+What You'll Discover
+
+Inside the book, you'll learn how to:
+
+Identify the beliefs about money and worth that may have been installed long before your career began.
+Recognize the money scripts influencing your pricing and financial decisions without your conscious permission.
+Understand why highly skilled people consistently undercharge.
+Distinguish between fear pricing and value pricing.
+Stop treating rejection as a reason to immediately lower your price.
+Understand how scarcity thinking can create the financial instability it is trying to prevent.
+Recognize the connection between self-image and your income ceiling.
+Build greater confidence around pricing and negotiation.
+Create a stronger financial architecture for independent earning.
+Develop a long-term approach to building genuine financial independence.
+
+The Problem Isn't Always Your Skill
+
+One of the book's central ideas is simple:
+
+Being better at what you do does not automatically mean you will earn more.
+
+Two people can have comparable skills and produce comparable results while charging dramatically different prices. The difference can come down to how they perceive their value, communicate it, and respond when their price is challenged.
+
+You may recognize yourself in the patterns:
+
+You know you should charge more—but hesitate when it's time to say the number.
+
+A client pushes back—and you discount before understanding why.
+
+Your income reaches a certain level—and somehow keeps returning there.
+
+You keep improving your skills, but your income doesn't seem to move with them.
+
+These aren't necessarily signs that you need another qualification.
+
+They may be signs that there is a Money Mindset Gap.
+
+A Practical Journey From Diagnosis to Change
+
+The book takes you through three stages:
+
+1. The Diagnosis
+
+Understand where your money beliefs came from and how they influence your decisions.
+
+You'll explore the Worth Wound, Money Scripts, Undercharging Trap, and Humility Lie.
+
+2. The Psychology
+
+Understand the mechanisms that keep the gap in place.
+
+You'll examine the Permission Problem, Fear Pricing vs Value Pricing, Scarcity Loop, and the relationship between Identity and Income.
+
+3. Closing the Gap
+
+Move from awareness into practical action.
+
+You'll work through worth assessment, pricing confidence, negotiation, financial architecture, and the long game of building wealth independently.
+
+This Book Is For You If...
+
+You're a freelancer, consultant, creative, professional, entrepreneur, specialist, or independent service provider who:
+
+Knows you're capable of more but isn't earning accordingly.
+Struggles to confidently communicate your rates.
+Frequently discounts when clients push back.
+Feels uncomfortable charging premium prices.
+Keeps taking low-paying work because saying no feels risky.
+Wants to earn more without compromising the quality or purpose of their work.
+Is ready to examine the beliefs behind their financial decisions.
+
+The Shift
+
+The goal isn't simply to convince you to charge more.
+
+It is to help you understand why you charge what you charge, where that number came from, and what needs to change for your financial reality to better reflect the value you create.
+
+Because the problem isn't always that you need to become more valuable.
+
+Sometimes, you need to stop undervaluing the value you already create.
+
+Know Your Worth. Charge Your Worth. Keep Your Worth.`
   },
 
   // ---------------- FEATURED BOOKS BY OTHER AUTHORS ----------------
@@ -389,6 +584,14 @@ app.get('/dl/:token', (req, res) => {
     console.error('PDF not found on disk:', filePath);
     return res.status(500).type('text/plain').send('File unavailable. Please contact support.');
   }
+  // First-party analytics: log the download, fire-and-forget (never blocks the file).
+  if (db) {
+    db.collection('events').add({
+      type: 'download',
+      productId,
+      createdAt: admin.firestore.Timestamp.now()
+    }).catch(() => null);
+  }
   res.setHeader('Content-Disposition', `attachment; filename="${path.basename(product.pdfPath)}"`);
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Cache-Control', 'no-store');
@@ -468,6 +671,28 @@ app.get('/api/product/:id', (req, res) => {
 // /config endpoint for client (Paystack public key + optional publicPdf fallback)
 app.get('/config', (req, res) => {
   return res.json({ paystackPublicKey: PAYSTACK_PUBLIC_KEY || null, publicPdfUrl: PUBLIC_PDF_URL || null });
+});
+
+// ---------- /api/track - first-party page-view beacon (no third-party pixels) ----------
+// Fires from a tiny snippet on each page. No cookies, no IP storage, no
+// cross-site identifiers — just a type + path + optional productId, so the
+// admin dashboard can show views/downloads/purchases per book.
+const TRACK_TYPES = new Set(['home', 'review', 'preview', 'page']);
+app.post('/api/track', (req, res) => {
+  // Always respond fast; analytics must never slow down or break the page.
+  res.status(204).end();
+  if (!db) return;
+  try {
+    const { type, path: p, productId, ref } = req.body || {};
+    if (!TRACK_TYPES.has(type)) return;
+    db.collection('events').add({
+      type,
+      path: typeof p === 'string' ? p.slice(0, 200) : null,
+      productId: (productId && PRODUCTS[productId]) ? productId : null,
+      ref: typeof ref === 'string' ? ref.slice(0, 300) : null,
+      createdAt: admin.firestore.Timestamp.now()
+    }).catch(() => null);
+  } catch { /* ignore malformed beacons */ }
 });
 
 // ---------- /api/orders - return orders for an email (enriched) ----------
@@ -799,6 +1024,84 @@ app.get('/support', (req, res) => {
 
 app.get('/legal', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'legal.html'));
+});
+
+// ---------- Admin dashboard (Basic Auth — see adminAuth above) ----------
+// Deliberately served from an `admin/` folder OUTSIDE `public/`, so it is
+// never reachable via the static file server — only through this
+// auth-gated route.
+app.get('/admin', adminAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, 'admin', 'dashboard.html'));
+});
+
+app.use('/api/admin', adminAuth);
+
+// GET /api/admin/summary?days=30 — pageviews, downloads, and purchases,
+// each broken down per book, for the last N days.
+app.get('/api/admin/summary', async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const days = Math.min(Math.max(parseInt(req.query.days, 10) || 30, 1), 365);
+    const since = admin.firestore.Timestamp.fromDate(new Date(Date.now() - days * 24 * 60 * 60 * 1000));
+
+    const eventsSnap = await db.collection('events').where('createdAt', '>=', since).get();
+
+    const pageviewsByPath = {};
+    const reviewViewsByProduct = {};
+    const previewViewsByProduct = {};
+    const downloadsByProduct = {};
+    let totalPageviews = 0;
+    let totalDownloads = 0;
+
+    eventsSnap.forEach(doc => {
+      const d = doc.data();
+      if (d.type === 'download') {
+        totalDownloads++;
+        if (d.productId) downloadsByProduct[d.productId] = (downloadsByProduct[d.productId] || 0) + 1;
+        return;
+      }
+      totalPageviews++;
+      const p = d.path || 'unknown';
+      pageviewsByPath[p] = (pageviewsByPath[p] || 0) + 1;
+      if (d.type === 'review' && d.productId) {
+        reviewViewsByProduct[d.productId] = (reviewViewsByProduct[d.productId] || 0) + 1;
+      }
+      if (d.type === 'preview' && d.productId) {
+        previewViewsByProduct[d.productId] = (previewViewsByProduct[d.productId] || 0) + 1;
+      }
+    });
+
+    const ordersSnap = await db.collection('my_order').where('paidAt', '>=', since).get();
+    const purchasesByProduct = {};
+    let totalOrders = 0;
+    let totalRevenueNgn = 0;
+    ordersSnap.forEach(doc => {
+      const d = doc.data();
+      totalOrders++;
+      totalRevenueNgn += Number(d.ngn_amount || 0);
+      (d.items || []).forEach(it => {
+        if (!it.productId) return;
+        purchasesByProduct[it.productId] = (purchasesByProduct[it.productId] || 0) + 1;
+      });
+    });
+
+    const withTitles = map => Object.entries(map)
+      .map(([id, count]) => ({ productId: id, title: (PRODUCTS[id] && PRODUCTS[id].title) || id, count }))
+      .sort((a, b) => b.count - a.count);
+
+    res.json({
+      rangeDays: days,
+      totals: { pageviews: totalPageviews, downloads: totalDownloads, orders: totalOrders, revenueNgn: totalRevenueNgn },
+      topPages: Object.entries(pageviewsByPath).map(([path, count]) => ({ path, count })).sort((a, b) => b.count - a.count).slice(0, 20),
+      reviewViews: withTitles(reviewViewsByProduct),
+      previewViews: withTitles(previewViewsByProduct),
+      downloads: withTitles(downloadsByProduct),
+      purchases: withTitles(purchasesByProduct)
+    });
+  } catch (err) {
+    console.error('/api/admin/summary error', err);
+    res.status(500).json({ error: 'Could not load stats' });
+  }
 });
 
 // Structured data endpoint — Google uses this for rich results / image search
