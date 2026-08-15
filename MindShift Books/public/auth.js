@@ -62,11 +62,37 @@
     await initAccountOnServer(name || null);
   }
 
-  function signInGoogle() {
+  // Popup is now the primary path. Redirect requires shuttling the auth
+  // result back from the authDomain (mindshiftbooks-c4451.firebaseapp.com)
+  // into this site's storage (mindshiftbooks.shop) via a hidden iframe —
+  // browsers that partition storage between top-level sites (Safari ITP,
+  // Chrome storage partitioning, Brave, many Android in-app WebViews) block
+  // that hand-off silently. Google's side completes fine, but the result
+  // never reaches the app — no error, just a permanent stall on /login or
+  // /signup. Popup talks back to the opener tab directly and doesn't hit
+  // this. Redirect is kept only as a fallback for the embedded in-app
+  // browsers (Instagram/TikTok/Facebook) that block popups outright.
+  async function signInGoogle() {
     const provider = new firebase.auth.GoogleAuthProvider();
-    // Redirect (not popup) — far more reliable on mobile browsers and
-    // in-app webviews, which is most of this site's traffic.
-    return auth.signInWithRedirect(provider);
+    const box = document.getElementById('authError');
+    try {
+      const result = await auth.signInWithPopup(provider);
+      await initAccountOnServer(result.user.displayName || null);
+      maybeLeaveAuthPage();
+    } catch (err) {
+      const code = err && err.code;
+      const fallbackCodes = [
+        'auth/popup-blocked',
+        'auth/operation-not-supported-in-this-environment',
+        'auth/popup-closed-by-user'
+      ];
+      if (code === 'auth/popup-blocked' || code === 'auth/operation-not-supported-in-this-environment') {
+        // Popup genuinely can't open here — fall back to redirect.
+        return auth.signInWithRedirect(provider);
+      }
+      if (fallbackCodes.includes(code)) return; // user closed it — no error needed
+      if (box) { box.textContent = friendlyAuthError(err); box.style.display = 'block'; }
+    }
   }
 
   function getReturnTo() {
