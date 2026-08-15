@@ -172,6 +172,23 @@ function showToast(msg, type = 'info', duration = 4000) {
   }, duration);
 }
 
+// Heart icon markup used for every wishlist toggle button (card + review page)
+function wishlistHeartSvg(filled) {
+  return `<svg viewBox="0 0 24 24" fill="${filled ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>`;
+}
+
+function wishlistToggleButton(productId, opts) {
+  opts = opts || {};
+  const inList = isInWishlist(productId);
+  const cls = opts.cardOverlay ? 'wishlist-heart-btn' : 'btn wishlist-inline-btn';
+  return `
+    <button type="button" class="${cls}${inList ? ' active' : ''}" data-action="toggle-wishlist" data-product-id="${escapeHtml(productId || '')}" aria-pressed="${inList}" aria-label="${inList ? 'Remove from wishlist' : 'Add to wishlist'}">
+      ${wishlistHeartSvg(inList)}
+      ${opts.cardOverlay ? '' : `<span class="wishlist-inline-label">${inList ? 'In Wishlist' : 'Add to Wishlist'}</span>`}
+    </button>
+  `;
+}
+
 // Build the inner HTML for a single product card
 function productCardInner(p) {
   const isFeatured = p.category !== 'ours';
@@ -179,7 +196,10 @@ function productCardInner(p) {
   if (isFeatured) {
     // Recommended read — compact grid card with container
     return `
-      <img src="${escapeHtml(p.cover || '')}" class="ebook-cover" alt="${escapeHtml(p.title || 'ebook')}"/>
+      <div class="card-cover-wrap">
+        <img src="${escapeHtml(p.cover || '')}" class="ebook-cover" alt="${escapeHtml(p.title || 'ebook')}"/>
+        ${wishlistToggleButton(p.id, { cardOverlay: true })}
+      </div>
       <div class="title">${escapeHtml(p.title || '')}</div>
       <div class="card-author">${escapeHtml(p.author || '')}</div>
       <div class="card-actions button-group" style="width:100%;margin-top:auto;">
@@ -198,7 +218,10 @@ function productCardInner(p) {
   const pct  = (p.originalPriceNGN && p.priceNGN) ? Math.round((1 - p.priceNGN / p.originalPriceNGN) * 100) : null;
 
   return `
-    <img src="${escapeHtml(p.cover || '')}" class="our-cover" alt="${escapeHtml(p.title || 'ebook')}"/>
+    <div class="card-cover-wrap">
+      <img src="${escapeHtml(p.cover || '')}" class="our-cover" alt="${escapeHtml(p.title || 'ebook')}"/>
+      ${wishlistToggleButton(p.id, { cardOverlay: true })}
+    </div>
     <div class="our-title">${escapeHtml(p.title || '')}</div>
     <div class="card-price-row">
       <span class="card-price">${price}</span>
@@ -265,6 +288,7 @@ document.addEventListener('click', function (ev) {
   if (action === 'review') openReview(productId);
   if (action === 'add-to-cart') addToCart(productId);
   if (action === 'remove-from-cart') removeFromCart(productId);
+  if (action === 'toggle-wishlist') toggleWishlist(productId);
 });
 
 // Review navigation
@@ -321,6 +345,80 @@ function removeFromCart(productId) {
   saveCart(cart);
   renderCartOverlay();
 }
+
+// ====================================================================
+// WISHLIST (localStorage-backed) — save books for later, no account needed
+// ====================================================================
+
+const WISHLIST_KEY = 'msb_wishlist';
+
+function getWishlist() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(WISHLIST_KEY));
+    return Array.isArray(raw) ? raw : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveWishlist(ids) {
+  localStorage.setItem(WISHLIST_KEY, JSON.stringify(ids));
+  updateWishlistBadge();
+  window.dispatchEvent(new CustomEvent('msb-wishlist-changed', { detail: { ids } }));
+}
+
+function isInWishlist(productId) {
+  return getWishlist().includes(productId);
+}
+
+function updateWishlistBadge() {
+  const badge = document.getElementById('wishlistBadge');
+  if (!badge) return;
+  const count = getWishlist().length;
+  if (count > 0) {
+    badge.textContent = String(count);
+    badge.style.display = 'flex';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+// Adds/removes a book and returns the new state (true = now in wishlist)
+function toggleWishlist(productId) {
+  if (!productId) return false;
+  const list = getWishlist();
+  const idx = list.indexOf(productId);
+  let nowIn;
+  if (idx === -1) {
+    list.push(productId);
+    nowIn = true;
+    showToast('Added to your wishlist.', 'success', 2500);
+  } else {
+    list.splice(idx, 1);
+    nowIn = false;
+    showToast('Removed from your wishlist.', 'info', 2500);
+  }
+  saveWishlist(list);
+  return nowIn;
+}
+
+function openWishlist() { window.location.href = '/wishlist'; }
+
+// Keep every heart button for a given book (card overlay + review-page
+// button, possibly several on one page) in sync after a toggle.
+window.addEventListener('msb-wishlist-changed', () => {
+  document.querySelectorAll('[data-action="toggle-wishlist"]').forEach(btn => {
+    const id = btn.getAttribute('data-product-id');
+    const inList = isInWishlist(id);
+    btn.classList.toggle('active', inList);
+    btn.setAttribute('aria-pressed', String(inList));
+    btn.setAttribute('aria-label', inList ? 'Remove from wishlist' : 'Add to wishlist');
+    const svg = btn.querySelector('svg');
+    if (svg) svg.setAttribute('fill', inList ? 'currentColor' : 'none');
+    const label = btn.querySelector('.wishlist-inline-label');
+    if (label) label.textContent = inList ? 'In Wishlist' : 'Add to Wishlist';
+  });
+});
 
 // Build the rows + total inside the cart overlay
 function renderCartOverlay() {
@@ -583,7 +681,9 @@ function _wireCartButtons() {
   document.getElementById('cartSwitchAccountBtn')?.addEventListener('click', () => {
     window.MSBAuth && window.MSBAuth.signOut();
   });
+  document.getElementById('wishlistIcon')?.addEventListener('click', openWishlist);
   updateCartBadge();
+  updateWishlistBadge();
 }
 
 if (document.readyState === 'loading') {
@@ -748,3 +848,8 @@ window.proceedCartToPayment = proceedCartToPayment;
 window.openReview = openReview;
 window.showSuggestions = showSuggestions;
 window.performSearch = performSearch;
+window.openWishlist = openWishlist;
+window.toggleWishlist = toggleWishlist;
+window.isInWishlist = isInWishlist;
+window.getWishlist = getWishlist;
+window.wishlistToggleButton = wishlistToggleButton;

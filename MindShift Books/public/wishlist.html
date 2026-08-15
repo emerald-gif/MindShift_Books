@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Wishlist | MindShift Books</title>
+  <meta name="description" content="Books you've saved for later on MindShift Books." />
+  <meta name="robots" content="noindex, follow" />
+
+  <link rel="shortcut icon" href="MINDSHIFT.jpg" type="image/jpg">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+
+  <style>
+    .wishlist-empty-state{
+      grid-column:1/-1; text-align:center; padding:60px 20px;
+    }
+    .wishlist-empty-state .icon{ color:#cbd5e1; margin-bottom:14px; }
+    .wishlist-empty-state h3{ font-size:1.15rem; margin-bottom:8px; color:var(--primary,#0f172a); }
+    .wishlist-empty-state p{ color:#6b7280; font-size:0.92rem; margin-bottom:20px; }
+    .wishlist-empty-state .btn{ display:inline-flex; width:auto; padding:12px 24px; }
+  </style>
+
+  <link rel="canonical" href="https://mindshiftbooks.shop/wishlist" />
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <h1 style="display:flex;align-items:center;gap:10px;margin:0;">
+      <img src="MINDSHIFT.jpg" alt="MindShift logo" style="width:36px;height:36px;border-radius:6px;">
+      <span>MindShift Books</span>
+    </h1>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <span class="acct-nav-slot"></span>
+      <button type="button" class="icon-btn" id="cartIcon" aria-label="View cart">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+        <span class="cart-badge" id="cartBadge" style="display:none;">0</span>
+      </button>
+      <button type="button" class="icon-btn" onclick="toggleSidebar()" aria-label="Open menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="22" height="22"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<aside class="sidebar" id="sidebar" aria-hidden="true" data-open="false">
+  <div class="logo-row">
+    <img src="MINDSHIFT.jpg" alt="logo">
+    <div style="font-weight:700">MindShift Books</div>
+  </div>
+  <ul>
+    <li onclick="window.location.href='/'">Browse Books</li>
+    <li onclick="openMyOrders()">My Account</li>
+    <li class="active" onclick="document.getElementById('sidebar').setAttribute('data-open','false')">My Wishlist</li>
+    <li onclick="window.location.href='/support'">Support</li>
+    <li onclick="window.location.href='/legal'">Terms &amp; Privacy</li>
+    <li onclick="openContact()">Contact Us</li>
+    <li onclick="followYoutube()">Follow us on YouTube</li>
+  </ul>
+  <div style="position:absolute;bottom:18px;left:18px;right:18px;color:#9ca3af;font-size:0.9rem;">
+    <div>© 2026 MindShift Books</div>
+    <div style="margin-top:6px">Shift your thinking, change your life.</div>
+  </div>
+</aside>
+
+<main>
+  <section class="hero" aria-labelledby="wishlist-h">
+    <div class="section-head">
+      <div class="section-label-row">
+        <span class="section-accent"></span>
+        <h2 id="wishlist-h">My Wishlist</h2>
+      </div>
+    </div>
+
+    <div id="wishlistGrid" class="product-grid" aria-live="polite">
+      <div class="skel-card"><div class="skel-img"></div><div class="skel-line w70"></div><div class="skel-line w45"></div><div class="skel-btn"></div></div>
+      <div class="skel-card"><div class="skel-img"></div><div class="skel-line w70"></div><div class="skel-line w45"></div><div class="skel-btn"></div></div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-bottom">
+    <div>© 2026 MindShift Books. All rights reserved.</div>
+    <div class="footer-secure">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+      Secure checkout powered by Paystack
+    </div>
+  </div>
+</footer>
+
+<!-- CART OVERLAY (needed since "Add to Cart" is available from wishlist items too) -->
+<div class="cart-overlay" id="cartOverlay" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="cart-title">
+  <div class="cart-overlay-inner">
+    <div class="cart-header">
+      <h2 id="cart-title">Your Cart <span id="cartItemCount" class="cart-item-count"></span></h2>
+      <button class="cart-close" id="cartCloseBtn" aria-label="Close cart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+    </div>
+    <div id="cartItemsList" class="cart-items-list"></div>
+    <div class="cart-summary" id="cartSummary">
+      <div class="cart-total-row">
+        <span>Total</span>
+        <span id="cartTotalPrice">$0.00</span>
+      </div>
+      <div id="cartCheckoutSignedIn" style="display:none;">
+        <div class="checkout-heading">Sending your eBooks to</div>
+        <div class="cart-recipient">
+          <div class="cart-recipient-avatar" id="cartRecipientAvatar">?</div>
+          <div class="cart-recipient-info">
+            <div class="cart-recipient-name" id="cartRecipientName">—</div>
+            <div class="cart-recipient-email" id="cartRecipientEmail">—</div>
+          </div>
+          <button type="button" class="cart-recipient-switch" id="cartSwitchAccountBtn">Not you?</button>
+        </div>
+        <button class="btn buy-btn checkout-btn" id="cartProceedBtn" style="margin-top:18px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          Proceed to Payment
+        </button>
+        <div class="checkout-trust">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          Payments secured by Paystack
+        </div>
+        <div class="muted" style="margin-top:8px;text-align:center;font-size:0.82rem;">
+          You'll be redirected after payment and your PDFs will be emailed automatically — or check anytime under My Account.
+        </div>
+      </div>
+      <div id="cartCheckoutSignedOut" style="display:none;">
+        <div class="cart-auth-gate">
+          <div class="cart-auth-gate-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          </div>
+          <h3>Sign in to check out</h3>
+          <p>Create a free account or sign in so we know exactly where to send your eBooks.</p>
+          <div class="cart-auth-gate-actions">
+            <button type="button" class="btn buy-btn" id="cartSignUpBtn">Create Account</button>
+            <button type="button" class="cart-auth-secondary" id="cartSignInBtn">Sign In</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function adjustMainPadding(){
+  const header = document.querySelector('header');
+  const main = document.querySelector('main');
+  if (!header || !main) return;
+  const h = header.getBoundingClientRect().height;
+  main.style.paddingTop = (h + 16) + 'px';
+}
+window.addEventListener('load', adjustMainPadding);
+window.addEventListener('resize', adjustMainPadding);
+adjustMainPadding();
+</script>
+
+<!-- Firebase + Main script (products, cart, wishlist) + Auth -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="/main.js"></script>
+<script src="/auth.js"></script>
+
+<script>
+// Renders the wishlist grid from PRODUCTS (loaded by main.js) filtered by
+// whatever's saved in localStorage. Re-runs whenever the product list
+// finishes loading/refreshing, and whenever a heart is toggled on this page.
+function renderWishlistGrid() {
+  const grid = document.getElementById('wishlistGrid');
+  if (!grid) return;
+
+  if (!Array.isArray(PRODUCTS) || !PRODUCTS.length) return; // still loading — keep skeleton
+
+  const ids = getWishlist();
+  const items = PRODUCTS.filter(p => ids.includes(p.id));
+
+  if (!items.length) {
+    grid.innerHTML = `
+      <div class="wishlist-empty-state">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="48" height="48"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+        <h3>Your wishlist is empty</h3>
+        <p>Tap the heart on any book to save it here for later.</p>
+        <button type="button" class="btn buy-btn" onclick="window.location.href='/'">Browse Books</button>
+      </div>
+    `;
+    return;
+  }
+
+  grid.innerHTML = '';
+  items.forEach(p => {
+    const card = document.createElement('div');
+    card.className = p.category === 'ours' ? 'our-book-item' : 'product-card';
+    card.innerHTML = productCardInner(p);
+    grid.appendChild(card);
+  });
+}
+
+// main.js calls renderProducts() once cached/fresh data is available — hook
+// into it so this page updates the moment PRODUCTS is populated.
+const _msbOrigRenderProducts = window.renderProducts;
+window.renderProducts = function () {
+  if (_msbOrigRenderProducts) _msbOrigRenderProducts();
+  renderWishlistGrid();
+};
+window.addEventListener('msb-wishlist-changed', renderWishlistGrid);
+
+// In case PRODUCTS was already populated from cache before this script ran.
+renderWishlistGrid();
+</script>
+
+<div id="toastContainer"></div>
+</body>
+</html>
