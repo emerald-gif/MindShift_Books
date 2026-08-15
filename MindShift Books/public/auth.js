@@ -78,14 +78,32 @@
     window.location.href = getReturnTo();
   }
 
+  // Guards against redirecting twice — getRedirectResult() and
+  // onAuthStateChanged() can both fire for the same sign-in.
+  let authRedirectHandled = false;
+  function maybeLeaveAuthPage() {
+    if (authRedirectHandled) return;
+    if (window.location.pathname === '/login' || window.location.pathname === '/signup') {
+      authRedirectHandled = true;
+      redirectAfterAuth();
+    }
+  }
+
   // Handles the bounce-back from signInWithRedirect (Google). Safe to call on
   // every page — resolves to null if this load isn't a redirect return.
+  //
+  // Known Firebase quirk: getRedirectResult() can resolve with result=null
+  // even when the Google sign-in actually succeeded (seen in some mobile/
+  // in-app browsers where storage partitioning delays this promise past the
+  // point the SDK already consumed the redirect). When that happens the user
+  // gets stuck on the sign-up/sign-in page even though they're signed in.
+  // onAuthStateChanged() below is the reliable fallback — it fires once the
+  // SDK has actually finished processing auth state, redirect or not — so we
+  // no longer rely on getRedirectResult() alone to send people onward.
   auth.getRedirectResult().then(async result => {
     if (result && result.user) {
       await initAccountOnServer(result.user.displayName || null);
-      if (window.location.pathname === '/login' || window.location.pathname === '/signup') {
-        redirectAfterAuth();
-      }
+      maybeLeaveAuthPage();
     }
   }).catch(err => {
     const box = document.getElementById('authError');
@@ -154,7 +172,12 @@
 
   auth.onAuthStateChanged(user => {
     renderNavSlot(user);
-    if (user) initAccountOnServer(user.displayName || null);
+    if (user) {
+      initAccountOnServer(user.displayName || null);
+      // Safety net for the getRedirectResult() quirk above: if we're on
+      // /login or /signup and the SDK now says we're signed in, leave.
+      maybeLeaveAuthPage();
+    }
     resumeCheckoutIfPending();
     window.dispatchEvent(new CustomEvent('msb-auth-changed', { detail: { user } }));
   });
