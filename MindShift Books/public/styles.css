@@ -214,6 +214,30 @@ footer .brand{font-weight:700;font-size:1.1rem;color:#fbbf24}
   padding:0 4px;line-height:1;
 }
 
+/* Wishlist heart — overlay button on each cover */
+.card-cover-wrap{ position:relative; width:100%; display:flex; justify-content:center; }
+.wishlist-heart-btn{
+  position:absolute; top:8px; right:8px;
+  width:32px;height:32px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,0.92); border:none; cursor:pointer;
+  color:#94a3b8; box-shadow:0 4px 10px rgba(15,23,42,0.14);
+  transition:color 150ms ease, transform 150ms ease, background-color 150ms ease;
+  padding:0; z-index:2;
+}
+.wishlist-heart-btn:hover{ transform:scale(1.08); color:#ef4444; }
+.wishlist-heart-btn.active{ color:#ef4444; background:#fff; }
+
+/* Wishlist button — inline variant used on the book review page */
+.wishlist-inline-btn{
+  background:#fff; color:#374151; border:2px solid #e2e8f0 !important;
+  display:inline-flex; align-items:center; justify-content:center; gap:7px;
+  font-weight:700; transition:border-color 0.18s, color 0.18s, background 0.18s;
+}
+.wishlist-inline-btn svg{ flex-shrink:0; }
+.wishlist-inline-btn:hover{ border-color:#ef4444 !important; color:#ef4444; }
+.wishlist-inline-btn.active{ border-color:#ef4444 !important; color:#ef4444; background:#fef2f2; }
+
 /* Full-screen cart overlay */
 .cart-overlay{
   position:fixed;inset:0;background:#fff;z-index:5000;
