@@ -381,6 +381,32 @@ function renderCartOverlay() {
   totalEl.textContent = hasNGN ? `₦${total.toLocaleString()}` : `$${total.toFixed(2)}`;
 }
 
+// Shows the recipient chip + Proceed to Payment for signed-in users, or the
+// sign-in/sign-up gate for signed-out users. Books are always sent to the
+// signed-in account's own email — nothing to type, nothing to get wrong.
+function updateCartCheckoutGate() {
+  const signedInBlock = document.getElementById('cartCheckoutSignedIn');
+  const signedOutBlock = document.getElementById('cartCheckoutSignedOut');
+  if (!signedInBlock || !signedOutBlock) return;
+
+  const user = window.MSBAuth && window.MSBAuth.getUser();
+  if (user) {
+    signedOutBlock.style.display = 'none';
+    signedInBlock.style.display = '';
+    const email = user.email || '';
+    const name = user.displayName || (email ? email.split('@')[0] : 'Your account');
+    const nameEl = document.getElementById('cartRecipientName');
+    const emailEl = document.getElementById('cartRecipientEmail');
+    const avatarEl = document.getElementById('cartRecipientAvatar');
+    if (nameEl) nameEl.textContent = name;
+    if (emailEl) emailEl.textContent = email;
+    if (avatarEl) avatarEl.textContent = (name.trim()[0] || '?').toUpperCase();
+  } else {
+    signedInBlock.style.display = 'none';
+    signedOutBlock.style.display = '';
+  }
+}
+
 function openCartOverlay() {
   renderCartOverlay();
   const overlay = document.getElementById('cartOverlay');
@@ -388,17 +414,16 @@ function openCartOverlay() {
   overlay.classList.add('show');
   overlay.setAttribute('aria-hidden', 'false');
   document.body.style.overflow = 'hidden';
-
-  // If already signed in, prefill checkout details from the account so
-  // returning customers don't have to retype them.
-  const user = window.MSBAuth && window.MSBAuth.getUser();
-  if (user) {
-    const emailEl = document.getElementById('cartBuyerEmail');
-    const nameEl = document.getElementById('cartBuyerName');
-    if (emailEl && !emailEl.value) emailEl.value = user.email || '';
-    if (nameEl && !nameEl.value) nameEl.value = user.displayName || '';
-  }
+  updateCartCheckoutGate();
 }
+
+// Keep the cart's checkout section in sync if auth state changes while the
+// cart happens to be open (e.g. signs out in another tab, or resumes after
+// coming back from /login).
+window.addEventListener('msb-auth-changed', () => {
+  const overlay = document.getElementById('cartOverlay');
+  if (overlay && overlay.classList.contains('show')) updateCartCheckoutGate();
+});
 
 function closeCartOverlay() {
   const overlay = document.getElementById('cartOverlay');
@@ -424,25 +449,24 @@ async function proceedCartToPayment() {
   // Browsing and cart-building stay open to everyone — only this step (an
   // actual purchase) requires a signed-in account. requireSignIn() redirects
   // to /login and remembers to resume checkout automatically after sign-in
-  // (see msbResumeCheckout below).
+  // (see msbResumeCheckout below). In normal use this button isn't even
+  // visible when signed out (see updateCartCheckoutGate), but this stays as
+  // a safety net for the msbResumeCheckout() auto-resume path.
   if (!window.MSBAuth || !window.MSBAuth.requireSignIn()) {
     return;
   }
 
-  const email = (document.getElementById('cartBuyerEmail') || { value: '' }).value.trim();
-  const name  = (document.getElementById('cartBuyerName') || { value: '' }).value.trim();
+  const user = window.MSBAuth.getUser();
+  const email = (user && user.email || '').trim();
+  const name  = (user && user.displayName || (email ? email.split('@')[0] : '')).trim();
   const cartIds = getCart();
 
   if (!cartIds.length) {
     showToast('Your cart is empty.', 'warning');
     return;
   }
-  if (!name) {
-    showToast('Please enter your name.', 'warning');
-    return;
-  }
   if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
-    showToast('Please enter a valid email address.', 'warning');
+    showToast('We could not read your account email. Please sign in again.', 'error');
     return;
   }
 
@@ -542,10 +566,23 @@ async function verifyCartPayment(reference, purchaserEmail) {
 }
 
 // ====== Cart UI wiring ======
+function goToCartAuth(path) {
+  // Same handoff mechanism as requireSignIn() — remembers a checkout was in
+  // progress so msbResumeCheckout() reopens the cart and picks up right
+  // where they left off once they're signed in.
+  try { sessionStorage.setItem('msb_resume_action', 'checkout'); } catch (e) {}
+  window.location.href = path + '?returnTo=' + encodeURIComponent('/');
+}
+
 function _wireCartButtons() {
   document.getElementById('cartIcon')?.addEventListener('click', openCartOverlay);
   document.getElementById('cartCloseBtn')?.addEventListener('click', closeCartOverlay);
   document.getElementById('cartProceedBtn')?.addEventListener('click', proceedCartToPayment);
+  document.getElementById('cartSignInBtn')?.addEventListener('click', () => goToCartAuth('/login'));
+  document.getElementById('cartSignUpBtn')?.addEventListener('click', () => goToCartAuth('/signup'));
+  document.getElementById('cartSwitchAccountBtn')?.addEventListener('click', () => {
+    window.MSBAuth && window.MSBAuth.signOut();
+  });
   updateCartBadge();
 }
 
