@@ -681,9 +681,7 @@ function _wireCartButtons() {
   document.getElementById('cartSwitchAccountBtn')?.addEventListener('click', () => {
     window.MSBAuth && window.MSBAuth.signOut();
   });
-  document.getElementById('wishlistIcon')?.addEventListener('click', openWishlist);
   updateCartBadge();
-  updateWishlistBadge();
 }
 
 if (document.readyState === 'loading') {

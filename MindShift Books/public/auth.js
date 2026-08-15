@@ -158,18 +158,22 @@
   }
 
   // ---------------- Header nav slot ----------------
+  // Icon-only account button (matches the cart/wishlist icon buttons) —
+  // avoids the "My Account ▾" text link crowding the header on narrow
+  // screens and pushing the hamburger menu off-screen.
+  const ACCOUNT_ICON_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`;
+
   function renderNavSlot(user) {
     document.querySelectorAll('.acct-nav-slot').forEach(slot => {
       if (!user) {
-        slot.innerHTML = `<a href="/login" class="sign-in-link">Sign In</a>`;
+        slot.innerHTML = `<a href="/login" class="icon-btn acct-icon-btn" aria-label="Sign in">${ACCOUNT_ICON_SVG}</a>`;
         return;
       }
-      const email = user.email || '';
       slot.innerHTML = `
         <div class="acct-menu">
-          <span class="sign-in-link" id="acctTrigger">My Account ▾</span>
+          <button type="button" class="icon-btn acct-icon-btn" id="acctTrigger" aria-label="My Account">${ACCOUNT_ICON_SVG}</button>
           <div class="acct-dropdown" id="acctDropdown">
-            <div class="acct-email">${email.replace(/</g, '&lt;')}</div>
+            <div class="acct-email">${(user.email || '').replace(/</g, '&lt;')}</div>
             <a href="/account#orders">Order History</a>
             <a href="/account#details">My Details</a>
             <button type="button" id="acctSignOutBtn">Sign Out</button>
@@ -187,12 +191,12 @@
   const style = document.createElement('style');
   style.textContent = `
     .acct-menu{position:relative;display:inline-block;}
+    .acct-icon-btn{color:#1e293b;}
     .acct-dropdown{position:absolute;right:0;top:calc(100% + 8px);background:#fff;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.15);min-width:180px;padding:8px;display:none;z-index:50;}
     .acct-dropdown.show{display:block;}
     .acct-dropdown a, .acct-dropdown button{display:block;width:100%;text-align:left;padding:9px 10px;border-radius:8px;border:none;background:none;font-size:0.85rem;font-weight:600;color:#334155;cursor:pointer;text-decoration:none;}
     .acct-dropdown a:hover, .acct-dropdown button:hover{background:#f1f5f9;}
     .acct-dropdown .acct-email{padding:8px 10px;font-size:0.72rem;color:#94a3b8;border-bottom:1px solid #f1f5f9;margin-bottom:4px;font-weight:600;word-break:break-all;}
-    .sign-in-link{font-size:0.85rem;font-weight:700;color:#4f46e5;cursor:pointer;padding:8px 12px;white-space:nowrap;text-decoration:none;}
   `;
   document.head.appendChild(style);
 

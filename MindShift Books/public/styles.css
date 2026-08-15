@@ -16,8 +16,11 @@ header{
 main{ max-width:1100px;margin:0 auto;padding-left:16px;padding-right:16px;}
 
 /* header top row */
-.header-top{display:flex;align-items:center;justify-content:space-between;width:100%}
-header h1{font-size:1.45rem;font-weight:700;display:flex;align-items:center;gap:10px}
+.header-top{display:flex;align-items:center;justify-content:space-between;width:100%;flex-wrap:nowrap;gap:8px;}
+header h1{font-size:1.45rem;font-weight:700;display:flex;align-items:center;gap:10px;min-width:0;overflow:hidden;}
+header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+header h1 img{flex-shrink:0;}
+.header-icon-group{display:flex;align-items:center;gap:4px;flex-shrink:0;}
 
 /* SEARCH */
 .search-wrapper{position:relative;display:flex;align-items:center;gap:8px;background:#eef2f6;padding:8px;border-radius:12px;width:420px;max-width:calc(100% - 40px);margin:0 auto;box-shadow:0 6px 18px rgba(2,6,23,0.04)}
@@ -478,6 +481,13 @@ header {
 @media (max-width: 450px) {
   .search-wrapper {
     padding: 6px 6px;
+  }
+  header h1 {
+    font-size: 1.15rem;
+  }
+  .header-icon-group .icon-btn {
+    width: 36px;
+    height: 36px;
   }
 }
 
