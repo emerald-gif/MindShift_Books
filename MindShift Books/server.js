@@ -1183,6 +1183,11 @@ app.get('/review', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'review.html'));
 });
 
+// Wishlist page — book list is built client-side from localStorage + /api/products
+app.get('/wishlist', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'wishlist.html'));
+});
+
 // /my-order is the old email-lookup page — permanently point it at the new
 // account-based page so old links/bookmarks still land somewhere useful.
 app.get('/my-order', (req, res) => {
