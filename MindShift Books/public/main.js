@@ -388,6 +388,16 @@ function openCartOverlay() {
   overlay.classList.add('show');
   overlay.setAttribute('aria-hidden', 'false');
   document.body.style.overflow = 'hidden';
+
+  // If already signed in, prefill checkout details from the account so
+  // returning customers don't have to retype them.
+  const user = window.MSBAuth && window.MSBAuth.getUser();
+  if (user) {
+    const emailEl = document.getElementById('cartBuyerEmail');
+    const nameEl = document.getElementById('cartBuyerName');
+    if (emailEl && !emailEl.value) emailEl.value = user.email || '';
+    if (nameEl && !nameEl.value) nameEl.value = user.displayName || '';
+  }
 }
 
 function closeCartOverlay() {
@@ -398,9 +408,27 @@ function closeCartOverlay() {
   document.body.style.overflow = '';
 }
 
+// Called by auth.js once, right after sign-in, if the person had tapped
+// "Proceed to Payment" while signed out. Picks the cart flow back up exactly
+// where they left off.
+window.msbResumeCheckout = function () {
+  if (getCart().length > 0) {
+    openCartOverlay();
+    proceedCartToPayment();
+  }
+};
+
 // ------------------ CART CHECKOUT (one payment for the whole cart) ------------------
 
 async function proceedCartToPayment() {
+  // Browsing and cart-building stay open to everyone — only this step (an
+  // actual purchase) requires a signed-in account. requireSignIn() redirects
+  // to /login and remembers to resume checkout automatically after sign-in
+  // (see msbResumeCheckout below).
+  if (!window.MSBAuth || !window.MSBAuth.requireSignIn()) {
+    return;
+  }
+
   const email = (document.getElementById('cartBuyerEmail') || { value: '' }).value.trim();
   const name  = (document.getElementById('cartBuyerName') || { value: '' }).value.trim();
   const cartIds = getCart();
@@ -425,9 +453,10 @@ async function proceedCartToPayment() {
   }
 
   try {
+    const idToken = await window.MSBAuth.getIdToken();
     const resp = await fetch('/api/pay', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
       body: JSON.stringify({ email, name, productIds: cartIds })
     });
 

@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>My Account | MindShift Books</title>
+  <meta name="description" content="MindShift Books — view your order history and account details." />
+  <meta name="robots" content="noindex, follow" />
+
+  <link rel="shortcut icon" href="MINDSHIFT.jpg" type="image/jpg">
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+  <style>
+:root{ --primary:#0f172a; --accent:#06b6d4; --indigo:#4f46e5; --bg:#f8fafc; }
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Inter',sans-serif}
+body{background:linear-gradient(180deg,#f8fafc 0%, #eef2f7 100%);min-height:100vh;color:var(--primary);}
+
+header{
+  position:fixed;top:0;left:0;right:0;background:white;z-index:1000;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 20px;box-shadow:0 2px 12px rgba(0,0,0,0.06);
+}
+header h1{font-size:1.45rem;font-weight:700;display:flex;align-items:center;gap:10px;margin:0;}
+.hamburger{font-size:1.3rem;cursor:pointer;color:#1e293b}
+
+main{ max-width:760px;margin:0 auto;padding:100px 16px 60px;}
+
+.sidebar{position:fixed;top:0;left:-300px;width:280px;height:100%;background:#111827;padding-top:84px;transition:left 0.32s ease;z-index:2000;border-right:1px solid rgba(255,255,255,0.04);color:#fff}
+.sidebar .logo-row{display:flex;align-items:center;gap:12px;padding:18px 20px;position:absolute;top:16px;left:12px}
+.sidebar img{width:36px;height:36px;border-radius:6px}
+.sidebar ul{list-style:none;margin-top:8px}
+.sidebar li{padding:16px 20px;font-weight:600;border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer}
+.sidebar li.active{color:var(--accent)}
+.sidebar[data-open="true"]{left:0}
+
+.page-head{margin-bottom:22px;}
+.page-head h2{font-size:1.4rem;margin-bottom:6px;}
+.muted{font-size:.9rem;color:#6b7280}
+
+.btn{padding:12px 16px;border-radius:10px;border:none;font-weight:700;cursor:pointer;}
+.buy-btn{background:linear-gradient(90deg,#4f46e5,#06b6d4);color:white;box-shadow:0 8px 20px rgba(79,70,229,0.18);}
+
+/* Gate / sign-in prompt */
+.gate-card{
+  background:white;border-radius:16px;padding:40px 28px;text-align:center;
+  box-shadow:0 18px 40px rgba(0,0,0,0.06);
+}
+.gate-card .icon{font-size:2rem;margin-bottom:14px;}
+.gate-card h3{font-size:1.15rem;margin-bottom:8px;}
+.gate-card p{color:#6b7280;font-size:0.92rem;margin-bottom:20px;}
+.gate-card .btn{max-width:220px;margin:0 auto;}
+.gate-card .browse-link{display:block;margin-top:16px;font-size:0.85rem;color:#4f46e5;font-weight:700;text-decoration:none;}
+
+/* Tabs */
+.acct-tabs{display:flex;gap:8px;background:white;border-radius:12px;padding:5px;margin-bottom:22px;box-shadow:0 4px 14px rgba(0,0,0,0.05);}
+.acct-tab{flex:1;text-align:center;padding:11px;border-radius:9px;font-weight:700;font-size:0.88rem;cursor:pointer;color:#64748b;border:none;background:none;}
+.acct-tab.active{background:linear-gradient(90deg,#4f46e5,#06b6d4);color:white;}
+.acct-panel{display:none;}
+.acct-panel.active{display:block;}
+
+/* Order cards */
+.results{display:flex;flex-direction:column;gap:16px;}
+.order-card{ background:white;padding:18px;border-radius:14px;box-shadow:0 18px 40px rgba(0,0,0,0.06); }
+.order-card .order-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;gap:10px;flex-wrap:wrap;}
+.order-card .ref{font-size:0.78rem;color:#94a3b8;font-weight:600;}
+.pill{display:inline-block;background:#eef2f7;color:var(--primary);padding:6px 12px;border-radius:999px;font-weight:700;font-size:0.8rem;}
+.order-item-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid #f1f5f9;flex-wrap:wrap;}
+.order-item-row:first-of-type{border-top:none;}
+.order-item-cover{width:38px;height:38px;border-radius:6px;object-fit:cover;flex-shrink:0;border:1px solid #e2e8f0;}
+.order-item-title{font-weight:700;font-size:0.92rem;flex:1;min-width:140px;}
+.order-item-row .download{background:linear-gradient(90deg,#4f46e5,#06b6d4);color:#fff;padding:8px 14px;border-radius:8px;text-decoration:none;font-weight:700;font-size:0.8rem;white-space:nowrap;}
+
+.empty{ padding:30px;text-align:center;color:#6b7280;background:white;border-radius:14px;box-shadow:0 18px 40px rgba(0,0,0,0.06); }
+.loader{ width:24px;height:24px;border:4px solid rgba(0,0,0,0.06);border-top:4px solid var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;margin:30px auto; }
+@keyframes spin{ to{transform:rotate(360deg)} }
+
+/* My details form */
+.details-card{ background:white;border-radius:16px;padding:24px;box-shadow:0 18px 40px rgba(0,0,0,0.06); }
+.details-field{margin-bottom:16px;}
+.details-field label{display:block;font-size:0.8rem;font-weight:700;color:#475569;margin-bottom:6px;}
+.details-field input{width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:0.92rem;outline:none;}
+.details-field input:focus{border-color:var(--accent);}
+.details-field input[disabled]{background:#f8fafc;color:#94a3b8;}
+.details-save-note{font-size:0.8rem;color:#16a34a;margin-top:10px;display:none;}
+
+footer{margin-top:32px;background:#0f172a;padding:28px;border-radius:10px;color:white;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+footer .brand{font-weight:700;font-size:1.1rem;color:#fbbf24}
+  </style>
+
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="MindShift Books" />
+  <meta property="og:title" content="My Account | MindShift Books" />
+  <meta property="og:description" content="View your order history and account details." />
+  <meta property="og:url" content="https://mindshiftbooks.shop/account" />
+  <meta property="og:image" content="https://mindshiftbooks.shop/og-image.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <link rel="canonical" href="https://mindshiftbooks.shop/account" />
+</head>
+
+<body>
+
+<header>
+  <h1>
+    <img src="MINDSHIFT.jpg" alt="MindShift logo" style="width:36px;height:36px;border-radius:6px;">
+    <span>MindShift Books</span>
+  </h1>
+  <div class="hamburger" onclick="document.getElementById('sidebar').setAttribute('data-open', document.getElementById('sidebar').getAttribute('data-open')==='true'?'false':'true')" aria-label="Open menu">
+    <i class="fas fa-bars"></i>
+  </div>
+</header>
+
+<aside class="sidebar" id="sidebar" data-open="false">
+  <div class="logo-row">
+    <img src="MINDSHIFT.jpg" alt="logo">
+    <div style="font-weight:700">MindShift Books</div>
+  </div>
+  <ul>
+    <li onclick="window.location.href='/'">Browse Books</li>
+    <li class="active" onclick="document.getElementById('sidebar').setAttribute('data-open','false')">My Account</li>
+    <li onclick="window.location.href='/support'">Support</li>
+    <li onclick="window.location.href='/legal'">Terms &amp; Privacy</li>
+  </ul>
+</aside>
+
+<main>
+  <div class="page-head">
+    <h2>My Account</h2>
+    <div class="muted">Your orders and account details.</div>
+  </div>
+
+  <!-- Shown when signed out -->
+  <div class="gate-card" id="gateCard" style="display:none;">
+    <div class="icon">🔒</div>
+    <h3>Sign in to view your account</h3>
+    <p>Your order history and details live in your account now — no more searching by email.</p>
+    <button class="btn buy-btn" id="gateSignInBtn">Sign In / Sign Up</button>
+    <a href="/" class="browse-link">← Browse books instead</a>
+  </div>
+
+  <!-- Shown when signed in -->
+  <div id="acctContent" style="display:none;">
+    <div class="acct-tabs">
+      <button class="acct-tab" id="tabOrders" type="button">Order History</button>
+      <button class="acct-tab" id="tabDetails" type="button">My Details</button>
+    </div>
+
+    <div class="acct-panel" id="panelOrders">
+      <div id="ordersStatus"><div class="loader"></div></div>
+      <div class="results" id="ordersResults"></div>
+    </div>
+
+    <div class="acct-panel" id="panelDetails">
+      <div class="details-card">
+        <div class="details-field">
+          <label for="detName">Full name</label>
+          <input id="detName" type="text" placeholder="Your name">
+        </div>
+        <div class="details-field">
+          <label for="detEmail">Email</label>
+          <input id="detEmail" type="email" disabled>
+        </div>
+        <button class="btn buy-btn" id="detSaveBtn" style="width:auto;">Save Changes</button>
+        <div class="details-save-note" id="detSaveNote">Saved ✓</div>
+        <div style="margin-top:22px;border-top:1px solid #f1f5f9;padding-top:16px;">
+          <button class="btn" id="detSignOutBtn" style="width:auto;background:#fef2f2;color:#991b1b;">Sign Out</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="brand">MindShift Books</div>
+  <div class="muted" style="color:#cbd5e1;">© 2026 MindShift Books</div>
+</footer>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="/auth.js"></script>
+<script>
+  function escapeHtml(s) { return (s == null ? '' : String(s)).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+
+  function showTab(tab) {
+    document.getElementById('tabOrders').classList.toggle('active', tab === 'orders');
+    document.getElementById('tabDetails').classList.toggle('active', tab === 'details');
+    document.getElementById('panelOrders').classList.toggle('active', tab === 'orders');
+    document.getElementById('panelDetails').classList.toggle('active', tab === 'details');
+    if (tab === 'orders') loadOrders();
+    if (tab === 'details') loadDetails();
+  }
+  document.getElementById('tabOrders').addEventListener('click', () => showTab('orders'));
+  document.getElementById('tabDetails').addEventListener('click', () => showTab('details'));
+  document.getElementById('gateSignInBtn').addEventListener('click', () => { window.location.href = '/login?returnTo=' + encodeURIComponent('/account'); });
+  document.getElementById('detSignOutBtn').addEventListener('click', () => window.MSBAuth.signOut());
+
+  let ordersLoaded = false;
+  async function loadOrders() {
+    if (ordersLoaded) return;
+    ordersLoaded = true;
+    const status = document.getElementById('ordersStatus');
+    const results = document.getElementById('ordersResults');
+    status.innerHTML = '<div class="loader"></div>';
+    results.innerHTML = '';
+    try {
+      const token = await window.MSBAuth.getIdToken();
+      const res = await fetch('/api/my-orders', { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      status.innerHTML = '';
+      if (!res.ok) throw new Error(data.error || 'Could not load orders');
+      if (!data.rows || !data.rows.length) {
+        results.innerHTML = `<div class="empty">No orders yet.<br><a href="/" style="color:#4f46e5;font-weight:700;">Browse books →</a></div>`;
+        return;
+      }
+      results.innerHTML = data.rows.map(order => {
+        const dateStr = order.paidAt ? new Date(order.paidAt).toLocaleDateString('en-NG', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
+        const itemsHtml = (order.items || []).map(it => `
+          <div class="order-item-row">
+            ${it.coverUrl ? `<img class="order-item-cover" src="${it.coverUrl}" alt="">` : ''}
+            <div class="order-item-title">${escapeHtml(it.title || 'Untitled')}</div>
+            <a class="download" href="${it.pdfUrl || '#'}" target="_blank">Download</a>
+          </div>`).join('');
+        return `
+          <div class="order-card">
+            <div class="order-top">
+              <span class="ref">${escapeHtml(order.reference)} · ${dateStr}</span>
+              <span class="pill">₦${order.ngn_amount || 0}</span>
+            </div>
+            ${itemsHtml}
+          </div>`;
+      }).join('');
+    } catch (err) {
+      status.innerHTML = '';
+      results.innerHTML = `<div class="empty">Could not load your orders.<br>${escapeHtml(err.message)}</div>`;
+    }
+  }
+
+  let detailsLoaded = false;
+  async function loadDetails() {
+    if (detailsLoaded) return;
+    detailsLoaded = true;
+    try {
+      const token = await window.MSBAuth.getIdToken();
+      const res = await fetch('/api/account', { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (res.ok) {
+        document.getElementById('detName').value = data.name || '';
+        document.getElementById('detEmail').value = data.email || '';
+      }
+    } catch (e) { /* leave fields blank on failure */ }
+  }
+
+  document.getElementById('detSaveBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('detSaveBtn');
+    const note = document.getElementById('detSaveNote');
+    const name = document.getElementById('detName').value.trim();
+    if (!name) return;
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+    try {
+      const token = await window.MSBAuth.getIdToken();
+      const res = await fetch('/api/account', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ name })
+      });
+      if (!res.ok) throw new Error();
+      note.style.display = 'block';
+      setTimeout(() => note.style.display = 'none', 2500);
+    } catch (e) {
+      alert('Could not save. Please try again.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Save Changes';
+    }
+  });
+
+  // React to auth state — gate content, jump to #orders / #details if linked directly
+  window.addEventListener('msb-auth-changed', (e) => {
+    const user = e.detail.user;
+    document.getElementById('gateCard').style.display = user ? 'none' : 'block';
+    document.getElementById('acctContent').style.display = user ? 'block' : 'none';
+    if (user) {
+      ordersLoaded = false; detailsLoaded = false;
+      const hash = window.location.hash.replace('#', '');
+      showTab(hash === 'details' ? 'details' : 'orders');
+    }
+  });
+</script>
+
+</body>
+</html>

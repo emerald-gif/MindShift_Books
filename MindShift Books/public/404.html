@@ -4,7 +4,6 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Page Not Found | MindShift Books</title>
-  <meta name="description" content="The page you're looking for doesn't exist. Head back to MindShift Books to browse transformative eBooks with instant delivery."/>
   <link rel="shortcut icon" href="MINDSHIFT.jpg" type="image/jpg">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
@@ -39,6 +38,7 @@
       <span>MindShift Books</span>
     </h1>
     <div style="display:flex;align-items:center;gap:6px;">
+      <span class="acct-nav-slot"></span>
       <button type="button" class="icon-btn" onclick="toggleSidebar()" aria-label="Open menu">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="22" height="22"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
       </button>
@@ -53,7 +53,7 @@
   </div>
   <ul>
     <li onclick="window.location.href='/'">Browse Books</li>
-    <li onclick="openMyOrders()">My Orders</li>
+    <li onclick="openMyOrders()">My Account</li>
     <li onclick="window.location.href='/support'">Support</li>
     <li onclick="openContact()">Contact Us</li>
   </ul>
@@ -82,7 +82,11 @@ window.addEventListener('load', adjustMainPadding);
 window.addEventListener('resize', adjustMainPadding);
 adjustMainPadding();
 </script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="/main.js"></script>
+<script src="/auth.js"></script>
 
 </body>
 </html>

@@ -133,6 +133,7 @@
       <span>MindShift Books</span>
     </h1>
     <div style="display:flex;align-items:center;gap:6px;">
+      <span class="acct-nav-slot"></span>
       <button type="button" class="icon-btn" id="cartIcon" aria-label="View cart">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
         <span class="cart-badge" id="cartBadge" style="display:none;">0</span>
@@ -151,7 +152,7 @@
   </div>
   <ul>
     <li onclick="window.location.href='/'">Browse Books</li>
-    <li onclick="openMyOrders()">My Orders</li>
+    <li onclick="openMyOrders()">My Account</li>
     <li class="active" onclick="toggleSidebar()">Support</li>
     <li onclick="window.location.href='/legal'">Terms &amp; Privacy</li>
     <li onclick="openContact()">Contact Us</li>
@@ -218,7 +219,17 @@
           <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </button>
         <div class="faq-answer"><div class="faq-answer-inner">
-          Browse the books on the homepage and tap a cover to open its Book Details page, or hit "Add to Cart" directly. Open your cart, enter your name and email, then tap "Proceed to Payment" to complete checkout securely through Paystack.
+          Browse the books on the homepage and tap a cover to open its Book Details page, or hit "Add to Cart" directly. Open your cart, enter your name and email, then tap "Proceed to Payment" — you'll be asked to sign in or create a free account first, then checkout completes securely through Paystack.
+        </div></div>
+      </div>
+
+      <div class="faq-item" id="faq-need-account" data-faq>
+        <button class="faq-question" onclick="toggleFaq(this)">
+          Do I need an account to buy a book?
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="faq-answer"><div class="faq-answer-inner">
+          Yes, but only at the payment step — browsing books, reading previews, and building your cart never require one. When you tap "Proceed to Payment," you'll be asked to sign in or create a free account (just an email and password) so your order history lives in one place instead of being tied to whatever email you happened to type in.
         </div></div>
       </div>
 
@@ -281,7 +292,7 @@
           <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </button>
         <div class="faq-answer"><div class="faq-answer-inner">
-          First, check your spam/junk or promotions folder — that's the most common cause. Still not there? Go to <a href="/my-order" style="color:#4f46e5;font-weight:700;">My Orders</a> and enter the same email you paid with — your download link(s) will show up there. If your order still isn't showing, email us at <a href="mailto:contact@mindshiftbooks.shop" style="color:#4f46e5;font-weight:700;">contact@mindshiftbooks.shop</a> with your order reference, or the email you used to pay, and we'll sort it out.
+          First, check your spam/junk or promotions folder — that's the most common cause. Still not there? Sign in to <a href="/account" style="color:#4f46e5;font-weight:700;">My Account</a> and your download link(s) will show up under Order History. If your order still isn't showing, email us at <a href="mailto:contact@mindshiftbooks.shop" style="color:#4f46e5;font-weight:700;">contact@mindshiftbooks.shop</a> with your order reference, or the email you used to pay, and we'll sort it out.
         </div></div>
       </div>
 
@@ -291,7 +302,7 @@
           <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </button>
         <div class="faq-answer"><div class="faq-answer-inner">
-          Yes — head to <a href="/my-order" style="color:#4f46e5;font-weight:700;">My Orders</a> anytime, enter your email, and your past purchases (with download links) will be right there.
+          Yes — head to <a href="/account" style="color:#4f46e5;font-weight:700;">My Account</a> and sign in, and your past purchases (with download links) will be right there under Order History. If you bought before you had an account, signing up with the same email you paid with automatically links those past orders to your new account.
         </div></div>
       </div>
 
@@ -324,7 +335,7 @@
           <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </button>
         <div class="faq-answer"><div class="faq-answer-inner">
-          Go to <a href="/my-order" style="color:#4f46e5;font-weight:700;">My Orders</a>, enter the email you used at checkout, and we'll pull up everything tied to that email.
+          Sign in to <a href="/account" style="color:#4f46e5;font-weight:700;">My Account</a> and everything tied to your account will be under Order History — no need to search by email.
         </div></div>
       </div>
 
@@ -334,7 +345,7 @@
           <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </button>
         <div class="faq-answer"><div class="faq-answer-inner">
-          Yes — every book in that order gets its own download link, both in your confirmation email and on your My Orders page.
+          Yes — every book in that order gets its own download link, both in your confirmation email and on your My Account page.
         </div></div>
       </div>
 
@@ -438,7 +449,9 @@ adjustMainPadding();
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="/main.js"></script>
+<script src="/auth.js"></script>
 
 </body>
 </html>
