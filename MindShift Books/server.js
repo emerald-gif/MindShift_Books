@@ -202,6 +202,26 @@ function requireAdminApi(req, res, next) {
 
 function toKobo(ngn) { return Math.round(Number(ngn) * 100); }
 
+// ── Customer account auth (Firebase ID tokens) ──────────────────────────────
+// The client signs in with Firebase Auth (email/password) and sends the
+// resulting ID token on requests that need to be tied to an account —
+// checkout and anything under /api/my-* or /api/account. Browsing, previews,
+// and reviews stay fully public and never touch this.
+async function requireUser(req, res, next) {
+  try {
+    const header = req.headers.authorization || '';
+    const [scheme, token] = header.split(' ');
+    if (scheme !== 'Bearer' || !token) return res.status(401).json({ error: 'Please sign in to continue.' });
+    const decoded = await admin.auth().verifyIdToken(token);
+    req.uid = decoded.uid;
+    req.userEmail = (decoded.email || '').toLowerCase();
+    req.userName = decoded.name || null;
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: 'Your session has expired. Please sign in again.' });
+  }
+}
+
 /**
  * Get USD -> NGN exchange rate
  * Priority:
@@ -804,8 +824,111 @@ app.get('/api/orders', ordersLimiter, async (req, res) => {
   }
 });
 
+// ---------- Account endpoints (require a signed-in Firebase user) ----------
+
+// Called once right after sign-up / sign-in. Creates the users/{uid} profile
+// doc if it doesn't exist yet, and "claims" any past orders placed with the
+// same email before the account existed — so order history isn't empty for
+// people who bought before accounts were a thing.
+app.post('/api/account/init', requireUser, async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const { name } = req.body || {};
+    const userRef = db.collection('users').doc(req.uid);
+    const existing = await userRef.get();
+
+    if (!existing.exists) {
+      await userRef.set({
+        email: req.userEmail,
+        name: (name && String(name).trim().slice(0, 120)) || req.userName || null,
+        createdAt: admin.firestore.Timestamp.now()
+      });
+    } else if (name && String(name).trim() && !existing.data().name) {
+      await userRef.update({ name: String(name).trim().slice(0, 120) });
+    }
+
+    // Claim legacy orders: any past `my_order` doc with a matching email but
+    // no uid yet gets tagged with this account.
+    if (req.userEmail) {
+      const legacySnap = await db.collection('my_order').where('email', '==', req.userEmail).get();
+      const toClaim = legacySnap.docs.filter(d => !d.data().uid);
+      await Promise.all(toClaim.map(d => d.ref.update({ uid: req.uid }).catch(() => null)));
+    }
+
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('/api/account/init error', err);
+    return res.status(500).json({ error: 'Could not set up your account. Please try again.' });
+  }
+});
+
+app.get('/api/account', requireUser, async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const doc = await db.collection('users').doc(req.uid).get();
+    const d = doc.exists ? doc.data() : {};
+    return res.json({
+      email: d.email || req.userEmail,
+      name: d.name || req.userName || null,
+      createdAt: d.createdAt ? (d.createdAt.toDate ? d.createdAt.toDate().toISOString() : d.createdAt) : null
+    });
+  } catch (err) {
+    console.error('/api/account error', err);
+    return res.status(500).json({ error: 'Could not load your details.' });
+  }
+});
+
+app.patch('/api/account', requireUser, async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const { name } = req.body || {};
+    if (!name || !String(name).trim()) return res.status(400).json({ error: 'Name is required' });
+    if (String(name).trim().length > 120) return res.status(400).json({ error: 'Name too long' });
+    await db.collection('users').doc(req.uid).set({ name: String(name).trim() }, { merge: true });
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('PATCH /api/account error', err);
+    return res.status(500).json({ error: 'Could not update your details.' });
+  }
+});
+
+// Order history for the signed-in account — replaces email-based lookup.
+app.get('/api/my-orders', requireUser, async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Order lookup unavailable' });
+    const snap = await db.collection('my_order').where('uid', '==', req.uid).orderBy('paidAt', 'desc').get();
+    const publicBase = process.env.PUBLIC_URL ? process.env.PUBLIC_URL.replace(/\/$/, '') : derivePublicUrl(req);
+    const rows = [];
+    snap.forEach(doc => {
+      const d = doc.data();
+      const items = Array.isArray(d.items) ? d.items : [];
+      rows.push({
+        id: doc.id,
+        reference: d.reference || doc.id,
+        buyerName: d.buyerName || null,
+        ngn_amount: d.ngn_amount || null,
+        paidAt: d.paidAt ? (d.paidAt.toDate ? d.paidAt.toDate().toISOString() : d.paidAt) : null,
+        items: items.map(it => {
+          const product = it.productId && PRODUCTS[it.productId];
+          return {
+            productId: it.productId || null,
+            title: (product && product.title) || it.title || null,
+            coverUrl: (product && product.coverPath) ? `${publicBase}/${product.coverPath.replace(/^\/+/, '')}` : (it.coverUrl || null),
+            pdfUrl: it.productId ? `/dl/${mintDownloadToken(it.productId)}` : (it.pdfUrl || null)
+          };
+        })
+      });
+    });
+    return res.json({ count: rows.length, rows });
+  } catch (err) {
+    console.error('/api/my-orders error', err);
+    return res.status(500).json({ error: 'Could not retrieve your orders. Please try again.' });
+  }
+});
+
 // /api/pay - initialize Paystack for one or more products (cart checkout)
-app.post('/api/pay', payLimiter, async (req, res) => {
+// Requires a signed-in account (browsing/preview stays public — only paying does not).
+app.post('/api/pay', requireUser, payLimiter, async (req, res) => {
   try {
     const { email, name, productId, productIds } = req.body;
     if (!email) return res.status(400).json({ error: 'Email required' });
@@ -838,7 +961,7 @@ app.post('/api/pay', payLimiter, async (req, res) => {
     // buyer_name travels inside Paystack's own metadata (set at initialize time)
     // rather than the inline-popup metadata, since that's the copy that's
     // actually still attached to the transaction when we verify it later.
-    const metadata = { productIds: ids, items, usd_total: usdTotal, fx_rate: fxRate, ngn_charged: ngnAmount, buyer_name: String(name).trim() };
+    const metadata = { productIds: ids, items, usd_total: usdTotal, fx_rate: fxRate, ngn_charged: ngnAmount, buyer_name: String(name).trim(), uid: req.uid };
 
     if (!PAYSTACK_SECRET_KEY) {
       const fakeRef = `TEST_REF_${Date.now()}`;
@@ -939,6 +1062,7 @@ app.post('/api/verify', payLimiter, async (req, res) => {
       reference: tx.reference,
       email: userEmail,
       buyerName,
+      uid: metadata.uid || null,
       status: 'success',
       usd_total: usdTotal,
       ngn_amount: ngnAmountPaid,
@@ -1059,8 +1183,22 @@ app.get('/review', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'review.html'));
 });
 
+// /my-order is the old email-lookup page — permanently point it at the new
+// account-based page so old links/bookmarks still land somewhere useful.
 app.get('/my-order', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'my-order.html'));
+  res.redirect(301, '/account');
+});
+
+app.get('/account', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'account.html'));
+});
+
+app.get('/login', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+
+app.get('/signup', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'signup.html'));
 });
 
 app.get('/support', (req, res) => {
