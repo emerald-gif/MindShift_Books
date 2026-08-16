@@ -112,9 +112,39 @@ const PUBLIC_PDF_URL = process.env.PUBLIC_PDF_URL || null;
 
 // Brevo (formerly Sendinblue) transactional email config
 const BREVO_API_KEY = process.env.BREVO_API_KEY || null; // set this in your environment
-const BREVO_TEMPLATE_ID = Number(process.env.BREVO_TEMPLATE_ID || 1); // single template, id 1
+const BREVO_TEMPLATE_ID = Number(process.env.BREVO_TEMPLATE_ID || 1); // order receipt / delivery email
+const BREVO_WELCOME_TEMPLATE_ID = Number(process.env.BREVO_WELCOME_TEMPLATE_ID || 2); // new-account welcome email
 const BREVO_SENDER_NAME = process.env.BREVO_SENDER_NAME || 'Mindshift Books';
 const BREVO_SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'contact@mindshiftbooks.shop';
+
+// Fires once, right after a brand-new account doc is created (see
+// /api/account/init). Fire-and-forget — a failed welcome email should never
+// block or fail account creation, so this always resolves quietly.
+async function sendWelcomeEmail(email, name) {
+  if (!BREVO_API_KEY || !email) return;
+  try {
+    const emailRes = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        accept: 'application/json',
+        'api-key': BREVO_API_KEY,
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        sender: { name: BREVO_SENDER_NAME, email: BREVO_SENDER_EMAIL },
+        to: [{ email, name: name || undefined }],
+        templateId: BREVO_WELCOME_TEMPLATE_ID,
+        params: { name: name || 'there' }
+      })
+    });
+    if (!emailRes.ok) {
+      const txt = await emailRes.text().catch(() => null);
+      console.error('Brevo welcome email error', emailRes.status, txt);
+    }
+  } catch (e) {
+    console.warn('Brevo welcome email send failed', e.message || e);
+  }
+}
 
 // Admin dashboard credentials + session (cookie-based — no browser Basic Auth
 // popup). Set ADMIN_PASSWORD as a Render env var — the dashboard refuses to
@@ -836,8 +866,9 @@ app.post('/api/account/init', requireUser, async (req, res) => {
     const { name } = req.body || {};
     const userRef = db.collection('users').doc(req.uid);
     const existing = await userRef.get();
+    const isNewAccount = !existing.exists;
 
-    if (!existing.exists) {
+    if (isNewAccount) {
       await userRef.set({
         email: req.userEmail,
         name: (name && String(name).trim().slice(0, 120)) || req.userName || null,
@@ -853,6 +884,13 @@ app.post('/api/account/init', requireUser, async (req, res) => {
       const legacySnap = await db.collection('my_order').where('email', '==', req.userEmail).get();
       const toClaim = legacySnap.docs.filter(d => !d.data().uid);
       await Promise.all(toClaim.map(d => d.ref.update({ uid: req.uid }).catch(() => null)));
+    }
+
+    // Welcome email — only on the very first account/init call for this uid.
+    // Fired after the response is queued, not awaited, so a slow/failed
+    // Brevo call never delays sign-up.
+    if (isNewAccount && req.userEmail) {
+      sendWelcomeEmail(req.userEmail, (name && String(name).trim()) || req.userName || null);
     }
 
     return res.json({ ok: true });
@@ -923,6 +961,49 @@ app.get('/api/my-orders', requireUser, async (req, res) => {
   } catch (err) {
     console.error('/api/my-orders error', err);
     return res.status(500).json({ error: 'Could not retrieve your orders. Please try again.' });
+  }
+});
+
+// Wishlist — stored server-side per account (users/{uid}.wishlist: string[]).
+// Signed-out visitors don't get a wishlist at all (see auth gate on the
+// client); everything here requires a valid Firebase session.
+app.get('/api/wishlist', requireUser, async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const doc = await db.collection('users').doc(req.uid).get();
+    const ids = (doc.exists && Array.isArray(doc.data().wishlist)) ? doc.data().wishlist : [];
+    return res.json({ ids });
+  } catch (err) {
+    console.error('/api/wishlist error', err);
+    return res.status(500).json({ error: 'Could not load your wishlist.' });
+  }
+});
+
+// Adds/removes a single book and returns the resulting state — uses
+// arrayUnion/arrayRemove so two tabs toggling at once can't clobber each
+// other the way a full-array overwrite could.
+app.post('/api/wishlist/toggle', requireUser, async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const productId = req.body && req.body.productId;
+    if (!productId || typeof productId !== 'string') return res.status(400).json({ error: 'productId required' });
+    if (!PRODUCTS[productId]) return res.status(404).json({ error: 'Unknown product' });
+
+    const userRef = db.collection('users').doc(req.uid);
+    const snap = await userRef.get();
+    const current = (snap.exists && Array.isArray(snap.data().wishlist)) ? snap.data().wishlist : [];
+    const inList = current.includes(productId);
+
+    await userRef.set({
+      wishlist: inList
+        ? admin.firestore.FieldValue.arrayRemove(productId)
+        : admin.firestore.FieldValue.arrayUnion(productId)
+    }, { merge: true });
+
+    return res.json({ ok: true, inWishlist: !inList });
+  } catch (err) {
+    console.error('/api/wishlist/toggle error', err);
+    return res.status(500).json({ error: 'Could not update your wishlist. Please try again.' });
   }
 });
 
