@@ -365,8 +365,7 @@ main{ max-width:760px;margin:0 auto;padding:100px 16px 60px;}
   });
 
   // React to auth state — gate content, jump to #orders / #details if linked directly
-  window.addEventListener('msb-auth-changed', (e) => {
-    const user = e.detail.user;
+  function applyAuthState(user) {
     document.getElementById('gateCard').style.display = user ? 'none' : 'block';
     document.getElementById('acctContent').style.display = user ? 'block' : 'none';
     if (user) {
@@ -374,7 +373,15 @@ main{ max-width:760px;margin:0 auto;padding:100px 16px 60px;}
       const hash = window.location.hash.replace('#', '');
       showTab(hash === 'details' ? 'details' : 'orders');
     }
-  });
+  }
+  window.addEventListener('msb-auth-changed', (e) => applyAuthState(e.detail.user));
+  // See wishlist.html for why this is also needed: auth.js's first auth
+  // resolution can happen before this listener is attached, in which case
+  // the event above already fired and won't come again. onAuthReady()
+  // catches that case so this page can't get stuck on the gate/skeleton.
+  if (window.MSBAuth) {
+    window.MSBAuth.onAuthReady((user) => applyAuthState(user));
+  }
 </script>
 
 </body>

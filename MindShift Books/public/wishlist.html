@@ -297,6 +297,18 @@ window.addEventListener('msb-auth-changed', () => {
   _msbAuthKnown = true;
   renderWishlistGrid();
 });
+// Belt-and-suspenders for the listener above: auth.js's first
+// onAuthStateChanged resolution can happen before this script block runs
+// (it's a microtask, this is further down the page), in which case the
+// 'msb-auth-changed' event above already fired and is gone. onAuthReady()
+// is safe either way — it fires now if auth already resolved, or later if
+// it hasn't — so this can't get stuck on the skeleton forever.
+if (window.MSBAuth) {
+  window.MSBAuth.onAuthReady(() => {
+    _msbAuthKnown = true;
+    renderWishlistGrid();
+  });
+}
 
 // In case PRODUCTS was already populated from cache before this script ran.
 renderWishlistGrid();

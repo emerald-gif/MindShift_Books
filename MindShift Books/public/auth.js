@@ -72,6 +72,20 @@
   // /signup. Popup talks back to the opener tab directly and doesn't hit
   // this. Redirect is kept only as a fallback for the embedded in-app
   // browsers (Instagram/TikTok/Facebook) that block popups outright.
+  //
+  // 'auth/popup-blocked' is NOT treated as a signal to fall back to
+  // redirect: on a normal mobile browser it usually just means the
+  // browser's popup blocker caught it (or the popup got closed before it
+  // could report back), and routing that into redirect walks the user
+  // straight into the storage-partitioning dead end above — the exact
+  // "stuck on /login forever" bug. Only 'auth/operation-not-supported-in-
+  // this-environment' (Firebase's own signal that popups genuinely can't
+  // work here — the actual in-app-webview case) falls back to redirect.
+  function isLikelyInAppWebview() {
+    const ua = navigator.userAgent || '';
+    return /Instagram|FBAN|FBAV|FB_IAB|Line\/|TikTok|MicroMessenger/i.test(ua);
+  }
+
   async function signInGoogle() {
     const provider = new firebase.auth.GoogleAuthProvider();
     const box = document.getElementById('authError');
@@ -81,16 +95,22 @@
       maybeLeaveAuthPage();
     } catch (err) {
       const code = err && err.code;
-      const fallbackCodes = [
-        'auth/popup-blocked',
-        'auth/operation-not-supported-in-this-environment',
-        'auth/popup-closed-by-user'
-      ];
-      if (code === 'auth/popup-blocked' || code === 'auth/operation-not-supported-in-this-environment') {
-        // Popup genuinely can't open here — fall back to redirect.
+      if (code === 'auth/operation-not-supported-in-this-environment' || (code === 'auth/popup-blocked' && isLikelyInAppWebview())) {
+        // Genuinely can't pop up here — redirect is the only option, even
+        // knowing it can silently strand the user on some in-app browsers.
+        // Mark that we're attempting it so the stall-detector below can
+        // give them a way out if the hand-off never completes.
+        try { sessionStorage.setItem('msb_google_redirect_pending', '1'); } catch (e) {}
         return auth.signInWithRedirect(provider);
       }
-      if (fallbackCodes.includes(code)) return; // user closed it — no error needed
+      if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') return; // user closed it — no error needed
+      if (code === 'auth/popup-blocked') {
+        if (box) {
+          box.textContent = "Your browser blocked the Google sign-in popup. Please allow popups for this site and try again, or sign in with email below.";
+          box.style.display = 'block';
+        }
+        return;
+      }
       if (box) { box.textContent = friendlyAuthError(err); box.style.display = 'block'; }
     }
   }
@@ -111,6 +131,7 @@
     if (authRedirectHandled) return;
     if (window.location.pathname === '/login' || window.location.pathname === '/signup') {
       authRedirectHandled = true;
+      try { sessionStorage.removeItem('msb_google_redirect_pending'); } catch (e) {}
       redirectAfterAuth();
     }
   }
@@ -135,6 +156,27 @@
     const box = document.getElementById('authError');
     if (box) { box.textContent = friendlyAuthError(err); box.style.display = 'block'; }
   });
+
+  // Stall detector for the redirect path. If signInGoogle() had to fall
+  // back to signInWithRedirect() (see above) and the storage hand-off gets
+  // silently swallowed, the user lands back on /login or /signup signed
+  // out with no error — otherwise a permanent, unexplained stall. Give
+  // them an explicit way out instead.
+  if (window.location.pathname === '/login' || window.location.pathname === '/signup') {
+    let redirectPending = false;
+    try { redirectPending = sessionStorage.getItem('msb_google_redirect_pending') === '1'; } catch (e) {}
+    if (redirectPending) {
+      setTimeout(() => {
+        if (authRedirectHandled) return; // it worked — we've already left the page
+        try { sessionStorage.removeItem('msb_google_redirect_pending'); } catch (e) {}
+        const box = document.getElementById('authError');
+        if (box) {
+          box.textContent = "Google sign-in didn't complete in this browser. Please try email/password below, or open this site in Chrome or Safari instead of an in-app browser.";
+          box.style.display = 'block';
+        }
+      }, 6000);
+    }
+  }
 
   // ---------------- Checkout gate ----------------
   // Called from main.js before letting someone pay. If signed out, remembers
@@ -200,6 +242,21 @@
   `;
   document.head.appendChild(style);
 
+  // ---------------- Auth-ready promise ----------------
+  // onAuthStateChanged() fires exactly once for the *first* resolution of
+  // sign-in state, and that can happen as early as a microtask right after
+  // this script finishes running (e.g. when Firebase's cached persistence
+  // resolves fast on a warm IndexedDB). Pages that gate their first render
+  // on the 'msb-auth-changed' event race that: if the event fires before
+  // their own <script> block (further down the page) has attached its
+  // listener, it's lost forever and the page is stuck on its skeleton with
+  // nothing left to unstick it. authReady sidesteps the race — it's a
+  // promise that's safe to consume whether auth already resolved (resolves
+  // next microtask) or hasn't yet (resolves when it does).
+  let authStateKnown = false;
+  let resolveAuthReady;
+  const authReadyPromise = new Promise(resolve => { resolveAuthReady = resolve; });
+
   auth.onAuthStateChanged(user => {
     renderNavSlot(user);
     if (user) {
@@ -209,6 +266,8 @@
       maybeLeaveAuthPage();
     }
     resumeCheckoutIfPending();
+    authStateKnown = true;
+    resolveAuthReady(user);
     window.dispatchEvent(new CustomEvent('msb-auth-changed', { detail: { user } }));
   });
 
@@ -222,6 +281,12 @@
     signInGoogle,
     friendlyAuthError,
     redirectAfterAuth,
-    getReturnTo
+    getReturnTo,
+    isAuthStateKnown: () => authStateKnown,
+    // Fires once, with the user (or null), whether auth already resolved
+    // before this was called or resolves later. Use this instead of (or
+    // alongside) the 'msb-auth-changed' event for a page's *first* render
+    // decision — the event alone can be missed by late listeners.
+    onAuthReady: (cb) => { authReadyPromise.then(cb); }
   };
 })();
