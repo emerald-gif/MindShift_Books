@@ -14,9 +14,18 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ── Security headers (helmet) ──────────────────────────────────────────────
+// crossOriginOpenerPolicy is explicitly disabled here: helmet's default
+// ("same-origin") severs window.opener between this site and any popup it
+// opens. Firebase's signInWithPopup() relies on window.opener to message
+// the sign-in result back once the Google popup completes — with COOP
+// left on its default, that message never arrives, the popup finishes
+// successfully on Google's side, and the page is just left sitting there
+// with no error and no way forward. This is the actual cause of the
+// Google sign-in stall on /login and /signup.
 app.use(helmet({
   contentSecurityPolicy: false, // CSP managed separately if needed
-  crossOriginEmbedderPolicy: false
+  crossOriginEmbedderPolicy: false,
+  crossOriginOpenerPolicy: false
 }));
 
 // ── CORS — only allow our own domain ──────────────────────────────────────
