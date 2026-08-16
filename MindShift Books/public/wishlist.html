@@ -312,6 +312,23 @@ if (window.MSBAuth) {
 
 // In case PRODUCTS was already populated from cache before this script ran.
 renderWishlistGrid();
+
+// Hard safety net: whatever the exact cause, this page should never sit on
+// the skeleton indefinitely. If nothing has replaced it within 8s, stop
+// waiting on events and show a clear retry instead of a dead loading state.
+setTimeout(() => {
+  const grid = document.getElementById('wishlistGrid');
+  if (!grid) return;
+  if (!grid.querySelector('.skel-card')) return; // already resolved to real content
+  grid.innerHTML = `
+    <div class="wishlist-empty-state">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="48" height="48"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+      <h3>This is taking longer than it should</h3>
+      <p>Your wishlist didn't finish loading. Please try again.</p>
+      <button type="button" class="btn buy-btn" onclick="window.location.reload()">Retry</button>
+    </div>
+  `;
+}, 8000);
 </script>
 
 <div id="toastContainer"></div>
