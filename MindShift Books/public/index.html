@@ -4,7 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>MindShift Books | eBook Store</title>
-  <meta name="description" content="MindShift Books — Transformative eBooks. Instant delivery after payment." />
+  <meta name="description" content="MindShift Books is an online eBook store for psychology, money, and personal-growth titles — buy by card and get the PDF instantly by email." />
   
   <link rel="shortcut icon" href="MINDSHIFT.jpg" type="image/jpg">
 
@@ -93,6 +93,19 @@
 </aside>
 
 <main>
+  <!-- Static, JS-independent description of what this app is for — Google's
+       OAuth branding verification checks the rendered homepage for this,
+       not just meta tags, before it'll approve the "Sign in with Google"
+       consent screen. Keep this in plain HTML, not injected by main.js. -->
+  <section class="about-blurb" aria-labelledby="about-h" style="padding:18px 20px 4px;max-width:720px;">
+    <h2 id="about-h" style="font-size:1.05rem;margin:0 0 8px;">What is MindShift Books?</h2>
+    <p style="margin:0;color:#475569;font-size:0.94rem;line-height:1.55;">
+      MindShift Books is an online eBook store for psychology, money, and personal-growth titles.
+      Browse and buy eBooks by card (Paystack), and get the PDF instantly by email — no waiting, no shipping.
+      Create a free account (email or Google) to check out, keep an order history, and save books to a wishlist for later.
+    </p>
+  </section>
+
   <!-- Warming-up toast (hidden by default, shown by JS) -->
   <div id="warmingToast" style="display:none;" class="warming-toast">
     <span class="warming-dot"></span>
