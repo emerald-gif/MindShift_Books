@@ -86,25 +86,22 @@
     return /Instagram|FBAN|FBAV|FB_IAB|Line\/|TikTok|MicroMessenger/i.test(ua);
   }
 
-  // Real mobile browsers (not just in-app webviews) also need redirect, not
-  // popup. On a lot of Android Chrome builds the "popup" Google opens is
-  // really a new tab/overlay that the OS or browser auto-closes right after
-  // the account is picked — Firebase reports that as
-  // 'auth/popup-closed-by-user' even though sign-in actually went through
-  // on Google's side. That error was previously swallowed silently (see the
-  // removed branch below), which is exactly the "comes back to /login and
-  // just sits there, dead" bug. Redirect avoids the popup entirely, so
-  // there's nothing for the browser to prematurely close.
-  function isMobileDevice() {
-    const ua = navigator.userAgent || '';
-    return /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
-  }
-
+  // Popup, not redirect, is the right default even on mobile browsers.
+  // Redirect has to shuttle the auth result back from the authDomain
+  // (mindshiftbooks-c4451.firebaseapp.com) to this site (mindshiftbooks.shop)
+  // through storage, and modern mobile Chrome partitions storage between
+  // different sites — that hand-off gets silently dropped, which is the
+  // "bounces back to /login and just sits there" stall confirmed on-device.
+  // Popup instead talks straight back to the opener tab via postMessage, so
+  // it isn't subject to that storage partitioning at all. Redirect is kept
+  // only as a genuine last resort for in-app webviews that block popups
+  // outright — and even there it can strand the user; see the stall
+  // detector below.
   async function signInGoogle() {
     const provider = new firebase.auth.GoogleAuthProvider();
     const box = document.getElementById('authError');
 
-    if (isMobileDevice() || isLikelyInAppWebview()) {
+    if (isLikelyInAppWebview()) {
       try { sessionStorage.setItem('msb_google_redirect_pending', '1'); } catch (e) {}
       return auth.signInWithRedirect(provider);
     }
@@ -119,7 +116,21 @@
         try { sessionStorage.setItem('msb_google_redirect_pending', '1'); } catch (e) {}
         return auth.signInWithRedirect(provider);
       }
-      if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') return; // user closed it — no error needed
+      if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+        // Some mobile Chrome builds auto-close the popup tab right after
+        // the account is picked — Firebase reports that as
+        // 'popup-closed-by-user' even when sign-in actually completed on
+        // Google's side. Give onAuthStateChanged a brief window to catch
+        // up before concluding the user genuinely cancelled; only show an
+        // error if they're still signed out after that.
+        setTimeout(() => {
+          if (!auth.currentUser && box) {
+            box.textContent = "The Google sign-in window closed before finishing. Please try again — and avoid switching apps or tabs while the Google screen is open.";
+            box.style.display = 'block';
+          }
+        }, 1200);
+        return;
+      }
       if (code === 'auth/popup-blocked') {
         if (box) {
           box.textContent = "Your browser blocked the Google sign-in popup. Please allow popups for this site and try again, or sign in with email below.";
