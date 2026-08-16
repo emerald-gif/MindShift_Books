@@ -86,20 +86,36 @@
     return /Instagram|FBAN|FBAV|FB_IAB|Line\/|TikTok|MicroMessenger/i.test(ua);
   }
 
+  // Real mobile browsers (not just in-app webviews) also need redirect, not
+  // popup. On a lot of Android Chrome builds the "popup" Google opens is
+  // really a new tab/overlay that the OS or browser auto-closes right after
+  // the account is picked — Firebase reports that as
+  // 'auth/popup-closed-by-user' even though sign-in actually went through
+  // on Google's side. That error was previously swallowed silently (see the
+  // removed branch below), which is exactly the "comes back to /login and
+  // just sits there, dead" bug. Redirect avoids the popup entirely, so
+  // there's nothing for the browser to prematurely close.
+  function isMobileDevice() {
+    const ua = navigator.userAgent || '';
+    return /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
+  }
+
   async function signInGoogle() {
     const provider = new firebase.auth.GoogleAuthProvider();
     const box = document.getElementById('authError');
+
+    if (isMobileDevice() || isLikelyInAppWebview()) {
+      try { sessionStorage.setItem('msb_google_redirect_pending', '1'); } catch (e) {}
+      return auth.signInWithRedirect(provider);
+    }
+
     try {
       const result = await auth.signInWithPopup(provider);
       await initAccountOnServer(result.user.displayName || null);
       maybeLeaveAuthPage();
     } catch (err) {
       const code = err && err.code;
-      if (code === 'auth/operation-not-supported-in-this-environment' || (code === 'auth/popup-blocked' && isLikelyInAppWebview())) {
-        // Genuinely can't pop up here — redirect is the only option, even
-        // knowing it can silently strand the user on some in-app browsers.
-        // Mark that we're attempting it so the stall-detector below can
-        // give them a way out if the hand-off never completes.
+      if (code === 'auth/operation-not-supported-in-this-environment') {
         try { sessionStorage.setItem('msb_google_redirect_pending', '1'); } catch (e) {}
         return auth.signInWithRedirect(provider);
       }
