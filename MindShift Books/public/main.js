@@ -1,6 +1,20 @@
 // public/main.js
 // Loads products from server (/api/products)
 
+// ── bfcache guard ────────────────────────────────────────────────────
+// Mobile browsers often restore a page from the back/forward cache on
+// back/forward nav instead of reloading it — you get back the exact frozen
+// DOM/JS state from the moment you left (mid-fetch, stuck skeletons, stale
+// auth state). None of our data fetches or Firebase listeners re-fire on
+// that kind of restore, so the page just sits there looking "static".
+// Forcing a real reload when a persisted (bfcache) restore is detected
+// makes every page re-run its scripts fresh, same as a normal page load.
+window.addEventListener('pageshow', function (event) {
+  if (event.persisted) {
+    window.location.reload();
+  }
+});
+
 // ── First-party page-view tracking (no third-party pixels/cookies) ─────────
 // Fires once per page load to /api/track. No IP, no cookies, no cross-site
 // identifiers — just type + path + which book (if any). Powers the admin
