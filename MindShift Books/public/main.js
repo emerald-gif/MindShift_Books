@@ -61,6 +61,19 @@ let PUBLIC_PDF_URL = null;
 let PAYSTACK_READY = false;
 let PRODUCTS = []; // fetched from server
 
+// Wishlist state — declared here (ahead of fetchProducts()/renderProducts())
+// on purpose. fetchProducts() below can call renderProducts() synchronously
+// (see its cached-data branch) whenever there's a warm localStorage product
+// cache, i.e. on basically any return visit — and renderProducts() reaches
+// isInWishlist()/wishlistIds through productCardInner(). Since these are
+// `let` bindings, declaring them further down the file used to leave them
+// in the temporal dead zone during that synchronous call, throwing
+// "Cannot access 'wishlistIds' before initialization" on exactly the
+// return-visit case. The functions that use them are function declarations
+// (fully hoisted), so only the variables themselves needed to move.
+let wishlistIds = [];
+let wishlistFetched = false; // true once fetchWishlist() has resolved at least once for the current session
+
 async function initConfigAndPaystack() {
   try {
     const res = await fetch('/config');
@@ -365,10 +378,9 @@ function removeFromCart(productId) {
 // drawer instead (below); nothing is stored for them. Kept in memory as
 // wishlistIds, populated by fetchWishlist() on sign-in and cleared on
 // sign-out (see the msb-auth-changed listener near the bottom of this file).
+// wishlistIds/wishlistFetched themselves are declared near the top of this
+// file — see the comment there for why.
 // ====================================================================
-
-let wishlistIds = [];
-let wishlistFetched = false; // true once fetchWishlist() has resolved at least once for the current session
 
 function getWishlist() {
   return wishlistIds;
