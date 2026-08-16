@@ -62,8 +62,8 @@ header h1 img{flex-shrink:0;}
 .product-grid .product-card:only-child .card-author {
   text-align: left;
 }
-.product-grid .product-card:only-child .card-price-row {
-  justify-content: flex-start;
+.product-grid .product-card:only-child .card-price-block {
+  align-items: flex-start; text-align: left;
 }
 .product-grid .product-card:only-child .button-group {
   max-width: 340px;
@@ -76,7 +76,7 @@ header h1 img{flex-shrink:0;}
   }
   .product-grid .product-card:only-child .title,
   .product-grid .product-card:only-child .card-author { text-align: center; }
-  .product-grid .product-card:only-child .card-price-row { justify-content: center; }
+  .product-grid .product-card:only-child .card-price-block { align-items: center; text-align: center; }
   .product-grid .product-card:only-child .button-group { max-width: 100%; }
 }
 
@@ -666,18 +666,25 @@ header {
 }
 
 /* ── Card slash price ── */
-.card-price-row {
-  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-  margin: 2px 0 6px;
+.card-price-block {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 4px; margin: 4px 0 8px; text-align: center;
 }
-.card-price { font-size: 1rem; font-weight: 700; color: var(--primary); }
+.card-price {
+  font-size: 1.15rem; font-weight: 800; color: var(--primary);
+  line-height: 1.1;
+}
+.card-price-subrow {
+  display: flex; align-items: center; justify-content: center;
+  gap: 7px; flex-wrap: wrap;
+}
 .card-price-old {
-  font-size: 0.82rem; color: #9ca3af;
+  font-size: 0.8rem; color: #9ca3af;
   text-decoration: line-through;
 }
 .card-discount-badge {
   background: #fef2f2; color: #dc2626;
-  font-size: 0.72rem; font-weight: 700;
+  font-size: 0.7rem; font-weight: 700;
   padding: 2px 7px; border-radius: 20px;
   border: 1px solid #fecaca;
 }
@@ -764,17 +771,6 @@ header {
   font-size: 0.82rem;
   padding: 9px 10px;
 }
-
-.our-preview-link {
-  display: block;
-  margin-top: 8px;
-  font-size: 0.78rem;
-  color: #4f46e5;
-  font-weight: 700;
-  text-decoration: none;
-  letter-spacing: 0.01em;
-}
-.our-preview-link:hover { text-decoration: underline; }
 
 /* ── FAQ accordion ─────────────────────────────────────────────────── */
 .faq-section { padding: 8px 20px 36px; max-width: 760px; margin: 0 auto; }

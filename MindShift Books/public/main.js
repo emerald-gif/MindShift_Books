@@ -250,10 +250,13 @@ function productCardInner(p) {
       ${wishlistToggleButton(p.id, { cardOverlay: true })}
     </div>
     <div class="our-title">${escapeHtml(p.title || '')}</div>
-    <div class="card-price-row">
-      <span class="card-price">${price}</span>
-      ${orig ? `<span class="card-price-old">${orig}</span>` : ''}
-      ${pct  ? `<span class="card-discount-badge">${pct}% OFF</span>` : ''}
+    <div class="card-price-block">
+      <div class="card-price">${price}</div>
+      ${(orig || pct) ? `
+      <div class="card-price-subrow">
+        ${orig ? `<span class="card-price-old">${orig}</span>` : ''}
+        ${pct  ? `<span class="card-discount-badge">${pct}% OFF</span>` : ''}
+      </div>` : ''}
     </div>
     <div class="our-actions">
       <button class="btn buy-btn" data-product-id="${escapeHtml(p.id || '')}" data-action="add-to-cart">
@@ -262,7 +265,6 @@ function productCardInner(p) {
       </button>
       <button class="btn review-btn" data-product-id="${escapeHtml(p.id || '')}" data-action="review">Details</button>
     </div>
-    ${p.previewUrl ? `<a href="${escapeHtml(p.previewUrl)}" class="our-preview-link">Read free preview →</a>` : ''}
   `;
 }
 
