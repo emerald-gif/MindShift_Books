@@ -347,34 +347,27 @@ function removeFromCart(productId) {
 }
 
 // ====================================================================
-// WISHLIST (localStorage-backed) — save books for later, no account needed
+// WISHLIST (server-side, per account) — signed-out visitors get the sign-in
+// drawer instead (below); nothing is stored for them. Kept in memory as
+// wishlistIds, populated by fetchWishlist() on sign-in and cleared on
+// sign-out (see the msb-auth-changed listener near the bottom of this file).
 // ====================================================================
 
-const WISHLIST_KEY = 'msb_wishlist';
+let wishlistIds = [];
+let wishlistFetched = false; // true once fetchWishlist() has resolved at least once for the current session
 
 function getWishlist() {
-  try {
-    const raw = JSON.parse(localStorage.getItem(WISHLIST_KEY));
-    return Array.isArray(raw) ? raw : [];
-  } catch (e) {
-    return [];
-  }
-}
-
-function saveWishlist(ids) {
-  localStorage.setItem(WISHLIST_KEY, JSON.stringify(ids));
-  updateWishlistBadge();
-  window.dispatchEvent(new CustomEvent('msb-wishlist-changed', { detail: { ids } }));
+  return wishlistIds;
 }
 
 function isInWishlist(productId) {
-  return getWishlist().includes(productId);
+  return wishlistIds.includes(productId);
 }
 
 function updateWishlistBadge() {
   const badge = document.getElementById('wishlistBadge');
   if (!badge) return;
-  const count = getWishlist().length;
+  const count = wishlistIds.length;
   if (count > 0) {
     badge.textContent = String(count);
     badge.style.display = 'flex';
@@ -383,26 +376,122 @@ function updateWishlistBadge() {
   }
 }
 
-// Adds/removes a book and returns the new state (true = now in wishlist)
-function toggleWishlist(productId) {
-  if (!productId) return false;
-  const list = getWishlist();
-  const idx = list.indexOf(productId);
-  let nowIn;
-  if (idx === -1) {
-    list.push(productId);
-    nowIn = true;
-    showToast('Added to your wishlist.', 'success', 2500);
-  } else {
-    list.splice(idx, 1);
-    nowIn = false;
-    showToast('Removed from your wishlist.', 'info', 2500);
+function setWishlistIds(ids) {
+  wishlistIds = Array.isArray(ids) ? ids : [];
+  updateWishlistBadge();
+  window.dispatchEvent(new CustomEvent('msb-wishlist-changed', { detail: { ids: wishlistIds } }));
+}
+
+// Pulls the signed-in account's saved books from the server. Called after
+// every sign-in (and on load if already signed in); clears the list on
+// sign-out since there's nothing local to fall back on anymore.
+async function fetchWishlist() {
+  const user = window.MSBAuth && window.MSBAuth.getUser();
+  if (!user) { wishlistFetched = true; setWishlistIds([]); return; }
+  try {
+    const token = await window.MSBAuth.getIdToken();
+    const res = await fetch('/api/wishlist', { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) throw new Error('wishlist fetch failed');
+    const data = await res.json();
+    setWishlistIds(data.ids);
+  } catch (e) {
+    setWishlistIds([]); // fail quiet — hearts just show unsaved until next load
+  } finally {
+    wishlistFetched = true;
   }
-  saveWishlist(list);
-  return nowIn;
+}
+
+// Adds/removes a book on the server and returns the new state (true = now in
+// wishlist). Updates the local cache optimistically so the heart flips
+// instantly, and rolls back if the request fails.
+async function toggleWishlist(productId) {
+  if (!productId) return false;
+  const user = window.MSBAuth && window.MSBAuth.getUser();
+  if (!user) { openWishlistAuthDrawer(); return false; }
+
+  const wasIn = isInWishlist(productId);
+  setWishlistIds(wasIn ? wishlistIds.filter(id => id !== productId) : [...wishlistIds, productId]);
+
+  try {
+    const token = await window.MSBAuth.getIdToken();
+    const res = await fetch('/api/wishlist/toggle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ productId })
+    });
+    if (!res.ok) throw new Error('wishlist toggle failed');
+    const data = await res.json();
+    showToast(data.inWishlist ? 'Added to your wishlist.' : 'Removed from your wishlist.', data.inWishlist ? 'success' : 'info', 2500);
+    return data.inWishlist;
+  } catch (e) {
+    setWishlistIds(wasIn ? [...wishlistIds, productId] : wishlistIds.filter(id => id !== productId)); // roll back
+    showToast("Couldn't update your wishlist — please try again.", 'error', 3000);
+    return wasIn;
+  }
 }
 
 function openWishlist() { window.location.href = '/wishlist'; }
+
+// ---------------- Wishlist sign-in drawer ----------------
+// Lightweight bottom-sheet nudge shown when a signed-out visitor taps a
+// wishlist heart. Saving books requires an account (the wishlist lives on
+// the server, tied to the shopper) — this is the light-touch prompt that
+// asks them to sign in or create one, injected once and reused on every
+// page that loads main.js.
+function ensureWishlistAuthDrawer() {
+  if (document.getElementById('wishlistAuthBackdrop')) return;
+  const wrap = document.createElement('div');
+  wrap.innerHTML = `
+    <div class="wishlist-drawer-backdrop" id="wishlistAuthBackdrop" aria-hidden="true">
+      <div class="wishlist-drawer" role="dialog" aria-modal="true" aria-labelledby="wishlistDrawerTitle">
+        <button type="button" class="wishlist-drawer-close" id="wishlistDrawerCloseBtn" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+        <div class="cart-auth-gate">
+          <div class="cart-auth-gate-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+          </div>
+          <h3 id="wishlistDrawerTitle">Sign in to save books</h3>
+          <p>Create a free account or sign in to start your wishlist.</p>
+          <div class="cart-auth-gate-actions">
+            <button type="button" class="btn buy-btn" id="wishlistDrawerSignUpBtn">Create Account</button>
+            <button type="button" class="cart-auth-secondary" id="wishlistDrawerSignInBtn">Sign In</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(wrap.firstElementChild);
+
+  const backdrop = document.getElementById('wishlistAuthBackdrop');
+  document.getElementById('wishlistDrawerCloseBtn')?.addEventListener('click', closeWishlistAuthDrawer);
+  backdrop?.addEventListener('click', (e) => { if (e.target === backdrop) closeWishlistAuthDrawer(); });
+  document.getElementById('wishlistDrawerSignInBtn')?.addEventListener('click', () => goToWishlistAuth('/login'));
+  document.getElementById('wishlistDrawerSignUpBtn')?.addEventListener('click', () => goToWishlistAuth('/signup'));
+}
+
+function goToWishlistAuth(path) {
+  window.location.href = path + '?returnTo=' + encodeURIComponent(window.location.pathname + window.location.search);
+}
+
+function openWishlistAuthDrawer() {
+  ensureWishlistAuthDrawer();
+  const backdrop = document.getElementById('wishlistAuthBackdrop');
+  if (!backdrop) return;
+  backdrop.classList.add('show');
+  backdrop.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeWishlistAuthDrawer() {
+  const backdrop = document.getElementById('wishlistAuthBackdrop');
+  if (!backdrop) return;
+  backdrop.classList.remove('show');
+  backdrop.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+}
+
+// Fetch (or clear) the wishlist every time sign-in state changes.
+window.addEventListener('msb-auth-changed', fetchWishlist);
 
 // Keep every heart button for a given book (card overlay + review-page
 // button, possibly several on one page) in sync after a toggle.
@@ -832,6 +921,8 @@ document.addEventListener('keydown', (e) => {
     }
     const cartOverlay = document.getElementById('cartOverlay');
     if (cartOverlay && cartOverlay.classList.contains('show')) closeCartOverlay();
+    const wishlistDrawer = document.getElementById('wishlistAuthBackdrop');
+    if (wishlistDrawer && wishlistDrawer.classList.contains('show')) closeWishlistAuthDrawer();
   }
 });
 
@@ -851,3 +942,7 @@ window.toggleWishlist = toggleWishlist;
 window.isInWishlist = isInWishlist;
 window.getWishlist = getWishlist;
 window.wishlistToggleButton = wishlistToggleButton;
+window.openWishlistAuthDrawer = openWishlistAuthDrawer;
+window.closeWishlistAuthDrawer = closeWishlistAuthDrawer;
+window.fetchWishlist = fetchWishlist;
+window.isWishlistFetched = () => wishlistFetched;

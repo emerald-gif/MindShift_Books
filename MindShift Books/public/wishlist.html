@@ -163,12 +163,53 @@ adjustMainPadding();
 <script src="/auth.js"></script>
 
 <script>
+// Signed-out visitors get a light sign-in/sign-up prompt instead of the
+// grid — the wishlist itself needs an account. We hold the skeleton until
+// Firebase's first auth-state callback fires so we don't flash the prompt
+// at someone who's actually signed in.
+let _msbAuthKnown = false;
+
+function wishlistAuthGateHtml() {
+  return `
+    <div class="wishlist-empty-state">
+      <div class="cart-auth-gate">
+        <div class="cart-auth-gate-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+        </div>
+        <h3>Sign in to see your wishlist</h3>
+        <p>Create a free account or sign in to save and view books here.</p>
+        <div class="cart-auth-gate-actions">
+          <button type="button" class="btn buy-btn" id="wishlistPageSignUpBtn">Create Account</button>
+          <button type="button" class="cart-auth-secondary" id="wishlistPageSignInBtn">Sign In</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 // Renders the wishlist grid from PRODUCTS (loaded by main.js) filtered by
-// whatever's saved in localStorage. Re-runs whenever the product list
-// finishes loading/refreshing, and whenever a heart is toggled on this page.
+// the signed-in account's saved book IDs (main.js fetches these from the
+// server on sign-in). Re-runs whenever the product list finishes
+// loading/refreshing, whenever a heart is toggled, and whenever auth state
+// changes (sign in/out in this tab or another).
 function renderWishlistGrid() {
   const grid = document.getElementById('wishlistGrid');
   if (!grid) return;
+  if (!_msbAuthKnown) return; // still resolving sign-in state — keep skeleton
+
+  const user = window.MSBAuth && window.MSBAuth.getUser();
+  if (!user) {
+    grid.innerHTML = wishlistAuthGateHtml();
+    document.getElementById('wishlistPageSignInBtn')?.addEventListener('click', () => {
+      window.location.href = '/login?returnTo=' + encodeURIComponent('/wishlist');
+    });
+    document.getElementById('wishlistPageSignUpBtn')?.addEventListener('click', () => {
+      window.location.href = '/signup?returnTo=' + encodeURIComponent('/wishlist');
+    });
+    return;
+  }
+
+  if (!window.isWishlistFetched || !window.isWishlistFetched()) return; // saved-books fetch still in flight — keep skeleton
 
   if (!Array.isArray(PRODUCTS) || !PRODUCTS.length) return; // still loading — keep skeleton
 
@@ -204,6 +245,10 @@ window.renderProducts = function () {
   renderWishlistGrid();
 };
 window.addEventListener('msb-wishlist-changed', renderWishlistGrid);
+window.addEventListener('msb-auth-changed', () => {
+  _msbAuthKnown = true;
+  renderWishlistGrid();
+});
 
 // In case PRODUCTS was already populated from cache before this script ran.
 renderWishlistGrid();
