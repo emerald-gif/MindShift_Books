@@ -277,7 +277,7 @@ function renderGrid(grid, list, emptyMessage) {
     return;
   }
   const isOurBooks = grid.id === 'ourBooksGrid';
-  const isSwiper = grid.id === 'featuredGrid';
+  const isSwiper = grid.classList.contains('swiper-track');
   list.forEach(p => {
     const card = document.createElement('div');
     card.className = isOurBooks ? 'our-book-item' : (isSwiper ? 'swiper-card' : 'product-card');
@@ -287,48 +287,61 @@ function renderGrid(grid, list, emptyMessage) {
   if (isSwiper) updateSwiperArrows(grid);
 }
 
-// ── Featured "Recommended Reads" swiper controls ─────────────────────
+// ── "Recommended Reads" swiper controls (works across every swiper-wrap on the page) ──
 function updateSwiperArrows(track) {
-  const prevBtn = document.getElementById('featuredPrevBtn');
-  const nextBtn = document.getElementById('featuredNextBtn');
+  const wrap = track.closest('.swiper-wrap');
+  if (!wrap) return;
+  const prevBtn = wrap.querySelector('[data-swiper-prev]');
+  const nextBtn = wrap.querySelector('[data-swiper-next]');
   if (!prevBtn || !nextBtn) return;
   const maxScroll = track.scrollWidth - track.clientWidth - 2;
   prevBtn.classList.toggle('is-hidden', track.scrollLeft <= 4);
   nextBtn.classList.toggle('is-hidden', track.scrollLeft >= maxScroll);
 }
 
-(function wireFeaturedSwiper() {
+(function wireFeaturedSwipers() {
   document.addEventListener('DOMContentLoaded', () => {
-    const track = document.getElementById('featuredGrid');
-    const prevBtn = document.getElementById('featuredPrevBtn');
-    const nextBtn = document.getElementById('featuredNextBtn');
-    if (!track || !prevBtn || !nextBtn) return;
+    const wraps = document.querySelectorAll('.swiper-wrap');
+    wraps.forEach(wrap => {
+      const track = wrap.querySelector('.swiper-track');
+      const prevBtn = wrap.querySelector('[data-swiper-prev]');
+      const nextBtn = wrap.querySelector('[data-swiper-next]');
+      if (!track || !prevBtn || !nextBtn) return;
 
-    const stepSize = () => {
-      const card = track.querySelector('.swiper-card');
-      if (!card) return track.clientWidth;
-      const style = getComputedStyle(track);
-      const gap = parseFloat(style.columnGap || style.gap || '12');
-      return card.getBoundingClientRect().width + gap;
-    };
+      const stepSize = () => {
+        const card = track.querySelector('.swiper-card');
+        if (!card) return track.clientWidth;
+        const style = getComputedStyle(track);
+        const gap = parseFloat(style.columnGap || style.gap || '12');
+        return card.getBoundingClientRect().width + gap;
+      };
 
-    nextBtn.addEventListener('click', () => {
-      track.scrollBy({ left: stepSize() * 3, behavior: 'smooth' });
+      nextBtn.addEventListener('click', () => {
+        track.scrollBy({ left: stepSize() * 2, behavior: 'smooth' });
+      });
+      prevBtn.addEventListener('click', () => {
+        track.scrollBy({ left: -stepSize() * 2, behavior: 'smooth' });
+      });
+      track.addEventListener('scroll', () => updateSwiperArrows(track), { passive: true });
+      window.addEventListener('resize', () => updateSwiperArrows(track));
     });
-    prevBtn.addEventListener('click', () => {
-      track.scrollBy({ left: -stepSize() * 3, behavior: 'smooth' });
-    });
-    track.addEventListener('scroll', () => updateSwiperArrows(track), { passive: true });
-    window.addEventListener('resize', () => updateSwiperArrows(track));
   });
 })();
 
 // Render product grids from PRODUCTS (from server), split into "Our Books" and "Featured" sections
 function renderProducts() {
   const ourGrid = document.getElementById('ourBooksGrid');
-  const featuredGrid = document.getElementById('featuredGrid');
+  const featuredGrids = [
+    document.getElementById('featuredGrid1'),
+    document.getElementById('featuredGrid2'),
+    document.getElementById('featuredGrid3')
+  ];
   const ourSection = document.getElementById('ourBooksSection');
-  const featuredSection = document.getElementById('featuredSection');
+  const featuredSections = [
+    document.getElementById('featuredSection'),
+    document.getElementById('featuredSection2'),
+    document.getElementById('featuredSection3')
+  ];
   const searchSection = document.getElementById('searchResultsSection');
 
   if (searchSection) searchSection.style.display = 'none';
@@ -336,11 +349,22 @@ function renderProducts() {
   const ourBooks = PRODUCTS.filter(p => p.category === 'ours');
   const featuredBooks = PRODUCTS.filter(p => p.category !== 'ours');
 
-  if (ourSection) ourSection.style.display = ourBooks.length ? '' : 'none';
-  if (featuredSection) featuredSection.style.display = '';
+  // split the featured books into 3 even groups (3 books each, when there are 9)
+  const groupCount = featuredSections.length;
+  const groupSize = Math.ceil(featuredBooks.length / groupCount) || 1;
+  const groups = [];
+  for (let i = 0; i < groupCount; i++) {
+    groups.push(featuredBooks.slice(i * groupSize, (i + 1) * groupSize));
+  }
 
+  if (ourSection) ourSection.style.display = ourBooks.length ? '' : 'none';
   renderGrid(ourGrid, ourBooks, 'No books yet — check back soon.');
-  renderGrid(featuredGrid, featuredBooks, 'No books available.');
+
+  featuredSections.forEach((section, i) => {
+    if (!section) return;
+    section.style.display = groups[i].length ? '' : 'none';
+    renderGrid(featuredGrids[i], groups[i], 'No books available.');
+  });
 }
 
 // initial load
@@ -927,7 +951,11 @@ document.getElementById('suggestionsBox')?.addEventListener('click', function(ev
 function performSearch() {
   const query = (document.getElementById('searchInput').value || '').trim().toLowerCase();
   const ourSection = document.getElementById('ourBooksSection');
-  const featuredSection = document.getElementById('featuredSection');
+  const featuredSections = [
+    document.getElementById('featuredSection'),
+    document.getElementById('featuredSection2'),
+    document.getElementById('featuredSection3')
+  ];
   const searchSection = document.getElementById('searchResultsSection');
   const searchGrid = document.getElementById('searchGrid');
 
@@ -938,7 +966,7 @@ function performSearch() {
   );
 
   if (ourSection) ourSection.style.display = 'none';
-  if (featuredSection) featuredSection.style.display = 'none';
+  featuredSections.forEach(s => { if (s) s.style.display = 'none'; });
   if (searchSection) searchSection.style.display = '';
 
   if (!searchGrid) return;

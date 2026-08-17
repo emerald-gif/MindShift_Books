@@ -204,15 +204,15 @@ footer .brand{font-weight:700;font-size:1.1rem;color:#fbbf24}
 /* Recommended Reads grid: tighter card, always-row actions, tiny Amazon button */
 /* Recommended Reads — horizontal swiper, cover-first cards (no white border) */
 .swiper-wrap{ position:relative; }
-#featuredGrid.swiper-track{
+.swiper-track{
   display:flex; gap:10px; overflow-x:auto; scroll-snap-type:x mandatory;
   scroll-behavior:smooth; -webkit-overflow-scrolling:touch; padding:2px 2px 6px;
   scrollbar-width:none;
 }
-#featuredGrid.swiper-track::-webkit-scrollbar{ display:none; }
+.swiper-track::-webkit-scrollbar{ display:none; }
 
 .swiper-card{
-  flex:0 0 calc((100% - 2*10px)/3);
+  flex:0 0 calc((100% - 10px)/2.4);
   scroll-snap-align:start;
   background:transparent; box-shadow:none; padding:0; margin:0;
   display:flex; flex-direction:column; align-items:stretch; text-align:left;
@@ -248,8 +248,8 @@ footer .brand{font-weight:700;font-size:1.1rem;color:#fbbf24}
 .swiper-arrow.is-hidden{ opacity:0; pointer-events:none; }
 
 @media (min-width:640px){
-  .swiper-card{ flex-basis:calc((100% - 3*16px)/4); }
-  #featuredGrid.swiper-track{ gap:16px; }
+  .swiper-card{ flex-basis:calc((100% - 3*16px)/3.4); }
+  .swiper-track{ gap:16px; }
   .swiper-card .title{ font-size:0.9rem; }
   .swiper-card .card-author{ font-size:0.78rem; }
   .swiper-card .card-actions .review-btn{ padding:9px 8px; font-size:0.82rem; }
@@ -258,12 +258,12 @@ footer .brand{font-weight:700;font-size:1.1rem;color:#fbbf24}
   .swiper-card .card-actions .find-on-amazon-btn span.amz-label{ display:inline; }
 }
 @media (min-width:1000px){
-  .swiper-card{ flex-basis:calc((100% - 4*18px)/5); }
-  #featuredGrid.swiper-track{ gap:18px; }
+  .swiper-card{ flex-basis:calc((100% - 4*18px)/4.4); }
+  .swiper-track{ gap:18px; }
 }
-#featuredGrid.swiper-track .skel-card{ flex:0 0 calc((100% - 2*10px)/3); }
-@media (min-width:640px){ #featuredGrid.swiper-track .skel-card{ flex-basis:calc((100% - 3*16px)/4); } }
-@media (min-width:1000px){ #featuredGrid.swiper-track .skel-card{ flex-basis:calc((100% - 4*18px)/5); } }
+.swiper-track .skel-card{ flex:0 0 calc((100% - 10px)/2.4); }
+@media (min-width:640px){ .swiper-track .skel-card{ flex-basis:calc((100% - 3*16px)/3.4); } }
+@media (min-width:1000px){ .swiper-track .skel-card{ flex-basis:calc((100% - 4*18px)/4.4); } }
 
 /* small screens: grid becomes 2 across (same), search fits */
 @media (max-width:860px){ .search-wrapper{width:100%;max-width:100%;margin:0} }
