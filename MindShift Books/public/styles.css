@@ -35,7 +35,7 @@ header h1 img{flex-shrink:0;}
 .suggestions .item:hover{background:#f1f5f9}
 
 /* Sidebar */
-.sidebar{position:fixed;top:0;left:-300px;width:280px;height:100%;background:#111827;padding-top:84px;transition:left 0.32s ease;z-index:2000;border-right:1px solid rgba(255,255,255,0.04);color:#fff}
+.sidebar{position:fixed;top:0;left:-300px;width:280px;height:100%;background:#111827;padding-top:84px;padding-bottom:90px;transition:left 0.32s ease;z-index:2000;border-right:1px solid rgba(255,255,255,0.04);color:#fff;overflow-y:auto}
 .sidebar .logo-row{display:flex;align-items:center;gap:12px;padding:18px 20px;position:absolute;top:16px;left:12px}
 .sidebar img{width:36px;height:36px;border-radius:6px}
 .sidebar ul{list-style:none;margin-top:8px}
@@ -264,6 +264,55 @@ footer .brand{font-weight:700;font-size:1.1rem;color:#fbbf24}
 .swiper-track .skel-card{ flex:0 0 calc((100% - 10px)/2.4); }
 @media (min-width:640px){ .swiper-track .skel-card{ flex-basis:calc((100% - 3*16px)/3.4); } }
 @media (min-width:1000px){ .swiper-track .skel-card{ flex-basis:calc((100% - 4*18px)/4.4); } }
+
+/* Signed-out CTA banner — sits with generous breathing room below the last
+   "Recommended Reads" swiper so it doesn't feel glued to it. */
+.auth-cta-section{ margin-top:52px !important; margin-bottom:12px; }
+.auth-cta-card{
+  position:relative; overflow:hidden;
+  background:linear-gradient(135deg,#0f172a 0%,#312e81 55%,#0891b2 100%);
+  border-radius:20px; padding:32px 24px; text-align:center;
+  box-shadow:0 16px 40px rgba(15,23,42,0.22);
+}
+.auth-cta-card::before{
+  content:''; position:absolute; inset:0; opacity:0.5; pointer-events:none;
+  background:radial-gradient(circle at 15% 20%, rgba(255,255,255,0.14), transparent 40%),
+             radial-gradient(circle at 85% 80%, rgba(6,182,212,0.25), transparent 45%);
+}
+.auth-cta-icon{ font-size:1.9rem; margin-bottom:8px; position:relative; }
+.auth-cta-title{
+  color:#fff; font-size:1.15rem; font-weight:800; margin:0 0 10px; position:relative;
+}
+.auth-cta-copy{
+  color:#cbd5e1; font-size:0.86rem; line-height:1.55; margin:0 auto 22px;
+  max-width:480px; position:relative;
+}
+.auth-cta-actions{
+  display:flex; gap:12px; justify-content:center; flex-wrap:wrap; position:relative;
+}
+.auth-cta-actions .btn{ width:auto; padding:11px 26px; font-size:0.9rem; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; }
+.auth-cta-signup{ background:linear-gradient(90deg,#4f46e5,#06b6d4); color:#fff; box-shadow:0 8px 20px rgba(6,182,212,0.3); }
+.auth-cta-login{ background:rgba(255,255,255,0.1); color:#fff; border:1.5px solid rgba(255,255,255,0.35) !important; }
+.auth-cta-login:hover{ background:rgba(255,255,255,0.18); }
+@media (min-width:640px){
+  .auth-cta-card{ padding:40px 48px; }
+  .auth-cta-title{ font-size:1.35rem; }
+  .auth-cta-copy{ font-size:0.92rem; }
+}
+
+/* Sidebar signed-out CTA — compact version of the same prompt */
+.sidebar-auth-cta{
+  margin:14px 18px 4px; padding:16px 14px; border-radius:14px; text-align:center;
+  background:linear-gradient(135deg,rgba(79,70,229,0.28),rgba(6,182,212,0.22));
+  border:1px solid rgba(255,255,255,0.1);
+}
+.sidebar-auth-icon{ font-size:1.3rem; margin-bottom:4px; }
+.sidebar-auth-text{ color:#e2e8f0; font-size:0.78rem; line-height:1.4; margin-bottom:12px; }
+.sidebar-auth-cta .btn{ display:block; width:100%; padding:9px 10px; font-size:0.8rem; text-decoration:none; margin-bottom:8px; }
+.sidebar-auth-cta .btn:last-child{ margin-bottom:0; }
+.sidebar-auth-signup{ background:linear-gradient(90deg,#4f46e5,#06b6d4); color:#fff; }
+.sidebar-auth-login{ background:rgba(255,255,255,0.08); color:#fff; border:1px solid rgba(255,255,255,0.3) !important; }
+.sidebar-auth-login:hover{ background:rgba(255,255,255,0.16); }
 
 /* small screens: grid becomes 2 across (same), search fits */
 @media (max-width:860px){ .search-wrapper{width:100%;max-width:100%;margin:0} }

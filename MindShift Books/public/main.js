@@ -365,7 +365,54 @@ function renderProducts() {
     section.style.display = groups[i].length ? '' : 'none';
     renderGrid(featuredGrids[i], groups[i], 'No books available.');
   });
+
+  updateAuthCtaVisibility();
 }
+
+// ── Signed-out CTA banner (before FAQ) ────────────────────────────────
+// Shown only once Firebase auth has resolved AND confirms nobody is signed
+// in. Hidden again while search results are on screen so it doesn't
+// interrupt the search flow.
+let msbIsSignedIn = null; // null = auth not resolved yet
+let msbSearchActive = false;
+
+function updateAuthCtaVisibility() {
+  const shouldShow = (msbIsSignedIn === false && !msbSearchActive);
+  const section = document.getElementById('authCtaSection');
+  if (section) section.style.display = shouldShow ? '' : 'none';
+  const sidebarCta = document.getElementById('sidebarAuthCta');
+  if (sidebarCta) sidebarCta.style.display = (msbIsSignedIn === false) ? '' : 'none';
+}
+
+(function wireAuthCta() {
+  // main.js loads before auth.js, so window.MSBAuth isn't ready yet at this
+  // exact point — but 'msb-auth-changed' is a plain event, so attaching the
+  // listener now is safe; it'll catch the event whenever auth.js resolves
+  // sign-in state later. This listener stays live for the whole session so
+  // later sign-in/sign-out (without a page reload) still updates the banner.
+  window.addEventListener('msb-auth-changed', (ev) => {
+    msbIsSignedIn = !!(ev.detail && ev.detail.user);
+    updateAuthCtaVisibility();
+  });
+
+  // Defensive check in case window.MSBAuth is already available (e.g. if
+  // script load order ever changes) — gives an earlier first read.
+  if (window.MSBAuth && typeof window.MSBAuth.onAuthReady === 'function') {
+    window.MSBAuth.onAuthReady(user => {
+      if (msbIsSignedIn === null) { msbIsSignedIn = !!user; updateAuthCtaVisibility(); }
+    });
+  }
+
+  // Fallback: if auth.js/Firebase never loads (blocked script, network
+  // issue, ad blocker) the event above may never fire and the banner would
+  // stay hidden forever. Treat "still unknown after a few seconds" as
+  // signed-out so guests still see the nice sign-up prompt instead of
+  // nothing at all. A genuine 'msb-auth-changed' event, if it does still
+  // arrive later, will correct this via the listener above.
+  setTimeout(() => {
+    if (msbIsSignedIn === null) { msbIsSignedIn = false; updateAuthCtaVisibility(); }
+  }, 4000);
+})();
 
 // initial load
 fetchProducts();
@@ -959,15 +1006,17 @@ function performSearch() {
   const searchSection = document.getElementById('searchResultsSection');
   const searchGrid = document.getElementById('searchGrid');
 
-  if (!query) { renderProducts(); return; }
+  if (!query) { msbSearchActive = false; renderProducts(); return; }
 
   const filtered = PRODUCTS.filter(p =>
     (p.title || '').toLowerCase().includes(query) || (p.id || '').toLowerCase().includes(query)
   );
 
+  msbSearchActive = true;
   if (ourSection) ourSection.style.display = 'none';
   featuredSections.forEach(s => { if (s) s.style.display = 'none'; });
   if (searchSection) searchSection.style.display = '';
+  updateAuthCtaVisibility();
 
   if (!searchGrid) return;
   if (!filtered.length) {

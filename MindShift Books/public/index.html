@@ -86,6 +86,15 @@
     <li onclick="followYoutube()">Follow us on YouTube</li>
   </ul>
 
+  <!-- Signed-out CTA — mirrors #authCtaSection, hidden by default and
+       shown/hidden together with it once auth state is known. -->
+  <div class="sidebar-auth-cta" id="sidebarAuthCta" style="display:none;">
+    <div class="sidebar-auth-icon" aria-hidden="true">✨</div>
+    <div class="sidebar-auth-text">Sign up to save books to your wishlist, track orders, and get picks made for you.</div>
+    <a href="/signup" class="btn sidebar-auth-signup">Sign Up Free</a>
+    <a href="/login" class="btn sidebar-auth-login">Log In</a>
+  </div>
+
   <div style="position:absolute;bottom:18px;left:18px;right:18px;color:#9ca3af;font-size:0.9rem;">
     <div>© 2026 MindShift Books</div>
     <div style="margin-top:6px">Shift your thinking, change your life.</div>
@@ -185,6 +194,25 @@
       <button type="button" class="swiper-arrow swiper-arrow--prev" data-swiper-prev aria-label="Previous books">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><polyline points="15 18 9 12 15 6"></polyline></svg>
       </button>
+    </div>
+  </section>
+
+  <!-- Signed-out CTA — invites guests to create an account. Hidden by
+       default and only shown once auth state resolves and confirms the
+       visitor isn't signed in (see wireAuthCta() in main.js). -->
+  <section class="hero auth-cta-section" id="authCtaSection" aria-labelledby="auth-cta-h" style="display:none;">
+    <div class="auth-cta-card">
+      <div class="auth-cta-icon" aria-hidden="true">✨</div>
+      <h2 id="auth-cta-h" class="auth-cta-title">New here? Create your free account</h2>
+      <p class="auth-cta-copy">
+        Sign up to save books to your wishlist, track your orders, breeze through checkout
+        with your details remembered, and get picks tailored to what you like to read.
+        Already have an account? Just log back in.
+      </p>
+      <div class="auth-cta-actions">
+        <a href="/signup" class="btn auth-cta-signup">Sign Up Free</a>
+        <a href="/login" class="btn auth-cta-login">Log In</a>
+      </div>
     </div>
   </section>
 
