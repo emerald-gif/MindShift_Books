@@ -46,12 +46,24 @@ main{ max-width:760px;margin:0 auto;padding:100px 16px 60px;}
 .gate-card{
   background:white;border-radius:16px;padding:40px 28px;text-align:center;
   box-shadow:0 18px 40px rgba(0,0,0,0.06);
+  border-top:3px solid transparent;
+  background-image:linear-gradient(white,white),linear-gradient(90deg,#4f46e5,#06b6d4);
+  background-origin:border-box;background-clip:padding-box,border-box;
 }
-.gate-card .icon{font-size:2rem;margin-bottom:14px;}
+.gate-card .icon{
+  width:56px;height:56px;margin:0 auto 16px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:#fff;
+  background:linear-gradient(90deg,#4f46e5,#06b6d4);
+  box-shadow:0 8px 20px rgba(79,70,229,0.25);
+}
 .gate-card h3{font-size:1.15rem;margin-bottom:8px;}
-.gate-card p{color:#6b7280;font-size:0.92rem;margin-bottom:20px;}
-.gate-card .btn{max-width:220px;margin:0 auto;}
-.gate-card .browse-link{display:block;margin-top:16px;font-size:0.85rem;color:#4f46e5;font-weight:700;text-decoration:none;}
+.gate-card p{color:#6b7280;font-size:0.92rem;margin-bottom:22px;max-width:360px;margin-left:auto;margin-right:auto;}
+.gate-auth-row{display:flex;gap:10px;max-width:320px;margin:0 auto;}
+.gate-auth-row .btn{flex:1;margin:0;}
+.gate-signin-btn{background:linear-gradient(90deg,#4f46e5,#06b6d4);color:#fff;box-shadow:0 8px 20px rgba(79,70,229,0.18);}
+.gate-signup-btn{background:white;color:var(--primary);border:1.5px solid #e2e8f0;}
+.gate-signup-btn:hover{border-color:#4f46e5;color:#4f46e5;}
+.gate-card .browse-link{display:block;margin-top:18px;font-size:0.85rem;color:#4f46e5;font-weight:700;text-decoration:none;}
 
 /* Tabs */
 .acct-tabs{display:flex;gap:8px;background:white;border-radius:12px;padding:5px;margin-bottom:22px;box-shadow:0 4px 14px rgba(0,0,0,0.05);}
@@ -166,10 +178,13 @@ main{ max-width:760px;margin:0 auto;padding:100px 16px 60px;}
 
   <!-- Shown when signed out -->
   <div class="gate-card" id="gateCard" style="display:none;">
-    <div class="icon">🔒</div>
+    <div class="icon"><i class="fa-solid fa-lock"></i></div>
     <h3>Sign in to view your account</h3>
     <p>Your order history and details live in your account now — no more searching by email.</p>
-    <button class="btn buy-btn" id="gateSignInBtn">Sign In / Sign Up</button>
+    <div class="gate-auth-row">
+      <button class="btn gate-signin-btn" id="gateSignInBtn">Sign In</button>
+      <button class="btn gate-signup-btn" id="gateSignUpBtn">Sign Up</button>
+    </div>
     <a href="/" class="browse-link">← Browse books instead</a>
   </div>
 
@@ -282,6 +297,7 @@ main{ max-width:760px;margin:0 auto;padding:100px 16px 60px;}
   document.getElementById('tabOrders').addEventListener('click', () => showTab('orders'));
   document.getElementById('tabDetails').addEventListener('click', () => showTab('details'));
   document.getElementById('gateSignInBtn').addEventListener('click', () => { window.location.href = '/login?returnTo=' + encodeURIComponent('/account'); });
+  document.getElementById('gateSignUpBtn').addEventListener('click', () => { window.location.href = '/signup?returnTo=' + encodeURIComponent('/account'); });
   document.getElementById('detSignOutBtn').addEventListener('click', () => window.MSBAuth.signOut());
 
   let ordersLoaded = false;

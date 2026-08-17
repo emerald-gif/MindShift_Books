@@ -44,6 +44,11 @@ header h1 img{flex-shrink:0;}
 /* Product grid */
 .product-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
 
+/* Recommended Reads: 3 per row on mobile, more room on tablet/desktop */
+#featuredGrid.product-grid{grid-template-columns:repeat(3,1fr);gap:10px}
+@media (min-width:640px){ #featuredGrid.product-grid{grid-template-columns:repeat(4,1fr);gap:16px} }
+@media (min-width:1000px){ #featuredGrid.product-grid{grid-template-columns:repeat(5,1fr);gap:18px} }
+
 /* Single book — spans both columns, horizontal layout so it fills the space naturally */
 .product-grid .product-card:only-child {
   grid-column: 1 / -1;
@@ -200,6 +205,31 @@ footer .brand{font-weight:700;font-size:1.1rem;color:#fbbf24}
 }
 .card-author{font-size:0.78rem;color:#6b7280;margin-bottom:8px;}
 .find-on-amazon-btn{text-decoration:none;display:inline-flex;}
+
+/* Recommended Reads grid: tighter card, always-row actions, tiny Amazon button */
+#featuredGrid .product-card{padding:10px;gap:6px;}
+#featuredGrid .ebook-cover{width:100%;height:auto;aspect-ratio:2/3;max-width:140px;object-fit:cover;border-radius:8px;}
+#featuredGrid .title{font-size:0.8rem;line-height:1.2;}
+#featuredGrid .card-author{font-size:0.68rem;margin-bottom:4px;}
+#featuredGrid .card-actions.button-group{flex-direction:row !important;gap:6px;}
+#featuredGrid .card-actions .review-btn{flex:1;padding:8px 6px;font-size:0.72rem;}
+#featuredGrid .card-actions .find-on-amazon-btn{
+  flex:0 0 auto;width:auto;padding:6px 8px;font-size:0.6rem;border-radius:7px;
+  box-shadow:none;white-space:nowrap;
+}
+#featuredGrid .card-actions .find-on-amazon-btn svg{width:10px;height:10px;margin-right:2px;}
+@media (max-width:480px){
+  #featuredGrid .card-actions .find-on-amazon-btn span.amz-label{display:none;}
+  #featuredGrid .card-actions .find-on-amazon-btn{padding:7px;}
+}
+@media (min-width:640px){
+  #featuredGrid .product-card{padding:16px;gap:10px;}
+  #featuredGrid .title{font-size:0.9rem;}
+  #featuredGrid .card-author{font-size:0.78rem;margin-bottom:8px;}
+  #featuredGrid .card-actions .review-btn{padding:9px 8px;font-size:0.82rem;}
+  #featuredGrid .card-actions .find-on-amazon-btn{padding:6px 9px;font-size:0.68rem;}
+  #featuredGrid .card-actions .find-on-amazon-btn svg{width:11px;height:11px;margin-right:3px;}
+}
 
 /* small screens: grid becomes 2 across (same), search fits */
 @media (max-width:860px){ .search-wrapper{width:100%;max-width:100%;margin:0} }
