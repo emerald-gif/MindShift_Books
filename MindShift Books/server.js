@@ -1296,6 +1296,10 @@ app.get('/signup', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'signup.html'));
 });
 
+app.get('/welcome', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'welcome.html'));
+});
+
 app.get('/support', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'support.html'));
 });
