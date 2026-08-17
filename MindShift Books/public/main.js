@@ -277,13 +277,51 @@ function renderGrid(grid, list, emptyMessage) {
     return;
   }
   const isOurBooks = grid.id === 'ourBooksGrid';
+  const isSwiper = grid.id === 'featuredGrid';
   list.forEach(p => {
     const card = document.createElement('div');
-    card.className = isOurBooks ? 'our-book-item' : 'product-card';
+    card.className = isOurBooks ? 'our-book-item' : (isSwiper ? 'swiper-card' : 'product-card');
     card.innerHTML = productCardInner(p);
     grid.appendChild(card);
   });
+  if (isSwiper) updateSwiperArrows(grid);
 }
+
+// ── Featured "Recommended Reads" swiper controls ─────────────────────
+function updateSwiperArrows(track) {
+  const prevBtn = document.getElementById('featuredPrevBtn');
+  const nextBtn = document.getElementById('featuredNextBtn');
+  if (!prevBtn || !nextBtn) return;
+  const maxScroll = track.scrollWidth - track.clientWidth - 2;
+  prevBtn.classList.toggle('is-hidden', track.scrollLeft <= 4);
+  nextBtn.classList.toggle('is-hidden', track.scrollLeft >= maxScroll);
+}
+
+(function wireFeaturedSwiper() {
+  document.addEventListener('DOMContentLoaded', () => {
+    const track = document.getElementById('featuredGrid');
+    const prevBtn = document.getElementById('featuredPrevBtn');
+    const nextBtn = document.getElementById('featuredNextBtn');
+    if (!track || !prevBtn || !nextBtn) return;
+
+    const stepSize = () => {
+      const card = track.querySelector('.swiper-card');
+      if (!card) return track.clientWidth;
+      const style = getComputedStyle(track);
+      const gap = parseFloat(style.columnGap || style.gap || '12');
+      return card.getBoundingClientRect().width + gap;
+    };
+
+    nextBtn.addEventListener('click', () => {
+      track.scrollBy({ left: stepSize() * 3, behavior: 'smooth' });
+    });
+    prevBtn.addEventListener('click', () => {
+      track.scrollBy({ left: -stepSize() * 3, behavior: 'smooth' });
+    });
+    track.addEventListener('scroll', () => updateSwiperArrows(track), { passive: true });
+    window.addEventListener('resize', () => updateSwiperArrows(track));
+  });
+})();
 
 // Render product grids from PRODUCTS (from server), split into "Our Books" and "Featured" sections
 function renderProducts() {
