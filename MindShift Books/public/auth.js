@@ -148,6 +148,13 @@
   }
 
   function redirectAfterAuth() {
+    // After a brand-new sign-up, land on the one-time welcome screen
+    // instead of dropping straight into the store. /login never goes
+    // through here, so existing users signing in are unaffected.
+    if (window.location.pathname === '/signup') {
+      window.location.href = '/welcome?returnTo=' + encodeURIComponent(getReturnTo());
+      return;
+    }
     window.location.href = getReturnTo();
   }
 
