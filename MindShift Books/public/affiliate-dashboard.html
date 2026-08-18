@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Affiliate Dashboard | MindShift Books</title>
+  <meta name="robots" content="noindex, follow" />
+  <link rel="shortcut icon" href="MINDSHIFT.jpg" type="image/jpg">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+:root{ --primary:#0f172a; --accent:#06b6d4; --indigo:#4f46e5; }
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Inter',sans-serif}
+body{background:#fff;color:var(--primary);}
+
+header{
+  position:sticky;top:0;background:white;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 20px;border-bottom:1px solid #f1f5f9;
+}
+header .brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--primary);font-weight:800;font-size:1rem;}
+header .brand img{width:30px;height:30px;border-radius:7px;}
+header a.back{font-size:0.82rem;font-weight:700;color:#64748b;text-decoration:none;}
+
+/* ── HERO ── */
+.hero{padding:40px 22px 8px;}
+.hero .eyebrow{
+  font-size:0.76rem;font-weight:800;color:#4f46e5;letter-spacing:0.04em;
+  text-transform:uppercase;margin-bottom:10px;display:block;
+}
+.hero h1{font-size:2rem;font-weight:900;letter-spacing:-0.02em;line-height:1.1;}
+.hero .sub{color:#64748b;font-size:0.92rem;margin-top:10px;line-height:1.55;max-width:420px;}
+
+/* ── LINK CARD ── */
+.link-card{
+  margin:26px 22px 0;padding:24px 22px;border-radius:22px;color:#fff;
+  background:linear-gradient(135deg,#0f172a 0%,#312e81 55%,#0891b2 100%);
+}
+.link-card .label{font-size:0.76rem;color:#cbd5e1;font-weight:800;letter-spacing:0.03em;text-transform:uppercase;margin-bottom:12px;}
+.link-row{display:flex;gap:10px;align-items:center;}
+.link-box{
+  flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);
+  border-radius:12px;padding:13px 15px;font-size:0.84rem;font-family:monospace;
+  overflow-x:auto;white-space:nowrap;color:#fff;
+}
+.copy-btn{
+  flex-shrink:0;background:#fff;color:var(--indigo);border:none;padding:13px 18px;
+  border-radius:12px;font-weight:800;font-size:0.85rem;cursor:pointer;
+}
+.copy-btn.copied{background:#22c55e;color:#fff;}
+
+/* ── PINTEREST-STYLE LAYERED STAT CARDS (grid, not swiper — numbers read
+   better all at once than one-at-a-time) ── */
+.stats-masonry{column-count:2;column-gap:12px;padding:22px 22px 8px;}
+.stat-card{
+  break-inside:avoid;margin-bottom:12px;border-radius:22px;overflow:hidden;
+  box-shadow:0 14px 28px rgba(15,23,42,0.12);background:#fff;
+}
+.stat-art{position:relative;padding:16px 18px 0;display:flex;justify-content:flex-end;}
+.stat-art::before{
+  content:'';position:absolute;top:-40%;left:-25%;width:80%;height:80%;border-radius:50%;
+  background:rgba(255,255,255,0.2);
+}
+.stat-badge{
+  position:relative;z-index:2;width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,0.92);
+  display:flex;align-items:center;justify-content:center;font-size:1.05rem;box-shadow:0 8px 16px rgba(0,0,0,0.14);
+}
+.stat-body{padding:0;}
+.stat-card .val{font-size:1.55rem;font-weight:900;color:#fff;position:relative;z-index:2;padding:0 18px;}
+.stat-card .lbl{font-size:0.78rem;color:rgba(255,255,255,0.85);margin-top:2px;font-weight:600;padding:0 18px 16px;}
+.sc-1{background:linear-gradient(135deg,#4f46e5,#7c3aed);min-height:118px;}
+.sc-2{background:linear-gradient(135deg,#0891b2,#06b6d4);min-height:96px;}
+.sc-3{background:linear-gradient(135deg,#be123c,#f43f5e);min-height:100px;}
+.sc-4{background:linear-gradient(135deg,#166534,#22c55e);min-height:150px;}
+.sc-5{background:linear-gradient(135deg,#b45309,#f59e0b);min-height:110px;}
+.sc-6{background:linear-gradient(135deg,#0f172a,#334155);min-height:96px;}
+
+/* ── SECTION ── */
+.section{padding:36px 22px 60px;}
+.section-eyebrow{font-size:0.76rem;font-weight:800;color:#4f46e5;letter-spacing:0.04em;text-transform:uppercase;margin-bottom:8px;}
+.section h2{font-size:1.4rem;font-weight:900;letter-spacing:-0.01em;}
+
+.referred-masonry{column-count:2;column-gap:12px;margin-top:20px;}
+.referred-card{
+  break-inside:avoid;margin-bottom:12px;background:#f8fafc;border:1.5px solid #f1f5f9;
+  border-radius:16px;padding:16px 16px;
+}
+.referred-card .avatar{
+  width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--indigo),var(--accent));
+  color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.9rem;margin-bottom:10px;
+}
+.referred-card .name{font-weight:700;font-size:0.88rem;}
+.referred-card .email{font-size:0.76rem;color:#94a3b8;margin-top:2px;word-break:break-all;}
+.empty{padding:34px 22px;text-align:center;color:#94a3b8;font-size:0.88rem;}
+
+.loader{width:26px;height:26px;border:4px solid rgba(0,0,0,0.06);border-top:4px solid var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;margin:70px auto;}
+@keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+
+<header>
+  <a class="brand" href="/">
+    <img src="MINDSHIFT.jpg" alt="MindShift Books logo">
+    MindShift Books
+  </a>
+  <a class="back" href="/account">My Account</a>
+</header>
+
+<div id="mainContent">
+  <div class="loader"></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="/auth.js"></script>
+<script>
+  const main = document.getElementById('mainContent');
+  const nf = new Intl.NumberFormat('en-NG');
+
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function initials(name) {
+    if (!name) return '👤';
+    const parts = name.trim().split(/\s+/);
+    return ((parts[0][0] || '') + (parts[1] ? parts[1][0] : '')).toUpperCase();
+  }
+
+  function render(affiliate, referred) {
+    const link = `${window.location.origin}/?ref=${affiliate.code}`;
+
+    main.innerHTML = `
+      <div class="hero">
+        <span class="eyebrow">✦ Your dashboard</span>
+        <h1>Hey ${escapeHtml((affiliate.name || '').split(' ')[0] || 'there')}, here's how you're doing.</h1>
+        <div class="sub">Every sale made through your link earns you 15% — tracked automatically, no codes needed.</div>
+      </div>
+
+      <div class="link-card">
+        <div class="label">Your referral link</div>
+        <div class="link-row">
+          <div class="link-box" id="linkBox">${link}</div>
+          <button class="copy-btn" id="copyBtn">Copy</button>
+        </div>
+      </div>
+
+      <div class="stats-masonry">
+        <div class="stat-card sc-4">
+          <div class="stat-art"><div class="stat-badge">💰</div></div>
+          <div class="val">₦${nf.format(affiliate.outstanding)}</div>
+          <div class="lbl">Owed to you right now</div>
+        </div>
+        <div class="stat-card sc-1">
+          <div class="stat-art"><div class="stat-badge">🔗</div></div>
+          <div class="val">${nf.format(affiliate.clicks)}</div>
+          <div class="lbl">Link clicks</div>
+        </div>
+        <div class="stat-card sc-2">
+          <div class="stat-art"><div class="stat-badge">🙌</div></div>
+          <div class="val">${nf.format(affiliate.signups)}</div>
+          <div class="lbl">Sign-ups</div>
+        </div>
+        <div class="stat-card sc-5">
+          <div class="stat-art"><div class="stat-badge">🛒</div></div>
+          <div class="val">${nf.format(affiliate.sales)}</div>
+          <div class="lbl">Sales</div>
+        </div>
+        <div class="stat-card sc-3">
+          <div class="stat-art"><div class="stat-badge">📈</div></div>
+          <div class="val">₦${nf.format(affiliate.earned)}</div>
+          <div class="lbl">Total earned, all time</div>
+        </div>
+        <div class="stat-card sc-6">
+          <div class="stat-art"><div class="stat-badge">✅</div></div>
+          <div class="val">₦${nf.format(affiliate.paidOut)}</div>
+          <div class="lbl">Already paid out</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-eyebrow">Community</div>
+        <h2>People you've referred</h2>
+        <div id="referredWrap"></div>
+      </div>
+    `;
+
+    const wrap = document.getElementById('referredWrap');
+    if (!referred || referred.length === 0) {
+      wrap.innerHTML = `<div class="empty">No one yet — share your link above to get your first referral.</div>`;
+    } else {
+      wrap.innerHTML = `<div class="referred-masonry">` + referred.map(r => `
+        <div class="referred-card">
+          <div class="avatar">${initials(r.name)}</div>
+          <div class="name">${escapeHtml(r.name || 'A new member')}</div>
+          <div class="email">${escapeHtml(r.email || '')}</div>
+        </div>
+      `).join('') + `</div>`;
+    }
+
+    document.getElementById('copyBtn').addEventListener('click', () => {
+      navigator.clipboard.writeText(link).then(() => {
+        const btn = document.getElementById('copyBtn');
+        btn.textContent = 'Copied!';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1800);
+      });
+    });
+  }
+
+  window.MSBAuth.onAuthReady(async (user) => {
+    if (!user) {
+      window.location.href = '/login?returnTo=' + encodeURIComponent('/affiliate/dashboard');
+      return;
+    }
+    try {
+      const token = await window.MSBAuth.getIdToken();
+      const res = await fetch('/api/affiliate/me', { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (!data || !data.affiliate) {
+        window.location.href = '/affiliate';
+        return;
+      }
+      render(data.affiliate, data.referred);
+    } catch (e) {
+      main.innerHTML = `<div class="empty">Could not load your dashboard. Please refresh the page.</div>`;
+    }
+  });
+</script>
+
+</body>
+</html>

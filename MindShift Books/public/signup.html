@@ -163,6 +163,14 @@ body{font-family:'Inter',sans-serif;color:var(--primary);background:var(--paper)
       <h1>Create your shelf.</h1>
       <div class="sub">Sign up to check out and keep every book in one place.</div>
 
+      <div id="refBanner" style="display:none; margin-bottom:20px; padding:11px 14px; border-radius:10px; background:rgba(79,70,229,0.08); border:1px solid rgba(79,70,229,0.18); font-size:0.85rem; color:#4338ca; font-weight:600;">
+        ✓ Referred by <span id="refBannerName"></span>
+      </div>
+      <div id="refManualWrap" style="margin-bottom:20px;">
+        <label for="refManualInput" style="display:block; font-size:0.82rem; font-weight:600; color:#6b7280; margin-bottom:6px;">Have a referral code? (optional)</label>
+        <input id="refManualInput" type="text" placeholder="e.g. CHIOMA83" autocapitalize="characters" style="width:100%; padding:11px 13px; border-radius:10px; border:1.5px solid #e2e8f0; font-size:0.9rem;">
+      </div>
+
       <form id="loginForm">
         <div class="field">
           <label for="name">Full name</label>
@@ -211,6 +219,33 @@ body{font-family:'Inter',sans-serif;color:var(--primary);background:var(--paper)
   const params = new URLSearchParams(location.search);
   const returnTo = params.get('returnTo') || '/';
   document.getElementById('signupLink').href = '/login?returnTo=' + encodeURIComponent(returnTo);
+
+  // Referral code — either auto-detected from a shared affiliate link
+  // (already captured by auth.js before this script runs) or typed in
+  // manually below. Whichever it is, it travels along with signup via
+  // window.MSBAuth's stored code, consumed by initAccountOnServer().
+  (function setupReferralField() {
+    const banner = document.getElementById('refBanner');
+    const bannerName = document.getElementById('refBannerName');
+    const manualWrap = document.getElementById('refManualWrap');
+    const manualInput = document.getElementById('refManualInput');
+    const existingCode = window.MSBAuth.getPendingAffCode();
+
+    if (existingCode) {
+      manualWrap.style.display = 'none';
+      banner.style.display = 'block';
+      bannerName.textContent = existingCode;
+      fetch('/api/affiliate/code-info/' + encodeURIComponent(existingCode))
+        .then(r => r.json())
+        .then(data => { if (data && data.name) bannerName.textContent = data.name; })
+        .catch(() => {});
+    } else {
+      manualInput.addEventListener('input', () => {
+        const val = manualInput.value.trim();
+        if (val) window.MSBAuth.storePendingAffCode(val.toUpperCase());
+      });
+    }
+  })();
 
   const form = document.getElementById('loginForm');
   const errorBox = document.getElementById('authError');

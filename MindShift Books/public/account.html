@@ -210,6 +210,10 @@ main{ max-width:760px;margin:0 auto;padding:100px 16px 60px;}
           <label for="detEmail">Email</label>
           <input id="detEmail" type="email" disabled>
         </div>
+        <div class="details-field" id="detReferredWrap" style="display:none;">
+          <label>Referred by</label>
+          <input id="detReferredName" type="text" disabled>
+        </div>
         <button class="btn buy-btn" id="detSaveBtn" style="width:auto;">Save Changes</button>
         <div class="details-save-note" id="detSaveNote">Saved ✓</div>
         <div style="margin-top:22px;border-top:1px solid #f1f5f9;padding-top:16px;">
@@ -352,6 +356,10 @@ main{ max-width:760px;margin:0 auto;padding:100px 16px 60px;}
       if (res.ok) {
         document.getElementById('detName').value = data.name || '';
         document.getElementById('detEmail').value = data.email || '';
+        if (data.referredByName) {
+          document.getElementById('detReferredWrap').style.display = '';
+          document.getElementById('detReferredName').value = data.referredByName;
+        }
       }
     } catch (e) { /* leave fields blank on failure */ }
   }

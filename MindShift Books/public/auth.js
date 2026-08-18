@@ -19,6 +19,55 @@
   if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
   const auth = firebase.auth();
 
+  // ---------------- Affiliate referral capture ----------------
+  // Runs on every page that loads auth.js (i.e. almost every page on the
+  // site), so a shared link like mindshiftbooks.shop/?ref=CODE is caught no
+  // matter which page it points to. "Last click wins" — if someone clicks
+  // two different affiliates' links before signing up, the most recent one
+  // gets credit. No expiry: the code is remembered until they actually sign
+  // up, however long that takes — someone browsing today and signing up
+  // next month still credits correctly. Attribution itself only actually
+  // happens once, server-side, the moment the account is first created (see
+  // referralFields in /api/account/init) — this is just capturing and
+  // remembering the code until that moment.
+  const AFF_STORAGE_KEY = 'msb_aff_ref';
+
+  function storePendingAffCode(code) {
+    try {
+      localStorage.setItem(AFF_STORAGE_KEY, JSON.stringify({ code }));
+    } catch (e) {}
+  }
+
+  function getPendingAffCode() {
+    try {
+      const raw = localStorage.getItem(AFF_STORAGE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed || !parsed.code) {
+        localStorage.removeItem(AFF_STORAGE_KEY);
+        return null;
+      }
+      return parsed.code;
+    } catch (e) { return null; }
+  }
+
+  (function captureAffCodeFromUrl() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const raw = params.get('ref');
+      if (!raw) return;
+      const code = raw.trim().toUpperCase().slice(0, 40);
+      if (!code) return;
+      storePendingAffCode(code);
+      const payload = JSON.stringify({ type: 'affiliate_click', path: window.location.pathname, affCode: code });
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon('/api/track', new Blob([payload], { type: 'application/json' }));
+      } else {
+        fetch('/api/track', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, keepalive: true }).catch(() => {});
+      }
+    } catch (e) {}
+  })();
+
   // In-flight/completed guard. accountInitPromise is set *synchronously* the
   // moment a call starts (not after it resolves), so a second call arriving
   // before the first finishes reuses the same promise instead of firing a
@@ -34,11 +83,16 @@
     accountInitPromise = (async () => {
       try {
         const token = await auth.currentUser.getIdToken();
+        const affCode = getPendingAffCode();
         await fetch('/api/account/init', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ name: name || null })
+          body: JSON.stringify({ name: name || null, affCode: affCode || null })
         });
+        // Sent once — whether or not it actually applied (it only applies to
+        // a genuinely brand-new account server-side), there's no reason to
+        // keep resending it on every later sign-in.
+        if (affCode) { try { localStorage.removeItem(AFF_STORAGE_KEY); } catch (e) {} }
       } catch (e) {
         // non-fatal — account page will retry on load. Clear the lock so a
         // genuine retry isn't permanently blocked by a failed attempt.
@@ -361,6 +415,8 @@
     signUpEmail,
     signInGoogle,
     signInFacebook,
+    getPendingAffCode,
+    storePendingAffCode,
     friendlyAuthError,
     redirectAfterAuth,
     getReturnTo,
