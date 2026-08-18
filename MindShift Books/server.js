@@ -1512,6 +1512,10 @@ app.get('/affiliate', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'affiliate.html'));
 });
 
+app.get('/affiliate/apply', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'affiliate-apply.html'));
+});
+
 app.get('/affiliate/dashboard', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'affiliate-dashboard.html'));
 });
