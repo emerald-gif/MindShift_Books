@@ -19,19 +19,33 @@
   if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
   const auth = firebase.auth();
 
-  let accountInitDone = false;
+  // In-flight/completed guard. accountInitPromise is set *synchronously* the
+  // moment a call starts (not after it resolves), so a second call arriving
+  // before the first finishes reuses the same promise instead of firing a
+  // duplicate /api/account/init request. Without this, initAccountOnServer()
+  // gets called from more than one place for the same sign-up (the explicit
+  // call in signUpEmail() *and* the onAuthStateChanged listener both fire),
+  // and both used to race past the old "accountInitDone" check before either
+  // had set it — causing two account/init calls, and two welcome emails.
+  let accountInitPromise = null;
 
-  async function initAccountOnServer(name) {
-    if (accountInitDone) return;
-    try {
-      const token = await auth.currentUser.getIdToken();
-      await fetch('/api/account/init', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ name: name || null })
-      });
-      accountInitDone = true;
-    } catch (e) { /* non-fatal — account page will retry on load */ }
+  function initAccountOnServer(name) {
+    if (accountInitPromise) return accountInitPromise;
+    accountInitPromise = (async () => {
+      try {
+        const token = await auth.currentUser.getIdToken();
+        await fetch('/api/account/init', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ name: name || null })
+        });
+      } catch (e) {
+        // non-fatal — account page will retry on load. Clear the lock so a
+        // genuine retry isn't permanently blocked by a failed attempt.
+        accountInitPromise = null;
+      }
+    })();
+    return accountInitPromise;
   }
 
   function friendlyAuthError(err) {
@@ -97,12 +111,15 @@
   // only as a genuine last resort for in-app webviews that block popups
   // outright — and even there it can strand the user; see the stall
   // detector below.
-  async function signInGoogle() {
-    const provider = new firebase.auth.GoogleAuthProvider();
+  //
+  // Shared by both signInGoogle() and signInFacebook() — same popup/redirect
+  // tradeoffs and failure modes apply to any OAuth provider here, not just
+  // Google, so this takes the provider instance and a label for messaging.
+  async function signInWithProvider(provider, redirectFlagKey, providerLabel) {
     const box = document.getElementById('authError');
 
     if (isLikelyInAppWebview()) {
-      try { sessionStorage.setItem('msb_google_redirect_pending', '1'); } catch (e) {}
+      try { sessionStorage.setItem(redirectFlagKey, '1'); } catch (e) {}
       return auth.signInWithRedirect(provider);
     }
 
@@ -113,19 +130,19 @@
     } catch (err) {
       const code = err && err.code;
       if (code === 'auth/operation-not-supported-in-this-environment') {
-        try { sessionStorage.setItem('msb_google_redirect_pending', '1'); } catch (e) {}
+        try { sessionStorage.setItem(redirectFlagKey, '1'); } catch (e) {}
         return auth.signInWithRedirect(provider);
       }
       if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
         // Some mobile Chrome builds auto-close the popup tab right after
         // the account is picked — Firebase reports that as
         // 'popup-closed-by-user' even when sign-in actually completed on
-        // Google's side. Give onAuthStateChanged a brief window to catch
-        // up before concluding the user genuinely cancelled; only show an
-        // error if they're still signed out after that.
+        // the provider's side. Give onAuthStateChanged a brief window to
+        // catch up before concluding the user genuinely cancelled; only
+        // show an error if they're still signed out after that.
         setTimeout(() => {
           if (!auth.currentUser && box) {
-            box.textContent = "The Google sign-in window closed before finishing. Please try again — and avoid switching apps or tabs while the Google screen is open.";
+            box.textContent = `The ${providerLabel} sign-in window closed before finishing. Please try again — and avoid switching apps or tabs while the ${providerLabel} screen is open.`;
             box.style.display = 'block';
           }
         }, 1200);
@@ -133,13 +150,33 @@
       }
       if (code === 'auth/popup-blocked') {
         if (box) {
-          box.textContent = "Your browser blocked the Google sign-in popup. Please allow popups for this site and try again, or sign in with email below.";
+          box.textContent = `Your browser blocked the ${providerLabel} sign-in popup. Please allow popups for this site and try again, or sign in with email below.`;
+          box.style.display = 'block';
+        }
+        return;
+      }
+      if (code === 'auth/account-exists-with-different-credential') {
+        if (box) {
+          box.textContent = `That email is already linked to another sign-in method (e.g. Google or email/password). Sign in that way instead — you can link ${providerLabel} to it afterwards from your account page.`;
           box.style.display = 'block';
         }
         return;
       }
       if (box) { box.textContent = friendlyAuthError(err); box.style.display = 'block'; }
     }
+  }
+
+  async function signInGoogle() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    return signInWithProvider(provider, 'msb_google_redirect_pending', 'Google');
+  }
+
+  async function signInFacebook() {
+    const provider = new firebase.auth.FacebookAuthProvider();
+    // Ask for the email up front — Facebook doesn't always return it
+    // otherwise, and we need it for order lookup / the welcome email.
+    provider.addScope('email');
+    return signInWithProvider(provider, 'msb_facebook_redirect_pending', 'Facebook');
   }
 
   function getReturnTo() {
@@ -165,17 +202,21 @@
     if (authRedirectHandled) return;
     if (window.location.pathname === '/login' || window.location.pathname === '/signup') {
       authRedirectHandled = true;
-      try { sessionStorage.removeItem('msb_google_redirect_pending'); } catch (e) {}
+      try {
+        sessionStorage.removeItem('msb_google_redirect_pending');
+        sessionStorage.removeItem('msb_facebook_redirect_pending');
+      } catch (e) {}
       redirectAfterAuth();
     }
   }
 
-  // Handles the bounce-back from signInWithRedirect (Google). Safe to call on
-  // every page — resolves to null if this load isn't a redirect return.
+  // Handles the bounce-back from signInWithRedirect (Google or Facebook).
+  // Safe to call on every page — resolves to null if this load isn't a
+  // redirect return.
   //
   // Known Firebase quirk: getRedirectResult() can resolve with result=null
-  // even when the Google sign-in actually succeeded (seen in some mobile/
-  // in-app browsers where storage partitioning delays this promise past the
+  // even when sign-in actually succeeded (seen in some mobile/in-app
+  // browsers where storage partitioning delays this promise past the
   // point the SDK already consumed the redirect). When that happens the user
   // gets stuck on the sign-up/sign-in page even though they're signed in.
   // onAuthStateChanged() below is the reliable fallback — it fires once the
@@ -191,21 +232,27 @@
     if (box) { box.textContent = friendlyAuthError(err); box.style.display = 'block'; }
   });
 
-  // Stall detector for the redirect path. If signInGoogle() had to fall
-  // back to signInWithRedirect() (see above) and the storage hand-off gets
-  // silently swallowed, the user lands back on /login or /signup signed
-  // out with no error — otherwise a permanent, unexplained stall. Give
-  // them an explicit way out instead.
+  // Stall detector for the redirect path. If signInGoogle()/signInFacebook()
+  // had to fall back to signInWithRedirect() (see above) and the storage
+  // hand-off gets silently swallowed, the user lands back on /login or
+  // /signup signed out with no error — otherwise a permanent, unexplained
+  // stall. Give them an explicit way out instead.
   if (window.location.pathname === '/login' || window.location.pathname === '/signup') {
-    let redirectPending = false;
-    try { redirectPending = sessionStorage.getItem('msb_google_redirect_pending') === '1'; } catch (e) {}
-    if (redirectPending) {
+    let redirectPendingProvider = null;
+    try {
+      if (sessionStorage.getItem('msb_google_redirect_pending') === '1') redirectPendingProvider = 'Google';
+      else if (sessionStorage.getItem('msb_facebook_redirect_pending') === '1') redirectPendingProvider = 'Facebook';
+    } catch (e) {}
+    if (redirectPendingProvider) {
       setTimeout(() => {
         if (authRedirectHandled) return; // it worked — we've already left the page
-        try { sessionStorage.removeItem('msb_google_redirect_pending'); } catch (e) {}
+        try {
+          sessionStorage.removeItem('msb_google_redirect_pending');
+          sessionStorage.removeItem('msb_facebook_redirect_pending');
+        } catch (e) {}
         const box = document.getElementById('authError');
         if (box) {
-          box.textContent = "Google sign-in didn't complete in this browser. Please try email/password below, or open this site in Chrome or Safari instead of an in-app browser.";
+          box.textContent = `${redirectPendingProvider} sign-in didn't complete in this browser. Please try email/password below, or open this site in Chrome or Safari instead of an in-app browser.`;
           box.style.display = 'block';
         }
       }, 6000);
@@ -313,6 +360,7 @@
     signInEmail,
     signUpEmail,
     signInGoogle,
+    signInFacebook,
     friendlyAuthError,
     redirectAfterAuth,
     getReturnTo,
