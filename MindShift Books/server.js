@@ -261,6 +261,121 @@ async function requireUser(req, res, next) {
   }
 }
 
+// ---------------- Affiliate program ----------------
+// One doc per affiliate, keyed by their own referral CODE (not their uid) —
+// that makes "look up an affiliate by the code in a link" a single get()
+// instead of a query, both for click tracking and for signup attribution.
+function makeAffiliateCode(name) {
+  const base = (name || 'FRIEND').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 8) || 'FRIEND';
+  const suffix = crypto.randomInt(100, 999);
+  return `${base}${suffix}`;
+}
+
+async function generateUniqueAffiliateCode(name) {
+  for (let i = 0; i < 8; i++) {
+    const code = makeAffiliateCode(name);
+    const existing = await db.collection('affiliates').doc(code).get();
+    if (!existing.exists) return code;
+  }
+  // Extremely unlikely fallback — fully random code.
+  return `AFF${crypto.randomInt(100000, 999999)}`;
+}
+
+// GET /api/affiliate/code-info/:code — public, no auth. Used only to show
+// "Referred by [Name]" on the signup page — deliberately returns just the
+// display name, nothing else about the affiliate.
+app.get('/api/affiliate/code-info/:code', async (req, res) => {
+  try {
+    if (!db) return res.json({ name: null });
+    const code = String(req.params.code || '').toUpperCase().slice(0, 40);
+    const doc = await db.collection('affiliates').doc(code).get();
+    return res.json({ name: doc.exists ? (doc.data().name || null) : null });
+  } catch (err) {
+    return res.json({ name: null });
+  }
+});
+
+app.post('/api/affiliate/apply', requireUser, async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const { phone, bankName, accountNumber, accountName, platform, handle } = req.body || {};
+    if (!phone || !String(phone).trim()) return res.status(400).json({ error: 'Phone number is required.' });
+    if (!bankName || !String(bankName).trim()) return res.status(400).json({ error: 'Bank name is required.' });
+    if (!accountNumber || !String(accountNumber).trim()) return res.status(400).json({ error: 'Account number is required.' });
+    if (!accountName || !String(accountName).trim()) return res.status(400).json({ error: 'Account name is required.' });
+
+    // Already an affiliate? Return their existing profile instead of making
+    // a second one — this endpoint is safe to call more than once.
+    const existingQuery = await db.collection('affiliates').where('uid', '==', req.uid).limit(1).get();
+    if (!existingQuery.empty) {
+      const doc = existingQuery.docs[0];
+      return res.json({ code: doc.id, ...doc.data() });
+    }
+
+    const userDoc = await db.collection('users').doc(req.uid).get();
+    const name = (userDoc.exists && userDoc.data().name) || req.userName || (req.userEmail || '').split('@')[0];
+    const code = await generateUniqueAffiliateCode(name);
+
+    const record = {
+      uid: req.uid,
+      name: name || 'Affiliate',
+      email: req.userEmail,
+      phone: String(phone).trim().slice(0, 30),
+      bank: {
+        bankName: String(bankName).trim().slice(0, 80),
+        accountNumber: String(accountNumber).trim().slice(0, 20),
+        accountName: String(accountName).trim().slice(0, 120)
+      },
+      platform: (platform && String(platform).trim().slice(0, 40)) || 'Other',
+      handle: (handle && String(handle).trim().slice(0, 200)) || null,
+      status: 'active',
+      clicks: 0,
+      signups: 0,
+      sales: 0,
+      earned: 0,
+      paidOut: 0,
+      createdAt: admin.firestore.Timestamp.now()
+    };
+    await db.collection('affiliates').doc(code).set(record);
+    return res.json({ code, ...record });
+  } catch (err) {
+    console.error('/api/affiliate/apply error', err);
+    return res.status(500).json({ error: 'Could not set up your affiliate account. Please try again.' });
+  }
+});
+
+app.get('/api/affiliate/me', requireUser, async (req, res) => {  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const q = await db.collection('affiliates').where('uid', '==', req.uid).limit(1).get();
+    if (q.empty) return res.json({ affiliate: null });
+    const doc = q.docs[0];
+    const data = doc.data();
+
+    // Recent people this affiliate referred, most recent first.
+    const referredQuery = await db.collection('users').where('referredByCode', '==', doc.id).orderBy('createdAt', 'desc').limit(50).get().catch(() => null);
+    const referred = referredQuery ? referredQuery.docs.map(d => ({
+      name: d.data().name || null,
+      email: d.data().email || null,
+      joinedAt: d.data().createdAt || null
+    })) : [];
+
+    return res.json({
+      affiliate: {
+        code: doc.id,
+        name: data.name, platform: data.platform, handle: data.handle,
+        clicks: data.clicks || 0, signups: data.signups || 0, sales: data.sales || 0,
+        earned: data.earned || 0, paidOut: data.paidOut || 0,
+        outstanding: Math.max(0, (data.earned || 0) - (data.paidOut || 0)),
+        createdAt: data.createdAt
+      },
+      referred
+    });
+  } catch (err) {
+    console.error('/api/affiliate/me error', err);
+    return res.status(500).json({ error: 'Could not load your affiliate dashboard. Please try again.' });
+  }
+});
+
 /**
  * Get USD -> NGN exchange rate
  * Priority:
@@ -781,21 +896,33 @@ app.get('/config', (req, res) => {
 // Fires from a tiny snippet on each page. No cookies, no IP storage, no
 // cross-site identifiers — just a type + path + optional productId, so the
 // admin dashboard can show views/downloads/purchases per book.
-const TRACK_TYPES = new Set(['home', 'review', 'preview', 'page']);
+const TRACK_TYPES = new Set(['home', 'review', 'preview', 'page', 'affiliate_click']);
+const AFFILIATE_COMMISSION_RATE = 0.15; // 15% of the actual NGN price paid, "ours" books only
+
 app.post('/api/track', (req, res) => {
   // Always respond fast; analytics must never slow down or break the page.
   res.status(204).end();
   if (!db) return;
   try {
-    const { type, path: p, productId, ref } = req.body || {};
+    const { type, path: p, productId, ref, affCode } = req.body || {};
     if (!TRACK_TYPES.has(type)) return;
-    db.collection('events').add({
+    const payload = {
       type,
       path: typeof p === 'string' ? p.slice(0, 200) : null,
       productId: (productId && PRODUCTS[productId]) ? productId : null,
       ref: typeof ref === 'string' ? ref.slice(0, 300) : null,
       createdAt: admin.firestore.Timestamp.now()
-    }).catch(() => null);
+    };
+    if (type === 'affiliate_click' && typeof affCode === 'string' && affCode.trim()) {
+      const code = affCode.trim().toUpperCase().slice(0, 40);
+      payload.affCode = code;
+      // Best-effort click counter on the affiliate doc itself — doesn't block
+      // the response above, and a missing/invalid code just no-ops.
+      db.collection('affiliates').doc(code).update({
+        clicks: admin.firestore.FieldValue.increment(1)
+      }).catch(() => null);
+    }
+    db.collection('events').add(payload).catch(() => null);
   } catch { /* ignore malformed beacons */ }
 });
 
@@ -872,8 +999,23 @@ app.get('/api/orders', ordersLimiter, async (req, res) => {
 app.post('/api/account/init', requireUser, async (req, res) => {
   try {
     if (!db) return res.status(500).json({ error: 'Database unavailable' });
-    const { name } = req.body || {};
+    const { name, affCode } = req.body || {};
     const userRef = db.collection('users').doc(req.uid);
+
+    // Referral attribution — looked up *before* the create() call so it can
+    // be written atomically as part of the same doc, rather than a
+    // follow-up update. Only ever applied on a genuinely new account: an
+    // existing user calling this again (e.g. a later sign-in) never has
+    // their referral changed, and self-referral (affiliate visiting their
+    // own link) is explicitly rejected.
+    let referralFields = {};
+    if (affCode && typeof affCode === 'string' && affCode.trim()) {
+      const code = affCode.trim().toUpperCase().slice(0, 40);
+      const affDoc = await db.collection('affiliates').doc(code).get();
+      if (affDoc.exists && affDoc.data().uid !== req.uid) {
+        referralFields = { referredByCode: code, referredByName: affDoc.data().name || null };
+      }
+    }
 
     // Atomic "create if absent" — .create() fails with ALREADY_EXISTS if the
     // doc is already there, instead of the old get()-then-set() pattern
@@ -889,7 +1031,8 @@ app.post('/api/account/init', requireUser, async (req, res) => {
       await userRef.create({
         email: req.userEmail,
         name: (name && String(name).trim().slice(0, 120)) || req.userName || null,
-        createdAt: admin.firestore.Timestamp.now()
+        createdAt: admin.firestore.Timestamp.now(),
+        ...referralFields
       });
     } catch (createErr) {
       if (createErr.code === 6 /* ALREADY_EXISTS */ || /already exists/i.test(createErr.message || '')) {
@@ -903,6 +1046,14 @@ app.post('/api/account/init', requireUser, async (req, res) => {
       } else {
         throw createErr;
       }
+    }
+
+    // Credit the affiliate's signup counter — only once, only for a genuine
+    // new account with a valid (non-self) referral code.
+    if (isNewAccount && referralFields.referredByCode) {
+      db.collection('affiliates').doc(referralFields.referredByCode).update({
+        signups: admin.firestore.FieldValue.increment(1)
+      }).catch(() => null);
     }
 
     // Claim legacy orders: any past `my_order` doc with a matching email but
@@ -935,7 +1086,8 @@ app.get('/api/account', requireUser, async (req, res) => {
     return res.json({
       email: d.email || req.userEmail,
       name: d.name || req.userName || null,
-      createdAt: d.createdAt ? (d.createdAt.toDate ? d.createdAt.toDate().toISOString() : d.createdAt) : null
+      createdAt: d.createdAt ? (d.createdAt.toDate ? d.createdAt.toDate().toISOString() : d.createdAt) : null,
+      referredByName: d.referredByName || null
     });
   } catch (err) {
     console.error('/api/account error', err);
@@ -1179,8 +1331,46 @@ app.post('/api/verify', payLimiter, async (req, res) => {
       paidAt: admin.firestore ? admin.firestore.Timestamp.now() : new Date()
     };
 
+    // Affiliate commission — 15% of the actual NGN price paid, and only on
+    // "ours" books (Amazon-linked "featured" books never reach this
+    // endpoint at all, since that sale happens off-site). Uses
+    // metadata.items, which carries the exact per-item ngn amount charged
+    // at checkout — so a 50%-off book credits 15% of the discounted price,
+    // never the original sticker price. Looked up from the buyer's own
+    // account (set once, first-touch, back when they signed up) — not from
+    // anything the buyer could tamper with at checkout time.
+    let affiliateCode = null;
+    let commissionAmount = 0;
+    if (db && metadata.uid) {
+      try {
+        const buyerDoc = await db.collection('users').doc(metadata.uid).get();
+        const code = buyerDoc.exists ? buyerDoc.data().referredByCode : null;
+        if (code) {
+          const metaItems = Array.isArray(metadata.items) ? metadata.items : [];
+          const eligibleNgn = metaItems.reduce((sum, it) => {
+            const product = PRODUCTS[it.id];
+            return (product && product.category === 'ours') ? sum + Number(it.ngn || 0) : sum;
+          }, 0);
+          if (eligibleNgn > 0) {
+            affiliateCode = code;
+            commissionAmount = Math.round(eligibleNgn * AFFILIATE_COMMISSION_RATE);
+          }
+        }
+      } catch (e) { /* commission lookup is best-effort — never block the order */ }
+    }
+    if (affiliateCode) {
+      record.affiliateCode = affiliateCode;
+      record.affiliateCommission = commissionAmount;
+    }
+
     if (db) {
       await db.collection('my_order').add(record).catch(() => null);
+      if (affiliateCode && commissionAmount > 0) {
+        db.collection('affiliates').doc(affiliateCode).update({
+          sales: admin.firestore.FieldValue.increment(1),
+          earned: admin.firestore.FieldValue.increment(commissionAmount)
+        }).catch(() => null);
+      }
       await db.collection('transactions').doc(tx.reference).set({
         reference: tx.reference, email: userEmail, amount: ngnAmountPaid,
         status: 'success', paidAt: admin.firestore.Timestamp.now()
@@ -1318,6 +1508,14 @@ app.get('/welcome', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'welcome.html'));
 });
 
+app.get('/affiliate', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'affiliate.html'));
+});
+
+app.get('/affiliate/dashboard', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'affiliate-dashboard.html'));
+});
+
 app.get('/support', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'support.html'));
 });
@@ -1431,6 +1629,52 @@ app.get('/api/admin/summary', async (req, res) => {
   } catch (err) {
     console.error('/api/admin/summary error', err);
     res.status(500).json({ error: 'Could not load stats' });
+  }
+});
+
+// GET /api/admin/affiliates — every affiliate, most-earned first, for the
+// admin dashboard's Affiliates tab.
+app.get('/api/admin/affiliates', async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const snap = await db.collection('affiliates').get();
+    const affiliates = snap.docs.map(d => {
+      const a = d.data();
+      return {
+        code: d.id,
+        name: a.name, email: a.email, phone: a.phone, platform: a.platform, handle: a.handle,
+        bank: a.bank || null,
+        clicks: a.clicks || 0, signups: a.signups || 0, sales: a.sales || 0,
+        earned: a.earned || 0, paidOut: a.paidOut || 0,
+        outstanding: Math.max(0, (a.earned || 0) - (a.paidOut || 0)),
+        createdAt: a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().toISOString() : a.createdAt) : null
+      };
+    }).sort((a, b) => b.outstanding - a.outstanding);
+    return res.json({ affiliates });
+  } catch (err) {
+    console.error('/api/admin/affiliates error', err);
+    return res.status(500).json({ error: 'Could not load affiliates' });
+  }
+});
+
+// POST /api/admin/affiliates/:code/mark-paid — records that everything
+// currently owed to this affiliate has been paid out (e.g. by bank
+// transfer, done manually outside this system). Sets paidOut = earned,
+// so outstanding drops to 0; any new sales after this point start
+// accumulating a fresh outstanding balance from zero.
+app.post('/api/admin/affiliates/:code/mark-paid', async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const code = String(req.params.code || '').toUpperCase();
+    const ref = db.collection('affiliates').doc(code);
+    const doc = await ref.get();
+    if (!doc.exists) return res.status(404).json({ error: 'Affiliate not found' });
+    const earned = doc.data().earned || 0;
+    await ref.update({ paidOut: earned });
+    return res.json({ ok: true, paidOut: earned });
+  } catch (err) {
+    console.error('/api/admin/affiliates/:code/mark-paid error', err);
+    return res.status(500).json({ error: 'Could not update payout status' });
   }
 });
 
