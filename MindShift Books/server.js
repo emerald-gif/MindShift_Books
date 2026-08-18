@@ -874,17 +874,35 @@ app.post('/api/account/init', requireUser, async (req, res) => {
     if (!db) return res.status(500).json({ error: 'Database unavailable' });
     const { name } = req.body || {};
     const userRef = db.collection('users').doc(req.uid);
-    const existing = await userRef.get();
-    const isNewAccount = !existing.exists;
 
-    if (isNewAccount) {
-      await userRef.set({
+    // Atomic "create if absent" — .create() fails with ALREADY_EXISTS if the
+    // doc is already there, instead of the old get()-then-set() pattern
+    // (read, then write) which had a race window: two concurrent requests
+    // for the same brand-new uid could both read "doesn't exist yet" before
+    // either had written, both treat it as a new account, and both fire the
+    // welcome email. With .create(), only one of two racing requests can
+    // ever win — the other lands in the catch block below as an existing
+    // account, so exactly one welcome email goes out no matter how the
+    // requests overlap.
+    let isNewAccount = true;
+    try {
+      await userRef.create({
         email: req.userEmail,
         name: (name && String(name).trim().slice(0, 120)) || req.userName || null,
         createdAt: admin.firestore.Timestamp.now()
       });
-    } else if (name && String(name).trim() && !existing.data().name) {
-      await userRef.update({ name: String(name).trim().slice(0, 120) });
+    } catch (createErr) {
+      if (createErr.code === 6 /* ALREADY_EXISTS */ || /already exists/i.test(createErr.message || '')) {
+        isNewAccount = false;
+        if (name && String(name).trim()) {
+          const existing = await userRef.get();
+          if (!existing.data().name) {
+            await userRef.update({ name: String(name).trim().slice(0, 120) });
+          }
+        }
+      } else {
+        throw createErr;
+      }
     }
 
     // Claim legacy orders: any past `my_order` doc with a matching email but
