@@ -252,6 +252,29 @@
   </section>
 </main>
 
+<!-- Free eBook detail drawer — same component as /free-ebooks.html -->
+<div class="fe-modal" id="feModal">
+  <div class="fe-modal-sheet">
+    <button type="button" class="fe-modal-close" id="feModalClose" aria-label="Close">&times;</button>
+    <div class="fe-modal-top">
+      <img id="feModalCover" class="fe-modal-cover" src="" alt="">
+      <div>
+        <div class="fe-modal-title" id="feModalTitle"></div>
+        <div class="fe-modal-author" id="feModalAuthor"></div>
+        <div class="fe-modal-meta" id="feModalMeta"></div>
+      </div>
+    </div>
+    <div class="fe-modal-desc" id="feModalDesc">Loading description…</div>
+    <div class="fe-modal-actions">
+      <a href="#" id="feModalReadBtn" class="btn fe-read-btn" target="_blank" rel="noopener noreferrer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+        Read Free eBook
+      </a>
+    </div>
+    <div class="fe-note">Opens in a new tab, right here on MindShift Books. Public-domain title via Project Gutenberg.</div>
+  </div>
+</div>
+
   <!-- FAQ — collapsible accordion, meant to stay permanently (also
        satisfies Google OAuth branding verification's "home page must
        explain the purpose of the app" requirement). Uses native
