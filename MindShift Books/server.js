@@ -92,7 +92,19 @@ app.get(/\.html$/, (req, res, next) => {
 });
 
 // Serve static assets (public folder only — /files is NOT served statically)
-app.use(express.static(path.join(__dirname, 'public')));
+// Explicit Cache-Control here matters: without it, browsers fall back to
+// *heuristic* caching (guessing a TTL from Last-Modified) and can silently
+// keep serving an old CSS/HTML file after a deploy — which is exactly what
+// caused the affiliate page swiper to look fixed one load and broken the
+// next, on the same phone, same URL. 'no-cache' doesn't mean "don't cache",
+// it means "always ask the server first" — the server replies 304 (cheap,
+// no re-download) if the file hasn't changed, so this stays fast but never
+// silently stale.
+app.use(express.static(path.join(__dirname, 'public'), {
+  setHeaders: (res) => {
+    res.setHeader('Cache-Control', 'no-cache');
+  }
+}));
 
 // Firebase admin init (SERVICE_ACCOUNT_JSON or ADC)
 try {
