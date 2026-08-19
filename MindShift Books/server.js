@@ -1093,7 +1093,7 @@ app.get('/api/product/:id', (req, res) => {
 const GOOGLE_BOOKS_API = 'https://www.googleapis.com/books/v1/volumes';
 
 const FREE_EBOOK_CATEGORIES = [
-  { slug: 'all',        label: 'All',                query: 'subject:fiction OR subject:"self-help" OR subject:business OR subject:psychology' },
+  { slug: 'all',        label: 'All',                query: null }, // handled specially — see ALL_MIX_QUERIES below
   { slug: 'fiction',    label: 'Fiction',             query: 'subject:fiction' },
   { slug: 'self-help',  label: 'Self-Help',           query: 'subject:"self-help"' },
   { slug: 'business',   label: 'Business & Money',    query: 'subject:business' },
@@ -1105,6 +1105,18 @@ const FREE_EBOOK_CATEGORIES = [
   { slug: 'biography',  label: 'Biography',           query: 'subject:biography' },
   { slug: 'classics',   label: 'Classics',            query: 'subject:classics' },
   { slug: 'poetry',     label: 'Poetry',              query: 'subject:poetry' }
+];
+
+// "All" doesn't use a single compound query — Google Books' search syntax
+// doesn't reliably combine subject: field-restricts with OR + quoted phrases
+// (it silently returns 0 results instead of erroring). Instead we rotate
+// through these known-good single-genre queries page by page, so "All" is
+// always a real mix without relying on fragile query syntax.
+const ALL_MIX_QUERIES = [
+  'subject:fiction', 'subject:"self-help"', 'subject:business',
+  'subject:psychology', 'subject:romance', 'subject:"science fiction"',
+  'subject:mystery', 'subject:history', 'subject:biography',
+  'subject:classics', 'subject:poetry'
 ];
 
 // Simple in-memory cache so repeat visits (and repeat page-2/3 browsing)
@@ -1174,9 +1186,14 @@ async function fetchGoogleBooks(query, startIndex) {
   try {
     json = await fetchGoogleBooksOnce(query, startIndex);
   } catch (e) {
-    // Google's backend occasionally throws a transient 5xx — retry once
-    // after a short pause instead of failing the whole request.
-    if (e.status && e.status >= 500) {
+    // Google's backend occasionally throws a transient 5xx, and unauthenticated
+    // (no API key) requests get 429 rate-limited under real traffic — retry
+    // once after a short pause instead of failing the whole request. 429s get
+    // a longer backoff since they need the rate window to actually clear.
+    if (e.status === 429) {
+      await sleep(1500);
+      json = await fetchGoogleBooksOnce(query, startIndex);
+    } else if (e.status && e.status >= 500) {
       await sleep(600);
       json = await fetchGoogleBooksOnce(query, startIndex);
     } else {
@@ -1200,14 +1217,24 @@ app.get('/api/free-ebooks', async (req, res) => {
     const slug = (req.query.category || 'all').toString();
     const q = (req.query.q || '').toString().trim();
     const startIndex = Math.max(0, parseInt(req.query.startIndex, 10) || 0);
-    let query;
+    let data;
     if (q) {
-      query = q;
+      data = await fetchGoogleBooks(q, startIndex);
+    } else if (slug === 'all') {
+      // Rotate through a different real genre query every page of 20, so
+      // "Load more" keeps cycling through a genuine mix instead of hammering
+      // one fragile compound query.
+      const page = Math.floor(startIndex / 20);
+      const genreQuery = ALL_MIX_QUERIES[page % ALL_MIX_QUERIES.length];
+      const localStart = Math.floor(page / ALL_MIX_QUERIES.length) * 20;
+      data = await fetchGoogleBooks(genreQuery, localStart);
+      // Report a large-but-plausible total so the front end's "load more"
+      // keeps working indefinitely instead of stopping after one genre's count.
+      data = { items: data.items, totalItems: Math.max(data.totalItems, 1000) };
     } else {
-      const cat = FREE_EBOOK_CATEGORIES.find(c => c.slug === slug) || FREE_EBOOK_CATEGORIES[0];
-      query = cat.query;
+      const cat = FREE_EBOOK_CATEGORIES.find(c => c.slug === slug) || FREE_EBOOK_CATEGORIES[1];
+      data = await fetchGoogleBooks(cat.query, startIndex);
     }
-    const data = await fetchGoogleBooks(query, startIndex);
     res.json(data);
   } catch (e) {
     console.error('[free-ebooks] list fetch failed:', e && e.message ? e.message : e);
