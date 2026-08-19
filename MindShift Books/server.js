@@ -1093,7 +1093,7 @@ app.get('/api/product/:id', (req, res) => {
 const GOOGLE_BOOKS_API = 'https://www.googleapis.com/books/v1/volumes';
 
 const FREE_EBOOK_CATEGORIES = [
-  { slug: 'all',        label: 'All',                query: 'the' },
+  { slug: 'all',        label: 'All',                query: 'subject:fiction OR subject:"self-help" OR subject:business OR subject:psychology' },
   { slug: 'fiction',    label: 'Fiction',             query: 'subject:fiction' },
   { slug: 'self-help',  label: 'Self-Help',           query: 'subject:"self-help"' },
   { slug: 'business',   label: 'Business & Money',    query: 'subject:business' },
@@ -1130,7 +1130,11 @@ function normalizeGoogleBook(item) {
     pageCount: v.pageCount || null,
     publishedDate: v.publishedDate || null,
     // Where "Read Free eBook" sends the visitor — Google's own free reader.
-    readLink: a.webReaderLink || v.previewLink || v.infoLink || null
+    // previewLink (books.google.com) works for anyone regardless of country.
+    // webReaderLink opens the Play Books app/site, which is account/country
+    // gated and throws "not available in your country" for a lot of users —
+    // so it's now just a fallback, not the primary link.
+    readLink: v.previewLink || a.webReaderLink || v.infoLink || null
   };
 }
 
