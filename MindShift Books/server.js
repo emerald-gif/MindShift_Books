@@ -1104,97 +1104,92 @@ app.get('/api/product/:id', (req, res) => {
   }
 });
 
-// ---------------- FREE EBOOKS (Google Books catalog proxy) ----------------
-// Thousands of real, actually-free books (public domain + publisher free
-// titles) shown in our own UI. We never host or redistribute the files —
-// "Read Free eBook" just sends the reader to Google's own free reader/
-// preview link for that title. No API key or approval needed; Google's
-// `filter=free-ebooks` param guarantees every result here is free, not
-// just previewable.
-const GOOGLE_BOOKS_API = 'https://www.googleapis.com/books/v1/volumes';
+// ---------------- FREE EBOOKS (Gutendex / Project Gutenberg catalog proxy) ----------------
+// Thousands of real, actually-free public-domain books (Pride and Prejudice,
+// Sherlock Holmes, Dracula, Moby Dick, Shakespeare, etc.) shown in our own
+// UI. We never host or redistribute the files — "Read Free eBook" sends the
+// reader straight to Project Gutenberg's own hosted HTML/EPUB/text file for
+// that title. No API key, no approval, no country gating — every format URL
+// is served directly off Gutenberg's own file host.
+const GUTENDEX_API = 'https://gutendex.com/books';
+const GUTENDEX_PAGE_SIZE = 32; // fixed by Gutendex, not configurable
 
 const FREE_EBOOK_CATEGORIES = [
-  { slug: 'all',        label: 'All',                query: null }, // handled specially — see ALL_MIX_QUERIES below
-  { slug: 'fiction',    label: 'Fiction',             query: 'fiction' },
-  { slug: 'self-help',  label: 'Self-Help',           query: '"self-help"' },
-  { slug: 'business',   label: 'Business & Money',    query: 'business' },
-  { slug: 'psychology', label: 'Psychology',          query: 'psychology' },
-  { slug: 'romance',    label: 'Romance',             query: 'romance' },
-  { slug: 'sci-fi',     label: 'Science Fiction',     query: '"science fiction"' },
-  { slug: 'mystery',    label: 'Mystery & Thriller',  query: 'mystery' },
-  { slug: 'history',    label: 'History',             query: 'history' },
-  { slug: 'biography',  label: 'Biography',           query: 'biography' },
-  { slug: 'classics',   label: 'Classics',            query: 'classics' },
-  { slug: 'poetry',     label: 'Poetry',              query: 'poetry' }
+  { slug: 'all',        label: 'All',                topic: null }, // handled specially — see ALL_MIX_TOPICS below
+  { slug: 'fiction',    label: 'Fiction',             topic: 'fiction' },
+  { slug: 'self-help',  label: 'Self-Help',           topic: 'conduct of life' },
+  { slug: 'business',   label: 'Business & Money',    topic: 'business' },
+  { slug: 'psychology', label: 'Psychology',          topic: 'psychology' },
+  { slug: 'romance',    label: 'Romance',             topic: 'love stories' },
+  { slug: 'sci-fi',     label: 'Science Fiction',     topic: 'science fiction' },
+  { slug: 'mystery',    label: 'Mystery & Thriller',  topic: 'detective' },
+  { slug: 'history',    label: 'History',             topic: 'history' },
+  { slug: 'biography',  label: 'Biography',           topic: 'biography' },
+  { slug: 'classics',   label: 'Classics',            topic: 'literature' },
+  { slug: 'poetry',     label: 'Poetry',              topic: 'poetry' }
 ];
 
-// "All" doesn't use a single compound query — Google Books' search syntax
-// doesn't reliably combine subject: field-restricts with OR + quoted phrases
-// (it silently returns 0 results instead of erroring). Instead we rotate
-// through these known-good single-genre queries page by page, so "All" is
-// always a real mix without relying on fragile query syntax.
-//
-// IMPORTANT: these are plain keywords, NOT "subject:x". Confirmed via
-// production logs that "subject:fiction" + filter=free-ebooks reliably
-// returns googleTotalItems=0 — free/public-domain books on Google Books are
-// mostly old scans without clean subject/category metadata, so requiring
-// BOTH free-ebook status AND a matching subject tag intersects two almost
-// entirely disjoint sets. A bare keyword searches title/description text
-// instead, which is what actually returned real results (this is also why
-// the original catch-all q=the query worked — no field restriction).
-const ALL_MIX_QUERIES = [
-  'fiction', '"self-help"', 'business',
-  'psychology', 'romance', '"science fiction"',
-  'mystery', 'history', 'biography',
-  'classics', 'poetry'
+// "All" rotates through these real topics so browsing stays a genuine mix
+// instead of one giant, ID-ordered dump. Note: Gutendex's own default
+// ordering (no topic/search) is already by popularity/download_count, so
+// this is only needed to keep genre variety on the "All" tab specifically.
+const ALL_MIX_TOPICS = [
+  'fiction', 'conduct of life', 'business',
+  'psychology', 'love stories', 'science fiction',
+  'detective', 'history', 'biography',
+  'literature', 'poetry'
 ];
 
-// Simple in-memory cache so repeat visits (and repeat page-2/3 browsing)
-// don't re-hit Google Books every time — keeps us well inside their free
-// quota even with real traffic. Cleared on server restart, which is fine.
+// Simple in-memory cache, keyed per Gutendex page (32 books at a time) so
+// repeat browsing doesn't re-hit Gutendex every time. Cleared on restart.
 const freeEbooksCache = new Map();
 const FREE_EBOOKS_CACHE_TTL = 60 * 60 * 1000; // 1 hour
 
-function normalizeGoogleBook(item) {
-  const v = item.volumeInfo || {};
-  const a = item.accessInfo || {};
-  let thumb = (v.imageLinks && (v.imageLinks.thumbnail || v.imageLinks.smallThumbnail)) || null;
-  if (thumb) thumb = thumb.replace(/^http:/, 'https:').replace('&edge=curl', '').replace('zoom=1', 'zoom=2');
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// Pick the best "read in browser" link and cover image out of Gutendex's
+// `formats` map (a mimetype -> URL dictionary). These are direct links to
+// Gutenberg's own file host — no app, no account, no region check.
+function pickReadLink(formats) {
+  return formats['text/html; charset=utf-8']
+    || formats['text/html']
+    || formats['text/html; charset=us-ascii']
+    || formats['application/epub+zip']
+    || formats['text/plain; charset=utf-8']
+    || formats['text/plain']
+    || null;
+}
+function pickCover(formats) {
+  return formats['image/jpeg'] || null;
+}
+
+function normalizeGutendexBook(item) {
+  const formats = item.formats || {};
+  const authors = (item.authors || []).map(a => a.name).filter(Boolean);
   return {
     id: item.id,
-    title: v.title || 'Untitled',
-    authors: v.authors || [],
-    author: (v.authors && v.authors[0]) || 'Unknown Author',
-    description: v.description || '',
-    cover: thumb,
-    categories: v.categories || [],
-    language: v.language || 'en',
-    pageCount: v.pageCount || null,
-    publishedDate: v.publishedDate || null,
-    // Where "Read Free eBook" sends the visitor — Google's own free reader.
-    // previewLink (books.google.com) works for anyone regardless of country.
-    // webReaderLink opens the Play Books app/site, which is account/country
-    // gated and throws "not available in your country" for a lot of users —
-    // so it's now just a fallback, not the primary link.
-    readLink: v.previewLink || a.webReaderLink || v.infoLink || null
+    title: item.title || 'Untitled',
+    authors,
+    author: authors[0] || 'Unknown Author',
+    description: '', // Gutendex has no blurb field — detail panel falls back to subjects below
+    cover: pickCover(formats),
+    categories: (item.subjects || []).slice(0, 3),
+    language: (item.languages && item.languages[0]) || 'en',
+    pageCount: null, // not provided by Gutendex
+    publishedDate: null, // not provided by Gutendex (these are old editions, not new releases)
+    downloadCount: item.download_count || 0,
+    readLink: pickReadLink(formats)
   };
 }
 
-// Optional — if you add a free Google Cloud API key with the Books API
-// enabled, set GOOGLE_BOOKS_API_KEY in your environment and requests will
-// use it automatically (higher quota, more reliable). Works fine without
-// one too.
-const GOOGLE_BOOKS_API_KEY = process.env.GOOGLE_BOOKS_API_KEY || '';
-console.log(GOOGLE_BOOKS_API_KEY
-  ? `[free-ebooks] Using Google Books API key (…${GOOGLE_BOOKS_API_KEY.slice(-6)})`
-  : '[free-ebooks] WARNING: no GOOGLE_BOOKS_API_KEY set — running unauthenticated, low rate limit.');
+async function fetchGutendexPageOnce(topicOrSearch, isSearch, page) {
+  const params = new URLSearchParams();
+  if (isSearch) params.set('search', topicOrSearch);
+  else if (topicOrSearch) params.set('topic', topicOrSearch);
+  params.set('languages', 'en'); // English-only — matches our audience and avoids untranslated results
+  params.set('page', String(page));
 
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-async function fetchGoogleBooksOnce(query, startIndex) {
-  let url = `${GOOGLE_BOOKS_API}?q=${encodeURIComponent(query)}&filter=free-ebooks&printType=books&maxResults=20&startIndex=${startIndex}&country=US`;
-  if (GOOGLE_BOOKS_API_KEY) url += `&key=${GOOGLE_BOOKS_API_KEY}`;
-
+  const url = `${GUTENDEX_API}?${params.toString()}`;
   const resp = await fetch(url, {
     headers: {
       'User-Agent': 'Mozilla/5.0 (compatible; MindShiftBooks/1.0; +https://mindshiftbooks.shop)',
@@ -1203,53 +1198,66 @@ async function fetchGoogleBooksOnce(query, startIndex) {
   });
   if (!resp.ok) {
     const bodyText = await resp.text().catch(() => '');
-    const err = new Error(`Google Books API error: ${resp.status} ${resp.statusText} — ${bodyText.slice(0, 300)}`);
+    const err = new Error(`Gutendex API error: ${resp.status} ${resp.statusText} — ${bodyText.slice(0, 300)}`);
     err.status = resp.status;
     throw err;
   }
   return resp.json();
 }
 
-async function fetchGoogleBooks(query, startIndex) {
-  const cacheKey = `list::${query}::${startIndex}`;
+// Fetches one Gutendex page (32 books), with retry/backoff — Gutendex is a
+// community-run free service and occasionally flakes or times out.
+async function fetchGutendexPage(topicOrSearch, isSearch, page) {
+  const cacheKey = `page::${isSearch ? 'search' : 'topic'}::${topicOrSearch || ''}::${page}`;
   const cached = freeEbooksCache.get(cacheKey);
   if (cached && cached.expires > Date.now()) return cached.data;
 
   let json;
   let lastErr;
-  // Google's backend occasionally flakes (503 backendFailed) or rate-limits
-  // unauthenticated requests (429) — a single retry wasn't enough when the
-  // backend stays flaky for a few seconds, so try up to 3 times total with
-  // increasing backoff before giving up and surfacing the error.
   const delays = [500, 1200, 2500];
   for (let attempt = 0; attempt <= delays.length; attempt++) {
     try {
-      json = await fetchGoogleBooksOnce(query, startIndex);
+      json = await fetchGutendexPageOnce(topicOrSearch, isSearch, page);
       lastErr = null;
       break;
     } catch (e) {
       lastErr = e;
-      const retryable = e.status === 429 || (e.status && e.status >= 500);
+      const retryable = e.status === 429 || (e.status && e.status >= 500) || !e.status;
       if (!retryable || attempt === delays.length) break;
       await sleep(delays[attempt]);
     }
   }
   if (lastErr) throw lastErr;
-  const items = Array.isArray(json.items) ? json.items.map(normalizeGoogleBook) : [];
-  const data = { items, totalItems: json.totalItems || 0 };
 
-  if (items.length === 0) {
-    // Google returned 200 OK but nothing usable — could be a genuinely empty
-    // result, or Google degrading gracefully instead of erroring during a
-    // backend hiccup. Log it plainly and DON'T cache it: caching an empty
-    // result for a full hour would keep serving "no books" long after
-    // Google recovers. Real, non-empty results are still cached normally.
-    console.warn(`[free-ebooks] "${query}" (start=${startIndex}) returned 0 items — googleTotalItems=${json.totalItems ?? 'undefined'}, hasKey=${!!GOOGLE_BOOKS_API_KEY}`);
-    return data;
+  const data = { results: Array.isArray(json.results) ? json.results : [], count: json.count || 0 };
+  if (data.results.length === 0) {
+    console.warn(`[free-ebooks] topic/search="${topicOrSearch}" page=${page} returned 0 items`);
+    return data; // don't cache empty pages — could be a transient Gutendex hiccup
   }
-
   freeEbooksCache.set(cacheKey, { data, expires: Date.now() + FREE_EBOOKS_CACHE_TTL });
   return data;
+}
+
+// The front end still speaks in "startIndex" (an item offset) and requests
+// 20 items at a time, so this stitches together however many 32-book
+// Gutendex pages are needed to cover [startIndex, startIndex+20) and slices
+// out exactly the requested window.
+async function fetchGutendexRange(topicOrSearch, isSearch, startIndex, count) {
+  const endIndexExclusive = startIndex + count;
+  const startPage = Math.floor(startIndex / GUTENDEX_PAGE_SIZE) + 1;
+  const endPage = Math.floor((endIndexExclusive - 1) / GUTENDEX_PAGE_SIZE) + 1;
+
+  let stitched = [];
+  let totalCount = 0;
+  for (let page = startPage; page <= endPage; page++) {
+    const pageData = await fetchGutendexPage(topicOrSearch, isSearch, page);
+    totalCount = pageData.count;
+    if (pageData.results.length === 0) break; // ran off the end of the catalog for this topic
+    stitched = stitched.concat(pageData.results);
+  }
+  const offsetInFirstPage = startIndex - (startPage - 1) * GUTENDEX_PAGE_SIZE;
+  const slice = stitched.slice(offsetInFirstPage, offsetInFirstPage + count);
+  return { items: slice.map(normalizeGutendexBook), totalItems: totalCount };
 }
 
 app.get('/api/free-ebook-categories', (req, res) => {
@@ -1265,21 +1273,20 @@ app.get('/api/free-ebooks', async (req, res) => {
     const startIndex = Math.max(0, parseInt(req.query.startIndex, 10) || 0);
     let data;
     if (q) {
-      data = await fetchGoogleBooks(q, startIndex);
+      data = await fetchGutendexRange(q, true, startIndex, 20);
     } else if (slug === 'all') {
-      // Rotate through a different real genre query every page of 20, so
-      // "Load more" keeps cycling through a genuine mix instead of hammering
-      // one fragile compound query.
+      // Rotate through a different real topic every page of 20, so
+      // "Load more" keeps cycling through a genuine mix.
       const page = Math.floor(startIndex / 20);
-      const genreQuery = ALL_MIX_QUERIES[page % ALL_MIX_QUERIES.length];
-      const localStart = Math.floor(page / ALL_MIX_QUERIES.length) * 20;
-      data = await fetchGoogleBooks(genreQuery, localStart);
-      // Report a large-but-plausible total so the front end's "load more"
-      // keeps working indefinitely instead of stopping after one genre's count.
-      data = { items: data.items, totalItems: Math.max(data.totalItems, 1000) };
+      const topic = ALL_MIX_TOPICS[page % ALL_MIX_TOPICS.length];
+      const localStart = Math.floor(page / ALL_MIX_TOPICS.length) * 20;
+      const topicData = await fetchGutendexRange(topic, false, localStart, 20);
+      // Report a large-but-plausible total so "load more" keeps working
+      // indefinitely instead of stopping after one topic's count.
+      data = { items: topicData.items, totalItems: Math.max(topicData.totalItems, 1000) };
     } else {
       const cat = FREE_EBOOK_CATEGORIES.find(c => c.slug === slug) || FREE_EBOOK_CATEGORIES[1];
-      data = await fetchGoogleBooks(cat.query, startIndex);
+      data = await fetchGutendexRange(cat.topic, false, startIndex, 20);
     }
     res.json(data);
   } catch (e) {
@@ -1288,8 +1295,9 @@ app.get('/api/free-ebooks', async (req, res) => {
   }
 });
 
-// Single-volume detail — used by the book detail panel for the full
-// (untruncated) description.
+// Single-book detail — used by the book detail panel. Gutendex has no
+// dedicated /books/:id/description-style field, so we surface subjects and
+// bookshelves as the "about" text instead of a blurb.
 app.get('/api/free-ebooks/:id', async (req, res) => {
   try {
     const id = req.params.id;
@@ -1297,9 +1305,7 @@ app.get('/api/free-ebooks/:id', async (req, res) => {
     const cached = freeEbooksCache.get(cacheKey);
     if (cached && cached.expires > Date.now()) return res.json(cached.data);
 
-    let url = `${GOOGLE_BOOKS_API}/${encodeURIComponent(id)}?country=US`;
-    if (GOOGLE_BOOKS_API_KEY) url += `&key=${GOOGLE_BOOKS_API_KEY}`;
-    const resp = await fetch(url, {
+    const resp = await fetch(`${GUTENDEX_API}/${encodeURIComponent(id)}`, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; MindShiftBooks/1.0; +https://mindshiftbooks.shop)',
         'Accept': 'application/json'
@@ -1307,7 +1313,10 @@ app.get('/api/free-ebooks/:id', async (req, res) => {
     });
     if (!resp.ok) return res.status(404).json({ error: 'Book not found' });
     const json = await resp.json();
-    const book = normalizeGoogleBook(json);
+    const book = normalizeGutendexBook(json);
+    book.description = (json.subjects || []).length
+      ? `Subjects: ${(json.subjects || []).slice(0, 6).join(', ')}`
+      : '';
     const data = { book };
     freeEbooksCache.set(cacheKey, { data, expires: Date.now() + FREE_EBOOKS_CACHE_TTL });
     res.json(data);
