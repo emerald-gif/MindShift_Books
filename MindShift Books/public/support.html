@@ -158,6 +158,7 @@
     <li onclick="window.location.href='/legal'">Terms &amp; Privacy</li>
     <li onclick="openContact()">Contact Us</li>
     <li onclick="followYoutube()">Follow us on YouTube</li>
+    <li onclick="window.location.href='/affiliate'">Become an Affiliate</li>
   </ul>
   <div style="position:absolute;bottom:18px;left:18px;right:18px;color:#9ca3af;font-size:0.9rem;">
     <div>© 2026 MindShift Books</div>
@@ -196,6 +197,11 @@
       <div class="cat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></div>
       <div class="cat-title">Account &amp; Orders</div>
       <div class="cat-sub">Finding past purchases</div>
+    </a>
+    <a href="#cat-affiliate">
+      <div class="cat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><circle cx="12" cy="8" r="6"></circle><path d="M15.5 13.5 17 22l-5-3-5 3 1.5-8.5"></path></svg></div>
+      <div class="cat-title">Affiliate Program</div>
+      <div class="cat-sub">Earning, payouts, your link</div>
     </a>
     <a href="#cat-general">
       <div class="cat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 1 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12" y2="17"></line></svg></div>
@@ -347,6 +353,99 @@
         </button>
         <div class="faq-answer"><div class="faq-answer-inner">
           Yes — every book in that order gets its own download link, both in your confirmation email and on your My Account page.
+        </div></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- AFFILIATE PROGRAM -->
+  <div class="faq-category" id="cat-affiliate" data-cat>
+    <div class="section-head">
+      <div class="section-label-row">
+        <span class="cat-head-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="12" cy="8" r="6"></circle><path d="M15.5 13.5 17 22l-5-3-5 3 1.5-8.5"></path></svg></span>
+        <h2>Affiliate Program</h2>
+      </div>
+    </div>
+    <div class="faq-list">
+
+      <div class="faq-item" id="faq-aff-what-is-it" data-faq>
+        <button class="faq-question" onclick="toggleFaq(this)">
+          What is the Affiliate Program?
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="faq-answer"><div class="faq-answer-inner">
+          It's a free way to earn money by recommending MindShift Books. You get a personal referral link to the whole catalog — share it anywhere (Instagram, WhatsApp, TikTok, a blog) — and you earn a commission on every book bought through it.
+        </div></div>
+      </div>
+
+      <div class="faq-item" id="faq-aff-how-to-join" data-faq>
+        <button class="faq-question" onclick="toggleFaq(this)">
+          How do I become an affiliate?
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="faq-answer"><div class="faq-answer-inner">
+          Tap "Become an Affiliate" in the menu or footer, or go straight to <a href="/affiliate" style="color:#4f46e5;font-weight:700;">/affiliate</a> and hit "Become an affiliate." Sign in (or create a free account) and your unique referral link is generated instantly — no application review, no minimum followers.
+        </div></div>
+      </div>
+
+      <div class="faq-item" id="faq-aff-commission" data-faq>
+        <button class="faq-question" onclick="toggleFaq(this)">
+          How much commission do I earn?
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="faq-answer"><div class="faq-answer-inner">
+          15% of the actual price paid on every book sold through your link — including if it sold at a discount. It's tracked and credited automatically, no codes to enter at checkout.
+        </div></div>
+      </div>
+
+      <div class="faq-item" id="faq-aff-link-duration" data-faq>
+        <button class="faq-question" onclick="toggleFaq(this)">
+          How long does my referral link last?
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="faq-answer"><div class="faq-answer-inner">
+          There's no deadline. Once someone clicks your link, your credit for them is remembered until they sign up — even weeks later — and it carries through even if they sign up with Google or Facebook instead of clicking straight through.
+        </div></div>
+      </div>
+
+      <div class="faq-item" id="faq-aff-get-paid" data-faq>
+        <button class="faq-question" onclick="toggleFaq(this)">
+          How and when do I get paid?
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="faq-answer"><div class="faq-answer-inner">
+          Payouts run automatically every Monday, straight to the bank account on your affiliate profile, once your available balance reaches the ₦5,000 minimum. Below that, your balance just keeps growing until it clears the threshold — no need to request anything.
+        </div></div>
+      </div>
+
+      <div class="faq-item" id="faq-aff-dashboard" data-faq>
+        <button class="faq-question" onclick="toggleFaq(this)">
+          Where do I find my referral link and track my earnings?
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="faq-answer"><div class="faq-answer-inner">
+          Sign in and open <a href="/affiliate/dashboard" style="color:#4f46e5;font-weight:700;">your affiliate dashboard</a> — it shows your link, clicks, sign-ups, books sold, and running balance in real time. Your bank details and payout history live under <a href="/affiliate/payout" style="color:#4f46e5;font-weight:700;">Payout</a>.
+        </div></div>
+      </div>
+
+      <div class="faq-item" id="faq-aff-update-bank" data-faq>
+        <button class="faq-question" onclick="toggleFaq(this)">
+          Can I update my bank details?
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="faq-answer"><div class="faq-answer-inner">
+          Yes, from your payout page — unless you already have a payout queued for the coming Monday, in which case those details are locked until it's paid out, then editable again right away.
+        </div></div>
+      </div>
+
+      <div class="faq-item" id="faq-aff-cost" data-faq>
+        <button class="faq-question" onclick="toggleFaq(this)">
+          Does it cost anything to join, or do I need to buy a book first?
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="faq-answer"><div class="faq-answer-inner">
+          It's completely free, forever, and you don't need to have bought a book yourself to start recommending them.
         </div></div>
       </div>
 
