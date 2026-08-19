@@ -146,6 +146,7 @@ const BREVO_API_KEY = process.env.BREVO_API_KEY || null; // set this in your env
 const BREVO_TEMPLATE_ID = Number(process.env.BREVO_TEMPLATE_ID || 1); // order receipt / delivery email
 const BREVO_WELCOME_TEMPLATE_ID = Number(process.env.BREVO_WELCOME_TEMPLATE_ID || 2); // new-account welcome email
 const BREVO_BANK_OTP_TEMPLATE_ID = Number(process.env.BREVO_BANK_OTP_TEMPLATE_ID || 3); // bank-details-change verification code
+const BREVO_AFFILIATE_WELCOME_TEMPLATE_ID = Number(process.env.BREVO_AFFILIATE_WELCOME_TEMPLATE_ID || 4); // successful affiliate onboarding
 const BREVO_SENDER_NAME = process.env.BREVO_SENDER_NAME || 'Mindshift Books';
 const BREVO_SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'contact@mindshiftbooks.shop';
 
@@ -207,6 +208,36 @@ async function sendBankOtpEmail(email, name, code) {
   } catch (e) {
     console.warn('Brevo bank-otp email send failed', e.message || e);
     return { ok: false, error: 'Could not send the verification code. Please try again.' };
+  }
+}
+
+// Fires once, right after a brand-new affiliate record is created (see
+// /api/affiliate/apply). Fire-and-forget, same as the account welcome
+// email — a failed send here shouldn't fail the application itself, since
+// the affiliate record is already live either way.
+async function sendAffiliateWelcomeEmail(email, name, code) {
+  if (!BREVO_API_KEY || !email) return;
+  try {
+    const emailRes = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        accept: 'application/json',
+        'api-key': BREVO_API_KEY,
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        sender: { name: BREVO_SENDER_NAME, email: BREVO_SENDER_EMAIL },
+        to: [{ email, name: name || undefined }],
+        templateId: BREVO_AFFILIATE_WELCOME_TEMPLATE_ID,
+        params: { name: name || 'there', code }
+      })
+    });
+    if (!emailRes.ok) {
+      const txt = await emailRes.text().catch(() => null);
+      console.error('Brevo affiliate-welcome email error', emailRes.status, txt);
+    }
+  } catch (e) {
+    console.warn('Brevo affiliate-welcome email send failed', e.message || e);
   }
 }
 
@@ -392,6 +423,7 @@ app.post('/api/affiliate/apply', requireUser, async (req, res) => {
       createdAt: admin.firestore.Timestamp.now()
     };
     await db.collection('affiliates').doc(code).set(record);
+    sendAffiliateWelcomeEmail(req.userEmail, record.name, code);
     return res.json({ code, ...record });
   } catch (err) {
     console.error('/api/affiliate/apply error', err);
@@ -444,11 +476,12 @@ app.get('/api/affiliate/me', requireUser, async (req, res) => {  try {
 });
 
 // POST /api/affiliate/bank/otp — sends a 6-digit code to the affiliate's own
-// account email, required before /api/affiliate/bank will accept a change.
-// Same lock as the update itself: no point sending a code if they can't
-// actually use it yet.
+// account email, required before /api/affiliate/bank/otp/verify will let
+// them in. Same lock as the update itself: no point sending a code if they
+// can't actually use it yet.
 const BANK_OTP_TTL_MS = 10 * 60 * 1000; // 10 minutes
 const BANK_OTP_RESEND_COOLDOWN_MS = 60 * 1000; // 60 seconds between sends
+const BANK_VERIFIED_TTL_MS = 5 * 60 * 1000; // window to actually save after verifying
 
 function maskEmail(email) {
   const [user, domain] = String(email || '').split('@');
@@ -488,13 +521,17 @@ app.post('/api/affiliate/bank/otp', requireUser, async (req, res) => {
     const sent = await sendBankOtpEmail(email, data.name, code);
     if (!sent.ok) return res.status(502).json({ error: sent.error });
 
+    // A fresh code request invalidates any previously-granted verified
+    // session too — starting the flow over shouldn't leave an old session
+    // still able to save.
     await doc.ref.update({
       bankOtp: {
         hash,
         expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + BANK_OTP_TTL_MS),
         requestedAt: now,
         attempts: 0
-      }
+      },
+      bankVerified: admin.firestore.FieldValue.delete()
     });
 
     return res.json({ ok: true, sentTo: maskEmail(email) });
@@ -504,22 +541,18 @@ app.post('/api/affiliate/bank/otp', requireUser, async (req, res) => {
   }
 });
 
-// PUT /api/affiliate/bank — affiliate updates their own bank account details
-// (used to receive Monday payouts). Does not touch balances.
-// Locked while a payout is queued for them (pendingPayout > 0) — the amount
-// owed was already snapshotted with the old bank details when Monday's
-// batch ran, so editing now would silently desync from what the admin is
-// about to send it to. They can edit again once that payout is marked paid.
-// Also requires a valid emailed OTP (see /api/affiliate/bank/otp above) —
-// proves whoever is submitting this change actually owns the account inbox,
-// not just an active session.
-app.put('/api/affiliate/bank', requireUser, async (req, res) => {
+// POST /api/affiliate/bank/otp/verify — checks the emailed code. On success
+// it does NOT save anything by itself; it opens a short (5-minute),
+// server-side-only "verified" window during which /api/affiliate/bank will
+// accept a save. This is deliberately a separate step from the save call so
+// the dashboard can show "verify" and "edit details" as two distinct
+// screens — but the security boundary is this endpoint, not the UI: the
+// save endpoint below trusts nothing from the client except that this
+// window is currently open, so there's no client-side path that skips it.
+app.post('/api/affiliate/bank/otp/verify', requireUser, async (req, res) => {
   try {
     if (!db) return res.status(500).json({ error: 'Database unavailable' });
-    const { bankName, accountName, accountNumber, otp } = req.body || {};
-    if (!bankName || !String(bankName).trim()) return res.status(400).json({ error: 'Bank name is required.' });
-    if (!accountName || !String(accountName).trim()) return res.status(400).json({ error: 'Account name is required.' });
-    if (!accountNumber || !String(accountNumber).trim()) return res.status(400).json({ error: 'Account number is required.' });
+    const { otp } = req.body || {};
     if (!otp || !String(otp).trim()) return res.status(400).json({ error: 'Enter the verification code sent to your email.' });
 
     const q = await db.collection('affiliates').where('uid', '==', req.uid).limit(1).get();
@@ -548,12 +581,60 @@ app.put('/api/affiliate/bank', requireUser, async (req, res) => {
       return res.status(400).json({ error: 'That code is incorrect. Please try again.' });
     }
 
+    const until = admin.firestore.Timestamp.fromMillis(Date.now() + BANK_VERIFIED_TTL_MS);
+    await doc.ref.update({
+      bankVerified: { until },
+      bankOtp: admin.firestore.FieldValue.delete()
+    });
+
+    return res.json({ ok: true, expiresInSeconds: Math.round(BANK_VERIFIED_TTL_MS / 1000) });
+  } catch (err) {
+    console.error('/api/affiliate/bank/otp/verify error', err);
+    return res.status(500).json({ error: 'Could not verify that code. Please try again.' });
+  }
+});
+
+// PUT /api/affiliate/bank — affiliate updates their own bank account details
+// (used to receive Monday payouts). Does not touch balances.
+// Locked while a payout is queued for them (pendingPayout > 0) — the amount
+// owed was already snapshotted with the old bank details when Monday's
+// batch ran, so editing now would silently desync from what the admin is
+// about to send it to. They can edit again once that payout is marked paid.
+// Also requires an active, server-granted "verified" window from
+// /api/affiliate/bank/otp/verify above — this is checked purely off the
+// affiliate's own doc, never off anything the client sends, so there's no
+// request anyone can craft that skips the emailed code.
+app.put('/api/affiliate/bank', requireUser, async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const { bankName, accountName, accountNumber } = req.body || {};
+    if (!bankName || !String(bankName).trim()) return res.status(400).json({ error: 'Bank name is required.' });
+    if (!accountName || !String(accountName).trim()) return res.status(400).json({ error: 'Account name is required.' });
+    if (!accountNumber || !String(accountNumber).trim()) return res.status(400).json({ error: 'Account number is required.' });
+
+    const q = await db.collection('affiliates').where('uid', '==', req.uid).limit(1).get();
+    if (q.empty) return res.status(404).json({ error: 'You are not registered as an affiliate.' });
+    const doc = q.docs[0];
+    const data = doc.data();
+
+    if ((data.pendingPayout || 0) > 0) {
+      return res.status(409).json({ error: 'You have a payout queued for this Monday, so your bank details are locked until it\'s paid out. You can update them right after.' });
+    }
+
+    const verifiedUntilMs = data.bankVerified && data.bankVerified.until && data.bankVerified.until.toMillis
+      ? data.bankVerified.until.toMillis() : 0;
+    if (Date.now() > verifiedUntilMs) {
+      return res.status(401).json({ error: 'Please verify with the code sent to your email first.', needsVerification: true });
+    }
+
     const bank = {
       bankName: String(bankName).trim().slice(0, 80),
       accountName: String(accountName).trim().slice(0, 120),
       accountNumber: String(accountNumber).trim().slice(0, 20)
     };
-    await doc.ref.update({ bank, bankOtp: admin.firestore.FieldValue.delete() });
+    // Single-use: the verified window is consumed the moment it's spent on
+    // an actual save, so a second save attempt needs a fresh code again.
+    await doc.ref.update({ bank, bankVerified: admin.firestore.FieldValue.delete() });
     return res.json({ ok: true, bank });
   } catch (err) {
     console.error('/api/affiliate/bank error', err);
