@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Free eBooks | MindShift Books</title>
+  <meta name="description" content="Thousands of free eBooks across fiction, self-help, business, psychology, and more — browse, read the description, and read free instantly." />
+  <link rel="shortcut icon" href="MINDSHIFT.jpg" type="image/jpg">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+
+  <style>
+    /* ---------------- HERO ---------------- */
+    .fe-hero {
+      text-align: center; padding: 36px 20px 28px; margin: 0 0 22px;
+      background: linear-gradient(180deg, #ffffff 0%, #f4f7fb 100%);
+      border-radius: 20px; border: 1px solid #eef2f7;
+    }
+    .fe-hero .eyebrow {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+      color: #06b6d4; margin-bottom: 10px;
+    }
+    .fe-hero .eyebrow svg { width: 13px; height: 13px; }
+    .fe-hero h1 { font-size: 1.55rem; font-weight: 800; color: var(--primary); letter-spacing: -0.01em; margin: 0 0 8px; }
+    .fe-hero p { color: #64748b; font-size: 0.92rem; max-width: 460px; margin: 0 auto; }
+
+    .fe-search-wrap { position: relative; margin: 20px auto 0; max-width: 460px; }
+    .fe-search-wrap input {
+      width: 100%; padding: 13px 16px 13px 42px; border-radius: 999px; border: 1.5px solid #e2e8f0;
+      font-size: 0.9rem; font-family: inherit; outline: none; transition: border-color 0.15s ease;
+    }
+    .fe-search-wrap input:focus { border-color: var(--accent); }
+    .fe-search-wrap svg { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #94a3b8; }
+
+    /* ---------------- CATEGORY CHIPS ---------------- */
+    .fe-chip-row {
+      display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 14px; margin-bottom: 6px;
+      scrollbar-width: none;
+    }
+    .fe-chip-row::-webkit-scrollbar { display: none; }
+    .fe-chip {
+      flex: 0 0 auto; padding: 9px 16px; border-radius: 999px; border: 1.5px solid #e2e8f0;
+      background: #fff; color: #475569; font-size: 0.82rem; font-weight: 700; white-space: nowrap;
+      cursor: pointer; transition: all 0.15s ease;
+    }
+    .fe-chip:hover { border-color: #4f46e5; color: #4f46e5; }
+    .fe-chip.active { background: linear-gradient(90deg,#4f46e5,#06b6d4); border-color: transparent; color: #fff; }
+
+    /* ---------------- FREE BADGE on cover ---------------- */
+    .fe-badge {
+      position: absolute; top: 6px; left: 6px; background: #10b981; color: #fff;
+      font-size: 0.62rem; font-weight: 800; letter-spacing: 0.02em; text-transform: uppercase;
+      padding: 3px 7px; border-radius: 999px; box-shadow: 0 2px 6px rgba(16,185,129,0.35); z-index: 2;
+    }
+    .fe-card .card-cover-wrap { position: relative; }
+    .fe-card .ebook-cover { background: #f1f5f9; }
+    .fe-card .card-actions .read-free-btn {
+      background: #10b981; color: #fff; border: none;
+    }
+
+    /* ---------------- GRID (paginated, below swiper) ---------------- */
+    .fe-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 6px;
+    }
+    @media (min-width: 640px) { .fe-grid { grid-template-columns: repeat(3, 1fr); gap: 18px; } }
+    @media (min-width: 1000px) { .fe-grid { grid-template-columns: repeat(4, 1fr); gap: 20px; } }
+
+    .fe-loadmore-wrap { display: flex; justify-content: center; margin: 26px 0 8px; }
+    .fe-loadmore-btn {
+      padding: 12px 26px; border-radius: 999px; border: 1.5px solid #e2e8f0; background: #fff;
+      color: var(--primary); font-weight: 700; font-size: 0.88rem; cursor: pointer;
+    }
+    .fe-loadmore-btn:hover { border-color: #4f46e5; color: #4f46e5; }
+    .fe-loadmore-btn:disabled { opacity: 0.6; cursor: default; }
+
+    .fe-empty { text-align: center; padding: 30px; color: #94a3b8; font-size: 0.9rem; }
+
+    /* ---------------- DETAIL MODAL ---------------- */
+    .fe-modal {
+      display: none; position: fixed; inset: 0; z-index: 9999;
+      background: rgba(15,23,42,0.55); align-items: flex-end; justify-content: center; padding: 0;
+    }
+    .fe-modal.open { display: flex; }
+    .fe-modal-sheet {
+      background: #fff; width: 100%; max-width: 560px; max-height: 88vh; overflow-y: auto;
+      border-radius: 22px 22px 0 0; padding: 22px 22px 28px; position: relative;
+    }
+    @media (min-width: 640px) {
+      .fe-modal { align-items: center; }
+      .fe-modal-sheet { border-radius: 22px; max-height: 82vh; }
+    }
+    .fe-modal-close {
+      position: absolute; top: 14px; right: 14px; width: 34px; height: 34px; border-radius: 50%;
+      border: none; background: #f1f5f9; color: #475569; font-size: 1.1rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .fe-modal-top { display: flex; gap: 16px; margin-top: 6px; }
+    .fe-modal-cover { width: 96px; height: 138px; object-fit: cover; border-radius: 8px; flex-shrink: 0; background: #f1f5f9; box-shadow: 0 10px 24px rgba(0,0,0,0.12); }
+    .fe-modal-title { font-size: 1.08rem; font-weight: 800; color: var(--primary); line-height: 1.3; margin-bottom: 4px; }
+    .fe-modal-author { font-size: 0.85rem; color: #64748b; margin-bottom: 8px; }
+    .fe-modal-meta { display: flex; flex-wrap: wrap; gap: 6px; }
+    .fe-modal-meta span {
+      font-size: 0.68rem; font-weight: 700; color: #475569; background: #f1f5f9;
+      padding: 4px 9px; border-radius: 999px;
+    }
+    .fe-modal-desc { margin-top: 18px; font-size: 0.88rem; line-height: 1.65; color: #334155; white-space: pre-line; }
+    .fe-modal-desc.loading { color: #94a3b8; }
+    .fe-modal-actions { margin-top: 22px; display: flex; gap: 10px; }
+    .fe-modal-actions .btn { flex: 1; }
+    .fe-read-btn { background: #10b981; color: #fff; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+    .fe-note { margin-top: 14px; font-size: 0.74rem; color: #94a3b8; line-height: 1.5; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <h1 style="display:flex;align-items:center;gap:10px;margin:0;">
+      <img src="MINDSHIFT.jpg" alt="MindShift logo" style="width:36px;height:36px;border-radius:6px;">
+      <span>MindShift Books</span>
+    </h1>
+    <div class="header-icon-group">
+      <span class="acct-nav-slot"></span>
+      <button type="button" class="icon-btn" id="cartIcon" aria-label="View cart">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+        <span class="cart-badge" id="cartBadge" style="display:none;">0</span>
+      </button>
+      <button type="button" class="icon-btn" onclick="toggleSidebar()" aria-label="Open menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="22" height="22"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<aside class="sidebar" id="sidebar" aria-hidden="true" data-open="false">
+  <div class="logo-row">
+    <img src="MINDSHIFT.jpg" alt="logo">
+    <div style="font-weight:700">MindShift Books</div>
+  </div>
+  <ul>
+    <li onclick="window.location.href='/'">Browse Books</li>
+    <li class="active" onclick="toggleSidebar()">Free eBooks</li>
+    <li onclick="openMyOrders()">My Account</li>
+    <li onclick="openWishlist()">My Wishlist</li>
+    <li onclick="window.location.href='/support'">Support</li>
+    <li onclick="window.location.href='/legal'">Terms &amp; Privacy</li>
+    <li onclick="openContact()">Contact Us</li>
+    <li onclick="followYoutube()">Follow us on YouTube</li>
+    <li onclick="window.location.href='/affiliate'">Become an Affiliate</li>
+  </ul>
+  <div style="position:absolute;bottom:18px;left:18px;right:18px;color:#9ca3af;font-size:0.9rem;">
+    <div>© 2026 MindShift Books</div>
+    <div style="margin-top:6px">Shift your thinking, change your life.</div>
+  </div>
+</aside>
+
+<main>
+
+  <div class="fe-hero">
+    <div class="eyebrow">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+      Free Library
+    </div>
+    <h1>Free eBooks</h1>
+    <p>Thousands of free titles across every genre — read the details, then read the full book free.</p>
+
+    <div class="fe-search-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <input id="feSearch" type="text" placeholder="Search free eBooks..." autocomplete="off">
+    </div>
+  </div>
+
+  <div class="fe-chip-row" id="feChipRow">
+    <!-- category chips injected here -->
+  </div>
+
+  <section class="hero" id="feSwiperSection" style="margin-top:6px;">
+    <div class="section-head">
+      <div class="section-label-row">
+        <span class="section-accent"></span>
+        <h2 id="feSwiperHeading">Trending Free Reads</h2>
+      </div>
+    </div>
+    <div class="swiper-wrap">
+      <div id="feSwiperTrack" class="swiper-track" aria-live="polite">
+        <div class="skel-card"><div class="skel-img"></div><div class="skel-line w70"></div><div class="skel-line w45"></div><div class="skel-btn"></div></div>
+        <div class="skel-card"><div class="skel-img"></div><div class="skel-line w70"></div><div class="skel-line w45"></div><div class="skel-btn"></div></div>
+        <div class="skel-card"><div class="skel-img"></div><div class="skel-line w70"></div><div class="skel-line w45"></div><div class="skel-btn"></div></div>
+      </div>
+      <button type="button" class="swiper-arrow swiper-arrow--next" data-swiper-next aria-label="Next books">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      </button>
+      <button type="button" class="swiper-arrow swiper-arrow--prev" data-swiper-prev aria-label="Previous books">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><polyline points="15 18 9 12 15 6"></polyline></svg>
+      </button>
+    </div>
+  </section>
+
+  <section class="hero" style="margin-top:30px;">
+    <div class="section-head">
+      <div class="section-label-row">
+        <span class="section-accent"></span>
+        <h2 id="feGridHeading">Browse All</h2>
+      </div>
+    </div>
+    <div id="feGrid" class="fe-grid" aria-live="polite"></div>
+    <div id="feEmpty" class="fe-empty" style="display:none;">No free eBooks found. Try a different search or category.</div>
+    <div class="fe-loadmore-wrap">
+      <button type="button" class="fe-loadmore-btn" id="feLoadMoreBtn">Load more books</button>
+    </div>
+  </section>
+
+</main>
+
+<!-- ---------------- DETAIL MODAL ---------------- -->
+<div class="fe-modal" id="feModal">
+  <div class="fe-modal-sheet">
+    <button type="button" class="fe-modal-close" id="feModalClose" aria-label="Close">&times;</button>
+    <div class="fe-modal-top">
+      <img id="feModalCover" class="fe-modal-cover" src="" alt="">
+      <div>
+        <div class="fe-modal-title" id="feModalTitle"></div>
+        <div class="fe-modal-author" id="feModalAuthor"></div>
+        <div class="fe-modal-meta" id="feModalMeta"></div>
+      </div>
+    </div>
+    <div class="fe-modal-desc" id="feModalDesc">Loading description…</div>
+    <div class="fe-modal-actions">
+      <a href="#" id="feModalReadBtn" class="btn fe-read-btn" target="_blank" rel="noopener noreferrer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+        Read Free eBook
+      </a>
+    </div>
+    <div class="fe-note">Opens in a new tab. This title is hosted and read for free on Google Books — MindShift Books doesn't host or sell this file.</div>
+  </div>
+</div>
+
+<script>
+(function () {
+  let CATEGORIES = [];
+  let activeCategory = 'all';
+  let activeQuery = '';
+  let gridStartIndex = 0;
+  let gridLoading = false;
+  let searchDebounce = null;
+
+  const chipRow = document.getElementById('feChipRow');
+  const swiperTrack = document.getElementById('feSwiperTrack');
+  const swiperHeading = document.getElementById('feSwiperHeading');
+  const grid = document.getElementById('feGrid');
+  const gridHeading = document.getElementById('feGridHeading');
+  const emptyEl = document.getElementById('feEmpty');
+  const loadMoreBtn = document.getElementById('feLoadMoreBtn');
+  const searchInput = document.getElementById('feSearch');
+
+  function escapeHtml(str) {
+    if (str == null) return '';
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  function placeholderCover(title) {
+    // Simple inline placeholder for books Google has no cover image for.
+    return 'data:image/svg+xml;utf8,' + encodeURIComponent(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="140" height="200"><rect width="140" height="200" rx="8" fill="#e2e8f0"/><text x="70" y="104" font-family="sans-serif" font-size="12" fill="#94a3b8" text-anchor="middle">No Cover</text></svg>`
+    );
+  }
+
+  function bookCardInner(b) {
+    const cover = b.cover || placeholderCover(b.title);
+    return `
+      <div class="card-cover-wrap">
+        <span class="fe-badge">Free</span>
+        <img src="${escapeHtml(cover)}" class="ebook-cover" alt="${escapeHtml(b.title)}" loading="lazy"/>
+      </div>
+      <div class="title">${escapeHtml(b.title)}</div>
+      <div class="card-author">${escapeHtml(b.author || '')}</div>
+      <div class="card-actions button-group" style="width:100%;margin-top:auto;">
+        <button class="btn review-btn" data-fe-detail="${escapeHtml(b.id)}">Details</button>
+        <a class="btn read-free-btn" href="${escapeHtml(b.readLink || '#')}" target="_blank" rel="noopener noreferrer">Read Free</a>
+      </div>
+    `;
+  }
+
+  function renderSwiper(items) {
+    swiperTrack.innerHTML = '';
+    if (!items.length) { swiperTrack.innerHTML = '<div class="muted" style="padding:14px;">No books yet in this category.</div>'; return; }
+    items.slice(0, 12).forEach(b => {
+      const card = document.createElement('div');
+      card.className = 'swiper-card fe-card';
+      card.innerHTML = bookCardInner(b);
+      swiperTrack.appendChild(card);
+    });
+    if (window.updateSwiperArrows) window.updateSwiperArrows(swiperTrack);
+  }
+
+  function appendGrid(items) {
+    if (!items.length && gridStartIndex === 0) {
+      emptyEl.style.display = 'block';
+      return;
+    }
+    emptyEl.style.display = 'none';
+    items.forEach(b => {
+      const card = document.createElement('div');
+      card.className = 'product-card fe-card';
+      card.innerHTML = bookCardInner(b);
+      grid.appendChild(card);
+    });
+  }
+
+  async function loadCategories() {
+    try {
+      const res = await fetch('/api/free-ebook-categories');
+      const j = await res.json();
+      CATEGORIES = (j && j.categories) || [];
+    } catch (e) {
+      CATEGORIES = [{ slug: 'all', label: 'All' }];
+    }
+    chipRow.innerHTML = CATEGORIES.map(c =>
+      `<button type="button" class="fe-chip${c.slug === activeCategory ? ' active' : ''}" data-cat="${escapeHtml(c.slug)}">${escapeHtml(c.label)}</button>`
+    ).join('');
+  }
+
+  async function fetchBooks(startIndex) {
+    const params = new URLSearchParams();
+    if (activeQuery) params.set('q', activeQuery);
+    else params.set('category', activeCategory);
+    params.set('startIndex', startIndex);
+    const res = await fetch('/api/free-ebooks?' + params.toString());
+    if (!res.ok) throw new Error('fetch failed');
+    return res.json();
+  }
+
+  async function loadFresh() {
+    gridStartIndex = 0;
+    grid.innerHTML = '';
+    emptyEl.style.display = 'none';
+    swiperTrack.innerHTML = '<div class="skel-card"><div class="skel-img"></div><div class="skel-line w70"></div><div class="skel-line w45"></div><div class="skel-btn"></div></div>';
+    loadMoreBtn.disabled = true;
+    loadMoreBtn.textContent = 'Loading…';
+
+    const label = activeQuery
+      ? `Results for "${activeQuery}"`
+      : ((CATEGORIES.find(c => c.slug === activeCategory) || {}).label || 'All');
+    swiperHeading.textContent = activeQuery ? 'Search Results' : `Trending in ${label}`;
+    gridHeading.textContent = activeQuery ? `Results for "${activeQuery}"` : `Browse ${label}`;
+
+    try {
+      const data = await fetchBooks(0);
+      const items = data.items || [];
+      renderSwiper(items);
+      appendGrid(items);
+      gridStartIndex = items.length;
+      loadMoreBtn.style.display = items.length < 20 ? 'none' : '';
+    } catch (e) {
+      swiperTrack.innerHTML = '<div class="muted" style="padding:14px;">Could not load free eBooks right now.</div>';
+      emptyEl.textContent = 'Could not load free eBooks right now. Please try again.';
+      emptyEl.style.display = 'block';
+    } finally {
+      loadMoreBtn.disabled = false;
+      loadMoreBtn.textContent = 'Load more books';
+    }
+  }
+
+  async function loadMore() {
+    if (gridLoading) return;
+    gridLoading = true;
+    loadMoreBtn.disabled = true;
+    loadMoreBtn.textContent = 'Loading…';
+    try {
+      const data = await fetchBooks(gridStartIndex);
+      const items = data.items || [];
+      appendGrid(items);
+      gridStartIndex += items.length;
+      if (items.length < 20) loadMoreBtn.style.display = 'none';
+    } catch (e) {
+      // silent — user can just tap again
+    } finally {
+      gridLoading = false;
+      loadMoreBtn.disabled = false;
+      loadMoreBtn.textContent = 'Load more books';
+    }
+  }
+
+  chipRow.addEventListener('click', (ev) => {
+    const chip = ev.target.closest('.fe-chip');
+    if (!chip) return;
+    activeCategory = chip.getAttribute('data-cat');
+    activeQuery = '';
+    searchInput.value = '';
+    chipRow.querySelectorAll('.fe-chip').forEach(c => c.classList.toggle('active', c === chip));
+    loadFresh();
+  });
+
+  searchInput.addEventListener('input', () => {
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(() => {
+      activeQuery = searchInput.value.trim();
+      if (activeQuery) chipRow.querySelectorAll('.fe-chip').forEach(c => c.classList.remove('active'));
+      loadFresh();
+    }, 450);
+  });
+
+  loadMoreBtn.addEventListener('click', loadMore);
+
+  // ---------------- Detail modal ----------------
+  const modal = document.getElementById('feModal');
+  const modalClose = document.getElementById('feModalClose');
+  const modalCover = document.getElementById('feModalCover');
+  const modalTitle = document.getElementById('feModalTitle');
+  const modalAuthor = document.getElementById('feModalAuthor');
+  const modalMeta = document.getElementById('feModalMeta');
+  const modalDesc = document.getElementById('feModalDesc');
+  const modalReadBtn = document.getElementById('feModalReadBtn');
+
+  function stripHtml(html) {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html || '';
+    return tmp.textContent || tmp.innerText || '';
+  }
+
+  async function openDetail(id) {
+    modal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    modalTitle.textContent = 'Loading…';
+    modalAuthor.textContent = '';
+    modalMeta.innerHTML = '';
+    modalDesc.textContent = 'Loading description…';
+    modalDesc.classList.add('loading');
+    modalCover.src = placeholderCover('');
+    modalReadBtn.href = '#';
+
+    try {
+      const res = await fetch('/api/free-ebooks/' + encodeURIComponent(id));
+      const j = await res.json();
+      const b = j.book;
+      if (!b) throw new Error('not found');
+      modalCover.src = b.cover || placeholderCover(b.title);
+      modalTitle.textContent = b.title;
+      modalAuthor.textContent = (b.authors && b.authors.length) ? b.authors.join(', ') : 'Unknown Author';
+      const metaBits = [];
+      if (b.categories && b.categories.length) metaBits.push(b.categories[0]);
+      if (b.pageCount) metaBits.push(b.pageCount + ' pages');
+      if (b.publishedDate) metaBits.push(b.publishedDate.slice(0, 4));
+      modalMeta.innerHTML = metaBits.map(m => `<span>${escapeHtml(m)}</span>`).join('');
+      modalDesc.textContent = stripHtml(b.description) || 'No description available for this title.';
+      modalDesc.classList.remove('loading');
+      modalReadBtn.href = b.readLink || '#';
+    } catch (e) {
+      modalDesc.textContent = 'Could not load this book right now. Please try again.';
+      modalDesc.classList.remove('loading');
+    }
+  }
+
+  function closeDetail() {
+    modal.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  document.addEventListener('click', (ev) => {
+    const btn = ev.target.closest('[data-fe-detail]');
+    if (btn) { openDetail(btn.getAttribute('data-fe-detail')); return; }
+  });
+  modalClose.addEventListener('click', closeDetail);
+  modal.addEventListener('click', (ev) => { if (ev.target === modal) closeDetail(); });
+
+  // ---------------- Init ----------------
+  (async function init() {
+    await loadCategories();
+    loadFresh();
+  })();
+})();
+</script>
+
+<script>
+function adjustMainPadding(){
+  const header = document.querySelector('header');
+  const main = document.querySelector('main');
+  if (!header || !main) return;
+  const h = header.getBoundingClientRect().height;
+  main.style.paddingTop = (h + 24) + 'px';
+}
+window.addEventListener('load', adjustMainPadding);
+window.addEventListener('resize', adjustMainPadding);
+adjustMainPadding();
+</script>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="/main.js"></script>
+<script src="/auth.js"></script>
+
+</body>
+</html>
