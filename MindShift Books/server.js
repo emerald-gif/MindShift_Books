@@ -1115,17 +1115,17 @@ const GOOGLE_BOOKS_API = 'https://www.googleapis.com/books/v1/volumes';
 
 const FREE_EBOOK_CATEGORIES = [
   { slug: 'all',        label: 'All',                query: null }, // handled specially — see ALL_MIX_QUERIES below
-  { slug: 'fiction',    label: 'Fiction',             query: 'subject:fiction' },
-  { slug: 'self-help',  label: 'Self-Help',           query: 'subject:"self-help"' },
-  { slug: 'business',   label: 'Business & Money',    query: 'subject:business' },
-  { slug: 'psychology', label: 'Psychology',          query: 'subject:psychology' },
-  { slug: 'romance',    label: 'Romance',             query: 'subject:romance' },
-  { slug: 'sci-fi',     label: 'Science Fiction',     query: 'subject:"science fiction"' },
-  { slug: 'mystery',    label: 'Mystery & Thriller',  query: 'subject:mystery' },
-  { slug: 'history',    label: 'History',             query: 'subject:history' },
-  { slug: 'biography',  label: 'Biography',           query: 'subject:biography' },
-  { slug: 'classics',   label: 'Classics',            query: 'subject:classics' },
-  { slug: 'poetry',     label: 'Poetry',              query: 'subject:poetry' }
+  { slug: 'fiction',    label: 'Fiction',             query: 'fiction' },
+  { slug: 'self-help',  label: 'Self-Help',           query: '"self-help"' },
+  { slug: 'business',   label: 'Business & Money',    query: 'business' },
+  { slug: 'psychology', label: 'Psychology',          query: 'psychology' },
+  { slug: 'romance',    label: 'Romance',             query: 'romance' },
+  { slug: 'sci-fi',     label: 'Science Fiction',     query: '"science fiction"' },
+  { slug: 'mystery',    label: 'Mystery & Thriller',  query: 'mystery' },
+  { slug: 'history',    label: 'History',             query: 'history' },
+  { slug: 'biography',  label: 'Biography',           query: 'biography' },
+  { slug: 'classics',   label: 'Classics',            query: 'classics' },
+  { slug: 'poetry',     label: 'Poetry',              query: 'poetry' }
 ];
 
 // "All" doesn't use a single compound query — Google Books' search syntax
@@ -1133,11 +1133,20 @@ const FREE_EBOOK_CATEGORIES = [
 // (it silently returns 0 results instead of erroring). Instead we rotate
 // through these known-good single-genre queries page by page, so "All" is
 // always a real mix without relying on fragile query syntax.
+//
+// IMPORTANT: these are plain keywords, NOT "subject:x". Confirmed via
+// production logs that "subject:fiction" + filter=free-ebooks reliably
+// returns googleTotalItems=0 — free/public-domain books on Google Books are
+// mostly old scans without clean subject/category metadata, so requiring
+// BOTH free-ebook status AND a matching subject tag intersects two almost
+// entirely disjoint sets. A bare keyword searches title/description text
+// instead, which is what actually returned real results (this is also why
+// the original catch-all q=the query worked — no field restriction).
 const ALL_MIX_QUERIES = [
-  'subject:fiction', 'subject:"self-help"', 'subject:business',
-  'subject:psychology', 'subject:romance', 'subject:"science fiction"',
-  'subject:mystery', 'subject:history', 'subject:biography',
-  'subject:classics', 'subject:poetry'
+  'fiction', '"self-help"', 'business',
+  'psychology', 'romance', '"science fiction"',
+  'mystery', 'history', 'biography',
+  'classics', 'poetry'
 ];
 
 // Simple in-memory cache so repeat visits (and repeat page-2/3 browsing)
