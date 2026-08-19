@@ -150,6 +150,7 @@ header a.back{font-size:0.82rem;font-weight:700;color:#64748b;text-decoration:no
   font-family:inherit;background:#fff;color:var(--primary);
 }
 .field input:focus{outline:none;border-color:var(--indigo);}
+.field input:disabled{background:#f8fafc;color:#94a3b8;cursor:not-allowed;}
 .save-btn{
   width:100%;padding:13px;border-radius:12px;border:none;margin-top:4px;
   background:linear-gradient(90deg,var(--indigo),var(--accent));color:#fff;
@@ -159,6 +160,19 @@ header a.back{font-size:0.82rem;font-weight:700;color:#64748b;text-decoration:no
 .save-msg{font-size:0.82rem;font-weight:700;margin-top:10px;display:none;}
 .save-msg.ok{color:#16a34a;display:block;}
 .save-msg.err{color:#dc2626;display:block;}
+.otp-box{border-top:1px solid #eef2f7;margin-top:18px;padding-top:18px;}
+.otp-box .otp-note{font-size:0.82rem;color:#64748b;line-height:1.5;margin-bottom:12px;}
+.otp-box .otp-note b{color:var(--primary);}
+.otp-row{display:flex;gap:10px;}
+.otp-row input{
+  flex:1;padding:12px 13px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:1rem;
+  font-family:inherit;background:#fff;color:var(--primary);letter-spacing:0.15em;text-align:center;font-weight:700;
+}
+.otp-row input:focus{outline:none;border-color:var(--indigo);}
+.otp-actions{display:flex;align-items:center;justify-content:space-between;margin-top:12px;gap:10px;}
+.otp-link{background:none;border:none;padding:0;font-size:0.8rem;font-weight:700;color:var(--indigo);cursor:pointer;}
+.otp-link:disabled{color:#94a3b8;cursor:default;}
+.otp-cancel{background:none;border:none;padding:0;font-size:0.8rem;font-weight:700;color:#94a3b8;cursor:pointer;}
   </style>
 </head>
 <body>
@@ -167,7 +181,7 @@ header a.back{font-size:0.82rem;font-weight:700;color:#64748b;text-decoration:no
 <div class="sidebar" id="sidebar">
   <div class="sidebar-head">
     <img src="/MINDSHIFT.jpg" alt="MindShift Books logo">
-    <div class="name">MindShift Books <span style="opacity:.5;font-weight:600;">/ Affiliate</span></div>
+    <div class="name">MindShift Books</div>
   </div>
   <div class="sidebar-nav">
     <button class="nav-item active" data-view="overview" id="navOverview">
@@ -198,7 +212,7 @@ header a.back{font-size:0.82rem;font-weight:700;color:#64748b;text-decoration:no
     </button>
     <a class="brand" href="/">
       <img src="/MINDSHIFT.jpg" alt="MindShift Books logo">
-      MindShift Books <span style="opacity:.5;font-weight:600;">/ Affiliate</span>
+      MindShift Books
     </a>
   </div>
 </header>
@@ -268,7 +282,7 @@ header a.back{font-size:0.82rem;font-weight:700;color:#64748b;text-decoration:no
       <div class="hero">
         <span class="eyebrow">${ICON.spark} Overview</span>
         <h1>Hey ${escapeHtml((affiliate.name || '').split(' ')[0] || 'there')}, here's how you're doing.</h1>
-        <div class="sub">Every sale made through your link earns you 15% — tracked automatically, no codes needed.</div>
+        <div class="sub">Every book sold through your link earns you 15% — tracked automatically, no codes needed.</div>
       </div>
 
       <div class="link-card">
@@ -298,7 +312,7 @@ header a.back{font-size:0.82rem;font-weight:700;color:#64748b;text-decoration:no
           <div class="stat-icon">${ICON.cart}</div>
           <div class="stat-info">
             <div class="stat-val">${nf.format(affiliate.sales)}</div>
-            <div class="stat-lbl">Sales</div>
+            <div class="stat-lbl">Books sold</div>
           </div>
         </div>
         <div class="stat-row">
@@ -319,7 +333,7 @@ header a.back{font-size:0.82rem;font-weight:700;color:#64748b;text-decoration:no
 
       <div class="section">
         <div class="section-eyebrow">${ICON.users} Community</div>
-        <h2>People you've referred</h2>
+        <h2>Readers you've brought in</h2>
         <div id="referredWrap"></div>
       </div>
     `;
@@ -327,7 +341,7 @@ header a.back{font-size:0.82rem;font-weight:700;color:#64748b;text-decoration:no
     // Referred
     const refWrap = document.getElementById('referredWrap');
     if (!REFERRED || REFERRED.length === 0) {
-      refWrap.innerHTML = `<div class="empty">No one yet — share your link above to get your first referral.</div>`;
+      refWrap.innerHTML = `<div class="empty">No one yet — share your link above to bring in your first reader.</div>`;
     } else {
       refWrap.innerHTML = `<div class="referred-card">` + REFERRED.map(r => {
         const init = initials(r.name);
@@ -357,6 +371,7 @@ header a.back{font-size:0.82rem;font-weight:700;color:#64748b;text-decoration:no
   function renderAccountView() {
     const affiliate = AFFILIATE;
     const bank = affiliate.bank || {};
+    const locked = (affiliate.pendingPayout || 0) > 0;
 
     main.innerHTML = `
       <div class="hero">
@@ -375,56 +390,153 @@ header a.back{font-size:0.82rem;font-weight:700;color:#64748b;text-decoration:no
 
       <div class="card">
         <div class="card-title">${ICON.bank} Bank account details</div>
+        ${locked ? `<div class="save-msg err" style="display:block;margin-bottom:14px;">You have a payout of ₦${nf.format(affiliate.pendingPayout)} queued for this Monday, so these details are locked until it's paid out — you'll be able to edit them right after.</div>` : ''}
         <form id="bankForm">
           <div class="field">
             <label for="accBankName">Bank name</label>
-            <input id="accBankName" type="text" value="${escapeHtml(bank.bankName || '')}" placeholder="e.g. GTBank" required>
+            <input id="accBankName" type="text" value="${escapeHtml(bank.bankName || '')}" placeholder="e.g. GTBank" required ${locked ? 'disabled' : ''}>
           </div>
           <div class="field">
             <label for="accAccName">Account name</label>
-            <input id="accAccName" type="text" value="${escapeHtml(bank.accountName || '')}" placeholder="Name on the account" required>
+            <input id="accAccName" type="text" value="${escapeHtml(bank.accountName || '')}" placeholder="Name on the account" required ${locked ? 'disabled' : ''}>
           </div>
           <div class="field">
             <label for="accAccNum">Account number</label>
-            <input id="accAccNum" type="text" inputmode="numeric" value="${escapeHtml(bank.accountNumber || '')}" placeholder="10 digits" required>
+            <input id="accAccNum" type="text" inputmode="numeric" value="${escapeHtml(bank.accountNumber || '')}" placeholder="10 digits" required ${locked ? 'disabled' : ''}>
           </div>
-          <button type="submit" class="save-btn" id="bankSaveBtn">Save bank details</button>
+          <button type="submit" class="save-btn" id="bankRequestBtn" ${locked ? 'disabled' : ''}>Send verification code</button>
           <div class="save-msg" id="bankSaveMsg"></div>
         </form>
+
+        <div class="otp-box" id="otpBox" style="display:none;">
+          <div class="otp-note" id="otpNote"></div>
+          <div class="otp-row">
+            <input id="otpInput" type="text" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="one-time-code">
+          </div>
+          <button type="button" class="save-btn" id="otpVerifyBtn" style="margin-top:12px;">Verify &amp; save</button>
+          <div class="otp-actions">
+            <button type="button" class="otp-link" id="otpResendBtn">Resend code</button>
+            <button type="button" class="otp-cancel" id="otpCancelBtn">Cancel</button>
+          </div>
+          <div class="save-msg" id="otpMsg"></div>
+        </div>
       </div>
     `;
 
-    const form = document.getElementById('bankForm');
-    const saveBtn = document.getElementById('bankSaveBtn');
-    const saveMsg = document.getElementById('bankSaveMsg');
+    if (locked) return;
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
+    const form = document.getElementById('bankForm');
+    const requestBtn = document.getElementById('bankRequestBtn');
+    const saveMsg = document.getElementById('bankSaveMsg');
+    const otpBox = document.getElementById('otpBox');
+    const otpNote = document.getElementById('otpNote');
+    const otpInput = document.getElementById('otpInput');
+    const otpMsg = document.getElementById('otpMsg');
+    const verifyBtn = document.getElementById('otpVerifyBtn');
+    const resendBtn = document.getElementById('otpResendBtn');
+    const cancelBtn = document.getElementById('otpCancelBtn');
+
+    let resendCooldown = 0;
+    let cooldownTimer = null;
+
+    function currentBankInput() {
+      return {
+        bankName: document.getElementById('accBankName').value.trim(),
+        accountName: document.getElementById('accAccName').value.trim(),
+        accountNumber: document.getElementById('accAccNum').value.trim()
+      };
+    }
+
+    function startCooldown() {
+      resendCooldown = 60;
+      resendBtn.disabled = true;
+      clearInterval(cooldownTimer);
+      cooldownTimer = setInterval(() => {
+        resendCooldown -= 1;
+        if (resendCooldown <= 0) {
+          clearInterval(cooldownTimer);
+          resendBtn.disabled = false;
+          resendBtn.textContent = 'Resend code';
+        } else {
+          resendBtn.textContent = `Resend code (${resendCooldown}s)`;
+        }
+      }, 1000);
+    }
+
+    async function requestOtp() {
       saveMsg.className = 'save-msg';
-      saveBtn.disabled = true;
-      saveBtn.textContent = 'Saving…';
+      otpMsg.className = 'save-msg';
+      requestBtn.disabled = true;
+      requestBtn.textContent = 'Sending…';
+      try {
+        const token = await window.MSBAuth.getIdToken();
+        const res = await fetch('/api/affiliate/bank/otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Could not send a verification code.');
+        otpNote.innerHTML = `We sent a 6-digit code to <b>${escapeHtml(data.sentTo)}</b>. Enter it below to confirm these are your new bank details.`;
+        otpBox.style.display = 'block';
+        otpInput.value = '';
+        otpInput.focus();
+        startCooldown();
+        otpBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      } catch (err) {
+        saveMsg.textContent = err.message;
+        saveMsg.classList.add('err');
+      } finally {
+        requestBtn.disabled = false;
+        requestBtn.textContent = 'Send verification code';
+      }
+    }
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      requestOtp();
+    });
+
+    resendBtn.addEventListener('click', () => {
+      if (resendBtn.disabled) return;
+      requestOtp();
+    });
+
+    cancelBtn.addEventListener('click', () => {
+      otpBox.style.display = 'none';
+      otpMsg.className = 'save-msg';
+      clearInterval(cooldownTimer);
+    });
+
+    verifyBtn.addEventListener('click', async () => {
+      const code = otpInput.value.trim();
+      if (!code) {
+        otpMsg.textContent = 'Enter the code we emailed you.';
+        otpMsg.className = 'save-msg err';
+        return;
+      }
+      otpMsg.className = 'save-msg';
+      verifyBtn.disabled = true;
+      verifyBtn.textContent = 'Verifying…';
       try {
         const token = await window.MSBAuth.getIdToken();
         const res = await fetch('/api/affiliate/bank', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({
-            bankName: document.getElementById('accBankName').value.trim(),
-            accountName: document.getElementById('accAccName').value.trim(),
-            accountNumber: document.getElementById('accAccNum').value.trim()
-          })
+          body: JSON.stringify({ ...currentBankInput(), otp: code })
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Could not save your bank details.');
         AFFILIATE.bank = data.bank;
+        clearInterval(cooldownTimer);
+        otpBox.style.display = 'none';
         saveMsg.textContent = 'Bank details updated.';
-        saveMsg.classList.add('ok');
+        saveMsg.className = 'save-msg ok';
       } catch (err) {
-        saveMsg.textContent = err.message;
-        saveMsg.classList.add('err');
+        otpMsg.textContent = err.message;
+        otpMsg.className = 'save-msg err';
       } finally {
-        saveBtn.disabled = false;
-        saveBtn.textContent = 'Save bank details';
+        verifyBtn.disabled = false;
+        verifyBtn.textContent = 'Verify & save';
       }
     });
   }
