@@ -1083,6 +1083,120 @@ app.get('/api/product/:id', (req, res) => {
   }
 });
 
+// ---------------- FREE EBOOKS (Google Books catalog proxy) ----------------
+// Thousands of real, actually-free books (public domain + publisher free
+// titles) shown in our own UI. We never host or redistribute the files —
+// "Read Free eBook" just sends the reader to Google's own free reader/
+// preview link for that title. No API key or approval needed; Google's
+// `filter=free-ebooks` param guarantees every result here is free, not
+// just previewable.
+const GOOGLE_BOOKS_API = 'https://www.googleapis.com/books/v1/volumes';
+
+const FREE_EBOOK_CATEGORIES = [
+  { slug: 'all',        label: 'All',                query: 'subject:fiction OR subject:nonfiction' },
+  { slug: 'fiction',    label: 'Fiction',             query: 'subject:fiction' },
+  { slug: 'self-help',  label: 'Self-Help',           query: 'subject:"self-help"' },
+  { slug: 'business',   label: 'Business & Money',    query: 'subject:business' },
+  { slug: 'psychology', label: 'Psychology',          query: 'subject:psychology' },
+  { slug: 'romance',    label: 'Romance',             query: 'subject:romance' },
+  { slug: 'sci-fi',     label: 'Science Fiction',     query: 'subject:"science fiction"' },
+  { slug: 'mystery',    label: 'Mystery & Thriller',  query: 'subject:mystery' },
+  { slug: 'history',    label: 'History',             query: 'subject:history' },
+  { slug: 'biography',  label: 'Biography',           query: 'subject:biography' },
+  { slug: 'classics',   label: 'Classics',            query: 'subject:classics' },
+  { slug: 'poetry',     label: 'Poetry',              query: 'subject:poetry' }
+];
+
+// Simple in-memory cache so repeat visits (and repeat page-2/3 browsing)
+// don't re-hit Google Books every time — keeps us well inside their free
+// quota even with real traffic. Cleared on server restart, which is fine.
+const freeEbooksCache = new Map();
+const FREE_EBOOKS_CACHE_TTL = 60 * 60 * 1000; // 1 hour
+
+function normalizeGoogleBook(item) {
+  const v = item.volumeInfo || {};
+  const a = item.accessInfo || {};
+  let thumb = (v.imageLinks && (v.imageLinks.thumbnail || v.imageLinks.smallThumbnail)) || null;
+  if (thumb) thumb = thumb.replace(/^http:/, 'https:').replace('&edge=curl', '').replace('zoom=1', 'zoom=2');
+  return {
+    id: item.id,
+    title: v.title || 'Untitled',
+    authors: v.authors || [],
+    author: (v.authors && v.authors[0]) || 'Unknown Author',
+    description: v.description || '',
+    cover: thumb,
+    categories: v.categories || [],
+    language: v.language || 'en',
+    pageCount: v.pageCount || null,
+    publishedDate: v.publishedDate || null,
+    // Where "Read Free eBook" sends the visitor — Google's own free reader.
+    readLink: a.webReaderLink || v.previewLink || v.infoLink || null
+  };
+}
+
+async function fetchGoogleBooks(query, startIndex) {
+  const cacheKey = `list::${query}::${startIndex}`;
+  const cached = freeEbooksCache.get(cacheKey);
+  if (cached && cached.expires > Date.now()) return cached.data;
+
+  const url = `${GOOGLE_BOOKS_API}?q=${encodeURIComponent(query)}&filter=free-ebooks&printType=books&maxResults=20&startIndex=${startIndex}&country=US`;
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error(`Google Books API error: ${resp.status}`);
+  const json = await resp.json();
+  const items = Array.isArray(json.items) ? json.items.map(normalizeGoogleBook) : [];
+  const data = { items, totalItems: json.totalItems || 0 };
+  freeEbooksCache.set(cacheKey, { data, expires: Date.now() + FREE_EBOOKS_CACHE_TTL });
+  return data;
+}
+
+app.get('/api/free-ebook-categories', (req, res) => {
+  res.json({ categories: FREE_EBOOK_CATEGORIES.map(c => ({ slug: c.slug, label: c.label })) });
+});
+
+// List/browse endpoint — one category (or a free-text search) at a time,
+// paginated via startIndex so the front end can "load more" indefinitely.
+app.get('/api/free-ebooks', async (req, res) => {
+  try {
+    const slug = (req.query.category || 'all').toString();
+    const q = (req.query.q || '').toString().trim();
+    const startIndex = Math.max(0, parseInt(req.query.startIndex, 10) || 0);
+    let query;
+    if (q) {
+      query = q;
+    } else {
+      const cat = FREE_EBOOK_CATEGORIES.find(c => c.slug === slug) || FREE_EBOOK_CATEGORIES[0];
+      query = cat.query;
+    }
+    const data = await fetchGoogleBooks(query, startIndex);
+    res.json(data);
+  } catch (e) {
+    console.error('[free-ebooks] list fetch failed', e);
+    res.status(500).json({ error: 'Could not load free eBooks right now.' });
+  }
+});
+
+// Single-volume detail — used by the book detail panel for the full
+// (untruncated) description.
+app.get('/api/free-ebooks/:id', async (req, res) => {
+  try {
+    const id = req.params.id;
+    const cacheKey = `detail::${id}`;
+    const cached = freeEbooksCache.get(cacheKey);
+    if (cached && cached.expires > Date.now()) return res.json(cached.data);
+
+    const resp = await fetch(`${GOOGLE_BOOKS_API}/${encodeURIComponent(id)}?country=US`);
+    if (!resp.ok) return res.status(404).json({ error: 'Book not found' });
+    const json = await resp.json();
+    const book = normalizeGoogleBook(json);
+    const data = { book };
+    freeEbooksCache.set(cacheKey, { data, expires: Date.now() + FREE_EBOOKS_CACHE_TTL });
+    res.json(data);
+  } catch (e) {
+    console.error('[free-ebooks] detail fetch failed', e);
+    res.status(500).json({ error: 'Could not load this book right now.' });
+  }
+});
+
 // /config endpoint for client (Paystack public key + optional publicPdf fallback)
 app.get('/config', (req, res) => {
   return res.json({ paystackPublicKey: PAYSTACK_PUBLIC_KEY || null, publicPdfUrl: PUBLIC_PDF_URL || null });
@@ -1820,6 +1934,10 @@ app.get('/affiliate/dashboard', (req, res) => {
 
 app.get('/affiliate/payout', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'payout.html'));
+});
+
+app.get('/free-ebooks', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'free-ebooks.html'));
 });
 
 app.get('/support', (req, res) => {
