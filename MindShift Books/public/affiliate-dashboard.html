@@ -50,7 +50,7 @@ header a.back{font-size:0.82rem;font-weight:700;color:#64748b;text-decoration:no
 .nav-item{
   display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
   color:#475569;font-weight:700;font-size:0.9rem;cursor:pointer;margin-bottom:4px;
-  border:none;background:none;width:100%;text-align:left;
+  border:none;background:none;width:100%;text-align:left;text-decoration:none;
 }
 .nav-item svg{width:19px;height:19px;flex-shrink:0;}
 .nav-item.active{background:#eef2ff;color:var(--indigo);}
@@ -93,34 +93,6 @@ header a.back{font-size:0.82rem;font-weight:700;color:#64748b;text-decoration:no
 }
 .copy-btn.copied{background:#22c55e;color:#fff;}
 
-/* ── BALANCE STRIP ── */
-.balance-strip{
-  margin:14px 22px 0;padding:16px 18px;border-radius:16px;
-  background:#f0fdf4;border:1px solid #dcfce7;
-  display:flex;align-items:center;gap:12px;
-}
-.balance-strip .b-icon{
-  width:38px;height:38px;border-radius:11px;background:#16a34a;color:#fff;
-  display:flex;align-items:center;justify-content:center;flex-shrink:0;
-}
-.balance-strip .b-val{font-size:1.15rem;font-weight:900;line-height:1.1;}
-.balance-strip .b-lbl{font-size:0.76rem;color:#4b5563;font-weight:600;margin-top:1px;}
-
-/* ── PAYOUT META GRID ── */
-.payout-grid{margin:14px 22px 0;display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.payout-cell{
-  border:1px solid #f1f5f9;border-radius:14px;padding:13px 14px;
-}
-.payout-cell .p-lbl{font-size:0.72rem;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:0.02em;margin-bottom:4px;}
-.payout-cell .p-val{font-size:0.98rem;font-weight:800;}
-.status-pill{
-  display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;
-  font-size:0.76rem;font-weight:800;
-}
-.status-pill.waiting{background:#f1f5f9;color:#64748b;}
-.status-pill.pending{background:#fef3c7;color:#92400e;}
-.status-pill.paid{background:#dcfce7;color:#166534;}
-
 /* ── STATS LIST (single flat card, rows not boxes) ── */
 .stats-card{
   margin:16px 22px 0;border:1px solid #f1f5f9;border-radius:18px;padding:2px 18px;
@@ -156,19 +128,6 @@ header a.back{font-size:0.82rem;font-weight:700;color:#64748b;text-decoration:no
 .referred-row .info{min-width:0;flex:1;}
 .referred-row .name{font-weight:700;font-size:0.88rem;}
 .referred-row .email{font-size:0.76rem;color:#94a3b8;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-
-/* ── PAYOUT HISTORY ── */
-.history-card{margin-top:18px;border:1px solid #f1f5f9;border-radius:18px;padding:2px 18px;}
-.history-row{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid #f1f5f9;}
-.history-row:last-child{border-bottom:none;}
-.history-row .h-icon{
-  width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
-}
-.history-row .h-icon.pending{background:#fef3c7;color:#92400e;}
-.history-row .h-icon.paid{background:#dcfce7;color:#166534;}
-.history-row .h-info{flex:1;min-width:0;}
-.history-row .h-amt{font-weight:800;font-size:0.92rem;}
-.history-row .h-date{font-size:0.76rem;color:#94a3b8;margin-top:1px;}
 
 .empty{padding:30px 18px;text-align:center;color:#94a3b8;font-size:0.86rem;border:1px solid #f1f5f9;border-radius:18px;margin-top:18px;}
 
@@ -211,10 +170,14 @@ header a.back{font-size:0.82rem;font-weight:700;color:#64748b;text-decoration:no
     <div class="name">MindShift Books</div>
   </div>
   <div class="sidebar-nav">
-    <button class="nav-item active" data-view="payout" id="navPayout">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 012-2h13a2 2 0 012 2v11a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/><path d="M16 12h4"/></svg>
-      Payout Dashboard
+    <button class="nav-item active" data-view="overview" id="navOverview">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>
+      Overview
     </button>
+    <a class="nav-item" href="/affiliate/payout">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 012-2h13a2 2 0 012 2v11a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/><path d="M16 12h4"/></svg>
+      Payout
+    </a>
     <button class="nav-item" data-view="account" id="navAccount">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0116 0"/></svg>
       My Account
@@ -252,21 +215,19 @@ header a.back{font-size:0.82rem;font-weight:700;color:#64748b;text-decoration:no
 <script>
   const main = document.getElementById('mainContent');
   const nf = new Intl.NumberFormat('en-NG');
-  let AFFILIATE = null, REFERRED = [], PAYOUTS = null;
-  let currentView = 'payout';
+  let AFFILIATE = null, REFERRED = [];
+  let currentView = 'overview';
 
   const ICON = {
     spark: `<svg class="ico-sm" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.6 5.4L19 9l-5.4 1.6L12 16l-1.6-5.4L5 9l5.4-1.6z"/></svg>`,
     link: `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 15l6-6"/><path d="M11 5l1-1a4 4 0 015.7 5.7l-2 2"/><path d="M13 19l-1 1a4 4 0 01-5.7-5.7l2-2"/></svg>`,
     copy: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>`,
     check: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M20 6L9 17l-5-5"/></svg>`,
-    wallet: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;"><path d="M3 7a2 2 0 012-2h13a2 2 0 012 2v11a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/><path d="M16 12h4"/></svg>`,
     users: `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20a6.5 6.5 0 0113 0"/><path d="M16 9.3a3 3 0 010 5.4"/><path d="M18.5 20a5.5 5.5 0 00-2.8-4.8"/></svg>`,
     cart: `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1.4"/><circle cx="18" cy="21" r="1.4"/><path d="M2 3h2l2.6 12.4a2 2 0 002 1.6h8.8a2 2 0 002-1.6L22 7H6"/></svg>`,
     trend: `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 7-8"/><path d="M15 6h5v5"/></svg>`,
     checkCircle: `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.3 2.3L16 9.6"/></svg>`,
     user: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0116 0"/></svg>`,
-    clock: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:17px;height:17px;"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>`,
     bank: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;"><path d="M3 21h18"/><path d="M5 21V10M9.5 21V10M14.5 21V10M19 21V10"/><path d="M3 10l9-6 9 6"/></svg>`,
     idcard: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;"><rect x="2.5" y="5" width="19" height="14" rx="2"/><circle cx="8.5" cy="12" r="2"/><path d="M13.5 10h5M13.5 14h3.5"/></svg>`
   };
@@ -279,12 +240,6 @@ header a.back{font-size:0.82rem;font-weight:700;color:#64748b;text-decoration:no
     const parts = name.trim().split(/\s+/);
     return ((parts[0][0] || '') + (parts[1] ? parts[1][0] : '')).toUpperCase();
   }
-  function fmtDate(iso) {
-    if (!iso) return '';
-    const d = new Date(iso);
-    return d.toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' });
-  }
-
   // ── Sidebar ──
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('sidebarOverlay');
@@ -295,33 +250,23 @@ header a.back{font-size:0.82rem;font-weight:700;color:#64748b;text-decoration:no
 
   function setView(view) {
     currentView = view;
-    document.getElementById('navPayout').classList.toggle('active', view === 'payout');
+    document.getElementById('navOverview').classList.toggle('active', view === 'overview');
     document.getElementById('navAccount').classList.toggle('active', view === 'account');
     closeSidebar();
-    if (view === 'payout') renderPayoutView();
+    if (view === 'overview') renderOverviewView();
     else renderAccountView();
   }
-  document.getElementById('navPayout').addEventListener('click', () => setView('payout'));
+  document.getElementById('navOverview').addEventListener('click', () => setView('overview'));
   document.getElementById('navAccount').addEventListener('click', () => setView('account'));
 
-  // ── Payout Dashboard view ──
-  function statusPillFor(affiliate) {
-    if (PAYOUTS && PAYOUTS.some(p => p.status === 'pending')) {
-      return `<span class="status-pill pending">Pending transfer</span>`;
-    }
-    if (affiliate.availableBalance >= affiliate.minPayout) {
-      return `<span class="status-pill pending">Queued for Monday</span>`;
-    }
-    return `<span class="status-pill waiting">Below minimum</span>`;
-  }
-
-  function renderPayoutView() {
+  // ── Overview view ──
+  function renderOverviewView() {
     const affiliate = AFFILIATE;
     const link = `${window.location.origin}/?ref=${affiliate.code}`;
 
     main.innerHTML = `
       <div class="hero">
-        <span class="eyebrow">${ICON.spark} Payout dashboard</span>
+        <span class="eyebrow">${ICON.spark} Overview</span>
         <h1>Hey ${escapeHtml((affiliate.name || '').split(' ')[0] || 'there')}, here's how you're doing.</h1>
         <div class="sub">Every sale made through your link earns you 15% — tracked automatically, no codes needed.</div>
       </div>
@@ -332,35 +277,6 @@ header a.back{font-size:0.82rem;font-weight:700;color:#64748b;text-decoration:no
           <div class="link-box" id="linkBox">${link}</div>
           <button class="copy-btn" id="copyBtn">${ICON.copy} Copy</button>
         </div>
-      </div>
-
-      <div class="balance-strip">
-        <div class="b-icon">${ICON.wallet}</div>
-        <div>
-          <div class="b-val">₦${nf.format(affiliate.availableBalance)}</div>
-          <div class="b-lbl">Available balance</div>
-        </div>
-      </div>
-
-      <div class="payout-grid">
-        <div class="payout-cell">
-          <div class="p-lbl">Minimum payout</div>
-          <div class="p-val">₦${nf.format(affiliate.minPayout)}</div>
-        </div>
-        <div class="payout-cell">
-          <div class="p-lbl">Next payout</div>
-          <div class="p-val">${fmtDate(affiliate.nextPayoutDate)}</div>
-        </div>
-        <div class="payout-cell" style="grid-column:1 / -1;">
-          <div class="p-lbl">Payout status</div>
-          <div class="p-val">${statusPillFor(affiliate)}</div>
-        </div>
-      </div>
-
-      <div class="section">
-        <div class="section-eyebrow">${ICON.clock} History</div>
-        <h2>Payout history</h2>
-        <div id="historyWrap"></div>
       </div>
 
       <div class="stats-card">
@@ -407,23 +323,6 @@ header a.back{font-size:0.82rem;font-weight:700;color:#64748b;text-decoration:no
         <div id="referredWrap"></div>
       </div>
     `;
-
-    // History
-    const historyWrap = document.getElementById('historyWrap');
-    if (!PAYOUTS || PAYOUTS.length === 0) {
-      historyWrap.innerHTML = `<div class="empty">No payouts yet — once your balance reaches ₦${nf.format(affiliate.minPayout)}, you'll be queued for the next Monday payout automatically.</div>`;
-    } else {
-      historyWrap.innerHTML = `<div class="history-card">` + PAYOUTS.map(p => `
-        <div class="history-row">
-          <div class="h-icon ${p.status}">${p.status === 'paid' ? ICON.checkCircle : ICON.clock}</div>
-          <div class="h-info">
-            <div class="h-amt">₦${nf.format(p.amount)}</div>
-            <div class="h-date">${p.status === 'paid' ? 'Paid ' + fmtDate(p.paidAt) : 'Queued ' + fmtDate(p.createdAt)}</div>
-          </div>
-          <span class="status-pill ${p.status}">${p.status === 'paid' ? 'Paid' : 'Pending'}</span>
-        </div>
-      `).join('') + `</div>`;
-    }
 
     // Referred
     const refWrap = document.getElementById('referredWrap');
@@ -537,20 +436,16 @@ header a.back{font-size:0.82rem;font-weight:700;color:#64748b;text-decoration:no
     }
     try {
       const token = await window.MSBAuth.getIdToken();
-      const [meRes, payoutsRes] = await Promise.all([
-        fetch('/api/affiliate/me', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('/api/affiliate/payouts', { headers: { Authorization: `Bearer ${token}` } })
-      ]);
+      const meRes = await fetch('/api/affiliate/me', { headers: { Authorization: `Bearer ${token}` } });
       const meData = await meRes.json();
-      const payoutsData = await payoutsRes.json().catch(() => ({ payouts: [] }));
       if (!meData || !meData.affiliate) {
         window.location.href = '/affiliate';
         return;
       }
       AFFILIATE = meData.affiliate;
       REFERRED = meData.referred || [];
-      PAYOUTS = payoutsData.payouts || [];
-      renderPayoutView();
+      const wantsAccount = new URLSearchParams(window.location.search).get('view') === 'account';
+      setView(wantsAccount ? 'account' : 'overview');
     } catch (e) {
       main.innerHTML = `<div class="empty">Could not load your dashboard. Please refresh the page.</div>`;
     }
