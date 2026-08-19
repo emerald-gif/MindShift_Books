@@ -1214,7 +1214,31 @@ async function fetchGutendexPageOnce(topicOrSearch, isSearch, page) {
 async function fetchGutendexPage(topicOrSearch, isSearch, page) {
   const cacheKey = `page::${isSearch ? 'search' : 'topic'}::${topicOrSearch || ''}::${page}`;
   const cached = freeEbooksCache.get(cacheKey);
-  if (cached && cached.expires > Date.now()) return cached.data;
+
+  // Stale-while-revalidate: once a page has been fetched once, a visitor
+  // never waits on a live Gutendex round-trip again — expired entries are
+  // served immediately while a background refresh quietly tops up the
+  // cache. Worst case someone sees a list that's a bit older than an hour;
+  // best case (the common case) every request is instant from memory.
+  if (cached) {
+    if (cached.expires <= Date.now() && !cached.refreshing) {
+      cached.refreshing = true;
+      fetchGutendexPageOnce(topicOrSearch, isSearch, page)
+        .then(json => {
+          const data = { results: Array.isArray(json.results) ? json.results : [], count: json.count || 0 };
+          if (data.results.length > 0) {
+            freeEbooksCache.set(cacheKey, { data, expires: Date.now() + FREE_EBOOKS_CACHE_TTL });
+          } else {
+            cached.refreshing = false; // keep serving old data, try again next request
+          }
+        })
+        .catch(e => {
+          cached.refreshing = false; // refresh failed — keep serving stale data, retry next request
+          console.warn(`[free-ebooks] background refresh failed for ${cacheKey}:`, e && e.message ? e.message : e);
+        });
+    }
+    return cached.data;
+  }
 
   let json;
   let lastErr;
