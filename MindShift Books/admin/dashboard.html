@@ -169,6 +169,12 @@
       <div class="stat-card"><span class="icon">💰</span><div class="label">Revenue</div><div class="value" id="totalRevenue">₦0</div></div>
     </div>
 
+    <div class="totals">
+      <div class="stat-card"><span class="icon">🤝</span><div class="label">Affiliate Page Views</div><div class="value" id="affiliateEcosystemViews">0</div></div>
+      <div class="stat-card"><span class="icon">🧑‍🤝‍🧑</span><div class="label">Affiliates Joined</div><div class="value" id="totalAffiliatesCount">0</div></div>
+      <div class="stat-card"><span class="icon">🆕</span><div class="label">New Affiliates</div><div class="value" id="newAffiliatesCount">0</div></div>
+    </div>
+
     <div class="grid">
       <div class="panel">
         <h2><span class="emoji">📖</span> Book Review Views</h2>
@@ -274,6 +280,9 @@
       document.getElementById('totalDownloads').textContent = data.totals.downloads.toLocaleString();
       document.getElementById('totalOrders').textContent = data.totals.orders.toLocaleString();
       document.getElementById('totalRevenue').textContent = fmtNgn(data.totals.revenueNgn);
+      document.getElementById('affiliateEcosystemViews').textContent = (data.totals.affiliateEcosystemViews || 0).toLocaleString();
+      document.getElementById('totalAffiliatesCount').textContent = (data.totals.totalAffiliates || 0).toLocaleString();
+      document.getElementById('newAffiliatesCount').textContent = (data.totals.newAffiliates || 0).toLocaleString();
 
       renderBars('reviewViewsBars', data.reviewViews);
       renderBars('previewViewsBars', data.previewViews);
