@@ -1171,7 +1171,7 @@ document.addEventListener('click', function (ev) {
 
   // sidebar close on outside click
   const sidebar = document.getElementById('sidebar');
-  const hamburger = document.querySelector('.hamburger');
+  const hamburger = document.getElementById('sidebarToggle') || document.querySelector('.hamburger');
   if (sidebar && sidebar.getAttribute('data-open') === 'true') {
     if (!sidebar.contains(ev.target) && hamburger && !hamburger.contains(ev.target)) {
       sidebar.setAttribute('data-open', 'false');
