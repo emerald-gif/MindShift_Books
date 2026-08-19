@@ -2334,6 +2334,8 @@ app.use('/api/admin', requireAdminApi);
 
 // GET /api/admin/summary?days=30 — pageviews, downloads, and purchases,
 // each broken down per book, for the last N days.
+const AFFILIATE_ECOSYSTEM_PATHS = new Set(['/affiliate', '/affiliate/apply', '/affiliate/dashboard', '/affiliate/payout']);
+
 app.get('/api/admin/summary', async (req, res) => {
   try {
     if (!db) return res.status(500).json({ error: 'Database unavailable' });
@@ -2348,6 +2350,7 @@ app.get('/api/admin/summary', async (req, res) => {
     const downloadsByProduct = {};
     let totalPageviews = 0;
     let totalDownloads = 0;
+    let affiliateEcosystemViews = 0;
 
     eventsSnap.forEach(doc => {
       const d = doc.data();
@@ -2359,6 +2362,7 @@ app.get('/api/admin/summary', async (req, res) => {
       totalPageviews++;
       const p = d.path || 'unknown';
       pageviewsByPath[p] = (pageviewsByPath[p] || 0) + 1;
+      if (AFFILIATE_ECOSYSTEM_PATHS.has(p)) affiliateEcosystemViews++;
       if (d.type === 'review' && d.productId) {
         reviewViewsByProduct[d.productId] = (reviewViewsByProduct[d.productId] || 0) + 1;
       }
@@ -2381,13 +2385,25 @@ app.get('/api/admin/summary', async (req, res) => {
       });
     });
 
+    // Affiliates who joined within this same date range, plus the running
+    // lifetime total — the stat card shows lifetime (it's a "how many have
+    // signed up ever" number), but rangeDays is included in case that's
+    // ever useful on the frontend too.
+    const affiliatesCountSnap = await db.collection('affiliates').count().get();
+    const totalAffiliates = affiliatesCountSnap.data().count;
+    const newAffiliatesSnap = await db.collection('affiliates').where('createdAt', '>=', since).count().get();
+    const newAffiliates = newAffiliatesSnap.data().count;
+
     const withTitles = map => Object.entries(map)
       .map(([id, count]) => ({ productId: id, title: (PRODUCTS[id] && PRODUCTS[id].title) || id, count }))
       .sort((a, b) => b.count - a.count);
 
     res.json({
       rangeDays: days,
-      totals: { pageviews: totalPageviews, downloads: totalDownloads, orders: totalOrders, revenueNgn: totalRevenueNgn },
+      totals: {
+        pageviews: totalPageviews, downloads: totalDownloads, orders: totalOrders, revenueNgn: totalRevenueNgn,
+        affiliateEcosystemViews, totalAffiliates, newAffiliates
+      },
       topPages: Object.entries(pageviewsByPath).map(([path, count]) => ({ path, count })).sort((a, b) => b.count - a.count).slice(0, 20),
       reviewViews: withTitles(reviewViewsByProduct),
       previewViews: withTitles(previewViewsByProduct),
