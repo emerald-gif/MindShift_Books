@@ -359,13 +359,25 @@ app.get('/api/affiliate/me', requireUser, async (req, res) => {  try {
       joinedAt: d.data().createdAt || null
     })) : [];
 
+    const earned = data.earned || 0;
+    const paidOut = data.paidOut || 0;
+    const pendingPayout = data.pendingPayout || 0;
+    // Available = earned minus anything already paid, minus anything already
+    // queued in an unresolved Monday payout (so it isn't queued twice).
+    const availableBalance = Math.max(0, earned - paidOut - pendingPayout);
+
     return res.json({
       affiliate: {
         code: doc.id,
         name: data.name, platform: data.platform, handle: data.handle,
+        phone: data.phone || null,
+        bank: data.bank || null,
         clicks: data.clicks || 0, signups: data.signups || 0, sales: data.sales || 0,
-        earned: data.earned || 0, paidOut: data.paidOut || 0,
-        outstanding: Math.max(0, (data.earned || 0) - (data.paidOut || 0)),
+        earned, paidOut, pendingPayout,
+        outstanding: Math.max(0, earned - paidOut),
+        availableBalance,
+        minPayout: AFFILIATE_MIN_PAYOUT,
+        nextPayoutDate: nextMondayISO(),
         createdAt: data.createdAt
       },
       referred
@@ -373,6 +385,62 @@ app.get('/api/affiliate/me', requireUser, async (req, res) => {  try {
   } catch (err) {
     console.error('/api/affiliate/me error', err);
     return res.status(500).json({ error: 'Could not load your affiliate dashboard. Please try again.' });
+  }
+});
+
+// PUT /api/affiliate/bank — affiliate updates their own bank account details
+// (used to receive Monday payouts). Does not touch balances.
+app.put('/api/affiliate/bank', requireUser, async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const { bankName, accountName, accountNumber } = req.body || {};
+    if (!bankName || !String(bankName).trim()) return res.status(400).json({ error: 'Bank name is required.' });
+    if (!accountName || !String(accountName).trim()) return res.status(400).json({ error: 'Account name is required.' });
+    if (!accountNumber || !String(accountNumber).trim()) return res.status(400).json({ error: 'Account number is required.' });
+
+    const q = await db.collection('affiliates').where('uid', '==', req.uid).limit(1).get();
+    if (q.empty) return res.status(404).json({ error: 'You are not registered as an affiliate.' });
+    const doc = q.docs[0];
+    const bank = {
+      bankName: String(bankName).trim().slice(0, 80),
+      accountName: String(accountName).trim().slice(0, 120),
+      accountNumber: String(accountNumber).trim().slice(0, 20)
+    };
+    await doc.ref.update({ bank });
+    return res.json({ ok: true, bank });
+  } catch (err) {
+    console.error('/api/affiliate/bank error', err);
+    return res.status(500).json({ error: 'Could not update your bank details. Please try again.' });
+  }
+});
+
+// GET /api/affiliate/payouts — this affiliate's own payout history
+// (every Monday batch they were included in), most recent first.
+app.get('/api/affiliate/payouts', requireUser, async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const q = await db.collection('affiliates').where('uid', '==', req.uid).limit(1).get();
+    if (q.empty) return res.json({ payouts: [] });
+    const code = q.docs[0].id;
+    // Filtered + sorted in JS rather than where()+orderBy() on different
+    // fields, so this never needs a manually-created Firestore composite
+    // index — fine at this scale (a handful of payouts per affiliate).
+    const snap = await db.collection('payouts').where('affiliateCode', '==', code).limit(200).get().catch(() => null);
+    const payouts = snap ? snap.docs.map(d => {
+      const p = d.data();
+      return {
+        id: d.id,
+        amount: p.amount || 0,
+        status: p.status || 'pending',
+        createdAt: p.createdAt ? (p.createdAt.toDate ? p.createdAt.toDate().toISOString() : p.createdAt) : null,
+        paidAt: p.paidAt ? (p.paidAt.toDate ? p.paidAt.toDate().toISOString() : p.paidAt) : null,
+        _sort: p.createdAt ? (p.createdAt.toMillis ? p.createdAt.toMillis() : 0) : 0
+      };
+    }).sort((a, b) => b._sort - a._sort).map(({ _sort, ...rest }) => rest) : [];
+    return res.json({ payouts });
+  } catch (err) {
+    console.error('/api/affiliate/payouts error', err);
+    return res.status(500).json({ error: 'Could not load your payout history. Please try again.' });
   }
 });
 
@@ -898,6 +966,108 @@ app.get('/config', (req, res) => {
 // admin dashboard can show views/downloads/purchases per book.
 const TRACK_TYPES = new Set(['home', 'review', 'preview', 'page', 'affiliate_click']);
 const AFFILIATE_COMMISSION_RATE = 0.15; // 15% of the actual NGN price paid, "ours" books only
+
+// ---------------- Affiliate payouts (weekly, Monday, manual bank transfer) ----------------
+const AFFILIATE_MIN_PAYOUT = 5000; // ₦5,000 minimum balance to be queued for a Monday payout
+const PAYOUT_TIMEZONE = 'Africa/Lagos';
+
+// Lagos is UTC+1 year-round (no DST), so this is a fixed offset — no need
+// for a timezone library just to answer "what's 'today' in Lagos right now".
+function lagosNow() {
+  return new Date(Date.now() + 60 * 60 * 1000);
+}
+
+// "Next Monday" label shown on the affiliate dashboard. If it's currently
+// Monday in Lagos, this still points at *next* Monday, since this week's
+// batch (if any) has already been generated by the time anyone reads it.
+function nextMondayISO() {
+  const now = lagosNow();
+  const day = now.getUTCDay(); // 0=Sun..6=Sat, computed against the shifted "Lagos" clock
+  let daysAhead = (8 - day) % 7;
+  if (daysAhead === 0) daysAhead = 7;
+  const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + daysAhead));
+  return next.toISOString().slice(0, 10);
+}
+
+// ISO week key (e.g. "2026-W08") used to make sure the Monday batch job
+// only ever runs once per week, even if the server restarts multiple times
+// on a Monday or the hourly check ticks more than once.
+function isoWeekKey(date) {
+  const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+  return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+}
+
+// Scans every affiliate, queues a pending payout for anyone whose available
+// balance (earned - paidOut - already-pending) has reached the ₦5,000
+// minimum, and marks that amount as pending on their record so it isn't
+// queued a second time next week. Safe to call more than once — affiliates
+// already at ₦0 available are simply skipped.
+async function generateWeeklyPayouts() {
+  if (!db) return { generated: 0, totalAmount: 0 };
+  const snap = await db.collection('affiliates').get();
+  let generated = 0, totalAmount = 0;
+  const batch = db.batch();
+  const now = admin.firestore.Timestamp.now();
+
+  snap.docs.forEach(doc => {
+    const a = doc.data();
+    const earned = a.earned || 0;
+    const paidOut = a.paidOut || 0;
+    const pendingPayout = a.pendingPayout || 0;
+    const available = earned - paidOut - pendingPayout;
+    if (available < AFFILIATE_MIN_PAYOUT) return;
+
+    const payoutRef = db.collection('payouts').doc();
+    batch.set(payoutRef, {
+      affiliateCode: doc.id,
+      affiliateName: a.name || 'Affiliate',
+      amount: available,
+      bank: a.bank || null,
+      status: 'pending',
+      createdAt: now
+    });
+    batch.update(doc.ref, {
+      pendingPayout: admin.firestore.FieldValue.increment(available)
+    });
+    generated += 1;
+    totalAmount += available;
+  });
+
+  if (generated > 0) await batch.commit();
+  return { generated, totalAmount };
+}
+
+// Hourly check: if it's Monday in Lagos and this week's batch hasn't run
+// yet, run it. Backed by a Firestore doc (not just an in-memory flag) so a
+// server restart on a Monday doesn't trigger a duplicate batch.
+async function maybeRunWeeklyPayoutCheck() {
+  if (!db) return;
+  try {
+    const now = lagosNow();
+    if (now.getUTCDay() !== 1) return; // only Mondays (Lagos-shifted clock)
+    const weekKey = isoWeekKey(now);
+    const stateRef = db.collection('meta').doc('payoutSchedule');
+    const stateDoc = await stateRef.get();
+    if (stateDoc.exists && stateDoc.data().lastRunWeek === weekKey) return;
+
+    const result = await generateWeeklyPayouts();
+    await stateRef.set({ lastRunWeek: weekKey, lastRunAt: admin.firestore.Timestamp.now(), lastRunResult: result }, { merge: true });
+    console.log('[payouts] Monday batch generated:', result);
+  } catch (err) {
+    console.error('[payouts] weekly check failed', err);
+  }
+}
+
+// Check on boot (covers "server happened to restart mid-Monday") and then
+// every hour on the hour, roughly.
+if (db) {
+  maybeRunWeeklyPayoutCheck();
+  setInterval(maybeRunWeeklyPayoutCheck, 60 * 60 * 1000);
+}
 
 app.post('/api/track', (req, res) => {
   // Always respond fast; analytics must never slow down or break the page.
@@ -1644,13 +1814,15 @@ app.get('/api/admin/affiliates', async (req, res) => {
     const snap = await db.collection('affiliates').get();
     const affiliates = snap.docs.map(d => {
       const a = d.data();
+      const pendingPayout = a.pendingPayout || 0;
       return {
         code: d.id,
         name: a.name, email: a.email, phone: a.phone, platform: a.platform, handle: a.handle,
         bank: a.bank || null,
         clicks: a.clicks || 0, signups: a.signups || 0, sales: a.sales || 0,
-        earned: a.earned || 0, paidOut: a.paidOut || 0,
+        earned: a.earned || 0, paidOut: a.paidOut || 0, pendingPayout,
         outstanding: Math.max(0, (a.earned || 0) - (a.paidOut || 0)),
+        availableBalance: Math.max(0, (a.earned || 0) - (a.paidOut || 0) - pendingPayout),
         createdAt: a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().toISOString() : a.createdAt) : null
       };
     }).sort((a, b) => b.outstanding - a.outstanding);
@@ -1661,23 +1833,77 @@ app.get('/api/admin/affiliates', async (req, res) => {
   }
 });
 
-// POST /api/admin/affiliates/:code/mark-paid — records that everything
-// currently owed to this affiliate has been paid out (e.g. by bank
-// transfer, done manually outside this system). Sets paidOut = earned,
-// so outstanding drops to 0; any new sales after this point start
-// accumulating a fresh outstanding balance from zero.
-app.post('/api/admin/affiliates/:code/mark-paid', async (req, res) => {
+// ---------------- Admin: weekly payout queue ----------------
+
+// GET /api/admin/payouts?status=pending — the Monday payout queue for the
+// admin's dedicated Payouts page. Defaults to pending only; ?status=all
+// returns everything (for a full history view).
+app.get('/api/admin/payouts', async (req, res) => {
   try {
     if (!db) return res.status(500).json({ error: 'Database unavailable' });
-    const code = String(req.params.code || '').toUpperCase();
-    const ref = db.collection('affiliates').doc(code);
-    const doc = await ref.get();
-    if (!doc.exists) return res.status(404).json({ error: 'Affiliate not found' });
-    const earned = doc.data().earned || 0;
-    await ref.update({ paidOut: earned });
-    return res.json({ ok: true, paidOut: earned });
+    const status = String(req.query.status || 'pending');
+    // Sorted in JS rather than orderBy()+where() on different fields, so
+    // this never needs a manually-created Firestore composite index.
+    const snap = await db.collection('payouts').orderBy('createdAt', 'desc').limit(300).get();
+    const filteredDocs = status === 'all' ? snap.docs : snap.docs.filter(d => (d.data().status || 'pending') === status);
+    const payouts = filteredDocs.map(d => {
+      const p = d.data();
+      return {
+        id: d.id,
+        affiliateCode: p.affiliateCode,
+        affiliateName: p.affiliateName,
+        amount: p.amount || 0,
+        bank: p.bank || null,
+        status: p.status || 'pending',
+        createdAt: p.createdAt ? (p.createdAt.toDate ? p.createdAt.toDate().toISOString() : p.createdAt) : null,
+        paidAt: p.paidAt ? (p.paidAt.toDate ? p.paidAt.toDate().toISOString() : p.paidAt) : null,
+        processedBy: p.processedBy || null
+      };
+    });
+    return res.json({ payouts });
   } catch (err) {
-    console.error('/api/admin/affiliates/:code/mark-paid error', err);
+    console.error('/api/admin/payouts error', err);
+    return res.status(500).json({ error: 'Could not load payouts' });
+  }
+});
+
+// POST /api/admin/payouts/generate — manually trigger this week's batch
+// (the Monday check also runs this automatically; this is a fallback for
+// when the server was asleep/restarting right at the scheduled time).
+app.post('/api/admin/payouts/generate', async (req, res) => {
+  try {
+    const result = await generateWeeklyPayouts();
+    return res.json({ ok: true, ...result });
+  } catch (err) {
+    console.error('/api/admin/payouts/generate error', err);
+    return res.status(500).json({ error: 'Could not generate payouts' });
+  }
+});
+
+// POST /api/admin/payouts/:id/mark-paid — call this ONLY after the admin
+// has actually sent the bank transfer. Moves the payout from pending to
+// paid, stamps who processed it and when, and settles the affiliate's
+// balance: paidOut goes up, pendingPayout comes back down by the same
+// amount, so the money isn't counted as "owed" anymore anywhere.
+app.post('/api/admin/payouts/:id/mark-paid', async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const id = String(req.params.id || '');
+    const ref = db.collection('payouts').doc(id);
+    const doc = await ref.get();
+    if (!doc.exists) return res.status(404).json({ error: 'Payout not found' });
+    const p = doc.data();
+    if (p.status === 'paid') return res.json({ ok: true, alreadyPaid: true });
+
+    const paidAt = admin.firestore.Timestamp.now();
+    await ref.update({ status: 'paid', paidAt, processedBy: ADMIN_USER });
+    await db.collection('affiliates').doc(p.affiliateCode).update({
+      paidOut: admin.firestore.FieldValue.increment(p.amount || 0),
+      pendingPayout: admin.firestore.FieldValue.increment(-(p.amount || 0))
+    });
+    return res.json({ ok: true, paidAt: paidAt.toDate().toISOString(), processedBy: ADMIN_USER });
+  } catch (err) {
+    console.error('/api/admin/payouts/:id/mark-paid error', err);
     return res.status(500).json({ error: 'Could not update payout status' });
   }
 });
