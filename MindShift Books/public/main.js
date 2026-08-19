@@ -328,6 +328,55 @@ function updateSwiperArrows(track) {
   });
 })();
 
+// ── "Free eBooks" swiper on the homepage — pulls the current top/trending
+// titles (Gutendex's default ordering is by download_count, so "all,
+// startIndex 0" already surfaces the most-read public-domain books first).
+// Cards link straight to /read/:id (our own on-domain reader) since there's
+// no detail drawer on this page — that lives on /free-ebooks.
+function freeEbookCardInner(b) {
+  const cover = b.cover || `data:image/svg+xml,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="140" height="200"><rect width="140" height="200" rx="8" fill="#e2e8f0"/><text x="70" y="104" font-family="sans-serif" font-size="12" fill="#94a3b8" text-anchor="middle">No Cover</text></svg>`
+  )}`;
+  return `
+    <div class="card-cover-wrap">
+      <img src="${escapeHtml(cover)}" class="ebook-cover" alt="${escapeHtml(b.title)}" loading="lazy"/>
+    </div>
+    <div class="title">${escapeHtml(b.title)}</div>
+    <div class="card-author">${escapeHtml(b.author || '')}</div>
+    <div class="card-actions button-group" style="width:100%;margin-top:auto;">
+      <a class="btn free-ebook-read-btn" href="${escapeHtml(b.readLink || '#')}" target="_blank" rel="noopener noreferrer" style="width:100%;text-align:center;">Read Free</a>
+    </div>
+  `;
+}
+
+async function loadFreeEbooksSwiper() {
+  const track = document.getElementById('freeEbooksGrid');
+  const section = document.getElementById('freeEbooksSection');
+  if (!track) return;
+  try {
+    const res = await fetch('/api/free-ebooks?category=all&startIndex=0');
+    if (!res.ok) throw new Error('fetch failed');
+    const data = await res.json();
+    const items = (data.items || []).slice(0, 12);
+    if (!items.length) {
+      if (section) section.style.display = 'none';
+      return;
+    }
+    track.innerHTML = '';
+    items.forEach(b => {
+      const card = document.createElement('div');
+      card.className = 'swiper-card fe-card';
+      card.innerHTML = freeEbookCardInner(b);
+      track.appendChild(card);
+    });
+    if (typeof updateSwiperArrows === 'function') updateSwiperArrows(track);
+  } catch (e) {
+    console.error('Failed to load free eBooks swiper', e);
+    if (section) section.style.display = 'none';
+  }
+}
+document.addEventListener('DOMContentLoaded', loadFreeEbooksSwiper);
+
 // Render product grids from PRODUCTS (from server), split into "Our Books" and "Featured" sections
 function renderProducts() {
   const ourGrid = document.getElementById('ourBooksGrid');

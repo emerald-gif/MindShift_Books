@@ -194,6 +194,34 @@ footer .brand{font-weight:700;font-size:1.1rem;color:#fbbf24}
   font-size: 0.65rem; color: #fbbf24;
 }
 
+/* FREE EBOOKS — brand-gradient pill (matches CTA buttons, not the generic green) */
+.section-pill--free {
+  background: linear-gradient(135deg, #1e1b4b, #0f172a);
+  color: #a5b4fc;
+  border: 1px solid rgba(79, 70, 229, 0.35);
+  box-shadow: 0 0 10px rgba(79,70,229,0.16), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+.section-pill--free::before {
+  content: '';
+  width: 6px; height: 6px; border-radius: 50%;
+  background: linear-gradient(90deg,#4f46e5,#06b6d4);
+}
+.swiper-card .free-ebook-read-btn {
+  background: linear-gradient(90deg,#4f46e5,#06b6d4); color: #fff; border: none;
+  text-decoration: none; display: inline-flex; align-items: center; justify-content: center;
+  padding: 7px 5px; font-size: 0.72rem; font-weight: 700; border-radius: 8px;
+}
+@media (min-width: 640px) { .swiper-card .free-ebook-read-btn { padding: 9px 8px; font-size: 0.82rem; } }
+
+/* "Explore All" link on section headers — sits flush right */
+.section-label-row { flex-wrap: wrap; }
+.section-view-all {
+  margin-left: auto; font-size: 0.8rem; font-weight: 700;
+  color: #4f46e5; text-decoration: none; white-space: nowrap;
+  transition: color 0.15s ease;
+}
+.section-view-all:hover { color: #06b6d4; }
+
 @keyframes pillPulse {
   0%, 100% { opacity: 1; transform: scale(1); }
   50%       { opacity: 0.4; transform: scale(0.7); }
