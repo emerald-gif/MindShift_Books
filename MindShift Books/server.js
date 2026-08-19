@@ -1093,7 +1093,7 @@ app.get('/api/product/:id', (req, res) => {
 const GOOGLE_BOOKS_API = 'https://www.googleapis.com/books/v1/volumes';
 
 const FREE_EBOOK_CATEGORIES = [
-  { slug: 'all',        label: 'All',                query: 'subject:fiction OR subject:nonfiction' },
+  { slug: 'all',        label: 'All',                query: 'the' },
   { slug: 'fiction',    label: 'Fiction',             query: 'subject:fiction' },
   { slug: 'self-help',  label: 'Self-Help',           query: 'subject:"self-help"' },
   { slug: 'business',   label: 'Business & Money',    query: 'subject:business' },
@@ -1140,11 +1140,9 @@ function normalizeGoogleBook(item) {
 // one too.
 const GOOGLE_BOOKS_API_KEY = process.env.GOOGLE_BOOKS_API_KEY || '';
 
-async function fetchGoogleBooks(query, startIndex) {
-  const cacheKey = `list::${query}::${startIndex}`;
-  const cached = freeEbooksCache.get(cacheKey);
-  if (cached && cached.expires > Date.now()) return cached.data;
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
+async function fetchGoogleBooksOnce(query, startIndex) {
   let url = `${GOOGLE_BOOKS_API}?q=${encodeURIComponent(query)}&filter=free-ebooks&printType=books&maxResults=20&startIndex=${startIndex}&country=US`;
   if (GOOGLE_BOOKS_API_KEY) url += `&key=${GOOGLE_BOOKS_API_KEY}`;
 
@@ -1156,9 +1154,31 @@ async function fetchGoogleBooks(query, startIndex) {
   });
   if (!resp.ok) {
     const bodyText = await resp.text().catch(() => '');
-    throw new Error(`Google Books API error: ${resp.status} ${resp.statusText} — ${bodyText.slice(0, 300)}`);
+    const err = new Error(`Google Books API error: ${resp.status} ${resp.statusText} — ${bodyText.slice(0, 300)}`);
+    err.status = resp.status;
+    throw err;
   }
-  const json = await resp.json();
+  return resp.json();
+}
+
+async function fetchGoogleBooks(query, startIndex) {
+  const cacheKey = `list::${query}::${startIndex}`;
+  const cached = freeEbooksCache.get(cacheKey);
+  if (cached && cached.expires > Date.now()) return cached.data;
+
+  let json;
+  try {
+    json = await fetchGoogleBooksOnce(query, startIndex);
+  } catch (e) {
+    // Google's backend occasionally throws a transient 5xx — retry once
+    // after a short pause instead of failing the whole request.
+    if (e.status && e.status >= 500) {
+      await sleep(600);
+      json = await fetchGoogleBooksOnce(query, startIndex);
+    } else {
+      throw e;
+    }
+  }
   const items = Array.isArray(json.items) ? json.items.map(normalizeGoogleBook) : [];
   const data = { items, totalItems: json.totalItems || 0 };
   freeEbooksCache.set(cacheKey, { data, expires: Date.now() + FREE_EBOOKS_CACHE_TTL });
