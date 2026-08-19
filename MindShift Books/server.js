@@ -123,6 +123,7 @@ const PUBLIC_PDF_URL = process.env.PUBLIC_PDF_URL || null;
 const BREVO_API_KEY = process.env.BREVO_API_KEY || null; // set this in your environment
 const BREVO_TEMPLATE_ID = Number(process.env.BREVO_TEMPLATE_ID || 1); // order receipt / delivery email
 const BREVO_WELCOME_TEMPLATE_ID = Number(process.env.BREVO_WELCOME_TEMPLATE_ID || 2); // new-account welcome email
+const BREVO_BANK_OTP_TEMPLATE_ID = Number(process.env.BREVO_BANK_OTP_TEMPLATE_ID || 3); // bank-details-change verification code
 const BREVO_SENDER_NAME = process.env.BREVO_SENDER_NAME || 'Mindshift Books';
 const BREVO_SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'contact@mindshiftbooks.shop';
 
@@ -152,6 +153,38 @@ async function sendWelcomeEmail(email, name) {
     }
   } catch (e) {
     console.warn('Brevo welcome email send failed', e.message || e);
+  }
+}
+
+// Sends the 6-digit bank-details verification code. Not fire-and-forget —
+// the caller needs to know whether it actually went out before telling the
+// affiliate "check your email".
+async function sendBankOtpEmail(email, name, code) {
+  if (!BREVO_API_KEY || !email) return { ok: false, error: 'Email delivery is not configured.' };
+  try {
+    const emailRes = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        accept: 'application/json',
+        'api-key': BREVO_API_KEY,
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        sender: { name: BREVO_SENDER_NAME, email: BREVO_SENDER_EMAIL },
+        to: [{ email, name: name || undefined }],
+        templateId: BREVO_BANK_OTP_TEMPLATE_ID,
+        params: { name: name || 'there', code }
+      })
+    });
+    if (!emailRes.ok) {
+      const txt = await emailRes.text().catch(() => null);
+      console.error('Brevo bank-otp email error', emailRes.status, txt);
+      return { ok: false, error: 'Could not send the verification code. Please try again.' };
+    }
+    return { ok: true };
+  } catch (e) {
+    console.warn('Brevo bank-otp email send failed', e.message || e);
+    return { ok: false, error: 'Could not send the verification code. Please try again.' };
   }
 }
 
@@ -388,31 +421,126 @@ app.get('/api/affiliate/me', requireUser, async (req, res) => {  try {
   }
 });
 
+// POST /api/affiliate/bank/otp — sends a 6-digit code to the affiliate's own
+// account email, required before /api/affiliate/bank will accept a change.
+// Same lock as the update itself: no point sending a code if they can't
+// actually use it yet.
+const BANK_OTP_TTL_MS = 10 * 60 * 1000; // 10 minutes
+const BANK_OTP_RESEND_COOLDOWN_MS = 60 * 1000; // 60 seconds between sends
+
+function maskEmail(email) {
+  const [user, domain] = String(email || '').split('@');
+  if (!user || !domain) return email || '';
+  const visible = user.slice(0, Math.min(2, user.length));
+  return `${visible}${'*'.repeat(Math.max(1, user.length - visible.length))}@${domain}`;
+}
+
+app.post('/api/affiliate/bank/otp', requireUser, async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const q = await db.collection('affiliates').where('uid', '==', req.uid).limit(1).get();
+    if (q.empty) return res.status(404).json({ error: 'You are not registered as an affiliate.' });
+    const doc = q.docs[0];
+    const data = doc.data();
+
+    if ((data.pendingPayout || 0) > 0) {
+      return res.status(409).json({ error: 'You have a payout queued for this Monday, so your bank details are locked until it\'s paid out. You can update them right after.' });
+    }
+
+    const email = data.email || req.userEmail;
+    if (!email) return res.status(400).json({ error: 'No email is on file for this account.' });
+
+    const existingOtp = data.bankOtp;
+    if (existingOtp && existingOtp.requestedAt) {
+      const requestedMs = existingOtp.requestedAt.toMillis ? existingOtp.requestedAt.toMillis() : 0;
+      const waitLeft = BANK_OTP_RESEND_COOLDOWN_MS - (Date.now() - requestedMs);
+      if (waitLeft > 0) {
+        return res.status(429).json({ error: `Please wait ${Math.ceil(waitLeft / 1000)}s before requesting another code.` });
+      }
+    }
+
+    const code = String(crypto.randomInt(100000, 999999));
+    const hash = crypto.createHash('sha256').update(code).digest('hex');
+    const now = admin.firestore.Timestamp.now();
+
+    const sent = await sendBankOtpEmail(email, data.name, code);
+    if (!sent.ok) return res.status(502).json({ error: sent.error });
+
+    await doc.ref.update({
+      bankOtp: {
+        hash,
+        expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + BANK_OTP_TTL_MS),
+        requestedAt: now,
+        attempts: 0
+      }
+    });
+
+    return res.json({ ok: true, sentTo: maskEmail(email) });
+  } catch (err) {
+    console.error('/api/affiliate/bank/otp error', err);
+    return res.status(500).json({ error: 'Could not send a verification code. Please try again.' });
+  }
+});
+
 // PUT /api/affiliate/bank — affiliate updates their own bank account details
 // (used to receive Monday payouts). Does not touch balances.
+// Locked while a payout is queued for them (pendingPayout > 0) — the amount
+// owed was already snapshotted with the old bank details when Monday's
+// batch ran, so editing now would silently desync from what the admin is
+// about to send it to. They can edit again once that payout is marked paid.
+// Also requires a valid emailed OTP (see /api/affiliate/bank/otp above) —
+// proves whoever is submitting this change actually owns the account inbox,
+// not just an active session.
 app.put('/api/affiliate/bank', requireUser, async (req, res) => {
   try {
     if (!db) return res.status(500).json({ error: 'Database unavailable' });
-    const { bankName, accountName, accountNumber } = req.body || {};
+    const { bankName, accountName, accountNumber, otp } = req.body || {};
     if (!bankName || !String(bankName).trim()) return res.status(400).json({ error: 'Bank name is required.' });
     if (!accountName || !String(accountName).trim()) return res.status(400).json({ error: 'Account name is required.' });
     if (!accountNumber || !String(accountNumber).trim()) return res.status(400).json({ error: 'Account number is required.' });
+    if (!otp || !String(otp).trim()) return res.status(400).json({ error: 'Enter the verification code sent to your email.' });
 
     const q = await db.collection('affiliates').where('uid', '==', req.uid).limit(1).get();
     if (q.empty) return res.status(404).json({ error: 'You are not registered as an affiliate.' });
     const doc = q.docs[0];
+    const data = doc.data();
+
+    if ((data.pendingPayout || 0) > 0) {
+      return res.status(409).json({ error: 'You have a payout queued for this Monday, so your bank details are locked until it\'s paid out. You can update them right after.' });
+    }
+
+    const bankOtp = data.bankOtp;
+    if (!bankOtp || !bankOtp.hash) {
+      return res.status(400).json({ error: 'Request a verification code first.' });
+    }
+    const expiresMs = bankOtp.expiresAt && bankOtp.expiresAt.toMillis ? bankOtp.expiresAt.toMillis() : 0;
+    if (Date.now() > expiresMs) {
+      return res.status(400).json({ error: 'That code has expired. Please request a new one.' });
+    }
+    if ((bankOtp.attempts || 0) >= 5) {
+      return res.status(429).json({ error: 'Too many incorrect attempts. Please request a new code.' });
+    }
+    const suppliedHash = crypto.createHash('sha256').update(String(otp).trim()).digest('hex');
+    if (suppliedHash !== bankOtp.hash) {
+      await doc.ref.update({ 'bankOtp.attempts': admin.firestore.FieldValue.increment(1) });
+      return res.status(400).json({ error: 'That code is incorrect. Please try again.' });
+    }
+
     const bank = {
       bankName: String(bankName).trim().slice(0, 80),
       accountName: String(accountName).trim().slice(0, 120),
       accountNumber: String(accountNumber).trim().slice(0, 20)
     };
-    await doc.ref.update({ bank });
+    await doc.ref.update({ bank, bankOtp: admin.firestore.FieldValue.delete() });
     return res.json({ ok: true, bank });
   } catch (err) {
     console.error('/api/affiliate/bank error', err);
     return res.status(500).json({ error: 'Could not update your bank details. Please try again.' });
   }
 });
+
+
+
 
 // GET /api/affiliate/payouts — this affiliate's own payout history
 // (every Monday batch they were included in), most recent first.
