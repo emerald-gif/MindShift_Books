@@ -152,6 +152,76 @@
     </div>
   </section>
 
+  <!-- Free eBooks: fetch this as early as possible — before the Firebase/
+       EmailJS scripts at the bottom of the page, which currently block
+       main.js (and its fetch) from even starting. Also caches the result
+       in sessionStorage so a repeat visit this session paints instantly,
+       with a fresh network fetch always running behind it. main.js's own
+       loader checks window.__feHomeSwiper.done and skips if this already
+       ran, so it stays as a safety-net fallback. -->
+  <script>
+  (function () {
+    var track = document.getElementById('freeEbooksGrid');
+    var section = document.getElementById('freeEbooksSection');
+    if (!track) return;
+    window.__feHomeSwiper = { done: false };
+
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+    function cardHtml(b) {
+      var cover = b.cover || 'data:image/svg+xml,' + encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="140" height="200"><rect width="140" height="200" rx="8" fill="#e2e8f0"/><text x="70" y="104" font-family="sans-serif" font-size="12" fill="#94a3b8" text-anchor="middle">No Cover</text></svg>'
+      );
+      return '<div class="swiper-card fe-card">' +
+        '<div class="card-cover-wrap"><img src="' + esc(cover) + '" class="ebook-cover" alt="' + esc(b.title) + '" loading="lazy"/></div>' +
+        '<div class="title">' + esc(b.title) + '</div>' +
+        '<div class="card-author">' + esc(b.author || '') + '</div>' +
+        '<div class="card-actions button-group" style="width:100%;margin-top:auto;">' +
+        '<button class="btn free-ebook-read-btn" data-fe-detail="' + esc(b.id) + '" style="width:100%;">Read Free</button>' +
+        '</div></div>';
+    }
+    function render(items) {
+      if (!items || !items.length) { if (section) section.style.display = 'none'; return; }
+      track.innerHTML = items.slice(0, 12).map(cardHtml).join('');
+      if (window.updateSwiperArrows) window.updateSwiperArrows(track);
+    }
+
+    // Instant paint from this session's last fetch, while a fresh one runs.
+    try {
+      var cached = sessionStorage.getItem('fe_home_cache_v1');
+      if (cached) {
+        var parsed = JSON.parse(cached);
+        if (parsed && parsed.items && parsed.items.length) {
+          render(parsed.items);
+          window.__feHomeSwiper.done = true;
+        }
+      }
+    } catch (e) {}
+
+    fetch('/api/free-ebooks?category=all&startIndex=0')
+      .then(function (res) { if (!res.ok) throw new Error('fetch failed'); return res.json(); })
+      .then(function (data) {
+        var items = data.items || [];
+        render(items);
+        window.__feHomeSwiper.done = true;
+        try { sessionStorage.setItem('fe_home_cache_v1', JSON.stringify({ items: items, ts: Date.now() })); } catch (e) {}
+      })
+      .catch(function (e) {
+        console.error('Failed to load free eBooks swiper', e);
+        if (!window.__feHomeSwiper.done && section) section.style.display = 'none';
+      });
+
+    // main.js defines updateSwiperArrows — it may not exist yet the moment
+    // this fetch resolves, so re-sync arrow state once everything's loaded.
+    window.addEventListener('load', function () {
+      if (window.updateSwiperArrows) window.updateSwiperArrows(track);
+    });
+  })();
+  </script>
+
   <section class="hero" id="featuredSection" aria-labelledby="featured-h" style="margin-top:28px">
     <div class="section-head">
       <div class="section-label-row">

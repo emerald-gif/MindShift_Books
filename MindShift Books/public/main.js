@@ -359,6 +359,9 @@ async function loadFreeEbooksSwiper() {
   const track = document.getElementById('freeEbooksGrid');
   const section = document.getElementById('freeEbooksSection');
   if (!track) return;
+  // The inline loader at the top of index.html already fetches this as
+  // early as possible (before this script even runs) — skip if it succeeded.
+  if (window.__feHomeSwiper && window.__feHomeSwiper.done) return;
   try {
     const res = await fetch('/api/free-ebooks?category=all&startIndex=0');
     if (!res.ok) throw new Error('fetch failed');
