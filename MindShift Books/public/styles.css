@@ -948,6 +948,52 @@ header {
   padding: 9px 10px;
 }
 
+.our-author { display: none; }
+
+/* When a book lands alone on the final row of the 2-col grid (odd total
+   count), spotlight it full-width — big cover panel on top, info below,
+   similar to a "featured pick" hero card. */
+.our-book-item:nth-child(odd):last-child {
+  grid-column: 1 / -1;
+}
+.our-book-item:nth-child(odd):last-child .card-cover-wrap {
+  background: linear-gradient(160deg, #dbe9e2, #c3d9cb);
+  border-radius: 20px;
+  padding: 40px 20px 34px;
+  margin-bottom: 6px;
+}
+.our-book-item:nth-child(odd):last-child .our-cover {
+  width: 210px;
+  max-width: 55%;
+  box-shadow: 0 22px 48px rgba(0,0,0,0.28), 0 6px 14px rgba(0,0,0,0.14);
+}
+.our-book-item:nth-child(odd):last-child .our-title {
+  font-size: 1.2rem;
+  margin-top: 18px;
+}
+.our-book-item:nth-child(odd):last-child .our-author {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #64748b;
+  margin: -2px 0 4px;
+}
+.our-book-item:nth-child(odd):last-child .card-price-block {
+  align-items: center;
+}
+.our-book-item:nth-child(odd):last-child .our-actions {
+  flex-direction: row;
+  justify-content: center;
+  max-width: 380px;
+  margin: 14px auto 0;
+}
+@media (max-width: 480px) {
+  .our-book-item:nth-child(odd):last-child .our-actions {
+    flex-direction: column;
+    max-width: 100%;
+  }
+}
+
 /* ── FAQ accordion ─────────────────────────────────────────────────── */
 .faq-section { padding: 8px 20px 36px; max-width: 760px; margin: 0 auto; }
 .faq-list { display: flex; flex-direction: column; gap: 10px; }

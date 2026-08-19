@@ -250,6 +250,7 @@ function productCardInner(p) {
       ${wishlistToggleButton(p.id, { cardOverlay: true })}
     </div>
     <div class="our-title">${escapeHtml(p.title || '')}</div>
+    <div class="our-author">${escapeHtml(p.author || '')}</div>
     <div class="card-price-block">
       <div class="card-price">${price}</div>
       ${(orig || pct) ? `
