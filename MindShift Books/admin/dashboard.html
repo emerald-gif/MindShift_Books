@@ -105,6 +105,31 @@
   }
   .pay-btn:disabled { opacity:0.55; cursor:default; }
   .aff-code { font-family: monospace; font-weight:700; color: var(--indigo); }
+
+  /* ── TOP-LEVEL TABS ── */
+  .tabs { display:flex; gap:8px; max-width:960px; margin:20px auto 0; padding:0 16px; }
+  .tab-btn {
+    padding:9px 16px; border-radius:10px; border:1.5px solid var(--border); background:#fff;
+    color:var(--muted); font-weight:700; font-size:0.84rem; cursor:pointer;
+  }
+  .tab-btn.active { background: linear-gradient(90deg, #4f46e5, #06b6d4); color:#fff; border-color:transparent; }
+
+  /* ── PAYOUTS PAGE ── */
+  .payouts-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px; }
+  .gen-btn {
+    padding:9px 15px; border-radius:10px; border:1.5px solid var(--border); background:#fff;
+    color: var(--primary); font-weight:700; font-size:0.82rem; cursor:pointer;
+  }
+  .gen-btn:disabled { opacity:0.55; cursor:default; }
+  .status-filter { display:flex; gap:8px; margin-bottom:16px; }
+  .status-filter button {
+    padding:7px 13px; border-radius:8px; border:1.5px solid var(--border); background:#fff;
+    color:var(--muted); font-weight:700; font-size:0.78rem; cursor:pointer;
+  }
+  .status-filter button.active { background:#eef2ff; color:var(--indigo); border-color:#c7d2fe; }
+  .bank-cell { font-size:0.78rem; line-height:1.4; }
+  .bank-cell .acc-name { color:var(--muted); }
+  .paid-meta { font-size:0.72rem; color:var(--muted); margin-top:2px; }
 </style>
 </head>
 <body>
@@ -127,6 +152,11 @@
     <a href="/admin/logout" class="logout-link">Log out</a>
   </div>
 </header>
+
+<div class="tabs">
+  <button class="tab-btn active" id="tabOverview">📊 Overview</button>
+  <button class="tab-btn" id="tabPayouts">💸 Payouts</button>
+</div>
 
 <div class="page">
   <div id="loadingWrap" class="loading">Loading stats…</div>
@@ -168,10 +198,28 @@
       <div class="panel full-panel">
         <h2><span class="emoji">🤝</span> Affiliates</h2>
         <table>
-          <thead><tr><th>Name</th><th>Code</th><th class="num">Sales</th><th class="num">Earned</th><th class="num">Owed</th><th class="num">Action</th></tr></thead>
+          <thead><tr><th>Name</th><th>Code</th><th class="num">Sales</th><th class="num">Earned</th><th class="num">Owed</th></tr></thead>
           <tbody id="affiliatesBody"></tbody>
         </table>
       </div>
+    </div>
+  </div>
+
+  <div id="payoutsPage" style="display:none;">
+    <div class="payouts-header">
+      <div class="status-filter">
+        <button class="active" data-status="pending" id="filterPending">Pending</button>
+        <button data-status="paid" id="filterPaid">Paid</button>
+        <button data-status="all" id="filterAll">All</button>
+      </div>
+      <button class="gen-btn" id="genBtn">↻ Generate this week's payouts</button>
+    </div>
+    <div class="panel full-panel" style="padding-bottom:16px;">
+      <h2><span class="emoji">💸</span> Monday Payout Queue</h2>
+      <table>
+        <thead><tr><th>Affiliate</th><th class="num">Amount</th><th>Bank</th><th>Status</th><th class="num">Action</th></tr></thead>
+        <tbody id="payoutsBody"></tbody>
+      </table>
     </div>
   </div>
 </div>
@@ -235,6 +283,7 @@
 
       loadingWrap.style.display = 'none';
       content.style.display = 'block';
+      content.dataset.loaded = 'true';
     } catch (err) {
       loadingWrap.innerHTML = `<div class="error-box">Could not load stats.<br>${esc(err && err.message)}</div>`;
     }
@@ -261,7 +310,7 @@
   function renderAffiliates(affiliates) {
     const tbody = document.getElementById('affiliatesBody');
     if (!affiliates.length) {
-      tbody.innerHTML = '<tr><td colspan="6" class="empty">No affiliates have joined yet.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5" class="empty">No affiliates have joined yet.</td></tr>';
       return;
     }
     tbody.innerHTML = affiliates.map(a => `
@@ -273,34 +322,134 @@
         <td class="num">
           <span class="aff-badge ${a.outstanding > 0 ? 'owed' : 'settled'}">${fmtNgn(a.outstanding)}</span>
         </td>
+      </tr>
+    `).join('');
+  }
+
+  loadAffiliates();
+
+  // ── Tabs: Overview vs Payouts ──
+  const tabOverview = document.getElementById('tabOverview');
+  const tabPayouts = document.getElementById('tabPayouts');
+  const payoutsPage = document.getElementById('payoutsPage');
+  let overviewLoadedOnce = true; // loadStats() already ran once above on page load
+
+  tabOverview.addEventListener('click', () => {
+    tabOverview.classList.add('active');
+    tabPayouts.classList.remove('active');
+    payoutsPage.style.display = 'none';
+    // Restore whichever overview state was showing before (loaded content, or its loader).
+    if (content.dataset.loaded === 'true') {
+      content.style.display = 'block';
+      loadingWrap.style.display = 'none';
+    } else {
+      loadingWrap.style.display = 'block';
+    }
+  });
+  tabPayouts.addEventListener('click', () => {
+    tabPayouts.classList.add('active');
+    tabOverview.classList.remove('active');
+    loadingWrap.style.display = 'none';
+    content.style.display = 'none';
+    payoutsPage.style.display = 'block';
+    loadPayouts();
+  });
+
+  // ── Payouts queue ──
+  let currentStatus = 'pending';
+  const filterBtns = { pending: document.getElementById('filterPending'), paid: document.getElementById('filterPaid'), all: document.getElementById('filterAll') };
+  Object.entries(filterBtns).forEach(([status, btn]) => {
+    btn.addEventListener('click', () => {
+      currentStatus = status;
+      Object.values(filterBtns).forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      loadPayouts();
+    });
+  });
+
+  function fmtDateTime(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    return d.toLocaleString('en-NG', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+  }
+
+  async function loadPayouts() {
+    const tbody = document.getElementById('payoutsBody');
+    tbody.innerHTML = '<tr><td colspan="5" class="empty">Loading…</td></tr>';
+    try {
+      const res = await fetch(`/api/admin/payouts?status=${currentStatus}`);
+      if (res.status === 401) { window.location.href = '/admin/login'; return; }
+      if (!res.ok) throw new Error('Request failed: ' + res.status);
+      const data = await res.json();
+      renderPayouts(data.payouts || []);
+    } catch (err) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty">Could not load payouts.</td></tr>';
+    }
+  }
+
+  function renderPayouts(payouts) {
+    const tbody = document.getElementById('payoutsBody');
+    if (!payouts.length) {
+      tbody.innerHTML = `<tr><td colspan="5" class="empty">No ${currentStatus === 'all' ? '' : currentStatus + ' '}payouts right now.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = payouts.map(p => {
+      const bank = p.bank || {};
+      return `
+      <tr>
+        <td>${esc(p.affiliateName)}<br><span class="aff-code" style="font-size:0.72rem;">${esc(p.affiliateCode)}</span></td>
+        <td class="num">${fmtNgn(p.amount)}</td>
+        <td class="bank-cell">${esc(bank.bankName || '—')}<br>${esc(bank.accountNumber || '')}<div class="acc-name">${esc(bank.accountName || '')}</div></td>
+        <td>
+          <span class="aff-badge ${p.status === 'paid' ? 'settled' : 'owed'}">${p.status === 'paid' ? 'Paid' : 'Pending'}</span>
+          ${p.status === 'paid' ? `<div class="paid-meta">${fmtDateTime(p.paidAt)}${p.processedBy ? ' · by ' + esc(p.processedBy) : ''}</div>` : ''}
+        </td>
         <td class="num">
-          <button class="pay-btn" data-code="${esc(a.code)}" ${a.outstanding <= 0 ? 'disabled' : ''}>
-            ${a.outstanding <= 0 ? 'Settled' : 'Mark Paid'}
+          <button class="pay-btn" data-id="${esc(p.id)}" ${p.status === 'paid' ? 'disabled' : ''}>
+            ${p.status === 'paid' ? 'Paid' : 'Mark as Paid'}
           </button>
         </td>
       </tr>
-    `).join('');
+    `;
+    }).join('');
 
-    tbody.querySelectorAll('.pay-btn').forEach(btn => {
+    tbody.querySelectorAll('.pay-btn:not([disabled])').forEach(btn => {
       btn.addEventListener('click', async () => {
-        const code = btn.getAttribute('data-code');
-        if (!confirm(`Mark all outstanding earnings for ${code} as paid? Only do this after you've actually sent the bank transfer.`)) return;
+        const id = btn.getAttribute('data-id');
+        if (!confirm('Mark this payout as paid? Only do this after you\'ve actually sent the bank transfer.')) return;
         btn.disabled = true;
         btn.textContent = 'Saving…';
         try {
-          const res = await fetch(`/api/admin/affiliates/${encodeURIComponent(code)}/mark-paid`, { method: 'POST' });
+          const res = await fetch(`/api/admin/payouts/${encodeURIComponent(id)}/mark-paid`, { method: 'POST' });
           if (!res.ok) throw new Error('Request failed');
+          loadPayouts();
           loadAffiliates();
         } catch (e) {
           btn.disabled = false;
-          btn.textContent = 'Mark Paid';
+          btn.textContent = 'Mark as Paid';
           alert('Could not update payout status. Please try again.');
         }
       });
     });
   }
 
-  loadAffiliates();
+  document.getElementById('genBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('genBtn');
+    btn.disabled = true;
+    btn.textContent = 'Generating…';
+    try {
+      const res = await fetch('/api/admin/payouts/generate', { method: 'POST' });
+      if (!res.ok) throw new Error('Request failed');
+      const data = await res.json();
+      alert(`Generated ${data.generated} payout${data.generated === 1 ? '' : 's'} totaling ${fmtNgn(data.totalAmount)}.`);
+      loadPayouts();
+    } catch (e) {
+      alert('Could not generate payouts. Please try again.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "↻ Generate this week's payouts";
+    }
+  });
 </script>
 
 </body>
