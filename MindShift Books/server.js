@@ -1176,6 +1176,9 @@ function normalizeGoogleBook(item) {
 // use it automatically (higher quota, more reliable). Works fine without
 // one too.
 const GOOGLE_BOOKS_API_KEY = process.env.GOOGLE_BOOKS_API_KEY || '';
+console.log(GOOGLE_BOOKS_API_KEY
+  ? `[free-ebooks] Using Google Books API key (…${GOOGLE_BOOKS_API_KEY.slice(-6)})`
+  : '[free-ebooks] WARNING: no GOOGLE_BOOKS_API_KEY set — running unauthenticated, low rate limit.');
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
@@ -1225,6 +1228,17 @@ async function fetchGoogleBooks(query, startIndex) {
   if (lastErr) throw lastErr;
   const items = Array.isArray(json.items) ? json.items.map(normalizeGoogleBook) : [];
   const data = { items, totalItems: json.totalItems || 0 };
+
+  if (items.length === 0) {
+    // Google returned 200 OK but nothing usable — could be a genuinely empty
+    // result, or Google degrading gracefully instead of erroring during a
+    // backend hiccup. Log it plainly and DON'T cache it: caching an empty
+    // result for a full hour would keep serving "no books" long after
+    // Google recovers. Real, non-empty results are still cached normally.
+    console.warn(`[free-ebooks] "${query}" (start=${startIndex}) returned 0 items — googleTotalItems=${json.totalItems ?? 'undefined'}, hasKey=${!!GOOGLE_BOOKS_API_KEY}`);
+    return data;
+  }
+
   freeEbooksCache.set(cacheKey, { data, expires: Date.now() + FREE_EBOOKS_CACHE_TTL });
   return data;
 }
