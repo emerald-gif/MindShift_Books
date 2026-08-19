@@ -245,6 +245,11 @@ function productCardInner(p) {
   const pct  = (p.originalPriceNGN && p.priceNGN) ? Math.round((1 - p.priceNGN / p.originalPriceNGN) * 100) : null;
 
   return `
+    <div class="our-spotlight-head">
+      <span class="section-accent"></span>
+      <h3>What Readers Are Loving</h3>
+      <span class="section-pill section-pill--trending">Trending</span>
+    </div>
     <div class="card-cover-wrap">
       <img src="${escapeHtml(p.cover || '')}" class="our-cover" alt="${escapeHtml(p.title || 'ebook')}"/>
       ${wishlistToggleButton(p.id, { cardOverlay: true })}
