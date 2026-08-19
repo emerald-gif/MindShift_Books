@@ -9,6 +9,7 @@ const admin = require('firebase-admin');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const crypto = require('crypto');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -1178,7 +1179,10 @@ function normalizeGutendexBook(item) {
     pageCount: null, // not provided by Gutendex
     publishedDate: null, // not provided by Gutendex (these are old editions, not new releases)
     downloadCount: item.download_count || 0,
-    readLink: pickReadLink(formats)
+    // Stays on our own domain the whole time — /read/:id proxies + caches
+    // the actual Gutenberg file server-side (see below). Download is
+    // intentionally not wired up yet.
+    readLink: `/read/${item.id}`
   };
 }
 
@@ -1323,6 +1327,112 @@ app.get('/api/free-ebooks/:id', async (req, res) => {
   } catch (e) {
     console.error('[free-ebooks] detail fetch failed', e);
     res.status(500).json({ error: 'Could not load this book right now.' });
+  }
+});
+
+// ---------------- FREE EBOOKS — on-domain reader (/read/:id) ----------------
+// Opens the actual book at mindshiftbooks.shop/read/:id, never
+// gutenberg.org, by fetching Gutenberg's file server-side and caching it to
+// local disk on first request. Every request after that is served straight
+// off our own disk — fast, and doesn't hammer Gutenberg's free servers.
+// Download is intentionally not exposed yet — this is read-only.
+const GUTENBERG_CACHE_DIR = path.join(__dirname, 'cache', 'gutenberg-reads');
+
+function ensureCacheDir() {
+  try { fs.mkdirSync(GUTENBERG_CACHE_DIR, { recursive: true }); } catch (e) { /* already exists */ }
+}
+ensureCacheDir();
+
+// Wraps Gutenberg's own HTML file in a minimal MindShift Books shell: a
+// slim back-link bar, and a <base> tag pointing back at the file's original
+// Gutenberg directory so relative images/CSS inside the file still load
+// (the page URL itself stays on our domain — only background asset requests
+// touch gutenberg.org, same as any site embedding external images).
+function wrapGutenbergHtml(rawHtml, sourceUrl, title) {
+  const baseDir = sourceUrl.slice(0, sourceUrl.lastIndexOf('/') + 1);
+  const backBar = `
+<div style="position:sticky;top:0;z-index:9999;background:#12121a;color:#fff;padding:10px 16px;font-family:system-ui,-apple-system,sans-serif;font-size:14px;display:flex;align-items:center;gap:10px;box-shadow:0 1px 4px rgba(0,0,0,.25);">
+  <a href="/free-ebooks" style="color:#fff;text-decoration:none;opacity:.85;">&larr; MindShift Books</a>
+  <span style="opacity:.5;">|</span>
+  <span style="opacity:.85;">${title ? title.replace(/</g, '&lt;') : 'Reading'}</span>
+</div>`;
+
+  let html = rawHtml;
+  if (/<head[^>]*>/i.test(html)) {
+    html = html.replace(/<head[^>]*>/i, m => `${m}\n<base href="${baseDir}">`);
+  } else {
+    html = `<base href="${baseDir}">\n` + html;
+  }
+  if (/<body[^>]*>/i.test(html)) {
+    html = html.replace(/<body[^>]*>/i, m => `${m}\n${backBar}`);
+  } else {
+    html = backBar + html;
+  }
+  return html;
+}
+
+function wrapPlainTextAsHtml(rawText, title) {
+  const safeTitle = (title || 'Reading').replace(/</g, '&lt;');
+  const safeBody = rawText.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  return `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>${safeTitle} — MindShift Books</title></head>
+<body style="margin:0;font-family:system-ui,-apple-system,sans-serif;">
+<div style="position:sticky;top:0;background:#12121a;color:#fff;padding:10px 16px;font-size:14px;display:flex;gap:10px;align-items:center;">
+  <a href="/free-ebooks" style="color:#fff;text-decoration:none;opacity:.85;">&larr; MindShift Books</a>
+  <span style="opacity:.5;">|</span><span style="opacity:.85;">${safeTitle}</span>
+</div>
+<pre style="white-space:pre-wrap;font-family:Georgia,serif;font-size:16px;line-height:1.6;max-width:760px;margin:24px auto;padding:0 20px;">${safeBody}</pre>
+</body></html>`;
+}
+
+app.get('/read/:id', async (req, res) => {
+  const id = req.params.id.replace(/[^0-9]/g, '');
+  if (!id) return res.status(400).send('Invalid book id.');
+  const cachePath = path.join(GUTENBERG_CACHE_DIR, `${id}.html`);
+
+  try {
+    if (fs.existsSync(cachePath)) {
+      res.set('Content-Type', 'text/html; charset=utf-8');
+      return fs.createReadStream(cachePath).pipe(res);
+    }
+
+    const detailResp = await fetch(`${GUTENDEX_API}/${id}`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; MindShiftBooks/1.0; +https://mindshiftbooks.shop)',
+        'Accept': 'application/json'
+      }
+    });
+    if (!detailResp.ok) return res.status(404).send('Book not found.');
+    const detail = await detailResp.json();
+    const formats = detail.formats || {};
+    const htmlUrl = formats['text/html; charset=utf-8'] || formats['text/html'] || formats['text/html; charset=us-ascii'] || null;
+    const textUrl = formats['text/plain; charset=utf-8'] || formats['text/plain'] || null;
+    const sourceUrl = htmlUrl || textUrl;
+
+    if (!sourceUrl) {
+      return res.status(404).send('This title is only available as a download file, which isn\u2019t supported here yet.');
+    }
+
+    const fileResp = await fetch(sourceUrl, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; MindShiftBooks/1.0; +https://mindshiftbooks.shop)' }
+    });
+    if (!fileResp.ok) return res.status(502).send('Could not load this book right now. Please try again.');
+    const rawText = await fileResp.text();
+
+    const html = htmlUrl
+      ? wrapGutenbergHtml(rawText, sourceUrl, detail.title)
+      : wrapPlainTextAsHtml(rawText, detail.title);
+
+    ensureCacheDir();
+    fs.writeFile(cachePath, html, 'utf8', (err) => {
+      if (err) console.error('[read] cache write failed:', err.message);
+    });
+
+    res.set('Content-Type', 'text/html; charset=utf-8');
+    res.send(html);
+  } catch (e) {
+    console.error('[read] failed to serve book', id, e && e.message ? e.message : e);
+    res.status(500).send('Could not load this book right now. Please try again.');
   }
 });
 
