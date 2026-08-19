@@ -1134,14 +1134,30 @@ function normalizeGoogleBook(item) {
   };
 }
 
+// Optional — if you add a free Google Cloud API key with the Books API
+// enabled, set GOOGLE_BOOKS_API_KEY in your environment and requests will
+// use it automatically (higher quota, more reliable). Works fine without
+// one too.
+const GOOGLE_BOOKS_API_KEY = process.env.GOOGLE_BOOKS_API_KEY || '';
+
 async function fetchGoogleBooks(query, startIndex) {
   const cacheKey = `list::${query}::${startIndex}`;
   const cached = freeEbooksCache.get(cacheKey);
   if (cached && cached.expires > Date.now()) return cached.data;
 
-  const url = `${GOOGLE_BOOKS_API}?q=${encodeURIComponent(query)}&filter=free-ebooks&printType=books&maxResults=20&startIndex=${startIndex}&country=US`;
-  const resp = await fetch(url);
-  if (!resp.ok) throw new Error(`Google Books API error: ${resp.status}`);
+  let url = `${GOOGLE_BOOKS_API}?q=${encodeURIComponent(query)}&filter=free-ebooks&printType=books&maxResults=20&startIndex=${startIndex}&country=US`;
+  if (GOOGLE_BOOKS_API_KEY) url += `&key=${GOOGLE_BOOKS_API_KEY}`;
+
+  const resp = await fetch(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (compatible; MindShiftBooks/1.0; +https://mindshiftbooks.shop)',
+      'Accept': 'application/json'
+    }
+  });
+  if (!resp.ok) {
+    const bodyText = await resp.text().catch(() => '');
+    throw new Error(`Google Books API error: ${resp.status} ${resp.statusText} — ${bodyText.slice(0, 300)}`);
+  }
   const json = await resp.json();
   const items = Array.isArray(json.items) ? json.items.map(normalizeGoogleBook) : [];
   const data = { items, totalItems: json.totalItems || 0 };
@@ -1170,7 +1186,7 @@ app.get('/api/free-ebooks', async (req, res) => {
     const data = await fetchGoogleBooks(query, startIndex);
     res.json(data);
   } catch (e) {
-    console.error('[free-ebooks] list fetch failed', e);
+    console.error('[free-ebooks] list fetch failed:', e && e.message ? e.message : e);
     res.status(500).json({ error: 'Could not load free eBooks right now.' });
   }
 });
@@ -1184,7 +1200,14 @@ app.get('/api/free-ebooks/:id', async (req, res) => {
     const cached = freeEbooksCache.get(cacheKey);
     if (cached && cached.expires > Date.now()) return res.json(cached.data);
 
-    const resp = await fetch(`${GOOGLE_BOOKS_API}/${encodeURIComponent(id)}?country=US`);
+    let url = `${GOOGLE_BOOKS_API}/${encodeURIComponent(id)}?country=US`;
+    if (GOOGLE_BOOKS_API_KEY) url += `&key=${GOOGLE_BOOKS_API_KEY}`;
+    const resp = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; MindShiftBooks/1.0; +https://mindshiftbooks.shop)',
+        'Accept': 'application/json'
+      }
+    });
     if (!resp.ok) return res.status(404).json({ error: 'Book not found' });
     const json = await resp.json();
     const book = normalizeGoogleBook(json);
