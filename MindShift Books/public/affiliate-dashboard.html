@@ -368,10 +368,16 @@ header a.back{font-size:0.82rem;font-weight:700;color:#64748b;text-decoration:no
   }
 
   // ── My Account view ──
+  // Bank card has three sub-screens within the Account view:
+  //   'view'   — current details (read-only) + "Update bank details" button
+  //   'verify' — OTP entry only; nothing about the new bank details lives here
+  //   'edit'   — the actual editable form, only reachable after verify succeeds
+  let bankScreen = 'view';
+
   function renderAccountView() {
     const affiliate = AFFILIATE;
-    const bank = affiliate.bank || {};
     const locked = (affiliate.pendingPayout || 0) > 0;
+    if (locked) bankScreen = 'view';
 
     main.innerHTML = `
       <div class="hero">
@@ -388,86 +394,106 @@ header a.back{font-size:0.82rem;font-weight:700;color:#64748b;text-decoration:no
         ${affiliate.phone ? `<div class="profile-row"><span class="p-k">Phone</span><span class="p-v">${escapeHtml(affiliate.phone)}</span></div>` : ''}
       </div>
 
-      <div class="card">
+      <div class="card" id="bankCard">
         <div class="card-title">${ICON.bank} Bank account details</div>
         ${locked ? `<div class="save-msg err" style="display:block;margin-bottom:14px;">You have a payout of ₦${nf.format(affiliate.pendingPayout)} queued for this Monday, so these details are locked until it's paid out — you'll be able to edit them right after.</div>` : ''}
-        <form id="bankForm">
-          <div class="field">
-            <label for="accBankName">Bank name</label>
-            <input id="accBankName" type="text" value="${escapeHtml(bank.bankName || '')}" placeholder="e.g. GTBank" required ${locked ? 'disabled' : ''}>
-          </div>
-          <div class="field">
-            <label for="accAccName">Account name</label>
-            <input id="accAccName" type="text" value="${escapeHtml(bank.accountName || '')}" placeholder="Name on the account" required ${locked ? 'disabled' : ''}>
-          </div>
-          <div class="field">
-            <label for="accAccNum">Account number</label>
-            <input id="accAccNum" type="text" inputmode="numeric" value="${escapeHtml(bank.accountNumber || '')}" placeholder="10 digits" required ${locked ? 'disabled' : ''}>
-          </div>
-          <button type="submit" class="save-btn" id="bankRequestBtn" ${locked ? 'disabled' : ''}>Send verification code</button>
-          <div class="save-msg" id="bankSaveMsg"></div>
-        </form>
-
-        <div class="otp-box" id="otpBox" style="display:none;">
-          <div class="otp-note" id="otpNote"></div>
-          <div class="otp-row">
-            <input id="otpInput" type="text" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="one-time-code">
-          </div>
-          <button type="button" class="save-btn" id="otpVerifyBtn" style="margin-top:12px;">Verify &amp; save</button>
-          <div class="otp-actions">
-            <button type="button" class="otp-link" id="otpResendBtn">Resend code</button>
-            <button type="button" class="otp-cancel" id="otpCancelBtn">Cancel</button>
-          </div>
-          <div class="save-msg" id="otpMsg"></div>
-        </div>
+        <div id="bankCardBody"></div>
       </div>
     `;
 
-    if (locked) return;
+    if (locked) {
+      renderBankView();
+      return;
+    }
 
-    const form = document.getElementById('bankForm');
-    const requestBtn = document.getElementById('bankRequestBtn');
-    const saveMsg = document.getElementById('bankSaveMsg');
-    const otpBox = document.getElementById('otpBox');
-    const otpNote = document.getElementById('otpNote');
+    if (bankScreen === 'verify') renderBankVerify();
+    else if (bankScreen === 'edit') renderBankEdit();
+    else renderBankView();
+  }
+
+  // ── Screen 1: read-only details + entry point ──
+  function renderBankView() {
+    const bank = AFFILIATE.bank || {};
+    const locked = (AFFILIATE.pendingPayout || 0) > 0;
+    document.getElementById('bankCardBody').innerHTML = `
+      <div class="profile-row"><span class="p-k">Bank name</span><span class="p-v">${escapeHtml(bank.bankName || '—')}</span></div>
+      <div class="profile-row"><span class="p-k">Account name</span><span class="p-v">${escapeHtml(bank.accountName || '—')}</span></div>
+      <div class="profile-row"><span class="p-k">Account number</span><span class="p-v">${escapeHtml(bank.accountNumber || '—')}</span></div>
+      <button type="button" class="save-btn" id="bankUpdateBtn" style="margin-top:16px;" ${locked ? 'disabled' : ''}>Update bank details</button>
+      <div class="save-msg" id="bankViewMsg"></div>
+    `;
+    if (locked) return;
+    document.getElementById('bankUpdateBtn').addEventListener('click', () => requestOtpAndGoToVerify());
+  }
+
+  // ── Sends the code, then switches to the verify screen ──
+  async function requestOtpAndGoToVerify() {
+    const btn = document.getElementById('bankUpdateBtn');
+    const msg = document.getElementById('bankViewMsg');
+    msg.className = 'save-msg';
+    btn.disabled = true;
+    btn.textContent = 'Sending code…';
+    try {
+      const token = await window.MSBAuth.getIdToken();
+      const res = await fetch('/api/affiliate/bank/otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not send a verification code.');
+      bankScreen = 'verify';
+      renderBankVerify(data.sentTo);
+    } catch (err) {
+      msg.textContent = err.message;
+      msg.className = 'save-msg err';
+      btn.disabled = false;
+      btn.textContent = 'Update bank details';
+    }
+  }
+
+  // ── Screen 2: OTP entry only — nothing about the new bank details here ──
+  function renderBankVerify(sentTo) {
+    document.getElementById('bankCardBody').innerHTML = `
+      <div class="otp-note" id="otpNote">${sentTo ? `We sent a 6-digit code to <b>${escapeHtml(sentTo)}</b>. Enter it below to continue.` : 'Enter the 6-digit code we sent to your email to continue.'}</div>
+      <div class="otp-row">
+        <input id="otpInput" type="text" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="one-time-code">
+      </div>
+      <button type="button" class="save-btn" id="otpVerifyBtn" style="margin-top:12px;">Verify code</button>
+      <div class="otp-actions">
+        <button type="button" class="otp-link" id="otpResendBtn" disabled>Resend code (60s)</button>
+        <button type="button" class="otp-cancel" id="otpCancelBtn">Cancel</button>
+      </div>
+      <div class="save-msg" id="otpMsg"></div>
+    `;
+
     const otpInput = document.getElementById('otpInput');
     const otpMsg = document.getElementById('otpMsg');
     const verifyBtn = document.getElementById('otpVerifyBtn');
     const resendBtn = document.getElementById('otpResendBtn');
     const cancelBtn = document.getElementById('otpCancelBtn');
+    otpInput.focus();
 
-    let resendCooldown = 0;
-    let cooldownTimer = null;
+    let resendCooldown = 60;
+    const cooldownTimer = setInterval(() => {
+      resendCooldown -= 1;
+      if (resendCooldown <= 0) {
+        clearInterval(cooldownTimer);
+        resendBtn.disabled = false;
+        resendBtn.textContent = 'Resend code';
+      } else {
+        resendBtn.textContent = `Resend code (${resendCooldown}s)`;
+      }
+    }, 1000);
 
-    function currentBankInput() {
-      return {
-        bankName: document.getElementById('accBankName').value.trim(),
-        accountName: document.getElementById('accAccName').value.trim(),
-        accountNumber: document.getElementById('accAccNum').value.trim()
-      };
-    }
-
-    function startCooldown() {
-      resendCooldown = 60;
-      resendBtn.disabled = true;
+    cancelBtn.addEventListener('click', () => {
       clearInterval(cooldownTimer);
-      cooldownTimer = setInterval(() => {
-        resendCooldown -= 1;
-        if (resendCooldown <= 0) {
-          clearInterval(cooldownTimer);
-          resendBtn.disabled = false;
-          resendBtn.textContent = 'Resend code';
-        } else {
-          resendBtn.textContent = `Resend code (${resendCooldown}s)`;
-        }
-      }, 1000);
-    }
+      bankScreen = 'view';
+      renderBankView();
+    });
 
-    async function requestOtp() {
-      saveMsg.className = 'save-msg';
-      otpMsg.className = 'save-msg';
-      requestBtn.disabled = true;
-      requestBtn.textContent = 'Sending…';
+    resendBtn.addEventListener('click', async () => {
+      if (resendBtn.disabled) return;
+      resendBtn.disabled = true;
       try {
         const token = await window.MSBAuth.getIdToken();
         const res = await fetch('/api/affiliate/bank/otp', {
@@ -475,36 +501,14 @@ header a.back{font-size:0.82rem;font-weight:700;color:#64748b;text-decoration:no
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Could not send a verification code.');
-        otpNote.innerHTML = `We sent a 6-digit code to <b>${escapeHtml(data.sentTo)}</b>. Enter it below to confirm these are your new bank details.`;
-        otpBox.style.display = 'block';
-        otpInput.value = '';
-        otpInput.focus();
-        startCooldown();
-        otpBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        if (!res.ok) throw new Error(data.error || 'Could not resend the code.');
+        clearInterval(cooldownTimer);
+        renderBankVerify(data.sentTo);
       } catch (err) {
-        saveMsg.textContent = err.message;
-        saveMsg.classList.add('err');
-      } finally {
-        requestBtn.disabled = false;
-        requestBtn.textContent = 'Send verification code';
+        otpMsg.textContent = err.message;
+        otpMsg.className = 'save-msg err';
+        resendBtn.disabled = false;
       }
-    }
-
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      requestOtp();
-    });
-
-    resendBtn.addEventListener('click', () => {
-      if (resendBtn.disabled) return;
-      requestOtp();
-    });
-
-    cancelBtn.addEventListener('click', () => {
-      otpBox.style.display = 'none';
-      otpMsg.className = 'save-msg';
-      clearInterval(cooldownTimer);
     });
 
     verifyBtn.addEventListener('click', async () => {
@@ -519,24 +523,105 @@ header a.back{font-size:0.82rem;font-weight:700;color:#64748b;text-decoration:no
       verifyBtn.textContent = 'Verifying…';
       try {
         const token = await window.MSBAuth.getIdToken();
-        const res = await fetch('/api/affiliate/bank', {
-          method: 'PUT',
+        const res = await fetch('/api/affiliate/bank/otp/verify', {
+          method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ ...currentBankInput(), otp: code })
+          body: JSON.stringify({ otp: code })
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Could not save your bank details.');
-        AFFILIATE.bank = data.bank;
+        if (!res.ok) throw new Error(data.error || 'Could not verify that code.');
         clearInterval(cooldownTimer);
-        otpBox.style.display = 'none';
-        saveMsg.textContent = 'Bank details updated.';
-        saveMsg.className = 'save-msg ok';
+        bankScreen = 'edit';
+        renderBankEdit();
       } catch (err) {
         otpMsg.textContent = err.message;
         otpMsg.className = 'save-msg err';
       } finally {
         verifyBtn.disabled = false;
-        verifyBtn.textContent = 'Verify & save';
+        verifyBtn.textContent = 'Verify code';
+      }
+    });
+  }
+
+  // ── Screen 3: the actual edit form — only reachable after verify succeeds.
+  // The save call below carries no code at all; the server checks its own
+  // short verified window instead, so there's nothing in this screen a
+  // client could replay to skip verification. ──
+  function renderBankEdit() {
+    const bank = AFFILIATE.bank || {};
+    document.getElementById('bankCardBody').innerHTML = `
+      <div class="otp-note">Code verified. Enter and save your new bank details below.</div>
+      <form id="bankForm">
+        <div class="field">
+          <label for="accBankName">Bank name</label>
+          <input id="accBankName" type="text" value="${escapeHtml(bank.bankName || '')}" placeholder="e.g. GTBank" required>
+        </div>
+        <div class="field">
+          <label for="accAccName">Account name</label>
+          <input id="accAccName" type="text" value="${escapeHtml(bank.accountName || '')}" placeholder="Name on the account" required>
+        </div>
+        <div class="field">
+          <label for="accAccNum">Account number</label>
+          <input id="accAccNum" type="text" inputmode="numeric" value="${escapeHtml(bank.accountNumber || '')}" placeholder="10 digits" required>
+        </div>
+        <button type="submit" class="save-btn" id="bankSaveBtn">Save bank details</button>
+        <button type="button" class="otp-cancel" id="bankEditCancelBtn" style="margin-top:10px;">Cancel</button>
+        <div class="save-msg" id="bankSaveMsg"></div>
+      </form>
+    `;
+
+    const form = document.getElementById('bankForm');
+    const saveBtn = document.getElementById('bankSaveBtn');
+    const saveMsg = document.getElementById('bankSaveMsg');
+    const cancelBtn = document.getElementById('bankEditCancelBtn');
+
+    cancelBtn.addEventListener('click', () => {
+      bankScreen = 'view';
+      renderBankView();
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      saveMsg.className = 'save-msg';
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving…';
+      try {
+        const token = await window.MSBAuth.getIdToken();
+        const res = await fetch('/api/affiliate/bank', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            bankName: document.getElementById('accBankName').value.trim(),
+            accountName: document.getElementById('accAccName').value.trim(),
+            accountNumber: document.getElementById('accAccNum').value.trim()
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          // The verified window can lapse (5 min) — send them back to
+          // request a fresh code rather than showing a dead form.
+          if (data.needsVerification) {
+            bankScreen = 'view';
+            renderBankView();
+            const msg = document.getElementById('bankViewMsg');
+            msg.textContent = data.error;
+            msg.className = 'save-msg err';
+            return;
+          }
+          throw new Error(data.error || 'Could not save your bank details.');
+        }
+        AFFILIATE.bank = data.bank;
+        bankScreen = 'view';
+        renderBankView();
+        const msg = document.getElementById('bankViewMsg');
+        msg.textContent = 'Bank details updated.';
+        msg.className = 'save-msg ok';
+      } catch (err) {
+        saveMsg.textContent = err.message;
+        saveMsg.className = 'save-msg err';
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save bank details';
       }
     });
   }
