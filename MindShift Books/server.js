@@ -1690,6 +1690,10 @@ app.get('/affiliate/dashboard', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'affiliate-dashboard.html'));
 });
 
+app.get('/affiliate/payout', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'payout.html'));
+});
+
 app.get('/support', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'support.html'));
 });
