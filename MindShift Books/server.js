@@ -13,6 +13,15 @@ const crypto = require('crypto');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Render (and most PaaS hosts) sit the app behind a reverse proxy, so the
+// real client IP arrives via X-Forwarded-For rather than the raw socket.
+// Without this, Express ignores X-Forwarded-For and express-rate-limit
+// throws ERR_ERL_UNEXPECTED_X_FORWARDED_FOR — worse, every request would
+// resolve to the proxy's IP, so all visitors would share one rate-limit
+// bucket instead of being limited individually. `1` = trust the first
+// hop (Render's own proxy) — correct for a single reverse proxy in front.
+app.set('trust proxy', 1);
+
 // ── Security headers (helmet) ──────────────────────────────────────────────
 // crossOriginOpenerPolicy is explicitly disabled here: helmet's default
 // ("same-origin") severs window.opener between this site and any popup it
@@ -1183,23 +1192,25 @@ async function fetchGoogleBooks(query, startIndex) {
   if (cached && cached.expires > Date.now()) return cached.data;
 
   let json;
-  try {
-    json = await fetchGoogleBooksOnce(query, startIndex);
-  } catch (e) {
-    // Google's backend occasionally throws a transient 5xx, and unauthenticated
-    // (no API key) requests get 429 rate-limited under real traffic — retry
-    // once after a short pause instead of failing the whole request. 429s get
-    // a longer backoff since they need the rate window to actually clear.
-    if (e.status === 429) {
-      await sleep(1500);
+  let lastErr;
+  // Google's backend occasionally flakes (503 backendFailed) or rate-limits
+  // unauthenticated requests (429) — a single retry wasn't enough when the
+  // backend stays flaky for a few seconds, so try up to 3 times total with
+  // increasing backoff before giving up and surfacing the error.
+  const delays = [500, 1200, 2500];
+  for (let attempt = 0; attempt <= delays.length; attempt++) {
+    try {
       json = await fetchGoogleBooksOnce(query, startIndex);
-    } else if (e.status && e.status >= 500) {
-      await sleep(600);
-      json = await fetchGoogleBooksOnce(query, startIndex);
-    } else {
-      throw e;
+      lastErr = null;
+      break;
+    } catch (e) {
+      lastErr = e;
+      const retryable = e.status === 429 || (e.status && e.status >= 500);
+      if (!retryable || attempt === delays.length) break;
+      await sleep(delays[attempt]);
     }
   }
+  if (lastErr) throw lastErr;
   const items = Array.isArray(json.items) ? json.items.map(normalizeGoogleBook) : [];
   const data = { items, totalItems: json.totalItems || 0 };
   freeEbooksCache.set(cacheKey, { data, expires: Date.now() + FREE_EBOOKS_CACHE_TTL });
