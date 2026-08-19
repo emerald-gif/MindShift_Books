@@ -2443,4 +2443,12 @@ app.get('*', (req, res, next) => {
 app.listen(PORT, () => {
   console.log(`MindShift Books server running on port ${PORT}`);
   console.log(`Serving static: ${path.join(__dirname,'public')} and ${path.join(__dirname,'files')}`);
+
+  // Pre-warm the free-eBooks cache right after boot, so the very first
+  // visitor doesn't wait on a cold external call to Gutendex. This covers
+  // both the homepage swiper and the /free-ebooks page's "All" tab, since
+  // both hit the exact same underlying query (topic "fiction", page 1).
+  fetchGutendexRange('fiction', false, 0, 20)
+    .then(() => console.log('[free-ebooks] cache warmed on startup'))
+    .catch(e => console.warn('[free-ebooks] startup warm-up failed (non-fatal):', e && e.message ? e.message : e));
 });
