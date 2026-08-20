@@ -350,7 +350,7 @@ function freeEbookCardInner(b) {
     <div class="title">${escapeHtml(b.title)}</div>
     <div class="card-author">${escapeHtml(b.author || '')}</div>
     <div class="card-actions button-group" style="width:100%;margin-top:auto;">
-      <button class="btn free-ebook-read-btn" data-fe-detail="${escapeHtml(b.id)}" style="width:100%;">Read Free</button>
+      <button class="btn free-ebook-read-btn" data-fe-detail="${escapeHtml(b.id)}" data-fe-title="${escapeHtml(b.title)}" style="width:100%;">Read Free</button>
     </div>
   `;
 }
@@ -363,7 +363,12 @@ async function loadFreeEbooksSwiper() {
   // early as possible (before this script even runs) — skip if it succeeded.
   if (window.__feHomeSwiper && window.__feHomeSwiper.done) return;
   try {
-    const res = await fetch('/api/free-ebooks?category=all&startIndex=0');
+    // Same hour-based rotation as the inline loader in index.html — see the
+    // comment there for why this is safe (reuses the existing server-side
+    // topic + cache logic, no new endpoint or background job).
+    const hourBucket = Math.floor(Date.now() / (60 * 60 * 1000)) % 11;
+    const startIndex = hourBucket * 20;
+    const res = await fetch('/api/free-ebooks?category=all&startIndex=' + startIndex);
     if (!res.ok) throw new Error('fetch failed');
     const data = await res.json();
     const items = (data.items || []).slice(0, 12);
@@ -387,17 +392,26 @@ async function loadFreeEbooksSwiper() {
 document.addEventListener('DOMContentLoaded', loadFreeEbooksSwiper);
 
 // ── Free eBook detail drawer — shared by the homepage swiper and, in its
-// own copy, by /free-ebooks.html. Opens on any [data-fe-detail] click. ──
+// own copy, by /free-ebooks.html. Opens on any [data-fe-detail] click.
+// Signed-out visitors get a sign-up/log-in prompt in the same sheet instead
+// of the book's description and a Read button they can't use yet. ──
 (function wireFreeEbookDrawer() {
   const modal = document.getElementById('feModal');
   if (!modal) return; // not on this page
   const modalClose = document.getElementById('feModalClose');
+  const modalTop = document.getElementById('feModalTop');
   const modalCover = document.getElementById('feModalCover');
   const modalTitle = document.getElementById('feModalTitle');
   const modalAuthor = document.getElementById('feModalAuthor');
   const modalMeta = document.getElementById('feModalMeta');
   const modalDesc = document.getElementById('feModalDesc');
+  const modalActions = document.getElementById('feModalActions');
+  const modalNote = document.getElementById('feModalNote');
   const modalReadBtn = document.getElementById('feModalReadBtn');
+  const authPrompt = document.getElementById('feAuthPrompt');
+  const authTitle = document.getElementById('feAuthTitle');
+  const authSignupBtn = document.getElementById('feAuthSignupBtn');
+  const authLoginBtn = document.getElementById('feAuthLoginBtn');
 
   function placeholderCover(title) {
     return `data:image/svg+xml,${encodeURIComponent(
@@ -409,9 +423,41 @@ document.addEventListener('DOMContentLoaded', loadFreeEbooksSwiper);
     return String(str).replace(/<[^>]*>/g, '');
   }
 
-  async function openDetail(id) {
+  function showAuthPrompt(title) {
     modal.classList.add('open');
     document.body.style.overflow = 'hidden';
+    // Hide the book-detail parts, show the sign-in prompt in the same sheet.
+    if (modalTop) modalTop.style.display = 'none';
+    modalDesc.style.display = 'none';
+    if (modalActions) modalActions.style.display = 'none';
+    if (modalNote) modalNote.style.display = 'none';
+    authTitle.textContent = title ? `Sign in to read "${title}"` : 'Sign in to read this eBook';
+    const returnTo = encodeURIComponent(window.location.pathname);
+    authSignupBtn.href = '/signup?returnTo=' + returnTo;
+    authLoginBtn.href = '/login?returnTo=' + returnTo;
+    authPrompt.classList.add('show');
+  }
+
+  async function openDetail(id, title) {
+    // If Firebase's cached-session check hasn't resolved yet (possible on a
+    // fast click right after page load), wait for it rather than flashing
+    // the sign-in prompt at someone who's actually already signed in.
+    let user = null;
+    if (window.MSBAuth) {
+      user = window.MSBAuth.isAuthStateKnown()
+        ? window.MSBAuth.getUser()
+        : await new Promise(resolve => window.MSBAuth.onAuthReady(resolve));
+    }
+    if (!user) { showAuthPrompt(title); return; }
+
+    modal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    if (modalTop) modalTop.style.display = '';
+    modalDesc.style.display = '';
+    if (modalActions) modalActions.style.display = '';
+    if (modalNote) modalNote.style.display = '';
+    authPrompt.classList.remove('show');
+
     modalTitle.textContent = 'Loading…';
     modalAuthor.textContent = '';
     modalMeta.innerHTML = '';
@@ -449,7 +495,7 @@ document.addEventListener('DOMContentLoaded', loadFreeEbooksSwiper);
 
   document.addEventListener('click', (ev) => {
     const btn = ev.target.closest('[data-fe-detail]');
-    if (btn) { openDetail(btn.getAttribute('data-fe-detail')); return; }
+    if (btn) { openDetail(btn.getAttribute('data-fe-detail'), btn.getAttribute('data-fe-title')); return; }
     if (ev.target.closest('#feModalClose')) { closeDetail(); return; }
     if (ev.target === modal) { closeDetail(); return; }
   });

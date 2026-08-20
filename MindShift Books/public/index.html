@@ -156,13 +156,29 @@
        in sessionStorage so a repeat visit this session paints instantly,
        with a fresh network fetch always running behind it. main.js's own
        loader checks window.__feHomeSwiper.done and skips if this already
-       ran, so it stays as a safety-net fallback. -->
+       ran, so it stays as a safety-net fallback.
+
+       Rotation: the homepage always used to request startIndex=0, which the
+       server maps to the same fixed topic ("fiction") forever. To vary
+       what's shown without adding any new server code or background jobs,
+       we request a different startIndex once per hour — the existing
+       /api/free-ebooks logic already maps that to a different topic (see
+       ALL_MIX_TOPICS in server.js), and the server already caches each
+       topic's page for an hour, so this is just picking a different
+       already-cached bucket. No extra load, no new endpoint. -->
   <script>
   (function () {
     var track = document.getElementById('freeEbooksGrid');
     var section = document.getElementById('freeEbooksSection');
     if (!track) return;
     window.__feHomeSwiper = { done: false };
+
+    // 11 = number of topics in server.js's ALL_MIX_TOPICS. Safe even if
+    // that list's length ever changes — the server always wraps whatever
+    // startIndex it's given with its own array length.
+    var hourBucket = Math.floor(Date.now() / (60 * 60 * 1000)) % 11;
+    var startIndex = hourBucket * 20;
+    var cacheKey = 'fe_home_cache_v2_h' + hourBucket;
 
     function esc(s) {
       return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -188,8 +204,10 @@
     }
 
     // Instant paint from this session's last fetch, while a fresh one runs.
+    // Keyed by the current hour bucket, so a session that spans an hour
+    // boundary won't instant-paint the previous hour's stale topic.
     try {
-      var cached = sessionStorage.getItem('fe_home_cache_v1');
+      var cached = sessionStorage.getItem(cacheKey);
       if (cached) {
         var parsed = JSON.parse(cached);
         if (parsed && parsed.items && parsed.items.length) {
@@ -199,13 +217,13 @@
       }
     } catch (e) {}
 
-    fetch('/api/free-ebooks?category=all&startIndex=0')
+    fetch('/api/free-ebooks?category=all&startIndex=' + startIndex)
       .then(function (res) { if (!res.ok) throw new Error('fetch failed'); return res.json(); })
       .then(function (data) {
         var items = data.items || [];
         render(items);
         window.__feHomeSwiper.done = true;
-        try { sessionStorage.setItem('fe_home_cache_v1', JSON.stringify({ items: items, ts: Date.now() })); } catch (e) {}
+        try { sessionStorage.setItem(cacheKey, JSON.stringify({ items: items, ts: Date.now() })); } catch (e) {}
       })
       .catch(function (e) {
         console.error('Failed to load free eBooks swiper', e);
@@ -324,7 +342,7 @@
 <div class="fe-modal" id="feModal">
   <div class="fe-modal-sheet">
     <button type="button" class="fe-modal-close" id="feModalClose" aria-label="Close">&times;</button>
-    <div class="fe-modal-top">
+    <div class="fe-modal-top" id="feModalTop">
       <img id="feModalCover" class="fe-modal-cover" src="" alt="">
       <div>
         <div class="fe-modal-title" id="feModalTitle"></div>
@@ -333,13 +351,25 @@
       </div>
     </div>
     <div class="fe-modal-desc" id="feModalDesc">Loading description…</div>
-    <div class="fe-modal-actions">
+    <div class="fe-modal-actions" id="feModalActions">
       <a href="#" id="feModalReadBtn" class="btn fe-read-btn" target="_blank" rel="noopener noreferrer">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
         Read Free eBook
       </a>
     </div>
-    <div class="fe-note">Opens in a new tab, right here on MindShift Books. Public-domain title via Project Gutenberg.</div>
+    <div class="fe-note" id="feModalNote">Opens in a new tab, right here on MindShift Books. Public-domain title via Project Gutenberg.</div>
+
+    <div class="fe-auth-prompt" id="feAuthPrompt">
+      <div class="fe-auth-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="26" height="26"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+      </div>
+      <h3 id="feAuthTitle">Sign in to read this eBook</h3>
+      <p>Free eBooks are available to signed-in readers. Create a free account or log in to keep reading — it only takes a moment.</p>
+      <div class="fe-auth-actions">
+        <a href="#" id="feAuthSignupBtn" class="fe-auth-signup">Sign Up Free</a>
+        <a href="#" id="feAuthLoginBtn" class="fe-auth-login">Log In</a>
+      </div>
+    </div>
   </div>
 </div>
 
