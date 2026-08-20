@@ -1460,57 +1460,31 @@ function buildReaderShell({ bookId, title, bodyInner, extraHeadHtml, baseTag }) 
 <html>
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 ${baseTag || ''}
 <title>${safeTitle} — MindShift Books</title>
 ${extraHeadHtml || ''}
 <style>
-  html,body{margin:0;padding:0;height:100%;overscroll-behavior:none;}
+  html,body{margin:0;padding:0;}
   body{font-family:Georgia,'Times New Roman',serif;background:#faf9f5;color:#1c1c1c;-webkit-text-size-adjust:100%;}
   a{color:#4f46e5;}
   img{max-width:100%;height:auto;}
   .msb-reader-header{
-    position:fixed;top:0;left:0;right:0;z-index:1000;height:52px;
+    position:sticky;top:0;left:0;right:0;z-index:1000;height:52px;
     display:flex;align-items:center;gap:10px;padding:0 14px;
-    background:#0f172a;color:#fff;font-family:'Inter',system-ui,-apple-system,sans-serif;
+    background:linear-gradient(90deg,#4f46e5,#06b6d4);color:#fff;
+    font-family:'Inter',system-ui,-apple-system,sans-serif;
     box-shadow:0 1px 6px rgba(0,0,0,.18);
   }
-  .msb-reader-header .back{color:#fff;text-decoration:none;opacity:.9;display:flex;align-items:center;flex-shrink:0;}
+  .msb-reader-header .back{color:#fff;text-decoration:none;opacity:.95;display:flex;align-items:center;flex-shrink:0;}
   .msb-reader-header .back svg{width:19px;height:19px;}
-  .msb-reader-header .logo{width:22px;height:22px;border-radius:5px;flex-shrink:0;}
-  .msb-reader-header .title{font-weight:700;font-size:0.84rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;}
-  .msb-reader-header .page-indicator{font-size:0.74rem;opacity:.65;flex-shrink:0;font-variant-numeric:tabular-nums;}
-  .msb-reader-viewport{position:fixed;top:52px;bottom:46px;left:0;right:0;overflow:hidden;}
+  .msb-reader-header .logo{width:22px;height:22px;border-radius:5px;flex-shrink:0;background:#fff;}
+  .msb-reader-header .title{font-weight:700;font-size:0.86rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;}
   .msb-reader-content{
-    height:100%;column-gap:0;column-fill:auto;box-sizing:border-box;
-    padding:26px 22px 36px;font-size:17px;line-height:1.75;
-    transition:transform .28s ease;will-change:transform;
+    max-width:720px;margin:0 auto;box-sizing:border-box;
+    padding:26px 22px 60px;font-size:17px;line-height:1.75;
   }
   .msb-reader-content h1,.msb-reader-content h2,.msb-reader-content h3{line-height:1.3;}
-  /* Gutenberg's tables of contents are often laid out as real multi-column
-     HTML tables. Browsers won't break a <table> across CSS columns — it
-     gets treated as one unbreakable block taller than a page, which forces
-     extra stacked rows of columns instead of flowing sideways like the
-     rest of the book. Unwrapping tables into plain stacked blocks makes
-     them paginate exactly like normal paragraphs. */
-  .msb-reader-content table,.msb-reader-content tbody,.msb-reader-content thead,
-  .msb-reader-content tr,.msb-reader-content td,.msb-reader-content th{
-    display:block!important;width:auto!important;
-  }
-  .msb-reader-content td,.msb-reader-content th{padding:0!important;text-align:left!important;}
-  .msb-reader-nav{
-    position:fixed;bottom:0;left:0;right:0;height:46px;z-index:1000;
-    display:flex;align-items:center;justify-content:space-between;gap:10px;
-    padding:0 8px;background:#fff;border-top:1px solid #eee;
-    font-family:'Inter',system-ui,-apple-system,sans-serif;
-  }
-  .msb-reader-nav button{
-    border:none;background:none;color:#4f46e5;font-weight:700;font-size:0.86rem;
-    padding:8px 14px;cursor:pointer;flex-shrink:0;
-  }
-  .msb-reader-nav button:disabled{opacity:.3;cursor:default;}
-  .msb-progress-track{flex:1;height:3px;background:#eee;border-radius:2px;overflow:hidden;}
-  .msb-progress-fill{height:100%;width:0%;background:linear-gradient(90deg,#4f46e5,#06b6d4);}
 </style>
 </head>
 <body>
@@ -1520,89 +1494,8 @@ ${extraHeadHtml || ''}
   </a>
   <img class="logo" src="/MINDSHIFT.jpg" alt="">
   <div class="title">${safeTitle}</div>
-  <div class="page-indicator" id="msbPageIndicator">–</div>
 </div>
-
-<div class="msb-reader-viewport" id="msbViewport">
-  <div class="msb-reader-content" id="msbContent">${bodyInner}</div>
-</div>
-
-<div class="msb-reader-nav">
-  <button type="button" id="msbPrevBtn" aria-label="Previous page">&larr; Prev</button>
-  <div class="msb-progress-track"><div class="msb-progress-fill" id="msbProgressFill"></div></div>
-  <button type="button" id="msbNextBtn" aria-label="Next page">Next &rarr;</button>
-</div>
-
-<script>
-(function () {
-  var BOOK_ID = ${JSON.stringify(String(bookId || ''))};
-  var STORAGE_KEY = 'msb_read_page_' + BOOK_ID;
-  var viewport = document.getElementById('msbViewport');
-  var content = document.getElementById('msbContent');
-  var prevBtn = document.getElementById('msbPrevBtn');
-  var nextBtn = document.getElementById('msbNextBtn');
-  var pageIndicator = document.getElementById('msbPageIndicator');
-  var progressFill = document.getElementById('msbProgressFill');
-
-  var page = 0, pageCount = 1, pageWidth = 0;
-  try {
-    var saved = sessionStorage.getItem(STORAGE_KEY);
-    if (saved) page = parseInt(saved, 10) || 0;
-  } catch (e) {}
-
-  function measure(preserve) {
-    var targetPage = preserve ? page : 0;
-    pageWidth = viewport.clientWidth || window.innerWidth;
-    content.style.transition = 'none';
-    content.style.columnWidth = pageWidth + 'px';
-    content.style.width = pageWidth + 'px';
-    // Force layout, then read the real flowed width.
-    var totalWidth = content.scrollWidth;
-    pageCount = Math.max(1, Math.round(totalWidth / pageWidth));
-    goToPage(targetPage, false);
-    requestAnimationFrame(function () { content.style.transition = ''; });
-  }
-
-  function goToPage(n, animate) {
-    page = Math.max(0, Math.min(n, pageCount - 1));
-    if (animate === false) content.style.transition = 'none';
-    content.style.transform = 'translateX(-' + (page * pageWidth) + 'px)';
-    if (animate === false) requestAnimationFrame(function () { content.style.transition = ''; });
-    pageIndicator.textContent = (page + 1) + ' / ' + pageCount;
-    progressFill.style.width = (pageCount <= 1 ? 100 : (page / (pageCount - 1)) * 100) + '%';
-    prevBtn.disabled = page === 0;
-    nextBtn.disabled = page === pageCount - 1;
-    try { sessionStorage.setItem(STORAGE_KEY, String(page)); } catch (e) {}
-  }
-
-  prevBtn.addEventListener('click', function () { goToPage(page - 1); });
-  nextBtn.addEventListener('click', function () { goToPage(page + 1); });
-
-  var touchStartX = null, touchStartY = null;
-  viewport.addEventListener('touchstart', function (e) {
-    touchStartX = e.touches[0].clientX;
-    touchStartY = e.touches[0].clientY;
-  }, { passive: true });
-  viewport.addEventListener('touchend', function (e) {
-    if (touchStartX === null) return;
-    var dx = e.changedTouches[0].clientX - touchStartX;
-    var dy = e.changedTouches[0].clientY - touchStartY;
-    if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy)) {
-      if (dx < 0) goToPage(page + 1); else goToPage(page - 1);
-    }
-    touchStartX = null;
-  }, { passive: true });
-
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'ArrowRight') goToPage(page + 1);
-    else if (e.key === 'ArrowLeft') goToPage(page - 1);
-  });
-
-  window.addEventListener('resize', function () { measure(true); });
-  window.addEventListener('load', function () { measure(true); });
-  measure(true);
-})();
-</script>
+<div class="msb-reader-content">${bodyInner}</div>
 </body>
 </html>`;
 }
@@ -1640,15 +1533,16 @@ function wrapPlainTextAsHtml(rawText, title, bookId) {
   return buildReaderShell({ bookId, title, bodyInner });
 }
 
+
 app.get('/read/:id', async (req, res) => {
   const id = req.params.id.replace(/[^0-9]/g, '');
   if (!id) return res.status(400).send('Invalid book id.');
-  // v3 = adds the table-flattening fix for Gutenberg's multi-column tables
-  // of contents (they broke pagination — see the CSS comment above).
-  // Bumping this suffix is how old cached pages get replaced — no purge
-  // job needed, they just become orphaned and the next request writes a
-  // fresh v3 file instead.
-  const cachePath = path.join(GUTENBERG_CACHE_DIR, `${id}.v3.html`);
+  // v4 = dropped the horizontal swipe/column pagination entirely (it broke
+  // on Gutenberg's table-based tables of contents) in favor of a simple
+  // vertical-scroll reader with a blue branded header. Bumping this suffix
+  // is how old cached pages get replaced — no purge job needed, they just
+  // become orphaned and the next request writes a fresh v4 file instead.
+  const cachePath = path.join(GUTENBERG_CACHE_DIR, `${id}.v4.html`);
 
   try {
     if (fs.existsSync(cachePath)) {
