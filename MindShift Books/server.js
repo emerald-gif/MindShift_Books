@@ -1448,52 +1448,194 @@ function ensureCacheDir() {
 }
 ensureCacheDir();
 
-// Wraps Gutenberg's own HTML file in a minimal MindShift Books shell: a
-// slim back-link bar, and a <base> tag pointing back at the file's original
-// Gutenberg directory so relative images/CSS inside the file still load
-// (the page URL itself stays on our domain — only background asset requests
-// touch gutenberg.org, same as any site embedding external images).
-function wrapGutenbergHtml(rawHtml, sourceUrl, title) {
-  const baseDir = sourceUrl.slice(0, sourceUrl.lastIndexOf('/') + 1);
-  const backBar = `
-<div style="position:sticky;top:0;z-index:9999;background:#12121a;color:#fff;padding:10px 16px;font-family:system-ui,-apple-system,sans-serif;font-size:14px;display:flex;align-items:center;gap:10px;box-shadow:0 1px 4px rgba(0,0,0,.25);">
-  <a href="/free-ebooks" style="color:#fff;text-decoration:none;opacity:.85;">&larr; MindShift Books</a>
-  <span style="opacity:.5;">|</span>
-  <span style="opacity:.85;">${title ? title.replace(/</g, '&lt;') : 'Reading'}</span>
-</div>`;
+// Builds the branded, paginated reader shell that wraps a book's raw content
+// (either Gutenberg's own HTML or plain text, already normalized to an inner
+// HTML string by the caller). Pagination is done with plain CSS columns —
+// the content is laid out as N screen-width columns and JS slides between
+// them with a transform, no external reader library needed. Works with
+// whatever markup Gutenberg's files happen to contain.
+function buildReaderShell({ bookId, title, bodyInner, extraHeadHtml, baseTag }) {
+  const safeTitle = (title || 'Reading').replace(/</g, '&lt;');
+  return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+${baseTag || ''}
+<title>${safeTitle} — MindShift Books</title>
+${extraHeadHtml || ''}
+<style>
+  html,body{margin:0;padding:0;height:100%;overscroll-behavior:none;}
+  body{font-family:Georgia,'Times New Roman',serif;background:#faf9f5;color:#1c1c1c;-webkit-text-size-adjust:100%;}
+  a{color:#4f46e5;}
+  img{max-width:100%;height:auto;}
+  .msb-reader-header{
+    position:fixed;top:0;left:0;right:0;z-index:1000;height:52px;
+    display:flex;align-items:center;gap:10px;padding:0 14px;
+    background:#0f172a;color:#fff;font-family:'Inter',system-ui,-apple-system,sans-serif;
+    box-shadow:0 1px 6px rgba(0,0,0,.18);
+  }
+  .msb-reader-header .back{color:#fff;text-decoration:none;opacity:.9;display:flex;align-items:center;flex-shrink:0;}
+  .msb-reader-header .back svg{width:19px;height:19px;}
+  .msb-reader-header .logo{width:22px;height:22px;border-radius:5px;flex-shrink:0;}
+  .msb-reader-header .title{font-weight:700;font-size:0.84rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;}
+  .msb-reader-header .page-indicator{font-size:0.74rem;opacity:.65;flex-shrink:0;font-variant-numeric:tabular-nums;}
+  .msb-reader-viewport{position:fixed;top:52px;bottom:46px;left:0;right:0;overflow:hidden;}
+  .msb-reader-content{
+    height:100%;column-gap:0;column-fill:auto;box-sizing:border-box;
+    padding:26px 22px 36px;font-size:17px;line-height:1.75;
+    transition:transform .28s ease;will-change:transform;
+  }
+  .msb-reader-content h1,.msb-reader-content h2,.msb-reader-content h3{line-height:1.3;}
+  .msb-reader-nav{
+    position:fixed;bottom:0;left:0;right:0;height:46px;z-index:1000;
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:0 8px;background:#fff;border-top:1px solid #eee;
+    font-family:'Inter',system-ui,-apple-system,sans-serif;
+  }
+  .msb-reader-nav button{
+    border:none;background:none;color:#4f46e5;font-weight:700;font-size:0.86rem;
+    padding:8px 14px;cursor:pointer;flex-shrink:0;
+  }
+  .msb-reader-nav button:disabled{opacity:.3;cursor:default;}
+  .msb-progress-track{flex:1;height:3px;background:#eee;border-radius:2px;overflow:hidden;}
+  .msb-progress-fill{height:100%;width:0%;background:linear-gradient(90deg,#4f46e5,#06b6d4);}
+</style>
+</head>
+<body>
+<div class="msb-reader-header">
+  <a class="back" href="/free-ebooks" aria-label="Back to Free eBooks">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+  </a>
+  <img class="logo" src="/MINDSHIFT.jpg" alt="">
+  <div class="title">${safeTitle}</div>
+  <div class="page-indicator" id="msbPageIndicator">–</div>
+</div>
 
-  let html = rawHtml;
-  if (/<head[^>]*>/i.test(html)) {
-    html = html.replace(/<head[^>]*>/i, m => `${m}\n<base href="${baseDir}">`);
-  } else {
-    html = `<base href="${baseDir}">\n` + html;
+<div class="msb-reader-viewport" id="msbViewport">
+  <div class="msb-reader-content" id="msbContent">${bodyInner}</div>
+</div>
+
+<div class="msb-reader-nav">
+  <button type="button" id="msbPrevBtn" aria-label="Previous page">&larr; Prev</button>
+  <div class="msb-progress-track"><div class="msb-progress-fill" id="msbProgressFill"></div></div>
+  <button type="button" id="msbNextBtn" aria-label="Next page">Next &rarr;</button>
+</div>
+
+<script>
+(function () {
+  var BOOK_ID = ${JSON.stringify(String(bookId || ''))};
+  var STORAGE_KEY = 'msb_read_page_' + BOOK_ID;
+  var viewport = document.getElementById('msbViewport');
+  var content = document.getElementById('msbContent');
+  var prevBtn = document.getElementById('msbPrevBtn');
+  var nextBtn = document.getElementById('msbNextBtn');
+  var pageIndicator = document.getElementById('msbPageIndicator');
+  var progressFill = document.getElementById('msbProgressFill');
+
+  var page = 0, pageCount = 1, pageWidth = 0;
+  try {
+    var saved = sessionStorage.getItem(STORAGE_KEY);
+    if (saved) page = parseInt(saved, 10) || 0;
+  } catch (e) {}
+
+  function measure(preserve) {
+    var targetPage = preserve ? page : 0;
+    pageWidth = viewport.clientWidth || window.innerWidth;
+    content.style.transition = 'none';
+    content.style.columnWidth = pageWidth + 'px';
+    content.style.width = pageWidth + 'px';
+    // Force layout, then read the real flowed width.
+    var totalWidth = content.scrollWidth;
+    pageCount = Math.max(1, Math.round(totalWidth / pageWidth));
+    goToPage(targetPage, false);
+    requestAnimationFrame(function () { content.style.transition = ''; });
   }
-  if (/<body[^>]*>/i.test(html)) {
-    html = html.replace(/<body[^>]*>/i, m => `${m}\n${backBar}`);
-  } else {
-    html = backBar + html;
+
+  function goToPage(n, animate) {
+    page = Math.max(0, Math.min(n, pageCount - 1));
+    if (animate === false) content.style.transition = 'none';
+    content.style.transform = 'translateX(-' + (page * pageWidth) + 'px)';
+    if (animate === false) requestAnimationFrame(function () { content.style.transition = ''; });
+    pageIndicator.textContent = (page + 1) + ' / ' + pageCount;
+    progressFill.style.width = (pageCount <= 1 ? 100 : (page / (pageCount - 1)) * 100) + '%';
+    prevBtn.disabled = page === 0;
+    nextBtn.disabled = page === pageCount - 1;
+    try { sessionStorage.setItem(STORAGE_KEY, String(page)); } catch (e) {}
   }
-  return html;
+
+  prevBtn.addEventListener('click', function () { goToPage(page - 1); });
+  nextBtn.addEventListener('click', function () { goToPage(page + 1); });
+
+  var touchStartX = null, touchStartY = null;
+  viewport.addEventListener('touchstart', function (e) {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+  viewport.addEventListener('touchend', function (e) {
+    if (touchStartX === null) return;
+    var dx = e.changedTouches[0].clientX - touchStartX;
+    var dy = e.changedTouches[0].clientY - touchStartY;
+    if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy)) {
+      if (dx < 0) goToPage(page + 1); else goToPage(page - 1);
+    }
+    touchStartX = null;
+  }, { passive: true });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight') goToPage(page + 1);
+    else if (e.key === 'ArrowLeft') goToPage(page - 1);
+  });
+
+  window.addEventListener('resize', function () { measure(true); });
+  window.addEventListener('load', function () { measure(true); });
+  measure(true);
+})();
+</script>
+</body>
+</html>`;
 }
 
-function wrapPlainTextAsHtml(rawText, title) {
-  const safeTitle = (title || 'Reading').replace(/</g, '&lt;');
+// Wraps Gutenberg's own HTML file for the reader shell above. Extracts any
+// <style> the file itself ships with (Gutenberg's converter often adds
+// classes like i{font-style:italic} or .chapter{...}) and keeps it, since
+// dropping it would break formatting the book actually relies on. A <base>
+// tag points back at the file's original Gutenberg directory so relative
+// images inside the file still load (the page URL itself stays on our
+// domain — only background asset requests touch gutenberg.org, same as any
+// site embedding external images).
+function wrapGutenbergHtml(rawHtml, sourceUrl, title, bookId) {
+  const baseDir = sourceUrl.slice(0, sourceUrl.lastIndexOf('/') + 1);
+  const baseTag = `<base href="${baseDir}">`;
+
+  const headMatch = rawHtml.match(/<head[^>]*>([\s\S]*?)<\/head>/i);
+  const styleTags = headMatch ? (headMatch[1].match(/<style[\s\S]*?<\/style>/gi) || []) : [];
+
+  const bodyMatch = rawHtml.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+  const bodyInner = bodyMatch ? bodyMatch[1] : rawHtml;
+
+  return buildReaderShell({
+    bookId,
+    title,
+    bodyInner,
+    extraHeadHtml: styleTags.join('\n'),
+    baseTag
+  });
+}
+
+function wrapPlainTextAsHtml(rawText, title, bookId) {
   const safeBody = rawText.replace(/&/g, '&amp;').replace(/</g, '&lt;');
-  return `<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>${safeTitle} — MindShift Books</title></head>
-<body style="margin:0;font-family:system-ui,-apple-system,sans-serif;">
-<div style="position:sticky;top:0;background:#12121a;color:#fff;padding:10px 16px;font-size:14px;display:flex;gap:10px;align-items:center;">
-  <a href="/free-ebooks" style="color:#fff;text-decoration:none;opacity:.85;">&larr; MindShift Books</a>
-  <span style="opacity:.5;">|</span><span style="opacity:.85;">${safeTitle}</span>
-</div>
-<pre style="white-space:pre-wrap;font-family:Georgia,serif;font-size:16px;line-height:1.6;max-width:760px;margin:24px auto;padding:0 20px;">${safeBody}</pre>
-</body></html>`;
+  const bodyInner = `<pre style="white-space:pre-wrap;font-family:inherit;font-size:inherit;line-height:inherit;margin:0;">${safeBody}</pre>`;
+  return buildReaderShell({ bookId, title, bodyInner });
 }
 
 app.get('/read/:id', async (req, res) => {
   const id = req.params.id.replace(/[^0-9]/g, '');
   if (!id) return res.status(400).send('Invalid book id.');
-  const cachePath = path.join(GUTENBERG_CACHE_DIR, `${id}.html`);
+  // v2 = the paginated reader shell. Bumping this suffix is how old cached
+  // scrolling pages get replaced — no purge job needed, they just become
+  // orphaned and the next request writes a fresh v2 file instead.
+  const cachePath = path.join(GUTENBERG_CACHE_DIR, `${id}.v2.html`);
 
   try {
     if (fs.existsSync(cachePath)) {
@@ -1525,8 +1667,8 @@ app.get('/read/:id', async (req, res) => {
     const rawText = await fileResp.text();
 
     const html = htmlUrl
-      ? wrapGutenbergHtml(rawText, sourceUrl, detail.title)
-      : wrapPlainTextAsHtml(rawText, detail.title);
+      ? wrapGutenbergHtml(rawText, sourceUrl, detail.title, id)
+      : wrapPlainTextAsHtml(rawText, detail.title, id);
 
     ensureCacheDir();
     fs.writeFile(cachePath, html, 'utf8', (err) => {
