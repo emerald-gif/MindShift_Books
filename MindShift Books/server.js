@@ -1487,6 +1487,17 @@ ${extraHeadHtml || ''}
     transition:transform .28s ease;will-change:transform;
   }
   .msb-reader-content h1,.msb-reader-content h2,.msb-reader-content h3{line-height:1.3;}
+  /* Gutenberg's tables of contents are often laid out as real multi-column
+     HTML tables. Browsers won't break a <table> across CSS columns — it
+     gets treated as one unbreakable block taller than a page, which forces
+     extra stacked rows of columns instead of flowing sideways like the
+     rest of the book. Unwrapping tables into plain stacked blocks makes
+     them paginate exactly like normal paragraphs. */
+  .msb-reader-content table,.msb-reader-content tbody,.msb-reader-content thead,
+  .msb-reader-content tr,.msb-reader-content td,.msb-reader-content th{
+    display:block!important;width:auto!important;
+  }
+  .msb-reader-content td,.msb-reader-content th{padding:0!important;text-align:left!important;}
   .msb-reader-nav{
     position:fixed;bottom:0;left:0;right:0;height:46px;z-index:1000;
     display:flex;align-items:center;justify-content:space-between;gap:10px;
@@ -1632,10 +1643,12 @@ function wrapPlainTextAsHtml(rawText, title, bookId) {
 app.get('/read/:id', async (req, res) => {
   const id = req.params.id.replace(/[^0-9]/g, '');
   if (!id) return res.status(400).send('Invalid book id.');
-  // v2 = the paginated reader shell. Bumping this suffix is how old cached
-  // scrolling pages get replaced — no purge job needed, they just become
-  // orphaned and the next request writes a fresh v2 file instead.
-  const cachePath = path.join(GUTENBERG_CACHE_DIR, `${id}.v2.html`);
+  // v3 = adds the table-flattening fix for Gutenberg's multi-column tables
+  // of contents (they broke pagination — see the CSS comment above).
+  // Bumping this suffix is how old cached pages get replaced — no purge
+  // job needed, they just become orphaned and the next request writes a
+  // fresh v3 file instead.
+  const cachePath = path.join(GUTENBERG_CACHE_DIR, `${id}.v3.html`);
 
   try {
     if (fs.existsSync(cachePath)) {
