@@ -1463,6 +1463,8 @@ function buildReaderShell({ bookId, title, bodyInner, extraHeadHtml, baseTag }) 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 ${baseTag || ''}
 <title>${safeTitle} — MindShift Books</title>
+<link rel="icon" type="image/jpeg" href="https://mindshiftbooks.shop/MINDSHIFT.jpg">
+<link rel="shortcut icon" type="image/jpeg" href="https://mindshiftbooks.shop/MINDSHIFT.jpg">
 ${extraHeadHtml || ''}
 <style>
   html,body{margin:0;padding:0;}
@@ -1489,10 +1491,10 @@ ${extraHeadHtml || ''}
 </head>
 <body>
 <div class="msb-reader-header">
-  <a class="back" href="/free-ebooks" aria-label="Back to Free eBooks">
+  <a class="back" href="https://mindshiftbooks.shop/free-ebooks" aria-label="Back to Free eBooks">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
   </a>
-  <img class="logo" src="/MINDSHIFT.jpg" alt="">
+  <img class="logo" src="https://mindshiftbooks.shop/MINDSHIFT.jpg" alt="">
   <div class="title">${safeTitle}</div>
 </div>
 <div class="msb-reader-content">${bodyInner}</div>
@@ -1537,12 +1539,12 @@ function wrapPlainTextAsHtml(rawText, title, bookId) {
 app.get('/read/:id', async (req, res) => {
   const id = req.params.id.replace(/[^0-9]/g, '');
   if (!id) return res.status(400).send('Invalid book id.');
-  // v4 = dropped the horizontal swipe/column pagination entirely (it broke
-  // on Gutenberg's table-based tables of contents) in favor of a simple
-  // vertical-scroll reader with a blue branded header. Bumping this suffix
-  // is how old cached pages get replaced — no purge job needed, they just
-  // become orphaned and the next request writes a fresh v4 file instead.
-  const cachePath = path.join(GUTENBERG_CACHE_DIR, `${id}.v4.html`);
+  // v6 = adds a favicon link — the reader shell had no <link rel="icon">
+  // at all, so browser tabs fell back to the default globe icon instead of
+  // our logo. Bumping this suffix is how old cached pages get replaced —
+  // no purge job needed, they just become orphaned and the next request
+  // writes a fresh v6 file instead.
+  const cachePath = path.join(GUTENBERG_CACHE_DIR, `${id}.v6.html`);
 
   try {
     if (fs.existsSync(cachePath)) {
