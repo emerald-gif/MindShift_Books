@@ -203,6 +203,32 @@
       if (window.updateSwiperArrows) window.updateSwiperArrows(track);
     }
 
+    // A hard-timeout wrapper — the rotated topic's cache is only warm once
+    // someone has already requested it in this hour, so the first person to
+    // hit a "new" topic each hour can otherwise get stuck waiting on a live
+    // Gutendex round-trip. If that takes too long, give up and fall back to
+    // the default topic (startIndex=0), which stays warm constantly since
+    // /free-ebooks.html also opens on it by default.
+    function fetchJson(url, timeoutMs) {
+      var controller = ('AbortController' in window) ? new AbortController() : null;
+      var opts = controller ? { signal: controller.signal } : {};
+      var req = fetch(url, opts).then(function (res) {
+        if (!res.ok) throw new Error('fetch failed');
+        return res.json();
+      });
+      var timeoutId;
+      var timeout = new Promise(function (_, reject) {
+        timeoutId = setTimeout(function () {
+          if (controller) controller.abort();
+          reject(new Error('timeout'));
+        }, timeoutMs);
+      });
+      return Promise.race([req, timeout]).then(
+        function (data) { clearTimeout(timeoutId); return data; },
+        function (err) { clearTimeout(timeoutId); throw err; }
+      );
+    }
+
     // Instant paint from this session's last fetch, while a fresh one runs.
     // Keyed by the current hour bucket, so a session that spans an hour
     // boundary won't instant-paint the previous hour's stale topic.
@@ -217,8 +243,12 @@
       }
     } catch (e) {}
 
-    fetch('/api/free-ebooks?category=all&startIndex=' + startIndex)
-      .then(function (res) { if (!res.ok) throw new Error('fetch failed'); return res.json(); })
+    fetchJson('/api/free-ebooks?category=all&startIndex=' + startIndex, 1500)
+      .catch(function () {
+        // Rotated topic was cold and too slow — fall back to the always-
+        // warm default topic instead of leaving the swiper hanging.
+        return fetchJson('/api/free-ebooks?category=all&startIndex=0', 5000);
+      })
       .then(function (data) {
         var items = data.items || [];
         render(items);

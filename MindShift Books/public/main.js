@@ -362,15 +362,34 @@ async function loadFreeEbooksSwiper() {
   // The inline loader at the top of index.html already fetches this as
   // early as possible (before this script even runs) — skip if it succeeded.
   if (window.__feHomeSwiper && window.__feHomeSwiper.done) return;
+
+  // Same timeout-then-fallback pattern as the inline loader in index.html —
+  // a rotated topic's cache is only warm once someone's requested it this
+  // hour, so give it a short window before falling back to the default
+  // topic (startIndex=0), which stays warm from constant traffic elsewhere.
+  function fetchJson(url, timeoutMs) {
+    const controller = ('AbortController' in window) ? new AbortController() : null;
+    const opts = controller ? { signal: controller.signal } : {};
+    const req = fetch(url, opts).then(res => { if (!res.ok) throw new Error('fetch failed'); return res.json(); });
+    let timeoutId;
+    const timeout = new Promise((_, reject) => {
+      timeoutId = setTimeout(() => { if (controller) controller.abort(); reject(new Error('timeout')); }, timeoutMs);
+    });
+    return Promise.race([req, timeout]).then(
+      data => { clearTimeout(timeoutId); return data; },
+      err => { clearTimeout(timeoutId); throw err; }
+    );
+  }
+
   try {
-    // Same hour-based rotation as the inline loader in index.html — see the
-    // comment there for why this is safe (reuses the existing server-side
-    // topic + cache logic, no new endpoint or background job).
     const hourBucket = Math.floor(Date.now() / (60 * 60 * 1000)) % 11;
     const startIndex = hourBucket * 20;
-    const res = await fetch('/api/free-ebooks?category=all&startIndex=' + startIndex);
-    if (!res.ok) throw new Error('fetch failed');
-    const data = await res.json();
+    let data;
+    try {
+      data = await fetchJson('/api/free-ebooks?category=all&startIndex=' + startIndex, 1500);
+    } catch (e) {
+      data = await fetchJson('/api/free-ebooks?category=all&startIndex=0', 5000);
+    }
     const items = (data.items || []).slice(0, 12);
     if (!items.length) {
       if (section) section.style.display = 'none';
