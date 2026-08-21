@@ -82,12 +82,13 @@ const apiLimiter = rateLimit({
 });
 app.use('/api/', apiLimiter);
 
-// 400kb (not 100kb) because the affiliate broadcast composer now embeds its
-// banner image as a base64 data URI directly in the JSON body — no upload
-// endpoint or storage bucket, the image just travels inside the request/
-// email itself. 180KB source image -> ~240KB base64 -> ~400kb gives headroom
-// for the rest of the broadcast payload. Every other endpoint still just
-// sends small JSON, so this stays effectively as tight as before for them.
+// 400kb (not 100kb) because the affiliate broadcast composer's image-upload
+// endpoint (/api/admin/affiliate-broadcast/upload-image) receives the banner
+// image as a base64 data URI in the JSON body before forwarding it to
+// Cloudinary. 180KB source image -> ~240KB base64 -> ~400kb gives headroom.
+// Once uploaded, only the resulting short Cloudinary https:// link travels
+// through the rest of the flow (preview, send), so every other endpoint —
+// including the actual broadcast-send ones — still just sends small JSON.
 app.use(bodyParser.json({ limit: '400kb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '400kb' }));
 
@@ -157,6 +158,54 @@ const BREVO_AFFILIATE_BROADCAST_TEMPLATE_ID = Number(process.env.BREVO_AFFILIATE
 const BREVO_SENDER_NAME = process.env.BREVO_SENDER_NAME || 'Mindshift Books';
 const BREVO_SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'contact@mindshiftbooks.shop';
 const PUBLIC_SITE_URL = process.env.PUBLIC_URL || 'https://mindshiftbooks.shop'; // reused below to build each affiliate's own ?ref= link
+
+// Cloudinary — hosts the affiliate broadcast's banner image so the email
+// carries a real https:// link instead of an embedded base64 data URI
+// (Gmail and most other clients strip data: URIs from HTML email, which is
+// why the banner was showing as a broken image). Signed upload: no upload
+// preset needed, just these three values from the Cloudinary dashboard.
+const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || null;
+const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY || null;
+const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET || null;
+
+// Uploads a data:image/...;base64,... string to Cloudinary and returns its
+// hosted https:// URL. Cloudinary's upload API accepts a base64 data URI
+// directly as the `file` param over a plain form POST — no multipart
+// encoding or extra dependency required. The signature is a sha1 of every
+// non-file param (sorted, `key=value` joined by `&`) with the API secret
+// appended, per Cloudinary's signed-upload spec.
+async function uploadBannerImageToCloudinary(dataUrl) {
+  if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_API_KEY || !CLOUDINARY_API_SECRET) {
+    return { ok: false, error: 'Image hosting is not configured (missing Cloudinary credentials).' };
+  }
+  const timestamp = Math.round(Date.now() / 1000);
+  const folder = 'affiliate-broadcasts';
+  const signaturePayload = `folder=${folder}&timestamp=${timestamp}${CLOUDINARY_API_SECRET}`;
+  const signature = crypto.createHash('sha1').update(signaturePayload).digest('hex');
+
+  const form = new URLSearchParams();
+  form.set('file', dataUrl);
+  form.set('api_key', CLOUDINARY_API_KEY);
+  form.set('timestamp', String(timestamp));
+  form.set('folder', folder);
+  form.set('signature', signature);
+
+  try {
+    const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: form.toString()
+    });
+    const json = await uploadRes.json().catch(() => null);
+    if (!uploadRes.ok || !json || !json.secure_url) {
+      const msg = (json && json.error && json.error.message) || `Cloudinary ${uploadRes.status}`;
+      return { ok: false, error: msg };
+    }
+    return { ok: true, url: json.secure_url };
+  } catch (e) {
+    return { ok: false, error: (e.message || String(e)).slice(0, 160) };
+  }
+}
 
 // Fires once, right after a brand-new account doc is created (see
 // /api/account/init). Fire-and-forget — a failed welcome email should never
@@ -321,7 +370,7 @@ function buildBroadcastContent(body) {
     headline,
     bodyHtml: textToParagraphs(bodyText),
     accentColor: /^#[0-9a-fA-F]{6}$/.test(body.accentColor || '') ? body.accentColor : '#e60023',
-    bannerImageUrl: clean(body.bannerImageUrl, 400000), // data URI (base64 image), not a short link
+    bannerImageUrl: clean(body.bannerImageUrl, 500), // hosted Cloudinary https:// link, set via the upload-image endpoint
     bannerImageAlt: clean(body.bannerImageAlt, 200),
     ctaText: clean(body.ctaText, 60),
     ctaLink: clean(body.ctaLink, 500),
@@ -2716,6 +2765,27 @@ app.post('/api/admin/payouts/:id/mark-paid', async (req, res) => {
 });
 
 // ---------------- Admin: affiliate broadcast ----------------
+
+// POST /api/admin/affiliate-broadcast/upload-image — takes the banner image
+// the dashboard just read locally as a base64 data URI, hosts it on
+// Cloudinary, and hands back a real https:// URL. This is what makes the
+// image actually render (and be downloadable/long-press-savable) in the
+// sent email — a data: URI embedded straight in the HTML gets stripped by
+// Gmail and most other mail clients.
+app.post('/api/admin/affiliate-broadcast/upload-image', async (req, res) => {
+  try {
+    const dataUrl = String((req.body && req.body.imageDataUrl) || '');
+    if (!/^data:image\/(jpeg|png|webp|gif);base64,/.test(dataUrl)) {
+      return res.status(400).json({ error: 'Expected a JPG, PNG, WEBP, or GIF image.' });
+    }
+    const result = await uploadBannerImageToCloudinary(dataUrl);
+    if (!result.ok) return res.status(502).json({ error: result.error || 'Upload failed.' });
+    return res.json({ ok: true, url: result.url });
+  } catch (err) {
+    console.error('/api/admin/affiliate-broadcast/upload-image error', err);
+    return res.status(500).json({ error: 'Could not upload image' });
+  }
+});
 
 // POST /api/admin/affiliate-broadcast/test — sends the composed email to a
 // single inbox (defaults to the store's own sender address) so it can be
