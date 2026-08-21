@@ -2236,6 +2236,97 @@ app.post('/api/wishlist/toggle', requireUser, async (req, res) => {
   }
 });
 
+// ── The 7-Day No Complaint Challenge (interactive, account-tied) ───────────
+// Stored at challengeProgress/{uid}: { startedAt, days: { "1": {...}, ... },
+// reflection }. Days unlock sequentially — day N requires day N-1 already
+// saved, so progress can't be skipped, but a missed day never blocks you
+// from resuming (no date/timezone logic at all).
+const CHALLENGE_TOTAL_DAYS = 7;
+
+app.get('/api/challenge/progress', requireUser, async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const doc = await db.collection('challengeProgress').doc(req.uid).get();
+    if (!doc.exists) return res.json({ started: false, days: {}, reflection: null });
+    const data = doc.data() || {};
+    return res.json({
+      started: true,
+      startedAt: data.startedAt ? data.startedAt.toDate().toISOString() : null,
+      days: data.days || {},
+      reflection: data.reflection || null
+    });
+  } catch (err) {
+    console.error('/api/challenge/progress error', err);
+    return res.status(500).json({ error: 'Could not load your progress.' });
+  }
+});
+
+app.post('/api/challenge/start', requireUser, async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const ref = db.collection('challengeProgress').doc(req.uid);
+    const snap = await ref.get();
+    if (!snap.exists) {
+      await ref.set({ startedAt: admin.firestore.Timestamp.now(), days: {} });
+    }
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('/api/challenge/start error', err);
+    return res.status(500).json({ error: 'Could not start the challenge.' });
+  }
+});
+
+app.post('/api/challenge/day', requireUser, async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const day = Number(req.body && req.body.day);
+    if (!Number.isInteger(day) || day < 1 || day > CHALLENGE_TOTAL_DAYS) {
+      return res.status(400).json({ error: 'Invalid day.' });
+    }
+    const notes = typeof (req.body && req.body.notes) === 'string' ? req.body.notes.slice(0, 2000) : '';
+    const mood = typeof (req.body && req.body.mood) === 'string' ? req.body.mood.slice(0, 20) : '';
+    const tallyRaw = req.body && req.body.tally;
+    const tally = (tallyRaw === null || tallyRaw === undefined || tallyRaw === '')
+      ? null
+      : Math.max(0, Math.min(999, Math.round(Number(tallyRaw)) || 0));
+
+    const ref = db.collection('challengeProgress').doc(req.uid);
+    const snap = await ref.get();
+    if (!snap.exists) {
+      await ref.set({ startedAt: admin.firestore.Timestamp.now(), days: {} });
+    }
+    const existingDays = (snap.exists && snap.data().days) || {};
+    if (day > 1 && !existingDays[String(day - 1)]) {
+      return res.status(400).json({ error: 'Complete the previous day first.' });
+    }
+
+    await ref.set({
+      [`days.${day}`]: {
+        notes, mood, tally,
+        completedAt: admin.firestore.Timestamp.now()
+      }
+    }, { merge: true });
+
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('/api/challenge/day error', err);
+    return res.status(500).json({ error: "Could not save today's entry." });
+  }
+});
+
+app.post('/api/challenge/reflection', requireUser, async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const reflection = typeof (req.body && req.body.reflection) === 'string' ? req.body.reflection.slice(0, 4000) : '';
+    const ref = db.collection('challengeProgress').doc(req.uid);
+    await ref.set({ reflection, reflectionAt: admin.firestore.Timestamp.now() }, { merge: true });
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('/api/challenge/reflection error', err);
+    return res.status(500).json({ error: 'Could not save your reflection.' });
+  }
+});
+
 // /api/pay - initialize Paystack for one or more products (cart checkout)
 // Requires a signed-in account (browsing/preview stays public — only paying does not).
 app.post('/api/pay', requireUser, payLimiter, async (req, res) => {
@@ -2528,6 +2619,10 @@ app.get('/mmg-preview', (req, res) => {
 
 app.get('/tda-preview', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'tda-preview.html'));
+});
+
+app.get('/challenge', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'challenge.html'));
 });
 
 // Other pages — explicit clean routes (no .html in the URL)
