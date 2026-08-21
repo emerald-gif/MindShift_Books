@@ -106,6 +106,22 @@
   .pay-btn:disabled { opacity:0.55; cursor:default; }
   .aff-code { font-family: monospace; font-weight:700; color: var(--indigo); }
 
+  /* ── AFFILIATE STAT CARDS (one per affiliate, mirrors their own dashboard view) ── */
+  .aff-cards-grid { display:grid; grid-template-columns:1fr; gap:14px; }
+  @media (min-width:760px) { .aff-cards-grid { grid-template-columns:1fr 1fr; } }
+  .aff-card { border:1px solid var(--border); border-radius:16px; padding:16px 18px 4px; }
+  .aff-card-head { display:flex; align-items:center; justify-content:space-between; gap:10px; padding-bottom:8px; margin-bottom:6px; border-bottom:1px solid #f1f5f9; }
+  .aff-card-name { font-weight:800; font-size:0.92rem; color:var(--primary); }
+  .aff-card-code { font-family:monospace; font-weight:700; font-size:0.72rem; color:var(--indigo); }
+  .aff-stat-row { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid #f8fafc; }
+  .aff-stat-row:last-child { border-bottom:none; }
+  .aff-stat-icon { width:32px; height:32px; border-radius:9px; background:#f8fafc; color:var(--indigo); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .aff-stat-icon svg { width:16px; height:16px; }
+  .aff-stat-info { flex:1; min-width:0; }
+  .aff-stat-val { font-size:0.94rem; font-weight:800; color:var(--primary); line-height:1.2; }
+  .aff-stat-lbl { font-size:0.72rem; color:var(--muted); font-weight:600; margin-top:1px; }
+  .aff-stat-val.owed { color:#92400e; }
+
   /* ── TOP-LEVEL TABS ── */
   .tabs { display:flex; gap:8px; max-width:960px; margin:20px auto 0; padding:0 16px; }
   .tab-btn {
@@ -223,6 +239,7 @@
 
   <div id="content" style="display:none;">
     <div class="totals">
+      <div class="stat-card"><span class="icon">👤</span><div class="label">Registered Users</div><div class="value" id="totalUsersCount">0</div></div>
       <div class="stat-card"><span class="icon">👁️</span><div class="label">Page Views</div><div class="value" id="totalPageviews">0</div></div>
       <div class="stat-card"><span class="icon">⬇️</span><div class="label">Downloads</div><div class="value" id="totalDownloads">0</div></div>
       <div class="stat-card"><span class="icon">🛒</span><div class="label">Orders</div><div class="value" id="totalOrders">0</div></div>
@@ -263,10 +280,7 @@
 
       <div class="panel full-panel">
         <h2><span class="emoji">🤝</span> Affiliates</h2>
-        <table>
-          <thead><tr><th>Name</th><th>Code</th><th class="num">Sales</th><th class="num">Earned</th><th class="num">Owed</th></tr></thead>
-          <tbody id="affiliatesBody"></tbody>
-        </table>
+        <div class="aff-cards-grid" id="affiliatesBody"></div>
       </div>
     </div>
   </div>
@@ -441,6 +455,16 @@
   function fmtNgn(n) { return '₦' + Number(n || 0).toLocaleString(); }
   function esc(s) { return (s || '').toString().replace(/</g, '&lt;'); }
 
+  // Same icon set as the affiliate's own dashboard stats card, so the
+  // admin view visually matches what each affiliate sees for themselves.
+  const AFF_ICON = {
+    link: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 15l6-6"/><path d="M11 5l1-1a4 4 0 015.7 5.7l-2 2"/><path d="M13 19l-1 1a4 4 0 01-5.7-5.7l2-2"/></svg>`,
+    users: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20a6.5 6.5 0 0113 0"/><path d="M16 9.3a3 3 0 010 5.4"/><path d="M18.5 20a5.5 5.5 0 00-2.8-4.8"/></svg>`,
+    cart: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1.4"/><circle cx="18" cy="21" r="1.4"/><path d="M2 3h2l2.6 12.4a2 2 0 002 1.6h8.8a2 2 0 002-1.6L22 7H6"/></svg>`,
+    trend: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 7-8"/><path d="M15 6h5v5"/></svg>`,
+    checkCircle: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.3 2.3L16 9.6"/></svg>`
+  };
+
   function renderBars(containerId, rows) {
     const el = document.getElementById(containerId);
     if (!rows || !rows.length) {
@@ -479,6 +503,7 @@
       if (!res.ok) throw new Error('Request failed: ' + res.status);
       const data = await res.json();
 
+      document.getElementById('totalUsersCount').textContent = (data.totals.totalUsers || 0).toLocaleString();
       document.getElementById('totalPageviews').textContent = data.totals.pageviews.toLocaleString();
       document.getElementById('totalDownloads').textContent = data.totals.downloads.toLocaleString();
       document.getElementById('totalOrders').textContent = data.totals.orders.toLocaleString();
@@ -526,19 +551,57 @@
   function renderAffiliates(affiliates) {
     const tbody = document.getElementById('affiliatesBody');
     if (!affiliates.length) {
-      tbody.innerHTML = '<tr><td colspan="5" class="empty">No affiliates have joined yet.</td></tr>';
+      tbody.innerHTML = '<p class="empty">No affiliates have joined yet.</p>';
       return;
     }
     tbody.innerHTML = affiliates.map(a => `
-      <tr>
-        <td>${esc(a.name)}</td>
-        <td class="aff-code">${esc(a.code)}</td>
-        <td class="num">${a.sales}</td>
-        <td class="num">${fmtNgn(a.earned)}</td>
-        <td class="num">
-          <span class="aff-badge ${a.outstanding > 0 ? 'owed' : 'settled'}">${fmtNgn(a.outstanding)}</span>
-        </td>
-      </tr>
+      <div class="aff-card">
+        <div class="aff-card-head">
+          <span class="aff-card-name">${esc(a.name) || 'Unnamed'}</span>
+          <span class="aff-card-code">${esc(a.code)}</span>
+        </div>
+        <div class="aff-stat-row">
+          <div class="aff-stat-icon">${AFF_ICON.link}</div>
+          <div class="aff-stat-info">
+            <div class="aff-stat-val">${Number(a.clicks || 0).toLocaleString()}</div>
+            <div class="aff-stat-lbl">Link clicks</div>
+          </div>
+        </div>
+        <div class="aff-stat-row">
+          <div class="aff-stat-icon">${AFF_ICON.users}</div>
+          <div class="aff-stat-info">
+            <div class="aff-stat-val">${Number(a.signups || 0).toLocaleString()}</div>
+            <div class="aff-stat-lbl">Sign-ups</div>
+          </div>
+        </div>
+        <div class="aff-stat-row">
+          <div class="aff-stat-icon">${AFF_ICON.cart}</div>
+          <div class="aff-stat-info">
+            <div class="aff-stat-val">${Number(a.sales || 0).toLocaleString()}</div>
+            <div class="aff-stat-lbl">Books sold</div>
+          </div>
+        </div>
+        <div class="aff-stat-row">
+          <div class="aff-stat-icon">${AFF_ICON.trend}</div>
+          <div class="aff-stat-info">
+            <div class="aff-stat-val">${fmtNgn(a.earned)}</div>
+            <div class="aff-stat-lbl">Total earned, all time</div>
+          </div>
+        </div>
+        <div class="aff-stat-row">
+          <div class="aff-stat-icon">${AFF_ICON.checkCircle}</div>
+          <div class="aff-stat-info">
+            <div class="aff-stat-val">${fmtNgn(a.paidOut)}</div>
+            <div class="aff-stat-lbl">Already paid out</div>
+          </div>
+        </div>
+        <div class="aff-stat-row">
+          <div class="aff-stat-info" style="display:flex;align-items:center;justify-content:space-between;">
+            <span class="aff-stat-lbl">Still owed</span>
+            <span class="aff-badge ${a.outstanding > 0 ? 'owed' : 'settled'}">${fmtNgn(a.outstanding)}</span>
+          </div>
+        </div>
+      </div>
     `).join('');
   }
 
