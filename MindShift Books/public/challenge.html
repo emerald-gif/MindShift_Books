@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>The 7-Day No Complaint Challenge | MindShift Books</title>
+  <meta name="description" content="Do the 7-Day No Complaint Challenge right here — log each day, track your progress, and see how your mindset shifts over the week."/>
+  <link rel="shortcut icon" href="MINDSHIFT.jpg" type="image/jpg">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+
+  <style>
+    .ch-hero {
+      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 55%, #0f172a 100%);
+      border-radius: 20px; padding: 34px 22px 28px; text-align: center; color: #fff; margin-bottom: 22px;
+    }
+    .ch-hero .badge {
+      display: inline-block; background: rgba(6,182,212,0.18); border: 1px solid rgba(6,182,212,0.4);
+      color: #67e8f9; font-size: 0.74rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+      padding: 5px 13px; border-radius: 20px; margin-bottom: 14px;
+    }
+    .ch-hero h1 { font-size: 1.55rem; font-weight: 800; line-height: 1.28; margin: 0 0 10px; color: #fff; }
+    .ch-hero p { color: #94a3b8; font-size: 0.9rem; max-width: 440px; margin: 0 auto; line-height: 1.6; }
+
+    /* Progress dots */
+    .ch-progress { display: flex; justify-content: center; gap: 8px; margin: 26px 0 22px; }
+    .ch-dot {
+      width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: 0.8rem; font-weight: 800; background: #eef2f7; color: #94a3b8; border: 2px solid transparent;
+      flex-shrink: 0;
+    }
+    .ch-dot.done { background: linear-gradient(135deg,#4f46e5,#06b6d4); color: #fff; }
+    .ch-dot.active { border-color: #06b6d4; color: #06b6d4; background: #fff; }
+    .ch-dot.locked { opacity: 0.55; }
+
+    /* Cards */
+    .ch-card {
+      background: #fff; border: 1px solid #eef2f7; border-radius: 18px; padding: 24px 20px; margin-bottom: 18px;
+    }
+    .ch-card .ch-label { font-size: 0.78rem; font-weight: 800; color: #06b6d4; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 4px; }
+    .ch-card h2 { font-size: 1.3rem; font-weight: 800; color: var(--primary); margin-bottom: 12px; }
+    .ch-card .ch-idea { color: #475569; font-size: 0.92rem; line-height: 1.65; margin-bottom: 16px; }
+    .ch-task-box {
+      background: #f8fafc; border-left: 3px solid #06b6d4; border-radius: 10px; padding: 14px 16px; margin-bottom: 18px;
+    }
+    .ch-task-box .t-label { font-size: 0.72rem; font-weight: 800; color: #06b6d4; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 5px; }
+    .ch-task-box .t-text { font-size: 0.88rem; color: var(--primary); line-height: 1.55; }
+
+    .ch-field-label { font-size: 0.85rem; font-weight: 700; color: var(--primary); margin-bottom: 8px; display: block; }
+
+    /* Tally stepper */
+    .ch-tally-row { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+    .ch-tally-btn {
+      width: 42px; height: 42px; border-radius: 12px; border: 1.5px solid #e2e8f0; background: #fff;
+      font-size: 1.2rem; font-weight: 800; color: #06b6d4; cursor: pointer;
+    }
+    .ch-tally-btn:active { background: #f0f9ff; }
+    .ch-tally-num { font-size: 1.7rem; font-weight: 800; color: var(--primary); min-width: 46px; text-align: center; }
+
+    .ch-textarea {
+      width: 100%; min-height: 84px; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 12px 14px;
+      font-family: inherit; font-size: 0.9rem; resize: vertical; margin-bottom: 20px; color: var(--primary);
+    }
+    .ch-textarea:focus { outline: none; border-color: #06b6d4; }
+
+    /* Mood scale */
+    .ch-mood-row { display: flex; gap: 8px; margin-bottom: 22px; flex-wrap: wrap; }
+    .ch-mood-btn {
+      flex: 1; min-width: 60px; padding: 10px 6px; border-radius: 10px; border: 1.5px solid #e2e8f0; background: #fff;
+      font-size: 0.78rem; font-weight: 700; color: #64748b; cursor: pointer; text-align: center;
+    }
+    .ch-mood-btn.selected { background: linear-gradient(90deg,#4f46e5,#06b6d4); color: #fff; border-color: transparent; }
+
+    .ch-save-btn {
+      width: 100%; padding: 14px; border-radius: 12px; border: none;
+      background: linear-gradient(90deg,#4f46e5,#06b6d4); color: #fff; font-weight: 700; font-size: 0.95rem;
+      cursor: pointer;
+    }
+    .ch-save-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .ch-error { color: #dc2626; font-size: 0.82rem; margin-top: 10px; display: none; }
+
+    /* Completed day summary */
+    .ch-done-row {
+      display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid #eef2f7; border-radius: 12px; margin-bottom: 8px;
+    }
+    .ch-done-check {
+      width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg,#4f46e5,#06b6d4);
+      color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 800; flex-shrink: 0;
+    }
+    .ch-done-info .d-title { font-weight: 700; font-size: 0.86rem; color: var(--primary); }
+    .ch-done-info .d-sub { font-size: 0.76rem; color: #94a3b8; }
+
+    /* Gate / CTA */
+    .ch-gate {
+      background: #fff; border: 1px solid #eef2f7; border-radius: 18px; padding: 30px 22px; text-align: center;
+    }
+    .ch-gate h2 { font-size: 1.15rem; font-weight: 800; color: var(--primary); margin-bottom: 8px; }
+    .ch-gate p { color: #64748b; font-size: 0.9rem; margin-bottom: 18px; line-height: 1.6; max-width: 420px; margin-left: auto; margin-right: auto; }
+    .ch-cta-btn {
+      display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(90deg,#4f46e5,#06b6d4);
+      color: #fff; font-weight: 700; font-size: 0.95rem; padding: 13px 26px; border-radius: 999px;
+      text-decoration: none; border: none; cursor: pointer; box-shadow: 0 8px 24px rgba(6,182,212,0.35);
+    }
+    .ch-loading { text-align: center; padding: 60px 20px; color: #94a3b8; font-size: 0.9rem; }
+    .ch-download-link { display: block; text-align: center; margin-top: 14px; font-size: 0.8rem; color: #94a3b8; text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <h1 style="display:flex;align-items:center;gap:10px;margin:0;">
+      <img src="MINDSHIFT.jpg" alt="MindShift logo" style="width:36px;height:36px;border-radius:6px;">
+      <span>MindShift Books</span>
+    </h1>
+    <div class="header-icon-group">
+      <span class="acct-nav-slot"></span>
+      <button type="button" class="icon-btn" id="cartIcon" aria-label="View cart">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+        <span class="cart-badge" id="cartBadge" style="display:none;">0</span>
+      </button>
+      <button type="button" id="sidebarToggle" class="icon-btn" onclick="toggleSidebar()" aria-label="Open menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="22" height="22"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<aside class="sidebar" id="sidebar" aria-hidden="true" data-open="false">
+  <button type="button" class="sidebar-close-btn" onclick="toggleSidebar()" aria-label="Close menu">&times;</button>
+  <div class="logo-row">
+    <img src="MINDSHIFT.jpg" alt="logo">
+    <div style="font-weight:700">MindShift Books</div>
+  </div>
+  <ul>
+    <li onclick="window.location.href='/'">Browse Books</li>
+    <li onclick="window.location.href='/free-ebooks'">Free eBooks</li>
+    <li onclick="openMyOrders()">My Account</li>
+    <li onclick="openWishlist()">My Wishlist</li>
+    <li onclick="window.location.href='/support'">Support</li>
+    <li onclick="window.location.href='/legal'">Terms &amp; Privacy</li>
+    <li onclick="openContact()">Contact Us</li>
+    <li onclick="followYoutube()">Follow us on YouTube</li>
+    <li onclick="window.location.href='/affiliate'">Become an Affiliate</li>
+  </ul>
+  <div style="position:absolute;bottom:18px;left:18px;right:18px;color:#9ca3af;font-size:0.9rem;">
+    <div>© 2026 MindShift Books</div>
+    <div style="margin-top:6px">Shift your thinking, change your life.</div>
+  </div>
+</aside>
+
+<main>
+
+  <div class="ch-hero">
+    <div class="badge">Interactive Challenge</div>
+    <h1>The 7-Day No Complaint Challenge</h1>
+    <p>Log each day right here. Your progress saves to your account, so you can come back tomorrow and pick up exactly where you left off.</p>
+  </div>
+
+  <div id="chRoot">
+    <div class="ch-loading">Loading...</div>
+  </div>
+
+</main>
+
+<script>
+const CHALLENGE_DAYS = [
+  { num: 1, title: "Awareness",
+    idea: "You can't change a pattern you can't see. Today isn't about stopping your complaints — it's about catching them. Most people complain 15-30 times a day without noticing a single one. Your only job today is to notice.",
+    task: "Every time you catch yourself complaining out loud OR in your head, add a tally mark below. Don't try to stop it. Don't judge it. Just count it.",
+    type: "tally", fieldLabel: "Today's complaint tally" },
+  { num: 2, title: "The Trigger Check",
+    idea: "Complaints rarely come from nowhere. They're almost always triggered by something specific — a person, a delay, a discomfort, an expectation that didn't get met. Today, name what set each one off.",
+    task: "For every complaint you catch today, jot down the trigger in a few words (e.g. \"traffic\", \"colleague was late\"). Look for a pattern by the end of the day.",
+    type: "notes", fieldLabel: "Today's triggers" },
+  { num: 3, title: "Reframe Practice",
+    idea: "A complaint says \"this is bad and I'm stuck with it.\" A reframe says \"here's what I can do about it\" — even if the action is just accepting it and moving on.",
+    task: "Pick at least one complaint today and rewrite it as either a specific request to someone, or a decision you're making about it. Write the before and after.",
+    type: "notes", fieldLabel: "Before -> After" },
+  { num: 4, title: "The Silent Complaint",
+    idea: "The complaints you say out loud are only half the pattern. The internal running commentary shapes your mood just as much, and it's easier to let slide unnoticed.",
+    task: "Today, catch your silent complaints — the ones you never said out loud. Tally how many you catch.",
+    type: "tally", fieldLabel: "Silent complaints caught" },
+  { num: 5, title: "Gratitude Swap",
+    idea: "You can't hold complaint and genuine gratitude in your head at the same time — they compete for the same attention. Swap the urge to complain for something specific you're grateful for.",
+    task: "Each time you feel the urge to complain, pause and name one specific thing you're grateful for right then. Write at least 3.",
+    type: "notes", fieldLabel: "Today's gratitude swaps" },
+  { num: 6, title: "The Fix-It Rule",
+    idea: "Today has one rule: if something is within your control, act on it instead of complaining about it. If it's genuinely outside your control, consciously let it go. No in-between.",
+    task: "List one thing you fixed instead of complained about, and one thing you consciously let go of today.",
+    type: "notes", fieldLabel: "Fixed / Let go" },
+  { num: 7, title: "The Full Day",
+    idea: "This is the test. A full day, complaint-free — out loud and in your head. You've built the awareness and the tools all week. Today you just use them, start to finish.",
+    task: "Go the entire day without complaining. If you slip, don't quit the day — just notice it, reset, and keep going.",
+    type: "notes", fieldLabel: "How today compared to Day 1" }
+];
+
+const chRoot = document.getElementById('chRoot');
+let currentProgress = null;
+let selectedMood = {};
+
+function apiHeaders(token) {
+  return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
+}
+
+async function loadProgress() {
+  const token = await window.MSBAuth.getIdToken();
+  if (!token) { renderSignedOut(); return; }
+  try {
+    const res = await fetch('/api/challenge/progress', { headers: apiHeaders(token) });
+    const data = await res.json();
+    currentProgress = data;
+    render();
+  } catch (e) {
+    chRoot.innerHTML = '<div class="ch-loading">Could not load your progress. Please refresh.</div>';
+  }
+}
+
+function renderSignedOut() {
+  chRoot.innerHTML = `
+    <div class="ch-gate">
+      <h2>Sign in to start</h2>
+      <p>Your daily entries save to your account so you can come back tomorrow and pick up right where you left off.</p>
+      <a href="/login?returnTo=${encodeURIComponent('/challenge')}" class="ch-cta-btn">Sign In to Start</a>
+      <a href="/files/7-Day-No-Complaint-Challenge.pdf" class="ch-download-link" download>Prefer a printable PDF instead?</a>
+    </div>`;
+}
+
+function getCompletedCount() {
+  if (!currentProgress || !currentProgress.days) return 0;
+  return Object.keys(currentProgress.days).length;
+}
+
+function render() {
+  const doneCount = getCompletedCount();
+  const activeDay = Math.min(doneCount + 1, 7);
+  const allDone = doneCount >= 7;
+
+  let dotsHtml = '<div class="ch-progress">';
+  for (let i = 1; i <= 7; i++) {
+    let cls = 'ch-dot';
+    let content = i;
+    if (currentProgress.days && currentProgress.days[String(i)]) { cls += ' done'; content = '\u2713'; }
+    else if (i === activeDay && !allDone) cls += ' active';
+    else if (i > activeDay) cls += ' locked';
+    dotsHtml += `<div class="${cls}">${content}</div>`;
+  }
+  dotsHtml += '</div>';
+
+  let doneHtml = '';
+  if (doneCount > 0) {
+    doneHtml += '<div style="margin-bottom:18px;">';
+    for (let i = 1; i <= 7; i++) {
+      const entry = currentProgress.days && currentProgress.days[String(i)];
+      if (!entry) continue;
+      const d = CHALLENGE_DAYS[i-1];
+      doneHtml += `<div class="ch-done-row">
+        <div class="ch-done-check">\u2713</div>
+        <div class="ch-done-info"><div class="d-title">Day ${i} — ${d.title}</div><div class="d-sub">${entry.mood ? 'Felt: ' + entry.mood : 'Completed'}</div></div>
+      </div>`;
+    }
+    doneHtml += '</div>';
+  }
+
+  if (allDone) {
+    if (currentProgress.reflection) {
+      chRoot.innerHTML = dotsHtml + doneHtml + `
+        <div class="ch-gate">
+          <h2>You finished the challenge \ud83c\udf89</h2>
+          <p>You made it through all 7 days. That's a real shift in how you relate to your own mind — most people never even notice the pattern, let alone interrupt it for a week straight.</p>
+          <p style="font-style:italic;color:#475569;">"${(currentProgress.reflection || '').replace(/</g,'&lt;')}"</p>
+          <a href="/escape-preview" class="ch-cta-btn">Explore Escape Your Environment</a>
+        </div>`;
+    } else {
+      renderReflectionForm(dotsHtml, doneHtml);
+    }
+    return;
+  }
+
+  const day = CHALLENGE_DAYS[activeDay - 1];
+  chRoot.innerHTML = dotsHtml + doneHtml + `
+    <div class="ch-card">
+      <div class="ch-label">Day ${day.num} of 7</div>
+      <h2>${day.title}</h2>
+      <p class="ch-idea">${day.idea}</p>
+      <div class="ch-task-box">
+        <div class="t-label">Today's Task</div>
+        <div class="t-text">${day.task}</div>
+      </div>
+
+      <label class="ch-field-label">${day.fieldLabel}</label>
+      ${day.type === 'tally' ? `
+        <div class="ch-tally-row">
+          <button type="button" class="ch-tally-btn" id="chTallyMinus">\u2212</button>
+          <div class="ch-tally-num" id="chTallyNum">0</div>
+          <button type="button" class="ch-tally-btn" id="chTallyPlus">+</button>
+        </div>
+      ` : `
+        <textarea class="ch-textarea" id="chNotes" placeholder="Write here..."></textarea>
+      `}
+
+      <label class="ch-field-label">How did today feel overall?</label>
+      <div class="ch-mood-row" id="chMoodRow">
+        ${['Rough','Meh','Okay','Good','Strong'].map(m => `<button type="button" class="ch-mood-btn" data-mood="${m}">${m}</button>`).join('')}
+      </div>
+
+      <button type="button" class="ch-save-btn" id="chSaveBtn">Mark Day ${day.num} Complete</button>
+      <div class="ch-error" id="chError">Something went wrong. Please try again.</div>
+    </div>
+    <a href="/files/7-Day-No-Complaint-Challenge.pdf" class="ch-download-link" download>Download the printable PDF version</a>
+  `;
+
+  let tally = 0;
+  selectedMood.value = null;
+  if (day.type === 'tally') {
+    const numEl = document.getElementById('chTallyNum');
+    document.getElementById('chTallyMinus').addEventListener('click', () => { tally = Math.max(0, tally - 1); numEl.textContent = tally; });
+    document.getElementById('chTallyPlus').addEventListener('click', () => { tally = Math.min(999, tally + 1); numEl.textContent = tally; });
+  }
+  document.querySelectorAll('.ch-mood-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.ch-mood-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedMood.value = btn.dataset.mood;
+    });
+  });
+
+  document.getElementById('chSaveBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('chSaveBtn');
+    const errEl = document.getElementById('chError');
+    errEl.style.display = 'none';
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+    const payload = { day: day.num, mood: selectedMood.value || '' };
+    if (day.type === 'tally') payload.tally = tally;
+    else payload.notes = (document.getElementById('chNotes').value || '').trim();
+
+    try {
+      const token = await window.MSBAuth.getIdToken();
+      const res = await fetch('/api/challenge/day', { method: 'POST', headers: apiHeaders(token), body: JSON.stringify(payload) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Save failed');
+      await loadProgress();
+    } catch (e) {
+      errEl.textContent = e.message || 'Something went wrong. Please try again.';
+      errEl.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = `Mark Day ${day.num} Complete`;
+    }
+  });
+}
+
+function renderReflectionForm(dotsHtml, doneHtml) {
+  chRoot.innerHTML = dotsHtml + doneHtml + `
+    <div class="ch-card">
+      <div class="ch-label">Final Step</div>
+      <h2>Reflection</h2>
+      <p class="ch-idea">You just spent a week rewiring a habit most people run on autopilot for their entire lives. Before you close this out — what did you notice about your default mental state this week? What's one pattern you want to keep watching?</p>
+      <textarea class="ch-textarea" id="chReflection" placeholder="Write your reflection here..." style="min-height:120px;"></textarea>
+      <button type="button" class="ch-save-btn" id="chReflectionBtn">Finish the Challenge</button>
+      <div class="ch-error" id="chReflectionError">Something went wrong. Please try again.</div>
+    </div>`;
+
+  document.getElementById('chReflectionBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('chReflectionBtn');
+    const errEl = document.getElementById('chReflectionError');
+    const text = (document.getElementById('chReflection').value || '').trim();
+    if (!text) { errEl.textContent = 'Write a few words before finishing.'; errEl.style.display = 'block'; return; }
+    errEl.style.display = 'none';
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+    try {
+      const token = await window.MSBAuth.getIdToken();
+      const res = await fetch('/api/challenge/reflection', { method: 'POST', headers: apiHeaders(token), body: JSON.stringify({ reflection: text }) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Save failed');
+      await loadProgress();
+    } catch (e) {
+      errEl.textContent = e.message || 'Something went wrong. Please try again.';
+      errEl.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Finish the Challenge';
+    }
+  });
+}
+
+window.addEventListener('msb-auth-changed', () => { loadProgress(); });
+if (window.MSBAuth && window.MSBAuth.getUser()) loadProgress();
+</script>
+
+<script>
+function adjustMainPadding(){
+  const header = document.querySelector('header');
+  const main = document.querySelector('main');
+  if (!header || !main) return;
+  const h = header.getBoundingClientRect().height;
+  main.style.paddingTop = (h + 24) + 'px';
+}
+window.addEventListener('load', adjustMainPadding);
+window.addEventListener('resize', adjustMainPadding);
+adjustMainPadding();
+</script>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="/main.js"></script>
+<script src="/auth.js"></script>
+
+</body>
+</html>
