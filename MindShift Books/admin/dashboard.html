@@ -659,12 +659,13 @@
 
   // ── Affiliate broadcast ──
 
-  // Banner image — read locally as base64 and embed it directly as a data
-  // URI in the hidden #bBannerUrl field. No upload endpoint, no storage
-  // bucket: the image just travels inside the email itself. The size cap
-  // matters here — Gmail clips any message over ~102KB and drops content
-  // (including images) below the clip point, so this stays well under that
-  // even after base64 inflates the file by ~33%.
+  // Banner image — read locally as base64, then hand that data URI to the
+  // server's /upload-image endpoint, which hosts it on Cloudinary and
+  // returns a real https:// link. That link (not the base64) is what ends
+  // up in the hidden #bBannerUrl field and gets sent to Brevo — a data:
+  // URI embedded straight in the email gets stripped by Gmail and most
+  // other mail clients, which is why the image wasn't showing before. The
+  // 180KB size cap just keeps the upload itself quick.
   (function setupBannerUpload() {
     const MAX_BYTES = 180 * 1024; // 180KB source file -> ~240KB base64, safe margin
     const drop = document.getElementById('bBannerDrop');
@@ -714,12 +715,28 @@
         setStatus(`That image is ${Math.round(file.size / 1024)}KB — keep it under ${Math.round(MAX_BYTES / 1024)}KB so Gmail doesn't clip the email. Try compressing it (tinypng.com works well) or use a smaller image.`, 'error');
         return;
       }
+      urlInput.value = ''; // cleared until the upload actually succeeds
       const reader = new FileReader();
-      reader.onload = () => {
-        urlInput.value = reader.result; // data:image/...;base64,....
-        showPreview(reader.result);
-        setStatus('Image attached ✓', 'success');
-        renderBroadcastPreview();
+      reader.onload = async () => {
+        showPreview(reader.result); // local preview shows instantly, before the upload finishes
+        setStatus('Uploading…', '');
+        try {
+          const res = await fetch('/api/admin/affiliate-broadcast/upload-image', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ imageDataUrl: reader.result })
+          });
+          const json = await res.json().catch(() => null);
+          if (!res.ok || !json || !json.url) {
+            setStatus((json && json.error) || 'Upload failed — try again.', 'error');
+            return;
+          }
+          urlInput.value = json.url; // hosted https:// link — this is what goes to Brevo
+          setStatus('Image uploaded ✓', 'success');
+          renderBroadcastPreview();
+        } catch (e) {
+          setStatus('Upload failed — check your connection and try again.', 'error');
+        }
       };
       reader.onerror = () => setStatus('Could not read that file — try again.', 'error');
       reader.readAsDataURL(file);
@@ -773,8 +790,8 @@
   // as JS conditionals) so what's shown here is exactly what ships — same
   // markup, same inline styles, same header/footer, same responsive rule
   // that makes it go edge-to-edge on a phone. Current template: white card,
-  // red "Affiliate Update" pin chip, banner image + "New Pin" byline row,
-  // full-pill CTA button, pink caption/referral cards. Only
+  // red "Affiliate Update" pin chip, banner image + a small download link
+  // beneath it, full-pill CTA button, pink caption/referral cards. Only
   // affiliateName/affiliateLink are faked, since those are filled in
   // per-recipient on the server.
   function escapeHtmlPreview(str) {
@@ -798,32 +815,16 @@
       ? textToParagraphsPreview(p.bodyText)
       : '<p style="margin:0 0 14px;color:#a3a3a3;">Your message will appear here as you type…</p>';
 
-    // Banner image + its "new pin" byline row are one card — only show
-    // the byline when there's actually an image to caption.
+    // Banner image + a download link beneath it are one card. The download
+    // link only makes sense once the image is actually hosted (a real
+    // https:// URL from the upload), so it's included unconditionally here
+    // since bannerImageUrl is only ever set after a successful upload.
     const bannerBlock = p.bannerImageUrl ? `
   <tr><td>
     <img src="${p.bannerImageUrl}" alt="${escapeHtmlPreview(p.bannerImageAlt || 'MindShift Books')}" width="600" style="width:100%;height:auto;display:block;">
   </td></tr>
-  <tr><td class="px" style="padding:14px 26px;border-bottom:1px solid #efefef;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-      <tr>
-        <td style="vertical-align:middle;">
-          <table role="presentation" cellpadding="0" cellspacing="0">
-            <tr>
-              <td style="vertical-align:middle;">
-                <img src="https://mindshiftbooks.shop/MINDSHIFT.jpg" width="22" height="22" alt="" style="width:22px;height:22px;border-radius:50%;display:block;">
-              </td>
-              <td style="padding-left:8px;vertical-align:middle;">
-                <span style="font-size:12.5px;font-weight:700;color:#111111;">MindShift Books</span>
-              </td>
-            </tr>
-          </table>
-        </td>
-        <td align="right" style="vertical-align:middle;">
-          <span style="font-size:12px;font-weight:700;color:#e60023;">📌 New Pin</span>
-        </td>
-      </tr>
-    </table>
+  <tr><td class="px" align="center" style="padding:12px 26px;border-bottom:1px solid #efefef;">
+    <a href="${p.bannerImageUrl}" style="font-size:12.5px;font-weight:700;color:#e60023;">⬇️ Download this image</a>
   </td></tr>` : '';
 
     const ctaBlock = (p.ctaText && p.ctaLink) ? `
