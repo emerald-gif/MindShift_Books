@@ -320,7 +320,7 @@ function buildBroadcastContent(body) {
   const content = {
     headline,
     bodyHtml: textToParagraphs(bodyText),
-    accentColor: /^#[0-9a-fA-F]{6}$/.test(body.accentColor || '') ? body.accentColor : '#4f46e5',
+    accentColor: /^#[0-9a-fA-F]{6}$/.test(body.accentColor || '') ? body.accentColor : '#e60023',
     bannerImageUrl: clean(body.bannerImageUrl, 400000), // data URI (base64 image), not a short link
     bannerImageAlt: clean(body.bannerImageAlt, 200),
     ctaText: clean(body.ctaText, 60),
