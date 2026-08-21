@@ -114,6 +114,21 @@
   }
   .tab-btn.active { background: linear-gradient(90deg, #4f46e5, #06b6d4); color:#fff; border-color:transparent; }
 
+  /* ── BROADCAST WRITE / PREVIEW SUB-TABS ── */
+  .broadcast-subtabs { display:flex; gap:8px; margin-bottom:18px; }
+  .broadcast-subtabs .tab-btn { padding:7px 14px; font-size:0.8rem; }
+  .preview-wrap { max-width:640px; margin:0 auto; border:1.5px solid var(--border); border-radius:14px; overflow:hidden; box-shadow:0 6px 22px rgba(15,23,42,0.08); background:#fff; }
+  .preview-toolbar { display:flex; align-items:center; gap:6px; padding:10px 14px; background:#f1f5f9; border-bottom:1px solid var(--border); }
+  .preview-dot { width:9px; height:9px; border-radius:50%; background:#cbd5e1; display:inline-block; }
+  .preview-toolbar-label { margin-left:6px; font-size:0.72rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.03em; }
+  .preview-toolbar-spacer { flex:1; }
+  .preview-device-btn { padding:5px 10px; border-radius:8px; border:1.5px solid var(--border); background:#fff; font-size:0.72rem; font-weight:700; color:var(--muted); cursor:pointer; }
+  .preview-device-btn.active { background:#0f172a; color:#fff; border-color:transparent; }
+  .preview-frame-wrap { background:#eef1f6; display:flex; justify-content:center; }
+  .preview-frame { border:none; display:block; height:640px; width:100%; transition:width .15s ease; background:#eef1f6; }
+  .preview-frame-wrap.mobile { padding:14px 0; }
+  .preview-frame-wrap.mobile .preview-frame { width:390px; box-shadow:0 0 0 1px rgba(15,23,42,0.08); }
+
   /* ── PAYOUTS PAGE ── */
   .payouts-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px; }
   .gen-btn {
@@ -130,6 +145,50 @@
   .bank-cell { font-size:0.78rem; line-height:1.4; }
   .bank-cell .acc-name { color:var(--muted); }
   .paid-meta { font-size:0.72rem; color:var(--muted); margin-top:2px; }
+
+  /* ── BROADCAST FORM ── */
+  .field { margin-bottom: 16px; }
+  .field label { display:block; font-size:0.76rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.03em; margin-bottom:6px; }
+  .field label .optional-tag { font-weight:600; text-transform:none; letter-spacing:0; color:#cbd5e1; margin-left:4px; }
+  .field input[type=text], .field input[type=url], .field textarea {
+    width:100%; padding:11px 13px; border-radius:10px; border:1.5px solid var(--border);
+    font-size:0.9rem; font-family:'Inter',sans-serif; color:var(--primary); background:#fff;
+  }
+  .field textarea { resize:vertical; min-height:88px; line-height:1.5; }
+  .field .hint { font-size:0.74rem; color:var(--muted); margin-top:5px; }
+  .field-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  @media (max-width:600px) { .field-row { grid-template-columns:1fr; } }
+  .color-row { display:flex; align-items:center; gap:10px; }
+  .color-row input[type=color] { width:44px; height:38px; border-radius:8px; border:1.5px solid var(--border); padding:2px; cursor:pointer; background:#fff; }
+  .section-divider { border:none; border-top:1px solid var(--border); margin:20px 0; }
+  .image-upload {
+    position:relative; border:1.5px dashed var(--border); border-radius:10px; background:#fff;
+    cursor:pointer; overflow:hidden; transition:border-color .15s, background .15s;
+  }
+  .image-upload:hover { border-color:var(--accent, #4f46e5); background:#fafaff; }
+  .image-upload.dragover { border-color:var(--accent, #4f46e5); background:#eef2ff; }
+  .image-upload-body { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:22px 12px; text-align:center; }
+  .image-upload-icon { font-size:1.4rem; }
+  .image-upload-text { font-size:0.82rem; font-weight:600; color:var(--primary); }
+  .image-upload-hint { font-size:0.72rem; color:var(--muted); }
+  .image-upload-preview { display:block; width:100%; max-height:180px; object-fit:cover; }
+  .image-upload-status { font-size:0.74rem; color:var(--muted); margin-top:5px; min-height:1em; }
+  .image-upload-status.error { color:#dc2626; }
+  .image-upload-status.success { color:#16a34a; }
+  .image-upload-remove {
+    position:absolute; top:8px; right:8px; background:rgba(15,23,42,0.72); color:#fff; border:none;
+    border-radius:7px; padding:4px 9px; font-size:0.72rem; font-weight:700; cursor:pointer;
+  }
+  .asset-row { display:grid; grid-template-columns:1fr 1.4fr; gap:10px; margin-bottom:10px; }
+  @media (max-width:600px) { .asset-row { grid-template-columns:1fr; } }
+  .broadcast-actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:18px; align-items:center; }
+  .btn-secondary { padding:11px 18px; border-radius:10px; border:1.5px solid var(--border); background:#fff; color:var(--primary); font-weight:700; font-size:0.84rem; cursor:pointer; }
+  .btn-primary { padding:11px 18px; border-radius:10px; border:none; background: linear-gradient(90deg, #4f46e5, #06b6d4); color:#fff; font-weight:700; font-size:0.84rem; cursor:pointer; }
+  .btn-secondary:disabled, .btn-primary:disabled { opacity:0.55; cursor:default; }
+  .recipient-count { font-size:0.8rem; color:var(--muted); }
+  .broadcast-result { margin-top:14px; padding:12px 14px; border-radius:10px; font-size:0.84rem; display:none; }
+  .broadcast-result.success { background:#dcfce7; color:#166534; display:block; }
+  .broadcast-result.error { background:#fef2f2; color:#991b1b; display:block; }
 </style>
 </head>
 <body>
@@ -156,6 +215,7 @@
 <div class="tabs">
   <button class="tab-btn active" id="tabOverview">📊 Overview</button>
   <button class="tab-btn" id="tabPayouts">💸 Payouts</button>
+  <button class="tab-btn" id="tabBroadcast">📣 Updates</button>
 </div>
 
 <div class="page">
@@ -226,6 +286,126 @@
         <thead><tr><th>Affiliate</th><th class="num">Amount</th><th>Bank</th><th>Status</th><th class="num">Action</th></tr></thead>
         <tbody id="payoutsBody"></tbody>
       </table>
+    </div>
+  </div>
+
+  <div id="broadcastPage" style="display:none;">
+    <div class="panel full-panel" style="padding-bottom:20px;">
+      <h2><span class="emoji">📣</span> Affiliate Update</h2>
+      <p class="empty" style="padding-top:0;margin-top:-8px;margin-bottom:14px;">
+        One template handles every send. Leave a section blank and it just won't appear in the email — that's how the same template covers a full launch flyer one week and a plain text tip the next.
+      </p>
+
+      <div class="broadcast-subtabs">
+        <button type="button" class="tab-btn active" id="bTabWrite">✍️ Write</button>
+        <button type="button" class="tab-btn" id="bTabPreview">👀 Preview</button>
+      </div>
+
+      <div id="broadcastWriteTab">
+
+      <div class="field">
+        <label>Headline</label>
+        <input type="text" id="bHeadline" maxlength="200" placeholder="New book is live: The Money Mindset Gap">
+      </div>
+
+      <div class="field">
+        <label>Message</label>
+        <textarea id="bBody" maxlength="4000" placeholder="Write the update here. Leave a blank line between paragraphs."></textarea>
+      </div>
+
+      <div class="field">
+        <label>Accent color</label>
+        <div class="color-row">
+          <input type="color" id="bColor" value="#4f46e5">
+          <span class="hint" style="margin-top:0;">Colors the headline and button — an easy way to make each send feel different.</span>
+        </div>
+      </div>
+
+      <hr class="section-divider">
+
+      <div class="field-row">
+        <div class="field">
+          <label>Flyer / banner image <span class="optional-tag">optional</span></label>
+          <input type="hidden" id="bBannerUrl">
+          <div class="image-upload" id="bBannerDrop">
+            <img id="bBannerPreview" class="image-upload-preview" style="display:none;">
+            <div class="image-upload-body" id="bBannerUploadBody">
+              <span class="image-upload-icon">🖼️</span>
+              <span class="image-upload-text">Click to choose an image, or drag one here</span>
+              <span class="image-upload-hint">JPG, PNG, WEBP or GIF · up to 180KB</span>
+            </div>
+            <input type="file" id="bBannerFile" accept="image/jpeg,image/png,image/webp,image/gif" style="display:none;">
+          </div>
+          <div class="image-upload-status" id="bBannerStatus"></div>
+        </div>
+        <div class="field">
+          <label>Image alt text <span class="optional-tag">optional</span></label>
+          <input type="text" id="bBannerAlt" maxlength="200" placeholder="Describe the image">
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label>Button text <span class="optional-tag">optional</span></label>
+          <input type="text" id="bCtaText" maxlength="60" placeholder="Get the book">
+        </div>
+        <div class="field">
+          <label>Button link <span class="optional-tag">optional</span></label>
+          <input type="url" id="bCtaLink" placeholder="https://…">
+        </div>
+      </div>
+
+      <hr class="section-divider">
+
+      <div class="field">
+        <label>Caption for affiliates to post <span class="optional-tag">optional</span></label>
+        <textarea id="bCaption" maxlength="2000" placeholder="A ready-to-post caption, shown in its own copy-paste box in the email."></textarea>
+      </div>
+
+      <hr class="section-divider">
+
+      <div class="field">
+        <label>More assets <span class="optional-tag">optional — up to 3 links</span></label>
+        <div class="asset-row">
+          <input type="text" id="bA1Label" maxlength="60" placeholder="Label, e.g. Flyer pack (zip)">
+          <input type="url" id="bA1Url" placeholder="https://…">
+        </div>
+        <div class="asset-row">
+          <input type="text" id="bA2Label" maxlength="60" placeholder="Label">
+          <input type="url" id="bA2Url" placeholder="https://…">
+        </div>
+        <div class="asset-row">
+          <input type="text" id="bA3Label" maxlength="60" placeholder="Label">
+          <input type="url" id="bA3Url" placeholder="https://…">
+        </div>
+      </div>
+
+      </div><!-- /broadcastWriteTab -->
+
+      <div id="broadcastPreviewTab" style="display:none;">
+        <div class="preview-wrap">
+          <div class="preview-toolbar">
+            <span class="preview-dot"></span><span class="preview-dot"></span><span class="preview-dot"></span>
+            <span class="preview-toolbar-label">Gmail preview</span>
+            <div class="preview-toolbar-spacer"></div>
+            <button type="button" class="preview-device-btn active" id="bPreviewDesktop">💻 Desktop</button>
+            <button type="button" class="preview-device-btn" id="bPreviewMobile">📱 Mobile</button>
+          </div>
+          <div class="preview-frame-wrap" id="bPreviewFrameWrap">
+            <iframe id="bPreviewFrame" class="preview-frame" title="Email preview"></iframe>
+          </div>
+        </div>
+        <p class="hint" style="text-align:center;margin-top:10px;">
+          This updates live as you type. Personal details like the affiliate's name and referral link are shown with sample values here — every real recipient gets their own.
+        </p>
+      </div>
+
+      <div class="broadcast-actions">
+        <button class="btn-secondary" id="bTestBtn">Send test to myself</button>
+        <button class="btn-primary" id="bSendBtn">Send to all affiliates</button>
+        <span class="recipient-count" id="bRecipientCount"></span>
+      </div>
+      <div class="broadcast-result" id="bResult"></div>
     </div>
   </div>
 </div>
@@ -303,6 +483,7 @@
 
   // ── Affiliates panel — independent of the date-range selector above,
   // since payout status is a running lifetime balance, not a per-period stat.
+  let lastAffiliates = [];
   async function loadAffiliates() {
     const tbody = document.getElementById('affiliatesBody');
     try {
@@ -310,7 +491,9 @@
       if (res.status === 401) { window.location.href = '/admin/login'; return; }
       if (!res.ok) throw new Error('Request failed: ' + res.status);
       const data = await res.json();
-      renderAffiliates(data.affiliates || []);
+      lastAffiliates = data.affiliates || [];
+      renderAffiliates(lastAffiliates);
+      updateRecipientCount();
     } catch (err) {
       tbody.innerHTML = `<tr><td colspan="6" class="empty">Could not load affiliates.</td></tr>`;
     }
@@ -337,16 +520,22 @@
 
   loadAffiliates();
 
-  // ── Tabs: Overview vs Payouts ──
+  // ── Tabs: Overview / Payouts / Updates ──
   const tabOverview = document.getElementById('tabOverview');
   const tabPayouts = document.getElementById('tabPayouts');
+  const tabBroadcast = document.getElementById('tabBroadcast');
   const payoutsPage = document.getElementById('payoutsPage');
+  const broadcastPage = document.getElementById('broadcastPage');
   let overviewLoadedOnce = true; // loadStats() already ran once above on page load
 
+  function setActiveTab(active) {
+    [tabOverview, tabPayouts, tabBroadcast].forEach(b => b.classList.toggle('active', b === active));
+  }
+
   tabOverview.addEventListener('click', () => {
-    tabOverview.classList.add('active');
-    tabPayouts.classList.remove('active');
+    setActiveTab(tabOverview);
     payoutsPage.style.display = 'none';
+    broadcastPage.style.display = 'none';
     // Restore whichever overview state was showing before (loaded content, or its loader).
     if (content.dataset.loaded === 'true') {
       content.style.display = 'block';
@@ -356,12 +545,20 @@
     }
   });
   tabPayouts.addEventListener('click', () => {
-    tabPayouts.classList.add('active');
-    tabOverview.classList.remove('active');
+    setActiveTab(tabPayouts);
     loadingWrap.style.display = 'none';
     content.style.display = 'none';
+    broadcastPage.style.display = 'none';
     payoutsPage.style.display = 'block';
     loadPayouts();
+  });
+  tabBroadcast.addEventListener('click', () => {
+    setActiveTab(tabBroadcast);
+    loadingWrap.style.display = 'none';
+    content.style.display = 'none';
+    payoutsPage.style.display = 'none';
+    broadcastPage.style.display = 'block';
+    updateRecipientCount();
   });
 
   // ── Payouts queue ──
@@ -457,6 +654,348 @@
     } finally {
       btn.disabled = false;
       btn.textContent = "↻ Generate this week's payouts";
+    }
+  });
+
+  // ── Affiliate broadcast ──
+
+  // Banner image — read locally as base64 and embed it directly as a data
+  // URI in the hidden #bBannerUrl field. No upload endpoint, no storage
+  // bucket: the image just travels inside the email itself. The size cap
+  // matters here — Gmail clips any message over ~102KB and drops content
+  // (including images) below the clip point, so this stays well under that
+  // even after base64 inflates the file by ~33%.
+  (function setupBannerUpload() {
+    const MAX_BYTES = 180 * 1024; // 180KB source file -> ~240KB base64, safe margin
+    const drop = document.getElementById('bBannerDrop');
+    const fileInput = document.getElementById('bBannerFile');
+    const preview = document.getElementById('bBannerPreview');
+    const body = document.getElementById('bBannerUploadBody');
+    const urlInput = document.getElementById('bBannerUrl');
+    const status = document.getElementById('bBannerStatus');
+    let removeBtn = null;
+
+    function setStatus(msg, kind) {
+      status.textContent = msg || '';
+      status.className = 'image-upload-status' + (kind ? ' ' + kind : '');
+    }
+
+    function showPreview(dataUrl) {
+      preview.src = dataUrl;
+      preview.style.display = 'block';
+      body.style.display = 'none';
+      if (!removeBtn) {
+        removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'image-upload-remove';
+        removeBtn.textContent = '✕ Remove';
+        removeBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          urlInput.value = '';
+          fileInput.value = '';
+          preview.style.display = 'none';
+          body.style.display = 'flex';
+          removeBtn.remove();
+          removeBtn = null;
+          setStatus('');
+          renderBroadcastPreview();
+        });
+        drop.appendChild(removeBtn);
+      }
+    }
+
+    function handleFile(file) {
+      if (!file) return;
+      if (!/^image\/(jpeg|png|webp|gif)$/.test(file.type)) {
+        setStatus('Only JPG, PNG, WEBP, or GIF images are allowed.', 'error');
+        return;
+      }
+      if (file.size > MAX_BYTES) {
+        setStatus(`That image is ${Math.round(file.size / 1024)}KB — keep it under ${Math.round(MAX_BYTES / 1024)}KB so Gmail doesn't clip the email. Try compressing it (tinypng.com works well) or use a smaller image.`, 'error');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        urlInput.value = reader.result; // data:image/...;base64,....
+        showPreview(reader.result);
+        setStatus('Image attached ✓', 'success');
+        renderBroadcastPreview();
+      };
+      reader.onerror = () => setStatus('Could not read that file — try again.', 'error');
+      reader.readAsDataURL(file);
+    }
+
+    drop.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => handleFile(fileInput.files[0]));
+
+    ['dragenter', 'dragover'].forEach(evt => drop.addEventListener(evt, (e) => {
+      e.preventDefault(); e.stopPropagation(); drop.classList.add('dragover');
+    }));
+    ['dragleave', 'drop'].forEach(evt => drop.addEventListener(evt, (e) => {
+      e.preventDefault(); e.stopPropagation(); drop.classList.remove('dragover');
+    }));
+    drop.addEventListener('drop', (e) => {
+      const file = e.dataTransfer.files && e.dataTransfer.files[0];
+      if (file) handleFile(file);
+    });
+  })();
+
+  // ── Write / Preview sub-tabs ──
+  const bTabWrite = document.getElementById('bTabWrite');
+  const bTabPreview = document.getElementById('bTabPreview');
+  const broadcastWriteTab = document.getElementById('broadcastWriteTab');
+  const broadcastPreviewTab = document.getElementById('broadcastPreviewTab');
+
+  bTabWrite.addEventListener('click', () => {
+    bTabWrite.classList.add('active'); bTabPreview.classList.remove('active');
+    broadcastWriteTab.style.display = 'block'; broadcastPreviewTab.style.display = 'none';
+  });
+  bTabPreview.addEventListener('click', () => {
+    bTabPreview.classList.add('active'); bTabWrite.classList.remove('active');
+    broadcastWriteTab.style.display = 'none'; broadcastPreviewTab.style.display = 'block';
+    renderBroadcastPreview();
+  });
+
+  const bPreviewFrameWrap = document.getElementById('bPreviewFrameWrap');
+  const bPreviewDesktop = document.getElementById('bPreviewDesktop');
+  const bPreviewMobile = document.getElementById('bPreviewMobile');
+  bPreviewDesktop.addEventListener('click', () => {
+    bPreviewDesktop.classList.add('active'); bPreviewMobile.classList.remove('active');
+    bPreviewFrameWrap.classList.remove('mobile');
+  });
+  bPreviewMobile.addEventListener('click', () => {
+    bPreviewMobile.classList.add('active'); bPreviewDesktop.classList.remove('active');
+    bPreviewFrameWrap.classList.add('mobile');
+  });
+
+  // ── Live preview rendering ──
+  // Mirrors the actual Brevo template (its Jinja {% if %} blocks re-expressed
+  // as JS conditionals) so what's shown here is exactly what ships — same
+  // markup, same inline styles, same header/footer, same responsive rule
+  // that makes it go edge-to-edge on a phone. Only affiliateName/affiliateLink
+  // are faked, since those are filled in per-recipient on the server.
+  function escapeHtmlPreview(str) {
+    return String(str || '')
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+  function textToParagraphsPreview(text) {
+    return String(text || '')
+      .split(/\n\s*\n/).map(b => b.trim()).filter(Boolean)
+      .map(b => `<p style="margin:0 0 14px;">${escapeHtmlPreview(b).replace(/\n/g, '<br>')}</p>`)
+      .join('');
+  }
+
+  function buildEmailPreviewHtml(p) {
+    const accent = /^#[0-9a-fA-F]{6}$/.test(p.accentColor || '') ? p.accentColor : '#4f46e5';
+    const headline = escapeHtmlPreview(p.headline || 'Your headline goes here');
+    const affiliateName = escapeHtmlPreview('Jordan');
+    const affiliateLink = 'https://mindshiftbooks.shop/?ref=demoaffiliate';
+    const bodyHtml = p.bodyText && p.bodyText.trim()
+      ? textToParagraphsPreview(p.bodyText)
+      : '<p style="margin:0 0 14px;color:#94a3b8;">Your message will appear here as you type…</p>';
+
+    const bannerBlock = p.bannerImageUrl ? `
+  <tr><td>
+    <img src="${p.bannerImageUrl}" alt="${escapeHtmlPreview(p.bannerImageAlt || 'MindShift Books')}" width="600" style="width:100%;height:auto;display:block;">
+  </td></tr>` : '';
+
+    const ctaBlock = (p.ctaText && p.ctaLink) ? `
+  <tr><td class="px" align="left" style="padding:14px 28px 8px;">
+    <table role="presentation" cellpadding="0" cellspacing="0">
+      <tr>
+        <td style="border-radius:12px;background:${accent};box-shadow:0 4px 14px rgba(79,70,229,0.35);">
+          <a href="${escapeHtmlPreview(p.ctaLink)}" style="display:inline-block;color:#ffffff;font-weight:700;font-size:14.5px;padding:14px 28px;border-radius:12px;">
+            ${escapeHtmlPreview(p.ctaText)} &nbsp;→
+          </a>
+        </td>
+      </tr>
+    </table>
+  </td></tr>` : '';
+
+    const captionBlock = p.captionText ? `
+  <tr><td class="px" style="padding:26px 28px 8px;">
+    <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:9px;">📋 Caption you can post as-is</div>
+    <div style="background:#f8fafc;border:1.5px dashed #cbd5e1;border-radius:12px;padding:18px;font-size:14px;line-height:1.65;color:#0f172a;white-space:pre-wrap;">${escapeHtmlPreview(p.captionText)}</div>
+  </td></tr>` : '';
+
+    const assetRows = [
+      p.asset1Url ? `<tr><td style="padding:0 0 8px;"><a href="${escapeHtmlPreview(p.asset1Url)}" style="display:block;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;color:#0f172a;font-weight:700;font-size:14px;">⬇️ &nbsp;${escapeHtmlPreview(p.asset1Label || 'Download')}</a></td></tr>` : '',
+      p.asset2Url ? `<tr><td style="padding:0 0 8px;"><a href="${escapeHtmlPreview(p.asset2Url)}" style="display:block;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;color:#0f172a;font-weight:700;font-size:14px;">⬇️ &nbsp;${escapeHtmlPreview(p.asset2Label || 'Download')}</a></td></tr>` : '',
+      p.asset3Url ? `<tr><td style="padding:0;"><a href="${escapeHtmlPreview(p.asset3Url)}" style="display:block;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;color:#0f172a;font-weight:700;font-size:14px;">⬇️ &nbsp;${escapeHtmlPreview(p.asset3Label || 'Download')}</a></td></tr>` : ''
+    ].join('');
+    const assetsBlock = (p.asset1Url || p.asset2Url || p.asset3Url) ? `
+  <tr><td class="px" style="padding:22px 28px 8px;">
+    <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:11px;">More assets</div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${assetRows}</table>
+  </td></tr>` : '';
+
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body, table, td { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+  body { margin: 0; padding: 0; background: #eef1f6; }
+  img { border: 0; display: block; }
+  a { text-decoration: none; }
+  @media (max-width: 600px) {
+    .outer-pad { padding: 0 !important; }
+    .container { width: 100% !important; max-width: 100% !important; border-radius: 0 !important; box-shadow: none !important; }
+    .px { padding-left: 22px !important; padding-right: 22px !important; }
+    .h1 { font-size: 21px !important; }
+  }
+</style>
+</head>
+<body style="margin:0;padding:0;background:#eef1f6;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef1f6;">
+<tr><td align="center" class="outer-pad" style="padding:28px 12px;">
+<table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" style="width:600px;max-width:600px;background:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 8px 28px rgba(15,23,42,0.10);">
+
+  <tr><td style="background:linear-gradient(135deg,#0f172a,#1e1b4b 55%,#0f172a);padding:26px 28px;">
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+      <tr>
+        <td style="vertical-align:middle;">
+          <table role="presentation" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="background:#ffffff;border-radius:10px;padding:6px;vertical-align:middle;">
+                <img src="https://mindshiftbooks.shop/MINDSHIFT.jpg" width="34" height="34" alt="MindShift Books" style="width:34px;height:34px;border-radius:6px;display:block;">
+              </td>
+              <td style="padding-left:12px;vertical-align:middle;">
+                <span style="color:#ffffff;font-weight:800;font-size:17px;letter-spacing:-0.01em;">MindShift Books</span><br>
+                <span style="color:#67e8f9;font-size:10.5px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">Affiliate Update</span>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+
+  <tr><td style="height:4px;line-height:4px;font-size:0;background:linear-gradient(90deg,${accent},#06b6d4);">&nbsp;</td></tr>
+${bannerBlock}
+  <tr><td class="px" style="padding:34px 28px 8px;">
+    <p style="margin:0 0 10px;font-size:12px;font-weight:700;color:${accent};text-transform:uppercase;letter-spacing:0.06em;">Hey ${affiliateName} 👋</p>
+    <h1 class="h1" style="margin:0 0 18px;font-size:24px;font-weight:800;color:#0f172a;line-height:1.3;letter-spacing:-0.01em;">
+      ${headline}
+    </h1>
+    <div style="font-size:15px;line-height:1.7;color:#334155;">
+      ${bodyHtml}
+    </div>
+  </td></tr>
+${ctaBlock}${captionBlock}${assetsBlock}
+  <tr><td class="px" style="padding:26px 28px 6px;">
+    <div style="background:#eef2ff;border:1px solid #e0e7ff;border-radius:12px;padding:16px 18px;">
+      <div style="font-size:11px;font-weight:700;color:${accent};text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;">🔗 Your referral link</div>
+      <a href="${affiliateLink}" style="font-size:13px;color:#0f172a;font-weight:600;word-break:break-all;">${affiliateLink}</a>
+    </div>
+  </td></tr>
+
+  <tr><td style="padding:26px 28px 30px;border-top:1px solid #f1f5f9;margin-top:10px;">
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-top:16px;">
+      <tr>
+        <td style="vertical-align:middle;">
+          <img src="https://mindshiftbooks.shop/MINDSHIFT.jpg" width="18" height="18" alt="" style="width:18px;height:18px;border-radius:4px;opacity:0.6;">
+        </td>
+        <td style="padding-left:8px;vertical-align:middle;">
+          <span style="font-size:11.5px;font-weight:700;color:#94a3b8;">MindShift Books</span>
+        </td>
+      </tr>
+    </table>
+    <p style="margin:14px 0 0;font-size:12px;line-height:1.6;color:#94a3b8;">You're getting this because you're a MindShift Books affiliate. Reply to this email any time — including if you'd rather not get these updates.</p>
+  </td></tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>`;
+  }
+
+  function renderBroadcastPreview() {
+    const frame = document.getElementById('bPreviewFrame');
+    const p = collectBroadcastForm();
+    frame.srcdoc = buildEmailPreviewHtml(p);
+  }
+
+  // Live-update the preview as any field changes.
+  ['bHeadline', 'bBody', 'bColor', 'bBannerAlt', 'bCtaText', 'bCtaLink', 'bCaption',
+   'bA1Label', 'bA1Url', 'bA2Label', 'bA2Url', 'bA3Label', 'bA3Url'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', renderBroadcastPreview);
+  });
+
+  function updateRecipientCount() {
+    const el = document.getElementById('bRecipientCount');
+    if (!lastAffiliates.length) { el.textContent = ''; return; }
+    const n = lastAffiliates.filter(a => a.email && a.status === 'active' && !a.broadcastOptOut).length;
+    el.textContent = `Will send to ${n} affiliate${n === 1 ? '' : 's'}`;
+  }
+
+  function collectBroadcastForm() {
+    return {
+      headline: document.getElementById('bHeadline').value,
+      bodyText: document.getElementById('bBody').value,
+      accentColor: document.getElementById('bColor').value,
+      bannerImageUrl: document.getElementById('bBannerUrl').value,
+      bannerImageAlt: document.getElementById('bBannerAlt').value,
+      ctaText: document.getElementById('bCtaText').value,
+      ctaLink: document.getElementById('bCtaLink').value,
+      captionText: document.getElementById('bCaption').value,
+      asset1Label: document.getElementById('bA1Label').value, asset1Url: document.getElementById('bA1Url').value,
+      asset2Label: document.getElementById('bA2Label').value, asset2Url: document.getElementById('bA2Url').value,
+      asset3Label: document.getElementById('bA3Label').value, asset3Url: document.getElementById('bA3Url').value
+    };
+  }
+
+  function showBroadcastResult(msg, ok) {
+    const el = document.getElementById('bResult');
+    el.className = 'broadcast-result ' + (ok ? 'success' : 'error');
+    el.textContent = msg;
+  }
+
+  document.getElementById('bTestBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('bTestBtn');
+    const testEmail = prompt("Send the test to which address? (Leave blank to use the store's own inbox.)", '');
+    if (testEmail === null) return;
+    btn.disabled = true; btn.textContent = 'Sending…';
+    try {
+      const payload = collectBroadcastForm();
+      payload.testEmail = testEmail.trim();
+      const res = await fetch('/api/admin/affiliate-broadcast/test', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+      });
+      if (res.status === 401) { window.location.href = '/admin/login'; return; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Send failed');
+      showBroadcastResult(`Test sent to ${data.sentTo}. Check that inbox before sending to everyone.`, true);
+    } catch (err) {
+      showBroadcastResult(err.message || 'Could not send test email.', false);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Send test to myself';
+    }
+  });
+
+  document.getElementById('bSendBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('bSendBtn');
+    const n = lastAffiliates.filter(a => a.email && a.status === 'active' && !a.broadcastOptOut).length;
+    if (!confirm(`Send this to all ${n} affiliate${n === 1 ? '' : 's'}? This can't be undone — send yourself a test first if you haven't.`)) return;
+    btn.disabled = true; btn.textContent = 'Sending…';
+    try {
+      const payload = collectBroadcastForm();
+      const res = await fetch('/api/admin/affiliate-broadcast', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+      });
+      if (res.status === 401) { window.location.href = '/admin/login'; return; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Send failed');
+      const failedNote = data.failed ? ` (${data.failed} failed to send)` : '';
+      showBroadcastResult(`Sent to ${data.sent} of ${data.total} affiliates${failedNote}.`, data.failed === 0);
+    } catch (err) {
+      showBroadcastResult(err.message || 'Could not send broadcast.', false);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Send to all affiliates';
     }
   });
 </script>
