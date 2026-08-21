@@ -2692,6 +2692,11 @@ app.get('/api/admin/summary', async (req, res) => {
     const newAffiliatesSnap = await db.collection('affiliates').where('createdAt', '>=', since).count().get();
     const newAffiliates = newAffiliatesSnap.data().count;
 
+    // Every account ever created (users collection) — the platform's total
+    // registered-user count, separate from the affiliate program.
+    const usersCountSnap = await db.collection('users').count().get();
+    const totalUsers = usersCountSnap.data().count;
+
     const withTitles = map => Object.entries(map)
       .map(([id, count]) => ({ productId: id, title: (PRODUCTS[id] && PRODUCTS[id].title) || id, count }))
       .sort((a, b) => b.count - a.count);
@@ -2700,7 +2705,7 @@ app.get('/api/admin/summary', async (req, res) => {
       rangeDays: days,
       totals: {
         pageviews: totalPageviews, downloads: totalDownloads, orders: totalOrders, revenueNgn: totalRevenueNgn,
-        affiliateEcosystemViews, totalAffiliates, newAffiliates
+        affiliateEcosystemViews, totalAffiliates, newAffiliates, totalUsers
       },
       topPages: Object.entries(pageviewsByPath).map(([path, count]) => ({ path, count })).sort((a, b) => b.count - a.count).slice(0, 20),
       reviewViews: withTitles(reviewViewsByProduct),
