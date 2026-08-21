@@ -82,8 +82,14 @@ const apiLimiter = rateLimit({
 });
 app.use('/api/', apiLimiter);
 
-app.use(bodyParser.json({ limit: '100kb' })); // tightened from 1mb — no endpoint needs that much
-app.use(bodyParser.urlencoded({ extended: true, limit: '100kb' }));
+// 400kb (not 100kb) because the affiliate broadcast composer now embeds its
+// banner image as a base64 data URI directly in the JSON body — no upload
+// endpoint or storage bucket, the image just travels inside the request/
+// email itself. 180KB source image -> ~240KB base64 -> ~400kb gives headroom
+// for the rest of the broadcast payload. Every other endpoint still just
+// sends small JSON, so this stays effectively as tight as before for them.
+app.use(bodyParser.json({ limit: '400kb' }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '400kb' }));
 
 // Clean URLs: redirect any request that still ends in .html to the extension-less version
 app.get(/\.html$/, (req, res, next) => {
@@ -147,8 +153,10 @@ const BREVO_TEMPLATE_ID = Number(process.env.BREVO_TEMPLATE_ID || 1); // order r
 const BREVO_WELCOME_TEMPLATE_ID = Number(process.env.BREVO_WELCOME_TEMPLATE_ID || 2); // new-account welcome email
 const BREVO_BANK_OTP_TEMPLATE_ID = Number(process.env.BREVO_BANK_OTP_TEMPLATE_ID || 3); // bank-details-change verification code
 const BREVO_AFFILIATE_WELCOME_TEMPLATE_ID = Number(process.env.BREVO_AFFILIATE_WELCOME_TEMPLATE_ID || 4); // successful affiliate onboarding
+const BREVO_AFFILIATE_BROADCAST_TEMPLATE_ID = Number(process.env.BREVO_AFFILIATE_BROADCAST_TEMPLATE_ID || 5); // one template for every affiliate announcement — which blocks render depends on which content fields are sent, not on which template
 const BREVO_SENDER_NAME = process.env.BREVO_SENDER_NAME || 'Mindshift Books';
 const BREVO_SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'contact@mindshiftbooks.shop';
+const PUBLIC_SITE_URL = process.env.PUBLIC_URL || 'https://mindshiftbooks.shop'; // reused below to build each affiliate's own ?ref= link
 
 // Fires once, right after a brand-new account doc is created (see
 // /api/account/init). Fire-and-forget — a failed welcome email should never
@@ -239,6 +247,95 @@ async function sendAffiliateWelcomeEmail(email, name, code) {
   } catch (e) {
     console.warn('Brevo affiliate-welcome email send failed', e.message || e);
   }
+}
+
+// ---------------- Affiliate broadcast (announcements, launches, tips) ----------------
+// One Brevo template handles every send. The admin dashboard composes
+// `content` (headline + whichever optional blocks apply) and that's the
+// only thing that changes — no new template, ever, per announcement.
+
+function escapeHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// Plain textarea text -> safe paragraph HTML for the template's bodyHtml
+// slot. A blank line starts a new paragraph; single line breaks become <br>.
+function textToParagraphs(text) {
+  return String(text || '')
+    .split(/\n\s*\n/)
+    .map(block => block.trim())
+    .filter(Boolean)
+    .map(block => `<p style="margin:0 0 14px;">${escapeHtml(block).replace(/\n/g, '<br>')}</p>`)
+    .join('');
+}
+
+// Sends the broadcast to one affiliate. `content` is the shared payload
+// built once per broadcast; affiliateName/affiliateLink are per-recipient.
+async function sendAffiliateBroadcastEmail(affiliate, content) {
+  if (!BREVO_API_KEY || !affiliate.email) return { ok: false, error: 'Missing Brevo API key or recipient email.' };
+  try {
+    const emailRes = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        accept: 'application/json',
+        'api-key': BREVO_API_KEY,
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        sender: { name: BREVO_SENDER_NAME, email: BREVO_SENDER_EMAIL },
+        to: [{ email: affiliate.email, name: affiliate.name || undefined }],
+        templateId: BREVO_AFFILIATE_BROADCAST_TEMPLATE_ID,
+        params: {
+          affiliateName: affiliate.name || 'there',
+          affiliateLink: `${PUBLIC_SITE_URL}/?ref=${affiliate.code}`,
+          ...content
+        }
+      })
+    });
+    if (!emailRes.ok) {
+      const txt = await emailRes.text().catch(() => null);
+      return { ok: false, error: `Brevo ${emailRes.status}: ${(txt || '').slice(0, 160)}` };
+    }
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e.message || String(e)).slice(0, 160) };
+  }
+}
+
+// Validates the admin's form input and shapes it into the params object
+// every recipient's email will share. Returns { error } if invalid.
+function buildBroadcastContent(body) {
+  body = body || {};
+  const headline = String(body.headline || '').trim().slice(0, 200);
+  const bodyText = String(body.bodyText || '').trim().slice(0, 4000);
+  if (!headline) return { error: 'Headline is required.' };
+  if (!bodyText) return { error: 'Message is required.' };
+
+  const clean = (v, max) => { const s = String(v || '').trim().slice(0, max); return s || undefined; };
+  const content = {
+    headline,
+    bodyHtml: textToParagraphs(bodyText),
+    accentColor: /^#[0-9a-fA-F]{6}$/.test(body.accentColor || '') ? body.accentColor : '#4f46e5',
+    bannerImageUrl: clean(body.bannerImageUrl, 400000), // data URI (base64 image), not a short link
+    bannerImageAlt: clean(body.bannerImageAlt, 200),
+    ctaText: clean(body.ctaText, 60),
+    ctaLink: clean(body.ctaLink, 500),
+    captionText: clean(body.captionText, 2000),
+    asset1Label: clean(body.asset1Label, 60),
+    asset1Url: clean(body.asset1Url, 500),
+    asset2Label: clean(body.asset2Label, 60),
+    asset2Url: clean(body.asset2Url, 500),
+    asset3Label: clean(body.asset3Label, 60),
+    asset3Url: clean(body.asset3Url, 500)
+  };
+  // A CTA button needs both a label and a link, or neither.
+  if (content.ctaText && !content.ctaLink) return { error: 'Add a link for the CTA button, or clear the CTA text.' };
+  return { content };
 }
 
 // Admin dashboard credentials + session (cookie-based — no browser Basic Auth
@@ -2527,6 +2624,7 @@ app.get('/api/admin/affiliates', async (req, res) => {
       return {
         code: d.id,
         name: a.name, email: a.email, phone: a.phone, platform: a.platform, handle: a.handle,
+        status: a.status || 'active', broadcastOptOut: !!a.broadcastOptOut,
         bank: a.bank || null,
         clicks: a.clicks || 0, signups: a.signups || 0, sales: a.sales || 0,
         earned: a.earned || 0, paidOut: a.paidOut || 0, pendingPayout,
@@ -2614,6 +2712,61 @@ app.post('/api/admin/payouts/:id/mark-paid', async (req, res) => {
   } catch (err) {
     console.error('/api/admin/payouts/:id/mark-paid error', err);
     return res.status(500).json({ error: 'Could not update payout status' });
+  }
+});
+
+// ---------------- Admin: affiliate broadcast ----------------
+
+// POST /api/admin/affiliate-broadcast/test — sends the composed email to a
+// single inbox (defaults to the store's own sender address) so it can be
+// checked for real before it goes out to every affiliate.
+app.post('/api/admin/affiliate-broadcast/test', async (req, res) => {
+  try {
+    const { content, error } = buildBroadcastContent(req.body);
+    if (error) return res.status(400).json({ error });
+    const testEmail = (String(req.body && req.body.testEmail || '').trim()) || BREVO_SENDER_EMAIL;
+    const result = await sendAffiliateBroadcastEmail({ email: testEmail, name: 'Test', code: 'TESTCODE' }, content);
+    if (!result.ok) return res.status(502).json({ error: result.error || 'Send failed.' });
+    return res.json({ ok: true, sentTo: testEmail });
+  } catch (err) {
+    console.error('/api/admin/affiliate-broadcast/test error', err);
+    return res.status(500).json({ error: 'Could not send test email' });
+  }
+});
+
+// POST /api/admin/affiliate-broadcast — sends to every active affiliate who
+// hasn't opted out. Sends in small batches with a short pause between them
+// so a large list doesn't slam Brevo's rate limit all at once.
+app.post('/api/admin/affiliate-broadcast', async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const { content, error } = buildBroadcastContent(req.body);
+    if (error) return res.status(400).json({ error });
+
+    const snap = await db.collection('affiliates').get();
+    const recipients = snap.docs
+      .map(d => ({ code: d.id, ...d.data() }))
+      .filter(a => a.email && a.status === 'active' && !a.broadcastOptOut);
+
+    if (!recipients.length) return res.json({ ok: true, sent: 0, failed: 0, total: 0 });
+
+    const BATCH_SIZE = 5;
+    let sent = 0;
+    const failures = [];
+    for (let i = 0; i < recipients.length; i += BATCH_SIZE) {
+      const batch = recipients.slice(i, i + BATCH_SIZE);
+      const results = await Promise.all(batch.map(a => sendAffiliateBroadcastEmail(a, content)));
+      results.forEach((r, idx) => {
+        if (r.ok) sent++; else failures.push({ email: batch[idx].email, error: r.error });
+      });
+      if (i + BATCH_SIZE < recipients.length) await new Promise(r => setTimeout(r, 400));
+    }
+
+    console.log(`Affiliate broadcast by ${ADMIN_USER}: ${sent}/${recipients.length} sent — "${content.headline}"`);
+    return res.json({ ok: true, sent, failed: failures.length, total: recipients.length, failures: failures.slice(0, 10) });
+  } catch (err) {
+    console.error('/api/admin/affiliate-broadcast error', err);
+    return res.status(500).json({ error: 'Could not send broadcast' });
   }
 });
 
