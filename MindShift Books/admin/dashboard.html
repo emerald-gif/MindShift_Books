@@ -400,12 +400,35 @@
         </p>
       </div>
 
+      <div class="field" style="max-width:320px;">
+        <label>Send to</label>
+        <select id="bRecipientSelect"><option value="all">All affiliates</option></select>
+      </div>
+
       <div class="broadcast-actions">
         <button class="btn-secondary" id="bTestBtn">Send test to myself</button>
         <button class="btn-primary" id="bSendBtn">Send to all affiliates</button>
         <span class="recipient-count" id="bRecipientCount"></span>
       </div>
       <div class="broadcast-result" id="bResult"></div>
+    </div>
+
+    <!-- ── Promo kit send: fixed-content asset drops (Brevo template 6) ── -->
+    <div class="panel full-panel" style="padding-bottom:20px;">
+      <h2><span class="emoji">🎒</span> Promo Kit</h2>
+      <p class="empty" style="padding-top:0;margin-top:-8px;margin-bottom:14px;">
+        Sends the ready-made "Wave 1" kit for The Discipline Advantage — tracking link, all 9 slides, and 3 copy angles. The content is fixed in the Brevo template; only the recipient's name and link are personalized.
+      </p>
+      <div class="field" style="max-width:320px;">
+        <label>Send to</label>
+        <select id="pkRecipientSelect"><option value="all">All affiliates</option></select>
+      </div>
+      <div class="broadcast-actions">
+        <button class="btn-secondary" id="pkTestBtn">Send test to myself</button>
+        <button class="btn-primary" id="pkSendBtn">Send promo kit</button>
+        <span class="recipient-count" id="pkRecipientCount"></span>
+      </div>
+      <div class="broadcast-result" id="pkResult"></div>
     </div>
   </div>
 </div>
@@ -493,6 +516,7 @@
       const data = await res.json();
       lastAffiliates = data.affiliates || [];
       renderAffiliates(lastAffiliates);
+      populateRecipientSelects();
       updateRecipientCount();
     } catch (err) {
       tbody.innerHTML = `<tr><td colspan="6" class="empty">Could not load affiliates.</td></tr>`;
@@ -956,12 +980,58 @@ ${ctaBlock}${captionBlock}${assetsBlock}${affiliateLinkBlock}
     if (el) el.addEventListener('input', renderBroadcastPreview);
   });
 
+  // Fills both recipient <select> dropdowns (Updates + Promo Kit) with
+  // every affiliate that has an email on file, so the admin can pick "All
+  // affiliates" or one specific person from the same list either send uses.
+  function populateRecipientSelects() {
+    ['bRecipientSelect', 'pkRecipientSelect'].forEach(id => {
+      const sel = document.getElementById(id);
+      if (!sel) return;
+      const current = sel.value || 'all';
+      sel.innerHTML = '<option value="all">All affiliates</option>';
+      lastAffiliates.filter(a => a.email).forEach(a => {
+        const opt = document.createElement('option');
+        opt.value = a.code;
+        opt.textContent = `${a.name || a.email}${a.broadcastOptOut ? ' (opted out)' : ''}`;
+        sel.appendChild(opt);
+      });
+      sel.value = [...sel.options].some(o => o.value === current) ? current : 'all';
+    });
+  }
+
   function updateRecipientCount() {
     const el = document.getElementById('bRecipientCount');
+    const sel = document.getElementById('bRecipientSelect');
     if (!lastAffiliates.length) { el.textContent = ''; return; }
+    if (sel && sel.value !== 'all') {
+      const a = lastAffiliates.find(x => x.code === sel.value);
+      el.textContent = a ? `Will send to ${a.name || a.email} only` : '';
+      return;
+    }
     const n = lastAffiliates.filter(a => a.email && a.status === 'active' && !a.broadcastOptOut).length;
     el.textContent = `Will send to ${n} affiliate${n === 1 ? '' : 's'}`;
   }
+
+  function updatePromoKitRecipientCount() {
+    const el = document.getElementById('pkRecipientCount');
+    const sel = document.getElementById('pkRecipientSelect');
+    if (!el || !sel) return;
+    if (!lastAffiliates.length) { el.textContent = ''; return; }
+    if (sel.value !== 'all') {
+      const a = lastAffiliates.find(x => x.code === sel.value);
+      el.textContent = a ? `Will send to ${a.name || a.email} only` : '';
+      return;
+    }
+    const n = lastAffiliates.filter(a => a.email && a.status === 'active' && !a.broadcastOptOut).length;
+    el.textContent = `Will send to ${n} affiliate${n === 1 ? '' : 's'}`;
+  }
+  const pkRecipientSelectEl = document.getElementById('pkRecipientSelect');
+  if (pkRecipientSelectEl) pkRecipientSelectEl.addEventListener('change', updatePromoKitRecipientCount);
+  document.getElementById('bRecipientSelect').addEventListener('change', () => {
+    updateRecipientCount();
+    document.getElementById('bSendBtn').textContent =
+      document.getElementById('bRecipientSelect').value === 'all' ? 'Send to all affiliates' : 'Send to selected affiliate';
+  });
 
   function collectBroadcastForm() {
     return {
@@ -1009,11 +1079,17 @@ ${ctaBlock}${captionBlock}${assetsBlock}${affiliateLinkBlock}
 
   document.getElementById('bSendBtn').addEventListener('click', async () => {
     const btn = document.getElementById('bSendBtn');
-    const n = lastAffiliates.filter(a => a.email && a.status === 'active' && !a.broadcastOptOut).length;
-    if (!confirm(`Send this to all ${n} affiliate${n === 1 ? '' : 's'}? This can't be undone — send yourself a test first if you haven't.`)) return;
+    const recipientCode = document.getElementById('bRecipientSelect').value;
+    const confirmMsg = recipientCode === 'all'
+      ? (() => { const n = lastAffiliates.filter(a => a.email && a.status === 'active' && !a.broadcastOptOut).length;
+                  return `Send this to all ${n} affiliate${n === 1 ? '' : 's'}? This can't be undone — send yourself a test first if you haven't.`; })()
+      : `Send this to ${(lastAffiliates.find(a => a.code === recipientCode) || {}).name || 'this affiliate'} only?`;
+    if (!confirm(confirmMsg)) return;
+    const originalLabel = btn.textContent;
     btn.disabled = true; btn.textContent = 'Sending…';
     try {
       const payload = collectBroadcastForm();
+      payload.recipientCode = recipientCode;
       const res = await fetch('/api/admin/affiliate-broadcast', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
       });
@@ -1021,11 +1097,65 @@ ${ctaBlock}${captionBlock}${assetsBlock}${affiliateLinkBlock}
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Send failed');
       const failedNote = data.failed ? ` (${data.failed} failed to send)` : '';
-      showBroadcastResult(`Sent to ${data.sent} of ${data.total} affiliates${failedNote}.`, data.failed === 0);
+      showBroadcastResult(`Sent to ${data.sent} of ${data.total} affiliate${data.total === 1 ? '' : 's'}${failedNote}.`, data.failed === 0);
     } catch (err) {
       showBroadcastResult(err.message || 'Could not send broadcast.', false);
     } finally {
-      btn.disabled = false; btn.textContent = 'Send to all affiliates';
+      btn.disabled = false; btn.textContent = originalLabel;
+    }
+  });
+
+  // ── Promo kit send (fixed-content template) ──
+  function showPromoKitResult(msg, ok) {
+    const el = document.getElementById('pkResult');
+    el.className = 'broadcast-result ' + (ok ? 'success' : 'error');
+    el.textContent = msg;
+  }
+
+  const pkTestBtn = document.getElementById('pkTestBtn');
+  if (pkTestBtn) pkTestBtn.addEventListener('click', async () => {
+    const testEmail = prompt("Send the test to which address? (Leave blank to use the store's own inbox.)", '');
+    if (testEmail === null) return;
+    pkTestBtn.disabled = true; pkTestBtn.textContent = 'Sending…';
+    try {
+      const res = await fetch('/api/admin/promo-kit/send', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ recipientCode: 'all', testEmail: testEmail.trim() })
+      });
+      if (res.status === 401) { window.location.href = '/admin/login'; return; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Send failed');
+      showPromoKitResult(`Test send finished (${data.sent} sent).`, true);
+    } catch (err) {
+      showPromoKitResult(err.message || 'Could not send test email.', false);
+    } finally {
+      pkTestBtn.disabled = false; pkTestBtn.textContent = 'Send test to myself';
+    }
+  });
+
+  const pkSendBtn = document.getElementById('pkSendBtn');
+  if (pkSendBtn) pkSendBtn.addEventListener('click', async () => {
+    const recipientCode = document.getElementById('pkRecipientSelect').value;
+    const confirmMsg = recipientCode === 'all'
+      ? (() => { const n = lastAffiliates.filter(a => a.email && a.status === 'active' && !a.broadcastOptOut).length;
+                  return `Send the promo kit to all ${n} affiliate${n === 1 ? '' : 's'}? This can't be undone.`; })()
+      : `Send the promo kit to ${(lastAffiliates.find(a => a.code === recipientCode) || {}).name || 'this affiliate'} only?`;
+    if (!confirm(confirmMsg)) return;
+    pkSendBtn.disabled = true; pkSendBtn.textContent = 'Sending…';
+    try {
+      const res = await fetch('/api/admin/promo-kit/send', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ recipientCode })
+      });
+      if (res.status === 401) { window.location.href = '/admin/login'; return; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Send failed');
+      const failedNote = data.failed ? ` (${data.failed} failed to send)` : '';
+      showPromoKitResult(`Sent to ${data.sent} of ${data.total} affiliate${data.total === 1 ? '' : 's'}${failedNote}.`, data.failed === 0);
+    } catch (err) {
+      showPromoKitResult(err.message || 'Could not send promo kit.', false);
+    } finally {
+      pkSendBtn.disabled = false; pkSendBtn.textContent = 'Send promo kit';
     }
   });
 </script>
