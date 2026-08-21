@@ -522,8 +522,19 @@ document.addEventListener('DOMContentLoaded', loadFreeEbooksSwiper);
 })();
 
 // Render product grids from PRODUCTS (from server), split into "Our Books" and "Featured" sections
+// Fixed swiper order for the "New Release" row on the homepage. The Money
+// Mindset Gap is deliberately left out of this list — it's pulled out below
+// into its own standalone spotlight card instead of riding in the swiper.
+const OUR_BOOKS_SWIPER_ORDER = [
+  'the-discipline-advantage',
+  'getting-clients-without-ads',
+  'escape-your-environment-or-become-it'
+];
+const MMG_SPOTLIGHT_ID = 'the-money-mindset-gap';
+
 function renderProducts() {
   const ourGrid = document.getElementById('ourBooksGrid');
+  const mmgSpotlight = document.getElementById('mmgSpotlight');
   const featuredGrids = [
     document.getElementById('featuredGrid1'),
     document.getElementById('featuredGrid2'),
@@ -539,7 +550,12 @@ function renderProducts() {
 
   if (searchSection) searchSection.style.display = 'none';
 
-  const ourBooks = PRODUCTS.filter(p => p.category === 'ours');
+  const ourBooksById = {};
+  PRODUCTS.filter(p => p.category === 'ours').forEach(p => { ourBooksById[p.id] = p; });
+
+  const ourSwiperBooks = OUR_BOOKS_SWIPER_ORDER.map(id => ourBooksById[id]).filter(Boolean);
+  const mmgBook = ourBooksById[MMG_SPOTLIGHT_ID] || null;
+
   const featuredBooks = PRODUCTS.filter(p => p.category !== 'ours');
 
   // split the featured books into 3 even groups (3 books each, when there are 9)
@@ -550,8 +566,18 @@ function renderProducts() {
     groups.push(featuredBooks.slice(i * groupSize, (i + 1) * groupSize));
   }
 
-  if (ourSection) ourSection.style.display = ourBooks.length ? '' : 'none';
-  renderGrid(ourGrid, ourBooks, 'No books yet — check back soon.');
+  if (ourSection) ourSection.style.display = (ourSwiperBooks.length || mmgBook) ? '' : 'none';
+  renderGrid(ourGrid, ourSwiperBooks, 'No books yet — check back soon.');
+
+  if (mmgSpotlight) {
+    mmgSpotlight.innerHTML = '';
+    if (mmgBook) {
+      const card = document.createElement('div');
+      card.className = 'our-book-item our-standout';
+      card.innerHTML = productCardInner(mmgBook);
+      mmgSpotlight.appendChild(card);
+    }
+  }
 
   featuredSections.forEach((section, i) => {
     if (!section) return;

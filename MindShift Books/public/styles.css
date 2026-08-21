@@ -932,6 +932,25 @@ header {
   cursor: default;
 }
 
+/* When an .our-book-item sits inside the homepage "New Release" swiper
+   track, size it like the other horizontal swiper cards instead of
+   stretching to fill a grid column. */
+.swiper-track .our-book-item {
+  flex: 0 0 calc((100% - 10px) / 2.4);
+  scroll-snap-align: start;
+}
+@media (min-width: 640px) {
+  .swiper-track .our-book-item { flex-basis: calc((100% - 3*16px) / 3.4); }
+}
+@media (min-width: 1000px) {
+  .swiper-track .our-book-item { flex-basis: calc((100% - 4*18px) / 4.4); }
+}
+
+/* Money Mindset Gap standalone spotlight wrapper on the homepage */
+.mmg-spotlight-wrap {
+  margin-top: 22px;
+}
+
 .our-cover {
   width: 100%;
   aspect-ratio: 2/3;
@@ -996,46 +1015,55 @@ header {
    count), spotlight it full-width — big cover panel on top, info below,
    similar to a "featured pick" hero card. Background uses the site's own
    brand gradient (indigo → cyan) instead of an off-brand color. */
-.our-book-item:nth-child(odd):last-child {
+.our-book-item:nth-child(odd):last-child,
+.our-book-item.our-standout {
   grid-column: 1 / -1;
 }
-.our-book-item:nth-child(odd):last-child .our-spotlight-head {
+.our-book-item:nth-child(odd):last-child .our-spotlight-head,
+.our-book-item.our-standout .our-spotlight-head {
   display: flex;
 }
-.our-book-item:nth-child(odd):last-child .card-cover-wrap {
+.our-book-item:nth-child(odd):last-child .card-cover-wrap,
+.our-book-item.our-standout .card-cover-wrap {
   background: linear-gradient(160deg, #eef2ff 0%, #e0f7fa 100%);
   box-shadow: inset 0 0 0 1px rgba(79,70,229,0.10);
   border-radius: 20px;
   padding: 40px 20px 34px;
   margin-bottom: 6px;
 }
-.our-book-item:nth-child(odd):last-child .our-cover {
+.our-book-item:nth-child(odd):last-child .our-cover,
+.our-book-item.our-standout .our-cover {
   width: 210px;
   max-width: 55%;
   box-shadow: 0 22px 48px rgba(0,0,0,0.28), 0 6px 14px rgba(0,0,0,0.14);
 }
-.our-book-item:nth-child(odd):last-child .our-title {
+.our-book-item:nth-child(odd):last-child .our-title,
+.our-book-item.our-standout .our-title {
   font-size: 1.2rem;
   margin-top: 18px;
 }
-.our-book-item:nth-child(odd):last-child .our-author {
+.our-book-item:nth-child(odd):last-child .our-author,
+.our-book-item.our-standout .our-author {
   display: block;
   font-size: 0.9rem;
   font-weight: 600;
   color: #64748b;
   margin: -2px 0 4px;
 }
-.our-book-item:nth-child(odd):last-child .card-price-block {
+.our-book-item:nth-child(odd):last-child .card-price-block,
+.our-book-item.our-standout .card-price-block {
   align-items: center;
 }
-.our-book-item:nth-child(odd):last-child .our-actions {
+.our-book-item:nth-child(odd):last-child .our-actions,
+.our-book-item.our-standout .our-actions {
   flex-direction: row;
   justify-content: center;
   max-width: 380px;
   margin: 14px auto 0;
 }
 @media (max-width: 480px) {
-  .our-book-item:nth-child(odd):last-child .our-actions {
+  .our-book-item:nth-child(odd):last-child .our-actions,
+  .our-book-item.our-standout .our-actions {
     flex-direction: column;
     max-width: 100%;
   }

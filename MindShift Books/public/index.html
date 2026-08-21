@@ -117,11 +117,23 @@
       </div>
     </div>
 
-    <!-- our books grid -->
-    <div id="ourBooksGrid" class="product-grid" aria-live="polite">
-      <div class="skel-card"><div class="skel-img"></div><div class="skel-line w70"></div><div class="skel-line w45"></div><div class="skel-btn"></div></div>
-      <div class="skel-card"><div class="skel-img"></div><div class="skel-line w70"></div><div class="skel-line w45"></div><div class="skel-btn"></div></div>
+    <!-- our books swiper: Discipline Advantage -> Getting Clients Without Ads -> Escape Your Environment -->
+    <div class="swiper-wrap">
+      <div id="ourBooksGrid" class="swiper-track" data-swiper-group="ours" aria-live="polite">
+        <div class="skel-card"><div class="skel-img"></div><div class="skel-line w70"></div><div class="skel-line w45"></div><div class="skel-btn"></div></div>
+        <div class="skel-card"><div class="skel-img"></div><div class="skel-line w70"></div><div class="skel-line w45"></div><div class="skel-btn"></div></div>
+        <div class="skel-card"><div class="skel-img"></div><div class="skel-line w70"></div><div class="skel-line w45"></div><div class="skel-btn"></div></div>
+      </div>
+      <button type="button" class="swiper-arrow swiper-arrow--next" data-swiper-next aria-label="Next books">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><polyline points="9 18 15 12 9 6"></polyline></svg>
+      </button>
+      <button type="button" class="swiper-arrow swiper-arrow--prev" data-swiper-prev aria-label="Previous books">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><polyline points="15 18 9 12 15 6"></polyline></svg>
+      </button>
     </div>
+
+    <!-- Money Mindset Gap: standalone standout spotlight card -->
+    <div id="mmgSpotlight" class="mmg-spotlight-wrap" aria-live="polite"></div>
   </section>
 
   <section class="hero" id="freeEbooksSection" aria-labelledby="free-ebooks-h" style="margin-top:28px">
