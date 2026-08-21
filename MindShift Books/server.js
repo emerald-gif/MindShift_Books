@@ -155,6 +155,7 @@ const BREVO_WELCOME_TEMPLATE_ID = Number(process.env.BREVO_WELCOME_TEMPLATE_ID |
 const BREVO_BANK_OTP_TEMPLATE_ID = Number(process.env.BREVO_BANK_OTP_TEMPLATE_ID || 3); // bank-details-change verification code
 const BREVO_AFFILIATE_WELCOME_TEMPLATE_ID = Number(process.env.BREVO_AFFILIATE_WELCOME_TEMPLATE_ID || 4); // successful affiliate onboarding
 const BREVO_AFFILIATE_BROADCAST_TEMPLATE_ID = Number(process.env.BREVO_AFFILIATE_BROADCAST_TEMPLATE_ID || 5); // one template for every affiliate announcement — which blocks render depends on which content fields are sent, not on which template
+const BREVO_PROMO_KIT_TEMPLATE_ID = 6; // fixed-content "Wave 1" style promo kit email (slides + copy angles) — see promo-kit-template-6.html — matches Brevo template #6
 const BREVO_SENDER_NAME = process.env.BREVO_SENDER_NAME || 'Mindshift Books';
 const BREVO_SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'contact@mindshiftbooks.shop';
 const PUBLIC_SITE_URL = process.env.PUBLIC_URL || 'https://mindshiftbooks.shop'; // reused below to build each affiliate's own ?ref= link
@@ -343,6 +344,58 @@ async function sendAffiliateBroadcastEmail(affiliate, content) {
           affiliateName: affiliate.name || 'there',
           affiliateLink: `${PUBLIC_SITE_URL}/?ref=${affiliate.code}`,
           ...content
+        }
+      })
+    });
+    if (!emailRes.ok) {
+      const txt = await emailRes.text().catch(() => null);
+      return { ok: false, error: `Brevo ${emailRes.status}: ${(txt || '').slice(0, 160)}` };
+    }
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e.message || String(e)).slice(0, 160) };
+  }
+}
+
+// ---------------- Affiliate promo kit (fixed-content asset drops) ----------------
+// Unlike the generic broadcast above, a promo kit's content (copy angles,
+// slide links) is fixed per campaign and lives in the Brevo template itself
+// (template 6 — see promo-kit-template-6.html). Only per-recipient fields
+// (name, tracking link, the 9 slide URLs which are the same for everyone
+// but kept as params so they're easy to swap for the next campaign) are
+// sent here.
+const PROMO_KIT_ASSET_URLS = [
+  'https://drive.google.com/file/d/1rU-eKj3uxqmdqfI8GmfVgC9OD9eU_xU3/view?usp=drivesdk',
+  'https://drive.google.com/file/d/1ImSBSBHG8g4TCM0ZfZ4YQI1c06xsC5tq/view?usp=drivesdk',
+  'https://drive.google.com/file/d/1bhjxpJq8x_I16AhzqNGLLozdvTNseQqA/view?usp=drivesdk',
+  'https://drive.google.com/file/d/1E0--UVKC4Oq6U6Qs5HDUr2xd2wRufrIv/view?usp=drivesdk',
+  'https://drive.google.com/file/d/1_VNJBeOnLlWQQsfLoixk25Mct7b4FoKq/view?usp=drivesdk',
+  'https://drive.google.com/file/d/1vF3NlmbCj32H_pPEiqeMnHIVwz1v6J53/view?usp=drivesdk',
+  'https://drive.google.com/file/d/1JVByoKIfsX7jVE-G2_5cgnEvFJQSkncH/view?usp=drivesdk',
+  'https://drive.google.com/file/d/1ISp1dZZbf9KSvc5QA2ZQb4bXo5m1L6if/view?usp=drivesdk',
+  'https://drive.google.com/file/d/16rWME3D8ULaVqZpT1fW6d5S3FBh4ycdH/view?usp=drivesdk'
+];
+
+async function sendAffiliatePromoKitEmail(affiliate) {
+  if (!BREVO_API_KEY || !affiliate.email) return { ok: false, error: 'Missing Brevo API key or recipient email.' };
+  try {
+    const assetParams = {};
+    PROMO_KIT_ASSET_URLS.forEach((url, i) => { assetParams[`asset${i + 1}Url`] = url; });
+    const emailRes = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        accept: 'application/json',
+        'api-key': BREVO_API_KEY,
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        sender: { name: BREVO_SENDER_NAME, email: BREVO_SENDER_EMAIL },
+        to: [{ email: affiliate.email, name: affiliate.name || undefined }],
+        templateId: BREVO_PROMO_KIT_TEMPLATE_ID,
+        params: {
+          name: affiliate.name || 'there',
+          affiliateLink: `${PUBLIC_SITE_URL}/?ref=${affiliate.code}`,
+          ...assetParams
         }
       })
     });
@@ -2804,19 +2857,36 @@ app.post('/api/admin/affiliate-broadcast/test', async (req, res) => {
   }
 });
 
+// Shared by both the broadcast and promo-kit send endpoints: resolves who
+// gets the email. recipientCode === 'all' (or omitted) sends to every
+// active, non-opted-out affiliate; any other value is treated as one
+// specific affiliate's code, so the admin can send a single test-in-context
+// email — e.g. to re-send to one person whose first copy bounced — without
+// blasting the whole list.
+async function resolveBroadcastRecipients(recipientCode) {
+  const snap = await db.collection('affiliates').get();
+  const all = snap.docs.map(d => ({ code: d.id, ...d.data() }));
+  if (recipientCode && recipientCode !== 'all') {
+    const one = all.find(a => a.code === recipientCode);
+    if (!one) return { error: `No affiliate found with code "${recipientCode}".` };
+    if (!one.email) return { error: 'That affiliate has no email on file.' };
+    return { recipients: [one] };
+  }
+  return { recipients: all.filter(a => a.email && a.status === 'active' && !a.broadcastOptOut) };
+}
+
 // POST /api/admin/affiliate-broadcast — sends to every active affiliate who
-// hasn't opted out. Sends in small batches with a short pause between them
-// so a large list doesn't slam Brevo's rate limit all at once.
+// hasn't opted out, or to a single affiliate when recipientCode is set.
+// Sends in small batches with a short pause between them so a large list
+// doesn't slam Brevo's rate limit all at once.
 app.post('/api/admin/affiliate-broadcast', async (req, res) => {
   try {
     if (!db) return res.status(500).json({ error: 'Database unavailable' });
     const { content, error } = buildBroadcastContent(req.body);
     if (error) return res.status(400).json({ error });
 
-    const snap = await db.collection('affiliates').get();
-    const recipients = snap.docs
-      .map(d => ({ code: d.id, ...d.data() }))
-      .filter(a => a.email && a.status === 'active' && !a.broadcastOptOut);
+    const { recipients, error: recipientError } = await resolveBroadcastRecipients(req.body && req.body.recipientCode);
+    if (recipientError) return res.status(400).json({ error: recipientError });
 
     if (!recipients.length) return res.json({ ok: true, sent: 0, failed: 0, total: 0 });
 
@@ -2837,6 +2907,45 @@ app.post('/api/admin/affiliate-broadcast', async (req, res) => {
   } catch (err) {
     console.error('/api/admin/affiliate-broadcast error', err);
     return res.status(500).json({ error: 'Could not send broadcast' });
+  }
+});
+
+// POST /api/admin/promo-kit/send — sends the fixed-content "Wave 1" promo
+// kit email (Brevo template 6). Body: { recipientCode: 'all' | '<code>' },
+// or { testEmail: '...' } to send a single test copy to any inbox first.
+app.post('/api/admin/promo-kit/send', async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+
+    const testEmail = String((req.body && req.body.testEmail) || '').trim();
+    if (testEmail || (req.body && req.body.testEmail === '')) {
+      const to = testEmail || BREVO_SENDER_EMAIL;
+      const result = await sendAffiliatePromoKitEmail({ email: to, name: 'Test', code: 'TESTCODE' });
+      if (!result.ok) return res.status(502).json({ error: result.error || 'Send failed.' });
+      return res.json({ ok: true, sent: 1, failed: 0, total: 1, sentTo: to });
+    }
+
+    const { recipients, error: recipientError } = await resolveBroadcastRecipients(req.body && req.body.recipientCode);
+    if (recipientError) return res.status(400).json({ error: recipientError });
+    if (!recipients.length) return res.json({ ok: true, sent: 0, failed: 0, total: 0 });
+
+    const BATCH_SIZE = 5;
+    let sent = 0;
+    const failures = [];
+    for (let i = 0; i < recipients.length; i += BATCH_SIZE) {
+      const batch = recipients.slice(i, i + BATCH_SIZE);
+      const results = await Promise.all(batch.map(a => sendAffiliatePromoKitEmail(a)));
+      results.forEach((r, idx) => {
+        if (r.ok) sent++; else failures.push({ email: batch[idx].email, error: r.error });
+      });
+      if (i + BATCH_SIZE < recipients.length) await new Promise(r => setTimeout(r, 400));
+    }
+
+    console.log(`Promo kit send by ${ADMIN_USER}: ${sent}/${recipients.length} sent`);
+    return res.json({ ok: true, sent, failed: failures.length, total: recipients.length, failures: failures.slice(0, 10) });
+  } catch (err) {
+    console.error('/api/admin/promo-kit/send error', err);
+    return res.status(500).json({ error: 'Could not send promo kit email' });
   }
 });
 
