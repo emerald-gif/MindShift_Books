@@ -935,6 +935,50 @@ Sometimes, you need to stop undervaluing the value you already create.
 Know Your Worth. Charge Your Worth. Keep Your Worth.`
   },
 
+  'the-discipline-advantage': {
+    id: 'the-discipline-advantage',
+    title: 'The Discipline Advantage',
+    priceUSD: null,
+    priceNGN: 4000,
+    originalPriceNGN: 12000,
+    coverPath: 'tda.jpg',
+    pdfPath: 'public/files/The_Discipline_Advantage.pdf',
+    previewUrl: '/tda-preview.pdf',
+    reviewImages: [], // no reviews yet, add later
+    category: 'ours',
+    author: 'MindShift Books',
+    genre: 'Personal Development',
+    language: 'English',
+    pages: 70,
+    description: `THE DISCIPLINE ADVANTAGE
+
+Why Talented People Never Finish What They Start — And How to Build the System That Makes Discipline Automatic
+
+You know what you need to do. You may even be talented enough to do it well.
+
+So why do you keep starting things and not finishing them?
+
+The Discipline Advantage challenges the idea that inconsistency is simply a lack of motivation, willpower or ambition. It argues that the real problem often lies deeper—in the systems, identity, environment and behavioural patterns that take over when the initial excitement disappears.
+
+This book explores the Discipline Advantage Gap: the distance between what you intend to do and what you consistently follow through on.
+
+Inside, you'll explore:
+
+Why willpower was never designed to carry your goals
+The hidden scripts influencing your follow-through
+Why talented people often start everything but finish nothing
+The difference between comfort discipline and real discipline
+How your identity influences what you can consistently sustain
+Why progress can trigger self-sabotage
+How to build systems that keep you moving even when motivation disappears
+How to design your environment so the right action becomes easier
+How to recover after falling off and avoid turning one missed day into a lost month
+
+This is not a hustle-culture book about waking up at 5 AM or trying harder. It is a practical framework for understanding why your plans break down—and building a system that works even on the days you don't feel like showing up.
+
+START LESS. FINISH MORE. BUILD WHAT LASTS.`
+  },
+
   // ---------------- FEATURED BOOKS BY OTHER AUTHORS ----------------
   'mindshift-101': {
     id: 'mindshift-101',
