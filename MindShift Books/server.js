@@ -733,7 +733,7 @@ const PRODUCTS = {
     originalPriceNGN: 12000,
     coverPath: 'tda.jpg',
     pdfPath: 'public/files/The_Discipline_Advantage.pdf',
-    previewUrl: '/tda-preview.pdf',
+    previewUrl: '/tda-preview',
     reviewImages: [], // no reviews yet, add later
     category: 'ours',
     author: 'MindShift Books',
@@ -2325,6 +2325,10 @@ app.get('/escape-preview', (req, res) => {
 
 app.get('/mmg-preview', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'mmg-preview.html'));
+});
+
+app.get('/tda-preview', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'tda-preview.html'));
 });
 
 // Other pages — explicit clean routes (no .html in the URL)
