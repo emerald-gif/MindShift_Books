@@ -5,7 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Who Am I Challenge | MindShift Books</title>
 <meta name="description" content="5 quick questions. 60 seconds. Find out who you are."/>
-<link rel="shortcut icon" href="MINDSHIFT.jpg" type="image/jpg">
+<meta property="og:title" content="The Who Am I Challenge | MindShift Books"/>
+<meta property="og:description" content="5 quick questions. 60 seconds. Find out who you are."/>
+<meta property="og:image" content="https://mindshiftbooks.shop/whoami-hero.png"/>
+<meta property="og:type" content="website"/>
+<meta property="og:url" content="https://mindshiftbooks.shop/whoami"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="The Who Am I Challenge | MindShift Books"/>
+<meta name="twitter:description" content="5 quick questions. 60 seconds. Find out who you are."/>
+<meta name="twitter:image" content="https://mindshiftbooks.shop/whoami-hero.png"/>
+<link rel="shortcut icon" href="MINDSHIFT.jpg" type="image/jpeg">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 <style>
@@ -93,6 +102,14 @@
     font-size: 0.95rem; font-family: inherit; color: #0f172a; margin-bottom: 16px; text-align: center;
   }
   .wa-name-input:focus { outline: none; border-color: #06b6d4; }
+
+  .wa-loading-card { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 46px 18px; }
+  .wa-spinner {
+    width: 34px; height: 34px; border-radius: 50%; border: 3px solid #edece6; border-top-color: #0348e3;
+    animation: waSpin 0.8s linear infinite; margin-bottom: 16px;
+  }
+  @keyframes waSpin { to { transform: rotate(360deg); } }
+  .wa-loading-text { font-size: 0.85rem; font-weight: 700; color: #64748b; text-align: center; }
 
   /* Result card — same light system as question cards */
   .wa-result-card .rc-logo-wrap {
@@ -366,11 +383,25 @@ let answers = [];
 let userName = '';
 const waRoot = document.getElementById('waRoot');
 
+// Escapes user-entered text before it's dropped into innerHTML templates,
+// since the name field is free text and shouldn't be trusted as markup.
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// Called after every screen change so the person always lands at the top
+// of the card, even if they'd scrolled down on a long question.
+function scrollCardIntoView() {
+  requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
+}
+
 function renderIntro() {
   waRoot.innerHTML = `
     <div class="wa-stage">
       <div class="wa-card">
-        <div class="wa-hero-img-wrap"><img src="whoami-hero.png" alt="" class="wa-hero-img"></div>
+        <div class="wa-hero-img-wrap"><img src="whoami-hero.png" alt="" class="wa-hero-img" onerror="this.closest('.wa-hero-img-wrap').style.display='none'"></div>
         <div class="wa-start-title">The Who Am I Challenge</div>
         <div class="wa-start-sub">5 quick questions. Pick whatever feels most like you — your gut answer is the accurate one.</div>
         <button type="button" class="wa-start-btn" id="waIntroBtn">Start the Challenge</button>
@@ -382,6 +413,7 @@ function renderIntro() {
       </div>
     </div>`;
   document.getElementById('waIntroBtn').addEventListener('click', renderNameStep);
+  scrollCardIntoView();
 }
 
 function renderNameStep() {
@@ -407,6 +439,7 @@ function renderNameStep() {
     QUESTIONS = shuffled(QUESTION_BANK).slice(0, QUESTIONS_PER_ROUND);
     renderQuestion();
   });
+  scrollCardIntoView();
 }
 
 function renderQuestion() {
@@ -453,8 +486,36 @@ function renderQuestion() {
   document.getElementById('waNextBtn').addEventListener('click', () => {
     if (answers[currentQ] === undefined) return;
     if (currentQ < QUESTIONS.length - 1) { currentQ++; renderQuestion(); }
-    else renderResult();
+    else renderLoading();
   });
+  scrollCardIntoView();
+}
+
+const LOADING_STEPS = [
+  'Reading your answers…',
+  'Spotting the pattern…',
+  'Matching your archetype…',
+  'Almost there…'
+];
+
+function renderLoading() {
+  waRoot.innerHTML = `
+    <div class="wa-stage">
+      <div class="wa-card wa-loading-card">
+        <div class="wa-spinner"></div>
+        <div class="wa-loading-text" id="waLoadingText">${LOADING_STEPS[0]}</div>
+      </div>
+    </div>`;
+
+  const textEl = document.getElementById('waLoadingText');
+  let step = 0;
+  const stepTimer = setInterval(() => {
+    step++;
+    if (step < LOADING_STEPS.length && textEl) textEl.textContent = LOADING_STEPS[step];
+  }, 550);
+
+  setTimeout(() => { clearInterval(stepTimer); renderResult(); }, 2200);
+  scrollCardIntoView();
 }
 
 function getWinningArchetype() {
@@ -469,7 +530,7 @@ function renderResult() {
   const key = getWinningArchetype();
   const a = ARCHETYPES[key];
   const shareUrl = window.location.origin + '/whoami';
-  const displayName = userName || 'You';
+  const displayName = escapeHtml(userName || 'You');
   const caption = `I'm ${a.name} ${a.emoji} — took me 60 seconds to find out. What are you? ${shareUrl}`;
 
   const encUrl = encodeURIComponent(shareUrl);
@@ -643,6 +704,7 @@ function renderResult() {
   });
 
   document.getElementById('waRetakeBtn').addEventListener('click', renderIntro);
+  scrollCardIntoView();
 }
 
 renderIntro();
