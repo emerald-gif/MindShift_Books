@@ -2292,22 +2292,28 @@ app.post('/api/challenge/day', requireUser, async (req, res) => {
 
     const ref = db.collection('challengeProgress').doc(req.uid);
     const snap = await ref.get();
-    if (!snap.exists) {
-      await ref.set({ startedAt: admin.firestore.Timestamp.now(), days: {} });
-    }
-    const existingDays = (snap.exists && snap.data().days) || {};
+    const existing = snap.exists ? snap.data() : {};
+    const existingDays = existing.days || {};
+
     if (day > 1 && !existingDays[String(day - 1)]) {
       return res.status(400).json({ error: 'Complete the previous day first.' });
     }
 
+    // Explicit read-modify-write on the full days map — avoids any ambiguity
+    // around dot-path field merging and guarantees the new day actually lands.
+    const updatedDays = { ...existingDays };
+    updatedDays[String(day)] = {
+      notes, mood, tally,
+      completedAt: admin.firestore.Timestamp.now()
+    };
+
     await ref.set({
-      [`days.${day}`]: {
-        notes, mood, tally,
-        completedAt: admin.firestore.Timestamp.now()
-      }
+      startedAt: existing.startedAt || admin.firestore.Timestamp.now(),
+      days: updatedDays
     }, { merge: true });
 
-    return res.json({ ok: true });
+    console.log(`[CHALLENGE] uid=${req.uid} saved day=${day} totalDaysNow=${Object.keys(updatedDays).length}`);
+    return res.json({ ok: true, days: updatedDays });
   } catch (err) {
     console.error('/api/challenge/day error', err);
     return res.status(500).json({ error: "Could not save today's entry." });
