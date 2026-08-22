@@ -175,7 +175,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
-const QUESTIONS = [
+const QUESTION_BANK = [
   { q: "Think about the thing you keep starting over. What's really going on?",
     options: [
       { text: "I get excited and dive in hard — then somewhere in the middle, the excitement just leaves", type: "sprinter" },
@@ -210,8 +210,141 @@ const QUESTIONS = [
       { text: "They stop shrinking the number before anyone even pushes back", type: "underpaid" },
       { text: "They actually leave the room they'd already outgrown", type: "outgrower" },
       { text: "They stop waiting to be noticed and start asking directly", type: "hustler" }
+    ] },
+  { q: "When something finally goes right, what's the first thing that happens in your head?",
+    options: [
+      { text: "I'm already thinking about the next thing I could start", type: "sprinter" },
+      { text: "I wonder if I should've asked for more before agreeing to this", type: "underpaid" },
+      { text: "I notice it doesn't excite me the way it used to", type: "outgrower" },
+      { text: "I hope someone who matters actually saw it happen", type: "hustler" }
+    ] },
+  { q: "What does \"busy\" actually mean, when you're the one saying it?",
+    options: [
+      { text: "Busy starting things — not necessarily busy finishing them", type: "sprinter" },
+      { text: "Busy working for less than it's actually worth", type: "underpaid" },
+      { text: "Busy staying somewhere I've already outgrown", type: "outgrower" },
+      { text: "Busy doing the work quietly, waiting to be seen", type: "hustler" }
+    ] },
+  { q: "Your notes app or drafts folder says a lot about you. What's it mostly full of?",
+    options: [
+      { text: "Half-finished ideas I was completely sure about at 11pm", type: "sprinter" },
+      { text: "Prices I typed out, then deleted before sending", type: "underpaid" },
+      { text: "Plans to leave that I never actually act on", type: "outgrower" },
+      { text: "Messages to people I drafted and never sent", type: "hustler" }
+    ] },
+  { q: "What's the compliment that quietly gets under your skin?",
+    options: [
+      { text: "\"You always have so many ideas\" — and none of them finished", type: "sprinter" },
+      { text: "\"You're so good at what you do\" — so why am I still broke", type: "underpaid" },
+      { text: "\"You seem so comfortable here\" — I'm really not", type: "outgrower" },
+      { text: "\"You're so hardworking\" — so why isn't anyone hiring me", type: "hustler" }
+    ] },
+  { q: "If your friends had to sum up your year in one sentence, it'd probably be:",
+    options: [
+      { text: "\"Always starting something new\"", type: "sprinter" },
+      { text: "\"Always working, never really cashing in\"", type: "underpaid" },
+      { text: "\"Still there, even though we all know they want out\"", type: "outgrower" },
+      { text: "\"Grinding quietly, waiting for their moment\"", type: "hustler" }
+    ] },
+  { q: "What's a habit you have that you honestly can't explain the origin of?",
+    options: [
+      { text: "Signing up for one more course or tool before finishing the last one", type: "sprinter" },
+      { text: "Quoting a lower price than the number that came to mind first", type: "underpaid" },
+      { text: "Staying close to people or places you outgrew years ago", type: "outgrower" },
+      { text: "Waiting for permission before pitching yourself", type: "hustler" }
+    ] },
+  { q: "If you're honest, what does \"progress\" actually look like for you right now?",
+    options: [
+      { text: "A lot of movement — hard to point to what's actually finished", type: "sprinter" },
+      { text: "More work, roughly the same pay", type: "underpaid" },
+      { text: "Staying the same while everything around you changes", type: "outgrower" },
+      { text: "Working harder, hoping it eventually gets seen", type: "hustler" }
+    ] },
+  { q: "What's the one thing you'd change first if no one was watching or judging?",
+    options: [
+      { text: "Actually finish something before starting the next thing", type: "sprinter" },
+      { text: "Charge what I actually think I'm worth", type: "underpaid" },
+      { text: "Leave the thing I've clearly outgrown", type: "outgrower" },
+      { text: "Ask directly instead of waiting to be noticed", type: "hustler" }
+    ] },
+  { q: "Picture the version of you who has \"made it.\" What do they actually do differently day to day?",
+    options: [
+      { text: "Finishes what they start, even after the excitement fades", type: "sprinter" },
+      { text: "Names their price without flinching", type: "underpaid" },
+      { text: "Isn't in the same room anymore", type: "outgrower" },
+      { text: "Puts themselves forward instead of waiting", type: "hustler" }
+    ] },
+  { q: "What's a pattern someone close to you has pointed out — that you kind of brushed off?",
+    options: [
+      { text: "\"You start so many things\"", type: "sprinter" },
+      { text: "\"You're worth more than you charge\"", type: "underpaid" },
+      { text: "\"You've been saying you want out for years\"", type: "outgrower" },
+      { text: "\"You work so hard, nobody even knows it\"", type: "hustler" }
+    ] },
+  { q: "Be honest — how many things do you currently have \"in progress\"?",
+    options: [
+      { text: "A lot. I start fast, I just don't always finish", type: "sprinter" },
+      { text: "Not many, but I do them properly — for less than I should charge", type: "underpaid" },
+      { text: "One thing, and I've been doing it a bit too long", type: "outgrower" },
+      { text: "A few, quietly, hoping someone notices", type: "hustler" }
+    ] },
+  { q: "When you finish a job, what's usually going through your mind about the money?",
+    options: [
+      { text: "I don't really think about money — I'm already onto the next idea", type: "sprinter" },
+      { text: "I did more work than what I actually got paid for", type: "underpaid" },
+      { text: "I barely think about the money, I think about how bored I am with the work", type: "outgrower" },
+      { text: "I wonder why nobody's calling me for bigger jobs yet", type: "hustler" }
+    ] },
+  { q: "Pick the sentence that sounds most like something you'd say:",
+    options: [
+      { text: "\"I have so many ideas, I just need to actually finish one\"", type: "sprinter" },
+      { text: "\"I'm good at what I do, I just don't charge enough\"", type: "underpaid" },
+      { text: "\"I think I've outgrown this place, job, or group\"", type: "outgrower" },
+      { text: "\"I work hard, nobody really sees it\"", type: "hustler" }
+    ] },
+  { q: "What usually stops you from getting where you actually want to be?",
+    options: [
+      { text: "I lose interest before I finish", type: "sprinter" },
+      { text: "I don't ask for what I'm worth", type: "underpaid" },
+      { text: "I stay too long in situations I've already outgrown", type: "outgrower" },
+      { text: "I wait instead of speaking up for myself", type: "hustler" }
+    ] },
+  { q: "If someone watched your daily routine closely, what would stand out most?",
+    options: [
+      { text: "I try a lot of new things but rarely stick with one", type: "sprinter" },
+      { text: "I work hard but don't earn what I should", type: "underpaid" },
+      { text: "I do the same thing every day, even though I want something different", type: "outgrower" },
+      { text: "I work quietly, hoping to be discovered", type: "hustler" }
+    ] },
+  { q: "How do you usually feel when a friend gets a big win?",
+    options: [
+      { text: "Happy for them, but it makes me want to start something new too", type: "sprinter" },
+      { text: "Happy for them, but it makes me wonder if I'm underpricing myself", type: "underpaid" },
+      { text: "Happy for them, but it reminds me I want to leave where I am", type: "outgrower" },
+      { text: "Happy for them, but I wish someone would notice me like that", type: "hustler" }
+    ] },
+  { q: "Simple question — what do you struggle with the most?",
+    options: [
+      { text: "Finishing what I start", type: "sprinter" },
+      { text: "Charging enough for what I do", type: "underpaid" },
+      { text: "Leaving something I've clearly outgrown", type: "outgrower" },
+      { text: "Getting noticed for my work", type: "hustler" }
     ] }
 ];
+
+// Fisher–Yates shuffle, non-mutating — used so a retake or a friend taking
+// it right after doesn't land on the exact same 5 questions.
+function shuffled(arr) {
+  const copy = arr.slice();
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+const QUESTIONS_PER_ROUND = 5;
+let QUESTIONS = shuffled(QUESTION_BANK).slice(0, QUESTIONS_PER_ROUND);
 
 const ARCHETYPES = {
   sprinter: { name: "The Sprinter", emoji: "\ud83c\udfc3",
@@ -267,6 +400,7 @@ function renderNameStep() {
   btn.addEventListener('click', () => {
     userName = input.value.trim().slice(0, 24);
     currentQ = 0; answers = [];
+    QUESTIONS = shuffled(QUESTION_BANK).slice(0, QUESTIONS_PER_ROUND);
     renderQuestion();
   });
 }
