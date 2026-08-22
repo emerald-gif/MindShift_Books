@@ -21,6 +21,10 @@
   }
   .wa-wrap { width: 100%; max-width: 400px; }
 
+  .wa-brand-strip { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 14px; }
+  .wa-brand-logo { width: 26px; height: 26px; border-radius: 7px; object-fit: cover; }
+  .wa-brand-name { font-size: 0.9rem; font-weight: 800; color: #0f172a; letter-spacing: 0.01em; }
+
   .wa-stage { position: relative; }
   .wa-stage::before, .wa-stage::after {
     content: ''; position: absolute; left: 50%; border-radius: 20px; background: #fff;
@@ -166,6 +170,10 @@
 <body>
 
 <div class="wa-wrap">
+  <div class="wa-brand-strip">
+    <img src="MINDSHIFT.jpg" alt="" class="wa-brand-logo">
+    <span class="wa-brand-name">MindShift Books</span>
+  </div>
   <div id="waRoot"></div>
 </div>
 
