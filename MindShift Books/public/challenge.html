@@ -325,10 +325,13 @@ function render() {
     });
   });
 
+  let chSaveInFlight = false;
   document.getElementById('chSaveBtn').addEventListener('click', async () => {
+    if (chSaveInFlight) return; // hard guard against double/triple taps
     const btn = document.getElementById('chSaveBtn');
     const errEl = document.getElementById('chError');
     errEl.style.display = 'none';
+    chSaveInFlight = true;
     btn.disabled = true;
     btn.textContent = 'Saving...';
     const payload = { day: day.num, mood: selectedMood.value || '' };
@@ -337,15 +340,27 @@ function render() {
 
     try {
       const token = await window.MSBAuth.getIdToken();
+      if (!token) throw new Error('You got signed out — please sign in again and retry.');
+      console.log('[challenge] saving day', payload);
       const res = await fetch('/api/challenge/day', { method: 'POST', headers: apiHeaders(token), body: JSON.stringify(payload) });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Save failed');
+      let data = {};
+      try { data = await res.json(); } catch (parseErr) { /* non-JSON response */ }
+      console.log('[challenge] save response', res.status, data);
+      if (!res.ok) throw new Error(data.error || `Save failed (status ${res.status}). Please try again.`);
       await loadProgress();
     } catch (e) {
-      errEl.textContent = e.message || 'Something went wrong. Please try again.';
+      console.error('[challenge] save error', e);
+      errEl.textContent = '\u26a0\ufe0f ' + (e.message || 'Something went wrong. Please try again.');
       errEl.style.display = 'block';
+      errEl.style.fontWeight = '700';
+      errEl.style.background = '#fef2f2';
+      errEl.style.border = '1px solid #fecaca';
+      errEl.style.borderRadius = '10px';
+      errEl.style.padding = '10px 12px';
       btn.disabled = false;
       btn.textContent = `Mark Day ${day.num} Complete`;
+    } finally {
+      chSaveInFlight = false;
     }
   });
 }
@@ -361,25 +376,43 @@ function renderReflectionForm(dotsHtml, doneHtml) {
       <div class="ch-error" id="chReflectionError">Something went wrong. Please try again.</div>
     </div>`;
 
+  let chReflectionInFlight = false;
   document.getElementById('chReflectionBtn').addEventListener('click', async () => {
+    if (chReflectionInFlight) return;
     const btn = document.getElementById('chReflectionBtn');
     const errEl = document.getElementById('chReflectionError');
     const text = (document.getElementById('chReflection').value || '').trim();
-    if (!text) { errEl.textContent = 'Write a few words before finishing.'; errEl.style.display = 'block'; return; }
+    if (!text) {
+      errEl.textContent = 'Write a few words before finishing.';
+      errEl.style.display = 'block';
+      return;
+    }
     errEl.style.display = 'none';
+    chReflectionInFlight = true;
     btn.disabled = true;
     btn.textContent = 'Saving...';
     try {
       const token = await window.MSBAuth.getIdToken();
+      if (!token) throw new Error('You got signed out — please sign in again and retry.');
       const res = await fetch('/api/challenge/reflection', { method: 'POST', headers: apiHeaders(token), body: JSON.stringify({ reflection: text }) });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Save failed');
+      let data = {};
+      try { data = await res.json(); } catch (parseErr) { /* non-JSON response */ }
+      console.log('[challenge] reflection response', res.status, data);
+      if (!res.ok) throw new Error(data.error || `Save failed (status ${res.status}). Please try again.`);
       await loadProgress();
     } catch (e) {
-      errEl.textContent = e.message || 'Something went wrong. Please try again.';
+      console.error('[challenge] reflection error', e);
+      errEl.textContent = '\u26a0\ufe0f ' + (e.message || 'Something went wrong. Please try again.');
       errEl.style.display = 'block';
+      errEl.style.fontWeight = '700';
+      errEl.style.background = '#fef2f2';
+      errEl.style.border = '1px solid #fecaca';
+      errEl.style.borderRadius = '10px';
+      errEl.style.padding = '10px 12px';
       btn.disabled = false;
       btn.textContent = 'Finish the Challenge';
+    } finally {
+      chReflectionInFlight = false;
     }
   });
 }
