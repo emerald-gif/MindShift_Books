@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Who Am I Challenge | MindShift Books</title>
+<meta name="description" content="5 quick questions. 60 seconds. Find out who you are."/>
+<link rel="shortcut icon" href="MINDSHIFT.jpg" type="image/jpg">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: 'Inter', sans-serif;
+    background-color: #f1f0ea;
+    background-image: linear-gradient(90deg, rgba(15,23,42,0.035) 1px, transparent 1px);
+    background-size: 34px 100%;
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 22px 16px;
+  }
+  .wa-wrap { width: 100%; max-width: 400px; }
+
+  .wa-stage { position: relative; }
+  .wa-stage::before, .wa-stage::after {
+    content: ''; position: absolute; left: 50%; border-radius: 20px; background: #fff;
+    box-shadow: 0 6px 18px rgba(15,23,42,0.05);
+  }
+  .wa-stage::before { width: 88%; height: 100%; top: 0; bottom: auto; transform: translateX(-50%) rotate(-5.5deg); opacity: 0.55; }
+  .wa-stage::after { width: 92%; height: 100%; top: 0; bottom: auto; transform: translateX(-50%) rotate(1.5deg); opacity: 0.8; }
+
+  @keyframes waCardIn {
+    from { opacity: 0; transform: translateY(16px) rotate(-1.5deg); }
+    to { opacity: 1; transform: translateY(0) rotate(-1.1deg); }
+  }
+  .wa-card {
+    animation: waCardIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+    transform: rotate(-1.1deg);
+  }
+
+  .wa-card {
+    position: relative; background: #fff; border-radius: 20px; padding: 20px 18px;
+    box-shadow: 0 20px 40px rgba(15,23,42,0.08); z-index: 2;
+  }
+
+  .wa-segs { display: flex; gap: 5px; margin-bottom: 16px; }
+  .wa-seg { flex: 1; height: 4px; border-radius: 999px; background: #e7e5df; }
+  .wa-seg.filled { background: #0f172a; }
+
+  .wa-qlabel { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; color: #06b6d4; text-transform: uppercase; margin-bottom: 7px; }
+  .wa-qtext { font-size: 1.05rem; font-weight: 800; color: #0f172a; line-height: 1.3; margin-bottom: 14px; }
+  .wa-select-hint { font-size: 0.66rem; font-weight: 700; color: #94a3b8; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 9px; }
+
+  .wa-option {
+    display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+    padding: 11px 12px; border-radius: 12px; border: 1.5px solid #edece6; background: #fff;
+    font-size: 0.84rem; color: #1e293b; margin-bottom: 7px; cursor: pointer; font-family: inherit; line-height: 1.32;
+  }
+  .wa-option .dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid #cbd5c8; flex-shrink: 0; position: relative; }
+  .wa-option.selected { border-color: #0f172a; background: #f8faf8; }
+  .wa-option.selected .dot { border-color: #0f172a; }
+  .wa-option.selected .dot::after { content: ''; position: absolute; inset: 3px; border-radius: 50%; background: #0f172a; }
+
+  .wa-nav-row { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; }
+  .wa-back-btn { background: none; border: none; font-family: inherit; font-size: 0.85rem; font-weight: 700; color: #94a3b8; cursor: pointer; padding: 8px 4px; }
+  .wa-back-btn:disabled { visibility: hidden; }
+  .wa-next-btn {
+    background: linear-gradient(90deg,#4f46e5,#06b6d4); color: #fff; border: none; border-radius: 999px;
+    padding: 11px 24px; font-weight: 700; font-size: 0.87rem; cursor: pointer; font-family: inherit;
+  }
+  .wa-next-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  .wa-start-title { font-size: 1.3rem; font-weight: 800; color: #0f172a; text-align: center; margin-bottom: 8px; line-height: 1.3; }
+  .wa-start-sub { font-size: 0.85rem; color: #64748b; text-align: center; line-height: 1.55; margin-bottom: 20px; }
+  .wa-start-btn {
+    width: 100%; background: linear-gradient(90deg,#4f46e5,#06b6d4); color: #fff; border: none;
+    border-radius: 999px; padding: 14px; font-weight: 700; font-size: 0.92rem; cursor: pointer; font-family: inherit;
+  }
+  .wa-start-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .wa-meta-row { display: flex; justify-content: center; gap: 16px; margin-top: 16px; }
+  .wa-meta-item { text-align: center; font-size: 0.7rem; color: #94a3b8; font-weight: 600; }
+  .wa-meta-item b { display: block; font-size: 0.92rem; color: #0f172a; font-weight: 800; }
+
+  .wa-name-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; color: #06b6d4; text-transform: uppercase; margin-bottom: 8px; text-align: center; }
+  .wa-name-input {
+    width: 100%; padding: 13px 15px; border-radius: 12px; border: 1.5px solid #edece6;
+    font-size: 0.95rem; font-family: inherit; color: #0f172a; margin-bottom: 16px; text-align: center;
+  }
+  .wa-name-input:focus { outline: none; border-color: #06b6d4; }
+
+  /* Result card — same light system as question cards */
+  .wa-result-card .rc-logo-wrap {
+    width: 52px; height: 52px; border-radius: 14px; background: #f0f9ff; display: flex; align-items: center;
+    justify-content: center; margin: 0 auto 12px; overflow: hidden;
+  }
+  .wa-result-card .rc-logo-wrap img { width: 100%; height: 100%; object-fit: cover; }
+  .wa-result-card .rc-eyebrow { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; color: #06b6d4; text-transform: uppercase; text-align: center; margin-bottom: 6px; }
+  .wa-result-card .rc-greeting { text-align: center; font-size: 0.8rem; color: #94a3b8; font-weight: 600; margin-bottom: 3px; }
+  .wa-result-card .rc-name { font-size: 1.3rem; font-weight: 800; color: #0f172a; text-align: center; margin-bottom: 12px; }
+  .wa-result-card .rc-name .rc-emoji { margin-right: 4px; }
+  .wa-result-card .rc-desc { color: #64748b; font-size: 0.85rem; line-height: 1.6; text-align: center; margin-bottom: 0; }
+  .wa-result-card .rc-divider { height: 1px; background: #edece6; margin: 16px 0 12px; }
+  .wa-result-card .rc-footer { text-align: center; font-size: 0.72rem; color: #b7c0c9; font-weight: 600; letter-spacing: 0.02em; }
+
+  .wa-action-row { margin-top: 16px; display: flex; flex-direction: column; gap: 9px; }
+  .wa-share-btn {
+    width: 100%; padding: 13px; border-radius: 999px; border: none;
+    background: linear-gradient(90deg,#4f46e5,#06b6d4); color: #fff; font-weight: 700; font-size: 0.9rem; cursor: pointer; font-family: inherit;
+  }
+  .wa-retake-btn {
+    width: 100%; padding: 12px; border-radius: 999px; border: 1.5px solid #e2e8f0; background: #fff;
+    color: #0f172a; font-weight: 700; font-size: 0.86rem; cursor: pointer; font-family: inherit;
+  }
+  .wa-copied-note { text-align: center; font-size: 0.76rem; color: #06b6d4; font-weight: 700; margin-top: -2px; display: none; }
+</style>
+</head>
+<body>
+
+<div class="wa-wrap">
+  <div id="waRoot"></div>
+</div>
+
+<script>
+const QUESTIONS = [
+  { q: "A big opportunity lands in your lap. Your first reaction is:",
+    options: [
+      { text: "\"I'll start tonight\" (you never touch it again)", type: "sprinter" },
+      { text: "\"Is this even worth what they're paying?\"", type: "underpaid" },
+      { text: "\"Finally, something bigger than where I am\"", type: "outgrower" },
+      { text: "\"I hope they noticed my work before this\"", type: "hustler" }
+    ] },
+  { q: "Your friend asks how work's going. You say:",
+    options: [
+      { text: "\"I've got 5 things going, don't ask which ones are actually moving\"", type: "sprinter" },
+      { text: "\"Busy. Underpaid. You know how it is\"", type: "underpaid" },
+      { text: "\"Same people, same conversations, I need something different\"", type: "outgrower" },
+      { text: "\"Grinding, waiting for the right person to notice\"", type: "hustler" }
+    ] },
+  { q: "Someone asks what you charge. You:",
+    options: [
+      { text: "Change the subject — haven't finished the last thing to prove it", type: "sprinter" },
+      { text: "Say a number lower than what you meant", type: "underpaid" },
+      { text: "Realize you've never actually asked for more", type: "outgrower" },
+      { text: "Wish they'd just refer you instead of asking", type: "hustler" }
+    ] },
+  { q: "Your ideal Saturday:",
+    options: [
+      { text: "Finally finishing that one thing you started in March", type: "sprinter" },
+      { text: "Anything that doesn't remind you of money", type: "underpaid" },
+      { text: "Somewhere completely different from your usual crowd", type: "outgrower" },
+      { text: "Working quietly, hoping the right person sees it", type: "hustler" }
+    ] },
+  { q: "The thought that keeps showing up at 1am:",
+    options: [
+      { text: "\"Why can't I just finish what I start?\"", type: "sprinter" },
+      { text: "\"Am I ever going to get paid what I'm worth?\"", type: "underpaid" },
+      { text: "\"Am I stuck here because of me, or everything around me?\"", type: "outgrower" },
+      { text: "\"Why does everyone else find it easier to get clients?\"", type: "hustler" }
+    ] }
+];
+
+const ARCHETYPES = {
+  sprinter: { name: "The Sprinter", emoji: "\ud83c\udfc3",
+    desc: "All momentum, no follow-through. You start everything with real energy — the hard part is still being there for the finish." },
+  underpaid: { name: "The Underpaid Expert", emoji: "\ud83d\udcb0",
+    desc: "You deliver real results but still feel broke or unseen for it. The skill isn't the problem — the pricing conversation is." },
+  outgrower: { name: "The Outgrower", emoji: "\ud83c\udf31",
+    desc: "You've outgrown your circle or environment but haven't left it yet. You already know — this just confirms it." },
+  hustler: { name: "The Quiet Hustler", emoji: "\ud83e\udd14",
+    desc: "Skilled, hardworking, invisible. You've been hoping to get noticed instead of going and getting clients directly." }
+};
+
+let currentQ = 0;
+let answers = [];
+let userName = '';
+const waRoot = document.getElementById('waRoot');
+
+function renderIntro() {
+  waRoot.innerHTML = `
+    <div class="wa-stage">
+      <div class="wa-card">
+        <div class="wa-start-title">The Who Am I Challenge</div>
+        <div class="wa-start-sub">5 quick questions. Pick whatever feels most like you — your gut answer is the accurate one.</div>
+        <button type="button" class="wa-start-btn" id="waIntroBtn">Start the Challenge</button>
+        <div class="wa-meta-row">
+          <div class="wa-meta-item"><b>${QUESTIONS.length}</b>Questions</div>
+          <div class="wa-meta-item"><b>60s</b>Takes About</div>
+          <div class="wa-meta-item"><b>0</b>Sign-ups Needed</div>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('waIntroBtn').addEventListener('click', renderNameStep);
+}
+
+function renderNameStep() {
+  waRoot.innerHTML = `
+    <div class="wa-stage">
+      <div class="wa-card">
+        <div class="wa-name-label">Before We Start</div>
+        <div class="wa-start-title" style="font-size:1.15rem;">What should we call you?</div>
+        <input type="text" class="wa-name-input" id="waNameInput" placeholder="Your first name" maxlength="24" autocomplete="given-name">
+        <button type="button" class="wa-start-btn" id="waNameBtn" disabled>Let's Go</button>
+      </div>
+    </div>`;
+
+  const input = document.getElementById('waNameInput');
+  const btn = document.getElementById('waNameBtn');
+  input.addEventListener('input', () => { btn.disabled = input.value.trim().length === 0; });
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !btn.disabled) btn.click(); });
+  input.focus();
+
+  btn.addEventListener('click', () => {
+    userName = input.value.trim().slice(0, 24);
+    currentQ = 0; answers = [];
+    renderQuestion();
+  });
+}
+
+function renderQuestion() {
+  const item = QUESTIONS[currentQ];
+  const selected = answers[currentQ];
+  let segs = '';
+  for (let i = 0; i < QUESTIONS.length; i++) segs += `<div class="wa-seg ${i <= currentQ ? 'filled' : ''}"></div>`;
+
+  waRoot.innerHTML = `
+    <div class="wa-stage">
+      <div class="wa-card">
+        <div class="wa-segs">${segs}</div>
+        <div class="wa-qlabel">Question ${String(currentQ + 1).padStart(2, '0')}</div>
+        <div class="wa-qtext">${item.q}</div>
+        <div class="wa-select-hint">Select only one</div>
+        ${item.options.map((opt, i) => `
+          <button type="button" class="wa-option ${selected === i ? 'selected' : ''}" data-index="${i}">
+            <span class="dot"></span><span>${opt.text}</span>
+          </button>`).join('')}
+        <div class="wa-nav-row">
+          <button type="button" class="wa-back-btn" id="waBackBtn">Back</button>
+          <button type="button" class="wa-next-btn" id="waNextBtn" ${selected === undefined ? 'disabled' : ''}>
+            ${currentQ === QUESTIONS.length - 1 ? 'See My Result' : 'Next'}
+          </button>
+        </div>
+      </div>
+    </div>`;
+
+  document.querySelectorAll('.wa-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      answers[currentQ] = Number(btn.dataset.index);
+      // Update selection state in place — no re-render, so the card
+      // doesn't replay its entrance animation on every tap.
+      document.querySelectorAll('.wa-option').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      document.getElementById('waNextBtn').disabled = false;
+    });
+  });
+
+  document.getElementById('waBackBtn').addEventListener('click', () => {
+    if (currentQ > 0) { currentQ--; renderQuestion(); } else { renderNameStep(); }
+  });
+
+  document.getElementById('waNextBtn').addEventListener('click', () => {
+    if (answers[currentQ] === undefined) return;
+    if (currentQ < QUESTIONS.length - 1) { currentQ++; renderQuestion(); }
+    else renderResult();
+  });
+}
+
+function getWinningArchetype() {
+  const scores = { sprinter: 0, underpaid: 0, outgrower: 0, hustler: 0 };
+  answers.forEach((ansIndex, qIndex) => { scores[QUESTIONS[qIndex].options[ansIndex].type]++; });
+  let best = 'sprinter', bestScore = -1;
+  Object.keys(scores).forEach(k => { if (scores[k] > bestScore) { bestScore = scores[k]; best = k; } });
+  return best;
+}
+
+function renderResult() {
+  const key = getWinningArchetype();
+  const a = ARCHETYPES[key];
+  const shareUrl = window.location.origin + '/whoami';
+  const displayName = userName || 'You';
+  const caption = `I'm ${a.name} ${a.emoji} — took me 60 seconds to find out. What are you? ${shareUrl}`;
+
+  waRoot.innerHTML = `
+    <div class="wa-stage">
+      <div class="wa-card wa-result-card">
+        <div class="rc-logo-wrap"><img src="MINDSHIFT.jpg" alt="MindShift Books"></div>
+        <div class="rc-eyebrow">Who Am I Challenge</div>
+        <div class="rc-greeting">${displayName}, you are</div>
+        <div class="rc-name"><span class="rc-emoji">${a.emoji}</span>${a.name}</div>
+        <p class="rc-desc">${a.desc}</p>
+        <div class="rc-divider"></div>
+        <div class="rc-footer">mindshiftbooks.shop/whoami</div>
+      </div>
+    </div>
+    <div class="wa-action-row">
+      <button type="button" class="wa-share-btn" id="waShareBtn">Share My Result</button>
+      <div class="wa-copied-note" id="waCopiedNote">Copied! Paste it anywhere \ud83c\udf89</div>
+      <button type="button" class="wa-retake-btn" id="waRetakeBtn">Take It Again</button>
+    </div>
+  `;
+
+  document.getElementById('waShareBtn').addEventListener('click', async () => {
+    if (navigator.share) {
+      try { await navigator.share({ text: caption, url: shareUrl }); return; }
+      catch (e) { /* cancelled — fall through to copy */ }
+    }
+    try { await navigator.clipboard.writeText(caption); document.getElementById('waCopiedNote').style.display = 'block'; }
+    catch (e) { alert(caption); }
+  });
+
+  document.getElementById('waRetakeBtn').addEventListener('click', renderIntro);
+}
+
+renderIntro();
+</script>
+</body>
+</html>
