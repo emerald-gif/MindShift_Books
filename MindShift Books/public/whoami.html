@@ -128,6 +128,37 @@
     background: #0f172a; box-shadow: 0 2px 6px rgba(15,23,42,0.15);
   }
   .wa-social-btn i { font-size: 17px; color: #fff; }
+
+  /* Promotional export card — built off-screen, used only for the PNG
+     download, never shown in the live UI. Bigger, bolder, brand-framed. */
+  .dl-bg {
+    width: 560px; padding: 40px 30px 30px; border-radius: 32px; position: relative; overflow: hidden;
+    background: linear-gradient(135deg,#4f46e5 0%,#7c3aed 45%,#06b6d4 100%);
+    font-family: 'Inter', sans-serif;
+  }
+  .dl-bg::before { content: ''; position: absolute; width: 260px; height: 260px; border-radius: 50%; background: rgba(255,255,255,0.14); top: -90px; right: -70px; }
+  .dl-bg::after { content: ''; position: absolute; width: 220px; height: 220px; border-radius: 50%; background: rgba(255,255,255,0.09); bottom: -80px; left: -60px; }
+  .dl-badge {
+    position: relative; z-index: 2; display: inline-block; background: rgba(255,255,255,0.18); color: #fff;
+    font-size: 0.78rem; font-weight: 800; letter-spacing: 0.04em; padding: 7px 16px; border-radius: 999px; margin-bottom: 18px;
+  }
+  .dl-card { position: relative; z-index: 2; background: #fff; border-radius: 24px; padding: 36px 28px 30px; text-align: center; box-shadow: 0 24px 48px rgba(15,23,42,0.28); }
+  .dl-logo-wrap { width: 66px; height: 66px; border-radius: 17px; background: #f0f9ff; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; overflow: hidden; }
+  .dl-logo-wrap img { width: 100%; height: 100%; object-fit: cover; }
+  .dl-eyebrow { font-size: 0.8rem; font-weight: 800; letter-spacing: 0.1em; color: #06b6d4; text-transform: uppercase; margin-bottom: 10px; }
+  .dl-greeting { font-size: 1rem; color: #94a3b8; font-weight: 600; margin-bottom: 5px; }
+  .dl-name { font-size: 2rem; font-weight: 900; color: #0f172a; margin-bottom: 18px; line-height: 1.2; }
+  .dl-name .dl-emoji { margin-right: 6px; }
+  .dl-desc { color: #64748b; font-size: 1.05rem; line-height: 1.65; margin: 0; }
+  .dl-cta { margin-top: 26px; padding-top: 20px; border-top: 1.5px dashed #dde3ec; }
+  .dl-cta-text { font-size: 1.08rem; font-weight: 800; color: #0f172a; margin-bottom: 5px; }
+  .dl-cta-url { font-size: 0.92rem; font-weight: 700; color: #06b6d4; }
+  .dl-footer {
+    position: relative; z-index: 2; margin-top: 22px; display: flex; align-items: center; justify-content: center;
+    gap: 12px; flex-wrap: wrap; color: rgba(255,255,255,0.95); font-size: 0.84rem; font-weight: 700;
+  }
+  .dl-footer i { margin-right: 4px; font-size: 0.92rem; }
+  .dl-sep { opacity: 0.5; }
 </style>
 </head>
 <body>
@@ -359,21 +390,42 @@ function renderResult() {
 
   document.getElementById('waDownloadBtn').addEventListener('click', async () => {
     const btn = document.getElementById('waDownloadBtn');
-    const cardEl = document.getElementById('waResultCard');
     btn.disabled = true;
     const originalText = btn.innerHTML;
     btn.innerHTML = 'Preparing\u2026';
-    // The card is tilted for visual flair (CSS animation + transform), but a
-    // rotated element leaves transparent corners outside its visual shape —
-    // those show up as black in most phone gallery/photo viewers. Straighten
-    // it just for the capture, then put the tilt back.
-    const prevAnimation = cardEl.style.animation;
-    const prevTransform = cardEl.style.transform;
-    cardEl.style.animation = 'none';
-    cardEl.style.transform = 'none';
+
+    // Build the shareable version off-screen — bolder branding, a CTA, and
+    // a social footer — kept separate from the plain on-screen card so the
+    // quiz UI itself stays clean but the downloaded PNG is promo-ready.
+    // The link stays /whoami either way.
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'position:fixed; left:-9999px; top:0;';
+    wrap.innerHTML = `
+      <div class="dl-bg">
+        <div class="dl-badge">\u2728 WHO AM I CHALLENGE</div>
+        <div class="dl-card">
+          <div class="dl-logo-wrap"><img src="MINDSHIFT.jpg" alt="MindShift Books" crossorigin="anonymous"></div>
+          <div class="dl-eyebrow">Who Am I Challenge</div>
+          <div class="dl-greeting">${displayName}, you are</div>
+          <div class="dl-name"><span class="dl-emoji">${a.emoji}</span>${a.name}</div>
+          <p class="dl-desc">${a.desc}</p>
+          <div class="dl-cta">
+            <div class="dl-cta-text">\ud83d\udd25 Take the 60-Second Quiz</div>
+            <div class="dl-cta-url">mindshiftbooks.shop/whoami</div>
+          </div>
+        </div>
+        <div class="dl-footer">
+          <span><i class="fa-brands fa-instagram"></i><i class="fa-brands fa-x-twitter"></i><i class="fa-brands fa-youtube"></i><i class="fa-brands fa-facebook-f"></i> mindshiftbookshq</span>
+          <span class="dl-sep">|</span>
+          <span><i class="fa-solid fa-globe"></i> mindshiftbooks.shop</span>
+        </div>
+      </div>`;
+    document.body.appendChild(wrap);
+    // Two rAFs so layout/fonts settle before html2canvas measures it.
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
     try {
-      const canvas = await html2canvas(cardEl, { scale: 2, backgroundColor: '#ffffff', useCORS: true, allowTaint: true });
+      const canvas = await html2canvas(wrap.firstElementChild, { scale: 2, backgroundColor: null, useCORS: true, allowTaint: true });
       const link = document.createElement('a');
       link.download = `who-am-i-${key}.png`;
       link.href = canvas.toDataURL('image/png');
@@ -383,8 +435,7 @@ function renderResult() {
     } catch (e) {
       alert('Could not generate the image — try a screenshot instead.');
     } finally {
-      cardEl.style.animation = prevAnimation;
-      cardEl.style.transform = prevTransform;
+      wrap.remove();
       btn.disabled = false;
       btn.innerHTML = originalText;
     }
