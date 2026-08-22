@@ -130,35 +130,41 @@
   .wa-social-btn i { font-size: 17px; color: #fff; }
 
   /* Promotional export card — built off-screen, used only for the PNG
-     download, never shown in the live UI. Bigger, bolder, brand-framed. */
+     download, never shown in the live UI. Bigger, bolder, brand-framed,
+     Gen-Z-leaning: saturated duotone gradient + grain texture + sticker badge. */
   .dl-bg {
     width: 560px; padding: 40px 30px 30px; border-radius: 32px; position: relative; overflow: hidden;
-    background: linear-gradient(135deg,#4f46e5 0%,#7c3aed 45%,#06b6d4 100%);
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E"),
+      linear-gradient(140deg, #ff4fa3 0%, #8b3cf7 45%, #22d3ee 100%);
+    background-blend-mode: overlay, normal;
     font-family: 'Inter', sans-serif;
   }
-  .dl-bg::before { content: ''; position: absolute; width: 260px; height: 260px; border-radius: 50%; background: rgba(255,255,255,0.14); top: -90px; right: -70px; }
-  .dl-bg::after { content: ''; position: absolute; width: 220px; height: 220px; border-radius: 50%; background: rgba(255,255,255,0.09); bottom: -80px; left: -60px; }
+  .dl-bg::before { content: ''; position: absolute; width: 260px; height: 260px; border-radius: 50%; background: rgba(255,255,255,0.22); top: -90px; right: -70px; }
+  .dl-bg::after { content: ''; position: absolute; width: 220px; height: 220px; border-radius: 50%; background: rgba(255,229,0,0.28); bottom: -80px; left: -60px; }
   .dl-badge {
-    position: relative; z-index: 2; display: inline-block; background: rgba(255,255,255,0.18); color: #fff;
-    font-size: 0.78rem; font-weight: 800; letter-spacing: 0.04em; padding: 7px 16px; border-radius: 999px; margin-bottom: 18px;
+    position: relative; z-index: 2; display: inline-block; background: #fff; color: #0f172a;
+    font-size: 0.78rem; font-weight: 900; letter-spacing: 0.03em; padding: 7px 16px; border-radius: 999px; margin-bottom: 18px;
+    border: 2px solid #0f172a; transform: rotate(-3deg);
   }
-  .dl-card { position: relative; z-index: 2; background: #fff; border-radius: 24px; padding: 36px 28px 30px; text-align: center; box-shadow: 0 24px 48px rgba(15,23,42,0.28); }
+  .dl-card { position: relative; z-index: 2; background: #fff; border-radius: 24px; padding: 36px 28px 30px; text-align: center;
+    box-shadow: 0 0 0 4px rgba(255,255,255,0.55), 0 24px 48px rgba(76,29,149,0.35); }
   .dl-logo-wrap { width: 66px; height: 66px; border-radius: 17px; background: #f0f9ff; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; overflow: hidden; }
   .dl-logo-wrap img { width: 100%; height: 100%; object-fit: cover; }
-  .dl-eyebrow { font-size: 0.8rem; font-weight: 800; letter-spacing: 0.1em; color: #06b6d4; text-transform: uppercase; margin-bottom: 10px; }
+  .dl-eyebrow { font-size: 0.8rem; font-weight: 800; letter-spacing: 0.1em; color: #db2777; text-transform: uppercase; margin-bottom: 10px; }
   .dl-greeting { font-size: 1rem; color: #94a3b8; font-weight: 600; margin-bottom: 5px; }
   .dl-name { font-size: 2rem; font-weight: 900; color: #0f172a; margin-bottom: 18px; line-height: 1.2; }
   .dl-name .dl-emoji { margin-right: 6px; }
   .dl-desc { color: #64748b; font-size: 1.05rem; line-height: 1.65; margin: 0; }
-  .dl-cta { margin-top: 26px; padding-top: 20px; border-top: 1.5px dashed #dde3ec; }
-  .dl-cta-text { font-size: 1.08rem; font-weight: 800; color: #0f172a; margin-bottom: 5px; }
-  .dl-cta-url { font-size: 0.92rem; font-weight: 700; color: #06b6d4; }
+  .dl-cta { margin-top: 26px; padding: 14px 16px; border-radius: 16px; background: linear-gradient(135deg,#ff4fa3,#8b3cf7); }
+  .dl-cta-text { font-size: 1.05rem; font-weight: 800; color: #fff; margin-bottom: 3px; }
+  .dl-cta-url { font-size: 0.9rem; font-weight: 700; color: rgba(255,255,255,0.92); }
   .dl-footer {
     position: relative; z-index: 2; margin-top: 22px; display: flex; align-items: center; justify-content: center;
-    gap: 12px; flex-wrap: wrap; color: rgba(255,255,255,0.95); font-size: 0.84rem; font-weight: 700;
+    gap: 12px; flex-wrap: wrap; color: #fff; font-size: 0.84rem; font-weight: 700;
   }
   .dl-footer i { margin-right: 4px; font-size: 0.92rem; }
-  .dl-sep { opacity: 0.5; }
+  .dl-sep { opacity: 0.6; }
 </style>
 </head>
 <body>
@@ -170,52 +176,52 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
 const QUESTIONS = [
-  { q: "A big opportunity lands in your lap. Your first reaction is:",
+  { q: "Think about the thing you keep starting over. What's really going on?",
     options: [
-      { text: "\"I'll start tonight\" (you never touch it again)", type: "sprinter" },
-      { text: "\"Is this even worth what they're paying?\"", type: "underpaid" },
-      { text: "\"Finally, something bigger than where I am\"", type: "outgrower" },
-      { text: "\"I hope they noticed my work before this\"", type: "hustler" }
+      { text: "I get excited and dive in hard — then somewhere in the middle, the excitement just leaves", type: "sprinter" },
+      { text: "I actually finish it. I'm just tired of doing it for less than it's worth", type: "underpaid" },
+      { text: "I finish it fine — I've just quietly outgrown the reason I started", type: "outgrower" },
+      { text: "I finish it, then wait for someone to notice before I move again", type: "hustler" }
     ] },
-  { q: "Your friend asks how work's going. You say:",
+  { q: "There's the version of you people see, and the one only you know. Where's the gap?",
     options: [
-      { text: "\"I've got 5 things going, don't ask which ones are actually moving\"", type: "sprinter" },
-      { text: "\"Busy. Underpaid. You know how it is\"", type: "underpaid" },
-      { text: "\"Same people, same conversations, I need something different\"", type: "outgrower" },
-      { text: "\"Grinding, waiting for the right person to notice\"", type: "hustler" }
+      { text: "They think I've got it together. I've actually got five things going and none of them moving", type: "sprinter" },
+      { text: "They think business is good. They don't see what's actually landing in the account", type: "underpaid" },
+      { text: "They think I'm fine where I am. I've been ready to outgrow this for a while now", type: "outgrower" },
+      { text: "They think I'm relaxed about it. I'm really just waiting to be picked", type: "hustler" }
     ] },
-  { q: "Someone asks what you charge. You:",
+  { q: "What's something you do because it's just \"what everyone does\" — without really knowing why?",
     options: [
-      { text: "Change the subject — haven't finished the last thing to prove it", type: "sprinter" },
-      { text: "Say a number lower than what you meant", type: "underpaid" },
-      { text: "Realize you've never actually asked for more", type: "outgrower" },
-      { text: "Wish they'd just refer you instead of asking", type: "hustler" }
+      { text: "Start something new. It feels like progress, even on the days it isn't", type: "sprinter" },
+      { text: "Undercharge. Like it's a phase you're supposed to pass through first", type: "underpaid" },
+      { text: "Stay. Leaving still feels like a bigger deal than it actually is", type: "outgrower" },
+      { text: "Wait to be asked. Putting yourself forward feels like too much", type: "hustler" }
     ] },
-  { q: "Your ideal Saturday:",
+  { q: "The thought that shows up uninvited around 1am:",
     options: [
-      { text: "Finally finishing that one thing you started in March", type: "sprinter" },
-      { text: "Anything that doesn't remind you of money", type: "underpaid" },
-      { text: "Somewhere completely different from your usual crowd", type: "outgrower" },
-      { text: "Working quietly, hoping the right person sees it", type: "hustler" }
-    ] },
-  { q: "The thought that keeps showing up at 1am:",
-    options: [
-      { text: "\"Why can't I just finish what I start?\"", type: "sprinter" },
-      { text: "\"Am I ever going to get paid what I'm worth?\"", type: "underpaid" },
+      { text: "\"Why can't I just finish something, for once?\"", type: "sprinter" },
+      { text: "\"Am I ever going to get paid what this is actually worth?\"", type: "underpaid" },
       { text: "\"Am I stuck here because of me, or everything around me?\"", type: "outgrower" },
-      { text: "\"Why does everyone else find it easier to get clients?\"", type: "hustler" }
+      { text: "\"Is anyone actually noticing the work I keep putting in?\"", type: "hustler" }
+    ] },
+  { q: "A year from now, a version of you finally \"gets it.\" What changes first?",
+    options: [
+      { text: "They finish what they start — even after the excitement wears off", type: "sprinter" },
+      { text: "They stop shrinking the number before anyone even pushes back", type: "underpaid" },
+      { text: "They actually leave the room they'd already outgrown", type: "outgrower" },
+      { text: "They stop waiting to be noticed and start asking directly", type: "hustler" }
     ] }
 ];
 
 const ARCHETYPES = {
   sprinter: { name: "The Sprinter", emoji: "\ud83c\udfc3",
-    desc: "All momentum, no follow-through. You start everything with real energy — the hard part is still being there for the finish." },
+    desc: "You move on real energy — every new thing gets your full push at the start. The pattern worth noticing isn't the starting. It's what happens right after the excitement fades." },
   underpaid: { name: "The Underpaid Expert", emoji: "\ud83d\udcb0",
-    desc: "You deliver real results but still feel broke or unseen for it. The skill isn't the problem — the pricing conversation is." },
+    desc: "The results are already there. What hasn't caught up yet is the number attached to them — and that's a conversation, not a skill gap." },
   outgrower: { name: "The Outgrower", emoji: "\ud83c\udf31",
-    desc: "You've outgrown your circle or environment but haven't left it yet. You already know — this just confirms it." },
+    desc: "Some part of you clocked this a while ago — you're not asking whether you've outgrown it, just when you'll admit it out loud." },
   hustler: { name: "The Quiet Hustler", emoji: "\ud83e\udd14",
-    desc: "Skilled, hardworking, invisible. You've been hoping to get noticed instead of going and getting clients directly." }
+    desc: "The work has never been the problem. The waiting-to-be-noticed part is the only thing standing between where you are and where you're headed." }
 };
 
 let currentQ = 0;
