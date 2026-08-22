@@ -2631,6 +2631,10 @@ app.get('/challenge', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'challenge.html'));
 });
 
+app.get('/whoami', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'whoami.html'));
+});
+
 // Other pages — explicit clean routes (no .html in the URL)
 app.get('/review', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'review.html'));
