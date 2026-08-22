@@ -161,13 +161,6 @@
   .dl-cta { margin-top: 26px; padding: 14px 16px; border-radius: 16px; background: #0348e3; }
   .dl-cta-text { font-size: 1.05rem; font-weight: 800; color: #fff; margin-bottom: 3px; }
   .dl-cta-url { font-size: 0.9rem; font-weight: 700; color: rgba(255,255,255,0.92); }
-  .dl-footer {
-    position: relative; z-index: 2; margin-top: 22px; display: flex; align-items: center; justify-content: center;
-    gap: 12px; flex-wrap: wrap; background: #0348e3; color: #fff; font-size: 0.84rem; font-weight: 700;
-    padding: 12px 18px; border-radius: 999px;
-  }
-  .dl-footer i { margin-right: 4px; font-size: 0.92rem; }
-  .dl-sep { opacity: 0.6; }
 </style>
 </head>
 <body>
@@ -522,25 +515,12 @@ function renderResult() {
     </div>
   `;
 
-  document.getElementById('waShareBtn').addEventListener('click', async () => {
-    if (navigator.share) {
-      try { await navigator.share({ text: caption, url: shareUrl }); return; }
-      catch (e) { /* cancelled — fall through to copy */ }
-    }
-    try { await navigator.clipboard.writeText(caption); document.getElementById('waCopiedNote').style.display = 'block'; }
-    catch (e) { alert(caption); }
-  });
-
-  document.getElementById('waDownloadBtn').addEventListener('click', async () => {
-    const btn = document.getElementById('waDownloadBtn');
-    btn.disabled = true;
-    const originalText = btn.innerHTML;
-    btn.innerHTML = 'Preparing\u2026';
-
-    // Build the shareable version off-screen — bolder branding, a CTA, and
-    // a social footer — kept separate from the plain on-screen card so the
-    // quiz UI itself stays clean but the downloaded PNG is promo-ready.
-    // The link stays /whoami either way.
+  // Builds the same badge + white-card graphic shown in the Download
+  // preview (no extra promo footer bar) as an off-screen node, renders it
+  // with html2canvas, and resolves with the resulting canvas. Shared by
+  // the download button, the share button, and the Instagram flow so
+  // every path produces the identical image.
+  async function buildCardCanvas() {
     const wrap = document.createElement('div');
     wrap.style.cssText = 'position:fixed; left:-9999px; top:0;';
     wrap.innerHTML = `
@@ -557,18 +537,62 @@ function renderResult() {
             <div class="dl-cta-url">mindshiftbooks.shop/whoami</div>
           </div>
         </div>
-        <div class="dl-footer">
-          <span><i class="fa-brands fa-instagram"></i><i class="fa-brands fa-x-twitter"></i><i class="fa-brands fa-youtube"></i><i class="fa-brands fa-facebook-f"></i> mindshiftbookshq</span>
-          <span class="dl-sep">|</span>
-          <span><i class="fa-solid fa-globe"></i> mindshiftbooks.shop</span>
-        </div>
       </div>`;
     document.body.appendChild(wrap);
     // Two rAFs so layout/fonts settle before html2canvas measures it.
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    try {
+      return await html2canvas(wrap.firstElementChild, { scale: 2, backgroundColor: null, useCORS: true, allowTaint: true });
+    } finally {
+      wrap.remove();
+    }
+  }
+
+  function canvasToBlob(canvas) {
+    return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+  }
+
+  document.getElementById('waShareBtn').addEventListener('click', async () => {
+    const shareBtn = document.getElementById('waShareBtn');
+    const originalText = shareBtn.innerHTML;
+    shareBtn.disabled = true;
+    shareBtn.innerHTML = 'Preparing\u2026';
 
     try {
-      const canvas = await html2canvas(wrap.firstElementChild, { scale: 2, backgroundColor: null, useCORS: true, allowTaint: true });
+      const canvas = await buildCardCanvas();
+      const blob = await canvasToBlob(canvas);
+      const file = new File([blob], `who-am-i-${key}.png`, { type: 'image/png' });
+
+      // Share the actual card image together with the caption whenever
+      // the platform supports file sharing, so the person sharing this
+      // gets the picture attached, not just the caption text. Falls back
+      // to link+text share, then to a plain clipboard copy of the caption.
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try { await navigator.share({ text: caption, url: shareUrl, files: [file] }); return; }
+        catch (e) { /* cancelled — fall through */ }
+      } else if (navigator.share) {
+        try { await navigator.share({ text: caption, url: shareUrl }); return; }
+        catch (e) { /* cancelled — fall through */ }
+      }
+      try { await navigator.clipboard.writeText(caption); document.getElementById('waCopiedNote').style.display = 'block'; }
+      catch (e) { alert(caption); }
+    } catch (e) {
+      try { await navigator.clipboard.writeText(caption); document.getElementById('waCopiedNote').style.display = 'block'; }
+      catch (e2) { alert(caption); }
+    } finally {
+      shareBtn.disabled = false;
+      shareBtn.innerHTML = originalText;
+    }
+  });
+
+  document.getElementById('waDownloadBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('waDownloadBtn');
+    btn.disabled = true;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = 'Preparing\u2026';
+
+    try {
+      const canvas = await buildCardCanvas();
       const link = document.createElement('a');
       link.download = `who-am-i-${key}.png`;
       link.href = canvas.toDataURL('image/png');
@@ -578,7 +602,6 @@ function renderResult() {
     } catch (e) {
       alert('Could not generate the image — try a screenshot instead.');
     } finally {
-      wrap.remove();
       btn.disabled = false;
       btn.innerHTML = originalText;
     }
