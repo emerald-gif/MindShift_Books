@@ -224,6 +224,25 @@ footer .brand{font-weight:700;font-size:1.1rem;color:#fbbf24}
 }
 .section-view-all:hover { color: #06b6d4; }
 
+/* Who Am I Challenge banner */
+.whoami-banner{
+  display:block;
+  margin:28px 0;
+  border-radius:20px;
+  padding:14px;
+  background:linear-gradient(135deg,#3b5bfd 0%, #5b7dff 55%, #7ea0ff 100%);
+  box-shadow:0 14px 34px rgba(59,91,253,0.28);
+  text-decoration:none;
+  transition:transform .18s ease, box-shadow .18s ease;
+}
+.whoami-banner:hover{ transform:translateY(-3px); box-shadow:0 18px 40px rgba(59,91,253,0.36); }
+.whoami-banner img{
+  display:block;
+  width:100%;
+  height:auto;
+  border-radius:12px;
+}
+
 /* ---------------- FREE EBOOK DETAIL DRAWER (shared: index.html + free-ebooks.html) ---------------- */
 .fe-modal {
   display: none; position: fixed; inset: 0; z-index: 9999;
