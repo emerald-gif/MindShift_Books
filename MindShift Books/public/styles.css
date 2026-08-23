@@ -228,29 +228,14 @@ footer .brand{font-weight:700;font-size:1.1rem;color:#fbbf24}
 .whoami-banner{
   display:block;
   margin:28px 0;
-  border-radius:14px;
-  padding:3px 3px 0;
-  background:#fff;
-  border:1px solid #eef1f5;
-  box-shadow:0 8px 22px rgba(15,23,42,0.06);
   text-decoration:none;
-  transition:transform .18s ease, box-shadow .18s ease;
-  overflow:hidden;
+  transition:transform .18s ease;
 }
-.whoami-banner:hover{ transform:translateY(-2px); box-shadow:0 12px 28px rgba(15,23,42,0.10); }
-.whoami-banner::before{
-  content:"";
-  display:block;
-  height:3px;
-  border-radius:3px 3px 0 0;
-  background:linear-gradient(90deg,#3b5bfd,#7ea0ff);
-  margin:0 0 3px;
-}
+.whoami-banner:hover{ transform:translateY(-2px); }
 .whoami-banner img{
   display:block;
   width:100%;
   height:auto;
-  border-radius:0 0 10px 10px;
 }
 
 /* ---------------- FREE EBOOK DETAIL DRAWER (shared: index.html + free-ebooks.html) ---------------- */

@@ -60,6 +60,17 @@
     @media (min-width: 640px) { .fe-grid { grid-template-columns: repeat(3, 1fr); gap: 18px; } }
     @media (min-width: 1000px) { .fe-grid { grid-template-columns: repeat(4, 1fr); gap: 20px; } }
 
+    /* No card box — just the cover image, prominent, sitting directly on the page */
+    .fe-grid .product-card {
+      background: none; padding: 0; border-radius: 0; box-shadow: none; align-items: stretch;
+    }
+    .fe-grid .ebook-cover {
+      width: 100%; height: auto; aspect-ratio: 2/3; border-radius: 10px;
+      box-shadow: 0 14px 30px rgba(0,0,0,0.14), 0 3px 8px rgba(0,0,0,0.08);
+    }
+    .fe-grid .title { text-align: left; font-size: 0.92rem; margin-top: 2px; }
+    .fe-grid .card-author { text-align: left; }
+
     .fe-loadmore-wrap { display: flex; justify-content: center; margin: 26px 0 8px; }
     .fe-loadmore-btn {
       padding: 12px 26px; border-radius: 999px; border: 1.5px solid #e2e8f0; background: #fff;

@@ -196,6 +196,30 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
+// ── First-party page-view tracking (no third-party pixels/cookies) ─────────
+// Same beacon main.js sends on every other page, added here since this page
+// doesn't load main.js. Guarded two ways against double-counting a single
+// visit: a module-scope flag stops it firing twice if this script ever runs
+// more than once, and forcing a real reload on a bfcache (back/forward)
+// restore — same as main.js — stops the browser silently reusing a frozen
+// page instance and never re-sending a beacon for the "new" view, or a
+// stray extra beacon firing from restored JS state.
+window.addEventListener('pageshow', function (event) {
+  if (event.persisted) window.location.reload();
+});
+(function trackWhoAmIPageView() {
+  if (window.__waTracked) return;
+  window.__waTracked = true;
+  try {
+    const payload = JSON.stringify({ type: 'page', path: '/whoami', ref: document.referrer || null });
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon('/api/track', new Blob([payload], { type: 'application/json' }));
+    } else {
+      fetch('/api/track', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, keepalive: true }).catch(() => {});
+    }
+  } catch (e) { /* analytics must never break the page */ }
+})();
+
 const QUESTION_BANK = [
   { q: "Think about the thing you keep starting over. What's really going on?",
     options: [
