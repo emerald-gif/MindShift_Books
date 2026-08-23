@@ -3108,9 +3108,19 @@ app.listen(PORT, () => {
 
   // Pre-warm the free-eBooks cache right after boot, so the very first
   // visitor doesn't wait on a cold external call to Gutendex. This covers
-  // both the homepage swiper and the /free-ebooks page's "All" tab, since
-  // both hit the exact same underlying query (topic "fiction", page 1).
-  fetchGutendexRange('fiction', false, 0, 20)
-    .then(() => console.log('[free-ebooks] cache warmed on startup'))
-    .catch(e => console.warn('[free-ebooks] startup warm-up failed (non-fatal):', e && e.message ? e.message : e));
+  // the homepage swiper and the /free-ebooks page's "All" tab (topic
+  // "fiction", page 1), PLUS every other category chip (Business & Money,
+  // Psychology, Romance, etc.) — otherwise only "fiction" was warm and the
+  // first person to click any other category each hour ate a slow live
+  // Gutendex round-trip (with retries) before it got cached.
+  const warmupTopics = Array.from(new Set(
+    FREE_EBOOK_CATEGORIES.map(c => c.topic).filter(Boolean)
+  ));
+  Promise.all(
+    warmupTopics.map(topic =>
+      fetchGutendexRange(topic, false, 0, 20).catch(e =>
+        console.warn(`[free-ebooks] startup warm-up failed for topic "${topic}" (non-fatal):`, e && e.message ? e.message : e)
+      )
+    )
+  ).then(() => console.log(`[free-ebooks] cache warmed on startup for ${warmupTopics.length} categories`));
 });
