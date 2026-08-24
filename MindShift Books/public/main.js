@@ -848,6 +848,24 @@ function closeWishlistAuthDrawer() {
 
 // Fetch (or clear) the wishlist every time sign-in state changes.
 window.addEventListener('msb-auth-changed', fetchWishlist);
+// Belt-and-suspenders (same pattern used on wishlist.html/account.html):
+// Firebase's first onAuthStateChanged resolution can fire before this
+// listener is attached, in which case the event above already fired and
+// won't come again — leaving wishlistFetched stuck at false forever and
+// the wishlist page stuck on its loading skeleton. onAuthReady() is safe
+// either way: it fires now if auth already resolved, or later if it
+// hasn't. Guarded by wishlistFetched so it can't double-fire alongside a
+// normal 'msb-auth-changed' event.
+function wireWishlistAuthFallback() {
+  if (window.MSBAuth && typeof window.MSBAuth.onAuthReady === 'function') {
+    window.MSBAuth.onAuthReady(() => { if (!wishlistFetched) fetchWishlist(); });
+  } else {
+    // auth.js (which defines window.MSBAuth) loads after main.js, so on a
+    // normal page load it isn't defined yet here — retry shortly.
+    setTimeout(wireWishlistAuthFallback, 50);
+  }
+}
+wireWishlistAuthFallback();
 
 // Keep every heart button for a given book (card overlay + review-page
 // button, possibly several on one page) in sync after a toggle.
