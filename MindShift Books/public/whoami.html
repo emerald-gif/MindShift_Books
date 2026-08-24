@@ -187,10 +187,10 @@
 <body>
 
 <div class="wa-wrap">
-  <div class="wa-brand-strip">
+  <a href="/" class="wa-brand-strip" style="text-decoration:none;">
     <img src="MINDSHIFT.jpg" alt="" class="wa-brand-logo">
     <span class="wa-brand-name">MindShift Books</span>
-  </div>
+  </a>
   <div id="waRoot"></div>
 </div>
 
@@ -727,7 +727,8 @@ function renderResult() {
           <i class="fa-brands fa-telegram"></i>
         </button>
       </div>
-      <button type="button" class="wa-retake-btn" id="waRetakeBtn" style="margin-top: 4px;">Take It Again</button>
+      <a href="/" class="wa-retake-btn" id="waBrowseBtn" style="margin-top: 4px; text-decoration:none; display:flex; align-items:center; justify-content:center; box-sizing:border-box;">See What's In Store</a>
+      <button type="button" class="wa-back-btn" id="waRetakeBtn" style="align-self:center; margin-top: 2px;">Take It Again</button>
     </div>
   `;
 
