@@ -156,6 +156,7 @@ const BREVO_BANK_OTP_TEMPLATE_ID = Number(process.env.BREVO_BANK_OTP_TEMPLATE_ID
 const BREVO_AFFILIATE_WELCOME_TEMPLATE_ID = Number(process.env.BREVO_AFFILIATE_WELCOME_TEMPLATE_ID || 4); // successful affiliate onboarding
 const BREVO_AFFILIATE_BROADCAST_TEMPLATE_ID = Number(process.env.BREVO_AFFILIATE_BROADCAST_TEMPLATE_ID || 5); // one template for every affiliate announcement — which blocks render depends on which content fields are sent, not on which template
 const BREVO_PROMO_KIT_TEMPLATE_ID = 6; // fixed-content "Wave 1" style promo kit email (slides + copy angles) — see promo-kit-template-6.html — matches Brevo template #6
+const BREVO_CUSTOMER_DISCOUNT_TEMPLATE_ID = 7; // fixed-content "books are discounted right now" announcement to every registered customer — content lives entirely in Brevo template #7, this just triggers the send
 const BREVO_SENDER_NAME = process.env.BREVO_SENDER_NAME || 'Mindshift Books';
 const BREVO_SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'contact@mindshiftbooks.shop';
 const PUBLIC_SITE_URL = process.env.PUBLIC_URL || 'https://mindshiftbooks.shop'; // reused below to build each affiliate's own ?ref= link
@@ -2733,6 +2734,51 @@ app.get('/admin', requireAdminPage, (req, res) => {
   res.sendFile(path.join(__dirname, 'admin', 'dashboard.html'));
 });
 
+// Every registered user with an email on file, unless they've opted out of
+// marketing mail (marketingOptOut: true — not set by anything yet, but
+// honored here in case it's ever added, same as affiliates' broadcastOptOut).
+async function resolveCustomerRecipients() {
+  const snap = await db.collection('users').get();
+  const all = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
+  return { recipients: all.filter(u => u.email && !u.marketingOptOut) };
+}
+
+// Same "press send, no composing" pattern as the affiliate promo kit above,
+// but aimed at every registered customer (users collection) instead of
+// affiliates. All copy — the discount, the advice, the CTA — lives in the
+// Brevo template itself (template #7); only the recipient's name is
+// personalized here, so this can be triggered again for a future discount
+// just by editing the template in Brevo and pressing send, no code changes.
+async function sendCustomerDiscountEmail(user) {
+  if (!BREVO_API_KEY || !user.email) return { ok: false, error: 'Missing Brevo API key or recipient email.' };
+  try {
+    const emailRes = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        accept: 'application/json',
+        'api-key': BREVO_API_KEY,
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        sender: { name: BREVO_SENDER_NAME, email: BREVO_SENDER_EMAIL },
+        to: [{ email: user.email, name: user.name || undefined }],
+        templateId: BREVO_CUSTOMER_DISCOUNT_TEMPLATE_ID,
+        params: {
+          name: user.name || 'there',
+          shopUrl: PUBLIC_SITE_URL
+        }
+      })
+    });
+    if (!emailRes.ok) {
+      const txt = await emailRes.text().catch(() => null);
+      return { ok: false, error: `Brevo ${emailRes.status}: ${(txt || '').slice(0, 160)}` };
+    }
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e.message || String(e)).slice(0, 160) };
+  }
+}
+
 app.use('/api/admin', requireAdminApi);
 
 // GET /api/admin/summary?days=30 — pageviews, downloads, and purchases,
@@ -3056,6 +3102,48 @@ app.post('/api/admin/promo-kit/send', async (req, res) => {
   } catch (err) {
     console.error('/api/admin/promo-kit/send error', err);
     return res.status(500).json({ error: 'Could not send promo kit email' });
+  }
+});
+
+// POST /api/admin/customer-broadcast/send — sends the fixed-content
+// discount announcement (Brevo template 7) to every registered customer.
+// Body: {} to send to everyone, or { testEmail: '...' } to send one test
+// copy to any inbox first (leave testEmail blank to use the store's own).
+// Same "no composer" idea as the promo kit above — the discount amount,
+// the advice, all of it lives in the Brevo template. Pressing send here
+// just triggers it; a future discount only needs the template edited.
+app.post('/api/admin/customer-broadcast/send', async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+
+    const testEmail = String((req.body && req.body.testEmail) || '').trim();
+    if (testEmail || (req.body && req.body.testEmail === '')) {
+      const to = testEmail || BREVO_SENDER_EMAIL;
+      const result = await sendCustomerDiscountEmail({ email: to, name: 'Test' });
+      if (!result.ok) return res.status(502).json({ error: result.error || 'Send failed.' });
+      return res.json({ ok: true, sent: 1, failed: 0, total: 1, sentTo: to });
+    }
+
+    const { recipients } = await resolveCustomerRecipients();
+    if (!recipients.length) return res.json({ ok: true, sent: 0, failed: 0, total: 0 });
+
+    const BATCH_SIZE = 5;
+    let sent = 0;
+    const failures = [];
+    for (let i = 0; i < recipients.length; i += BATCH_SIZE) {
+      const batch = recipients.slice(i, i + BATCH_SIZE);
+      const results = await Promise.all(batch.map(u => sendCustomerDiscountEmail(u)));
+      results.forEach((r, idx) => {
+        if (r.ok) sent++; else failures.push({ email: batch[idx].email, error: r.error });
+      });
+      if (i + BATCH_SIZE < recipients.length) await new Promise(r => setTimeout(r, 400));
+    }
+
+    console.log(`Customer discount broadcast by ${ADMIN_USER}: ${sent}/${recipients.length} sent`);
+    return res.json({ ok: true, sent, failed: failures.length, total: recipients.length, failures: failures.slice(0, 10) });
+  } catch (err) {
+    console.error('/api/admin/customer-broadcast/send error', err);
+    return res.status(500).json({ error: 'Could not send customer broadcast' });
   }
 });
 
