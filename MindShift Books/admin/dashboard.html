@@ -444,6 +444,20 @@
       </div>
       <div class="broadcast-result" id="pkResult"></div>
     </div>
+
+    <!-- ── Customer discount announcement: fixed-content send (Brevo template 7) ── -->
+    <div class="panel full-panel" style="padding-bottom:20px;">
+      <h2><span class="emoji">🏷️</span> Book Discount Announcement</h2>
+      <p class="empty" style="padding-top:0;margin-top:-8px;margin-bottom:14px;">
+        Sends the ready-made discount announcement — current pricing plus a bit of advice — to every registered customer. The content lives entirely in Brevo template #7; edit it there whenever the discount changes, then just press send here, no code changes needed.
+      </p>
+      <div class="broadcast-actions">
+        <button class="btn-secondary" id="cdTestBtn">Send test to myself</button>
+        <button class="btn-primary" id="cdSendBtn">Send to all customers</button>
+        <span class="recipient-count" id="cdRecipientCount"></span>
+      </div>
+      <div class="broadcast-result" id="cdResult"></div>
+    </div>
   </div>
 </div>
 
@@ -504,6 +518,11 @@
       const data = await res.json();
 
       document.getElementById('totalUsersCount').textContent = (data.totals.totalUsers || 0).toLocaleString();
+      const cdCountEl = document.getElementById('cdRecipientCount');
+      if (cdCountEl) {
+        const n = data.totals.totalUsers || 0;
+        cdCountEl.textContent = `Will send to ~${n.toLocaleString()} customer${n === 1 ? '' : 's'}`;
+      }
       document.getElementById('totalPageviews').textContent = data.totals.pageviews.toLocaleString();
       document.getElementById('totalDownloads').textContent = data.totals.downloads.toLocaleString();
       document.getElementById('totalOrders').textContent = data.totals.orders.toLocaleString();
@@ -1219,6 +1238,55 @@ ${ctaBlock}${captionBlock}${assetsBlock}${affiliateLinkBlock}
       showPromoKitResult(err.message || 'Could not send promo kit.', false);
     } finally {
       pkSendBtn.disabled = false; pkSendBtn.textContent = 'Send promo kit';
+    }
+  });
+
+  // ── Customer discount announcement (fixed-content template, Brevo #7) ──
+  function showCustomerBroadcastResult(msg, ok) {
+    const el = document.getElementById('cdResult');
+    el.className = 'broadcast-result ' + (ok ? 'success' : 'error');
+    el.textContent = msg;
+  }
+
+  const cdTestBtn = document.getElementById('cdTestBtn');
+  if (cdTestBtn) cdTestBtn.addEventListener('click', async () => {
+    const testEmail = prompt("Send the test to which address? (Leave blank to use the store's own inbox.)", '');
+    if (testEmail === null) return;
+    cdTestBtn.disabled = true; cdTestBtn.textContent = 'Sending…';
+    try {
+      const res = await fetch('/api/admin/customer-broadcast/send', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ testEmail: testEmail.trim() })
+      });
+      if (res.status === 401) { window.location.href = '/admin/login'; return; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Send failed');
+      showCustomerBroadcastResult(`Test sent to ${data.sentTo}. Check that inbox before sending to everyone.`, true);
+    } catch (err) {
+      showCustomerBroadcastResult(err.message || 'Could not send test email.', false);
+    } finally {
+      cdTestBtn.disabled = false; cdTestBtn.textContent = 'Send test to myself';
+    }
+  });
+
+  const cdSendBtn = document.getElementById('cdSendBtn');
+  if (cdSendBtn) cdSendBtn.addEventListener('click', async () => {
+    const countText = document.getElementById('cdRecipientCount').textContent || 'all customers';
+    if (!confirm(`Send the discount announcement to ${countText.replace('Will send to ', '')}? This can't be undone — send yourself a test first if you haven't.`)) return;
+    cdSendBtn.disabled = true; cdSendBtn.textContent = 'Sending…';
+    try {
+      const res = await fetch('/api/admin/customer-broadcast/send', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({})
+      });
+      if (res.status === 401) { window.location.href = '/admin/login'; return; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Send failed');
+      const failedNote = data.failed ? ` (${data.failed} failed to send)` : '';
+      showCustomerBroadcastResult(`Sent to ${data.sent} of ${data.total} customer${data.total === 1 ? '' : 's'}${failedNote}.`, data.failed === 0);
+    } catch (err) {
+      showCustomerBroadcastResult(err.message || 'Could not send broadcast.', false);
+    } finally {
+      cdSendBtn.disabled = false; cdSendBtn.textContent = 'Send to all customers';
     }
   });
 </script>
