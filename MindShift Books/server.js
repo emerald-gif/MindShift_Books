@@ -1845,7 +1845,7 @@ app.get('/config', (req, res) => {
 // Fires from a tiny snippet on each page. No cookies, no IP storage, no
 // cross-site identifiers — just a type + path + optional productId, so the
 // admin dashboard can show views/downloads/purchases per book.
-const TRACK_TYPES = new Set(['home', 'review', 'preview', 'page', 'affiliate_click']);
+const TRACK_TYPES = new Set(['home', 'review', 'preview', 'page', 'affiliate_click', 'whoami_result', 'whoami_download', 'whoami_share']);
 const AFFILIATE_COMMISSION_RATE = 0.15; // 15% of the actual NGN price paid, "ours" books only
 
 // ---------------- Affiliate payouts (weekly, Monday, manual bank transfer) ----------------
@@ -1955,7 +1955,7 @@ app.post('/api/track', (req, res) => {
   res.status(204).end();
   if (!db) return;
   try {
-    const { type, path: p, productId, ref, affCode } = req.body || {};
+    const { type, path: p, productId, ref, affCode, archetype } = req.body || {};
     if (!TRACK_TYPES.has(type)) return;
     const payload = {
       type,
@@ -1964,6 +1964,12 @@ app.post('/api/track', (req, res) => {
       ref: typeof ref === 'string' ? ref.slice(0, 300) : null,
       createdAt: admin.firestore.Timestamp.now()
     };
+    // Which "Who Am I" archetype the result/download/share belongs to —
+    // only meaningful for the whoami_* types, kept short since it's just
+    // a slug like "overthinker", not free text.
+    if (type.startsWith('whoami_') && typeof archetype === 'string' && archetype.trim()) {
+      payload.archetype = archetype.trim().slice(0, 40);
+    }
     if (type === 'affiliate_click' && typeof affCode === 'string' && affCode.trim()) {
       const code = affCode.trim().toUpperCase().slice(0, 40);
       payload.affCode = code;
@@ -2785,6 +2791,14 @@ app.use('/api/admin', requireAdminApi);
 // each broken down per book, for the last N days.
 const AFFILIATE_ECOSYSTEM_PATHS = new Set(['/affiliate', '/affiliate/apply', '/affiliate/dashboard', '/affiliate/payout']);
 
+// Mirrors the ARCHETYPES map in public/whoami.html, kept minimal (just the
+// display label) since that's all the admin dashboard needs to show.
+const WHOAMI_ARCHETYPE_LABELS = {
+  sprinter: 'The Sprinter', underpaid: 'The Underpaid Expert', outgrower: 'The Outgrower',
+  hustler: 'The Quiet Hustler', overthinker: 'The Overthinker', peoplepleaser: 'The People-Pleaser',
+  perfectionist: 'The Perfectionist', comfortseeker: 'The Comfort Seeker'
+};
+
 app.get('/api/admin/summary', async (req, res) => {
   try {
     if (!db) return res.status(500).json({ error: 'Database unavailable' });
@@ -2801,6 +2815,14 @@ app.get('/api/admin/summary', async (req, res) => {
     let totalDownloads = 0;
     let affiliateEcosystemViews = 0;
 
+    // "Who Am I" quiz funnel — page views come from pageviewsByPath['/whoami']
+    // below (it's a normal 'page' event), these three are the steps after
+    // that: got a result, downloaded the card, shared it. Archetype counts
+    // are tallied off whoami_result only, since that's the one event that
+    // fires exactly once per completed quiz.
+    let whoamiResults = 0, whoamiDownloads = 0, whoamiShares = 0;
+    const whoamiByArchetype = {};
+
     eventsSnap.forEach(doc => {
       const d = doc.data();
       if (d.type === 'download') {
@@ -2808,6 +2830,13 @@ app.get('/api/admin/summary', async (req, res) => {
         if (d.productId) downloadsByProduct[d.productId] = (downloadsByProduct[d.productId] || 0) + 1;
         return;
       }
+      if (d.type === 'whoami_result') {
+        whoamiResults++;
+        if (d.archetype) whoamiByArchetype[d.archetype] = (whoamiByArchetype[d.archetype] || 0) + 1;
+        return;
+      }
+      if (d.type === 'whoami_download') { whoamiDownloads++; return; }
+      if (d.type === 'whoami_share') { whoamiShares++; return; }
       totalPageviews++;
       const p = d.path || 'unknown';
       pageviewsByPath[p] = (pageviewsByPath[p] || 0) + 1;
@@ -2862,7 +2891,16 @@ app.get('/api/admin/summary', async (req, res) => {
       reviewViews: withTitles(reviewViewsByProduct),
       previewViews: withTitles(previewViewsByProduct),
       downloads: withTitles(downloadsByProduct),
-      purchases: withTitles(purchasesByProduct)
+      purchases: withTitles(purchasesByProduct),
+      whoami: {
+        views: pageviewsByPath['/whoami'] || 0,
+        results: whoamiResults,
+        downloads: whoamiDownloads,
+        shares: whoamiShares,
+        byArchetype: Object.entries(whoamiByArchetype)
+          .map(([key, count]) => ({ title: WHOAMI_ARCHETYPE_LABELS[key] || key, count }))
+          .sort((a, b) => b.count - a.count)
+      }
     });
   } catch (err) {
     console.error('/api/admin/summary error', err);
