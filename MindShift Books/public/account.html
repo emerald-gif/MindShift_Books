@@ -25,7 +25,7 @@ header{
 header h1{font-size:1.45rem;font-weight:700;display:flex;align-items:center;gap:10px;margin:0;}
 .hamburger{font-size:1.3rem;cursor:pointer;color:#1e293b}
 
-main{ max-width:760px;margin:0 auto;padding:100px 16px 60px;}
+main{ max-width:600px;margin:0 auto;padding:100px 16px 60px;}
 
 .sidebar{position:fixed;top:0;left:-300px;width:280px;height:100%;background:#111827;padding-top:84px;transition:left 0.32s ease;z-index:2000;border-right:1px solid rgba(255,255,255,0.04);color:#fff}
 .sidebar .logo-row{display:flex;align-items:center;gap:12px;padding:18px 20px;position:absolute;top:16px;left:12px}
@@ -34,10 +34,6 @@ main{ max-width:760px;margin:0 auto;padding:100px 16px 60px;}
 .sidebar li{padding:16px 20px;font-weight:600;border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer}
 .sidebar li.active{color:var(--accent)}
 .sidebar[data-open="true"]{left:0}
-
-.page-head{margin-bottom:22px;}
-.page-head h2{font-size:1.4rem;margin-bottom:6px;}
-.muted{font-size:.9rem;color:#6b7280}
 
 .btn{padding:12px 16px;border-radius:10px;border:none;font-weight:700;cursor:pointer;}
 .buy-btn{background:linear-gradient(90deg,#4f46e5,#06b6d4);color:white;box-shadow:0 8px 20px rgba(79,70,229,0.18);}
@@ -65,12 +61,66 @@ main{ max-width:760px;margin:0 auto;padding:100px 16px 60px;}
 .gate-signup-btn:hover{border-color:#4f46e5;color:#4f46e5;}
 .gate-card .browse-link{display:block;margin-top:18px;font-size:0.85rem;color:#4f46e5;font-weight:700;text-decoration:none;}
 
-/* Tabs */
-.acct-tabs{display:flex;gap:8px;background:white;border-radius:12px;padding:5px;margin-bottom:22px;box-shadow:0 4px 14px rgba(0,0,0,0.05);}
-.acct-tab{flex:1;text-align:center;padding:11px;border-radius:9px;font-weight:700;font-size:0.88rem;cursor:pointer;color:#64748b;border:none;background:none;}
-.acct-tab.active{background:linear-gradient(90deg,#4f46e5,#06b6d4);color:white;}
-.acct-panel{display:none;}
-.acct-panel.active{display:block;}
+/* ---------------- "Meta One"-style settings hub ---------------- */
+
+/* Hero */
+.hero-card{ text-align:center; padding:6px 0 8px; }
+.hero-avatar-ring{
+  width:96px;height:96px;margin:0 auto 16px;border-radius:50%;
+  background:linear-gradient(135deg,#4f46e5,#06b6d4);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 10px 26px rgba(79,70,229,0.22);
+}
+.hero-avatar{
+  width:84px;height:84px;border-radius:50%;background:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.9rem;font-weight:800;
+  background-image:linear-gradient(135deg,#4f46e5,#06b6d4);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.hero-name{font-size:1.3rem;font-weight:800;margin-bottom:4px;}
+.hero-sub{font-size:0.88rem;color:#6b7280;}
+
+/* Section labels + grouped rows */
+.settings-label{
+  font-size:0.72rem;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;
+  color:#94a3b8;margin:28px 6px 10px;
+}
+.settings-group{
+  background:white;border-radius:14px;overflow:hidden;
+  box-shadow:0 10px 26px rgba(0,0,0,0.05);
+  border:1px solid rgba(15,23,42,0.04);
+}
+.settings-row{
+  display:flex;align-items:center;gap:14px;padding:15px 16px;
+  cursor:pointer;border-bottom:1px solid #f1f5f9;
+  transition:background-color 120ms ease;
+}
+.settings-row:last-child{border-bottom:none;}
+.settings-row:hover{background:#f8fafc;}
+.settings-row:active{background:#f1f5f9;}
+.row-icon{
+  width:36px;height:36px;border-radius:10px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  background:#f1f5f9;border:1px solid #e2e8f0;color:#334155;font-size:0.95rem;
+}
+.row-text{flex:1;min-width:0;}
+.row-label{font-weight:700;font-size:0.95rem;color:var(--primary);}
+.row-sub{font-size:0.78rem;color:#94a3b8;margin-top:2px;}
+.row-value{font-size:0.85rem;color:#64748b;margin-right:2px;white-space:nowrap;}
+.chevron{color:#cbd5e1;font-size:0.8rem;flex-shrink:0;}
+.settings-row.danger .row-icon{color:#dc2626;background:#fef2f2;border-color:#fecaca;}
+.settings-row.danger .row-label{color:#dc2626;}
+
+/* Sub-page (drill-down) header */
+.subpage-header{display:flex;align-items:center;gap:12px;margin-bottom:20px;}
+.back-btn{
+  width:38px;height:38px;border-radius:50%;background:white;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;color:#1e293b;
+  box-shadow:0 6px 16px rgba(0,0,0,0.08);border:1px solid rgba(15,23,42,0.04);
+}
+.back-btn:hover{background:#f8fafc;}
+.subpage-header h2{font-size:1.2rem;font-weight:800;}
 
 /* Order cards */
 .results{display:flex;flex-direction:column;gap:16px;}
@@ -173,10 +223,6 @@ main{ max-width:760px;margin:0 auto;padding:100px 16px 60px;}
 </aside>
 
 <main>
-  <div class="page-head">
-    <h2>My Account</h2>
-    <div class="muted">Your orders and account details.</div>
-  </div>
 
   <!-- Shown when signed out -->
   <div class="gate-card" id="gateCard" style="display:none;">
@@ -192,17 +238,89 @@ main{ max-width:760px;margin:0 auto;padding:100px 16px 60px;}
 
   <!-- Shown when signed in -->
   <div id="acctContent" style="display:none;">
-    <div class="acct-tabs">
-      <button class="acct-tab" id="tabOrders" type="button">Order History</button>
-      <button class="acct-tab" id="tabDetails" type="button">My Details</button>
+
+    <!-- MAIN SETTINGS-STYLE HUB -->
+    <div id="viewMain">
+      <div class="hero-card">
+        <div class="hero-avatar-ring"><div class="hero-avatar" id="heroAvatar">M</div></div>
+        <div class="hero-name" id="heroName">My Account</div>
+        <div class="hero-sub" id="heroSub">Loading…</div>
+      </div>
+
+      <div class="settings-label">Orders &amp; Details</div>
+      <div class="settings-group">
+        <div class="settings-row" id="rowOrders">
+          <div class="row-icon"><i class="fa-solid fa-receipt"></i></div>
+          <div class="row-text">
+            <div class="row-label">Order History</div>
+            <div class="row-sub" id="orderCountSub">View your purchases</div>
+          </div>
+          <i class="fa-solid fa-chevron-right chevron"></i>
+        </div>
+        <div class="settings-row" id="rowDetails">
+          <div class="row-icon"><i class="fa-solid fa-user"></i></div>
+          <div class="row-text">
+            <div class="row-label">My Details</div>
+            <div class="row-sub">Name, email &amp; referral</div>
+          </div>
+          <i class="fa-solid fa-chevron-right chevron"></i>
+        </div>
+      </div>
+
+      <div class="settings-label">More</div>
+      <div class="settings-group">
+        <div class="settings-row" onclick="window.location.href='/wishlist'">
+          <div class="row-icon"><i class="fa-solid fa-heart"></i></div>
+          <div class="row-text"><div class="row-label">My Wishlist</div></div>
+          <i class="fa-solid fa-chevron-right chevron"></i>
+        </div>
+        <div class="settings-row" onclick="window.location.href='/free-ebooks'">
+          <div class="row-icon"><i class="fa-solid fa-book-open"></i></div>
+          <div class="row-text"><div class="row-label">Free eBooks</div></div>
+          <i class="fa-solid fa-chevron-right chevron"></i>
+        </div>
+        <div class="settings-row" onclick="window.location.href='/affiliate'">
+          <div class="row-icon"><i class="fa-solid fa-handshake"></i></div>
+          <div class="row-text"><div class="row-label">Become an Affiliate</div></div>
+          <i class="fa-solid fa-chevron-right chevron"></i>
+        </div>
+        <div class="settings-row" onclick="window.location.href='/support'">
+          <div class="row-icon"><i class="fa-solid fa-headset"></i></div>
+          <div class="row-text"><div class="row-label">Support</div></div>
+          <i class="fa-solid fa-chevron-right chevron"></i>
+        </div>
+        <div class="settings-row" onclick="window.location.href='/legal'">
+          <div class="row-icon"><i class="fa-solid fa-file-contract"></i></div>
+          <div class="row-text"><div class="row-label">Terms &amp; Privacy</div></div>
+          <i class="fa-solid fa-chevron-right chevron"></i>
+        </div>
+      </div>
+
+      <div class="settings-label">&nbsp;</div>
+      <div class="settings-group">
+        <div class="settings-row danger" id="mainSignOutBtn">
+          <div class="row-icon"><i class="fa-solid fa-right-from-bracket"></i></div>
+          <div class="row-text"><div class="row-label">Sign Out</div></div>
+        </div>
+      </div>
     </div>
 
-    <div class="acct-panel" id="panelOrders">
+    <!-- ORDER HISTORY SUB-PAGE -->
+    <div id="viewOrders" style="display:none;">
+      <div class="subpage-header">
+        <div class="back-btn" id="backFromOrders"><i class="fa-solid fa-arrow-left"></i></div>
+        <h2>Order History</h2>
+      </div>
       <div id="ordersStatus"><div class="loader"></div></div>
       <div class="results" id="ordersResults"></div>
     </div>
 
-    <div class="acct-panel" id="panelDetails">
+    <!-- MY DETAILS SUB-PAGE -->
+    <div id="viewDetails" style="display:none;">
+      <div class="subpage-header">
+        <div class="back-btn" id="backFromDetails"><i class="fa-solid fa-arrow-left"></i></div>
+        <h2>My Details</h2>
+      </div>
       <div class="details-card">
         <div class="details-field">
           <label for="detName">Full name</label>
@@ -218,11 +336,9 @@ main{ max-width:760px;margin:0 auto;padding:100px 16px 60px;}
         </div>
         <button class="btn buy-btn" id="detSaveBtn" style="width:auto;">Save Changes</button>
         <div class="details-save-note" id="detSaveNote">Saved ✓</div>
-        <div style="margin-top:22px;border-top:1px solid #f1f5f9;padding-top:16px;">
-          <button class="btn" id="detSignOutBtn" style="width:auto;background:#fef2f2;color:#991b1b;">Sign Out</button>
-        </div>
       </div>
     </div>
+
   </div>
 </main>
 
@@ -294,19 +410,24 @@ main{ max-width:760px;margin:0 auto;padding:100px 16px 60px;}
 <script>
   function escapeHtml(s) { return (s == null ? '' : String(s)).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
 
-  function showTab(tab) {
-    document.getElementById('tabOrders').classList.toggle('active', tab === 'orders');
-    document.getElementById('tabDetails').classList.toggle('active', tab === 'details');
-    document.getElementById('panelOrders').classList.toggle('active', tab === 'orders');
-    document.getElementById('panelDetails').classList.toggle('active', tab === 'details');
-    if (tab === 'orders') loadOrders();
-    if (tab === 'details') loadDetails();
+  let accountData = null;
+
+  function showView(view) {
+    document.getElementById('viewMain').style.display = view === 'main' ? 'block' : 'none';
+    document.getElementById('viewOrders').style.display = view === 'orders' ? 'block' : 'none';
+    document.getElementById('viewDetails').style.display = view === 'details' ? 'block' : 'none';
+    window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+    if (view === 'orders') loadOrders();
+    if (view === 'details') loadDetails();
   }
-  document.getElementById('tabOrders').addEventListener('click', () => showTab('orders'));
-  document.getElementById('tabDetails').addEventListener('click', () => showTab('details'));
+  document.getElementById('rowOrders').addEventListener('click', () => showView('orders'));
+  document.getElementById('rowDetails').addEventListener('click', () => showView('details'));
+  document.getElementById('backFromOrders').addEventListener('click', () => showView('main'));
+  document.getElementById('backFromDetails').addEventListener('click', () => showView('main'));
+
   document.getElementById('gateSignInBtn').addEventListener('click', () => { window.location.href = '/login?returnTo=' + encodeURIComponent('/account'); });
   document.getElementById('gateSignUpBtn').addEventListener('click', () => { window.location.href = '/signup?returnTo=' + encodeURIComponent('/account'); });
-  document.getElementById('detSignOutBtn').addEventListener('click', () => window.MSBAuth.signOut());
+  document.getElementById('mainSignOutBtn').addEventListener('click', () => window.MSBAuth.signOut());
 
   let ordersLoaded = false;
   async function loadOrders() {
@@ -322,6 +443,8 @@ main{ max-width:760px;margin:0 auto;padding:100px 16px 60px;}
       const data = await res.json();
       status.innerHTML = '';
       if (!res.ok) throw new Error(data.error || 'Could not load orders');
+      const count = (data.rows || []).length;
+      document.getElementById('orderCountSub').textContent = count ? `${count} order${count === 1 ? '' : 's'}` : 'View your purchases';
       if (!data.rows || !data.rows.length) {
         results.innerHTML = `<div class="empty">No orders yet.<br><a href="/" style="color:#4f46e5;font-weight:700;">Browse books →</a></div>`;
         return;
@@ -349,6 +472,12 @@ main{ max-width:760px;margin:0 auto;padding:100px 16px 60px;}
     }
   }
 
+  function initialsFor(name, email) {
+    const src = (name || '').trim() || (email || '').trim();
+    if (!src) return 'M';
+    return src.charAt(0).toUpperCase();
+  }
+
   let detailsLoaded = false;
   async function loadDetails() {
     if (detailsLoaded) return;
@@ -368,6 +497,25 @@ main{ max-width:760px;margin:0 auto;padding:100px 16px 60px;}
     } catch (e) { /* leave fields blank on failure */ }
   }
 
+  // Loads a lightweight copy of account info for the hero card, independent
+  // of the My Details sub-page (so the hero fills in even if that page is
+  // never opened).
+  async function loadHero() {
+    try {
+      const token = await window.MSBAuth.getIdToken();
+      const res = await fetch('/api/account', { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (res.ok) {
+        accountData = data;
+        document.getElementById('heroAvatar').textContent = initialsFor(data.name, data.email);
+        document.getElementById('heroName').textContent = data.name || 'My Account';
+        document.getElementById('heroSub').textContent = data.email || '';
+      }
+    } catch (e) {
+      document.getElementById('heroSub').textContent = '';
+    }
+  }
+
   document.getElementById('detSaveBtn').addEventListener('click', async () => {
     const btn = document.getElementById('detSaveBtn');
     const note = document.getElementById('detSaveNote');
@@ -384,6 +532,8 @@ main{ max-width:760px;margin:0 auto;padding:100px 16px 60px;}
       });
       if (!res.ok) throw new Error();
       note.style.display = 'block';
+      document.getElementById('heroName').textContent = name;
+      document.getElementById('heroAvatar').textContent = initialsFor(name, document.getElementById('detEmail').value);
       setTimeout(() => note.style.display = 'none', 2500);
     } catch (e) {
       alert('Could not save. Please try again.');
@@ -399,8 +549,9 @@ main{ max-width:760px;margin:0 auto;padding:100px 16px 60px;}
     document.getElementById('acctContent').style.display = user ? 'block' : 'none';
     if (user) {
       ordersLoaded = false; detailsLoaded = false;
+      loadHero();
       const hash = window.location.hash.replace('#', '');
-      showTab(hash === 'details' ? 'details' : 'orders');
+      showView(hash === 'details' ? 'details' : hash === 'orders' ? 'orders' : 'main');
     }
   }
   window.addEventListener('msb-auth-changed', (e) => applyAuthState(e.detail.user));
