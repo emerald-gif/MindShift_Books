@@ -7,38 +7,78 @@
 <title>Admin — MindShift Books</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
+
   :root {
     --primary: #0f172a; --accent: #06b6d4; --indigo: #4f46e5; --bg: #f8fafc;
     --card: #ffffff; --border: #e5e7eb; --muted: #64748b;
+    --indigo-soft: #eef2ff; --border-soft: #f1f5f9;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
   body { background: var(--bg); color: var(--primary); min-height: 100vh; padding-bottom: 60px; }
 
-  /* ── HEADER ── */
-  header {
-    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
-    padding: 18px 20px;
-    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;
-  }
-  .hd-brand { display: flex; align-items: center; gap: 12px; }
-  .hd-brand img { width: 38px; height: 38px; border-radius: 8px; }
-  .hd-brand .name { color: white; font-weight: 800; font-size: 1.05rem; }
-  .hd-brand .tag { color: #67e8f9; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+  /* ── DASHBOARD SHELL: sidebar (desktop) / docked top bar (mobile) ── */
+  .dash-shell { min-height: 100vh; }
 
-  .hd-actions { display: flex; align-items: center; gap: 10px; }
+  .sidebar {
+    background: linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%);
+    position: sticky; top: 0; z-index: 50;
+  }
+  .sidebar-brand { display: flex; align-items: center; gap: 10px; padding: 18px; }
+  .sidebar-brand img { width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0; }
+  .sidebar-brand .name { color: white; font-weight: 800; font-size: 0.94rem; line-height: 1.25; }
+  .sidebar-brand .tag { color: #67e8f9; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+
+  .sidebar-nav { display: flex; flex-direction: column; gap: 3px; padding: 6px 12px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 11px; width: 100%; text-align: left;
+    padding: 10px 12px; border-radius: 10px; border: none; background: none; cursor: pointer;
+    color: #94a3b8; font-family: 'Inter', sans-serif; font-weight: 700; font-size: 0.86rem;
+    transition: background .15s, color .15s;
+  }
+  .nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+  .nav-item.active { background: rgba(255,255,255,0.1); color: #fff; }
+  .nav-item:not(.active):hover { background: rgba(255,255,255,0.05); color: #d8dee9; }
+
+  .sidebar-controls { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; margin-top: auto; border-top: 1px solid rgba(255,255,255,0.08); }
   select {
     padding: 9px 14px; border-radius: 10px; border: 1.5px solid rgba(255,255,255,0.15);
     background: rgba(255,255,255,0.08); color: white; font-weight: 600; font-size: 0.84rem;
   }
   select option { color: #0f172a; }
   .logout-link {
+    display: block; text-align: center;
     color: #94a3b8; font-size: 0.82rem; font-weight: 600; text-decoration: none;
     padding: 9px 14px; border-radius: 10px; border: 1.5px solid rgba(255,255,255,0.12);
     transition: color 0.2s, border-color 0.2s;
   }
   .logout-link:hover { color: #67e8f9; border-color: rgba(103,232,249,0.4); }
 
-  .page { max-width: 960px; margin: 0 auto; padding: 24px 16px 0; }
+  .main { min-width: 0; }
+  .page { max-width: 900px; margin: 0 auto; padding: 28px 20px 0; }
+
+  @media (min-width: 880px) {
+    .dash-shell { display: flex; }
+    .sidebar { width: 232px; flex-shrink: 0; height: 100vh; display: flex; flex-direction: column; }
+    .main { flex: 1; height: 100vh; overflow-y: auto; }
+  }
+  @media (max-width: 879px) {
+    .sidebar { display: flex; flex-wrap: wrap; align-items: center; box-shadow: 0 1px 0 rgba(15,23,42,0.06); }
+    .sidebar-brand { flex: 1; padding: 14px 16px; }
+    .sidebar-controls { flex-direction: row; align-items: center; padding: 12px 16px; margin-top: 0; border-top: none; }
+    .sidebar-controls select { font-size: 0.78rem; padding: 8px 10px; }
+    .logout-link { padding: 8px 12px; font-size: 0.78rem; white-space: nowrap; }
+    .sidebar-nav { flex-basis: 100%; flex-direction: row; overflow-x: auto; padding: 4px 10px 10px; border-top: 1px solid rgba(255,255,255,0.08); gap: 2px; }
+    .nav-item { flex-direction: column; gap: 3px; padding: 8px 14px; font-size: 0.66rem; white-space: nowrap; }
+    .nav-item svg { width: 19px; height: 19px; }
+  }
+
+  /* ── PAGE-LEVEL SECTION GROUPS (separate topics stacked on one tab) ── */
+  .group-title {
+    font-size: 0.76rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--indigo); display:flex; align-items:center; gap:7px;
+    margin: 36px 0 14px;
+  }
+  .group-title:first-child { margin-top: 0; }
 
   /* ── STAT CARDS ── */
   .totals { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-bottom: 28px; }
@@ -51,12 +91,16 @@
     content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
     background: linear-gradient(90deg, #4f46e5, #06b6d4);
   }
-  .stat-card .icon { font-size: 1.3rem; margin-bottom: 8px; display: block; }
+  .stat-card .icon-chip {
+    width: 34px; height: 34px; border-radius: 10px; background: var(--indigo-soft); color: var(--indigo);
+    display:flex; align-items:center; justify-content:center; margin-bottom: 12px;
+  }
+  .stat-card .icon-chip svg { width: 17px; height: 17px; }
   .stat-card .label { font-size: 0.76rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
   .stat-card .value { font-size: 1.7rem; font-weight: 800; margin-top: 4px; }
 
   /* ── PANELS ── */
-  .grid { display: grid; grid-template-columns: 1fr; gap: 18px; }
+  .grid { display: grid; grid-template-columns: 1fr; gap: 18px; margin-bottom: 18px; }
   @media (min-width: 760px) { .grid { grid-template-columns: 1fr 1fr; } }
 
   .panel {
@@ -67,7 +111,7 @@
     font-size: 0.92rem; font-weight: 700; margin-bottom: 14px;
     display: flex; align-items: center; gap: 8px; color: var(--primary);
   }
-  .panel h2 .emoji { font-size: 1rem; }
+  .h2-icon svg { width: 15px; height: 15px; display: block; }
 
   .bar-row { margin-bottom: 12px; }
   .bar-row:last-child { margin-bottom: 0; }
@@ -84,10 +128,11 @@
 
   .full-panel { grid-column: 1 / -1; }
   table { width: 100%; border-collapse: collapse; }
-  th, td { text-align: left; padding: 9px 4px; font-size: 0.84rem; border-bottom: 1px solid #f1f5f9; }
+  th, td { text-align: left; padding: 10px 4px; font-size: 0.84rem; border-bottom: 1px solid var(--border-soft); }
   th { color: var(--muted); font-weight: 600; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.03em; }
   td.num { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
   tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: #fafbfd; }
 
   .loading { text-align: center; padding: 80px 20px; color: var(--muted); }
   .error-box {
@@ -110,7 +155,7 @@
   .aff-cards-grid { display:grid; grid-template-columns:1fr; gap:14px; }
   @media (min-width:760px) { .aff-cards-grid { grid-template-columns:1fr 1fr; } }
   .aff-card { border:1px solid var(--border); border-radius:16px; padding:16px 18px 4px; }
-  .aff-card-head { display:flex; align-items:center; justify-content:space-between; gap:10px; padding-bottom:8px; margin-bottom:6px; border-bottom:1px solid #f1f5f9; }
+  .aff-card-head { display:flex; align-items:center; justify-content:space-between; gap:10px; padding-bottom:8px; margin-bottom:6px; border-bottom:1px solid var(--border-soft); }
   .aff-card-name { font-weight:800; font-size:0.92rem; color:var(--primary); }
   .aff-card-code { font-family:monospace; font-weight:700; font-size:0.72rem; color:var(--indigo); }
   .aff-stat-row { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid #f8fafc; }
@@ -122,15 +167,17 @@
   .aff-stat-lbl { font-size:0.72rem; color:var(--muted); font-weight:600; margin-top:1px; }
   .aff-stat-val.owed { color:#92400e; }
 
-  /* ── TOP-LEVEL TABS ── */
-  .tabs { display:flex; gap:8px; max-width:960px; margin:20px auto 0; padding:0 16px; }
+  /* ── BROADCAST WRITE / PREVIEW SUB-TABS ── */
   .tab-btn {
+    display: inline-flex; align-items: center; gap: 6px;
     padding:9px 16px; border-radius:10px; border:1.5px solid var(--border); background:#fff;
     color:var(--muted); font-weight:700; font-size:0.84rem; cursor:pointer;
+    transition: background .15s, color .15s, border-color .15s;
   }
+  .tab-btn svg { width: 15px; height: 15px; }
   .tab-btn.active { background: linear-gradient(90deg, #4f46e5, #06b6d4); color:#fff; border-color:transparent; }
+  .tab-btn:not(.active):hover { border-color:#c7d2fe; color:var(--indigo); }
 
-  /* ── BROADCAST WRITE / PREVIEW SUB-TABS ── */
   .broadcast-subtabs { display:flex; gap:8px; margin-bottom:18px; }
   .broadcast-subtabs .tab-btn { padding:7px 14px; font-size:0.8rem; }
   .preview-wrap { max-width:640px; margin:0 auto; border:1.5px solid var(--border); border-radius:14px; overflow:hidden; box-shadow:0 6px 22px rgba(15,23,42,0.08); background:#fff; }
@@ -138,7 +185,8 @@
   .preview-dot { width:9px; height:9px; border-radius:50%; background:#cbd5e1; display:inline-block; }
   .preview-toolbar-label { margin-left:6px; font-size:0.72rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.03em; }
   .preview-toolbar-spacer { flex:1; }
-  .preview-device-btn { padding:5px 10px; border-radius:8px; border:1.5px solid var(--border); background:#fff; font-size:0.72rem; font-weight:700; color:var(--muted); cursor:pointer; }
+  .preview-device-btn { display:inline-flex; align-items:center; gap:5px; padding:5px 10px; border-radius:8px; border:1.5px solid var(--border); background:#fff; font-size:0.72rem; font-weight:700; color:var(--muted); cursor:pointer; }
+  .preview-device-btn svg { width: 13px; height: 13px; }
   .preview-device-btn.active { background:#0f172a; color:#fff; border-color:transparent; }
   .preview-frame-wrap { background:#eef1f6; display:flex; justify-content:center; }
   .preview-frame { border:none; display:block; height:640px; width:100%; transition:width .15s ease; background:#eef1f6; }
@@ -148,9 +196,11 @@
   /* ── PAYOUTS PAGE ── */
   .payouts-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px; }
   .gen-btn {
+    display:inline-flex; align-items:center; gap:6px;
     padding:9px 15px; border-radius:10px; border:1.5px solid var(--border); background:#fff;
     color: var(--primary); font-weight:700; font-size:0.82rem; cursor:pointer;
   }
+  .gen-btn svg { width: 14px; height: 14px; }
   .gen-btn:disabled { opacity:0.55; cursor:default; }
   .status-filter { display:flex; gap:8px; margin-bottom:16px; }
   .status-filter button {
@@ -162,6 +212,14 @@
   .bank-cell .acc-name { color:var(--muted); }
   .paid-meta { font-size:0.72rem; color:var(--muted); margin-top:2px; }
 
+  /* ── AUDIENCE BADGE (who a broadcast panel sends to — quick visual scan) ── */
+  .audience-badge {
+    display:inline-flex; align-items:center; padding:4px 10px; border-radius:999px;
+    font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.03em;
+    background:var(--indigo-soft); color:var(--indigo); margin-left:8px; vertical-align:middle;
+  }
+  .audience-badge.customers { background:#fdf4ff; color:#a21caf; }
+
   /* ── BROADCAST FORM ── */
   .field { margin-bottom: 16px; }
   .field label { display:block; font-size:0.76rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.03em; margin-bottom:6px; }
@@ -169,7 +227,9 @@
   .field input[type=text], .field input[type=url], .field textarea {
     width:100%; padding:11px 13px; border-radius:10px; border:1.5px solid var(--border);
     font-size:0.9rem; font-family:'Inter',sans-serif; color:var(--primary); background:#fff;
+    transition: border-color .15s;
   }
+  .field input[type=text]:focus, .field input[type=url]:focus, .field textarea:focus { outline:none; border-color:var(--indigo); }
   .field textarea { resize:vertical; min-height:88px; line-height:1.5; }
   .field .hint { font-size:0.74rem; color:var(--muted); margin-top:5px; }
   .field-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
@@ -184,7 +244,8 @@
   .image-upload:hover { border-color:var(--accent, #4f46e5); background:#fafaff; }
   .image-upload.dragover { border-color:var(--accent, #4f46e5); background:#eef2ff; }
   .image-upload-body { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:22px 12px; text-align:center; }
-  .image-upload-icon { font-size:1.4rem; }
+  .image-upload-icon { display:inline-flex; color:#94a3b8; }
+  .image-upload-icon svg { width: 27px; height: 27px; }
   .image-upload-text { font-size:0.82rem; font-weight:600; color:var(--primary); }
   .image-upload-hint { font-size:0.72rem; color:var(--muted); }
   .image-upload-preview { display:block; width:100%; max-height:180px; object-fit:cover; }
@@ -198,7 +259,8 @@
   .asset-row { display:grid; grid-template-columns:1fr 1.4fr; gap:10px; margin-bottom:10px; }
   @media (max-width:600px) { .asset-row { grid-template-columns:1fr; } }
   .broadcast-actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:18px; align-items:center; }
-  .btn-secondary { padding:11px 18px; border-radius:10px; border:1.5px solid var(--border); background:#fff; color:var(--primary); font-weight:700; font-size:0.84rem; cursor:pointer; }
+  .btn-secondary { padding:11px 18px; border-radius:10px; border:1.5px solid var(--border); background:#fff; color:var(--primary); font-weight:700; font-size:0.84rem; cursor:pointer; transition:border-color .15s, color .15s; }
+  .btn-secondary:hover { border-color:var(--indigo); color:var(--indigo); }
   .btn-primary { padding:11px 18px; border-radius:10px; border:none; background: linear-gradient(90deg, #4f46e5, #06b6d4); color:#fff; font-weight:700; font-size:0.84rem; cursor:pointer; }
   .btn-secondary:disabled, .btn-primary:disabled { opacity:0.55; cursor:default; }
   .recipient-count { font-size:0.8rem; color:var(--muted); }
@@ -209,15 +271,23 @@
 </head>
 <body>
 
-<header>
-  <div class="hd-brand">
+<div class="dash-shell">
+<aside class="sidebar">
+  <div class="sidebar-brand">
     <img src="/MINDSHIFT.jpg" alt="MindShift Books logo">
     <div>
       <div class="name">MindShift Books</div>
       <div class="tag">Admin Dashboard</div>
     </div>
   </div>
-  <div class="hd-actions">
+
+  <nav class="sidebar-nav">
+    <button class="nav-item active" id="tabOverview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.8"/></svg>Overview</button>
+    <button class="nav-item" id="tabPayouts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2.2"/><circle cx="12" cy="12" r="2.6"/></svg>Payouts</button>
+    <button class="nav-item" id="tabBroadcast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.3v3.4a1.3 1.3 0 001.3 1.3h1.2l4.8 3.9V5.1l-4.8 3.9H4.3A1.3 1.3 0 003 10.3z"/><path d="M14.5 9a3.5 3.5 0 010 6"/></svg>Updates</button>
+  </nav>
+
+  <div class="sidebar-controls">
     <select id="rangeSelect">
       <option value="7">Last 7 days</option>
       <option value="30" selected>Last 30 days</option>
@@ -226,78 +296,78 @@
     </select>
     <a href="/admin/logout" class="logout-link">Log out</a>
   </div>
-</header>
+</aside>
 
-<div class="tabs">
-  <button class="tab-btn active" id="tabOverview">📊 Overview</button>
-  <button class="tab-btn" id="tabPayouts">💸 Payouts</button>
-  <button class="tab-btn" id="tabBroadcast">📣 Updates</button>
-</div>
-
+<div class="main">
 <div class="page">
   <div id="loadingWrap" class="loading">Loading stats…</div>
 
   <div id="content" style="display:none;">
+
+    <div class="group-title"><span class="h2-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.8"/></svg></span>Store Overview</div>
     <div class="totals">
-      <div class="stat-card"><span class="icon">👤</span><div class="label">Registered Users</div><div class="value" id="totalUsersCount">0</div></div>
-      <div class="stat-card"><span class="icon">👁️</span><div class="label">Page Views</div><div class="value" id="totalPageviews">0</div></div>
-      <div class="stat-card"><span class="icon">⬇️</span><div class="label">Downloads</div><div class="value" id="totalDownloads">0</div></div>
-      <div class="stat-card"><span class="icon">🛒</span><div class="label">Orders</div><div class="value" id="totalOrders">0</div></div>
-      <div class="stat-card"><span class="icon">💰</span><div class="label">Revenue</div><div class="value" id="totalRevenue">₦0</div></div>
+      <div class="stat-card"><span class="icon-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"/><path d="M4.5 20a7.5 7.5 0 0115 0"/></svg></span><div class="label">Registered Users</div><div class="value" id="totalUsersCount">0</div></div>
+      <div class="stat-card"><span class="icon-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.7"/></svg></span><div class="label">Page Views</div><div class="value" id="totalPageviews">0</div></div>
+      <div class="stat-card"><span class="icon-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5v11.5"/><path d="M6.5 10.5L12 16l5.5-5.5"/><path d="M4.5 20h15"/></svg></span><div class="label">Downloads</div><div class="value" id="totalDownloads">0</div></div>
+      <div class="stat-card"><span class="icon-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1.4"/><circle cx="18" cy="21" r="1.4"/><path d="M2 3h2l2.6 12.4a2 2 0 002 1.6h8.8a2 2 0 002-1.6L22 7H6"/></svg></span><div class="label">Orders</div><div class="value" id="totalOrders">0</div></div>
+      <div class="stat-card"><span class="icon-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2.2"/><circle cx="12" cy="12" r="2.6"/></svg></span><div class="label">Revenue</div><div class="value" id="totalRevenue">₦0</div></div>
     </div>
 
-    <div class="totals">
-      <div class="stat-card"><span class="icon">🤝</span><div class="label">Affiliate Page Views</div><div class="value" id="affiliateEcosystemViews">0</div></div>
-      <div class="stat-card"><span class="icon">🧑‍🤝‍🧑</span><div class="label">Affiliates Joined</div><div class="value" id="totalAffiliatesCount">0</div></div>
-      <div class="stat-card"><span class="icon">🆕</span><div class="label">New Affiliates</div><div class="value" id="newAffiliatesCount">0</div></div>
-    </div>
-
-    <h2 style="margin: 4px 0 12px;"><span class="emoji">🪞</span> Who Am I Challenge</h2>
-    <div class="totals">
-      <div class="stat-card"><span class="icon">👁️</span><div class="label">Quiz Views</div><div class="value" id="waViews">0</div></div>
-      <div class="stat-card"><span class="icon">✨</span><div class="label">Results Revealed</div><div class="value" id="waResults">0</div></div>
-      <div class="stat-card"><span class="icon">⬇️</span><div class="label">Card Downloads</div><div class="value" id="waDownloads">0</div></div>
-      <div class="stat-card"><span class="icon">📤</span><div class="label">Shares</div><div class="value" id="waShares">0</div></div>
-    </div>
-
+    <div class="group-title"><span class="h2-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg></span>Book Performance</div>
     <div class="grid">
       <div class="panel">
-        <h2><span class="emoji">🎭</span> Results by Archetype</h2>
-        <div id="waArchetypeBars"></div>
-      </div>
-    </div>
-
-    <div class="grid">
-      <div class="panel">
-        <h2><span class="emoji">📖</span> Book Review Views</h2>
+        <h2><span class="h2-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg></span>Book Review Views</h2>
         <div id="reviewViewsBars"></div>
       </div>
 
       <div class="panel">
-        <h2><span class="emoji">👀</span> Book Preview Views</h2>
+        <h2><span class="h2-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.7"/></svg></span>Book Preview Views</h2>
         <div id="previewViewsBars"></div>
       </div>
 
       <div class="panel">
-        <h2><span class="emoji">💵</span> Purchases by Book</h2>
+        <h2><span class="h2-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2.2"/><circle cx="12" cy="12" r="2.6"/></svg></span>Purchases by Book</h2>
         <div id="purchasesBars"></div>
       </div>
 
       <div class="panel">
-        <h2><span class="emoji">📥</span> Downloads by Book</h2>
+        <h2><span class="h2-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5v11.5"/><path d="M6.5 10.5L12 16l5.5-5.5"/><path d="M4.5 20h15"/></svg></span>Downloads by Book</h2>
         <div id="downloadsBars"></div>
       </div>
 
       <div class="panel full-panel">
-        <h2><span class="emoji">🌐</span> Top Pages</h2>
+        <h2><span class="h2-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3.3 12h17.4"/></svg></span>Top Pages</h2>
         <table><thead><tr><th>Path</th><th class="num">Views</th></tr></thead><tbody id="topPagesBody"></tbody></table>
       </div>
+    </div>
 
+    <div class="group-title"><span class="h2-icon"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2.5l1.8 6.8L20.5 11l-6.7 1.7L12 19.5l-1.8-6.8L3.5 11l6.7-1.7z"/></svg></span>Who Am I Challenge</div>
+    <div class="totals">
+      <div class="stat-card"><span class="icon-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.7"/></svg></span><div class="label">Quiz Views</div><div class="value" id="waViews">0</div></div>
+      <div class="stat-card"><span class="icon-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.3 2.3L16 9.6"/></svg></span><div class="label">Results Revealed</div><div class="value" id="waResults">0</div></div>
+      <div class="stat-card"><span class="icon-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5v11.5"/><path d="M6.5 10.5L12 16l5.5-5.5"/><path d="M4.5 20h15"/></svg></span><div class="label">Card Downloads</div><div class="value" id="waDownloads">0</div></div>
+      <div class="stat-card"><span class="icon-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4.5h5.5V10"/><path d="M19.5 4.5l-8.7 8.7"/><path d="M17.5 13v5.5a1.3 1.3 0 01-1.3 1.3H5.8a1.3 1.3 0 01-1.3-1.3V8.3A1.3 1.3 0 015.8 7h5.5"/></svg></span><div class="label">Shares</div><div class="value" id="waShares">0</div></div>
+    </div>
+    <div class="grid">
       <div class="panel full-panel">
-        <h2><span class="emoji">🤝</span> Affiliates</h2>
+        <h2><span class="h2-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg></span>Results by Archetype</h2>
+        <div id="waArchetypeBars"></div>
+      </div>
+    </div>
+
+    <div class="group-title"><span class="h2-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20a6.5 6.5 0 0113 0"/><path d="M16 9.3a3 3 0 010 5.4"/><path d="M18.5 20a5.5 5.5 0 00-2.8-4.8"/></svg></span>Affiliate Program</div>
+    <div class="totals">
+      <div class="stat-card"><span class="icon-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 15l6-6"/><path d="M11 5l1-1a4 4 0 015.7 5.7l-2 2"/><path d="M13 19l-1 1a4 4 0 01-5.7-5.7l2-2"/></svg></span><div class="label">Affiliate Page Views</div><div class="value" id="affiliateEcosystemViews">0</div></div>
+      <div class="stat-card"><span class="icon-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20a6.5 6.5 0 0113 0"/><path d="M16 9.3a3 3 0 010 5.4"/><path d="M18.5 20a5.5 5.5 0 00-2.8-4.8"/></svg></span><div class="label">Affiliates Joined</div><div class="value" id="totalAffiliatesCount">0</div></div>
+      <div class="stat-card"><span class="icon-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="8" r="3.3"/><path d="M1.8 20a6.7 6.7 0 0113.4 0"/><path d="M18 7v6"/><path d="M15 10h6"/></svg></span><div class="label">New Affiliates</div><div class="value" id="newAffiliatesCount">0</div></div>
+    </div>
+    <div class="grid">
+      <div class="panel full-panel">
+        <h2><span class="h2-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20a6.5 6.5 0 0113 0"/><path d="M16 9.3a3 3 0 010 5.4"/><path d="M18.5 20a5.5 5.5 0 00-2.8-4.8"/></svg></span>Affiliates</h2>
         <div class="aff-cards-grid" id="affiliatesBody"></div>
       </div>
     </div>
+
   </div>
 
   <div id="payoutsPage" style="display:none;">
@@ -307,10 +377,10 @@
         <button data-status="paid" id="filterPaid">Paid</button>
         <button data-status="all" id="filterAll">All</button>
       </div>
-      <button class="gen-btn" id="genBtn">↻ Generate this week's payouts</button>
+      <button class="gen-btn" id="genBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 4v6h-6"/><path d="M18.4 15a8 8 0 11-2-8.4L21 10"/></svg>Generate this week's payouts</button>
     </div>
     <div class="panel full-panel" style="padding-bottom:16px;">
-      <h2><span class="emoji">💸</span> Monday Payout Queue</h2>
+      <h2><span class="h2-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2.2"/><circle cx="12" cy="12" r="2.6"/></svg></span>Monday Payout Queue</h2>
       <table>
         <thead><tr><th>Affiliate</th><th class="num">Amount</th><th>Bank</th><th>Status</th><th class="num">Action</th></tr></thead>
         <tbody id="payoutsBody"></tbody>
@@ -320,14 +390,14 @@
 
   <div id="broadcastPage" style="display:none;">
     <div class="panel full-panel" style="padding-bottom:20px;">
-      <h2><span class="emoji">📣</span> Affiliate Update</h2>
+      <h2><span class="h2-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.3v3.4a1.3 1.3 0 001.3 1.3h1.2l4.8 3.9V5.1l-4.8 3.9H4.3A1.3 1.3 0 003 10.3z"/><path d="M14.5 9a3.5 3.5 0 010 6"/></svg></span>Affiliate Update <span class="audience-badge">→ Affiliates</span></h2>
       <p class="empty" style="padding-top:0;margin-top:-8px;margin-bottom:14px;">
         One template handles every send. Leave a section blank and it just won't appear in the email — that's how the same template covers a full launch flyer one week and a plain text tip the next.
       </p>
 
       <div class="broadcast-subtabs">
-        <button type="button" class="tab-btn active" id="bTabWrite">✍️ Write</button>
-        <button type="button" class="tab-btn" id="bTabPreview">👀 Preview</button>
+        <button type="button" class="tab-btn active" id="bTabWrite"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>Write</button>
+        <button type="button" class="tab-btn" id="bTabPreview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.7"/></svg>Preview</button>
       </div>
 
       <div id="broadcastWriteTab">
@@ -359,7 +429,7 @@
           <div class="image-upload" id="bBannerDrop">
             <img id="bBannerPreview" class="image-upload-preview" style="display:none;">
             <div class="image-upload-body" id="bBannerUploadBody">
-              <span class="image-upload-icon">🖼️</span>
+              <span class="image-upload-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></span>
               <span class="image-upload-text">Click to choose an image, or drag one here</span>
               <span class="image-upload-hint">JPG, PNG, WEBP or GIF · up to 180KB</span>
             </div>
@@ -417,8 +487,8 @@
             <span class="preview-dot"></span><span class="preview-dot"></span><span class="preview-dot"></span>
             <span class="preview-toolbar-label">Gmail preview</span>
             <div class="preview-toolbar-spacer"></div>
-            <button type="button" class="preview-device-btn active" id="bPreviewDesktop">💻 Desktop</button>
-            <button type="button" class="preview-device-btn" id="bPreviewMobile">📱 Mobile</button>
+            <button type="button" class="preview-device-btn active" id="bPreviewDesktop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>Desktop</button>
+            <button type="button" class="preview-device-btn" id="bPreviewMobile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><circle cx="12" cy="18" r="0.9"/></svg>Mobile</button>
           </div>
           <div class="preview-frame-wrap" id="bPreviewFrameWrap">
             <iframe id="bPreviewFrame" class="preview-frame" title="Email preview"></iframe>
@@ -444,7 +514,7 @@
 
     <!-- ── Promo kit send: fixed-content asset drops (Brevo template 6) ── -->
     <div class="panel full-panel" style="padding-bottom:20px;">
-      <h2><span class="emoji">🎒</span> Promo Kit</h2>
+      <h2><span class="h2-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="8.5" width="17" height="11.5" rx="1.5"/><path d="M3.5 12.5h17"/><path d="M12 8.5v11.5"/><circle cx="9.5" cy="5.5" r="2"/><circle cx="14.5" cy="5.5" r="2"/></svg></span>Promo Kit <span class="audience-badge">→ Affiliates</span></h2>
       <p class="empty" style="padding-top:0;margin-top:-8px;margin-bottom:14px;">
         Sends the ready-made "Wave 1" kit for The Discipline Advantage — tracking link, all 9 slides, and 3 copy angles. The content is fixed in the Brevo template; only the recipient's name and link are personalized.
       </p>
@@ -462,7 +532,7 @@
 
     <!-- ── Customer discount announcement: fixed-content send (Brevo template 7) ── -->
     <div class="panel full-panel" style="padding-bottom:20px;">
-      <h2><span class="emoji">🏷️</span> Book Discount Announcement</h2>
+      <h2><span class="h2-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41L13.42 20.58a2 2 0 01-2.83 0L2.59 12.58a2 2 0 010-2.83l7.17-7.17A2 2 0 0111.17 2H18a2 2 0 012 2v6.83a2 2 0 01-.59 1.41z"/><circle cx="7" cy="7" r="1"/></svg></span>Book Discount Announcement <span class="audience-badge customers">→ Customers</span></h2>
       <p class="empty" style="padding-top:0;margin-top:-8px;margin-bottom:14px;">
         Sends the ready-made discount announcement — current pricing plus a bit of advice — to every registered customer. The content lives entirely in Brevo template #7; edit it there whenever the discount changes, then just press send here, no code changes needed.
       </p>
@@ -474,6 +544,8 @@
       <div class="broadcast-result" id="cdResult"></div>
     </div>
   </div>
+</div>
+</div>
 </div>
 
 <script>
@@ -662,6 +734,7 @@
 
   tabOverview.addEventListener('click', () => {
     setActiveTab(tabOverview);
+    rangeSelect.style.display = '';
     payoutsPage.style.display = 'none';
     broadcastPage.style.display = 'none';
     // Restore whichever overview state was showing before (loaded content, or its loader).
@@ -674,6 +747,7 @@
   });
   tabPayouts.addEventListener('click', () => {
     setActiveTab(tabPayouts);
+    rangeSelect.style.display = 'none';
     loadingWrap.style.display = 'none';
     content.style.display = 'none';
     broadcastPage.style.display = 'none';
@@ -682,6 +756,7 @@
   });
   tabBroadcast.addEventListener('click', () => {
     setActiveTab(tabBroadcast);
+    rangeSelect.style.display = 'none';
     loadingWrap.style.display = 'none';
     content.style.display = 'none';
     payoutsPage.style.display = 'none';
