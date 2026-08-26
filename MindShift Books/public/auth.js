@@ -113,7 +113,10 @@
       'auth/invalid-credential': 'Incorrect email or password.',
       'auth/too-many-requests': 'Too many attempts. Please wait a moment and try again.',
       'auth/popup-closed-by-user': 'Sign-in was cancelled.',
-      'auth/cancelled-popup-request': 'Sign-in was cancelled.'
+      'auth/cancelled-popup-request': 'Sign-in was cancelled.',
+      'auth/expired-action-code': 'This reset link has expired. Please request a new one.',
+      'auth/invalid-action-code': 'This reset link is invalid or has already been used. Please request a new one.',
+      'auth/user-disabled': 'This account has been disabled. Contact support for help.'
     };
     return (code && map[code]) || (err && err.message) || 'Something went wrong. Please try again.';
   }
@@ -128,6 +131,30 @@
     const cred = await auth.createUserWithEmailAndPassword(email, password);
     if (name) await cred.user.updateProfile({ displayName: name });
     await initAccountOnServer(name || null);
+  }
+
+  // ---------------- Forgot / reset password ----------------
+  // Firebase handles sending the email and generating the secure, single-use
+  // link itself — nothing custom to build or maintain server-side. The `url`
+  // below is where that link points once clicked; Firebase appends its own
+  // `mode` and `oobCode` query params onto it automatically.
+  async function sendResetEmail(email) {
+    await auth.sendPasswordResetEmail(email, {
+      url: window.location.origin + '/login'
+    });
+  }
+
+  // Called on /reset-password with the oobCode pulled from the emailed
+  // link's URL. Firebase validates the code (not expired, not already used)
+  // and, on success, hands back the email it belongs to — this is what lets
+  // the reset page show whose password is being reset without asking the
+  // person to type their email again.
+  async function verifyResetCode(oobCode) {
+    return auth.verifyPasswordResetCode(oobCode);
+  }
+
+  async function completeReset(oobCode, newPassword) {
+    await auth.confirmPasswordReset(oobCode, newPassword);
   }
 
   // Popup is now the primary path. Redirect requires shuttling the auth
@@ -415,6 +442,9 @@
     signUpEmail,
     signInGoogle,
     signInFacebook,
+    sendResetEmail,
+    verifyResetCode,
+    completeReset,
     getPendingAffCode,
     storePendingAffCode,
     friendlyAuthError,

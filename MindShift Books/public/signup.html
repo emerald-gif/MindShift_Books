@@ -131,6 +131,52 @@ body{font-family:'Inter',sans-serif;color:var(--primary);background:var(--paper)
   .shelf-foot{ display:none; }
   .formside{ padding:32px 24px 60px; }
 }
+
+/* ---------- Entrance polish ---------- */
+@keyframes riseIn{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:translateY(0); } }
+.formwrap{ animation: riseIn 0.5s ease both; }
+.shelf-quote{ animation: riseIn 0.6s ease 0.1s both; }
+
+/* ---------- Password show/hide ---------- */
+.pw-wrap{ position:relative; }
+.pw-wrap input{ padding-right:32px; }
+.pw-toggle{
+  position:absolute; right:0; bottom:8px; background:none; border:none; padding:2px;
+  color:#94a3b8; cursor:pointer; display:flex; align-items:center; line-height:0;
+  transition: color 0.15s;
+}
+.pw-toggle:hover{ color:var(--indigo); }
+.pw-toggle svg{ width:18px; height:18px; }
+
+/* ---------- Consistent keyboard focus states ---------- */
+.submit-btn:focus-visible, .google-btn:focus-visible, .facebook-btn:focus-visible, .pw-toggle:focus-visible{
+  outline:2px solid var(--indigo); outline-offset:2px;
+}
+.back:focus-visible, .switch-note a:focus-visible{ outline:2px solid var(--indigo); outline-offset:2px; border-radius:2px; }
+
+/* ---------- Submit-button loading spinner — keys off the existing :disabled state, no script change needed ---------- */
+.submit-btn{ display:inline-flex; align-items:center; justify-content:center; gap:9px; }
+.submit-btn:disabled::before{
+  content:''; width:15px; height:15px; border-radius:50%; flex-shrink:0;
+  border:2px solid rgba(255,255,255,0.4); border-top-color:#fff;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin{ to{ transform:rotate(360deg); } }
+
+/* ---------- Referral banner + manual code field ---------- */
+.ref-banner{
+  display:none; margin-bottom:20px; padding:11px 14px; border-radius:10px;
+  background:rgba(79,70,229,0.08); border:1px solid rgba(79,70,229,0.18);
+  font-size:0.85rem; color:#4338ca; font-weight:600;
+}
+.ref-banner svg{ width:15px; height:15px; vertical-align:-3px; margin-right:6px; }
+.ref-manual-wrap{ margin-bottom:20px; }
+.ref-manual-wrap label{ display:block; font-size:0.82rem; font-weight:600; color:#6b7280; margin-bottom:6px; }
+.ref-manual-wrap input{
+  width:100%; padding:11px 13px; border-radius:10px; border:1.5px solid #e2e8f0;
+  font-size:0.9rem; font-family:'Inter',sans-serif; color:var(--primary); transition:border-color 0.15s;
+}
+.ref-manual-wrap input:focus{ outline:none; border-color:var(--indigo); }
   </style>
 </head>
 <body>
@@ -163,12 +209,10 @@ body{font-family:'Inter',sans-serif;color:var(--primary);background:var(--paper)
       <h1>Create your shelf.</h1>
       <div class="sub">Sign up to check out and keep every book in one place.</div>
 
-      <div id="refBanner" style="display:none; margin-bottom:20px; padding:11px 14px; border-radius:10px; background:rgba(79,70,229,0.08); border:1px solid rgba(79,70,229,0.18); font-size:0.85rem; color:#4338ca; font-weight:600;">
-        ✓ Referred by <span id="refBannerName"></span>
-      </div>
-      <div id="refManualWrap" style="margin-bottom:20px;">
-        <label for="refManualInput" style="display:block; font-size:0.82rem; font-weight:600; color:#6b7280; margin-bottom:6px;">Have a referral code? (optional)</label>
-        <input id="refManualInput" type="text" placeholder="e.g. CHIOMA83" autocapitalize="characters" style="width:100%; padding:11px 13px; border-radius:10px; border:1.5px solid #e2e8f0; font-size:0.9rem;">
+      <div id="refBanner" class="ref-banner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5.5 5.5L20 6"/></svg>Referred by <span id="refBannerName"></span></div>
+      <div id="refManualWrap" class="ref-manual-wrap">
+        <label for="refManualInput">Have a referral code? (optional)</label>
+        <input id="refManualInput" type="text" placeholder="e.g. CHIOMA83" autocapitalize="characters">
       </div>
 
       <form id="loginForm">
@@ -184,7 +228,10 @@ body{font-family:'Inter',sans-serif;color:var(--primary);background:var(--paper)
 
         <div class="field">
           <label for="password">Password</label>
-          <input id="password" type="password" placeholder="At least 6 characters" autocomplete="new-password" required minlength="6">
+          <div class="pw-wrap">
+            <input id="password" type="password" placeholder="At least 6 characters" autocomplete="new-password" required minlength="6">
+            <button type="button" class="pw-toggle" id="pwToggle" aria-label="Show password"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.7"/></svg></button>
+          </div>
         </div>
 
         <div class="error" id="authError"></div>
@@ -252,6 +299,14 @@ body{font-family:'Inter',sans-serif;color:var(--primary);background:var(--paper)
   const submitBtn = document.getElementById('submitBtn');
   const googleBtn = document.getElementById('googleBtn');
   const facebookBtn = document.getElementById('facebookBtn');
+  const pwToggle = document.getElementById('pwToggle');
+  const pwInput = document.getElementById('password');
+  pwToggle.addEventListener('click', () => {
+    const showing = pwInput.type === 'text';
+    pwInput.type = showing ? 'password' : 'text';
+    pwToggle.innerHTML = showing ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.7"/></svg>' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18"/><path d="M10.6 5.6A10.8 10.8 0 0112 5.5c6 0 9.5 6.5 9.5 6.5a13 13 0 01-3 3.6M6.6 6.6C4 8.3 2.5 10.5 2.5 12s3.5 6.5 9.5 6.5a10.6 10.6 0 004-.8"/><path d="M9.6 9.6a3 3 0 004.2 4.2"/></svg>';
+    pwToggle.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+  });
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
