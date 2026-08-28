@@ -285,6 +285,7 @@
     <button class="nav-item active" id="tabOverview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.8"/></svg>Overview</button>
     <button class="nav-item" id="tabPayouts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2.2"/><circle cx="12" cy="12" r="2.6"/></svg>Payouts</button>
     <button class="nav-item" id="tabBroadcast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.3v3.4a1.3 1.3 0 001.3 1.3h1.2l4.8 3.9V5.1l-4.8 3.9H4.3A1.3 1.3 0 003 10.3z"/><path d="M14.5 9a3.5 3.5 0 010 6"/></svg>Updates</button>
+    <button class="nav-item" id="tabCreators"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="8" r="3.3"/><path d="M1.8 20a6.7 6.7 0 0113.4 0"/><path d="M18 7v6"/><path d="M15 10h6"/></svg>Creators</button>
   </nav>
 
   <div class="sidebar-controls">
@@ -544,6 +545,57 @@
       <div class="broadcast-result" id="cdResult"></div>
     </div>
   </div>
+
+  <div id="creatorsPage" style="display:none;">
+    <div class="totals">
+      <div class="stat-card"><div class="label">Total Creators</div><div class="value" id="crTotal">0</div></div>
+      <div class="stat-card"><div class="label">A-list</div><div class="value" id="crAList">0</div></div>
+      <div class="stat-card"><div class="label">B-list</div><div class="value" id="crBList">0</div></div>
+      <div class="stat-card"><div class="label">C-list</div><div class="value" id="crCList">0</div></div>
+      <div class="stat-card"><div class="label">Contacted</div><div class="value" id="crContacted">0</div></div>
+      <div class="stat-card"><div class="label">Replied</div><div class="value" id="crReplied">0</div></div>
+      <div class="stat-card"><div class="label">Signed Up</div><div class="value" id="crSignedUp">0</div></div>
+      <div class="stat-card"><div class="label">Sales Generated</div><div class="value" id="crSales">₦0</div></div>
+    </div>
+
+    <div class="panel full-panel" style="padding-bottom:20px;">
+      <h2><span class="h2-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="8" r="3.3"/><path d="M1.8 20a6.7 6.7 0 0113.4 0"/><path d="M18 7v6"/><path d="M15 10h6"/></svg></span>Import Creators</h2>
+      <p class="empty" style="padding-top:0;margin-top:-8px;margin-bottom:14px;">
+        Paste a CSV export here — either straight from Modash, or from the Creator CRM spreadsheet. Needs a header row; columns are matched by name (Handle, Platform, Country, Followers, Engagement Rate, Niche Fit, Days Since Last Post, Email) so either source works as-is. Re-importing the same email/handle updates that creator instead of duplicating them.
+      </p>
+      <div class="field">
+        <label>CSV data</label>
+        <textarea id="crCsvInput" maxlength="500000" placeholder="Handle,Platform,Country,Followers,Engagement Rate,Niche Fit,Days Since Last Post,Email&#10;@example_creator,Instagram,Nigeria,4200,0.045,High,12,creator@example.com" style="min-height:140px;"></textarea>
+      </div>
+      <div class="broadcast-actions">
+        <button class="btn-primary" id="crImportBtn">Import creators</button>
+        <span class="recipient-count" id="crImportResult"></span>
+      </div>
+    </div>
+
+    <div class="panel full-panel" style="padding-bottom:20px;">
+      <h2><span class="h2-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.3v3.4a1.3 1.3 0 001.3 1.3h1.2l4.8 3.9V5.1l-4.8 3.9H4.3A1.3 1.3 0 003 10.3z"/><path d="M14.5 9a3.5 3.5 0 010 6"/></svg></span>Outreach</h2>
+      <p class="empty" style="padding-top:0;margin-top:-8px;margin-bottom:14px;">
+        Runs automatically every day (initial emails to A-list then B-list, follow-ups after 4 days of silence, max 2 follow-ups). Use this button to send today's batch right now instead of waiting for the scheduled run.
+      </p>
+      <div class="broadcast-actions">
+        <button class="btn-primary" id="crSendBtn">Send outreach now</button>
+        <span class="recipient-count" id="crSendResult"></span>
+      </div>
+    </div>
+
+    <div class="panel full-panel" style="padding-bottom:16px;">
+      <h2><span class="h2-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="8" r="3.3"/><path d="M1.8 20a6.7 6.7 0 0113.4 0"/><path d="M18 7v6"/><path d="M15 10h6"/></svg></span>Creators</h2>
+      <p class="empty" style="padding-top:0;margin-top:-8px;margin-bottom:14px;">
+        Replied, Affiliate Signup, Affiliate Code, and Sales are the fields you update by hand as replies come in — everything else runs itself.
+      </p>
+      <table>
+        <thead><tr><th>Handle</th><th>Platform</th><th class="num">Score</th><th>Tier</th><th>Status</th><th>Replied</th><th>Signed Up</th><th>Code</th><th class="num">Sales</th></tr></thead>
+        <tbody id="creatorsBody"></tbody>
+      </table>
+    </div>
+  </div>
+
 </div>
 </div>
 </div>
@@ -720,23 +772,29 @@
 
   loadAffiliates();
 
-  // ── Tabs: Overview / Payouts / Updates ──
+  // ── Tabs: Overview / Payouts / Updates / Creators ──
   const tabOverview = document.getElementById('tabOverview');
   const tabPayouts = document.getElementById('tabPayouts');
   const tabBroadcast = document.getElementById('tabBroadcast');
+  const tabCreators = document.getElementById('tabCreators');
   const payoutsPage = document.getElementById('payoutsPage');
   const broadcastPage = document.getElementById('broadcastPage');
+  const creatorsPage = document.getElementById('creatorsPage');
   let overviewLoadedOnce = true; // loadStats() already ran once above on page load
 
   function setActiveTab(active) {
-    [tabOverview, tabPayouts, tabBroadcast].forEach(b => b.classList.toggle('active', b === active));
+    [tabOverview, tabPayouts, tabBroadcast, tabCreators].forEach(b => b.classList.toggle('active', b === active));
+  }
+  function hideAllPages() {
+    payoutsPage.style.display = 'none';
+    broadcastPage.style.display = 'none';
+    creatorsPage.style.display = 'none';
   }
 
   tabOverview.addEventListener('click', () => {
     setActiveTab(tabOverview);
     rangeSelect.style.display = '';
-    payoutsPage.style.display = 'none';
-    broadcastPage.style.display = 'none';
+    hideAllPages();
     // Restore whichever overview state was showing before (loaded content, or its loader).
     if (content.dataset.loaded === 'true') {
       content.style.display = 'block';
@@ -750,7 +808,7 @@
     rangeSelect.style.display = 'none';
     loadingWrap.style.display = 'none';
     content.style.display = 'none';
-    broadcastPage.style.display = 'none';
+    hideAllPages();
     payoutsPage.style.display = 'block';
     loadPayouts();
   });
@@ -759,9 +817,152 @@
     rangeSelect.style.display = 'none';
     loadingWrap.style.display = 'none';
     content.style.display = 'none';
-    payoutsPage.style.display = 'none';
+    hideAllPages();
     broadcastPage.style.display = 'block';
     updateRecipientCount();
+  });
+  tabCreators.addEventListener('click', () => {
+    setActiveTab(tabCreators);
+    rangeSelect.style.display = 'none';
+    loadingWrap.style.display = 'none';
+    content.style.display = 'none';
+    hideAllPages();
+    creatorsPage.style.display = 'block';
+    loadCreatorSummary();
+    loadCreators();
+  });
+
+  // ── Creators ──
+  async function loadCreatorSummary() {
+    try {
+      const res = await fetch('/api/admin/creators/summary');
+      if (res.status === 401) { window.location.href = '/admin/login'; return; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Request failed');
+      const s = data.summary;
+      document.getElementById('crTotal').textContent = s.total;
+      document.getElementById('crAList').textContent = s.aList;
+      document.getElementById('crBList').textContent = s.bList;
+      document.getElementById('crCList').textContent = s.cList;
+      document.getElementById('crContacted').textContent = s.contacted;
+      document.getElementById('crReplied').textContent = s.replied;
+      document.getElementById('crSignedUp').textContent = s.signedUp;
+      document.getElementById('crSales').textContent = fmtNgn(s.totalSales);
+    } catch (err) {
+      console.error('loadCreatorSummary failed', err);
+    }
+  }
+
+  const CREATOR_TIER_COLORS = {
+    'A - Contact First': '#166534', 'B - Contact Next': '#1d4ed8',
+    'C - Keep': '#92400e', 'Discard': '#6b7280'
+  };
+
+  async function updateCreator(id, field, value, td) {
+    try {
+      const res = await fetch(`/api/admin/creators/${encodeURIComponent(id)}/update`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [field]: value })
+      });
+      if (res.status === 401) { window.location.href = '/admin/login'; return; }
+      if (!res.ok) throw new Error('Update failed');
+      td.style.background = '#dcfce7';
+      setTimeout(() => { td.style.background = ''; }, 600);
+      if (field === 'salesGenerated') loadCreatorSummary();
+    } catch (err) {
+      alert('Could not save that change — try again.');
+    }
+  }
+
+  async function loadCreators() {
+    const tbody = document.getElementById('creatorsBody');
+    try {
+      const res = await fetch('/api/admin/creators');
+      if (res.status === 401) { window.location.href = '/admin/login'; return; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Request failed');
+      const creators = data.creators || [];
+      if (!creators.length) {
+        tbody.innerHTML = '<tr><td colspan="9" class="empty">No creators imported yet — paste a CSV above to get started.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = creators.map(c => `
+        <tr>
+          <td>${esc(c.handle)}</td>
+          <td>${esc(c.platform)}</td>
+          <td class="num">${c.score ?? ''}</td>
+          <td><span style="color:${CREATOR_TIER_COLORS[c.tier] || '#6b7280'};font-weight:700;">${esc(c.tier || '')}</span></td>
+          <td>${esc(c.status || '')}</td>
+          <td>
+            <select data-field="replied" data-id="${esc(c.id)}" style="padding:4px 6px;border-radius:6px;border:1px solid #e2e8f0;">
+              <option value="N" ${c.replied !== 'Y' ? 'selected' : ''}>N</option>
+              <option value="Y" ${c.replied === 'Y' ? 'selected' : ''}>Y</option>
+            </select>
+          </td>
+          <td>
+            <select data-field="affiliateSignup" data-id="${esc(c.id)}" style="padding:4px 6px;border-radius:6px;border:1px solid #e2e8f0;">
+              <option value="N" ${c.affiliateSignup !== 'Y' ? 'selected' : ''}>N</option>
+              <option value="Y" ${c.affiliateSignup === 'Y' ? 'selected' : ''}>Y</option>
+            </select>
+          </td>
+          <td><input type="text" data-field="affiliateCode" data-id="${esc(c.id)}" value="${esc(c.affiliateCode || '')}" style="width:90px;padding:4px 6px;border-radius:6px;border:1px solid #e2e8f0;"></td>
+          <td class="num"><input type="text" data-field="salesGenerated" data-id="${esc(c.id)}" value="${c.salesGenerated || 0}" style="width:80px;padding:4px 6px;border-radius:6px;border:1px solid #e2e8f0;text-align:right;"></td>
+        </tr>
+      `).join('');
+
+      tbody.querySelectorAll('select[data-field], input[data-field]').forEach(el => {
+        const evt = el.tagName === 'SELECT' ? 'change' : 'blur';
+        el.addEventListener(evt, () => updateCreator(el.dataset.id, el.dataset.field, el.value, el.closest('td')));
+      });
+    } catch (err) {
+      tbody.innerHTML = '<tr><td colspan="9" class="empty">Could not load creators.</td></tr>';
+    }
+  }
+
+  const crImportBtn = document.getElementById('crImportBtn');
+  if (crImportBtn) crImportBtn.addEventListener('click', async () => {
+    const csv = document.getElementById('crCsvInput').value;
+    const resultEl = document.getElementById('crImportResult');
+    if (!csv.trim()) { resultEl.textContent = 'Paste some CSV data first.'; return; }
+    crImportBtn.disabled = true; crImportBtn.textContent = 'Importing…';
+    resultEl.textContent = '';
+    try {
+      const res = await fetch('/api/admin/creators/import', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ csv })
+      });
+      if (res.status === 401) { window.location.href = '/admin/login'; return; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Import failed');
+      resultEl.textContent = `Imported ${data.imported} of ${data.total}${data.skipped ? ` (${data.skipped} skipped — missing handle)` : ''}.`;
+      document.getElementById('crCsvInput').value = '';
+      loadCreatorSummary();
+      loadCreators();
+    } catch (err) {
+      resultEl.textContent = err.message || 'Import failed.';
+    } finally {
+      crImportBtn.disabled = false; crImportBtn.textContent = 'Import creators';
+    }
+  });
+
+  const crSendBtn = document.getElementById('crSendBtn');
+  if (crSendBtn) crSendBtn.addEventListener('click', async () => {
+    if (!confirm('Send today\'s outreach batch now?')) return;
+    const resultEl = document.getElementById('crSendResult');
+    crSendBtn.disabled = true; crSendBtn.textContent = 'Sending…';
+    resultEl.textContent = '';
+    try {
+      const res = await fetch('/api/admin/creators/send-outreach', { method: 'POST' });
+      if (res.status === 401) { window.location.href = '/admin/login'; return; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Send failed');
+      resultEl.textContent = `Sent ${data.initialSent} initial email${data.initialSent === 1 ? '' : 's'}, ${data.followUpsSent} follow-up${data.followUpsSent === 1 ? '' : 's'}.`;
+      loadCreatorSummary();
+      loadCreators();
+    } catch (err) {
+      resultEl.textContent = err.message || 'Send failed.';
+    } finally {
+      crSendBtn.disabled = false; crSendBtn.textContent = 'Send outreach now';
+    }
   });
 
   // ── Payouts queue ──
