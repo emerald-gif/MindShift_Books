@@ -135,11 +135,17 @@
   /* Wide tables (like Creators, with 10+ columns) scroll horizontally on
      phones instead of squishing every column unreadably thin. The first two
      columns (checkbox + handle) stay pinned so you always know which row
-     you're looking at while scrolling through the rest. */
-  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+     you're looking at while scrolling through the rest. A fading edge on
+     the right hints there's more to swipe to. */
+  .table-scroll { position: relative; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; touch-action: pan-x; scroll-behavior: smooth; }
   .table-scroll table { min-width: 760px; }
-  .table-scroll th:nth-child(1), .table-scroll td:nth-child(1) { position: sticky; left: 0; background: var(--card); z-index: 2; width: 32px; }
-  .table-scroll th:nth-child(2), .table-scroll td:nth-child(2) { position: sticky; left: 32px; background: var(--card); z-index: 2; box-shadow: 2px 0 4px rgba(15,23,42,0.05); }
+  .table-scroll th:nth-child(1), .table-scroll td:nth-child(1) { position: sticky; left: 0; background: var(--card); z-index: 2; width: 32px; box-shadow: 2px 0 4px rgba(15,23,42,0.05); }
+  .table-scroll::after {
+    content: ''; position: absolute; top: 0; right: 0; bottom: 0; width: 22px;
+    background: linear-gradient(90deg, rgba(255,255,255,0), var(--card));
+    pointer-events: none; transition: opacity 0.15s;
+  }
+  .table-scroll.at-end::after { opacity: 0; }
   tbody tr:hover td { background: #fafbfd; }
 
   .loading { text-align: center; padding: 80px 20px; color: var(--muted); }
@@ -1015,6 +1021,17 @@
       tbody.innerHTML = '<tr><td colspan="11" class="empty">Could not load creators.</td></tr>';
     }
   }
+
+  // Hides the right-edge fade hint once you've scrolled all the way — so it
+  // only shows when there's actually more to swipe to.
+  document.querySelectorAll('.table-scroll').forEach(el => {
+    const check = () => {
+      const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 4;
+      el.classList.toggle('at-end', atEnd);
+    };
+    el.addEventListener('scroll', check);
+    check();
+  });
 
   const crSelectAll = document.getElementById('crSelectAll');
   if (crSelectAll) crSelectAll.addEventListener('change', () => {
