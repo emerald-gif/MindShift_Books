@@ -162,6 +162,20 @@ const BREVO_SENDER_NAME = process.env.BREVO_SENDER_NAME || 'Mindshift Books';
 const BREVO_SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'contact@mindshiftbooks.shop';
 const PUBLIC_SITE_URL = process.env.PUBLIC_URL || 'https://mindshiftbooks.shop'; // reused below to build each affiliate's own ?ref= link
 
+// Creator discovery — YouTube Data API (free, official, no scraping) lets us
+// search channels by niche keyword directly. Get a key from Google Cloud
+// Console → enable "YouTube Data API v3" → create an API key.
+const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY || null;
+
+// Creator enrichment — Instagram's Graph API "Business Discovery" endpoint
+// looks up public stats for a handle you already have (it cannot search by
+// niche — Instagram has no public discovery API). Needs your own Instagram
+// professional account connected to a Meta app: IG_BUSINESS_ID is that
+// account's numeric ID, IG_ACCESS_TOKEN is a long-lived token for it (these
+// expire ~60 days and need refreshing — see Meta's Graph API docs).
+const IG_BUSINESS_ID = process.env.IG_BUSINESS_ID || null;
+const IG_ACCESS_TOKEN = process.env.IG_ACCESS_TOKEN || null;
+
 // Cloudinary — hosts the affiliate broadcast's banner image so the email
 // carries a real https:// link instead of an embedded base64 data URI
 // (Gmail and most other clients strip data: URIs from HTML email, which is
@@ -1985,6 +1999,180 @@ function computeCreatorScore(c) {
   return { score, tier };
 }
 
+// Pulls the first email-looking string out of a bio/description, so a
+// channel or profile that already lists a contact email gets it filled in
+// automatically instead of the admin typing it by hand later.
+function extractEmailFromText(text) {
+  if (!text) return '';
+  const m = String(text).match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+  return m ? m[0] : '';
+}
+
+// Shared upsert used by both the "discover" preview→save flows below. Takes
+// already-normalized candidate objects (handle, platform, country,
+// followers, engagementRate, nicheFit, daysSinceLastPost, email, source) —
+// the same shape CSV rows are turned into — scores them, and writes them to
+// the same `creators` collection the CSV importer uses, so every source
+// (CSV, YouTube discovery, Instagram enrichment) feeds one pipeline.
+async function upsertCreatorCandidates(candidates) {
+  if (!db) throw new Error('Database unavailable');
+  const BATCH_LIMIT = 400; // Firestore batch write cap is 500
+  let imported = 0, skipped = 0;
+  for (let i = 0; i < candidates.length; i += BATCH_LIMIT) {
+    const chunk = candidates.slice(i, i + BATCH_LIMIT);
+    const batch = db.batch();
+    chunk.forEach(c => {
+      const handle = String(c.handle || '').trim();
+      if (!handle) { skipped++; return; }
+      const email = String(c.email || '').toLowerCase().trim();
+      const followers = Number(c.followers) || 0;
+      let engagementRate = Number(c.engagementRate) || 0;
+      if (engagementRate > 1) engagementRate = engagementRate / 100; // tolerate "4.5" meaning 4.5%
+      const daysSinceLastPostRaw = Number(c.daysSinceLastPost);
+      const daysSinceLastPost = isNaN(daysSinceLastPostRaw) ? null : daysSinceLastPostRaw;
+      const nicheFit = ['High', 'Medium', 'Low'].includes(c.nicheFit) ? c.nicheFit : 'Medium';
+      const { score, tier } = computeCreatorScore({ followers, engagementRate, nicheFit, daysSinceLastPost });
+
+      const docId = (email || handle).toLowerCase().replace(/[^a-z0-9._@-]/g, '_').slice(0, 200);
+      const ref = db.collection('creators').doc(docId);
+      batch.set(ref, {
+        handle,
+        platform: c.platform || '',
+        country: c.country || '',
+        followers, engagementRate, nicheFit, daysSinceLastPost, email,
+        score, tier,
+        status: 'Not Contacted', dateContacted: null, lastFollowUp: null, followUpCount: 0,
+        replied: 'N', affiliateSignup: 'N', affiliateCode: '', salesGenerated: 0, notes: '',
+        source: c.source || 'manual',
+        createdAt: admin.firestore.Timestamp.now()
+      }, { merge: true });
+      imported++;
+    });
+    await batch.commit();
+  }
+  return { imported, skipped, total: candidates.length };
+}
+
+// Searches YouTube by niche keyword (search.list, type=channel), then pulls
+// subscriber counts and a real-ish engagement estimate for each match from
+// its 5 most recent uploads. This is the one platform with a genuine public
+// discovery API — no scraping, no ToS risk. Engagement is computed as
+// (likes+comments)/subscribers per video, averaged — same "% of followers
+// who engage" scale as the Instagram/TikTok numbers already in the sheet,
+// so computeCreatorScore treats every source the same way.
+async function youtubeSearchChannels(query, maxResults) {
+  if (!YOUTUBE_API_KEY) throw new Error('YOUTUBE_API_KEY is not set in the environment.');
+  const n = Math.min(Math.max(Number(maxResults) || 15, 1), 25); // keep quota use predictable
+
+  const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(query)}&maxResults=${n}&key=${YOUTUBE_API_KEY}`;
+  const searchRes = await fetch(searchUrl);
+  const searchData = await searchRes.json();
+  if (!searchRes.ok) throw new Error(searchData.error?.message || 'YouTube search failed.');
+  const channelIds = (searchData.items || []).map(it => it.id && it.id.channelId).filter(Boolean);
+  if (!channelIds.length) return [];
+
+  const channelsUrl = `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics,contentDetails&id=${channelIds.join(',')}&key=${YOUTUBE_API_KEY}`;
+  const channelsRes = await fetch(channelsUrl);
+  const channelsData = await channelsRes.json();
+  if (!channelsRes.ok) throw new Error(channelsData.error?.message || 'YouTube channel lookup failed.');
+
+  const candidates = [];
+  for (const ch of (channelsData.items || [])) {
+    const subscriberCount = ch.statistics && ch.statistics.hiddenSubscriberCount ? 0 : (Number(ch.statistics && ch.statistics.subscriberCount) || 0);
+    const uploadsPlaylist = ch.contentDetails && ch.contentDetails.relatedPlaylists && ch.contentDetails.relatedPlaylists.uploads;
+    let daysSinceLastPost = null;
+    let engagementRate = 0;
+
+    if (uploadsPlaylist) {
+      try {
+        const plUrl = `https://www.googleapis.com/youtube/v3/playlistItems?part=contentDetails&playlistId=${uploadsPlaylist}&maxResults=5&key=${YOUTUBE_API_KEY}`;
+        const plRes = await fetch(plUrl);
+        const plData = await plRes.json();
+        const items = plData.items || [];
+        const videoIds = items.map(it => it.contentDetails && it.contentDetails.videoId).filter(Boolean);
+        const publishDates = items.map(it => it.contentDetails && it.contentDetails.videoPublishedAt).filter(Boolean);
+        if (publishDates.length) {
+          const latest = publishDates.slice().sort().reverse()[0];
+          daysSinceLastPost = Math.floor((Date.now() - new Date(latest).getTime()) / 86400000);
+        }
+        if (videoIds.length) {
+          const vUrl = `https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${videoIds.join(',')}&key=${YOUTUBE_API_KEY}`;
+          const vRes = await fetch(vUrl);
+          const vData = await vRes.json();
+          const rates = (vData.items || []).map(v => {
+            const likes = Number(v.statistics && v.statistics.likeCount) || 0;
+            const comments = Number(v.statistics && v.statistics.commentCount) || 0;
+            return subscriberCount > 0 ? (likes + comments) / subscriberCount : 0;
+          });
+          if (rates.length) engagementRate = rates.reduce((a, b) => a + b, 0) / rates.length;
+        }
+      } catch (e) { /* engagement/recency is best-effort — a channel with no readable uploads still gets imported, just scores lower on those two factors */ }
+    }
+
+    candidates.push({
+      handle: ch.snippet && ch.snippet.customUrl ? `@${ch.snippet.customUrl.replace(/^@/, '')}` : ((ch.snippet && ch.snippet.title) || ''),
+      platform: 'YouTube',
+      country: (ch.snippet && ch.snippet.country) || '',
+      followers: subscriberCount,
+      engagementRate,
+      nicheFit: 'Medium',
+      daysSinceLastPost,
+      email: extractEmailFromText(ch.snippet && ch.snippet.description),
+      channelUrl: `https://youtube.com/channel/${ch.id}`,
+      source: 'youtube-discovery'
+    });
+  }
+  return candidates;
+}
+
+// Looks up ONE Instagram handle via the Graph API's Business Discovery
+// endpoint. This is a lookup, not a search — Instagram has no public API to
+// find accounts by niche/keyword, which is the real reason tools like
+// Modash exist. You still have to find handles yourself (Explore, hashtags,
+// etc.); this just auto-fills the stats once you have a handle.
+async function instagramBusinessDiscovery(handle) {
+  if (!IG_BUSINESS_ID || !IG_ACCESS_TOKEN) throw new Error('IG_BUSINESS_ID and IG_ACCESS_TOKEN are not set in the environment.');
+  const clean = String(handle).replace(/^@/, '').trim();
+  if (!clean) throw new Error('Empty handle.');
+  const fields = `business_discovery.username(${clean}){username,followers_count,biography,media.limit(6){like_count,comments_count,timestamp}}`;
+  const url = `https://graph.facebook.com/v19.0/${IG_BUSINESS_ID}?fields=${encodeURIComponent(fields)}&access_token=${IG_ACCESS_TOKEN}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  if (!res.ok || data.error) throw new Error((data.error && data.error.message) || `Could not look up @${clean}.`);
+  const bd = data.business_discovery;
+  if (!bd) throw new Error(`@${clean} isn't a public Business/Creator account — Instagram only exposes this data for professional accounts.`);
+
+  const followers = Number(bd.followers_count) || 0;
+  const media = (bd.media && bd.media.data) || [];
+  let daysSinceLastPost = null;
+  let engagementRate = 0;
+  if (media.length) {
+    const timestamps = media.map(m => m.timestamp).filter(Boolean);
+    if (timestamps.length) {
+      const latest = timestamps.slice().sort().reverse()[0];
+      daysSinceLastPost = Math.floor((Date.now() - new Date(latest).getTime()) / 86400000);
+    }
+    const rates = media.map(m => {
+      const likes = Number(m.like_count) || 0;
+      const comments = Number(m.comments_count) || 0;
+      return followers > 0 ? (likes + comments) / followers : 0;
+    });
+    engagementRate = rates.reduce((a, b) => a + b, 0) / rates.length;
+  }
+
+  return {
+    handle: `@${bd.username}`,
+    platform: 'Instagram',
+    country: '',
+    followers,
+    engagementRate,
+    nicheFit: 'Medium',
+    daysSinceLastPost,
+    email: extractEmailFromText(bd.biography),
+    source: 'instagram-enrichment'
+  };
+}
+
 // Minimal CSV parser (handles quoted fields with embedded commas) so a
 // Modash export — or an export of the original Creator CRM spreadsheet —
 // can be pasted straight in without a new dependency. Header matching is
@@ -3066,6 +3254,67 @@ app.post('/api/admin/creators/import', async (req, res) => {
   } catch (err) {
     console.error('/api/admin/creators/import error', err);
     return res.status(500).json({ error: 'Import failed.' });
+  }
+});
+
+// POST /api/admin/creators/discover-youtube — searches YouTube by niche
+// keyword and returns SCORED CANDIDATES ONLY, nothing is saved yet. The
+// admin reviews/edits them on the Creators tab, then a separate call to
+// /save-candidates actually writes the ones they keep.
+app.post('/api/admin/creators/discover-youtube', async (req, res) => {
+  try {
+    const { query, maxResults } = req.body || {};
+    if (!query || !String(query).trim()) return res.status(400).json({ error: 'A search query is required.' });
+    const candidates = await youtubeSearchChannels(String(query).trim(), maxResults);
+    const scored = candidates.map(c => ({ ...c, ...computeCreatorScore(c) }));
+    scored.sort((a, b) => b.score - a.score);
+    return res.json({ ok: true, candidates: scored });
+  } catch (err) {
+    console.error('/api/admin/creators/discover-youtube error', err);
+    return res.status(400).json({ error: err.message || 'YouTube discovery failed.' });
+  }
+});
+
+// POST /api/admin/creators/enrich-instagram — takes a pasted list of
+// Instagram handles (you still have to find these yourself — see the
+// route's underlying function for why) and looks each one up via Business
+// Discovery, returning scored candidates for review, same as YouTube above.
+app.post('/api/admin/creators/enrich-instagram', async (req, res) => {
+  try {
+    const { handles } = req.body || {};
+    const list = String(handles || '').split(/[\n,]/).map(h => h.trim()).filter(Boolean).slice(0, 25); // cap per request — stay within Graph API rate limits
+    if (!list.length) return res.status(400).json({ error: 'Paste at least one Instagram handle.' });
+    const candidates = [];
+    const errors = [];
+    for (const h of list) {
+      try {
+        const c = await instagramBusinessDiscovery(h);
+        candidates.push({ ...c, ...computeCreatorScore(c) });
+      } catch (e) {
+        errors.push({ handle: h, error: e.message });
+      }
+    }
+    candidates.sort((a, b) => b.score - a.score);
+    return res.json({ ok: true, candidates, errors });
+  } catch (err) {
+    console.error('/api/admin/creators/enrich-instagram error', err);
+    return res.status(400).json({ error: err.message || 'Instagram enrichment failed.' });
+  }
+});
+
+// POST /api/admin/creators/save-candidates — writes admin-approved
+// candidates (from either discovery flow above, or anywhere else the same
+// shape comes from) into the `creators` collection via the same upsert CSV
+// import uses, so every source lands in one pipeline.
+app.post('/api/admin/creators/save-candidates', async (req, res) => {
+  try {
+    const { candidates } = req.body || {};
+    if (!Array.isArray(candidates) || !candidates.length) return res.status(400).json({ error: 'No candidates provided.' });
+    const result = await upsertCreatorCandidates(candidates);
+    return res.json({ ok: true, ...result });
+  } catch (err) {
+    console.error('/api/admin/creators/save-candidates error', err);
+    return res.status(500).json({ error: err.message || 'Save failed.' });
   }
 });
 
