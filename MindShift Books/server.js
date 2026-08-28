@@ -2060,11 +2060,12 @@ async function upsertCreatorCandidates(candidates) {
 // (likes+comments)/subscribers per video, averaged — same "% of followers
 // who engage" scale as the Instagram/TikTok numbers already in the sheet,
 // so computeCreatorScore treats every source the same way.
-async function youtubeSearchChannels(query, maxResults) {
+async function youtubeSearchChannels(query, maxResults, regionCode) {
   if (!YOUTUBE_API_KEY) throw new Error('YOUTUBE_API_KEY is not set in the environment.');
   const n = Math.min(Math.max(Number(maxResults) || 15, 1), 25); // keep quota use predictable
 
-  const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(query)}&maxResults=${n}&key=${YOUTUBE_API_KEY}`;
+  let searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(query)}&maxResults=${n}&key=${YOUTUBE_API_KEY}`;
+  if (regionCode) searchUrl += `&regionCode=${encodeURIComponent(regionCode)}`; // biases results toward that region — YouTube doesn't guarantee an exact channel-country match
   const searchRes = await fetch(searchUrl);
   const searchData = await searchRes.json();
   if (!searchRes.ok) throw new Error(searchData.error?.message || 'YouTube search failed.');
@@ -3263,12 +3264,21 @@ app.post('/api/admin/creators/import', async (req, res) => {
 // /save-candidates actually writes the ones they keep.
 app.post('/api/admin/creators/discover-youtube', async (req, res) => {
   try {
-    const { query, maxResults } = req.body || {};
+    const { query, maxResults, regionCode, minFollowers, maxFollowers, minEngagementRate } = req.body || {};
     if (!query || !String(query).trim()) return res.status(400).json({ error: 'A search query is required.' });
-    const candidates = await youtubeSearchChannels(String(query).trim(), maxResults);
-    const scored = candidates.map(c => ({ ...c, ...computeCreatorScore(c) }));
+    const candidates = await youtubeSearchChannels(String(query).trim(), maxResults, regionCode);
+    let scored = candidates.map(c => ({ ...c, ...computeCreatorScore(c) }));
+
+    const minF = Number(minFollowers);
+    const maxF = Number(maxFollowers);
+    const minEng = Number(minEngagementRate);
+    const searchedCount = scored.length;
+    if (!isNaN(minF) && minFollowers !== '') scored = scored.filter(c => c.followers >= minF);
+    if (!isNaN(maxF) && maxFollowers !== '') scored = scored.filter(c => c.followers <= maxF);
+    if (!isNaN(minEng) && minEngagementRate !== '') scored = scored.filter(c => (c.engagementRate * 100) >= minEng);
+
     scored.sort((a, b) => b.score - a.score);
-    return res.json({ ok: true, candidates: scored });
+    return res.json({ ok: true, candidates: scored, searchedCount });
   } catch (err) {
     console.error('/api/admin/creators/discover-youtube error', err);
     return res.status(400).json({ error: err.message || 'YouTube discovery failed.' });
@@ -3315,6 +3325,76 @@ app.post('/api/admin/creators/save-candidates', async (req, res) => {
   } catch (err) {
     console.error('/api/admin/creators/save-candidates error', err);
     return res.status(500).json({ error: err.message || 'Save failed.' });
+  }
+});
+
+// Shared by both the daily/manual "send to everyone due" cycle and the new
+// "send to just these" flow below — figures out what stage a single
+// creator is due for from their current status, sends it, and updates
+// their record the same way either path would.
+async function sendOutreachForCreator(doc) {
+  const creator = doc.data();
+  if (!creator.email) return { ok: false, error: 'No email on file' };
+  if (creator.replied === 'Y') return { ok: false, error: 'Already replied — skipped' };
+
+  const now = admin.firestore.Timestamp.now();
+  const followUpCount = Number(creator.followUpCount) || 0;
+  let stage, updates;
+
+  if (!creator.status || creator.status === 'Not Contacted') {
+    stage = 'initial';
+    updates = { status: 'Contacted', dateContacted: now };
+  } else if (followUpCount >= CREATOR_MAX_FOLLOWUPS) {
+    await doc.ref.update({ status: 'Declined' });
+    return { ok: false, error: 'Already at max follow-ups — marked Declined' };
+  } else {
+    stage = followUpCount === 0 ? 'followup1' : 'followup2';
+    updates = { status: followUpCount === 0 ? 'Follow-up 1' : 'Follow-up 2', lastFollowUp: now, followUpCount: followUpCount + 1 };
+  }
+
+  const result = await sendCreatorOutreachEmail(creator, stage);
+  if (result.ok) {
+    await doc.ref.update(updates);
+    return { ok: true, stage };
+  }
+  await doc.ref.update({ notes: `Send failed: ${result.error}` });
+  return { ok: false, error: result.error };
+}
+
+// POST /api/admin/creators/send-selected — targeted send to specific
+// creators picked in the dashboard table, instead of waiting for the
+// automatic tier/day-gap rules. Still figures out the right stage
+// (initial vs. follow-up) per creator from their current status.
+app.post('/api/admin/creators/send-selected', async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const { ids } = req.body || {};
+    if (!Array.isArray(ids) || !ids.length) return res.status(400).json({ error: 'No creators selected.' });
+    let sent = 0, skipped = 0;
+    for (const id of ids.slice(0, CREATOR_DAILY_SEND_CAP)) { // same cap as the automatic cycle, as a sanity ceiling
+      const ref = db.collection('creators').doc(id);
+      const doc = await ref.get();
+      if (!doc.exists) { skipped++; continue; }
+      const result = await sendOutreachForCreator(doc);
+      if (result.ok) sent++; else skipped++;
+      await new Promise(r => setTimeout(r, 300));
+    }
+    return res.json({ ok: true, sent, skipped, total: ids.length });
+  } catch (err) {
+    console.error('/api/admin/creators/send-selected error', err);
+    return res.status(500).json({ error: 'Send failed.' });
+  }
+});
+
+// DELETE /api/admin/creators/:id — removes one creator from the list entirely.
+app.delete('/api/admin/creators/:id', async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    await db.collection('creators').doc(req.params.id).delete();
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('/api/admin/creators/:id delete error', err);
+    return res.status(500).json({ error: 'Delete failed.' });
   }
 });
 
