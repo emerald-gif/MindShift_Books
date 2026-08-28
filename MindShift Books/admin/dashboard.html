@@ -574,6 +574,60 @@
     </div>
 
     <div class="panel full-panel" style="padding-bottom:20px;">
+      <h2><span class="h2-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></span>Discover on YouTube</h2>
+      <p class="empty" style="padding-top:0;margin-top:-8px;margin-bottom:14px;">
+        Searches YouTube directly by keyword (the one platform with a real public discovery API — no scraping). Pulls subscriber count and estimates engagement from each channel's last 5 uploads. Nothing saves until you review and hit "Save selected" below.
+      </p>
+      <div class="field" style="max-width:420px;">
+        <label>Niche / keyword</label>
+        <input type="text" id="ytQuery" placeholder="e.g. money mindset Nigeria">
+      </div>
+      <div class="field" style="max-width:160px;">
+        <label>Max results <span class="optional-tag">up to 25</span></label>
+        <input type="text" id="ytMaxResults" value="15">
+      </div>
+      <div class="broadcast-actions">
+        <button class="btn-primary" id="ytSearchBtn">Search YouTube</button>
+        <span class="recipient-count" id="ytSearchResult"></span>
+      </div>
+      <div id="ytPreviewWrap" style="display:none;margin-top:16px;">
+        <table>
+          <thead><tr><th></th><th>Handle</th><th class="num">Subs</th><th class="num">Eng. %</th><th>Niche Fit</th><th>Email</th><th class="num">Score</th><th>Tier</th></tr></thead>
+          <tbody id="ytCandidatesBody"></tbody>
+        </table>
+        <div class="broadcast-actions" style="margin-top:12px;">
+          <button class="btn-secondary" id="ytSaveBtn">Save selected</button>
+          <span class="recipient-count" id="ytSaveResult"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel full-panel" style="padding-bottom:20px;">
+      <h2><span class="h2-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="0.6" fill="currentColor"/></svg></span>Enrich Instagram handles</h2>
+      <p class="empty" style="padding-top:0;margin-top:-8px;margin-bottom:14px;">
+        Instagram has no public search API — you still have to find handles yourself (Explore, hashtags, etc.). Paste the handles you've found below and this looks up followers, engagement, and bio-listed email for each one automatically. Needs a Meta app connected to your own Instagram professional account (IG_BUSINESS_ID / IG_ACCESS_TOKEN) — see CREATOR_OUTREACH_CHANGES.md for setup. TikTok has no equivalent public API at all, so those still need manual CSV entry above.
+      </p>
+      <div class="field">
+        <label>Handles <span class="optional-tag">one per line, or comma-separated — up to 25 per lookup</span></label>
+        <textarea id="igHandles" placeholder="@creator_one&#10;@creator_two" style="min-height:88px;"></textarea>
+      </div>
+      <div class="broadcast-actions">
+        <button class="btn-primary" id="igLookupBtn">Look up on Instagram</button>
+        <span class="recipient-count" id="igLookupResult"></span>
+      </div>
+      <div id="igPreviewWrap" style="display:none;margin-top:16px;">
+        <table>
+          <thead><tr><th></th><th>Handle</th><th class="num">Followers</th><th class="num">Eng. %</th><th>Niche Fit</th><th>Email</th><th class="num">Score</th><th>Tier</th></tr></thead>
+          <tbody id="igCandidatesBody"></tbody>
+        </table>
+        <div class="broadcast-actions" style="margin-top:12px;">
+          <button class="btn-secondary" id="igSaveBtn">Save selected</button>
+          <span class="recipient-count" id="igSaveResult"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel full-panel" style="padding-bottom:20px;">
       <h2><span class="h2-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.3v3.4a1.3 1.3 0 001.3 1.3h1.2l4.8 3.9V5.1l-4.8 3.9H4.3A1.3 1.3 0 003 10.3z"/><path d="M14.5 9a3.5 3.5 0 010 6"/></svg></span>Outreach</h2>
       <p class="empty" style="padding-top:0;margin-top:-8px;margin-bottom:14px;">
         Runs automatically every day (initial emails to A-list then B-list, follow-ups after 4 days of silence, max 2 follow-ups). Use this button to send today's batch right now instead of waiting for the scheduled run.
@@ -941,6 +995,154 @@
       resultEl.textContent = err.message || 'Import failed.';
     } finally {
       crImportBtn.disabled = false; crImportBtn.textContent = 'Import creators';
+    }
+  });
+
+  // ── Discovery / enrichment candidate preview (shared by YouTube + Instagram) ──
+  // Candidates are held in memory (not saved) until "Save selected" is hit.
+  // Editable fields (niche fit, email) write straight back into the
+  // candidate object via the input's own change listener, so whatever's on
+  // screen when "Save selected" is clicked is exactly what gets sent.
+  function renderCandidateRows(candidates, tbodyEl, followerLabel) {
+    tbodyEl.innerHTML = candidates.map((c, i) => `
+      <tr>
+        <td><input type="checkbox" class="cand-check" data-i="${i}" checked></td>
+        <td>${esc(c.handle)}</td>
+        <td class="num">${(c.followers || 0).toLocaleString()}</td>
+        <td class="num">${((c.engagementRate || 0) * 100).toFixed(1)}%</td>
+        <td>
+          <select class="cand-nichefit" data-i="${i}" style="padding:4px 6px;border-radius:6px;border:1px solid #e2e8f0;">
+            <option value="High" ${c.nicheFit === 'High' ? 'selected' : ''}>High</option>
+            <option value="Medium" ${c.nicheFit === 'Medium' ? 'selected' : ''}>Medium</option>
+            <option value="Low" ${c.nicheFit === 'Low' ? 'selected' : ''}>Low</option>
+          </select>
+        </td>
+        <td><input type="text" class="cand-email" data-i="${i}" value="${esc(c.email || '')}" placeholder="add manually" style="width:150px;padding:4px 6px;border-radius:6px;border:1px solid #e2e8f0;"></td>
+        <td class="num">${c.score ?? ''}</td>
+        <td><span style="color:${CREATOR_TIER_COLORS[c.tier] || '#6b7280'};font-weight:700;">${esc(c.tier || '')}</span></td>
+      </tr>
+    `).join('');
+    tbodyEl.querySelectorAll('.cand-nichefit').forEach(el => {
+      el.addEventListener('change', () => { candidates[Number(el.dataset.i)].nicheFit = el.value; });
+    });
+    tbodyEl.querySelectorAll('.cand-email').forEach(el => {
+      el.addEventListener('blur', () => { candidates[Number(el.dataset.i)].email = el.value.trim(); });
+    });
+  }
+
+  function checkedCandidates(candidates, tbodyEl) {
+    const checked = new Set(Array.from(tbodyEl.querySelectorAll('.cand-check:checked')).map(el => Number(el.dataset.i)));
+    return candidates.filter((c, i) => checked.has(i));
+  }
+
+  // ── YouTube discovery ──
+  let ytCandidates = [];
+  const ytSearchBtn = document.getElementById('ytSearchBtn');
+  const ytCandidatesBody = document.getElementById('ytCandidatesBody');
+  if (ytSearchBtn) ytSearchBtn.addEventListener('click', async () => {
+    const query = document.getElementById('ytQuery').value.trim();
+    const maxResults = document.getElementById('ytMaxResults').value;
+    const resultEl = document.getElementById('ytSearchResult');
+    if (!query) { resultEl.textContent = 'Enter a niche or keyword first.'; return; }
+    ytSearchBtn.disabled = true; ytSearchBtn.textContent = 'Searching…';
+    resultEl.textContent = '';
+    try {
+      const res = await fetch('/api/admin/creators/discover-youtube', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query, maxResults })
+      });
+      if (res.status === 401) { window.location.href = '/admin/login'; return; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Search failed');
+      ytCandidates = data.candidates || [];
+      document.getElementById('ytPreviewWrap').style.display = ytCandidates.length ? 'block' : 'none';
+      if (!ytCandidates.length) { resultEl.textContent = 'No channels found — try a different keyword.'; return; }
+      renderCandidateRows(ytCandidates, ytCandidatesBody);
+      resultEl.textContent = `Found ${ytCandidates.length} channel${ytCandidates.length === 1 ? '' : 's'} — review below, then save.`;
+    } catch (err) {
+      resultEl.textContent = err.message || 'Search failed.';
+    } finally {
+      ytSearchBtn.disabled = false; ytSearchBtn.textContent = 'Search YouTube';
+    }
+  });
+
+  const ytSaveBtn = document.getElementById('ytSaveBtn');
+  if (ytSaveBtn) ytSaveBtn.addEventListener('click', async () => {
+    const selected = checkedCandidates(ytCandidates, ytCandidatesBody);
+    const resultEl = document.getElementById('ytSaveResult');
+    if (!selected.length) { resultEl.textContent = 'Nothing checked to save.'; return; }
+    ytSaveBtn.disabled = true; ytSaveBtn.textContent = 'Saving…';
+    try {
+      const res = await fetch('/api/admin/creators/save-candidates', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ candidates: selected })
+      });
+      if (res.status === 401) { window.location.href = '/admin/login'; return; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Save failed');
+      resultEl.textContent = `Saved ${data.imported} of ${data.total}.`;
+      document.getElementById('ytPreviewWrap').style.display = 'none';
+      ytCandidates = [];
+      loadCreatorSummary(); loadCreators();
+    } catch (err) {
+      resultEl.textContent = err.message || 'Save failed.';
+    } finally {
+      ytSaveBtn.disabled = false; ytSaveBtn.textContent = 'Save selected';
+    }
+  });
+
+  // ── Instagram enrichment ──
+  let igCandidates = [];
+  const igLookupBtn = document.getElementById('igLookupBtn');
+  const igCandidatesBody = document.getElementById('igCandidatesBody');
+  if (igLookupBtn) igLookupBtn.addEventListener('click', async () => {
+    const handles = document.getElementById('igHandles').value.trim();
+    const resultEl = document.getElementById('igLookupResult');
+    if (!handles) { resultEl.textContent = 'Paste at least one handle first.'; return; }
+    igLookupBtn.disabled = true; igLookupBtn.textContent = 'Looking up…';
+    resultEl.textContent = '';
+    try {
+      const res = await fetch('/api/admin/creators/enrich-instagram', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ handles })
+      });
+      if (res.status === 401) { window.location.href = '/admin/login'; return; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Lookup failed');
+      igCandidates = data.candidates || [];
+      document.getElementById('igPreviewWrap').style.display = igCandidates.length ? 'block' : 'none';
+      renderCandidateRows(igCandidates, igCandidatesBody);
+      const errCount = (data.errors || []).length;
+      resultEl.textContent = `Found ${igCandidates.length}${errCount ? `, ${errCount} failed (private/personal account, or typo)` : ''}.`;
+    } catch (err) {
+      resultEl.textContent = err.message || 'Lookup failed.';
+    } finally {
+      igLookupBtn.disabled = false; igLookupBtn.textContent = 'Look up on Instagram';
+    }
+  });
+
+  const igSaveBtn = document.getElementById('igSaveBtn');
+  if (igSaveBtn) igSaveBtn.addEventListener('click', async () => {
+    const selected = checkedCandidates(igCandidates, igCandidatesBody);
+    const resultEl = document.getElementById('igSaveResult');
+    if (!selected.length) { resultEl.textContent = 'Nothing checked to save.'; return; }
+    igSaveBtn.disabled = true; igSaveBtn.textContent = 'Saving…';
+    try {
+      const res = await fetch('/api/admin/creators/save-candidates', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ candidates: selected })
+      });
+      if (res.status === 401) { window.location.href = '/admin/login'; return; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Save failed');
+      resultEl.textContent = `Saved ${data.imported} of ${data.total}.`;
+      document.getElementById('igPreviewWrap').style.display = 'none';
+      igCandidates = [];
+      loadCreatorSummary(); loadCreators();
+    } catch (err) {
+      resultEl.textContent = err.message || 'Save failed.';
+    } finally {
+      igSaveBtn.disabled = false; igSaveBtn.textContent = 'Save selected';
     }
   });
 
