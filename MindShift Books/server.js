@@ -157,6 +157,7 @@ const BREVO_AFFILIATE_WELCOME_TEMPLATE_ID = Number(process.env.BREVO_AFFILIATE_W
 const BREVO_AFFILIATE_BROADCAST_TEMPLATE_ID = Number(process.env.BREVO_AFFILIATE_BROADCAST_TEMPLATE_ID || 5); // one template for every affiliate announcement — which blocks render depends on which content fields are sent, not on which template
 const BREVO_PROMO_KIT_TEMPLATE_ID = 6; // fixed-content "Wave 1" style promo kit email (slides + copy angles) — see promo-kit-template-6.html — matches Brevo template #6
 const BREVO_CUSTOMER_DISCOUNT_TEMPLATE_ID = 7; // fixed-content "books are discounted right now" announcement to every registered customer — content lives entirely in Brevo template #7, this just triggers the send
+const BREVO_CREATOR_OUTREACH_TEMPLATE_ID = 8; // one template covers every creator-outreach stage (initial ask + 2 follow-ups) — same "one template, which blocks render depends on which params are sent" pattern as templates 5-7. Build the template with conditional blocks keyed on isInitial / isFollowUp1 / isFollowUp2.
 const BREVO_SENDER_NAME = process.env.BREVO_SENDER_NAME || 'Mindshift Books';
 const BREVO_SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'contact@mindshiftbooks.shop';
 const PUBLIC_SITE_URL = process.env.PUBLIC_URL || 'https://mindshiftbooks.shop'; // reused below to build each affiliate's own ?ref= link
@@ -1950,6 +1951,223 @@ if (db) {
   setInterval(maybeRunWeeklyPayoutCheck, 60 * 60 * 1000);
 }
 
+// ── Creator outreach (affiliate recruitment) ────────────────────────────────
+// Scores an imported creator 0-100 on the same rubric as the original
+// Creator CRM spreadsheet: engagement (0-40), follower-band fit (0-20),
+// manually-set niche fit (0-25), posting recency (0-15). Re-run whenever
+// nicheFit changes so the tier stays accurate.
+function computeCreatorScore(c) {
+  const followers = Number(c.followers) || 0;
+  const engagement = Number(c.engagementRate) || 0; // stored as a fraction, e.g. 0.045 = 4.5%
+  const daysSincePost = Number(c.daysSinceLastPost);
+
+  const engagementPts = Math.min(engagement * 800, 40);
+  let followersPts = 0;
+  if (followers >= 2000 && followers <= 6000) followersPts = 20;
+  else if (followers >= 1000 && followers <= 10000) followersPts = 12;
+  else if (followers > 10000) followersPts = 5;
+  let nichePts = 0;
+  if (c.nicheFit === 'High') nichePts = 25;
+  else if (c.nicheFit === 'Medium') nichePts = 15;
+  else if (c.nicheFit === 'Low') nichePts = 5;
+  let recencyPts = 0;
+  if (!isNaN(daysSincePost)) {
+    if (daysSincePost <= 30) recencyPts = 15;
+    else if (daysSincePost <= 60) recencyPts = 10;
+    else if (daysSincePost <= 90) recencyPts = 5;
+  }
+
+  const score = Math.round(engagementPts + followersPts + nichePts + recencyPts);
+  let tier = 'Discard';
+  if (score >= 80) tier = 'A - Contact First';
+  else if (score >= 60) tier = 'B - Contact Next';
+  else if (score >= 40) tier = 'C - Keep';
+  return { score, tier };
+}
+
+// Minimal CSV parser (handles quoted fields with embedded commas) so a
+// Modash export — or an export of the original Creator CRM spreadsheet —
+// can be pasted straight in without a new dependency. Header matching is
+// alias-based and case-insensitive so either source works unmodified.
+function parseCreatorCsv(text) {
+  const lines = String(text || '').split(/\r?\n/).filter(l => l.trim().length);
+  if (!lines.length) return [];
+  const parseLine = (line) => {
+    const out = []; let cur = ''; let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (inQuotes) {
+        if (ch === '"' && line[i + 1] === '"') { cur += '"'; i++; }
+        else if (ch === '"') inQuotes = false;
+        else cur += ch;
+      } else if (ch === '"') inQuotes = true;
+      else if (ch === ',') { out.push(cur); cur = ''; }
+      else cur += ch;
+    }
+    out.push(cur);
+    return out.map(s => s.trim());
+  };
+  const headers = parseLine(lines[0]).map(h => h.toLowerCase());
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cells = parseLine(lines[i]);
+    const row = {};
+    headers.forEach((h, idx) => { row[h] = cells[idx] || ''; });
+    rows.push(row);
+  }
+  return rows;
+}
+
+const CREATOR_FIELD_ALIASES = {
+  handle: ['handle', 'name', 'username', 'handle / name'],
+  platform: ['platform'],
+  country: ['country', 'location'],
+  followers: ['followers'],
+  engagementRate: ['engagement rate', 'engagementrate', 'engagement'],
+  nicheFit: ['niche fit', 'nichefit'],
+  daysSinceLastPost: ['days since last post', 'dayssincelastpost'],
+  email: ['email']
+};
+function pickCreatorField(row, field) {
+  for (const alias of CREATOR_FIELD_ALIASES[field]) {
+    if (row[alias] !== undefined) return row[alias];
+  }
+  return '';
+}
+
+// Same "one template, conditional params" pattern as sendCustomerDiscountEmail
+// above: all three stages of the outreach sequence (initial ask, follow-up 1,
+// follow-up 2) go through the single Brevo template #8, and the isInitial /
+// isFollowUp1 / isFollowUp2 flags let the template show the right block.
+async function sendCreatorOutreachEmail(creator, stage) {
+  if (!BREVO_API_KEY || !creator.email) return { ok: false, error: 'Missing Brevo API key or recipient email.' };
+  try {
+    const emailRes = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: { accept: 'application/json', 'api-key': BREVO_API_KEY, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        sender: { name: BREVO_SENDER_NAME, email: BREVO_SENDER_EMAIL },
+        to: [{ email: creator.email, name: creator.handle || undefined }],
+        templateId: BREVO_CREATOR_OUTREACH_TEMPLATE_ID,
+        params: {
+          name: creator.handle || 'there',
+          platform: creator.platform || 'social',
+          tier: creator.tier || '',
+          isInitial: stage === 'initial',
+          isFollowUp1: stage === 'followup1',
+          isFollowUp2: stage === 'followup2',
+          affiliateUrl: `${PUBLIC_SITE_URL}/affiliate`,
+          shopUrl: PUBLIC_SITE_URL
+        }
+      })
+    });
+    if (!emailRes.ok) {
+      const txt = await emailRes.text().catch(() => null);
+      return { ok: false, error: `Brevo ${emailRes.status}: ${(txt || '').slice(0, 160)}` };
+    }
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e.message || String(e)).slice(0, 160) };
+  }
+}
+
+const CREATOR_DAILY_SEND_CAP = 40; // stays well under Brevo/inbox sending limits
+const CREATOR_FOLLOWUP_GAP_DAYS = 4;
+const CREATOR_MAX_FOLLOWUPS = 2; // after this, auto-marked Declined so nobody gets chased indefinitely
+
+// Runs the whole outreach cycle once: initial emails to any "Not Contacted"
+// creator (A-list first, then B-list, capped per run), then follow-ups to
+// anyone silent for CREATOR_FOLLOWUP_GAP_DAYS+ days. Also callable directly
+// from the admin dashboard's "Send outreach now" button, not just the cron.
+async function runDailyCreatorOutreachCycle() {
+  if (!db) return { initialSent: 0, followUpsSent: 0 };
+  const now = admin.firestore.Timestamp.now();
+  const nowMs = Date.now();
+
+  let initialSent = 0;
+  for (const targetTier of ['A - Contact First', 'B - Contact Next']) {
+    if (initialSent >= CREATOR_DAILY_SEND_CAP) break;
+    const snap = await db.collection('creators')
+      .where('tier', '==', targetTier)
+      .where('status', '==', 'Not Contacted')
+      .limit(CREATOR_DAILY_SEND_CAP - initialSent)
+      .get();
+    for (const doc of snap.docs) {
+      const creator = doc.data();
+      if (!creator.email) continue;
+      const result = await sendCreatorOutreachEmail(creator, 'initial');
+      if (result.ok) {
+        await doc.ref.update({ status: 'Contacted', dateContacted: now });
+        initialSent++;
+      } else {
+        await doc.ref.update({ notes: `Send failed: ${result.error}` });
+      }
+      await new Promise(r => setTimeout(r, 300)); // small pause between sends
+    }
+  }
+
+  let followUpsSent = 0;
+  const followUpSnap = await db.collection('creators')
+    .where('status', 'in', ['Contacted', 'Follow-up 1'])
+    .get();
+  for (const doc of followUpSnap.docs) {
+    if (followUpsSent >= CREATOR_DAILY_SEND_CAP) break;
+    const creator = doc.data();
+    if (!creator.email || creator.replied === 'Y') continue;
+    const lastTouch = creator.lastFollowUp || creator.dateContacted;
+    if (!lastTouch) continue;
+    const lastTouchMs = lastTouch.toMillis ? lastTouch.toMillis() : new Date(lastTouch).getTime();
+    const daysSince = (nowMs - lastTouchMs) / (1000 * 60 * 60 * 24);
+    if (daysSince < CREATOR_FOLLOWUP_GAP_DAYS) continue;
+
+    const followUpCount = Number(creator.followUpCount) || 0;
+    if (followUpCount >= CREATOR_MAX_FOLLOWUPS) {
+      await doc.ref.update({ status: 'Declined' });
+      continue;
+    }
+    const stage = followUpCount === 0 ? 'followup1' : 'followup2';
+    const result = await sendCreatorOutreachEmail(creator, stage);
+    if (result.ok) {
+      await doc.ref.update({
+        status: followUpCount === 0 ? 'Follow-up 1' : 'Follow-up 2',
+        lastFollowUp: now,
+        followUpCount: followUpCount + 1
+      });
+      followUpsSent++;
+    } else {
+      await doc.ref.update({ notes: `Follow-up failed: ${result.error}` });
+    }
+    await new Promise(r => setTimeout(r, 300));
+  }
+
+  return { initialSent, followUpsSent };
+}
+
+// Runs once per Lagos calendar day, backed by a Firestore doc (not just an
+// in-memory flag) so a server restart doesn't trigger a duplicate run —
+// same guard pattern as maybeRunWeeklyPayoutCheck above.
+async function maybeRunDailyCreatorOutreach() {
+  if (!db) return;
+  try {
+    const now = lagosNow();
+    const dayKey = now.toISOString().slice(0, 10);
+    const stateRef = db.collection('meta').doc('creatorOutreachSchedule');
+    const stateDoc = await stateRef.get();
+    if (stateDoc.exists && stateDoc.data().lastRunDay === dayKey) return;
+
+    const result = await runDailyCreatorOutreachCycle();
+    await stateRef.set({ lastRunDay: dayKey, lastRunAt: admin.firestore.Timestamp.now(), lastRunResult: result }, { merge: true });
+    console.log('[creator-outreach] daily run:', result);
+  } catch (err) {
+    console.error('[creator-outreach] daily run failed', err);
+  }
+}
+
+if (db) {
+  maybeRunDailyCreatorOutreach();
+  setInterval(maybeRunDailyCreatorOutreach, 60 * 60 * 1000);
+}
+
 app.post('/api/track', (req, res) => {
   // Always respond fast; analytics must never slow down or break the page.
   res.status(204).end();
@@ -2794,6 +3012,145 @@ async function sendCustomerDiscountEmail(user) {
 }
 
 app.use('/api/admin', requireAdminApi);
+
+// ── Creator outreach admin routes ───────────────────────────────────────────
+
+// POST /api/admin/creators/import — pastes a CSV (Modash export, or an
+// export of the original Creator CRM spreadsheet — either works, columns
+// are matched by alias) and upserts every row. Doc id is derived from
+// email (or handle if no email), so re-importing the same creator updates
+// them in place instead of creating a duplicate.
+app.post('/api/admin/creators/import', async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const csv = String((req.body && req.body.csv) || '');
+    if (!csv.trim()) return res.status(400).json({ error: 'No CSV data provided.' });
+    const rows = parseCreatorCsv(csv);
+    if (!rows.length) return res.status(400).json({ error: 'Could not read any rows from that CSV.' });
+
+    const BATCH_LIMIT = 400; // Firestore batch write cap is 500
+    let imported = 0, skipped = 0;
+    for (let i = 0; i < rows.length; i += BATCH_LIMIT) {
+      const chunk = rows.slice(i, i + BATCH_LIMIT);
+      const batch = db.batch();
+      chunk.forEach(row => {
+        const handle = pickCreatorField(row, 'handle');
+        if (!handle) { skipped++; return; }
+        const email = pickCreatorField(row, 'email').toLowerCase();
+        const followers = parseInt(pickCreatorField(row, 'followers'), 10) || 0;
+        let engagementRate = parseFloat(pickCreatorField(row, 'engagementRate')) || 0;
+        if (engagementRate > 1) engagementRate = engagementRate / 100; // tolerate "4.5" meaning 4.5%
+        const daysSinceLastPostRaw = parseInt(pickCreatorField(row, 'daysSinceLastPost'), 10);
+        const daysSinceLastPost = isNaN(daysSinceLastPostRaw) ? null : daysSinceLastPostRaw;
+        const nicheFitRaw = pickCreatorField(row, 'nicheFit');
+        const nicheFit = ['High', 'Medium', 'Low'].includes(nicheFitRaw) ? nicheFitRaw : 'Medium';
+        const { score, tier } = computeCreatorScore({ followers, engagementRate, nicheFit, daysSinceLastPost });
+
+        const docId = (email || handle).toLowerCase().replace(/[^a-z0-9._@-]/g, '_').slice(0, 200);
+        const ref = db.collection('creators').doc(docId);
+        batch.set(ref, {
+          handle,
+          platform: pickCreatorField(row, 'platform') || '',
+          country: pickCreatorField(row, 'country') || '',
+          followers, engagementRate, nicheFit, daysSinceLastPost, email,
+          score, tier,
+          status: 'Not Contacted', dateContacted: null, lastFollowUp: null, followUpCount: 0,
+          replied: 'N', affiliateSignup: 'N', affiliateCode: '', salesGenerated: 0, notes: '',
+          createdAt: admin.firestore.Timestamp.now()
+        }, { merge: true });
+        imported++;
+      });
+      await batch.commit();
+    }
+    return res.json({ ok: true, imported, skipped, total: rows.length });
+  } catch (err) {
+    console.error('/api/admin/creators/import error', err);
+    return res.status(500).json({ error: 'Import failed.' });
+  }
+});
+
+// GET /api/admin/creators — full list for the dashboard table, highest score first.
+app.get('/api/admin/creators', async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const snap = await db.collection('creators').orderBy('score', 'desc').get();
+    const creators = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    return res.json({ ok: true, creators });
+  } catch (err) {
+    console.error('/api/admin/creators error', err);
+    return res.status(500).json({ error: 'Could not load creators.' });
+  }
+});
+
+// GET /api/admin/creators/summary — counts for the Creators tab's stat cards.
+app.get('/api/admin/creators/summary', async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const snap = await db.collection('creators').get();
+    const all = snap.docs.map(d => d.data());
+    const summary = {
+      total: all.length,
+      aList: all.filter(c => c.tier === 'A - Contact First').length,
+      bList: all.filter(c => c.tier === 'B - Contact Next').length,
+      cList: all.filter(c => c.tier === 'C - Keep').length,
+      discard: all.filter(c => c.tier === 'Discard').length,
+      contacted: all.filter(c => c.status && c.status !== 'Not Contacted').length,
+      replied: all.filter(c => c.replied === 'Y').length,
+      signedUp: all.filter(c => c.affiliateSignup === 'Y').length,
+      totalSales: all.reduce((sum, c) => sum + (Number(c.salesGenerated) || 0), 0)
+    };
+    return res.json({ ok: true, summary });
+  } catch (err) {
+    console.error('/api/admin/creators/summary error', err);
+    return res.status(500).json({ error: 'Could not load summary.' });
+  }
+});
+
+// POST /api/admin/creators/:id/update — the handful of fields the admin
+// edits by hand: Replied, Affiliate Signup, Affiliate Code, Sales, Notes,
+// and Niche Fit (which recalculates score/tier when changed).
+app.post('/api/admin/creators/:id/update', async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const ref = db.collection('creators').doc(req.params.id);
+    const doc = await ref.get();
+    if (!doc.exists) return res.status(404).json({ error: 'Creator not found.' });
+    const current = doc.data();
+
+    const allowedFields = ['replied', 'affiliateSignup', 'affiliateCode', 'salesGenerated', 'notes', 'nicheFit', 'status'];
+    const updates = {};
+    allowedFields.forEach(field => {
+      if (req.body[field] !== undefined) updates[field] = req.body[field];
+    });
+    if (updates.salesGenerated !== undefined) updates.salesGenerated = Number(updates.salesGenerated) || 0;
+
+    if (updates.nicheFit !== undefined) {
+      const { score, tier } = computeCreatorScore({ ...current, ...updates });
+      updates.score = score;
+      updates.tier = tier;
+    }
+
+    await ref.update(updates);
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('/api/admin/creators/:id/update error', err);
+    return res.status(500).json({ error: 'Update failed.' });
+  }
+});
+
+// POST /api/admin/creators/send-outreach — manual trigger for the same
+// cycle the daily cron runs, so the admin doesn't have to wait until
+// tomorrow morning to see the first batch go out.
+app.post('/api/admin/creators/send-outreach', async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const result = await runDailyCreatorOutreachCycle();
+    return res.json({ ok: true, ...result });
+  } catch (err) {
+    console.error('/api/admin/creators/send-outreach error', err);
+    return res.status(500).json({ error: 'Send failed.' });
+  }
+});
 
 // GET /api/admin/summary?days=30 — pageviews, downloads, and purchases,
 // each broken down per book, for the last N days.
