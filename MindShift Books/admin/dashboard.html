@@ -132,6 +132,14 @@
   th { color: var(--muted); font-weight: 600; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.03em; }
   td.num { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
   tr:last-child td { border-bottom: none; }
+  /* Wide tables (like Creators, with 10+ columns) scroll horizontally on
+     phones instead of squishing every column unreadably thin. The first two
+     columns (checkbox + handle) stay pinned so you always know which row
+     you're looking at while scrolling through the rest. */
+  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .table-scroll table { min-width: 760px; }
+  .table-scroll th:nth-child(1), .table-scroll td:nth-child(1) { position: sticky; left: 0; background: var(--card); z-index: 2; width: 32px; }
+  .table-scroll th:nth-child(2), .table-scroll td:nth-child(2) { position: sticky; left: 32px; background: var(--card); z-index: 2; box-shadow: 2px 0 4px rgba(15,23,42,0.05); }
   tbody tr:hover td { background: #fafbfd; }
 
   .loading { text-align: center; padding: 80px 20px; color: var(--muted); }
@@ -576,14 +584,38 @@
     <div class="panel full-panel" style="padding-bottom:20px;">
       <h2><span class="h2-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></span>Discover on YouTube</h2>
       <p class="empty" style="padding-top:0;margin-top:-8px;margin-bottom:14px;">
-        Searches YouTube directly by keyword (the one platform with a real public discovery API — no scraping). Pulls subscriber count and estimates engagement from each channel's last 5 uploads. Nothing saves until you review and hit "Save selected" below.
+        Searches YouTube directly by keyword (the one platform with a real public discovery API — no scraping). Pulls subscriber count and estimates engagement from each channel's last 5 uploads. Nothing saves until you go through the results below and hit Add on the ones you want.
       </p>
       <div class="field" style="max-width:420px;">
         <label>Niche / keyword</label>
         <input type="text" id="ytQuery" placeholder="e.g. money mindset Nigeria">
       </div>
       <div class="field" style="max-width:160px;">
-        <label>Max results <span class="optional-tag">up to 25</span></label>
+        <label>Country <span class="optional-tag">biases results</span></label>
+        <select id="ytCountry">
+          <option value="">Any</option>
+          <option value="NG">Nigeria</option>
+          <option value="GH">Ghana</option>
+          <option value="KE">Kenya</option>
+          <option value="ZA">South Africa</option>
+          <option value="US">United States</option>
+          <option value="GB">United Kingdom</option>
+        </select>
+      </div>
+      <div class="field" style="max-width:150px;">
+        <label>Min subscribers</label>
+        <input type="text" id="ytMinSubs" placeholder="e.g. 2000">
+      </div>
+      <div class="field" style="max-width:150px;">
+        <label>Max subscribers</label>
+        <input type="text" id="ytMaxSubs" placeholder="e.g. 6000">
+      </div>
+      <div class="field" style="max-width:150px;">
+        <label>Min engagement % <span class="optional-tag">estimate</span></label>
+        <input type="text" id="ytMinEngagement" placeholder="e.g. 3">
+      </div>
+      <div class="field" style="max-width:160px;">
+        <label>Max results <span class="optional-tag">up to 25 searched</span></label>
         <input type="text" id="ytMaxResults" value="15">
       </div>
       <div class="broadcast-actions">
@@ -591,14 +623,8 @@
         <span class="recipient-count" id="ytSearchResult"></span>
       </div>
       <div id="ytPreviewWrap" style="display:none;margin-top:16px;">
-        <table>
-          <thead><tr><th></th><th>Handle</th><th class="num">Subs</th><th class="num">Eng. %</th><th>Niche Fit</th><th>Email</th><th class="num">Score</th><th>Tier</th></tr></thead>
-          <tbody id="ytCandidatesBody"></tbody>
-        </table>
-        <div class="broadcast-actions" style="margin-top:12px;">
-          <button class="btn-secondary" id="ytSaveBtn">Save selected</button>
-          <span class="recipient-count" id="ytSaveResult"></span>
-        </div>
+        <p class="empty" style="padding:0 0 10px 0;">Go through each one below — <strong>Add</strong> saves it to your Creators list, <strong>Skip</strong> just removes it from this list. Nothing happens until you click one or the other.</p>
+        <div id="ytCandidatesBody"></div>
       </div>
     </div>
 
@@ -616,14 +642,8 @@
         <span class="recipient-count" id="igLookupResult"></span>
       </div>
       <div id="igPreviewWrap" style="display:none;margin-top:16px;">
-        <table>
-          <thead><tr><th></th><th>Handle</th><th class="num">Followers</th><th class="num">Eng. %</th><th>Niche Fit</th><th>Email</th><th class="num">Score</th><th>Tier</th></tr></thead>
-          <tbody id="igCandidatesBody"></tbody>
-        </table>
-        <div class="broadcast-actions" style="margin-top:12px;">
-          <button class="btn-secondary" id="igSaveBtn">Save selected</button>
-          <span class="recipient-count" id="igSaveResult"></span>
-        </div>
+        <p class="empty" style="padding:0 0 10px 0;">Go through each one below — <strong>Add</strong> saves it to your Creators list, <strong>Skip</strong> just removes it from this list. Nothing happens until you click one or the other.</p>
+        <div id="igCandidatesBody"></div>
       </div>
     </div>
 
@@ -643,10 +663,16 @@
       <p class="empty" style="padding-top:0;margin-top:-8px;margin-bottom:14px;">
         Replied, Affiliate Signup, Affiliate Code, and Sales are the fields you update by hand as replies come in — everything else runs itself.
       </p>
-      <table>
-        <thead><tr><th>Handle</th><th>Platform</th><th class="num">Score</th><th>Tier</th><th>Status</th><th>Replied</th><th>Signed Up</th><th>Code</th><th class="num">Sales</th></tr></thead>
-        <tbody id="creatorsBody"></tbody>
-      </table>
+      <div class="broadcast-actions" style="margin-bottom:10px;">
+        <button class="btn-secondary" id="crSendSelectedBtn">Send to selected</button>
+        <span class="recipient-count" id="crSendSelectedResult"></span>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th><input type="checkbox" id="crSelectAll"></th><th>Handle</th><th>Platform</th><th class="num">Score</th><th>Tier</th><th>Status</th><th>Replied</th><th>Signed Up</th><th>Code</th><th class="num">Sales</th><th></th></tr></thead>
+          <tbody id="creatorsBody"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -937,11 +963,12 @@
       if (!res.ok) throw new Error(data.error || 'Request failed');
       const creators = data.creators || [];
       if (!creators.length) {
-        tbody.innerHTML = '<tr><td colspan="9" class="empty">No creators imported yet — paste a CSV above to get started.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="11" class="empty">No creators imported yet — paste a CSV above to get started.</td></tr>';
         return;
       }
       tbody.innerHTML = creators.map(c => `
-        <tr>
+        <tr data-row-id="${esc(c.id)}">
+          <td><input type="checkbox" class="cr-check" data-id="${esc(c.id)}"></td>
           <td>${esc(c.handle)}</td>
           <td>${esc(c.platform)}</td>
           <td class="num">${c.score ?? ''}</td>
@@ -961,6 +988,7 @@
           </td>
           <td><input type="text" data-field="affiliateCode" data-id="${esc(c.id)}" value="${esc(c.affiliateCode || '')}" style="width:90px;padding:4px 6px;border-radius:6px;border:1px solid #e2e8f0;"></td>
           <td class="num"><input type="text" data-field="salesGenerated" data-id="${esc(c.id)}" value="${c.salesGenerated || 0}" style="width:80px;padding:4px 6px;border-radius:6px;border:1px solid #e2e8f0;text-align:right;"></td>
+          <td><button class="cr-delete" data-id="${esc(c.id)}" title="Delete" style="border:none;background:none;color:#dc2626;font-size:1.1rem;cursor:pointer;line-height:1;">&times;</button></td>
         </tr>
       `).join('');
 
@@ -968,10 +996,54 @@
         const evt = el.tagName === 'SELECT' ? 'change' : 'blur';
         el.addEventListener(evt, () => updateCreator(el.dataset.id, el.dataset.field, el.value, el.closest('td')));
       });
+
+      tbody.querySelectorAll('.cr-delete').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          if (!confirm('Delete this creator? This can\'t be undone.')) return;
+          try {
+            const res = await fetch(`/api/admin/creators/${encodeURIComponent(btn.dataset.id)}`, { method: 'DELETE' });
+            if (res.status === 401) { window.location.href = '/admin/login'; return; }
+            if (!res.ok) throw new Error();
+            btn.closest('tr').remove();
+            loadCreatorSummary();
+          } catch {
+            alert('Delete failed — try again.');
+          }
+        });
+      });
     } catch (err) {
-      tbody.innerHTML = '<tr><td colspan="9" class="empty">Could not load creators.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="11" class="empty">Could not load creators.</td></tr>';
     }
   }
+
+  const crSelectAll = document.getElementById('crSelectAll');
+  if (crSelectAll) crSelectAll.addEventListener('change', () => {
+    document.querySelectorAll('#creatorsBody .cr-check').forEach(cb => { cb.checked = crSelectAll.checked; });
+  });
+
+  const crSendSelectedBtn = document.getElementById('crSendSelectedBtn');
+  if (crSendSelectedBtn) crSendSelectedBtn.addEventListener('click', async () => {
+    const ids = Array.from(document.querySelectorAll('#creatorsBody .cr-check:checked')).map(cb => cb.dataset.id);
+    const resultEl = document.getElementById('crSendSelectedResult');
+    if (!ids.length) { resultEl.textContent = 'Check some creators in the table below first.'; return; }
+    if (!confirm(`Send outreach to ${ids.length} selected creator${ids.length === 1 ? '' : 's'} now?`)) return;
+    crSendSelectedBtn.disabled = true; crSendSelectedBtn.textContent = 'Sending…';
+    resultEl.textContent = '';
+    try {
+      const res = await fetch('/api/admin/creators/send-selected', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids })
+      });
+      if (res.status === 401) { window.location.href = '/admin/login'; return; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Send failed');
+      resultEl.textContent = `Sent ${data.sent} of ${data.total}${data.skipped ? ` (${data.skipped} skipped — no email, already replied, or maxed out follow-ups)` : ''}.`;
+      loadCreators();
+    } catch (err) {
+      resultEl.textContent = err.message || 'Send failed.';
+    } finally {
+      crSendSelectedBtn.disabled = false; crSendSelectedBtn.textContent = 'Send to selected';
+    }
+  });
 
   const crImportBtn = document.getElementById('crImportBtn');
   if (crImportBtn) crImportBtn.addEventListener('click', async () => {
@@ -999,49 +1071,75 @@
   });
 
   // ── Discovery / enrichment candidate preview (shared by YouTube + Instagram) ──
-  // Candidates are held in memory (not saved) until "Save selected" is hit.
-  // Editable fields (niche fit, email) write straight back into the
-  // candidate object via the input's own change listener, so whatever's on
-  // screen when "Save selected" is clicked is exactly what gets sent.
-  function renderCandidateRows(candidates, tbodyEl, followerLabel) {
-    tbodyEl.innerHTML = candidates.map((c, i) => `
-      <tr>
-        <td><input type="checkbox" class="cand-check" data-i="${i}" checked></td>
-        <td>${esc(c.handle)}</td>
-        <td class="num">${(c.followers || 0).toLocaleString()}</td>
-        <td class="num">${((c.engagementRate || 0) * 100).toFixed(1)}%</td>
-        <td>
-          <select class="cand-nichefit" data-i="${i}" style="padding:4px 6px;border-radius:6px;border:1px solid #e2e8f0;">
-            <option value="High" ${c.nicheFit === 'High' ? 'selected' : ''}>High</option>
-            <option value="Medium" ${c.nicheFit === 'Medium' ? 'selected' : ''}>Medium</option>
-            <option value="Low" ${c.nicheFit === 'Low' ? 'selected' : ''}>Low</option>
-          </select>
-        </td>
-        <td><input type="text" class="cand-email" data-i="${i}" value="${esc(c.email || '')}" placeholder="add manually" style="width:150px;padding:4px 6px;border-radius:6px;border:1px solid #e2e8f0;"></td>
-        <td class="num">${c.score ?? ''}</td>
-        <td><span style="color:${CREATOR_TIER_COLORS[c.tier] || '#6b7280'};font-weight:700;">${esc(c.tier || '')}</span></td>
-      </tr>
+  // Each candidate is its own card with two buttons: Add (saves it right
+  // now, via save-candidates with a single-item array) or Skip (just
+  // deletes the card, nothing is sent anywhere). Either way the card is
+  // gone the moment you decide — no separate "did I remember to save"
+  // step, no checkboxes to track.
+  function renderCandidateCards(candidates, containerEl, onEmpty) {
+    containerEl.innerHTML = candidates.map(c => `
+      <div class="cand-card" data-key="${esc(c.handle)}" style="border:1.5px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:200px;">
+          <div style="font-weight:700;color:var(--primary);">${esc(c.handle)}
+            <span style="font-weight:700;font-size:0.8rem;color:${CREATOR_TIER_COLORS[c.tier] || '#6b7280'};margin-left:6px;">${esc(c.tier || '')}</span>
+          </div>
+          <div style="font-size:0.82rem;color:var(--muted);margin-top:2px;">
+            ${(c.followers || 0).toLocaleString()} followers · ${((c.engagementRate || 0) * 100).toFixed(1)}% engagement · score ${c.score ?? '—'}
+          </div>
+        </div>
+        <select class="cand-nichefit" style="padding:6px 8px;border-radius:8px;border:1.5px solid var(--border);font-size:0.82rem;">
+          <option value="High" ${c.nicheFit === 'High' ? 'selected' : ''}>High fit</option>
+          <option value="Medium" ${c.nicheFit === 'Medium' ? 'selected' : ''}>Medium fit</option>
+          <option value="Low" ${c.nicheFit === 'Low' ? 'selected' : ''}>Low fit</option>
+        </select>
+        <input type="text" class="cand-email" value="${esc(c.email || '')}" placeholder="email (optional)" style="width:170px;padding:6px 8px;border-radius:8px;border:1.5px solid var(--border);font-size:0.82rem;">
+        <button class="btn-primary cand-add" style="padding:8px 14px;font-size:0.8rem;">Add</button>
+        <button class="btn-secondary cand-skip" style="padding:8px 14px;font-size:0.8rem;">Skip</button>
+      </div>
     `).join('');
-    tbodyEl.querySelectorAll('.cand-nichefit').forEach(el => {
-      el.addEventListener('change', () => { candidates[Number(el.dataset.i)].nicheFit = el.value; });
-    });
-    tbodyEl.querySelectorAll('.cand-email').forEach(el => {
-      el.addEventListener('blur', () => { candidates[Number(el.dataset.i)].email = el.value.trim(); });
-    });
-  }
 
-  function checkedCandidates(candidates, tbodyEl) {
-    const checked = new Set(Array.from(tbodyEl.querySelectorAll('.cand-check:checked')).map(el => Number(el.dataset.i)));
-    return candidates.filter((c, i) => checked.has(i));
+    containerEl.querySelectorAll('.cand-card').forEach((card, i) => {
+      const c = candidates[i];
+      card.querySelector('.cand-nichefit').addEventListener('change', e => { c.nicheFit = e.target.value; });
+      card.querySelector('.cand-email').addEventListener('blur', e => { c.email = e.target.value.trim(); });
+
+      card.querySelector('.cand-skip').addEventListener('click', () => {
+        card.remove();
+        if (!containerEl.querySelector('.cand-card')) onEmpty();
+      });
+
+      card.querySelector('.cand-add').addEventListener('click', async () => {
+        const addBtn = card.querySelector('.cand-add');
+        addBtn.disabled = true; addBtn.textContent = 'Adding…';
+        try {
+          const res = await fetch('/api/admin/creators/save-candidates', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ candidates: [c] })
+          });
+          if (res.status === 401) { window.location.href = '/admin/login'; return; }
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Save failed');
+          card.remove();
+          if (!containerEl.querySelector('.cand-card')) onEmpty();
+          loadCreatorSummary(); loadCreators();
+        } catch (err) {
+          addBtn.disabled = false; addBtn.textContent = 'Add';
+          alert(err.message || 'Save failed — try again.');
+        }
+      });
+    });
   }
 
   // ── YouTube discovery ──
-  let ytCandidates = [];
   const ytSearchBtn = document.getElementById('ytSearchBtn');
   const ytCandidatesBody = document.getElementById('ytCandidatesBody');
   if (ytSearchBtn) ytSearchBtn.addEventListener('click', async () => {
     const query = document.getElementById('ytQuery').value.trim();
     const maxResults = document.getElementById('ytMaxResults').value;
+    const regionCode = document.getElementById('ytCountry').value;
+    const minFollowers = document.getElementById('ytMinSubs').value;
+    const maxFollowers = document.getElementById('ytMaxSubs').value;
+    const minEngagementRate = document.getElementById('ytMinEngagement').value;
     const resultEl = document.getElementById('ytSearchResult');
     if (!query) { resultEl.textContent = 'Enter a niche or keyword first.'; return; }
     ytSearchBtn.disabled = true; ytSearchBtn.textContent = 'Searching…';
@@ -1049,16 +1147,20 @@
     try {
       const res = await fetch('/api/admin/creators/discover-youtube', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, maxResults })
+        body: JSON.stringify({ query, maxResults, regionCode, minFollowers, maxFollowers, minEngagementRate })
       });
       if (res.status === 401) { window.location.href = '/admin/login'; return; }
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Search failed');
-      ytCandidates = data.candidates || [];
-      document.getElementById('ytPreviewWrap').style.display = ytCandidates.length ? 'block' : 'none';
-      if (!ytCandidates.length) { resultEl.textContent = 'No channels found — try a different keyword.'; return; }
-      renderCandidateRows(ytCandidates, ytCandidatesBody);
-      resultEl.textContent = `Found ${ytCandidates.length} channel${ytCandidates.length === 1 ? '' : 's'} — review below, then save.`;
+      const candidates = data.candidates || [];
+      document.getElementById('ytPreviewWrap').style.display = candidates.length ? 'block' : 'none';
+      if (!candidates.length) { resultEl.textContent = 'No channels matched — try a wider filter or a different keyword.'; return; }
+      renderCandidateCards(candidates, ytCandidatesBody, () => {
+        document.getElementById('ytPreviewWrap').style.display = 'none';
+        resultEl.textContent = 'All done for this search.';
+      });
+      const filteredOut = (data.searchedCount || candidates.length) - candidates.length;
+      resultEl.textContent = `Found ${candidates.length} matching channel${candidates.length === 1 ? '' : 's'}${filteredOut > 0 ? ` (${filteredOut} filtered out)` : ''} — go through them below.`;
     } catch (err) {
       resultEl.textContent = err.message || 'Search failed.';
     } finally {
@@ -1066,33 +1168,7 @@
     }
   });
 
-  const ytSaveBtn = document.getElementById('ytSaveBtn');
-  if (ytSaveBtn) ytSaveBtn.addEventListener('click', async () => {
-    const selected = checkedCandidates(ytCandidates, ytCandidatesBody);
-    const resultEl = document.getElementById('ytSaveResult');
-    if (!selected.length) { resultEl.textContent = 'Nothing checked to save.'; return; }
-    ytSaveBtn.disabled = true; ytSaveBtn.textContent = 'Saving…';
-    try {
-      const res = await fetch('/api/admin/creators/save-candidates', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ candidates: selected })
-      });
-      if (res.status === 401) { window.location.href = '/admin/login'; return; }
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Save failed');
-      resultEl.textContent = `Saved ${data.imported} of ${data.total}.`;
-      document.getElementById('ytPreviewWrap').style.display = 'none';
-      ytCandidates = [];
-      loadCreatorSummary(); loadCreators();
-    } catch (err) {
-      resultEl.textContent = err.message || 'Save failed.';
-    } finally {
-      ytSaveBtn.disabled = false; ytSaveBtn.textContent = 'Save selected';
-    }
-  });
-
   // ── Instagram enrichment ──
-  let igCandidates = [];
   const igLookupBtn = document.getElementById('igLookupBtn');
   const igCandidatesBody = document.getElementById('igCandidatesBody');
   if (igLookupBtn) igLookupBtn.addEventListener('click', async () => {
@@ -1109,40 +1185,20 @@
       if (res.status === 401) { window.location.href = '/admin/login'; return; }
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Lookup failed');
-      igCandidates = data.candidates || [];
-      document.getElementById('igPreviewWrap').style.display = igCandidates.length ? 'block' : 'none';
-      renderCandidateRows(igCandidates, igCandidatesBody);
+      const candidates = data.candidates || [];
+      document.getElementById('igPreviewWrap').style.display = candidates.length ? 'block' : 'none';
       const errCount = (data.errors || []).length;
-      resultEl.textContent = `Found ${igCandidates.length}${errCount ? `, ${errCount} failed (private/personal account, or typo)` : ''}.`;
+      if (candidates.length) {
+        renderCandidateCards(candidates, igCandidatesBody, () => {
+          document.getElementById('igPreviewWrap').style.display = 'none';
+          resultEl.textContent = 'All done for this batch.';
+        });
+      }
+      resultEl.textContent = `Found ${candidates.length}${errCount ? `, ${errCount} failed (private/personal account, or typo)` : ''}.`;
     } catch (err) {
       resultEl.textContent = err.message || 'Lookup failed.';
     } finally {
       igLookupBtn.disabled = false; igLookupBtn.textContent = 'Look up on Instagram';
-    }
-  });
-
-  const igSaveBtn = document.getElementById('igSaveBtn');
-  if (igSaveBtn) igSaveBtn.addEventListener('click', async () => {
-    const selected = checkedCandidates(igCandidates, igCandidatesBody);
-    const resultEl = document.getElementById('igSaveResult');
-    if (!selected.length) { resultEl.textContent = 'Nothing checked to save.'; return; }
-    igSaveBtn.disabled = true; igSaveBtn.textContent = 'Saving…';
-    try {
-      const res = await fetch('/api/admin/creators/save-candidates', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ candidates: selected })
-      });
-      if (res.status === 401) { window.location.href = '/admin/login'; return; }
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Save failed');
-      resultEl.textContent = `Saved ${data.imported} of ${data.total}.`;
-      document.getElementById('igPreviewWrap').style.display = 'none';
-      igCandidates = [];
-      loadCreatorSummary(); loadCreators();
-    } catch (err) {
-      resultEl.textContent = err.message || 'Save failed.';
-    } finally {
-      igSaveBtn.disabled = false; igSaveBtn.textContent = 'Save selected';
     }
   });
 
