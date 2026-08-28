@@ -176,6 +176,13 @@ const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY || null;
 const IG_BUSINESS_ID = process.env.IG_BUSINESS_ID || null;
 const IG_ACCESS_TOKEN = process.env.IG_ACCESS_TOKEN || null;
 
+// Creator discovery — X (Twitter) has a real search API, but as of Feb 2026
+// it's pay-per-use with no free tier: ~$0.005 per post read, no monthly
+// minimum. Every search costs real money on whatever card is attached to
+// the X Developer account — there's no quota buffer like YouTube has.
+// X_BEARER_TOKEN is the App-Only Bearer Token from the X Developer Portal.
+const X_BEARER_TOKEN = process.env.X_BEARER_TOKEN || null;
+
 // Cloudinary — hosts the affiliate broadcast's banner image so the email
 // carries a real https:// link instead of an embedded base64 data URI
 // (Gmail and most other clients strip data: URIs from HTML email, which is
@@ -2120,6 +2127,7 @@ async function youtubeSearchChannels(query, maxResults, regionCode) {
       daysSinceLastPost,
       email: extractEmailFromText(ch.snippet && ch.snippet.description),
       channelUrl: `https://youtube.com/channel/${ch.id}`,
+      seenKey: `youtube_${ch.id}`, // channel ID, not handle — stable even if they change their custom URL
       source: 'youtube-discovery'
     });
   }
@@ -2170,8 +2178,72 @@ async function instagramBusinessDiscovery(handle) {
     nicheFit: 'Medium',
     daysSinceLastPost,
     email: extractEmailFromText(bd.biography),
+    seenKey: `instagram_${bd.username.toLowerCase()}`,
     source: 'instagram-enrichment'
   };
+}
+
+// Searches X (Twitter) via the real Recent Search endpoint — a genuine
+// keyword search, unlike Instagram/Facebook. Only covers the last 7 days
+// (that's what recent-search means), and costs real money per read (see
+// X_BEARER_TOKEN comment above) — kept intentionally low-volume by default.
+// Groups matching posts by author, so someone with 3 matching tweets still
+// only shows up once as one candidate.
+async function xSearchAuthors(query, maxResults) {
+  if (!X_BEARER_TOKEN) throw new Error('X_BEARER_TOKEN is not set in the environment.');
+  const n = Math.min(Math.max(Number(maxResults) || 10, 1), 20); // real dollars per read — default conservative, hard ceiling of 20
+
+  const searchQuery = `${query} -is:retweet`;
+  const url = `https://api.x.com/2/tweets/search/recent?query=${encodeURIComponent(searchQuery)}&max_results=${n}&expansions=author_id&tweet.fields=created_at,public_metrics&user.fields=username,name,description,public_metrics`;
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${X_BEARER_TOKEN}` } });
+  const data = await res.json();
+  if (!res.ok) throw new Error((data.detail || data.title) || 'X search failed.');
+
+  const tweets = data.data || [];
+  const users = (data.includes && data.includes.users) || [];
+  const usersById = {};
+  users.forEach(u => { usersById[u.id] = u; });
+
+  // Group each author's matching tweets together so we can average their
+  // engagement across however many showed up in this search.
+  const byAuthor = {};
+  tweets.forEach(t => {
+    if (!byAuthor[t.author_id]) byAuthor[t.author_id] = [];
+    byAuthor[t.author_id].push(t);
+  });
+
+  const candidates = [];
+  for (const authorId of Object.keys(byAuthor)) {
+    const user = usersById[authorId];
+    if (!user) continue;
+    const followers = (user.public_metrics && user.public_metrics.followers_count) || 0;
+    const authorTweets = byAuthor[authorId];
+
+    const rates = authorTweets.map(t => {
+      const m = t.public_metrics || {};
+      const engagements = (Number(m.like_count) || 0) + (Number(m.retweet_count) || 0) + (Number(m.reply_count) || 0);
+      return followers > 0 ? engagements / followers : 0;
+    });
+    const engagementRate = rates.length ? rates.reduce((a, b) => a + b, 0) / rates.length : 0;
+
+    const latestDate = authorTweets.map(t => t.created_at).filter(Boolean).sort().reverse()[0];
+    const daysSinceLastPost = latestDate ? Math.floor((Date.now() - new Date(latestDate).getTime()) / 86400000) : null;
+
+    candidates.push({
+      handle: `@${user.username}`,
+      platform: 'X',
+      country: '',
+      followers,
+      engagementRate,
+      nicheFit: 'Medium',
+      daysSinceLastPost,
+      email: extractEmailFromText(user.description),
+      profileUrl: `https://x.com/${user.username}`,
+      seenKey: `x_${authorId}`, // user ID, stable even if they change their @handle
+      source: 'x-discovery'
+    });
+  }
+  return candidates;
 }
 
 // Minimal CSV parser (handles quoted fields with embedded commas) so a
@@ -2265,34 +2337,36 @@ const CREATOR_FOLLOWUP_GAP_DAYS = 4;
 const CREATOR_MAX_FOLLOWUPS = 2; // after this, auto-marked Declined so nobody gets chased indefinitely
 
 // Runs the whole outreach cycle once: initial emails to any "Not Contacted"
-// creator (A-list first, then B-list, capped per run), then follow-ups to
-// anyone silent for CREATOR_FOLLOWUP_GAP_DAYS+ days. Also callable directly
-// from the admin dashboard's "Send outreach now" button, not just the cron.
+// creator (highest score first, capped per run), then follow-ups to anyone
+// silent for CREATOR_FOLLOWUP_GAP_DAYS+ days. Also callable directly from
+// the admin dashboard's "Send outreach now" button, not just the cron.
 async function runDailyCreatorOutreachCycle() {
   if (!db) return { initialSent: 0, followUpsSent: 0 };
   const now = admin.firestore.Timestamp.now();
   const nowMs = Date.now();
 
+  // Everyone "Not Contacted" is eligible — no tier gate. Sorted highest
+  // score first, so the strongest fits still get reached before weaker
+  // ones, but nobody is permanently excluded from the automatic cycle
+  // purely for scoring lower.
   let initialSent = 0;
-  for (const targetTier of ['A - Contact First', 'B - Contact Next']) {
+  const initialSnap = await db.collection('creators')
+    .where('status', '==', 'Not Contacted')
+    .orderBy('score', 'desc')
+    .limit(CREATOR_DAILY_SEND_CAP)
+    .get();
+  for (const doc of initialSnap.docs) {
     if (initialSent >= CREATOR_DAILY_SEND_CAP) break;
-    const snap = await db.collection('creators')
-      .where('tier', '==', targetTier)
-      .where('status', '==', 'Not Contacted')
-      .limit(CREATOR_DAILY_SEND_CAP - initialSent)
-      .get();
-    for (const doc of snap.docs) {
-      const creator = doc.data();
-      if (!creator.email) continue;
-      const result = await sendCreatorOutreachEmail(creator, 'initial');
-      if (result.ok) {
-        await doc.ref.update({ status: 'Contacted', dateContacted: now });
-        initialSent++;
-      } else {
-        await doc.ref.update({ notes: `Send failed: ${result.error}` });
-      }
-      await new Promise(r => setTimeout(r, 300)); // small pause between sends
+    const creator = doc.data();
+    if (!creator.email) continue;
+    const result = await sendCreatorOutreachEmail(creator, 'initial');
+    if (result.ok) {
+      await doc.ref.update({ status: 'Contacted', dateContacted: now });
+      initialSent++;
+    } else {
+      await doc.ref.update({ notes: `Send failed: ${result.error}` });
     }
+    await new Promise(r => setTimeout(r, 300)); // small pause between sends
   }
 
   let followUpsSent = 0;
@@ -3262,9 +3336,38 @@ app.post('/api/admin/creators/import', async (req, res) => {
 // keyword and returns SCORED CANDIDATES ONLY, nothing is saved yet. The
 // admin reviews/edits them on the Creators tab, then a separate call to
 // /save-candidates actually writes the ones they keep.
+// Marks discovery candidates as "seen" so a future search doesn't keep
+// resurfacing the same people (stored in a plain `discoverySeen`
+// collection, separate from the actual `creators` list — this tracks
+// everyone shown, not just ones you Added). Pass includeSeen=true from the
+// dashboard to deliberately look them up again anyway.
+async function filterAndMarkSeen(candidates, includeSeen) {
+  if (!db || !candidates.length) return candidates;
+  const withKeys = candidates.filter(c => c.seenKey);
+
+  let toReturn = candidates;
+  if (!includeSeen && withKeys.length) {
+    const seenChecks = await Promise.all(
+      withKeys.map(c => db.collection('discoverySeen').doc(c.seenKey).get())
+    );
+    const seenKeys = new Set(withKeys.filter((c, i) => seenChecks[i].exists).map(c => c.seenKey));
+    toReturn = candidates.filter(c => !c.seenKey || !seenKeys.has(c.seenKey));
+  }
+
+  // Mark everything actually being shown right now as seen, so it won't
+  // resurface next time regardless of whether this call filtered anything.
+  const batch = db.batch();
+  toReturn.forEach(c => {
+    if (c.seenKey) batch.set(db.collection('discoverySeen').doc(c.seenKey), { lastSeenAt: admin.firestore.Timestamp.now() }, { merge: true });
+  });
+  if (toReturn.some(c => c.seenKey)) await batch.commit();
+
+  return toReturn;
+}
+
 app.post('/api/admin/creators/discover-youtube', async (req, res) => {
   try {
-    const { query, maxResults, regionCode, minFollowers, maxFollowers, minEngagementRate } = req.body || {};
+    const { query, maxResults, regionCode, minFollowers, maxFollowers, minEngagementRate, emailOnly, includeSeen } = req.body || {};
     if (!query || !String(query).trim()) return res.status(400).json({ error: 'A search query is required.' });
     const candidates = await youtubeSearchChannels(String(query).trim(), maxResults, regionCode);
     let scored = candidates.map(c => ({ ...c, ...computeCreatorScore(c) }));
@@ -3276,9 +3379,14 @@ app.post('/api/admin/creators/discover-youtube', async (req, res) => {
     if (!isNaN(minF) && minFollowers !== '') scored = scored.filter(c => c.followers >= minF);
     if (!isNaN(maxF) && maxFollowers !== '') scored = scored.filter(c => c.followers <= maxF);
     if (!isNaN(minEng) && minEngagementRate !== '') scored = scored.filter(c => (c.engagementRate * 100) >= minEng);
+    if (emailOnly) scored = scored.filter(c => c.email); // only channels where an email was actually found in their description
+
+    const beforeSeenFilter = scored.length;
+    scored = await filterAndMarkSeen(scored, !!includeSeen);
+    const skippedAsSeen = beforeSeenFilter - scored.length;
 
     scored.sort((a, b) => b.score - a.score);
-    return res.json({ ok: true, candidates: scored, searchedCount });
+    return res.json({ ok: true, candidates: scored, searchedCount, skippedAsSeen });
   } catch (err) {
     console.error('/api/admin/creators/discover-youtube error', err);
     return res.status(400).json({ error: err.message || 'YouTube discovery failed.' });
@@ -3289,12 +3397,45 @@ app.post('/api/admin/creators/discover-youtube', async (req, res) => {
 // Instagram handles (you still have to find these yourself — see the
 // route's underlying function for why) and looks each one up via Business
 // Discovery, returning scored candidates for review, same as YouTube above.
+// POST /api/admin/creators/discover-x — searches X's real Recent Search
+// API by keyword. Unlike Instagram/Facebook, this is a genuine search, not
+// a lookup — but it costs real money per read (see X_BEARER_TOKEN comment),
+// only covers the last 7 days, and defaults to a small batch size to keep
+// spend predictable.
+app.post('/api/admin/creators/discover-x', async (req, res) => {
+  try {
+    const { query, maxResults, minFollowers, maxFollowers, minEngagementRate, emailOnly, includeSeen } = req.body || {};
+    if (!query || !String(query).trim()) return res.status(400).json({ error: 'A search query is required.' });
+    const candidates = await xSearchAuthors(String(query).trim(), maxResults);
+    let scored = candidates.map(c => ({ ...c, ...computeCreatorScore(c) }));
+
+    const minF = Number(minFollowers);
+    const maxF = Number(maxFollowers);
+    const minEng = Number(minEngagementRate);
+    const searchedCount = scored.length;
+    if (!isNaN(minF) && minFollowers !== '') scored = scored.filter(c => c.followers >= minF);
+    if (!isNaN(maxF) && maxFollowers !== '') scored = scored.filter(c => c.followers <= maxF);
+    if (!isNaN(minEng) && minEngagementRate !== '') scored = scored.filter(c => (c.engagementRate * 100) >= minEng);
+    if (emailOnly) scored = scored.filter(c => c.email);
+
+    const beforeSeenFilter = scored.length;
+    scored = await filterAndMarkSeen(scored, !!includeSeen);
+    const skippedAsSeen = beforeSeenFilter - scored.length;
+
+    scored.sort((a, b) => b.score - a.score);
+    return res.json({ ok: true, candidates: scored, searchedCount, skippedAsSeen });
+  } catch (err) {
+    console.error('/api/admin/creators/discover-x error', err);
+    return res.status(400).json({ error: err.message || 'X discovery failed.' });
+  }
+});
+
 app.post('/api/admin/creators/enrich-instagram', async (req, res) => {
   try {
-    const { handles } = req.body || {};
+    const { handles, includeSeen } = req.body || {};
     const list = String(handles || '').split(/[\n,]/).map(h => h.trim()).filter(Boolean).slice(0, 25); // cap per request — stay within Graph API rate limits
     if (!list.length) return res.status(400).json({ error: 'Paste at least one Instagram handle.' });
-    const candidates = [];
+    let candidates = [];
     const errors = [];
     for (const h of list) {
       try {
@@ -3304,8 +3445,12 @@ app.post('/api/admin/creators/enrich-instagram', async (req, res) => {
         errors.push({ handle: h, error: e.message });
       }
     }
+    const beforeSeenFilter = candidates.length;
+    candidates = await filterAndMarkSeen(candidates, !!includeSeen);
+    const skippedAsSeen = beforeSeenFilter - candidates.length;
+
     candidates.sort((a, b) => b.score - a.score);
-    return res.json({ ok: true, candidates, errors });
+    return res.json({ ok: true, candidates, errors, skippedAsSeen });
   } catch (err) {
     console.error('/api/admin/creators/enrich-instagram error', err);
     return res.status(400).json({ error: err.message || 'Instagram enrichment failed.' });
@@ -3419,10 +3564,11 @@ app.get('/api/admin/creators/summary', async (req, res) => {
     const all = snap.docs.map(d => d.data());
     const summary = {
       total: all.length,
-      aList: all.filter(c => c.tier === 'A - Contact First').length,
-      bList: all.filter(c => c.tier === 'B - Contact Next').length,
-      cList: all.filter(c => c.tier === 'C - Keep').length,
-      discard: all.filter(c => c.tier === 'Discard').length,
+      // Score bands instead of the old tier labels — matches the same
+      // 65 / 40 cutoffs the dashboard uses to color-code scores elsewhere.
+      strongFit: all.filter(c => (c.score || 0) >= 65).length,
+      middling: all.filter(c => (c.score || 0) >= 40 && (c.score || 0) < 65).length,
+      weakFit: all.filter(c => (c.score || 0) < 40).length,
       contacted: all.filter(c => c.status && c.status !== 'Not Contacted').length,
       replied: all.filter(c => c.replied === 'Y').length,
       signedUp: all.filter(c => c.affiliateSignup === 'Y').length,
