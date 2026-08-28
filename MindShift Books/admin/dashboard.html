@@ -563,9 +563,9 @@
   <div id="creatorsPage" style="display:none;">
     <div class="totals">
       <div class="stat-card"><div class="label">Total Creators</div><div class="value" id="crTotal">0</div></div>
-      <div class="stat-card"><div class="label">A-list</div><div class="value" id="crAList">0</div></div>
-      <div class="stat-card"><div class="label">B-list</div><div class="value" id="crBList">0</div></div>
-      <div class="stat-card"><div class="label">C-list</div><div class="value" id="crCList">0</div></div>
+      <div class="stat-card"><div class="label">Strong fit (65%+)</div><div class="value" id="crAList">0</div></div>
+      <div class="stat-card"><div class="label">Middling (40–64%)</div><div class="value" id="crBList">0</div></div>
+      <div class="stat-card"><div class="label">Weak fit (&lt;40%)</div><div class="value" id="crCList">0</div></div>
       <div class="stat-card"><div class="label">Contacted</div><div class="value" id="crContacted">0</div></div>
       <div class="stat-card"><div class="label">Replied</div><div class="value" id="crReplied">0</div></div>
       <div class="stat-card"><div class="label">Signed Up</div><div class="value" id="crSignedUp">0</div></div>
@@ -624,6 +624,18 @@
         <label>Max results <span class="optional-tag">up to 25 searched</span></label>
         <input type="text" id="ytMaxResults" value="15">
       </div>
+      <div class="field">
+        <label style="display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer;">
+          <input type="checkbox" id="ytEmailOnly" style="width:auto;">
+          Only show channels with a public email
+        </label>
+      </div>
+      <div class="field">
+        <label style="display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer;">
+          <input type="checkbox" id="ytIncludeSeen" style="width:auto;">
+          Include channels I've already seen before
+        </label>
+      </div>
       <div class="broadcast-actions">
         <button class="btn-primary" id="ytSearchBtn">Search YouTube</button>
         <span class="recipient-count" id="ytSearchResult"></span>
@@ -635,6 +647,56 @@
     </div>
 
     <div class="panel full-panel" style="padding-bottom:20px;">
+      <h2><span class="h2-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l16 16M4 20L20 4"/></svg></span>Discover on X</h2>
+      <p class="empty" style="padding-top:0;margin-top:-8px;margin-bottom:10px;">
+        Searches X's real Recent Search API by keyword — a genuine search, not just a lookup — grouping matching posts by author. Only covers the last 7 days of posts.
+      </p>
+      <p style="background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;font-size:0.82rem;color:#92400e;margin:0 0 16px 0;">
+        <strong>Costs real money per search.</strong> As of Feb 2026, X has no free API tier — roughly $0.005 per post read, so each search here costs about $0.05–$0.10 depending on result count, charged to whatever card is on your X Developer account.
+      </p>
+      <div class="field" style="max-width:420px;">
+        <label>Niche / keyword</label>
+        <input type="text" id="xQuery" placeholder="e.g. money mindset Nigeria">
+      </div>
+      <div class="field" style="max-width:150px;">
+        <label>Min followers</label>
+        <input type="text" id="xMinSubs" placeholder="e.g. 2000">
+      </div>
+      <div class="field" style="max-width:150px;">
+        <label>Max followers</label>
+        <input type="text" id="xMaxSubs" placeholder="e.g. 6000">
+      </div>
+      <div class="field" style="max-width:150px;">
+        <label>Min engagement % <span class="optional-tag">estimate</span></label>
+        <input type="text" id="xMinEngagement" placeholder="e.g. 3">
+      </div>
+      <div class="field" style="max-width:160px;">
+        <label>Max results <span class="optional-tag">up to 20 — costs money per result</span></label>
+        <input type="text" id="xMaxResults" value="10">
+      </div>
+      <div class="field">
+        <label style="display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer;">
+          <input type="checkbox" id="xEmailOnly" style="width:auto;">
+          Only show accounts with a public email
+        </label>
+      </div>
+      <div class="field">
+        <label style="display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer;">
+          <input type="checkbox" id="xIncludeSeen" style="width:auto;">
+          Include accounts I've already seen before
+        </label>
+      </div>
+      <div class="broadcast-actions">
+        <button class="btn-primary" id="xSearchBtn">Search X</button>
+        <span class="recipient-count" id="xSearchResult"></span>
+      </div>
+      <div id="xPreviewWrap" style="display:none;margin-top:16px;">
+        <p class="empty" style="padding:0 0 10px 0;">Go through each one below — <strong>Add</strong> saves it to your Creators list, <strong>Skip</strong> just removes it from this list.</p>
+        <div id="xCandidatesBody"></div>
+      </div>
+    </div>
+
+    <div class="panel full-panel" style="padding-bottom:20px;">
       <h2><span class="h2-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="0.6" fill="currentColor"/></svg></span>Enrich Instagram handles</h2>
       <p class="empty" style="padding-top:0;margin-top:-8px;margin-bottom:14px;">
         Instagram has no public search API — you still have to find handles yourself (Explore, hashtags, etc.). Paste the handles you've found below and this looks up followers, engagement, and bio-listed email for each one automatically. Needs a Meta app connected to your own Instagram professional account (IG_BUSINESS_ID / IG_ACCESS_TOKEN) — see CREATOR_OUTREACH_CHANGES.md for setup. TikTok has no equivalent public API at all, so those still need manual CSV entry above.
@@ -642,6 +704,12 @@
       <div class="field">
         <label>Handles <span class="optional-tag">one per line, or comma-separated — up to 25 per lookup</span></label>
         <textarea id="igHandles" placeholder="@creator_one&#10;@creator_two" style="min-height:88px;"></textarea>
+      </div>
+      <div class="field">
+        <label style="display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer;">
+          <input type="checkbox" id="igIncludeSeen" style="width:auto;">
+          Include handles I've already looked up before
+        </label>
       </div>
       <div class="broadcast-actions">
         <button class="btn-primary" id="igLookupBtn">Look up on Instagram</button>
@@ -675,7 +743,7 @@
       </div>
       <div class="table-scroll">
         <table>
-          <thead><tr><th><input type="checkbox" id="crSelectAll"></th><th>Handle</th><th>Platform</th><th class="num">Score</th><th>Tier</th><th>Status</th><th>Replied</th><th>Signed Up</th><th>Code</th><th class="num">Sales</th><th></th></tr></thead>
+          <thead><tr><th><input type="checkbox" id="crSelectAll"></th><th>Handle</th><th>Platform</th><th class="num">Score</th><th>Status</th><th>Replied</th><th>Signed Up</th><th>Code</th><th class="num">Sales</th><th></th></tr></thead>
           <tbody id="creatorsBody"></tbody>
         </table>
       </div>
@@ -927,9 +995,9 @@
       if (!res.ok) throw new Error(data.error || 'Request failed');
       const s = data.summary;
       document.getElementById('crTotal').textContent = s.total;
-      document.getElementById('crAList').textContent = s.aList;
-      document.getElementById('crBList').textContent = s.bList;
-      document.getElementById('crCList').textContent = s.cList;
+      document.getElementById('crAList').textContent = s.strongFit;
+      document.getElementById('crBList').textContent = s.middling;
+      document.getElementById('crCList').textContent = s.weakFit;
       document.getElementById('crContacted').textContent = s.contacted;
       document.getElementById('crReplied').textContent = s.replied;
       document.getElementById('crSignedUp').textContent = s.signedUp;
@@ -939,10 +1007,14 @@
     }
   }
 
-  const CREATOR_TIER_COLORS = {
-    'A - Contact First': '#166534', 'B - Contact Next': '#1d4ed8',
-    'C - Keep': '#92400e', 'Discard': '#6b7280'
-  };
+  // Score-driven color, not a fixed tier label — green for strong fits,
+  // amber for middling, gray for weak. Purely visual; every score is
+  // outreachable, nothing here gates who gets emailed.
+  function scoreColor(score) {
+    if (score >= 65) return '#166534';
+    if (score >= 40) return '#92400e';
+    return '#6b7280';
+  }
 
   async function updateCreator(id, field, value, td) {
     try {
@@ -969,7 +1041,7 @@
       if (!res.ok) throw new Error(data.error || 'Request failed');
       const creators = data.creators || [];
       if (!creators.length) {
-        tbody.innerHTML = '<tr><td colspan="11" class="empty">No creators imported yet — paste a CSV above to get started.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" class="empty">No creators imported yet — paste a CSV above to get started.</td></tr>';
         return;
       }
       tbody.innerHTML = creators.map(c => `
@@ -977,8 +1049,7 @@
           <td><input type="checkbox" class="cr-check" data-id="${esc(c.id)}"></td>
           <td>${esc(c.handle)}</td>
           <td>${esc(c.platform)}</td>
-          <td class="num">${c.score ?? ''}</td>
-          <td><span style="color:${CREATOR_TIER_COLORS[c.tier] || '#6b7280'};font-weight:700;">${esc(c.tier || '')}</span></td>
+          <td class="num"><span style="color:${scoreColor(c.score || 0)};font-weight:700;">${c.score ?? ''}%</span></td>
           <td>${esc(c.status || '')}</td>
           <td>
             <select data-field="replied" data-id="${esc(c.id)}" style="padding:4px 6px;border-radius:6px;border:1px solid #e2e8f0;">
@@ -1018,7 +1089,7 @@
         });
       });
     } catch (err) {
-      tbody.innerHTML = '<tr><td colspan="11" class="empty">Could not load creators.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="10" class="empty">Could not load creators.</td></tr>';
     }
   }
 
@@ -1098,10 +1169,10 @@
       <div class="cand-card" data-key="${esc(c.handle)}" style="border:1.5px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
         <div style="flex:1;min-width:200px;">
           <div style="font-weight:700;color:var(--primary);">${esc(c.handle)}
-            <span style="font-weight:700;font-size:0.8rem;color:${CREATOR_TIER_COLORS[c.tier] || '#6b7280'};margin-left:6px;">${esc(c.tier || '')}</span>
+            <span style="font-weight:700;font-size:0.8rem;color:${scoreColor(c.score || 0)};margin-left:6px;">${c.score ?? '—'}%</span>
           </div>
           <div style="font-size:0.82rem;color:var(--muted);margin-top:2px;">
-            ${(c.followers || 0).toLocaleString()} followers · ${((c.engagementRate || 0) * 100).toFixed(1)}% engagement · score ${c.score ?? '—'}
+            ${(c.followers || 0).toLocaleString()} followers · ${((c.engagementRate || 0) * 100).toFixed(1)}% engagement
           </div>
         </div>
         <select class="cand-nichefit" style="padding:6px 8px;border-radius:8px;border:1.5px solid var(--border);font-size:0.82rem;">
@@ -1157,6 +1228,8 @@
     const minFollowers = document.getElementById('ytMinSubs').value;
     const maxFollowers = document.getElementById('ytMaxSubs').value;
     const minEngagementRate = document.getElementById('ytMinEngagement').value;
+    const emailOnly = document.getElementById('ytEmailOnly').checked;
+    const includeSeen = document.getElementById('ytIncludeSeen').checked;
     const resultEl = document.getElementById('ytSearchResult');
     if (!query) { resultEl.textContent = 'Enter a niche or keyword first.'; return; }
     ytSearchBtn.disabled = true; ytSearchBtn.textContent = 'Searching…';
@@ -1164,24 +1237,78 @@
     try {
       const res = await fetch('/api/admin/creators/discover-youtube', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, maxResults, regionCode, minFollowers, maxFollowers, minEngagementRate })
+        body: JSON.stringify({ query, maxResults, regionCode, minFollowers, maxFollowers, minEngagementRate, emailOnly, includeSeen })
       });
       if (res.status === 401) { window.location.href = '/admin/login'; return; }
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Search failed');
       const candidates = data.candidates || [];
       document.getElementById('ytPreviewWrap').style.display = candidates.length ? 'block' : 'none';
-      if (!candidates.length) { resultEl.textContent = 'No channels matched — try a wider filter or a different keyword.'; return; }
+      if (!candidates.length) {
+        resultEl.textContent = (data.skippedAsSeen > 0)
+          ? `All ${data.skippedAsSeen} results here were ones you've already seen — check "Include channels I've already seen" to revisit them, or try a different keyword.`
+          : 'No channels matched — try a wider filter or a different keyword.';
+        return;
+      }
       renderCandidateCards(candidates, ytCandidatesBody, () => {
         document.getElementById('ytPreviewWrap').style.display = 'none';
         resultEl.textContent = 'All done for this search.';
       });
-      const filteredOut = (data.searchedCount || candidates.length) - candidates.length;
-      resultEl.textContent = `Found ${candidates.length} matching channel${candidates.length === 1 ? '' : 's'}${filteredOut > 0 ? ` (${filteredOut} filtered out)` : ''} — go through them below.`;
+      const filteredOut = (data.searchedCount || candidates.length) - candidates.length - (data.skippedAsSeen || 0);
+      let msg = `Found ${candidates.length} fresh channel${candidates.length === 1 ? '' : 's'}`;
+      if (filteredOut > 0) msg += ` (${filteredOut} filtered out)`;
+      if (data.skippedAsSeen > 0) msg += ` (${data.skippedAsSeen} already seen before, hidden)`;
+      resultEl.textContent = msg + ' — go through them below.';
     } catch (err) {
       resultEl.textContent = err.message || 'Search failed.';
     } finally {
       ytSearchBtn.disabled = false; ytSearchBtn.textContent = 'Search YouTube';
+    }
+  });
+
+  // ── X discovery ──
+  const xSearchBtn = document.getElementById('xSearchBtn');
+  const xCandidatesBody = document.getElementById('xCandidatesBody');
+  if (xSearchBtn) xSearchBtn.addEventListener('click', async () => {
+    const query = document.getElementById('xQuery').value.trim();
+    const maxResults = document.getElementById('xMaxResults').value;
+    const minFollowers = document.getElementById('xMinSubs').value;
+    const maxFollowers = document.getElementById('xMaxSubs').value;
+    const minEngagementRate = document.getElementById('xMinEngagement').value;
+    const emailOnly = document.getElementById('xEmailOnly').checked;
+    const includeSeen = document.getElementById('xIncludeSeen').checked;
+    const resultEl = document.getElementById('xSearchResult');
+    if (!query) { resultEl.textContent = 'Enter a niche or keyword first.'; return; }
+    if (!confirm(`This search costs real money (roughly $0.05–$0.10 for up to ${maxResults || 10} results). Continue?`)) return;
+    xSearchBtn.disabled = true; xSearchBtn.textContent = 'Searching…';
+    resultEl.textContent = '';
+    try {
+      const res = await fetch('/api/admin/creators/discover-x', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query, maxResults, minFollowers, maxFollowers, minEngagementRate, emailOnly, includeSeen })
+      });
+      if (res.status === 401) { window.location.href = '/admin/login'; return; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Search failed');
+      const candidates = data.candidates || [];
+      document.getElementById('xPreviewWrap').style.display = candidates.length ? 'block' : 'none';
+      if (!candidates.length) {
+        resultEl.textContent = (data.skippedAsSeen > 0)
+          ? `All ${data.skippedAsSeen} matches were ones you've already seen — check "Include accounts I've already seen" to revisit, or try a different keyword.`
+          : 'No matching accounts found in the last 7 days — try a different keyword.';
+        return;
+      }
+      renderCandidateCards(candidates, xCandidatesBody, () => {
+        document.getElementById('xPreviewWrap').style.display = 'none';
+        resultEl.textContent = 'All done for this search.';
+      });
+      let msg = `Found ${candidates.length} account${candidates.length === 1 ? '' : 's'}`;
+      if (data.skippedAsSeen > 0) msg += ` (${data.skippedAsSeen} already seen before, hidden)`;
+      resultEl.textContent = msg + ' — go through them below.';
+    } catch (err) {
+      resultEl.textContent = err.message || 'Search failed.';
+    } finally {
+      xSearchBtn.disabled = false; xSearchBtn.textContent = 'Search X';
     }
   });
 
@@ -1190,6 +1317,7 @@
   const igCandidatesBody = document.getElementById('igCandidatesBody');
   if (igLookupBtn) igLookupBtn.addEventListener('click', async () => {
     const handles = document.getElementById('igHandles').value.trim();
+    const includeSeen = document.getElementById('igIncludeSeen').checked;
     const resultEl = document.getElementById('igLookupResult');
     if (!handles) { resultEl.textContent = 'Paste at least one handle first.'; return; }
     igLookupBtn.disabled = true; igLookupBtn.textContent = 'Looking up…';
@@ -1197,7 +1325,7 @@
     try {
       const res = await fetch('/api/admin/creators/enrich-instagram', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ handles })
+        body: JSON.stringify({ handles, includeSeen })
       });
       if (res.status === 401) { window.location.href = '/admin/login'; return; }
       const data = await res.json();
@@ -1211,7 +1339,10 @@
           resultEl.textContent = 'All done for this batch.';
         });
       }
-      resultEl.textContent = `Found ${candidates.length}${errCount ? `, ${errCount} failed (private/personal account, or typo)` : ''}.`;
+      let msg = `Found ${candidates.length}`;
+      if (errCount) msg += `, ${errCount} failed (private/personal account, or typo)`;
+      if (data.skippedAsSeen > 0) msg += `, ${data.skippedAsSeen} already looked up before (hidden)`;
+      resultEl.textContent = msg + '.';
     } catch (err) {
       resultEl.textContent = err.message || 'Lookup failed.';
     } finally {
