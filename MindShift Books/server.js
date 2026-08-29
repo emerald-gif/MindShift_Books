@@ -54,6 +54,37 @@ app.use(cors({
   allowedHeaders: ['Content-Type']
 }));
 
+// ── Affiliate subdomain routing ─────────────────────────────────────────────
+// The affiliate area lives at affiliate.mindshiftbooks.shop instead of
+// mindshiftbooks.shop/affiliate/*. This has to run before express.static()
+// further down: express.static serves "/" as public/index.html (the main
+// store) on its own, so if this ran any later, every request to the
+// subdomain's root would already be answered — main site, not affiliate.html
+// — before this code ever got a chance to look at it.
+//   - Request arrives on the affiliate subdomain ("/", "/apply", ...): prefix
+//     the path with /affiliate internally so it falls through to the actual
+//     handlers (defined later, unchanged) that serve those HTML files.
+//   - Request arrives on the main domain at an old /affiliate/* URL: 301 it
+//     out to the equivalent path on the subdomain, so old links/bookmarks
+//     still land somewhere real.
+const AFFILIATE_HOST = 'affiliate.mindshiftbooks.shop';
+const AFFILIATE_SITE_URL = process.env.AFFILIATE_URL || `https://${AFFILIATE_HOST}`;
+const AFFILIATE_ECOSYSTEM_PATHS = new Set(['/affiliate', '/affiliate/apply', '/affiliate/dashboard', '/affiliate/payout']);
+app.use((req, res, next) => {
+  const host = (req.hostname || '').toLowerCase();
+  if (host === AFFILIATE_HOST) {
+    if (!req.path.startsWith('/affiliate') && !req.path.startsWith('/api')) {
+      req.url = '/affiliate' + (req.path === '/' ? '' : req.path) + req.url.slice(req.path.length);
+    }
+    return next();
+  }
+  if (AFFILIATE_ECOSYSTEM_PATHS.has(req.path)) {
+    const suffix = req.path.replace(/^\/affiliate/, '') || '/';
+    return res.redirect(301, `${AFFILIATE_SITE_URL}${suffix}${req.url.slice(req.path.length)}`);
+  }
+  return next();
+});
+
 // ── Rate limiters ──────────────────────────────────────────────────────────
 // Strict limit on the order-lookup endpoint (prevents email enumeration)
 const ordersLimiter = rateLimit({
@@ -162,17 +193,8 @@ const BREVO_CREATOR_OUTREACH_TEMPLATE_ID = 8; // one template covers every creat
 const BREVO_SENDER_NAME = process.env.BREVO_SENDER_NAME || 'Mindshift Books';
 const BREVO_SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'contact@mindshiftbooks.shop';
 const PUBLIC_SITE_URL = process.env.PUBLIC_URL || 'https://mindshiftbooks.shop'; // reused below to build each affiliate's own ?ref= link
-
-// Affiliate area lives on its own subdomain. This is the one place that
-// knows that — every other reference to the affiliate site (emails, the
-// cross-domain redirect below) reads AFFILIATE_HOST/AFFILIATE_SITE_URL
-// instead of hardcoding it again.
-const AFFILIATE_HOST = 'affiliate.mindshiftbooks.shop';
-const AFFILIATE_SITE_URL = process.env.AFFILIATE_URL || `https://${AFFILIATE_HOST}`;
-// Every affiliate-area path, on the OLD mindshiftbooks.shop/affiliate* scheme.
-// Single source of truth: used both by the cross-domain redirect below and
-// by the analytics summary further down (was previously redeclared there).
-const AFFILIATE_ECOSYSTEM_PATHS = new Set(['/affiliate', '/affiliate/apply', '/affiliate/dashboard', '/affiliate/payout']);
+// (AFFILIATE_HOST / AFFILIATE_SITE_URL / AFFILIATE_ECOSYSTEM_PATHS are declared
+// near the top of the file, before the static file server — see the comment there.)
 
 // Creator discovery — YouTube Data API (free, official, no scraping) lets us
 // search channels by niche keyword directly. Get a key from Google Cloud
@@ -3202,32 +3224,9 @@ app.get('/welcome', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'welcome.html'));
 });
 
-// ── Affiliate subdomain routing ─────────────────────────────────────────────
-// The affiliate area now lives at affiliate.mindshiftbooks.shop instead of
-// mindshiftbooks.shop/affiliate/*, but the four handlers below are still the
-// only place that knows which HTML file serves which affiliate page — this
-// middleware just gets the right request to them, from either domain:
-//   - Request arrives on the affiliate subdomain ("/", "/apply", ...): prefix
-//     the path with /affiliate internally so it falls through to the
-//     existing handlers unchanged. (If a page already links to "/affiliate/..."
-//     literally, it's left alone — already routes correctly.)
-//   - Request arrives on the main domain at an old /affiliate/* URL: 301 it
-//     out to the equivalent path on the subdomain, so old links/bookmarks
-//     still land somewhere real.
-app.use((req, res, next) => {
-  const host = (req.hostname || '').toLowerCase();
-  if (host === AFFILIATE_HOST) {
-    if (!req.path.startsWith('/affiliate') && !req.path.startsWith('/api')) {
-      req.url = '/affiliate' + (req.path === '/' ? '' : req.path) + req.url.slice(req.path.length);
-    }
-    return next();
-  }
-  if (AFFILIATE_ECOSYSTEM_PATHS.has(req.path)) {
-    const suffix = req.path.replace(/^\/affiliate/, '') || '/';
-    return res.redirect(301, `${AFFILIATE_SITE_URL}${suffix}${req.url.slice(req.path.length)}`);
-  }
-  return next();
-});
+// (The affiliate-subdomain rewrite/redirect middleware runs much earlier in
+// the file — before the static file server — so it can catch "/" etc. before
+// express.static serves the main site's index.html for it. See top of file.)
 
 app.get('/affiliate', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'affiliate.html'));
