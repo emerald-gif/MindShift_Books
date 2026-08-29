@@ -2121,7 +2121,7 @@ async function upsertCreatorCandidates(candidates) {
 // so computeCreatorScore treats every source the same way.
 async function youtubeSearchChannels(query, maxResults, regionCode) {
   if (!YOUTUBE_API_KEY) throw new Error('YOUTUBE_API_KEY is not set in the environment.');
-  const n = Math.min(Math.max(Number(maxResults) || 15, 1), 25); // keep quota use predictable
+  const n = Math.min(Math.max(Number(maxResults) || 15, 1), 50); // 50 is YouTube's actual per-request ceiling
 
   let searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(query)}&maxResults=${n}&key=${YOUTUBE_API_KEY}`;
   if (regionCode) searchUrl += `&regionCode=${encodeURIComponent(regionCode)}`; // biases results toward that region — YouTube doesn't guarantee an exact channel-country match
@@ -2243,7 +2243,7 @@ async function instagramBusinessDiscovery(handle) {
 // only shows up once as one candidate.
 async function xSearchAuthors(query, maxResults) {
   if (!X_BEARER_TOKEN) throw new Error('X_BEARER_TOKEN is not set in the environment.');
-  const n = Math.min(Math.max(Number(maxResults) || 10, 1), 20); // real dollars per read — default conservative, hard ceiling of 20
+  const n = Math.min(Math.max(Number(maxResults) || 10, 1), 100); // 100 is X's actual per-request ceiling — real money either way, see cost comment above
 
   const searchQuery = `${query} -is:retweet`;
   const url = `https://api.x.com/2/tweets/search/recent?query=${encodeURIComponent(searchQuery)}&max_results=${n}&expansions=author_id&tweet.fields=created_at,public_metrics&user.fields=username,name,description,public_metrics`;
@@ -2385,7 +2385,7 @@ async function sendCreatorOutreachEmail(creator, stage) {
   }
 }
 
-const CREATOR_DAILY_SEND_CAP = 40; // stays well under Brevo/inbox sending limits
+const CREATOR_DAILY_SEND_CAP = 100; // raised from 40 — moving faster toward the 1,000-creator target; keep an eye on reply/open rates as this ramps up on a still-young authenticated domain
 const CREATOR_FOLLOWUP_GAP_DAYS = 4;
 const CREATOR_MAX_FOLLOWUPS = 2; // after this, auto-marked Declined so nobody gets chased indefinitely
 
@@ -3443,9 +3443,32 @@ async function filterAndMarkSeen(candidates, includeSeen) {
 
 app.post('/api/admin/creators/discover-youtube', async (req, res) => {
   try {
-    const { query, maxResults, regionCode, minFollowers, maxFollowers, minEngagementRate, emailOnly, includeSeen } = req.body || {};
-    if (!query || !String(query).trim()) return res.status(400).json({ error: 'A search query is required.' });
-    const candidates = await youtubeSearchChannels(String(query).trim(), maxResults, regionCode);
+    const { niches, query, maxResults, regionCode, minFollowers, maxFollowers, minEngagementRate, emailOnly, includeSeen } = req.body || {};
+    // Accepts either the new `niches` array (checkbox picks + optional
+    // custom keyword) or the old single `query` string, so nothing breaks
+    // if an older client is still calling this.
+    const terms = Array.isArray(niches) && niches.length
+      ? [...new Set(niches.map(n => String(n).trim()).filter(Boolean))]
+      : (query && String(query).trim() ? [String(query).trim()] : []);
+    if (!terms.length) return res.status(400).json({ error: 'Pick at least one niche, or enter a custom keyword.' });
+
+    // Total requested results split evenly across however many niches were
+    // picked, so ticking more boxes doesn't multiply YouTube quota use —
+    // the total stays close to what was actually asked for.
+    const totalRequested = Math.min(Math.max(Number(maxResults) || 15, 1), 50);
+    const perTerm = Math.max(1, Math.ceil(totalRequested / terms.length));
+
+    const seen = new Set();
+    let candidates = [];
+    for (const term of terms) {
+      const results = await youtubeSearchChannels(term, perTerm, regionCode);
+      for (const r of results) {
+        if (r.seenKey && seen.has(r.seenKey)) continue; // same channel matched more than one niche — keep it once
+        if (r.seenKey) seen.add(r.seenKey);
+        candidates.push(r);
+      }
+    }
+
     let scored = candidates.map(c => ({ ...c, ...computeCreatorScore(c) }));
 
     const minF = Number(minFollowers);
@@ -3480,9 +3503,28 @@ app.post('/api/admin/creators/discover-youtube', async (req, res) => {
 // spend predictable.
 app.post('/api/admin/creators/discover-x', async (req, res) => {
   try {
-    const { query, maxResults, minFollowers, maxFollowers, minEngagementRate, emailOnly, includeSeen } = req.body || {};
-    if (!query || !String(query).trim()) return res.status(400).json({ error: 'A search query is required.' });
-    const candidates = await xSearchAuthors(String(query).trim(), maxResults);
+    const { niches, query, maxResults, minFollowers, maxFollowers, minEngagementRate, emailOnly, includeSeen } = req.body || {};
+    const terms = Array.isArray(niches) && niches.length
+      ? [...new Set(niches.map(n => String(n).trim()).filter(Boolean))]
+      : (query && String(query).trim() ? [String(query).trim()] : []);
+    if (!terms.length) return res.status(400).json({ error: 'Pick at least one niche, or enter a custom keyword.' });
+
+    // Same split-across-niches approach as YouTube — matters even more
+    // here since every result costs real money either way.
+    const totalRequested = Math.min(Math.max(Number(maxResults) || 10, 1), 100);
+    const perTerm = Math.max(1, Math.ceil(totalRequested / terms.length));
+
+    const seen = new Set();
+    let candidates = [];
+    for (const term of terms) {
+      const results = await xSearchAuthors(term, perTerm);
+      for (const r of results) {
+        if (r.seenKey && seen.has(r.seenKey)) continue;
+        if (r.seenKey) seen.add(r.seenKey);
+        candidates.push(r);
+      }
+    }
+
     let scored = candidates.map(c => ({ ...c, ...computeCreatorScore(c) }));
 
     const minF = Number(minFollowers);
