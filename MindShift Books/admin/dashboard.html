@@ -140,6 +140,9 @@
   .empty { color: var(--muted); font-size: 0.85rem; padding: 8px 0 16px; }
 
   .full-panel { grid-column: 1 / -1; }
+  .panel-toggle { cursor: pointer; display: flex; align-items: center; justify-content: space-between; user-select: none; }
+  .panel-toggle .chevron { width: 18px; height: 18px; flex-shrink: 0; color: var(--muted); transition: transform 0.2s; }
+  .panel-toggle.open .chevron { transform: rotate(180deg); }
   table { width: 100%; border-collapse: collapse; }
   th, td { text-align: left; padding: 10px 4px; font-size: 0.84rem; border-bottom: 1px solid var(--border-soft); }
   th { color: var(--muted); font-weight: 600; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.03em; }
@@ -595,7 +598,8 @@
     </div>
 
     <div class="panel full-panel" style="padding-bottom:20px;">
-      <h2><span class="h2-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="8" r="3.3"/><path d="M1.8 20a6.7 6.7 0 0113.4 0"/><path d="M18 7v6"/><path d="M15 10h6"/></svg></span>Import Creators</h2>
+      <h2 id="importCreatorsHeader" class="panel-toggle" onclick="toggleAccordion('importCreatorsBody')"><span style="display:flex;align-items:center;"><span class="h2-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="8" r="3.3"/><path d="M1.8 20a6.7 6.7 0 0113.4 0"/><path d="M18 7v6"/><path d="M15 10h6"/></svg></span>Import Creators</span><svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></h2>
+      <div id="importCreatorsBody" style="display:none;">
       <p class="empty" style="padding-top:0;margin-top:-8px;margin-bottom:14px;">
         Paste a CSV export here — either straight from Modash, or from the Creator CRM spreadsheet. Needs a header row; columns are matched by name (Handle, Platform, Country, Followers, Engagement Rate, Niche Fit, Days Since Last Post, Email) so either source works as-is. Re-importing the same email/handle updates that creator instead of duplicating them.
       </p>
@@ -607,10 +611,12 @@
         <button class="btn-primary" id="crImportBtn">Import creators</button>
         <span class="recipient-count" id="crImportResult"></span>
       </div>
+      </div>
     </div>
 
     <div class="panel full-panel" style="padding-bottom:20px;">
-      <h2><span class="h2-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></span>Discover on YouTube</h2>
+      <h2 id="ytDiscoverHeader" class="panel-toggle" onclick="toggleAccordion('ytDiscoverBody')"><span style="display:flex;align-items:center;"><span class="h2-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></span>Discover on YouTube</span><svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></h2>
+      <div id="ytDiscoverBody" style="display:none;">
       <p class="empty" style="padding-top:0;margin-top:-8px;margin-bottom:14px;">
         Searches YouTube directly by keyword (the one platform with a real public discovery API — no scraping). Pulls subscriber count and estimates engagement from each channel's last 5 uploads. Nothing saves until you go through the results below and hit Add on the ones you want.
       </p>
@@ -666,10 +672,12 @@
         <p class="empty" style="padding:0 0 10px 0;">Go through each one below — <strong>Add</strong> saves it to your Creators list, <strong>Skip</strong> just removes it from this list. Nothing happens until you click one or the other.</p>
         <div id="ytCandidatesBody"></div>
       </div>
+      </div>
     </div>
 
     <div class="panel full-panel" style="padding-bottom:20px;">
-      <h2><span class="h2-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l16 16M4 20L20 4"/></svg></span>Discover on X</h2>
+      <h2 id="xDiscoverHeader" class="panel-toggle" onclick="toggleAccordion('xDiscoverBody')"><span style="display:flex;align-items:center;"><span class="h2-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l16 16M4 20L20 4"/></svg></span>Discover on X</span><svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></h2>
+      <div id="xDiscoverBody" style="display:none;">
       <p class="empty" style="padding-top:0;margin-top:-8px;margin-bottom:10px;">
         Searches X's real Recent Search API by keyword — a genuine search, not just a lookup — grouping matching posts by author. Only covers the last 7 days of posts.
       </p>
@@ -716,10 +724,12 @@
         <p class="empty" style="padding:0 0 10px 0;">Go through each one below — <strong>Add</strong> saves it to your Creators list, <strong>Skip</strong> just removes it from this list.</p>
         <div id="xCandidatesBody"></div>
       </div>
+      </div>
     </div>
 
     <div class="panel full-panel" style="padding-bottom:20px;">
-      <h2><span class="h2-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="0.6" fill="currentColor"/></svg></span>Enrich Instagram handles</h2>
+      <h2 id="igEnrichHeader" class="panel-toggle" onclick="toggleAccordion('igEnrichBody')"><span style="display:flex;align-items:center;"><span class="h2-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="0.6" fill="currentColor"/></svg></span>Enrich Instagram handles</span><svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></h2>
+      <div id="igEnrichBody" style="display:none;">
       <p class="empty" style="padding-top:0;margin-top:-8px;margin-bottom:14px;">
         Instagram has no public search API — you still have to find handles yourself (Explore, hashtags, etc.). Paste the handles you've found below and this looks up followers, engagement, and bio-listed email for each one automatically. Needs a Meta app connected to your own Instagram professional account (IG_BUSINESS_ID / IG_ACCESS_TOKEN) — see CREATOR_OUTREACH_CHANGES.md for setup. TikTok has no equivalent public API at all, so those still need manual CSV entry above.
       </p>
@@ -740,6 +750,7 @@
       <div id="igPreviewWrap" style="display:none;margin-top:16px;">
         <p class="empty" style="padding:0 0 10px 0;">Go through each one below — <strong>Add</strong> saves it to your Creators list, <strong>Skip</strong> just removes it from this list. Nothing happens until you click one or the other.</p>
         <div id="igCandidatesBody"></div>
+      </div>
       </div>
     </div>
 
@@ -957,6 +968,16 @@
   const broadcastPage = document.getElementById('broadcastPage');
   const creatorsPage = document.getElementById('creatorsPage');
   let overviewLoadedOnce = true; // loadStats() already ran once above on page load
+
+  // Generic accordion toggle, shared by all four discovery/import panels —
+  // collapsed by default so the Creators tab isn't one long scroll.
+  function toggleAccordion(id) {
+    const body = document.getElementById(id);
+    const header = document.getElementById(id + 'Header');
+    const isOpen = body.style.display !== 'none';
+    body.style.display = isOpen ? 'none' : 'block';
+    if (header) header.classList.toggle('open', !isOpen);
+  }
 
   const navHamburger = document.getElementById('navHamburger');
   const sidebarNav = document.getElementById('sidebarNav');
@@ -2070,9 +2091,13 @@ ${ctaBlock}${captionBlock}${assetsBlock}${affiliateLinkBlock}
 
   const crLogBtn = document.getElementById('crLogBtn');
   if (crLogBtn) crLogBtn.addEventListener('click', openCrLog);
-  const crLogCloseBtn = document.getElementById('crLogCloseBtn');
-  if (crLogCloseBtn) crLogCloseBtn.addEventListener('click', () => {
-    document.getElementById('crLogOverlay').style.display = 'none';
+  // Delegated on document, not looked up directly — the Close button lives
+  // in markup added after this script runs, so a direct getElementById
+  // here would find nothing. Delegation works regardless of DOM order.
+  document.addEventListener('click', (e) => {
+    if (e.target && e.target.id === 'crLogCloseBtn') {
+      document.getElementById('crLogOverlay').style.display = 'none';
+    }
   });
 
 </script>
