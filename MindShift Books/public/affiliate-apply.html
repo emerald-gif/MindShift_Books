@@ -74,12 +74,29 @@ header a.back{font-size:0.82rem;font-weight:700;color:#64748b;text-decoration:no
 .state{text-align:center;padding:60px 0;color:#94a3b8;}
 .loader{width:26px;height:26px;border:4px solid rgba(0,0,0,0.06);border-top:4px solid var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto 14px;}
 @keyframes spin{to{transform:rotate(360deg)}}
+
+.acct-strip{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  background:#eef2ff;border:1px solid #e0e7ff;border-radius:12px;
+  padding:11px 14px;margin-bottom:20px;font-size:0.82rem;
+}
+.acct-strip .acct-info{display:flex;align-items:center;gap:9px;min-width:0;}
+.acct-strip .acct-dot{
+  width:8px;height:8px;border-radius:50%;background:#22c55e;flex-shrink:0;
+}
+.acct-strip .acct-text{color:#334155;min-width:0;}
+.acct-strip .acct-text b{color:var(--indigo);font-weight:700;word-break:break-all;}
+.acct-strip .acct-switch{
+  flex-shrink:0;font-weight:700;color:#64748b;text-decoration:none;font-size:0.78rem;
+  border-left:1px solid #e0e7ff;padding-left:10px;
+}
+.acct-strip .acct-switch:hover{color:var(--indigo);}
   </style>
 </head>
 <body>
 
 <header>
-  <a class="brand" href="/">
+  <a class="brand" href="https://mindshiftbooks.shop/">
     <img src="/MINDSHIFT.jpg" alt="MindShift Books logo">
     MindShift Books
   </a>
@@ -117,12 +134,19 @@ header a.back{font-size:0.82rem;font-weight:700;color:#64748b;text-decoration:no
     `;
   }
 
-  function renderApplicationForm() {
+  function renderApplicationForm(user) {
     wrap.innerHTML = `
       <div class="top">
         <div class="icon">${ICONS.link}</div>
         <h1>One quick step</h1>
         <p>Just enough info to get you your reading list link and pay you correctly.</p>
+      </div>
+      <div class="acct-strip">
+        <div class="acct-info">
+          <span class="acct-dot"></span>
+          <span class="acct-text">Applying as <b>${(user.email || 'your account').replace(/</g, '&lt;')}</b></span>
+        </div>
+        <a href="#" class="acct-switch" id="switchAcctLink">Not you?</a>
       </div>
       <div class="card">
         <div class="error-box" id="affError"><span>${ICONS.alert}</span><span id="affErrorText"></span></div>
@@ -168,6 +192,15 @@ header a.back{font-size:0.82rem;font-weight:700;color:#64748b;text-decoration:no
     const errorBox = document.getElementById('affError');
     const errorText = document.getElementById('affErrorText');
     const submitBtn = document.getElementById('affSubmitBtn');
+    const switchAcctLink = document.getElementById('switchAcctLink');
+
+    // "Not you?" — signs this browser out of the current account and sends
+    // them to sign in again, landing right back here once they do.
+    switchAcctLink.addEventListener('click', async (e) => {
+      e.preventDefault();
+      await window.MSBAuth.signOut();
+      window.location.href = '/login?returnTo=' + encodeURIComponent('/affiliate/apply');
+    });
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -210,9 +243,9 @@ header a.back{font-size:0.82rem;font-weight:700;color:#64748b;text-decoration:no
         window.location.href = '/affiliate/dashboard';
         return;
       }
-      renderApplicationForm();
+      renderApplicationForm(user);
     } catch (e) {
-      renderApplicationForm();
+      renderApplicationForm(user);
     }
   });
 </script>
