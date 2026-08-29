@@ -621,6 +621,93 @@ async function requireUser(req, res, next) {
   }
 }
 
+// ── Cross-subdomain session relay (mindshiftbooks.shop <-> affiliate.mindshiftbooks.shop) ──
+// Firebase Auth persists the signed-in session in this origin's own storage
+// (IndexedDB, scoped per-origin) — so a customer who signs in on
+// mindshiftbooks.shop shows up signed OUT on affiliate.mindshiftbooks.shop in
+// the same browser, and vice versa. That's the "auth state isn't syncing"
+// bug: two different origins, two separate local sessions.
+//
+// Fix mirrors the admin session pattern above (same HMAC-signed, expiring
+// cookie shape) but scoped to Domain=.mindshiftbooks.shop, so the cookie is
+// readable on BOTH the main site and the affiliate subdomain, and carries a
+// uid instead of a fixed 'admin' tag. Minted only after requireUser verifies
+// a real Firebase ID token, so this can't be forged into "log me in as
+// someone else."
+//
+// Important: this cookie is a *relay*, never a credential. It doesn't grant
+// API access by itself — every /api/affiliate/* and /api/account* route
+// still goes through requireUser's real ID-token check. Its only job is to
+// let the *other* origin ask Firebase for a fresh custom token for that uid
+// and silently re-establish a real, working session there too (see
+// auth.js's onAuthStateChanged, which calls /api/session/status whenever
+// this origin's own Firebase session comes back empty).
+const USER_SESSION_SECRET = process.env.USER_SESSION_SECRET || (() => {
+  const s = crypto.randomBytes(32).toString('hex');
+  console.warn('USER_SESSION_SECRET not set — using an ephemeral secret. Set this env var on Render or cross-subdomain login sync will reset on every restart.');
+  return s;
+})();
+const USER_SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 days, in seconds — matches ADMIN_SESSION_MAX_AGE
+const USER_SESSION_COOKIE_DOMAIN = '.mindshiftbooks.shop'; // leading dot = visible on the main site AND affiliate.mindshiftbooks.shop
+
+function mintUserSession(uid) {
+  const expiry = Date.now() + USER_SESSION_MAX_AGE * 1000;
+  const payload = `user|${uid}|${expiry}`;
+  const sig = crypto.createHmac('sha256', USER_SESSION_SECRET).update(payload).digest('hex').slice(0, 32);
+  return Buffer.from(`${payload}|${sig}`).toString('base64url');
+}
+
+// Returns the uid from a valid, unexpired token, or null.
+function validateUserSession(token) {
+  try {
+    const decoded = Buffer.from(token, 'base64url').toString('utf8');
+    const parts = decoded.split('|');
+    if (parts.length !== 4) return null;
+    const [tag, uid, expiryStr, sig] = parts;
+    if (tag !== 'user' || !uid) return null;
+    const expected = crypto.createHmac('sha256', USER_SESSION_SECRET).update(`${tag}|${uid}|${expiryStr}`).digest('hex').slice(0, 32);
+    if (sig.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null;
+    const expiry = Number(expiryStr);
+    if (!Number.isFinite(expiry) || Date.now() > expiry) return null;
+    return uid;
+  } catch { return null; }
+}
+
+// Called by auth.js right after a real sign-in resolves on either origin —
+// plants/refreshes the relay cookie so the other origin knows this uid is signed in.
+app.post('/api/session/sync', requireUser, (req, res) => {
+  const token = mintUserSession(req.uid);
+  res.setHeader('Set-Cookie', `ms_user=${token}; Domain=${USER_SESSION_COOKIE_DOMAIN}; HttpOnly; Secure; SameSite=Lax; Max-Age=${USER_SESSION_MAX_AGE}; Path=/`);
+  res.json({ ok: true });
+});
+
+// Called by auth.js when THIS origin's own Firebase session comes back
+// empty — checks the relay cookie and, if valid, hands back a fresh custom
+// token the client can use with signInWithCustomToken() to restore a real
+// session here too. No requireUser here on purpose: by definition there's no
+// local ID token yet on this origin — the relay cookie is the only proof available.
+app.get('/api/session/status', async (req, res) => {
+  const cookies = parseCookies(req);
+  const uid = cookies.ms_user && validateUserSession(cookies.ms_user);
+  if (!uid) return res.json({ loggedIn: false });
+  try {
+    const customToken = await admin.auth().createCustomToken(uid);
+    return res.json({ loggedIn: true, customToken });
+  } catch (err) {
+    return res.json({ loggedIn: false });
+  }
+});
+
+// Called by auth.js on sign-out (either origin). Clears the relay cookie so
+// the other origin stops silently restoring the session on its next load,
+// and revokes the uid's refresh tokens so an already-open tab on the other
+// origin can't keep going once its current short-lived ID token expires.
+app.post('/api/session/clear', requireUser, async (req, res) => {
+  res.setHeader('Set-Cookie', `ms_user=; Domain=${USER_SESSION_COOKIE_DOMAIN}; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Path=/`);
+  try { await admin.auth().revokeRefreshTokens(req.uid); } catch (err) {}
+  res.json({ ok: true });
+});
+
 // ---------------- Affiliate program ----------------
 // One doc per affiliate, keyed by their own referral CODE (not their uid) —
 // that makes "look up an affiliate by the code in a link" a single get()
