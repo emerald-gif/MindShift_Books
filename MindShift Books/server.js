@@ -176,6 +176,13 @@ const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY || null;
 const IG_BUSINESS_ID = process.env.IG_BUSINESS_ID || null;
 const IG_ACCESS_TOKEN = process.env.IG_ACCESS_TOKEN || null;
 
+// The mid-template banner image for creator outreach emails (Template #8).
+// One shared banner across all outreach sends — set this once you have the
+// image hosted somewhere (Cloudinary, your own /public folder, wherever).
+// Left empty until you add it; the template hides the banner block entirely
+// when this is blank, so nothing breaks in the meantime.
+const CREATOR_OUTREACH_BANNER_URL = process.env.CREATOR_OUTREACH_BANNER_URL || '';
+
 // Creator discovery — X (Twitter) has a real search API, but as of Feb 2026
 // it's pay-per-use with no free tier: ~$0.005 per post read, no monthly
 // minimum. Every search costs real money on whatever card is attached to
@@ -2318,7 +2325,8 @@ async function sendCreatorOutreachEmail(creator, stage) {
           isFollowUp1: stage === 'followup1',
           isFollowUp2: stage === 'followup2',
           affiliateUrl: `${PUBLIC_SITE_URL}/affiliate`,
-          shopUrl: PUBLIC_SITE_URL
+          shopUrl: PUBLIC_SITE_URL,
+          bannerImageUrl: CREATOR_OUTREACH_BANNER_URL
         }
       })
     });
@@ -2409,6 +2417,23 @@ async function runDailyCreatorOutreachCycle() {
 // Runs once per Lagos calendar day, backed by a Firestore doc (not just an
 // in-memory flag) so a server restart doesn't trigger a duplicate run —
 // same guard pattern as maybeRunWeeklyPayoutCheck above.
+// Writes one entry to the activity log every time outreach actually sends
+// something — automatic daily cycle, "Send outreach now", or "Send to
+// selected". This is what powers the terminal-style log screen in the
+// dashboard, so anything that happened while the admin wasn't watching
+// (the daily cron, mainly) still shows up when they check back.
+async function logCreatorOutreachRun(entry) {
+  if (!db) return;
+  try {
+    await db.collection('creatorOutreachLogs').add({
+      ...entry,
+      at: admin.firestore.Timestamp.now()
+    });
+  } catch (err) {
+    console.error('[creator-outreach] failed to write log entry', err);
+  }
+}
+
 async function maybeRunDailyCreatorOutreach() {
   if (!db) return;
   try {
@@ -2420,9 +2445,11 @@ async function maybeRunDailyCreatorOutreach() {
 
     const result = await runDailyCreatorOutreachCycle();
     await stateRef.set({ lastRunDay: dayKey, lastRunAt: admin.firestore.Timestamp.now(), lastRunResult: result }, { merge: true });
+    await logCreatorOutreachRun({ source: 'auto', ...result });
     console.log('[creator-outreach] daily run:', result);
   } catch (err) {
     console.error('[creator-outreach] daily run failed', err);
+    await logCreatorOutreachRun({ source: 'auto', error: err.message || 'Daily run failed' });
   }
 }
 
@@ -3524,6 +3551,7 @@ app.post('/api/admin/creators/send-selected', async (req, res) => {
       if (result.ok) sent++; else skipped++;
       await new Promise(r => setTimeout(r, 300));
     }
+    await logCreatorOutreachRun({ source: 'manual-selected', sent, skipped, total: ids.length });
     return res.json({ ok: true, sent, skipped, total: ids.length });
   } catch (err) {
     console.error('/api/admin/creators/send-selected error', err);
@@ -3620,10 +3648,30 @@ app.post('/api/admin/creators/send-outreach', async (req, res) => {
   try {
     if (!db) return res.status(500).json({ error: 'Database unavailable' });
     const result = await runDailyCreatorOutreachCycle();
+    await logCreatorOutreachRun({ source: 'manual-full-cycle', ...result });
     return res.json({ ok: true, ...result });
   } catch (err) {
     console.error('/api/admin/creators/send-outreach error', err);
     return res.status(500).json({ error: 'Send failed.' });
+  }
+});
+
+// GET /api/admin/creators/logs — powers the terminal-style activity log
+// screen. Returns the most recent runs, newest first, whether they were
+// the automatic daily cycle or a manual send from the dashboard.
+app.get('/api/admin/creators/logs', async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 200);
+    const snap = await db.collection('creatorOutreachLogs').orderBy('at', 'desc').limit(limit).get();
+    const logs = snap.docs.map(d => {
+      const data = d.data();
+      return { ...data, at: data.at ? data.at.toDate().toISOString() : null };
+    });
+    return res.json({ ok: true, logs });
+  } catch (err) {
+    console.error('/api/admin/creators/logs error', err);
+    return res.status(500).json({ error: 'Could not load logs.' });
   }
 });
 
