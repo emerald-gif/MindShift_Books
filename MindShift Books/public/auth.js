@@ -387,7 +387,7 @@
       const dropdown = document.getElementById('acctDropdown');
       trigger?.addEventListener('click', (e) => { e.stopPropagation(); dropdown.classList.toggle('show'); });
       document.addEventListener('click', () => dropdown && dropdown.classList.remove('show'));
-      document.getElementById('acctSignOutBtn')?.addEventListener('click', () => auth.signOut());
+      document.getElementById('acctSignOutBtn')?.addEventListener('click', () => signOutEverywhere());
     });
   }
 
@@ -419,10 +419,67 @@
   let resolveAuthReady;
   const authReadyPromise = new Promise(resolve => { resolveAuthReady = resolve; });
 
-  auth.onAuthStateChanged(user => {
+  // ---------------- Cross-subdomain session relay ----------------
+  // Firebase persists its session per-origin, so signing in on
+  // mindshiftbooks.shop doesn't carry over to affiliate.mindshiftbooks.shop
+  // in the same browser (and vice versa) — different origin, different
+  // storage. These three functions close that gap using the ms_user relay
+  // cookie minted by /api/session/sync (Domain=.mindshiftbooks.shop, so it's
+  // readable on both origins) — see server.js for the full explanation.
+  let crossDomainRestoreAttempted = false;
+
+  // Called the moment onAuthStateChanged resolves with no user on THIS
+  // origin. Checks whether the *other* origin is actually signed in, and if
+  // so, silently restores a real session here too via a Firebase custom
+  // token. Returns true if a restore was attempted — the caller should then
+  // wait for the resulting onAuthStateChanged firing instead of treating
+  // this resolution as a genuine sign-out.
+  async function tryRestoreCrossDomainSession() {
+    if (crossDomainRestoreAttempted) return false; // one attempt per page load — avoids looping if the restored sign-in doesn't stick
+    crossDomainRestoreAttempted = true;
+    try {
+      const res = await fetch('/api/session/status');
+      if (!res.ok) return false;
+      const data = await res.json();
+      if (!data.loggedIn || !data.customToken) return false;
+      await auth.signInWithCustomToken(data.customToken);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Called whenever onAuthStateChanged resolves WITH a user — plants/
+  // refreshes the relay cookie so the other origin picks up the sign-in.
+  // Fire-and-forget; nothing on this page waits on it.
+  function syncCrossDomainSession(user) {
+    user.getIdToken()
+      .then(token => fetch('/api/session/sync', { method: 'POST', headers: { Authorization: `Bearer ${token}` } }))
+      .catch(() => {});
+  }
+
+  // Called on sign-out. Clears the relay cookie server-side and revokes the
+  // account's refresh tokens *before* signing out locally, so the other
+  // origin's next load — or its next token refresh, if it's already open in
+  // another tab — sees the sign-out too.
+  async function signOutEverywhere() {
+    try {
+      if (auth.currentUser) {
+        const token = await auth.currentUser.getIdToken();
+        await fetch('/api/session/clear', { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+      }
+    } catch (e) {
+      // non-fatal — still sign out locally even if the relay cookie couldn't be reached
+    }
+    return auth.signOut();
+  }
+
+  auth.onAuthStateChanged(async user => {
+    if (!user && await tryRestoreCrossDomainSession()) return; // signInWithCustomToken() above re-fires this listener with the real user — let that call finish the job instead of reporting a false sign-out here.
     renderNavSlot(user);
     if (user) {
       initAccountOnServer(user.displayName || null);
+      syncCrossDomainSession(user);
       // Safety net for the getRedirectResult() quirk above: if we're on
       // /login or /signup and the SDK now says we're signed in, leave.
       maybeLeaveAuthPage();
@@ -436,7 +493,7 @@
   window.MSBAuth = {
     getUser: () => auth.currentUser,
     getIdToken: () => auth.currentUser ? auth.currentUser.getIdToken() : Promise.resolve(null),
-    signOut: () => auth.signOut(),
+    signOut: () => signOutEverywhere(),
     requireSignIn,
     signInEmail,
     signUpEmail,
