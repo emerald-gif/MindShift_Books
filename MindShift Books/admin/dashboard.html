@@ -140,6 +140,9 @@
   .empty { color: var(--muted); font-size: 0.85rem; padding: 8px 0 16px; }
 
   .full-panel { grid-column: 1 / -1; }
+  .niche-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px 10px; margin: 4px 0 14px 0; }
+  .niche-check { display: flex; align-items: center; gap: 7px; font-size: 0.82rem; cursor: pointer; }
+  .niche-check input { width: auto; margin: 0; }
   .panel-toggle { cursor: pointer; display: flex; align-items: center; justify-content: space-between; user-select: none; }
   .panel-toggle .chevron { width: 18px; height: 18px; flex-shrink: 0; color: var(--muted); transition: transform 0.2s; }
   .panel-toggle.open .chevron { transform: rotate(180deg); }
@@ -620,8 +623,21 @@
       <p class="empty" style="padding-top:0;margin-top:-8px;margin-bottom:14px;">
         Searches YouTube directly by keyword (the one platform with a real public discovery API — no scraping). Pulls subscriber count and estimates engagement from each channel's last 5 uploads. Nothing saves until you go through the results below and hit Add on the ones you want.
       </p>
+      <div class="field">
+        <label>Niches <span class="optional-tag">pick one or more</span></label>
+        <div class="niche-grid" id="ytNicheGrid">
+          <label class="niche-check"><input type="checkbox" class="yt-niche" value="money mindset"> Money mindset</label>
+          <label class="niche-check"><input type="checkbox" class="yt-niche" value="discipline productivity"> Discipline & productivity</label>
+          <label class="niche-check"><input type="checkbox" class="yt-niche" value="client acquisition freelancing"> Client acquisition</label>
+          <label class="niche-check"><input type="checkbox" class="yt-niche" value="side hustle"> Side hustle</label>
+          <label class="niche-check"><input type="checkbox" class="yt-niche" value="entrepreneurship"> Entrepreneurship</label>
+          <label class="niche-check"><input type="checkbox" class="yt-niche" value="personal finance"> Personal finance</label>
+          <label class="niche-check"><input type="checkbox" class="yt-niche" value="self improvement"> Self improvement</label>
+          <label class="niche-check"><input type="checkbox" class="yt-niche" value="digital marketing"> Digital marketing</label>
+        </div>
+      </div>
       <div class="field" style="max-width:420px;">
-        <label>Niche / keyword</label>
+        <label>Custom keyword <span class="optional-tag">optional — adds to whatever's checked above</span></label>
         <input type="text" id="ytQuery" placeholder="e.g. money mindset Nigeria">
       </div>
       <div class="field" style="max-width:160px;">
@@ -649,7 +665,7 @@
         <input type="text" id="ytMinEngagement" placeholder="e.g. 3">
       </div>
       <div class="field" style="max-width:160px;">
-        <label>Max results <span class="optional-tag">up to 25 searched</span></label>
+        <label>Max results <span class="optional-tag">up to 50 searched, split across your picked niches</span></label>
         <input type="text" id="ytMaxResults" value="15">
       </div>
       <div class="field">
@@ -684,8 +700,21 @@
       <p style="background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;font-size:0.82rem;color:#92400e;margin:0 0 16px 0;">
         <strong>Costs real money per search.</strong> As of Feb 2026, X has no free API tier — roughly $0.005 per post read, so each search here costs about $0.05–$0.10 depending on result count, charged to whatever card is on your X Developer account.
       </p>
+      <div class="field">
+        <label>Niches <span class="optional-tag">pick one or more</span></label>
+        <div class="niche-grid" id="xNicheGrid">
+          <label class="niche-check"><input type="checkbox" class="x-niche" value="money mindset"> Money mindset</label>
+          <label class="niche-check"><input type="checkbox" class="x-niche" value="discipline productivity"> Discipline & productivity</label>
+          <label class="niche-check"><input type="checkbox" class="x-niche" value="client acquisition freelancing"> Client acquisition</label>
+          <label class="niche-check"><input type="checkbox" class="x-niche" value="side hustle"> Side hustle</label>
+          <label class="niche-check"><input type="checkbox" class="x-niche" value="entrepreneurship"> Entrepreneurship</label>
+          <label class="niche-check"><input type="checkbox" class="x-niche" value="personal finance"> Personal finance</label>
+          <label class="niche-check"><input type="checkbox" class="x-niche" value="self improvement"> Self improvement</label>
+          <label class="niche-check"><input type="checkbox" class="x-niche" value="digital marketing"> Digital marketing</label>
+        </div>
+      </div>
       <div class="field" style="max-width:420px;">
-        <label>Niche / keyword</label>
+        <label>Custom keyword <span class="optional-tag">optional — adds to whatever's checked above</span></label>
         <input type="text" id="xQuery" placeholder="e.g. money mindset Nigeria">
       </div>
       <div class="field" style="max-width:150px;">
@@ -701,7 +730,7 @@
         <input type="text" id="xMinEngagement" placeholder="e.g. 3">
       </div>
       <div class="field" style="max-width:160px;">
-        <label>Max results <span class="optional-tag">up to 20 — costs money per result</span></label>
+        <label>Max results <span class="optional-tag">up to 100 — costs money per result, split across picked niches</span></label>
         <input type="text" id="xMaxResults" value="10">
       </div>
       <div class="field">
@@ -1276,7 +1305,9 @@
   const ytSearchBtn = document.getElementById('ytSearchBtn');
   const ytCandidatesBody = document.getElementById('ytCandidatesBody');
   if (ytSearchBtn) ytSearchBtn.addEventListener('click', async () => {
-    const query = document.getElementById('ytQuery').value.trim();
+    const checkedNiches = Array.from(document.querySelectorAll('.yt-niche:checked')).map(el => el.value);
+    const customKeyword = document.getElementById('ytQuery').value.trim();
+    const niches = customKeyword ? [...checkedNiches, customKeyword] : checkedNiches;
     const maxResults = document.getElementById('ytMaxResults').value;
     const regionCode = document.getElementById('ytCountry').value;
     const minFollowers = document.getElementById('ytMinSubs').value;
@@ -1285,13 +1316,13 @@
     const emailOnly = document.getElementById('ytEmailOnly').checked;
     const includeSeen = document.getElementById('ytIncludeSeen').checked;
     const resultEl = document.getElementById('ytSearchResult');
-    if (!query) { resultEl.textContent = 'Enter a niche or keyword first.'; return; }
+    if (!niches.length) { resultEl.textContent = 'Pick at least one niche, or enter a custom keyword.'; return; }
     ytSearchBtn.disabled = true; ytSearchBtn.textContent = 'Searching…';
     resultEl.textContent = '';
     try {
       const res = await fetch('/api/admin/creators/discover-youtube', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, maxResults, regionCode, minFollowers, maxFollowers, minEngagementRate, emailOnly, includeSeen })
+        body: JSON.stringify({ niches, maxResults, regionCode, minFollowers, maxFollowers, minEngagementRate, emailOnly, includeSeen })
       });
       if (res.status === 401) { window.location.href = '/admin/login'; return; }
       const data = await res.json();
@@ -1324,7 +1355,9 @@
   const xSearchBtn = document.getElementById('xSearchBtn');
   const xCandidatesBody = document.getElementById('xCandidatesBody');
   if (xSearchBtn) xSearchBtn.addEventListener('click', async () => {
-    const query = document.getElementById('xQuery').value.trim();
+    const checkedNiches = Array.from(document.querySelectorAll('.x-niche:checked')).map(el => el.value);
+    const customKeyword = document.getElementById('xQuery').value.trim();
+    const niches = customKeyword ? [...checkedNiches, customKeyword] : checkedNiches;
     const maxResults = document.getElementById('xMaxResults').value;
     const minFollowers = document.getElementById('xMinSubs').value;
     const maxFollowers = document.getElementById('xMaxSubs').value;
@@ -1332,14 +1365,16 @@
     const emailOnly = document.getElementById('xEmailOnly').checked;
     const includeSeen = document.getElementById('xIncludeSeen').checked;
     const resultEl = document.getElementById('xSearchResult');
-    if (!query) { resultEl.textContent = 'Enter a niche or keyword first.'; return; }
-    if (!confirm(`This search costs real money (roughly $0.05–$0.10 for up to ${maxResults || 10} results). Continue?`)) return;
+    if (!niches.length) { resultEl.textContent = 'Pick at least one niche, or enter a custom keyword.'; return; }
+    // ~$0.005/post-read + ~$0.010/author-read, roughly one of each per result returned
+    const estimatedCost = (Number(maxResults) || 10) * 0.015;
+    if (!confirm(`This search costs real money (roughly $${estimatedCost.toFixed(2)} for up to ${maxResults || 10} results, split across ${niches.length} niche${niches.length === 1 ? '' : 's'}). Continue?`)) return;
     xSearchBtn.disabled = true; xSearchBtn.textContent = 'Searching…';
     resultEl.textContent = '';
     try {
       const res = await fetch('/api/admin/creators/discover-x', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, maxResults, minFollowers, maxFollowers, minEngagementRate, emailOnly, includeSeen })
+        body: JSON.stringify({ niches, maxResults, minFollowers, maxFollowers, minEngagementRate, emailOnly, includeSeen })
       });
       if (res.status === 401) { window.location.href = '/admin/login'; return; }
       const data = await res.json();
