@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Affiliate Dashboard | MindShift Books</title>
   <meta name="robots" content="noindex, follow" />
-  <link rel="shortcut icon" href="/MINDSHIFTAFFILIATE.jpg" type="image/jpg">
+  <link rel="shortcut icon" href="/MINDSHIFT.jpg" type="image/jpg">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
 :root{ --primary:#0f172a; --accent:#06b6d4; --indigo:#4f46e5; }
@@ -180,7 +180,7 @@ header a.back{font-size:0.82rem;font-weight:700;color:#64748b;text-decoration:no
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
 <div class="sidebar" id="sidebar">
   <div class="sidebar-head">
-    <img src="/MINDSHIFTAFFILIATE.jpg" alt="MindShift Books logo">
+    <img src="/MINDSHIFT.jpg" alt="MindShift Books logo">
     <div class="name">MindShift Books</div>
   </div>
   <div class="sidebar-nav">
@@ -198,7 +198,7 @@ header a.back{font-size:0.82rem;font-weight:700;color:#64748b;text-decoration:no
     </button>
   </div>
   <div class="sidebar-foot">
-    <a href="https://mindshiftbooks.shop/">
+    <a href="/">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
       Back to store
     </a>
@@ -210,8 +210,8 @@ header a.back{font-size:0.82rem;font-weight:700;color:#64748b;text-decoration:no
     <button class="menu-btn" id="menuBtn" aria-label="Open menu">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
     </button>
-    <a class="brand" href="https://mindshiftbooks.shop/">
-      <img src="/MINDSHIFTAFFILIATE.jpg" alt="MindShift Books logo">
+    <a class="brand" href="/">
+      <img src="/MINDSHIFT.jpg" alt="MindShift Books logo">
       MindShift Books
     </a>
   </div>
@@ -276,7 +276,11 @@ header a.back{font-size:0.82rem;font-weight:700;color:#64748b;text-decoration:no
   // ── Overview view ──
   function renderOverviewView() {
     const affiliate = AFFILIATE;
-    const link = `${window.location.origin}/?ref=${affiliate.code}`;
+    // Hardcoded to the main storefront domain, not window.location.origin —
+    // this dashboard now lives on affiliate.mindshiftbooks.shop, but the
+    // link itself must point where auth.js actually captures ?ref= and
+    // sends people to shop, not wherever the dashboard happens to be hosted.
+    const link = `https://mindshiftbooks.shop/?ref=${affiliate.code}`;
 
     main.innerHTML = `
       <div class="hero">
