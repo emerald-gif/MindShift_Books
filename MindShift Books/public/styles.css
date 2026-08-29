@@ -169,44 +169,39 @@ footer .brand{font-weight:700;font-size:1.1rem;color:#fbbf24}
   text-transform: uppercase;
 }
 
-/* NEW RELEASE — dark fintech with cyan glow */
+/* NEW RELEASE — flat, light pill (no glow/gradient — plain badge style) */
 .section-pill--new {
-  background: linear-gradient(135deg, #0f172a, #1e1b4b);
-  color: #67e8f9;
-  border: 1px solid rgba(6, 182, 212, 0.35);
-  box-shadow: 0 0 10px rgba(6, 182, 212, 0.18), inset 0 1px 0 rgba(255,255,255,0.06);
+  background: #eef2ff;
+  color: #4338ca;
+  border: 1px solid #e0e7ff;
 }
 .section-pill--new::before {
   content: '';
   width: 6px; height: 6px; border-radius: 50%;
-  background: #06b6d4;
-  box-shadow: 0 0 6px #06b6d4;
-  animation: pillPulse 1.6s ease-in-out infinite;
+  background: #4f46e5;
 }
 
-/* BEST OF 2026 — dark gold fintech */
+/* BEST OF 2026 */
 .section-pill--warm {
-  background: linear-gradient(135deg, #1c1107, #2d1f04);
-  color: #fbbf24;
-  border: 1px solid rgba(251, 191, 36, 0.3);
-  box-shadow: 0 0 10px rgba(251,191,36,0.12), inset 0 1px 0 rgba(255,255,255,0.05);
+  background: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fde68a;
 }
 .section-pill--warm::before {
   content: '★';
-  font-size: 0.65rem; color: #fbbf24;
+  font-size: 0.62rem; color: #f59e0b;
 }
 
-/* FREE EBOOKS — brand-gradient pill (matches CTA buttons, not the generic green) */
+/* FREE EBOOKS */
 .section-pill--free {
-  background: linear-gradient(135deg, #1e1b4b, #0f172a);
-  color: #a5b4fc;
-  border: 1px solid rgba(79, 70, 229, 0.35);
-  box-shadow: 0 0 10px rgba(79,70,229,0.16), inset 0 1px 0 rgba(255,255,255,0.06);
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
 }
 .section-pill--free::before {
   content: '';
   width: 6px; height: 6px; border-radius: 50%;
-  background: linear-gradient(90deg,#4f46e5,#06b6d4);
+  background: #10b981;
 }
 .swiper-card .free-ebook-read-btn {
   background: linear-gradient(90deg,#4f46e5,#06b6d4); color: #fff; border: none;
@@ -290,10 +285,6 @@ footer .brand{font-weight:700;font-size:1.1rem;color:#fbbf24}
 .fe-auth-signup { background: linear-gradient(90deg,#4f46e5,#06b6d4); color: #fff; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; padding: 13px; border-radius: 12px; font-weight: 800; font-size: 0.92rem; }
 .fe-auth-login { color: var(--primary); text-decoration: none; display: inline-flex; align-items: center; justify-content: center; padding: 13px; border-radius: 12px; font-weight: 700; font-size: 0.92rem; border: 1.5px solid #e2e8f0; }
 
-@keyframes pillPulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50%       { opacity: 0.4; transform: scale(0.7); }
-}
 .card-author{font-size:0.78rem;color:#6b7280;margin-bottom:8px;}
 .find-on-amazon-btn{text-decoration:none;display:inline-flex;}
 
@@ -1019,10 +1010,13 @@ header {
 }
 .section-pill--trending {
   margin-left: auto;
-  background: linear-gradient(135deg, #1e1b4b, #0f172a);
-  color: #67e8f9;
-  border: 1px solid rgba(6, 182, 212, 0.35);
-  box-shadow: 0 0 10px rgba(6, 182, 212, 0.18), inset 0 1px 0 rgba(255,255,255,0.06);
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+.section-pill--trending::before {
+  content: '↑';
+  font-size: 0.7rem; font-weight: 800; color: #dc2626;
 }
 
 /* Standalone spotlight card (currently used for The Money Mindset Gap) —
