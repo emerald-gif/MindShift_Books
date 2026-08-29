@@ -28,6 +28,12 @@
   .sidebar-brand .name { color: white; font-weight: 800; font-size: 0.94rem; line-height: 1.25; }
   .sidebar-brand .tag { color: #67e8f9; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
 
+  .hamburger-btn { display: none; margin-left: auto; background: none; border: 1.5px solid rgba(255,255,255,0.18); border-radius: 9px; padding: 8px 10px; cursor: pointer; }
+  .hamburger-btn span { display: block; width: 19px; height: 2px; background: #fff; border-radius: 2px; margin: 3.5px 0; transition: transform .15s, opacity .15s; }
+  .hamburger-btn.open span:nth-child(1) { transform: translateY(5.5px) rotate(45deg); }
+  .hamburger-btn.open span:nth-child(2) { opacity: 0; }
+  .hamburger-btn.open span:nth-child(3) { transform: translateY(-5.5px) rotate(-45deg); }
+
   .sidebar-nav { display: flex; flex-direction: column; gap: 3px; padding: 6px 12px; }
   .nav-item {
     display: flex; align-items: center; gap: 11px; width: 100%; text-align: left;
@@ -62,13 +68,20 @@
     .main { flex: 1; height: 100vh; overflow-y: auto; }
   }
   @media (max-width: 879px) {
-    .sidebar { display: flex; flex-wrap: wrap; align-items: center; box-shadow: 0 1px 0 rgba(15,23,42,0.06); }
+    .sidebar { display: flex; flex-wrap: wrap; align-items: center; box-shadow: 0 1px 0 rgba(15,23,42,0.06); position: relative; }
     .sidebar-brand { flex: 1; padding: 14px 16px; }
+    .hamburger-btn { display: block; }
     .sidebar-controls { flex-direction: row; align-items: center; padding: 12px 16px; margin-top: 0; border-top: none; }
     .sidebar-controls select { font-size: 0.78rem; padding: 8px 10px; }
     .logout-link { padding: 8px 12px; font-size: 0.78rem; white-space: nowrap; }
-    .sidebar-nav { flex-basis: 100%; flex-direction: row; overflow-x: auto; padding: 4px 10px 10px; border-top: 1px solid rgba(255,255,255,0.08); gap: 2px; }
-    .nav-item { flex-direction: column; gap: 3px; padding: 8px 14px; font-size: 0.66rem; white-space: nowrap; }
+    .sidebar-nav {
+      display: none; flex-basis: 100%; flex-direction: column; gap: 2px;
+      position: absolute; top: 100%; left: 0; right: 0;
+      background: #10122b; padding: 8px 12px 14px; border-top: 1px solid rgba(255,255,255,0.08);
+      box-shadow: 0 12px 24px rgba(0,0,0,0.25); z-index: 40;
+    }
+    .sidebar-nav.open { display: flex; }
+    .nav-item { flex-direction: row; gap: 11px; padding: 12px 14px; font-size: 0.86rem; white-space: nowrap; }
     .nav-item svg { width: 19px; height: 19px; }
   }
 
@@ -293,9 +306,12 @@
       <div class="name">MindShift Books</div>
       <div class="tag">Admin Dashboard</div>
     </div>
+    <button class="hamburger-btn" id="navHamburger" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
   </div>
 
-  <nav class="sidebar-nav">
+  <nav class="sidebar-nav" id="sidebarNav">
     <button class="nav-item active" id="tabOverview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.8"/></svg>Overview</button>
     <button class="nav-item" id="tabPayouts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2.2"/><circle cx="12" cy="12" r="2.6"/></svg>Payouts</button>
     <button class="nav-item" id="tabBroadcast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.3v3.4a1.3 1.3 0 001.3 1.3h1.2l4.8 3.9V5.1l-4.8 3.9H4.3A1.3 1.3 0 003 10.3z"/><path d="M14.5 9a3.5 3.5 0 010 6"/></svg>Updates</button>
@@ -561,6 +577,12 @@
   </div>
 
   <div id="creatorsPage" style="display:none;">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+      <button id="crLogBtn" style="display:flex;align-items:center;gap:8px;background:#161b22;color:#8b949e;border:1.5px solid #30363d;border-radius:8px;padding:9px 16px;font-family:'Courier New',monospace;font-size:0.8rem;font-weight:700;cursor:pointer;letter-spacing:0.02em;">
+        <span style="width:7px;height:7px;border-radius:50%;background:#56d364;display:inline-block;"></span>
+        ACTIVITY LOG
+      </button>
+    </div>
     <div class="totals">
       <div class="stat-card"><div class="label">Total Creators</div><div class="value" id="crTotal">0</div></div>
       <div class="stat-card"><div class="label">Strong fit (65%+)</div><div class="value" id="crAList">0</div></div>
@@ -936,8 +958,19 @@
   const creatorsPage = document.getElementById('creatorsPage');
   let overviewLoadedOnce = true; // loadStats() already ran once above on page load
 
+  const navHamburger = document.getElementById('navHamburger');
+  const sidebarNav = document.getElementById('sidebarNav');
+  if (navHamburger) navHamburger.addEventListener('click', () => {
+    sidebarNav.classList.toggle('open');
+    navHamburger.classList.toggle('open');
+  });
+
   function setActiveTab(active) {
     [tabOverview, tabPayouts, tabBroadcast, tabCreators].forEach(b => b.classList.toggle('active', b === active));
+    // Auto-close the mobile dropdown menu whenever a tab is picked — no
+    // reason to make the admin close it manually every time.
+    document.getElementById('sidebarNav').classList.remove('open');
+    document.getElementById('navHamburger').classList.remove('open');
   }
   function hideAllPages() {
     payoutsPage.style.display = 'none';
@@ -1993,7 +2026,69 @@ ${ctaBlock}${captionBlock}${assetsBlock}${affiliateLinkBlock}
       cdSendBtn.disabled = false; cdSendBtn.textContent = 'Send to all customers';
     }
   });
+  // ── Terminal-style activity log ──
+  // Formats a raw log entry (auto cron run, or manual send) into a
+  // monospace terminal line, so the admin can see exactly what happened
+  // while they weren't watching — mainly the daily automatic cycle.
+  function formatLogLine(entry) {
+    const ts = entry.at ? new Date(entry.at).toLocaleString('en-US', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }) : '????-??-??';
+    const tag = entry.source === 'auto' ? 'AUTO ' : entry.source === 'manual-full-cycle' ? 'MANUAL' : 'PICKED';
+    if (entry.error) {
+      return `[${ts}] ${tag} > ERROR: ${entry.error}`;
+    }
+    if (entry.source === 'manual-selected') {
+      return `[${ts}] ${tag} > sent ${entry.sent}/${entry.total} to hand-picked creators${entry.skipped ? ` (${entry.skipped} skipped)` : ''}`;
+    }
+    const initial = entry.initialSent || 0;
+    const followUps = entry.followUpsSent || 0;
+    if (initial === 0 && followUps === 0) {
+      return `[${ts}] ${tag} > ran — nothing due, 0 sent`;
+    }
+    return `[${ts}] ${tag} > sent ${initial} initial + ${followUps} follow-up${followUps === 1 ? '' : 's'} (${initial + followUps} total)`;
+  }
+
+  async function openCrLog() {
+    const overlay = document.getElementById('crLogOverlay');
+    const body = document.getElementById('crLogBody');
+    overlay.style.display = 'block';
+    body.textContent = 'Loading…';
+    try {
+      const res = await fetch('/api/admin/creators/logs?limit=100');
+      if (res.status === 401) { window.location.href = '/admin/login'; return; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not load logs.');
+      const logs = data.logs || [];
+      if (!logs.length) {
+        body.textContent = '> No activity yet. Nothing has been sent — automatically or manually — since this feature was added.';
+        return;
+      }
+      body.textContent = logs.map(formatLogLine).join('\n');
+    } catch (err) {
+      body.textContent = `> ERROR loading logs: ${err.message || 'unknown error'}`;
+    }
+  }
+
+  const crLogBtn = document.getElementById('crLogBtn');
+  if (crLogBtn) crLogBtn.addEventListener('click', openCrLog);
+  const crLogCloseBtn = document.getElementById('crLogCloseBtn');
+  if (crLogCloseBtn) crLogCloseBtn.addEventListener('click', () => {
+    document.getElementById('crLogOverlay').style.display = 'none';
+  });
+
 </script>
+
+<!-- Terminal-style activity log overlay — shows every automatic and manual
+     outreach run, so anything that happened while the admin wasn't watching
+     (mainly the daily cron) is still visible when they check back. -->
+<div id="crLogOverlay" style="display:none;position:fixed;inset:0;background:#0d1117;z-index:9999;font-family:'Courier New',monospace;">
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #21262d;">
+    <span style="color:#c9d1d9;font-weight:700;font-size:0.95rem;letter-spacing:0.02em;">Creator Outreach Log</span>
+    <button id="crLogCloseBtn" style="background:none;border:1px solid #30363d;color:#8b949e;border-radius:6px;padding:6px 14px;font-family:'Courier New',monospace;cursor:pointer;font-size:0.85rem;">Close</button>
+  </div>
+  <div id="crLogBody" style="padding:18px 20px;overflow-y:auto;height:calc(100% - 60px);color:#c9d1d9;font-size:0.82rem;line-height:1.8;white-space:pre-wrap;">
+    Loading…
+  </div>
+</div>
 
 </body>
 </html>
