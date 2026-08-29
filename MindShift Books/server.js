@@ -61,20 +61,31 @@ app.use(cors({
 // store) on its own, so if this ran any later, every request to the
 // subdomain's root would already be answered — main site, not affiliate.html
 // — before this code ever got a chance to look at it.
-//   - Request arrives on the affiliate subdomain ("/", "/apply", ...): prefix
-//     the path with /affiliate internally so it falls through to the actual
+//   - Request arrives on the affiliate subdomain, on one of the four known
+//     page paths ("/", "/apply", "/dashboard", "/payout"): rewrite to the
+//     matching /affiliate/... path so it falls through to the actual
 //     handlers (defined later, unchanged) that serve those HTML files.
+//     Everything else on that subdomain — static assets like /auth.js or
+//     /styles.css, API calls, images — passes through untouched, so the
+//     static file server and API routes keep working exactly as normal.
 //   - Request arrives on the main domain at an old /affiliate/* URL: 301 it
 //     out to the equivalent path on the subdomain, so old links/bookmarks
 //     still land somewhere real.
 const AFFILIATE_HOST = 'affiliate.mindshiftbooks.shop';
 const AFFILIATE_SITE_URL = process.env.AFFILIATE_URL || `https://${AFFILIATE_HOST}`;
 const AFFILIATE_ECOSYSTEM_PATHS = new Set(['/affiliate', '/affiliate/apply', '/affiliate/dashboard', '/affiliate/payout']);
+const AFFILIATE_SUBDOMAIN_PAGE_MAP = {
+  '/': '/affiliate',
+  '/apply': '/affiliate/apply',
+  '/dashboard': '/affiliate/dashboard',
+  '/payout': '/affiliate/payout'
+};
 app.use((req, res, next) => {
   const host = (req.hostname || '').toLowerCase();
   if (host === AFFILIATE_HOST) {
-    if (!req.path.startsWith('/affiliate') && !req.path.startsWith('/api')) {
-      req.url = '/affiliate' + (req.path === '/' ? '' : req.path) + req.url.slice(req.path.length);
+    const mapped = AFFILIATE_SUBDOMAIN_PAGE_MAP[req.path];
+    if (mapped) {
+      req.url = mapped + req.url.slice(req.path.length);
     }
     return next();
   }
