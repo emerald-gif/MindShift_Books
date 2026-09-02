@@ -1672,6 +1672,41 @@ function normalizeGutendexBook(item) {
   };
 }
 
+// Fetches a single Gutendex URL with a request timeout + retry/backoff.
+// Used for one-off lookups (like the book detail endpoint) that don't have
+// a page-level cache to fall back on, so a single flaky Gutendex response
+// shouldn't immediately surface as an error to the visitor.
+async function fetchGutendexUrlWithRetry(url, { retries = 2, timeoutMs = 8000, delays = [500, 1500] } = {}) {
+  let lastErr;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const resp = await fetch(url, {
+        signal: controller.signal,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; MindShiftBooks/1.0; +https://mindshiftbooks.shop)',
+          'Accept': 'application/json'
+        }
+      });
+      clearTimeout(timeout);
+      if (!resp.ok) {
+        const err = new Error(`Gutendex API error: ${resp.status} ${resp.statusText}`);
+        err.status = resp.status;
+        throw err;
+      }
+      return await resp.json();
+    } catch (e) {
+      clearTimeout(timeout);
+      lastErr = e;
+      const retryable = e.name === 'AbortError' || e.status === 429 || (e.status && e.status >= 500) || !e.status;
+      if (!retryable || attempt === retries) break;
+      await sleep(delays[attempt] || delays[delays.length - 1]);
+    }
+  }
+  throw lastErr;
+}
+
 async function fetchGutendexPageOnce(topicOrSearch, isSearch, page) {
   const params = new URLSearchParams();
   if (isSearch) params.set('search', topicOrSearch);
@@ -1813,20 +1848,13 @@ app.get('/api/free-ebooks', async (req, res) => {
 // dedicated /books/:id/description-style field, so we surface subjects and
 // bookshelves as the "about" text instead of a blurb.
 app.get('/api/free-ebooks/:id', async (req, res) => {
-  try {
-    const id = req.params.id;
-    const cacheKey = `detail::${id}`;
-    const cached = freeEbooksCache.get(cacheKey);
-    if (cached && cached.expires > Date.now()) return res.json(cached.data);
+  const id = req.params.id;
+  const cacheKey = `detail::${id}`;
+  const cached = freeEbooksCache.get(cacheKey);
+  if (cached && cached.expires > Date.now()) return res.json(cached.data);
 
-    const resp = await fetch(`${GUTENDEX_API}/${encodeURIComponent(id)}`, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; MindShiftBooks/1.0; +https://mindshiftbooks.shop)',
-        'Accept': 'application/json'
-      }
-    });
-    if (!resp.ok) return res.status(404).json({ error: 'Book not found' });
-    const json = await resp.json();
+  try {
+    const json = await fetchGutendexUrlWithRetry(`${GUTENDEX_API}/${encodeURIComponent(id)}`);
     const book = normalizeGutendexBook(json);
     book.description = (json.subjects || []).length
       ? `Subjects: ${(json.subjects || []).slice(0, 6).join(', ')}`
@@ -1835,7 +1863,16 @@ app.get('/api/free-ebooks/:id', async (req, res) => {
     freeEbooksCache.set(cacheKey, { data, expires: Date.now() + FREE_EBOOKS_CACHE_TTL });
     res.json(data);
   } catch (e) {
-    console.error('[free-ebooks] detail fetch failed', e);
+    // Gutendex is a flaky third-party free service. If we have any prior
+    // (even expired) cached copy of this book, serve that rather than
+    // failing the visitor outright — better a slightly stale detail panel
+    // than "Could not load this book right now."
+    if (cached) {
+      console.warn(`[free-ebooks] detail fetch failed for ${id}, serving stale cache:`, e && e.message ? e.message : e);
+      return res.json(cached.data);
+    }
+    if (e && e.status === 404) return res.status(404).json({ error: 'Book not found' });
+    console.error('[free-ebooks] detail fetch failed', id, e && e.message ? e.message : e);
     res.status(500).json({ error: 'Could not load this book right now.' });
   }
 });
