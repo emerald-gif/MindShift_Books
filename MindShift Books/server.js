@@ -2693,10 +2693,114 @@ app.get('/api/orders', ordersLimiter, async (req, res) => {
 // doc if it doesn't exist yet, and "claims" any past orders placed with the
 // same email before the account existed — so order history isn't empty for
 // people who bought before accounts were a thing.
+// ── Usernames ──
+// Reserved in their own `usernames/{lower}` collection (doc id = the
+// lowercased handle) rather than just a field on `users/{uid}`, so
+// claiming one is a single atomic transaction against a doc keyed by the
+// name itself — two people racing for the same handle can't both win,
+// which a query-then-write against `users` couldn't guarantee.
+const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
+
+function slugifyUsernameBase(input) {
+  return String(input || '')
+    .toLowerCase()
+    .replace(/@.*/, '')          // if an email leaked in, drop the domain
+    .replace(/[^a-z0-9_]/g, '')
+    .slice(0, 16);
+}
+
+// Atomically claims `desired` for uid if free. Returns the claimed handle,
+// or null if it's taken (letting the caller decide: error out for a
+// user-chosen handle, or try another auto-generated candidate).
+async function tryClaimUsername(desired, uid) {
+  const lower = desired.toLowerCase();
+  if (!USERNAME_RE.test(lower)) return null;
+  const ref = db.collection('usernames').doc(lower);
+  try {
+    await db.runTransaction(async (tx) => {
+      const doc = await tx.get(ref);
+      if (doc.exists) throw new Error('TAKEN');
+      tx.set(ref, { uid, createdAt: admin.firestore.Timestamp.now() });
+    });
+    return lower;
+  } catch (e) {
+    if (e.message === 'TAKEN') return null;
+    throw e;
+  }
+}
+
+// For OAuth / no-preference signups: builds candidates from a name or
+// email and claims the first one that's free (e.g. "jordan.o" ->
+// "jordano", then "jordano4821" if taken). Falls back to a random
+// "reader" handle if it somehow can't land one in a handful of tries —
+// astronomically unlikely, but a signup must never hard-fail on this.
+async function autoClaimUsername(seed, uid) {
+  const base = slugifyUsernameBase(seed) || 'reader';
+  const paddedBase = base.length < 3 ? (base + 'msb').slice(0, 16) : base;
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const candidate = attempt === 0 ? paddedBase : `${paddedBase}${Math.floor(1000 + Math.random() * 9000)}`;
+    const claimed = await tryClaimUsername(candidate, uid);
+    if (claimed) return claimed;
+  }
+  return tryClaimUsername(`reader${Date.now().toString().slice(-8)}`, uid);
+}
+
+// Live availability check while typing on /signup. Doesn't claim
+// anything — actual claiming happens atomically in /api/account/init so
+// there's no gap between "looks free" and "actually reserved".
+app.get('/api/username/available', async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const lower = String(req.query.u || '').toLowerCase();
+    if (!USERNAME_RE.test(lower)) {
+      return res.json({ available: false, reason: '3-20 characters: letters, numbers, underscores only.' });
+    }
+    const doc = await db.collection('usernames').doc(lower).get();
+    return res.json({ available: !doc.exists });
+  } catch (err) {
+    console.error('/api/username/available error', err);
+    return res.status(500).json({ error: 'Could not check that username right now.' });
+  }
+});
+
+// Called from the profile-edit sheet when a signed-in user changes their
+// handle (as opposed to /api/account/init, which claims the *first* one at
+// signup). Releases the old reservation and claims the new one — both
+// against the same `usernames/{lower}` collection so there's exactly one
+// source of truth for "is this handle taken" everywhere in the app.
+app.post('/api/claim-username', requireUser, async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const newUsername = String((req.body || {}).newUsername || '').trim().toLowerCase();
+    const oldUsername = String((req.body || {}).oldUsername || '').trim().toLowerCase();
+    if (!USERNAME_RE.test(newUsername)) {
+      return res.status(400).json({ error: '3-20 characters: letters, numbers, underscores only.' });
+    }
+    if (newUsername === oldUsername) return res.json({ ok: true, username: newUsername });
+
+    const claimed = await tryClaimUsername(newUsername, req.uid);
+    if (!claimed) return res.status(409).json({ error: 'That username is already taken.' });
+
+    if (oldUsername) {
+      const oldRef = db.collection('usernames').doc(oldUsername);
+      const oldDoc = await oldRef.get();
+      // Only release it if it was actually this user's — never let one
+      // request accidentally free up someone else's handle.
+      if (oldDoc.exists && oldDoc.data().uid === req.uid) {
+        await oldRef.delete();
+      }
+    }
+    return res.json({ ok: true, username: claimed });
+  } catch (err) {
+    console.error('/api/claim-username error', err);
+    return res.status(500).json({ error: 'Could not save that username. Please try again.' });
+  }
+});
+
 app.post('/api/account/init', requireUser, async (req, res) => {
   try {
     if (!db) return res.status(500).json({ error: 'Database unavailable' });
-    const { name, affCode } = req.body || {};
+    const { name, affCode, username } = req.body || {};
     const userRef = db.collection('users').doc(req.uid);
 
     // Referral attribution — looked up *before* the create() call so it can
@@ -2724,21 +2828,50 @@ app.post('/api/account/init', requireUser, async (req, res) => {
     // account, so exactly one welcome email goes out no matter how the
     // requests overlap.
     let isNewAccount = true;
+    let claimedUsername = null;
     try {
+      // Username: use what they typed on /signup if it's free, otherwise
+      // (Google/Facebook, or a typed one that got sniped in the meantime)
+      // auto-generate one from their name or email so account creation
+      // never blocks on this — they can always change it later from Settings.
+      const preferred = username && String(username).trim();
+      claimedUsername = preferred ? await tryClaimUsername(preferred, req.uid) : null;
+      if (!claimedUsername) {
+        claimedUsername = await autoClaimUsername(
+          (name && String(name).trim()) || req.userName || req.userEmail,
+          req.uid
+        );
+      }
+
       await userRef.create({
         email: req.userEmail,
         name: (name && String(name).trim().slice(0, 120)) || req.userName || null,
+        username: claimedUsername,
         createdAt: admin.firestore.Timestamp.now(),
         ...referralFields
       });
     } catch (createErr) {
       if (createErr.code === 6 /* ALREADY_EXISTS */ || /already exists/i.test(createErr.message || '')) {
         isNewAccount = false;
-        if (name && String(name).trim()) {
-          const existing = await userRef.get();
-          if (!existing.data().name) {
-            await userRef.update({ name: String(name).trim().slice(0, 120) });
-          }
+        // Existing account claimed a username doc above (harmless orphan if
+        // so) before finding out it wasn't actually new — release it rather
+        // than leave a dangling reservation nobody can ever use.
+        if (claimedUsername) {
+          db.collection('usernames').doc(claimedUsername).delete().catch(() => null);
+          claimedUsername = null;
+        }
+        const existing = await userRef.get();
+        const existingData = existing.data() || {};
+        if (name && String(name).trim() && !existingData.name) {
+          await userRef.update({ name: String(name).trim().slice(0, 120) });
+        }
+        // Backfill for accounts created before usernames existed.
+        claimedUsername = existingData.username || null;
+        if (!claimedUsername) {
+          claimedUsername = await autoClaimUsername(
+            existingData.name || req.userName || req.userEmail, req.uid
+          );
+          await userRef.update({ username: claimedUsername });
         }
       } else {
         throw createErr;
@@ -2768,10 +2901,29 @@ app.post('/api/account/init', requireUser, async (req, res) => {
       sendWelcomeEmail(req.userEmail, (name && String(name).trim()) || req.userName || null);
     }
 
-    return res.json({ ok: true });
+    return res.json({ ok: true, isNewAccount, username: claimedUsername });
   } catch (err) {
     console.error('/api/account/init error', err);
     return res.status(500).json({ error: 'Could not set up your account. Please try again.' });
+  }
+});
+
+// Called once from /welcome after the reader picks their interests —
+// separate from /api/account/init so re-running init on a later sign-in
+// never touches categories the reader already chose.
+app.post('/api/account/categories', requireUser, async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const { categories } = req.body || {};
+    if (!Array.isArray(categories) || !categories.length) {
+      return res.status(400).json({ error: 'Pick at least one category.' });
+    }
+    const clean = categories.filter(c => typeof c === 'string').slice(0, 10);
+    await db.collection('users').doc(req.uid).set({ categories: clean }, { merge: true });
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('/api/account/categories error', err);
+    return res.status(500).json({ error: 'Could not save your interests. Please try again.' });
   }
 });
 
@@ -3295,11 +3447,16 @@ app.get('/wishlist', (req, res) => {
 // /my-order is the old email-lookup page — permanently point it at the new
 // account-based page so old links/bookmarks still land somewhere useful.
 app.get('/my-order', (req, res) => {
-  res.redirect(301, '/account');
+  res.redirect(301, '/settings');
 });
 
+// account.html is retired — Order History and My Details now live inline
+// inside /settings (see settings.html: showSettingsView('orders'/'details')),
+// same /api/my-orders and /api/account backend, just no longer a separate
+// page. This redirect (not a 404) means every old link/bookmark to /account
+// or /account#orders still lands somewhere useful instead of breaking.
 app.get('/account', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'account.html'));
+  res.redirect(301, '/settings');
 });
 
 app.get('/login', (req, res) => {
