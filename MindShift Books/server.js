@@ -152,6 +152,11 @@ app.get(/\.html$/, (req, res, next) => {
 // no re-download) if the file hasn't changed, so this stays fast but never
 // silently stale.
 app.use(express.static(path.join(__dirname, 'public'), {
+  // Lets clean URLs like /profile or /articles resolve to
+  // public/profile.html / public/articles.html automatically, instead of
+  // 404ing just because there's no explicit app.get(...) route for that
+  // page below. Only kicks in when there's no exact file match first.
+  extensions: ['html'],
   setHeaders: (res) => {
     res.setHeader('Cache-Control', 'no-cache');
   }
