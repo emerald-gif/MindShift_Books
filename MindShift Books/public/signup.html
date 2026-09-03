@@ -227,6 +227,12 @@ body{font-family:'Inter',sans-serif;color:var(--primary);background:var(--paper)
         </div>
 
         <div class="field">
+          <label for="username">Username</label>
+          <input id="username" type="text" placeholder="yourname" autocomplete="off" maxlength="20" required>
+          <div id="usernameStatus" style="font-size:12px;margin-top:5px;min-height:16px;"></div>
+        </div>
+
+        <div class="field">
           <label for="password">Password</label>
           <div class="pw-wrap">
             <input id="password" type="password" placeholder="At least 6 characters" autocomplete="new-password" required minlength="6">
@@ -301,6 +307,44 @@ body{font-family:'Inter',sans-serif;color:var(--primary);background:var(--paper)
   const facebookBtn = document.getElementById('facebookBtn');
   const pwToggle = document.getElementById('pwToggle');
   const pwInput = document.getElementById('password');
+
+  // ── Username: live availability check (debounced), server has final say ──
+  const usernameInput = document.getElementById('username');
+  const usernameStatus = document.getElementById('usernameStatus');
+  let usernameOk = false;
+  let usernameCheckTimer = null;
+  let usernameCheckSeq = 0;
+
+  function setUsernameStatus(text, ok) {
+    usernameStatus.textContent = text;
+    usernameStatus.style.color = ok === true ? '#059669' : ok === false ? '#dc2626' : '#6b7280';
+    usernameOk = ok === true;
+  }
+
+  usernameInput.addEventListener('input', () => {
+    const raw = usernameInput.value.trim().toLowerCase();
+    usernameInput.value = raw;
+    clearTimeout(usernameCheckTimer);
+    if (!raw) { setUsernameStatus('', null); return; }
+    if (!/^[a-z0-9_]{3,20}$/.test(raw)) {
+      setUsernameStatus('3-20 characters: letters, numbers, underscores only.', false);
+      return;
+    }
+    setUsernameStatus('Checking…', null);
+    const seq = ++usernameCheckSeq;
+    usernameCheckTimer = setTimeout(async () => {
+      try {
+        const r = await fetch('/api/username/available?u=' + encodeURIComponent(raw));
+        const j = await r.json();
+        if (seq !== usernameCheckSeq) return; // a newer keystroke has since fired
+        if (j.available) setUsernameStatus('@' + raw + ' is available', true);
+        else setUsernameStatus(j.reason || 'That username is taken.', false);
+      } catch (e) {
+        if (seq !== usernameCheckSeq) return;
+        setUsernameStatus('', null); // don't block submit on a network blip — server re-checks anyway
+      }
+    }, 400);
+  });
   pwToggle.addEventListener('click', () => {
     const showing = pwInput.type === 'text';
     pwInput.type = showing ? 'password' : 'text';
@@ -311,13 +355,30 @@ body{font-family:'Inter',sans-serif;color:var(--primary);background:var(--paper)
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     errorBox.style.display = 'none';
+
+    const username = usernameInput.value.trim();
+    if (!username || !/^[a-z0-9_]{3,20}$/.test(username)) {
+      setUsernameStatus('Pick a username first (3-20 characters: letters, numbers, underscores).', false);
+      usernameInput.focus();
+      return;
+    }
+    // usernameOk being false just means our own debounced check hasn't
+    // confirmed it yet (or flagged it taken) — either way /api/account/init
+    // re-checks and claims atomically server-side, so this is a helpful
+    // early nudge, not the actual guarantee.
+    if (usernameOk === false && usernameStatus.textContent.toLowerCase().includes('taken')) {
+      usernameInput.focus();
+      return;
+    }
+
     submitBtn.disabled = true;
     submitBtn.textContent = 'Creating account…';
     try {
       await window.MSBAuth.signUpEmail(
         document.getElementById('email').value.trim(),
         document.getElementById('password').value,
-        document.getElementById('name').value.trim()
+        document.getElementById('name').value.trim(),
+        username
       );
       window.MSBAuth.redirectAfterAuth();
     } catch (err) {

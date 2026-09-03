@@ -6,39 +6,65 @@
   <title>Welcome | MindShift Books</title>
   <meta name="description" content="Your MindShift Books account is ready." />
   <meta name="robots" content="noindex, follow">
-  <link rel="shortcut icon" href="MINDSHIFT.jpg" type="image/jpg">
+  <link rel="shortcut icon" href="/MINDSHIFT.jpg" type="image/jpg">
   <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="/article-categories.js"></script>
   <style>
-:root{ --primary:#0f172a; --accent:#06b6d4; --indigo:#4f46e5; --paper:#fdfdfc; }
+:root{ --primary:#0f172a; --accent:#06b6d4; --indigo:#4f46e5; --paper:#fdfdfc; --border:#e5e7eb; }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{
   font-family:'Inter',sans-serif; color:var(--primary); background:var(--paper);
   min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;
 }
 
-.card{
-  width:100%; max-width:420px; text-align:center; padding:44px 32px 40px;
-}
+.card{ width:100%; max-width:460px; text-align:center; padding:44px 32px 40px; }
 
-.brand{ display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:40px; }
+.brand{ display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:28px; }
 .brand img{ width:32px; height:32px; border-radius:7px; }
 .brand span{ font-weight:700; font-size:1rem; letter-spacing:0.01em; }
 
+.step-dots{ display:flex; justify-content:center; gap:6px; margin-bottom:28px; }
+.step-dots span{ width:7px; height:7px; border-radius:99px; background:#e2e8f0; transition:background .2s,width .2s; }
+.step-dots span.on{ background:linear-gradient(90deg,var(--indigo),var(--accent)); width:20px; }
+
 .icon-wrap{
-  width:96px; height:96px; margin:0 auto 32px; border-radius:50%;
+  width:96px; height:96px; margin:0 auto 28px; border-radius:50%;
   display:flex; align-items:center; justify-content:center;
   background:radial-gradient(circle at 30% 25%, rgba(6,182,212,0.16), rgba(79,70,229,0.1) 70%);
 }
 .icon-wrap svg{ width:52px; height:52px; }
 
 h1{
-  font-family:'Source Serif 4',serif; font-weight:600; font-size:1.7rem;
-  line-height:1.25; margin-bottom:14px;
+  font-family:'Source Serif 4',serif; font-weight:600; font-size:1.55rem;
+  line-height:1.25; margin-bottom:10px;
 }
 h1 .accent{ color:var(--indigo); }
 
-.subtext{ color:#64748b; font-size:0.96rem; line-height:1.6; margin-bottom:36px; }
+.subtext{ color:#64748b; font-size:0.94rem; line-height:1.6; margin-bottom:26px; }
 .subtext b{ color:var(--primary); }
+
+.cat-pills{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-bottom:8px; }
+.cat-pill{
+  padding:9px 14px; border-radius:99px; border:1.5px solid var(--border); background:#fff;
+  font-size:12.5px; font-weight:600; color:var(--primary); cursor:pointer; transition:all .15s;
+  font-family:inherit;
+}
+.cat-pill.sel{ background:linear-gradient(90deg,var(--indigo),var(--accent)); color:#fff; border-color:transparent; }
+.cat-hint{ font-size:11.5px; color:#94a3b8; margin:10px 0 26px; }
+
+.uname-row{
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  font-size:13px; color:#64748b; margin-bottom:26px; flex-wrap:wrap;
+}
+.uname-row b{ color:var(--primary); }
+.uname-row button{ border:none; background:none; color:var(--indigo); font-weight:700; font-size:12.5px; cursor:pointer; padding:2px 4px; }
+.uname-edit{ display:none; align-items:center; gap:8px; justify-content:center; margin-bottom:26px; flex-wrap:wrap; }
+.uname-edit.show{ display:flex; }
+.uname-edit input{
+  border:1.5px solid var(--border); border-radius:10px; padding:8px 10px; font-size:13px;
+  font-family:inherit; width:160px; text-align:center;
+}
+.uname-status{ font-size:11.5px; min-height:14px; width:100%; text-align:center; }
 
 .browse-btn{
   display:block; width:100%; padding:15px 20px; border-radius:12px; border:none;
@@ -46,40 +72,191 @@ h1 .accent{ color:var(--indigo); }
   font-weight:700; font-size:1rem; text-decoration:none; cursor:pointer;
   box-shadow:0 10px 26px rgba(79,70,229,0.25);
 }
-.browse-btn:hover{ filter:brightness(1.05); }
+.browse-btn:disabled{ opacity:.5; cursor:not-allowed; box-shadow:none; }
+.browse-btn:hover:not(:disabled){ filter:brightness(1.05); }
+
+.skip-link{ display:block; margin-top:14px; font-size:12.5px; color:#94a3b8; text-decoration:underline; cursor:pointer; background:none; border:none; font-family:inherit; }
 
 .footer-links{ margin-top:26px; font-size:0.82rem; color:#94a3b8; }
 .footer-links a{ color:#64748b; text-decoration:underline; }
+
+#stepInterests, #stepDone{ display:none; }
+#stepInterests.active, #stepDone.active{ display:block; }
   </style>
 </head>
 <body>
 
 <div class="card">
   <div class="brand">
-    <img src="MINDSHIFT.jpg" alt="MindShift Books logo">
+    <img src="/MINDSHIFT.jpg" alt="MindShift Books logo">
     <span>MindShift Books</span>
   </div>
 
-  <div class="icon-wrap">
-    <svg viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 21C12 21 4 16.5 4 10.5C4 7.46 6.24 5 9.2 5C10.86 5 12 6 12 6C12 6 13.14 5 14.8 5C17.76 5 20 7.46 20 10.5C20 16.5 12 21 12 21Z"/>
-    </svg>
+  <div class="step-dots">
+    <span id="dot1" class="on"></span>
+    <span id="dot2"></span>
   </div>
 
-  <h1>You're all set, <span class="accent">welcome in</span></h1>
-  <p class="subtext">Your account is ready. <b>Browse the store</b> whenever you like — everything you save gets kept on your account from here on.</p>
+  <!-- STEP 1: INTERESTS -->
+  <div id="stepInterests" class="active">
+    <h1>What draws <span class="accent">you</span> in?</h1>
+    <p class="subtext">Pick what fits — we'll use it to shape your <b>For You</b> feed and recommend books that match.</p>
 
-  <a href="/" id="browseBtn" class="browse-btn">Browse Store</a>
+    <div class="cat-pills" id="onboardCatPills"></div>
+    <div class="cat-hint">Pick as many as you like — you can change these anytime in Settings.</div>
+
+    <div class="uname-row" id="unameRow" style="display:none">
+      Your username is <b id="unameDisplay"></b>
+      <button type="button" id="unameEditBtn">Change</button>
+    </div>
+    <div class="uname-edit" id="unameEdit">
+      <input id="unameInput" type="text" maxlength="20" placeholder="username">
+      <button type="button" class="browse-btn" id="unameSaveBtn" style="width:auto;padding:8px 16px;font-size:13px;">Save</button>
+      <div class="uname-status" id="unameStatus"></div>
+    </div>
+
+    <button class="browse-btn" id="continueBtn" disabled>Continue</button>
+    <button class="skip-link" id="skipBtn" type="button">Skip for now</button>
+  </div>
+
+  <!-- STEP 2: DONE -->
+  <div id="stepDone">
+    <div class="icon-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 21C12 21 4 16.5 4 10.5C4 7.46 6.24 5 9.2 5C10.86 5 12 6 12 6C12 6 13.14 5 14.8 5C17.76 5 20 7.46 20 10.5C20 16.5 12 21 12 21Z"/>
+      </svg>
+    </div>
+    <h1>You're all set, <span class="accent">welcome in</span></h1>
+    <p class="subtext">Your account is ready. <b>Browse the store</b> whenever you like — everything you save gets kept on your account from here on.</p>
+    <a href="/" id="browseBtn" class="browse-btn">Browse Store</a>
+  </div>
 
   <div class="footer-links">
     <a href="/support">Support</a> &nbsp;|&nbsp; <a href="/legal">Terms &amp; Privacy</a>
   </div>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="/auth.js"></script>
 <script>
   const params = new URLSearchParams(location.search);
   const returnTo = params.get('returnTo') || '/';
+  let claimedUsername = (params.get('u') || '').trim().toLowerCase();
   document.getElementById('browseBtn').href = returnTo;
+
+  // ── Auth guard: this page is meaningless signed out ──
+  window.MSBAuth.onAuthReady(user => {
+    if (!user) { location.href = '/login?returnTo=' + encodeURIComponent('/welcome' + location.search); return; }
+  });
+
+  // ── Step 1: interest pills ──
+  let selected = [];
+  const pillsWrap = document.getElementById('onboardCatPills');
+  const continueBtn = document.getElementById('continueBtn');
+
+  function renderPills(){
+    if (!window.MSB_CATEGORIES) return;
+    pillsWrap.innerHTML = window.MSB_CATEGORIES.map(c =>
+      `<button type="button" class="cat-pill" data-cat="${c.code}">${c.emoji} ${c.label}</button>`
+    ).join('');
+    pillsWrap.querySelectorAll('.cat-pill').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const code = btn.dataset.cat;
+        const i = selected.indexOf(code);
+        if (i === -1) { selected.push(code); btn.classList.add('sel'); }
+        else { selected.splice(i, 1); btn.classList.remove('sel'); }
+        continueBtn.disabled = selected.length === 0;
+      });
+    });
+  }
+  renderPills();
+
+  // ── Username confirm/edit (only shown if we arrived with a claimed handle) ──
+  const unameRow = document.getElementById('unameRow');
+  const unameDisplay = document.getElementById('unameDisplay');
+  const unameEdit = document.getElementById('unameEdit');
+  const unameInput = document.getElementById('unameInput');
+  const unameStatus = document.getElementById('unameStatus');
+
+  if (claimedUsername) {
+    unameRow.style.display = 'flex';
+    unameDisplay.textContent = '@' + claimedUsername;
+  }
+  document.getElementById('unameEditBtn').addEventListener('click', () => {
+    unameRow.style.display = 'none';
+    unameEdit.classList.add('show');
+    unameInput.value = claimedUsername;
+    unameInput.focus();
+  });
+  document.getElementById('unameSaveBtn').addEventListener('click', async () => {
+    const next = unameInput.value.trim().toLowerCase();
+    if (!/^[a-z0-9_]{3,20}$/.test(next)) {
+      unameStatus.style.color = '#dc2626';
+      unameStatus.textContent = '3-20 characters: letters, numbers, underscores only.';
+      return;
+    }
+    if (next === claimedUsername) { unameEdit.classList.remove('show'); unameRow.style.display = 'flex'; return; }
+    unameStatus.style.color = '#6b7280';
+    unameStatus.textContent = 'Saving…';
+    try {
+      const token = await window.MSBAuth.getIdToken();
+      const r = await fetch('/api/claim-username', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: JSON.stringify({ newUsername: next, oldUsername: claimedUsername })
+      });
+      const j = await r.json();
+      if (!r.ok) { unameStatus.style.color = '#dc2626'; unameStatus.textContent = j.error || 'Could not save that username.'; return; }
+      claimedUsername = next;
+      unameDisplay.textContent = '@' + next;
+      unameEdit.classList.remove('show');
+      unameRow.style.display = 'flex';
+      unameStatus.textContent = '';
+    } catch (e) {
+      unameStatus.style.color = '#dc2626';
+      unameStatus.textContent = 'Network error — please try again.';
+    }
+  });
+
+  // ── Advance to step 2, saving categories (or skipping) on the way ──
+  async function goToStepDone(){
+    document.getElementById('stepInterests').classList.remove('active');
+    document.getElementById('stepDone').classList.add('active');
+    document.getElementById('dot1').classList.remove('on');
+    document.getElementById('dot2').classList.add('on');
+  }
+
+  async function saveCategoriesAndAdvance(){
+    const user = window.MSBAuth.getUser();
+    if (selected.length && user) {
+      try {
+        // Make the pick usable immediately (articles.html reads this key
+        // without waiting on a fresh Firestore round trip)...
+        let existing = {};
+        try { existing = JSON.parse(localStorage.getItem('mindshift_user_cats_' + user.uid)) || {}; } catch(e){}
+        existing.categories = selected; existing.ts = Date.now();
+        localStorage.setItem('mindshift_user_cats_' + user.uid, JSON.stringify(existing));
+
+        // ...and persist it server-side so it's there on the next device/session.
+        const token = await window.MSBAuth.getIdToken();
+        await fetch('/api/account/categories', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+          body: JSON.stringify({ categories: selected })
+        });
+      } catch (e) { /* non-fatal — Settings lets them set this later either way */ }
+    }
+    goToStepDone();
+  }
+
+  continueBtn.addEventListener('click', () => {
+    continueBtn.disabled = true;
+    continueBtn.textContent = 'Saving…';
+    saveCategoriesAndAdvance();
+  });
+  document.getElementById('skipBtn').addEventListener('click', goToStepDone);
 </script>
 
 </body>

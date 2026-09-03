@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MindShift Books · Official</title>
+<meta name="description" content="MindShift Books' official profile."/>
+<meta name="robots" content="noindex, nofollow"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --p:#4f46e5;--p2:#06b6d4;--g:linear-gradient(90deg,#4f46e5,#06b6d4);
+  --txt:#0f172a;--sub:#6b7280;--mute:#9ca3af;
+  --bg:#f8fafc;--card:#fff;--border:#e5e7eb;
+  --red:#ef4444;--green:#10b981;--radius:16px;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh}
+
+/* ── HEADER ── */
+.hdr{position:sticky;top:0;z-index:100;background:rgba(248,247,255,.92);
+  backdrop-filter:blur(12px);border-bottom:1px solid var(--border);
+  padding:0 16px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.btn-back{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--border);
+  background:var(--card);display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--txt);text-decoration:none}
+.btn-back svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.5;
+  stroke-linecap:round;stroke-linejoin:round}
+.hdr-title{font-size:15px;font-weight:800;color:var(--txt);flex:1;text-align:center;
+  display:flex;align-items:center;justify-content:center;gap:5px}
+.hdr-badge{width:16px;height:16px;border-radius:50%;background:var(--g);
+  display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;
+  box-shadow:0 1px 5px rgba(37,99,235,.4)}
+.hdr-badge svg{width:8px;height:8px;fill:none;stroke:#fff;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.hdr-r{width:36px;display:flex;justify-content:flex-end}
+
+/* You tag in follower list */
+.you-tag{display:inline-flex;align-items:center;background:rgba(37,99,235,.12);
+  color:var(--p);font-size:9.5px;font-weight:800;padding:2px 7px;
+  border-radius:99px;margin-left:5px;vertical-align:middle;letter-spacing:.2px}
+
+/* ── COVER ── */
+.cover{width:100%;height:210px;background:var(--g);position:relative;overflow:hidden}
+.cover img{width:100%;height:100%;object-fit:cover;object-position:center;display:block}
+.cover-overlay{position:absolute;inset:0;
+  background:linear-gradient(to bottom,transparent 40%,rgba(15,10,30,.38))}
+
+/* ── PROFILE CARD ── */
+.profile-card{background:var(--card);border-radius:0 0 28px 28px;
+  padding:0 16px 22px;border-bottom:1.5px solid var(--border);margin-bottom:2px;
+  position:relative;z-index:1;overflow:visible}
+
+/* Avatar sits ON the cover — Pinterest style */
+.avatar-wrap{position:absolute;top:-44px;left:16px;z-index:10}
+.avatar{width:84px;height:84px;border-radius:50%;border:3.5px solid var(--card);
+  overflow:hidden;background:var(--g);
+  box-shadow:0 6px 24px rgba(37,99,235,.3)}
+.avatar img{width:100%;height:100%;object-fit:cover;display:block}
+
+/* ── VERIFIED BADGE — Pinterest style, pinned to avatar corner ── */
+.avatar-badge{position:absolute;bottom:3px;right:3px;
+  width:20px;height:20px;border-radius:50%;
+  background:var(--g);border:2.5px solid var(--card);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 1px 6px rgba(37,99,235,.5)}
+.avatar-badge svg{width:9px;height:9px;fill:none;stroke:#fff;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}
+
+.avatar-row{display:flex;align-items:flex-start;justify-content:flex-end;
+  padding-top:14px;margin-bottom:6px}
+
+/* Follow button */
+.btn-follow{padding:9px 22px;border-radius:99px;background:var(--g);border:none;
+  color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;
+  box-shadow:0 4px 14px rgba(37,99,235,.3);transition:all .2s;display:flex;align-items:center;gap:6px}
+.btn-follow:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(37,99,235,.4)}
+.btn-follow.following{background:var(--card);color:var(--txt);border:1.5px solid var(--border);box-shadow:none}
+.btn-follow.following:hover{border-color:var(--red);color:var(--red)}
+.btn-follow svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round}
+
+/* Name */
+.name-row{display:flex;align-items:center;gap:7px;margin-bottom:3px;flex-wrap:wrap;padding-left:2px}
+.profile-name{font-size:22px;font-weight:900;color:var(--txt);letter-spacing:-.3px}
+
+/* Official chip */
+.official-chip{display:inline-flex;align-items:center;gap:4px;
+  background:#eef2ff;border:1.5px solid #e0e7ff;color:var(--p);
+  font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;letter-spacing:.2px;margin-top:5px}
+.official-chip svg{width:10px;height:10px}
+
+.profile-tagline{font-size:13.5px;color:var(--p);font-weight:600;margin-bottom:8px}
+.profile-bio{font-size:14px;color:var(--sub);line-height:1.65;margin-bottom:14px}
+
+/* ── STATS ── */
+.stats-row{display:flex;border-top:1px solid var(--border);padding-top:14px;gap:0}
+.stat{flex:1;text-align:center;cursor:pointer}
+.stat:not(:last-child){border-right:1px solid var(--border)}
+.stat-num{font-size:19px;font-weight:900;color:var(--txt)}
+.stat-label{font-size:11px;color:var(--mute);font-weight:500;margin-top:2px}
+.stat:hover .stat-num{color:var(--p)}
+
+/* ── DIVIDER LABEL ── */
+.section-label{padding:16px 16px 10px;font-size:12px;font-weight:800;
+  color:var(--mute);text-transform:uppercase;letter-spacing:.6px}
+
+/* ── ARTICLE CARD (horizontal, matches feed) ── */
+.art-list{padding:0 0 100px}
+.acard{display:flex;flex-direction:row;align-items:flex-start;gap:14px;
+  background:var(--card);padding:18px 16px;cursor:pointer;
+  border-bottom:1px solid var(--border);transition:background .18s}
+.acard:active{background:#eef2ff}
+.acard-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.acard-cat{display:inline-flex;align-items:center;background:rgba(37,99,235,.1);
+  color:var(--p);font-size:9.5px;font-weight:800;padding:3px 9px;
+  border-radius:99px;letter-spacing:.3px;text-transform:uppercase;margin-bottom:4px;width:fit-content}
+.acard-title{font-size:15px;font-weight:800;color:var(--txt);line-height:1.35;
+  letter-spacing:-.2px;display:-webkit-box;-webkit-line-clamp:2;
+  -webkit-box-orient:vertical;overflow:hidden}
+.acard-brief{font-size:12.5px;color:var(--sub);line-height:1.55;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.acard-read{font-size:11px;color:var(--mute);font-weight:600;margin-top:6px}
+.acard-img{width:90px;height:80px;border-radius:10px;overflow:hidden;
+  flex-shrink:0;background:linear-gradient(135deg,#e0e7ff,#eef2ff);align-self:flex-start}
+.acard-img img{width:100%;height:100%;object-fit:cover;display:block}
+
+/* ── SKELETON ── */
+.skel{background:linear-gradient(90deg,#f3f4f6 25%,#e9eaec 50%,#f3f4f6 75%);
+  background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:6px}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.skel-card{display:flex;gap:14px;padding:18px 16px;border-bottom:1px solid var(--border)}
+.skel-img{width:90px;height:80px;border-radius:10px;flex-shrink:0}
+.skel-lines{flex:1;display:flex;flex-direction:column;gap:8px;padding-top:4px}
+
+/* ── EMPTY ── */
+.empty{text-align:center;padding:60px 24px}
+.empty svg{width:44px;height:44px;color:#d1d5db;margin:0 auto 14px;display:block}
+.empty p{font-size:14px;color:var(--mute);line-height:1.6}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:#0f0a1e;color:#fff;padding:10px 20px;border-radius:99px;
+  font-size:13px;font-weight:600;opacity:0;transition:all .3s;z-index:300;white-space:nowrap;pointer-events:none}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── FOLLOWERS SHEET ── */
+.sheet-bg{position:fixed;inset:0;background:rgba(15,10,30,.5);backdrop-filter:blur(4px);
+  z-index:200;opacity:0;pointer-events:none;transition:opacity .3s}
+.sheet-bg.show{opacity:1;pointer-events:all}
+.sheet{position:fixed;bottom:-100%;left:0;right:0;background:var(--card);
+  border-radius:24px 24px 0 0;z-index:201;transition:bottom .4s cubic-bezier(.34,1.2,.64,1);
+  max-height:80vh;overflow-y:auto}
+.sheet.show{bottom:0}
+.sheet-handle{width:36px;height:4px;background:var(--border);border-radius:99px;margin:12px auto 0}
+.sheet-title{font-size:16px;font-weight:800;padding:16px 20px 12px;border-bottom:1px solid var(--border)}
+.follow-item{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border)}
+.follow-item:last-child{border-bottom:none}
+.follow-av{width:42px;height:42px;border-radius:50%;background:var(--g);
+  display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;
+  color:#fff;overflow:hidden;flex-shrink:0;cursor:pointer}
+.follow-av img{width:100%;height:100%;object-fit:cover}
+.follow-name{font-size:14px;font-weight:700;color:var(--txt);cursor:pointer}
+.follow-name:hover{color:var(--p)}
+.follow-sub{font-size:12px;color:var(--mute);margin-top:1px}
+.follow-btn{margin-left:8px;padding:6px 14px;border-radius:99px;border:1.5px solid var(--border);
+  background:transparent;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;
+  transition:all .2s;flex-shrink:0}
+.follow-btn:hover{border-color:var(--p);color:var(--p)}
+.follow-btn.ing{border-color:var(--p);color:var(--p);background:#eef2ff}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="hdr">
+  <a class="btn-back" href="/articles" aria-label="Back">
+    <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+  </a>
+  <div class="hdr-title">
+    MindShift Books
+    <span class="hdr-badge"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>
+  </div>
+  <div class="hdr-r">
+    <a class="btn-back" href="/" title="Bookstore" aria-label="Bookstore">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    </a>
+  </div>
+</header>
+
+<!-- COVER -->
+<div class="cover">
+  <img src="kie.jpg" alt="MindShift Books Cover" id="kvCoverImg" onerror="this.style.display='none'">
+  <div class="cover-overlay"></div>
+</div>
+
+<!-- PROFILE CARD -->
+<div class="profile-card">
+  <!-- Avatar overlapping the cover -->
+  <div class="avatar-wrap">
+    <div class="avatar">
+      <img src="logo.jpg" alt="MindShift Books" id="kvAvatarImg" onerror="this.style.background='linear-gradient(135deg,#4f46e5,#06b6d4)'">
+    </div>
+    <div class="avatar-badge">
+      <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+  </div>
+
+  <!-- Row just for the follow button -->
+  <div class="avatar-row">
+    <button class="btn-follow" id="followBtn" onclick="toggleFollow()">
+      <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+      Follow
+    </button>
+  </div>
+
+  <div class="name-row">
+    <span class="profile-name" id="kvName">MindShift Books</span>
+  </div>
+
+  <div class="profile-tagline" id="kvTagline">Your Career, Elevated.</div>
+  <div>
+    <span class="official-chip">
+      <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20A10 10 0 0012 2zm0 0"/><polyline points="9 12 11 14 15 10" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+      Official Account
+    </span>
+  </div>
+
+  <div class="profile-bio" id="kvBio" style="margin-top:10px">
+    MindShift Books is Africa's leading career platform — helping professionals land better jobs, write standout resumes, and build careers that pay. Every article is written by our editorial team or approved community experts.
+  </div>
+
+  <div class="stats-row">
+    <div class="stat" onclick="showFollowers('followers')">
+      <div class="stat-num" id="statFollowers">—</div>
+      <div class="stat-label">Followers</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" id="statArticles">—</div>
+      <div class="stat-label">Articles</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" id="statLikes">—</div>
+      <div class="stat-label">Total Likes</div>
+    </div>
+  </div>
+</div>
+
+<!-- ARTICLES -->
+<div class="section-label">Published Articles</div>
+<div class="art-list" id="artList">
+  <div class="skel-card"><div class="skel-lines"><div class="skel" style="height:10px;width:60px"></div><div class="skel" style="height:14px;width:90%"></div><div class="skel" style="height:12px;width:75%"></div><div class="skel" style="height:10px;width:50px;margin-top:4px"></div></div><div class="skel skel-img"></div></div>
+  <div class="skel-card"><div class="skel-lines"><div class="skel" style="height:10px;width:60px"></div><div class="skel" style="height:14px;width:85%"></div><div class="skel" style="height:12px;width:70%"></div><div class="skel" style="height:10px;width:50px;margin-top:4px"></div></div><div class="skel skel-img"></div></div>
+  <div class="skel-card"><div class="skel-lines"><div class="skel" style="height:10px;width:60px"></div><div class="skel" style="height:14px;width:80%"></div><div class="skel" style="height:12px;width:65%"></div><div class="skel" style="height:10px;width:50px;margin-top:4px"></div></div><div class="skel skel-img"></div></div>
+  <div class="skel-card"><div class="skel-lines"><div class="skel" style="height:10px;width:60px"></div><div class="skel" style="height:14px;width:88%"></div><div class="skel" style="height:12px;width:72%"></div><div class="skel" style="height:10px;width:50px;margin-top:4px"></div></div><div class="skel skel-img"></div></div>
+</div>
+
+<!-- FOLLOWERS SHEET -->
+<div class="sheet-bg" id="sheetBg" onclick="closeSheet()"></div>
+<div class="sheet" id="followSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title" id="sheetTitle">Followers</div>
+  <div id="followList"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
+import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
+import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection,
+  query, where, getDocs, orderBy, serverTimestamp, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
+
+const fbApp = initializeApp({
+  apiKey:"AIzaSyDTn70s1_uIiSOR6lPLY_nKh8Ff1FViFCs",
+  authDomain:"mindshiftbooks-c4451.firebaseapp.com",
+  projectId:"mindshiftbooks-c4451",
+  storageBucket:"mindshiftbooks-c4451.firebasestorage.app",
+  messagingSenderId:"388697987853",
+  appId: "1:388697987853:web:f023df9412c22285012e44",
+  measurementId: "G-CHPJDQ4W08"
+});
+const auth = getAuth(fbApp);
+const db   = getFirestore(fbApp, 'default');
+
+let currentUser = null;
+let isFollowing  = false;
+let articles     = [];
+
+/* ── AUTH ── */
+onAuthStateChanged(auth, async user => {
+  currentUser = user;
+  if(user){
+    const followId = `${user.uid}_official`;
+    try{
+      const s = await getDoc(doc(db,'follows',followId));
+      isFollowing = s.exists();
+      updateFollowBtn();
+    }catch{}
+  }
+});
+
+/* ── LOAD ── */
+async function init(){
+  await Promise.all([loadMindshiftProfile(), loadArticles(), loadFollowerCount()]);
+}
+
+// Pulls admin-edited name/avatar/cover/bio/tagline from platform/official-profile,
+// falling back to the hardcoded defaults already in the HTML if nothing's been saved yet.
+async function loadMindshiftProfile(){
+  try{
+    const snap = await getDoc(doc(db,'platform','official-profile'));
+    if(!snap.exists()) return;
+    const p = snap.data();
+    if(p.name)    { document.getElementById('kvName').textContent = p.name; document.title = p.name + ' — MindShift Books'; }
+    if(p.tagline) document.getElementById('kvTagline').textContent = p.tagline;
+    if(p.bio)     document.getElementById('kvBio').textContent = p.bio;
+    if(p.avatar)  document.getElementById('kvAvatarImg').src = p.avatar;
+    if(p.cover)   document.getElementById('kvCoverImg').src = p.cover;
+  }catch(e){ console.error('MindShift Books profile load error:', e); }
+}
+
+async function loadArticles(){
+  try{
+    // Load from Firestore articles collection (userId = 'official')
+    const q = query(
+      collection(db,'articles'),
+      where('userId','==','official'),
+      where('status','==','published'),
+      orderBy('publishedAt','desc')
+    );
+    const snap = await getDocs(q);
+
+    if(snap.empty){
+      // Fallback: load all published articles from the seed
+      const q2 = query(collection(db,'articles'), where('status','==','published'), orderBy('publishedAt','desc'));
+      const snap2 = await getDocs(q2);
+      articles = snap2.docs.map(d=>({id:d.id,...d.data()}));
+    } else {
+      articles = snap.docs.map(d=>({id:d.id,...d.data()}));
+    }
+
+    document.getElementById('statArticles').textContent = articles.length;
+    renderArticles();
+    loadTotalLikes();
+  }catch(e){
+    console.error(e);
+    renderArticles();
+  }
+}
+
+async function loadFollowerCount(){
+  try{
+    const q = query(collection(db,'follows'), where('followingId','==','official'));
+    // Live listener so count stays accurate without refresh
+    onSnapshot(q, snap=>{
+      document.getElementById('statFollowers').textContent = fmtNum(snap.size);
+    });
+  }catch{ document.getElementById('statFollowers').textContent = '0'; }
+}
+
+async function loadTotalLikes(){
+  try{
+    let total = 0;
+    await Promise.all(articles.map(async a=>{
+      const s = await getDoc(doc(db,'articleLikes',a.id));
+      if(s.exists()) total += s.data().count||0;
+    }));
+    document.getElementById('statLikes').textContent = fmtNum(total);
+  }catch{ document.getElementById('statLikes').textContent = '0'; }
+}
+
+function renderArticles(){
+  const el = document.getElementById('artList');
+  if(!articles.length){
+    el.innerHTML = `<div class="empty">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>
+      </svg>
+      <p>No articles published yet.</p>
+    </div>`;
+    return;
+  }
+  el.innerHTML = articles.map(a=>`
+    <div class="acard" onclick="location.href='article-read.html?id=${a.id}'">
+      <div class="acard-body">
+        <span class="acard-cat">${a.cat||'CAREERS'}</span>
+        <div class="acard-title">${a.title||''}</div>
+        <div class="acard-brief">${a.brief||''}</div>
+        <div class="acard-read">${a.readTime||a.read||''}</div>
+      </div>
+      <div class="acard-img">
+        <img src="${a.cover||a.img||''}" alt="${a.title||''}" loading="lazy"
+          onerror="this.parentElement.style.background='linear-gradient(135deg,#e0e7ff,#93c5fd)'">
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ── FOLLOW ── */
+window.toggleFollow = async function(){
+  if(!currentUser){
+    showToast('Sign in to follow MindShift Books');
+    setTimeout(()=>location.href='login.html',1400);
+    return;
+  }
+  const followId = `${currentUser.uid}_official`;
+  const ref = doc(db,'follows',followId);
+  try{
+    if(isFollowing){
+      await deleteDoc(ref);
+      isFollowing = false;
+      showToast('Unfollowed MindShift Books');
+    } else {
+      await setDoc(ref,{
+        followerId: currentUser.uid,
+        followingId: 'official',
+        createdAt: serverTimestamp()
+      });
+      isFollowing = true;
+      showToast('Following MindShift Books ✓');
+    }
+    updateFollowBtn();
+    loadFollowerCount();
+  }catch(e){ showToast('Something went wrong'); }
+};
+
+function updateFollowBtn(){
+  const btn = document.getElementById('followBtn');
+  if(isFollowing){
+    btn.className = 'btn-follow following';
+    btn.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> Following`;
+  } else {
+    btn.className = 'btn-follow';
+    btn.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg> Follow`;
+  }
+}
+
+/* ── FOLLOWERS SHEET ── */
+window.showFollowers = async function(type){
+  document.getElementById('sheetTitle').textContent = 'Followers';
+  document.getElementById('followList').innerHTML = `<div style="padding:24px;text-align:center;color:var(--mute)">Loading…</div>`;
+  document.getElementById('followSheet').classList.add('show');
+  document.getElementById('sheetBg').classList.add('show');
+  try{
+    const q = query(collection(db,'follows'), where('followingId','==','official'));
+    const snap = await getDocs(q);
+    const uids = snap.docs.map(d=>d.data().followerId);
+    if(!uids.length){
+      document.getElementById('followList').innerHTML = `<div style="padding:24px;text-align:center;color:var(--mute);font-size:14px">No followers yet.</div>`;
+      return;
+    }
+
+    // Pre-fetch who current user already follows
+    let myFollowing = new Set();
+    if(currentUser){
+      try{
+        const mq = query(collection(db,'follows'), where('followerId','==',currentUser.uid));
+        const ms = await getDocs(mq);
+        ms.docs.forEach(d=>myFollowing.add(d.data().followingId));
+      }catch{}
+    }
+
+    const profiles = await Promise.all(uids.map(async uid=>{
+      try{ const s=await getDoc(doc(db,'users',uid)); return s.exists()?{uid,...s.data()}:{uid,name:'MindShift Books Member'}; }
+      catch{ return {uid,name:'MindShift Books Member'}; }
+    }));
+
+    document.getElementById('followList').innerHTML = profiles.map(p=>{
+      const isMe = currentUser && p.uid === currentUser.uid;
+      const href = isMe ? '/profile' : `/profile?uid=${p.uid}`;
+      const alreadyFollowing = myFollowing.has(p.uid);
+      return `
+      <div class="follow-item">
+        <div class="follow-av" onclick="location.href='${href}'">
+          ${p.photo?`<img src="${p.photo}" alt="">`:`<span>${(p.name||'R').slice(0,1).toUpperCase()}</span>`}
+        </div>
+        <div style="flex:1;min-width:0">
+          <div class="follow-name" onclick="location.href='${href}'">${p.name||'MindShift Books Member'}${isMe?'<span class="you-tag">You</span>':''}</div>
+          <div class="follow-sub">${p.jobTitle||'Member'}</div>
+        </div>
+        ${!isMe && currentUser ? `<button class="follow-btn${alreadyFollowing?' ing':''}" onclick="quickFollowSheet('${p.uid}',this)" ${alreadyFollowing?'disabled':''}>${alreadyFollowing?'Following':'Follow'}</button>` : ''}
+      </div>`;
+    }).join('');
+  }catch{ document.getElementById('followList').innerHTML=`<div style="padding:20px;color:var(--mute)">Could not load.</div>`; }
+};
+window.closeSheet = function(){
+  document.getElementById('followSheet').classList.remove('show');
+  document.getElementById('sheetBg').classList.remove('show');
+};
+
+window.quickFollowSheet = async function(uid, btn){
+  if(!currentUser) return;
+  const id = `${currentUser.uid}_${uid}`;
+  try{
+    await setDoc(doc(db,'follows',id),{followerId:currentUser.uid,followingId:uid,createdAt:serverTimestamp()});
+    btn.textContent='Following'; btn.classList.add('ing'); btn.disabled=true;
+  }catch{}
+};
+
+/* ── HELPERS ── */
+function fmtNum(n){
+  if(n>=1000000) return (n/1000000).toFixed(1).replace('.0','')+'M';
+  if(n>=1000) return (n/1000).toFixed(1).replace('.0','')+'K';
+  return n||'0';
+}
+window.showToast = function(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('on');
+  setTimeout(()=>t.classList.remove('on'),2800);
+};
+
+init();
+</script>
+</body>
+</html>
