@@ -78,17 +78,25 @@
   // had set it — causing two account/init calls, and two welcome emails.
   let accountInitPromise = null;
 
-  function initAccountOnServer(name) {
+  // Set once initAccountOnServer's request resolves — redirectAfterAuth()
+  // reads this to decide whether THIS sign-in was a brand-new account
+  // (send to /welcome for onboarding) or a returning one (skip straight
+  // to the store), instead of guessing from which page the request
+  // started on.
+  let lastAccountInit = null;
+
+  function initAccountOnServer(name, username) {
     if (accountInitPromise) return accountInitPromise;
     accountInitPromise = (async () => {
       try {
         const token = await auth.currentUser.getIdToken();
         const affCode = getPendingAffCode();
-        await fetch('/api/account/init', {
+        const res = await fetch('/api/account/init', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ name: name || null, affCode: affCode || null })
+          body: JSON.stringify({ name: name || null, username: username || null, affCode: affCode || null })
         });
+        lastAccountInit = res.ok ? await res.json().catch(() => null) : null;
         // Sent once — whether or not it actually applied (it only applies to
         // a genuinely brand-new account server-side), there's no reason to
         // keep resending it on every later sign-in.
@@ -127,10 +135,10 @@
     await initAccountOnServer(null);
   }
 
-  async function signUpEmail(email, password, name) {
+  async function signUpEmail(email, password, name, username) {
     const cred = await auth.createUserWithEmailAndPassword(email, password);
     if (name) await cred.user.updateProfile({ displayName: name });
-    await initAccountOnServer(name || null);
+    await initAccountOnServer(name || null, username || null);
   }
 
   // ---------------- Forgot / reset password ----------------
@@ -266,11 +274,24 @@
   }
 
   function redirectAfterAuth() {
-    // After a brand-new sign-up, land on the one-time welcome screen
-    // instead of dropping straight into the store. /login never goes
-    // through here, so existing users signing in are unaffected.
-    if (window.location.pathname === '/signup') {
-      window.location.href = '/welcome?returnTo=' + encodeURIComponent(getReturnTo());
+    // After a brand-new sign-up, land on the one-time onboarding screen
+    // (pick interests, confirm handle) instead of dropping straight into
+    // the store. Gated on isNewAccount from the server response — not just
+    // "did this start on /signup" — so a returning user whose Google
+    // account happens to already exist never sees onboarding again, even
+    // if they landed on /signup by mistake and signed in from there.
+    // Falls back to the old path-based guess only if that response is
+    // unavailable (e.g. the /api/account/init call itself failed).
+    //
+    // lastAccountInit lives in THIS page's in-memory closure only — it does
+    // not survive the full navigation to /welcome, so isNewAccount and the
+    // claimed username are passed along as query params rather than relied
+    // on there.
+    const isNew = lastAccountInit ? lastAccountInit.isNewAccount : (window.location.pathname === '/signup');
+    if (isNew) {
+      const uname = (lastAccountInit && lastAccountInit.username) || '';
+      window.location.href = '/welcome?returnTo=' + encodeURIComponent(getReturnTo()) +
+        (uname ? '&u=' + encodeURIComponent(uname) : '');
       return;
     }
     window.location.href = getReturnTo();
@@ -378,8 +399,8 @@
           <button type="button" class="icon-btn acct-icon-btn" id="acctTrigger" aria-label="My Account">${ACCOUNT_ICON_SVG}</button>
           <div class="acct-dropdown" id="acctDropdown">
             <div class="acct-email">${(user.email || '').replace(/</g, '&lt;')}</div>
-            <a href="/account#orders">Order History</a>
-            <a href="/account#details">My Details</a>
+            <a href="/profile">My Profile</a>
+            <a href="/settings">Settings</a>
             <button type="button" id="acctSignOutBtn">Sign Out</button>
           </div>
         </div>`;
@@ -507,6 +528,11 @@
     friendlyAuthError,
     redirectAfterAuth,
     getReturnTo,
+    // The username /api/account/init just claimed for THIS sign-up (auto-
+    // generated for Google/Facebook, or the one typed on /signup) — read by
+    // /welcome so it can show "you're @handle" without a second round trip.
+    // Null until initAccountOnServer's request resolves.
+    getLastAccountInit: () => lastAccountInit,
     isAuthStateKnown: () => authStateKnown,
     // Fires once, with the user (or null), whether auth already resolved
     // before this was called or resolves later. Use this instead of (or

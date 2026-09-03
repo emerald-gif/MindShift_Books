@@ -1,0 +1,1594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Profile - MindShift Books</title>
+<meta name="description" content="View and edit your MindShift Books profile."/>
+<meta name="robots" content="noindex, nofollow"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --p:#4f46e5;--p2:#06b6d4;--g:linear-gradient(90deg,#4f46e5,#06b6d4);
+  --txt:#0f172a;--sub:#6b7280;--mute:#9ca3af;
+  --bg:#f8fafc;--card:#fff;--border:#e5e7eb;
+  --green:#10b981;--red:#ef4444;--radius:16px;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh}
+
+/* ── SHARED MINDSHIFT HEADER / SEARCH / SIDEBAR (copied verbatim from styles.css — see the same
+   block in articles.html; keep all copies in sync if styles.css changes) ── */
+.sticky-header-stack{position:sticky;top:0;z-index:1000}
+.sticky-header-stack header:first-child{position:relative;left:0;right:0;background:white;display:flex;flex-direction:column;gap:10px;padding:16px 20px 18px;box-shadow:0 2px 12px rgba(0,0,0,0.06)}
+.sticky-header-stack .header-top{display:flex;align-items:center;justify-content:space-between;width:100%;flex-wrap:nowrap;gap:8px}
+.sticky-header-stack header:first-child h1{font-size:1.45rem;font-weight:700;display:flex;align-items:center;gap:10px;min-width:0;overflow:hidden;margin:0}
+.sticky-header-stack header:first-child h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.header-icon-group{display:flex;align-items:center;gap:4px;flex-shrink:0}
+.icon-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;border:none;background:transparent;color:#1e293b;cursor:pointer;transition:background-color 150ms ease,color 150ms ease;padding:0}
+.icon-btn:hover{background-color:#f1f5f9;color:#4f46e5}
+.icon-btn:active{background-color:#e6e9ee}
+.sidebar{position:fixed;top:0;left:-300px;width:280px;height:100%;background:#111827;padding-top:84px;padding-bottom:90px;transition:left 0.32s ease;z-index:2000;border-right:1px solid rgba(255,255,255,0.04);color:#fff;overflow-y:auto}
+.sidebar .logo-row{display:flex;align-items:center;gap:12px;padding:18px 20px;position:absolute;top:16px;left:12px}
+.sidebar img{width:36px;height:36px;border-radius:6px}
+.sidebar ul{list-style:none;margin-top:8px}
+.sidebar li{padding:16px 20px;font-weight:600;border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer}
+.sidebar-close-btn{position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.06);color:#fff;font-size:1.15rem;font-weight:800;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:1}
+.sidebar-close-btn:active{background:rgba(255,255,255,0.14)}
+.sidebar-auth-cta{padding:16px 20px;margin-top:6px}
+.sidebar-auth-icon{font-size:1.3rem;margin-bottom:4px}
+.sidebar-auth-text{color:#e2e8f0;font-size:0.78rem;line-height:1.4;margin-bottom:12px}
+.sidebar-auth-cta .btn{display:block;width:100%;padding:9px 10px;font-size:0.8rem;text-decoration:none;margin-bottom:8px;text-align:center;border-radius:10px;font-weight:700}
+.sidebar-auth-cta .btn:last-child{margin-bottom:0}
+.sidebar-auth-signup{background:linear-gradient(90deg,#4f46e5,#06b6d4);color:#fff}
+.sidebar-auth-login{background:rgba(255,255,255,0.08);color:#fff;border:1px solid rgba(255,255,255,0.3)!important}
+.sidebar-auth-login:hover{background:rgba(255,255,255,0.16)}
+/* ── /SHARED HEADER ── */
+
+/* ── PAGE-LEVEL BACK BAR (sits under the shared header, inside the same sticky stack) ── */
+.hdr{position:sticky;top:0;z-index:100;background:rgba(248,247,255,.92);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);padding:0 16px;height:56px;
+  display:flex;align-items:center;justify-content:space-between}
+.sticky-header-stack .hdr{position:relative}
+.btn-back{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--border);
+  background:var(--card);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt)}
+.btn-back svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.hdr-title{font-size:15px;font-weight:800;color:var(--txt);flex:1;text-align:center}
+.hdr-action{width:36px;display:flex;justify-content:flex-end}
+
+/* You tag */
+.you-tag{display:inline-flex;align-items:center;background:rgba(37,99,235,.12);
+  color:var(--p);font-size:9.5px;font-weight:800;padding:2px 7px;
+  border-radius:99px;margin-left:5px;vertical-align:middle;letter-spacing:.2px}
+
+/* ── COVER BANNER ── */
+.cover-banner{width:100%;height:160px;background:var(--g);position:relative;overflow:hidden}
+.cover-banner img{width:100%;height:100%;object-fit:cover}
+.cover-banner-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(15,10,30,.4))}
+.cover-edit-btn{position:absolute;top:12px;right:12px;background:rgba(0,0,0,.4);backdrop-filter:blur(4px);
+  border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:99px;padding:6px 12px;
+  font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;font-family:inherit}
+.cover-edit-btn svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* ── PROFILE CARD ── */
+.profile-card{background:var(--card);border-radius:0 0 24px 24px;padding:0 16px 20px;
+  border-bottom:1.5px solid var(--border);margin-bottom:12px}
+.avatar-row{display:flex;align-items:flex-end;justify-content:space-between;margin-top:-36px;margin-bottom:12px}
+.avatar{width:80px;height:80px;border-radius:50%;border:3px solid var(--card);
+  background:var(--g);display:flex;align-items:center;justify-content:center;
+  font-size:28px;font-weight:900;color:#fff;overflow:hidden;flex-shrink:0;position:relative}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.avatar-edit{position:absolute;bottom:0;right:0;width:24px;height:24px;background:var(--p);
+  border-radius:50%;border:2px solid var(--card);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.avatar-edit svg{width:11px;height:11px;fill:none;stroke:#fff;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.profile-actions{display:flex;gap:8px;align-items:center}
+
+/* ── CTA ROW (Write / Edit Profile / Follow) ── */
+.profile-cta-row{display:flex;gap:8px;margin-top:14px;margin-bottom:16px}
+.profile-cta-row .btn-follow{flex:1}
+.profile-cta-row .btn-write{flex:1;justify-content:center}
+.profile-cta-row .btn-edit-profile{flex:1;justify-content:center}
+
+.btn-follow{padding:9px 20px;border-radius:99px;background:var(--g);border:none;
+  color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;
+  box-shadow:0 4px 14px rgba(37,99,235,.3);transition:all .2s}
+.btn-follow:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(37,99,235,.4)}
+.btn-follow.following{background:var(--card);color:var(--txt);border:1.5px solid var(--border);
+  box-shadow:none}
+.btn-follow.following:hover{border-color:var(--red);color:var(--red)}
+
+.btn-edit-profile{padding:9px 16px;border-radius:99px;border:1.5px solid var(--border);
+  background:var(--card);font-size:13px;font-weight:700;color:var(--txt);cursor:pointer;
+  font-family:inherit;transition:all .2s;display:flex;align-items:center;gap:5px}
+.btn-edit-profile:hover{border-color:var(--p);color:var(--p)}
+.btn-edit-profile svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+.btn-write{padding:9px 16px;border-radius:99px;background:#e0e7ff;border:none;
+  color:var(--p);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;
+  transition:all .2s;display:flex;align-items:center;gap:5px}
+.btn-write:hover{background:var(--p);color:#fff}
+.btn-write svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+.btn-share{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--border);
+  background:var(--card);display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--txt);transition:all .2s;flex-shrink:0}
+.btn-share:hover{border-color:var(--p);color:var(--p)}
+.btn-share svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* ── EDIT PROFILE SCREEN (full page) ── */
+.edit-screen{position:fixed;inset:0;background:var(--bg);z-index:300;
+  transform:translateX(100%);transition:transform .35s cubic-bezier(.32,0,.15,1);
+  overflow-y:auto;-webkit-overflow-scrolling:touch}
+.edit-screen.show{transform:translateX(0)}
+.edit-screen .hdr{position:sticky}
+
+.profile-name{font-size:20px;font-weight:900;color:var(--txt);margin-bottom:3px}
+.profile-title{font-size:13px;color:var(--p);font-weight:600;margin-bottom:6px}
+.profile-bio{font-size:14px;color:var(--sub);line-height:1.6;margin-bottom:12px}
+.profile-location{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--mute);margin-bottom:14px}
+.profile-location svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* ── SOCIAL LINKS (profile display) ── */
+.social-links-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.social-link-btn{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--border);
+  background:var(--card);display:flex;align-items:center;justify-content:center;
+  color:var(--txt);text-decoration:none;transition:all .2s;flex-shrink:0}
+.social-link-btn:hover{border-color:var(--p);color:var(--p)}
+.social-link-btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* ── SOCIAL LINKS (edit screen) ── */
+.social-counter{font-size:11px;color:var(--sub);margin-bottom:10px;font-weight:600}
+.social-counter.max{color:var(--red)}
+.social-card{border:1.5px solid var(--border);border-radius:14px;overflow:hidden}
+.social-row{display:flex;align-items:center;gap:12px;padding:12px 14px;flex-wrap:wrap;
+  border-bottom:1px solid var(--border)}
+.social-row:last-child{border-bottom:none}
+.social-icon{width:36px;height:36px;border-radius:50%;background:#f3f4f6;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--txt)}
+.social-icon svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.social-name{font-size:13.5px;font-weight:700;color:var(--txt);flex:1}
+.social-toggle{width:30px;height:30px;border-radius:50%;border:none;background:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;color:#10b981;flex-shrink:0;
+  transition:all .2s;font-family:inherit;padding:0}
+.social-toggle svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform .2s}
+.social-toggle.active svg{transform:rotate(45deg);color:var(--red)}
+.social-input{display:none;flex-basis:100%;width:100%;margin-top:10px;padding:10px 12px;
+  border:1.5px solid var(--border);border-radius:10px;font-size:13px;color:var(--txt);
+  font-family:inherit;outline:none;background:var(--card)}
+.social-input.show{display:block}
+.social-input:focus{border-color:var(--p)}
+
+/* ── STATS ── */
+.stats-row{display:flex;gap:0;border-top:1px solid var(--border);padding-top:14px}
+.stat{flex:1;text-align:center;cursor:pointer}
+.stat:not(:last-child){border-right:1px solid var(--border)}
+.stat-num{font-size:18px;font-weight:900;color:var(--txt)}
+.stat-label{font-size:11px;color:var(--mute);font-weight:500;margin-top:2px}
+.stat:hover .stat-num{color:var(--p)}
+
+/* ── TABS ── */
+.tabs{display:flex;background:var(--card);border-bottom:1.5px solid var(--border);
+  position:sticky;top:56px;z-index:90}
+.tab{flex:1;padding:14px 8px;text-align:center;font-size:13px;font-weight:700;
+  color:var(--mute);cursor:pointer;border-bottom:2.5px solid transparent;
+  transition:all .2s;position:relative}
+.tab.active{color:var(--p);border-bottom-color:var(--p)}
+.tab-badge{position:absolute;top:8px;right:calc(50% - 20px);background:var(--p);
+  color:#fff;font-size:10px;font-weight:800;padding:1px 5px;border-radius:99px;min-width:16px}
+
+/* ── ARTICLES LIST ── */
+.articles-section{padding:12px 16px 80px}
+.article-row{background:var(--card);border-radius:var(--radius);border:1.5px solid var(--border);
+  display:flex;gap:12px;padding:12px;margin-bottom:10px;cursor:pointer;
+  transition:box-shadow .2s;align-items:flex-start}
+.article-row:hover{box-shadow:0 4px 20px rgba(0,0,0,.07)}
+.art-thumb{width:72px;height:72px;border-radius:10px;object-fit:cover;flex-shrink:0;
+  background:linear-gradient(135deg,#e0e7ff,#93c5fd)}
+.art-info{flex:1;min-width:0}
+.art-cat{font-size:11px;font-weight:700;color:var(--p);text-transform:uppercase;
+  letter-spacing:.4px;margin-bottom:3px}
+.art-title{font-size:14px;font-weight:700;color:var(--txt);line-height:1.4;margin-bottom:5px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.art-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.art-read{font-size:12px;color:var(--mute)}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:99px;
+  font-size:11px;font-weight:700}
+.badge-pending{background:#fef3c7;color:#92400e}
+.badge-approved{background:#d1fae5;color:#065f46}
+.badge-rejected{background:#fee2e2;color:#991b1b}
+.dot{width:6px;height:6px;border-radius:50%;background:#f59e0b}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.dot{animation:pulse 1.5s ease-in-out infinite}
+
+/* ── EMPTY STATE ── */
+.empty-state{text-align:center;padding:48px 24px}
+.empty-state svg{width:44px;height:44px;color:#d1d5db;margin:0 auto 12px}
+.empty-state p{font-size:14px;color:var(--mute);line-height:1.6;margin-bottom:16px}
+.btn-write-now{padding:10px 20px;border-radius:99px;background:var(--g);border:none;
+  color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+
+/* ── EDIT PROFILE SHEET ── */
+.sheet-bg{position:fixed;inset:0;background:rgba(15,10,30,.5);backdrop-filter:blur(4px);
+  z-index:200;opacity:0;pointer-events:none;transition:opacity .3s}
+.sheet-bg.show{opacity:1;pointer-events:all}
+.sheet{position:fixed;bottom:-100%;left:0;right:0;background:var(--card);
+  border-radius:24px 24px 0 0;padding:0 0 40px;z-index:201;transition:bottom .4s cubic-bezier(.34,1.2,.64,1);
+  max-height:90vh;overflow-y:auto}
+.sheet.show{bottom:0}
+.sheet-handle{width:36px;height:4px;background:var(--border);border-radius:99px;margin:12px auto 0}
+.sheet-title{font-size:16px;font-weight:800;padding:16px 20px 12px;border-bottom:1px solid var(--border)}
+.sheet-body{padding:20px}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:12px;font-weight:700;color:var(--sub);
+  text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px}
+.field input,.field textarea,.field select{width:100%;padding:12px 14px;border:1.5px solid var(--border);
+  border-radius:12px;font-size:14px;color:var(--txt);font-family:inherit;outline:none;
+  background:var(--card);transition:border-color .2s;resize:none}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--p)}
+.field select{appearance:none;-webkit-appearance:none;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;background-size:16px;padding-right:38px}
+.field-hint{font-size:11px;color:var(--sub);margin-top:5px;line-height:1.5}
+.cat-pills{display:flex;flex-wrap:wrap;gap:8px}
+.cat-pill{padding:8px 13px;border-radius:99px;border:1.5px solid var(--border);background:var(--card);font-size:12.5px;font-weight:600;color:var(--txt);cursor:pointer;transition:all .15s;font-family:inherit}
+.cat-pill.sel{background:var(--g);color:#fff;border-color:transparent}
+.char-count{font-size:11px;color:var(--mute);text-align:right;margin-top:5px;font-weight:600}
+.char-count.warn{color:#f59e0b}
+.char-count.max{color:var(--red)}
+.btn-save-profile{width:100%;padding:14px;border-radius:99px;background:var(--g);border:none;
+  color:#fff;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;margin-top:4px;
+  box-shadow:0 4px 20px rgba(37,99,235,.35)}
+
+/* ── FOLLOWERS SHEET ── */
+.follow-list{padding:16px}
+.follow-item{display:flex;align-items:center;gap:12px;padding:10px 0;
+  border-bottom:1px solid var(--border)}
+.follow-item:last-child{border-bottom:none}
+.follow-av{width:42px;height:42px;border-radius:50%;background:var(--g);
+  display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;
+  color:#fff;overflow:hidden;flex-shrink:0;cursor:pointer}
+.follow-av img{width:100%;height:100%;object-fit:cover}
+.follow-name{font-size:14px;font-weight:700;color:var(--txt);cursor:pointer}
+.follow-title{font-size:12px;color:var(--mute)}
+.follow-btn{margin-left:auto;padding:6px 14px;border-radius:99px;border:1.5px solid var(--border);
+  background:transparent;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;
+  transition:all .2s}
+.follow-btn:hover{border-color:var(--p);color:var(--p)}
+.follow-btn.ing{border-color:var(--p);color:var(--p);background:#eef2ff}
+
+/* ── SKELETON LOADER ── */
+.skel{background:linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%);
+  background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:8px}
+.skel-avatar{width:80px;height:80px;border-radius:50%;flex-shrink:0}
+.skel-name{height:22px;width:140px;border-radius:8px}
+.skel-bio-line{height:13px;border-radius:6px}
+.skel-stat{height:18px;width:36px;border-radius:6px;margin:0 auto}
+.skel-art-row{display:flex;gap:12px;padding:12px;background:var(--card);border-radius:var(--radius);border:1.5px solid var(--border);margin-bottom:10px}
+.skel-art-thumb{width:72px;height:72px;border-radius:10px;flex-shrink:0}
+.skel-art-info{flex:1;display:flex;flex-direction:column;gap:8px;justify-content:center}
+
+
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);
+  background:#0f0a1e;color:#fff;padding:12px 20px;border-radius:99px;font-size:14px;
+  font-weight:600;z-index:999;transition:transform .35s cubic-bezier(.34,1.56,.64,1);white-space:nowrap}
+.toast.on{transform:translateX(-50%) translateY(0)}
+</style>
+<script src="/article-categories.js"></script>
+</head>
+<body>
+
+<!-- ══ SHARED MINDSHIFT HEADER + SIDEBAR (matches articles.html / index.html) ══ -->
+<div class="sticky-header-stack">
+<header>
+  <div class="header-top">
+    <h1><a href="/" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;"><img src="/MINDSHIFT.jpg" alt="MindShift logo" style="width:36px;height:36px;border-radius:6px;"></a><span>Profile</span></h1>
+    <div class="header-icon-group">
+      <span class="acct-nav-slot"></span>
+      <div class="notif-wrap" id="notifWrap" style="display:none">
+        <button type="button" class="icon-btn" id="notifBtn" onclick="openNotifPanel()" aria-label="Notifications">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+          <span class="notif-badge" id="notifBadge">0</span>
+        </button>
+      </div>
+      <button type="button" id="sidebarToggle" class="icon-btn" onclick="toggleSidebar()" aria-label="Open menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="22" height="22"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- HEADER -->
+<header class="hdr">
+  <button class="btn-back" onclick="history.back()">
+    <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+  </button>
+  <span class="hdr-title" id="hdrName">Profile</span>
+  <div class="hdr-action" style="width:36px"></div>
+</header>
+</div>
+
+<aside class="sidebar" id="sidebar" aria-hidden="true" data-open="false">
+  <button type="button" class="sidebar-close-btn" onclick="toggleSidebar()" aria-label="Close menu">&times;</button>
+  <div class="logo-row">
+    <img src="/MINDSHIFT.jpg" alt="logo">
+    <div style="font-weight:700">MindShift Books</div>
+  </div>
+  <ul>
+    <li onclick="window.location.href='/'">Bookstore</li>
+    <li onclick="window.location.href='/articles'">Articles</li>
+    <li onclick="window.location.href='/write'">Write an Article</li>
+    <li id="sbProfileLink" style="display:none" onclick="window.location.href='/profile'">My Profile</li>
+    <li id="sbInsightsLink" style="display:none" onclick="window.location.href='/insights'">My Insights</li>
+    <li id="sbSavedLink" style="display:none" onclick="window.location.href='/articles'">Saved Articles</li>
+    <li onclick="window.location.href='/settings'">Settings</li>
+    <li onclick="window.location.href='/wishlist'">My Wishlist</li>
+    <li onclick="window.location.href='/free-ebooks'">Free eBooks</li>
+    <li onclick="window.location.href='/support'">Support</li>
+    <li onclick="window.location.href='/legal'">Terms &amp; Privacy</li>
+    <li onclick="window.location.href='/affiliate'">Become an Affiliate</li>
+  </ul>
+  <div class="sidebar-auth-cta" id="sidebarAuthCta" style="display:none;">
+    <div class="sidebar-auth-icon" aria-hidden="true">✨</div>
+    <div class="sidebar-auth-text">Sign up to write articles, follow authors, and get a feed picked for you.</div>
+    <a href="/signup" class="btn sidebar-auth-signup">Sign Up Free</a>
+    <a href="/login" class="btn sidebar-auth-login">Log In</a>
+  </div>
+</aside>
+<script>
+  function toggleSidebar(){
+    const sidebar = document.getElementById('sidebar');
+    const open = sidebar.getAttribute('data-open') === 'true';
+    sidebar.setAttribute('data-open', open ? 'false' : 'true');
+    sidebar.style.left = open ? '-300px' : '0px';
+    sidebar.setAttribute('aria-hidden', open ? 'true' : 'false');
+  }
+</script>
+<!-- ══ /SHARED HEADER + SIDEBAR ══ -->
+
+<!-- COVER BANNER -->
+<div class="cover-banner" id="coverBanner">
+  <img id="coverImg" src="" alt="" style="display:none">
+  <div class="cover-banner-overlay"></div>
+  <button class="cover-edit-btn" id="coverEditBtn" style="display:none" onclick="openEditSheet()">
+    <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+    Change Cover
+  </button>
+</div>
+
+<!-- PROFILE CARD -->
+<div class="profile-card" id="profileCard">
+  <div class="avatar-row">
+    <div class="avatar" id="avatar"><div class="skel skel-avatar" id="avatarSkel" style="border:3px solid var(--card)"></div></div>
+    <div class="profile-actions" id="profileActions">
+      <!-- filled by JS -->
+    </div>
+  </div>
+  <div id="profileName" class="profile-name"><div class="skel skel-name" id="nameSkel"></div></div>
+  <div id="profileJobTitle" class="profile-title" style="display:none"></div>
+  <div id="profileBio" class="profile-bio" style="display:none"></div>
+  <div id="profileLocation" class="profile-location" style="display:none">
+    <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+    <span id="profileLocationText"></span>
+  </div>
+  <div id="profileSocialLinks" class="social-links-row" style="display:none"></div>
+  <!-- CTA buttons row — populated by JS -->
+  <div class="profile-cta-row" id="profileCta"></div>
+  <div class="stats-row">
+    <div class="stat" onclick="document.getElementById('articlesSection').scrollIntoView({behavior:'smooth'})">
+      <div class="stat-num" id="statArticles"><div class="skel skel-stat" id="statArticlesSkel"></div></div>
+      <div class="stat-label">Articles</div>
+    </div>
+    <div class="stat" onclick="showFollowers('followers')">
+      <div class="stat-num" id="statFollowers"><div class="skel skel-stat" id="statFollowersSkel"></div></div>
+      <div class="stat-label">Followers</div>
+    </div>
+    <div class="stat" onclick="showFollowers('following')">
+      <div class="stat-num" id="statFollowing"><div class="skel skel-stat" id="statFollowingSkel"></div></div>
+      <div class="stat-label">Following</div>
+    </div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs" id="tabsRow">
+  <div class="tab active" id="tabPublished" onclick="switchTab('published')">Published</div>
+  <!-- pending/rejected tabs only for owner — added by JS -->
+</div>
+
+<!-- ARTICLES -->
+<div class="articles-section" id="articlesSection">
+  <div class="skel-art-row">
+    <div class="skel skel-art-thumb"></div>
+    <div class="skel-art-info">
+      <div class="skel" style="height:11px;width:60px;border-radius:6px"></div>
+      <div class="skel" style="height:15px;width:90%"></div>
+      <div class="skel" style="height:13px;width:70%"></div>
+      <div class="skel" style="height:11px;width:50%"></div>
+    </div>
+  </div>
+  <div class="skel-art-row">
+    <div class="skel skel-art-thumb"></div>
+    <div class="skel-art-info">
+      <div class="skel" style="height:11px;width:60px;border-radius:6px"></div>
+      <div class="skel" style="height:15px;width:90%"></div>
+      <div class="skel" style="height:13px;width:70%"></div>
+      <div class="skel" style="height:11px;width:50%"></div>
+    </div>
+  </div>
+  <div class="skel-art-row">
+    <div class="skel skel-art-thumb"></div>
+    <div class="skel-art-info">
+      <div class="skel" style="height:11px;width:60px;border-radius:6px"></div>
+      <div class="skel" style="height:15px;width:90%"></div>
+      <div class="skel" style="height:13px;width:70%"></div>
+      <div class="skel" style="height:11px;width:50%"></div>
+    </div>
+  </div>
+  <div class="skel-art-row">
+    <div class="skel skel-art-thumb"></div>
+    <div class="skel-art-info">
+      <div class="skel" style="height:11px;width:60px;border-radius:6px"></div>
+      <div class="skel" style="height:15px;width:90%"></div>
+      <div class="skel" style="height:13px;width:70%"></div>
+      <div class="skel" style="height:11px;width:50%"></div>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT PROFILE SCREEN (full page) -->
+<div class="edit-screen" id="editScreen">
+  <header class="hdr">
+    <button class="btn-back" onclick="closeEditSheet()">
+      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <span class="hdr-title">Edit Profile</span>
+    <div class="hdr-action"></div>
+  </header>
+  <div class="sheet-body">
+    <div class="field"><label>Display Name</label><input id="eName" type="text" maxlength="50" placeholder="Your full name"></div>
+    <div class="field">
+      <label>Username <span style="color:#e11d48;font-size:11px">(required)</span></label>
+      <div style="position:relative">
+        <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--mute,#94a3b8);font-weight:700;font-size:14px;pointer-events:none">@</span>
+        <input id="eUsername" type="text" maxlength="20" placeholder="your_username" autocomplete="off"
+          style="padding-left:26px"
+          oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9_]/g,'');debounceUsernameCheck(this.value)">
+      </div>
+      <div id="usernameStatus" style="font-size:12px;margin-top:5px;font-weight:600;min-height:16px"></div>
+      <small style="color:var(--mute,#94a3b8);font-size:11px">3–20 chars · letters, numbers, underscores only · cannot be removed</small>
+    </div>
+    <div class="field"><label>Title / Tagline</label><input id="eTitle" type="text" maxlength="100" placeholder="e.g. Writer · Mindset Coach · Founder"></div>
+    <div class="field">
+      <label>Interests</label>
+      <div class="cat-pills" id="eCategoryPills"></div>
+      <div class="field-hint">Shapes the articles MindShift Books recommends to you. Pick as many as fit.</div>
+    </div>
+    <div class="field">
+      <label>Bio</label>
+      <textarea id="eBio" rows="3" maxlength="160" placeholder="Tell the community about yourself…" oninput="updateBioCount()"></textarea>
+      <div class="char-count" id="bioCharCount">0 / 160</div>
+    </div>
+    <div class="field"><label>Location</label><input id="eLocation" type="text" maxlength="60" placeholder="e.g. Lagos, Nigeria"></div>
+    <div class="field">
+      <label>Profile Photo</label>
+      <div class="upload-picker" id="photoPickerZone" onclick="window._kvOpenProfilePhoto()" style="display:flex;align-items:center;gap:12px;padding:10px 14px;border:1.5px dashed var(--border);border-radius:10px;cursor:pointer;background:var(--bg);transition:border-color .2s">
+        <div id="photoPickerThumb" style="width:44px;height:44px;border-radius:50%;background:var(--border);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--mute)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        </div>
+        <div>
+          <div id="photoPickerLabel" style="font-size:13px;color:var(--txt);font-weight:500">Tap to upload profile photo</div>
+          <div style="font-size:11px;color:var(--mute);margin-top:2px">JPG, PNG, WebP · max 5MB</div>
+        </div>
+        <div id="photoPickerSpinner" style="display:none;margin-left:auto">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--p)" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 11-6.3-8.6"/></svg>
+        </div>
+      </div>
+      <input type="hidden" id="ePhoto">
+    </div>
+    <div class="field">
+      <label>Cover Photo</label>
+      <div class="upload-picker" id="coverPickerZone" onclick="window._kvOpenProfileCover()" style="display:flex;align-items:center;gap:12px;padding:10px 14px;border:1.5px dashed var(--border);border-radius:10px;cursor:pointer;background:var(--bg);transition:border-color .2s">
+        <div id="coverPickerThumb" style="width:44px;height:28px;border-radius:6px;background:var(--border);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--mute)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        </div>
+        <div>
+          <div id="coverPickerLabel" style="font-size:13px;color:var(--txt);font-weight:500">Tap to upload cover photo</div>
+          <div style="font-size:11px;color:var(--mute);margin-top:2px">JPG, PNG, WebP · max 5MB</div>
+        </div>
+        <div id="coverPickerSpinner" style="display:none;margin-left:auto">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--p)" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 11-6.3-8.6"/></svg>
+        </div>
+      </div>
+      <input type="hidden" id="eCover">
+    </div>
+    <div class="field">
+      <label>Social Links</label>
+      <div class="social-counter" id="socialCounter">0 of 5 links added</div>
+      <div class="social-card" id="socialCard"></div>
+      <div class="field-hint">Add up to 5 links — tap + to add a platform. They'll show as tappable icons on your profile.</div>
+    </div>
+    <button class="btn-save-profile" onclick="saveProfile()">Save Changes</button>
+  </div>
+</div>
+
+<!-- FOLLOWERS SHEET -->
+<div class="sheet-bg" id="followBg" onclick="closeFollowSheet()"></div>
+<div class="sheet" id="followSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title" id="followSheetTitle">Followers</div>
+  <div class="follow-list" id="followList"></div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
+import { getAuth, onAuthStateChanged, updateProfile } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
+import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, query, where, getDocs, orderBy, serverTimestamp, onSnapshot, addDoc, writeBatch, increment, limit }
+  from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
+import { initNotificationUI } from '/notifications.js';
+
+const fbApp = initializeApp({
+  apiKey:"AIzaSyDTn70s1_uIiSOR6lPLY_nKh8Ff1FViFCs",
+  authDomain:"mindshiftbooks-c4451.firebaseapp.com",
+  projectId:"mindshiftbooks-c4451",
+  storageBucket:"mindshiftbooks-c4451.firebasestorage.app",
+  messagingSenderId:"388697987853",
+  appId: "1:388697987853:web:f023df9412c22285012e44",
+  measurementId: "G-CHPJDQ4W08"
+});
+const auth = getAuth(fbApp);
+const db   = getFirestore(fbApp, 'default');
+const notif = initNotificationUI({
+  db, getCurrentUser: () => currentUser, getMyProfile: () => myProfile,
+  fs: { collection, query, where, onSnapshot, getDocs, orderBy, limit, addDoc, writeBatch, serverTimestamp, doc, getDoc, setDoc, increment }
+});
+
+const params     = new URLSearchParams(location.search);
+const profileUid = params.get('uid');      // legacy / direct uid link
+// Support both ?username=foo  AND  clean URL /profile/@foo
+const _pathUsername = location.pathname.match(/\/profile\/@([^/?#]+)/)?.[1];
+const profileUsername = _pathUsername || params.get('username');
+let currentUser = null;
+let myProfile = null;
+let isOwner = false;
+let profileData = {};
+let activeTab = 'published';
+let isFollowing = false;
+let allSubmissions = [];
+
+/* ── SOCIAL LINKS CONFIG ── */
+const MAX_SOCIAL_LINKS = 5;
+const SOCIAL_PLATFORMS = [
+  {key:'facebook',  label:'Facebook',    placeholder:'https://facebook.com/yourname',
+    icon:'<path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>'},
+  {key:'instagram', label:'Instagram',   placeholder:'https://instagram.com/yourname',
+    icon:'<rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>'},
+  {key:'tiktok',    label:'TikTok',      placeholder:'https://tiktok.com/@yourname',
+    icon:'<path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/>'},
+  {key:'youtube',   label:'YouTube',     placeholder:'https://youtube.com/@yourchannel',
+    icon:'<path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17"/><path d="m10 15 5-3-5-3z"/>'},
+  {key:'linkedin',  label:'LinkedIn',    placeholder:'https://linkedin.com/in/yourname',
+    icon:'<path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/>'},
+  {key:'twitter',   label:'Twitter / X', placeholder:'https://x.com/yourname',
+    icon:'<path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5 .5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/>'},
+  {key:'github',    label:'GitHub',      placeholder:'https://github.com/yourname',
+    icon:'<path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/>'},
+  {key:'website',   label:'Website',     placeholder:'https://yourwebsite.com',
+    icon:'<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>'}
+];
+
+function normalizeUrl(url){
+  url = url.trim();
+  if(!url) return '';
+  if(!/^https?:\/\//i.test(url)) return `https://${url}`;
+  return url;
+}
+function getActiveSocialCount(){
+  return SOCIAL_PLATFORMS.filter(p=>{
+    const el = document.getElementById(`social-${p.key}`);
+    return el && (el.classList.contains('show') || el.value.trim());
+  }).length;
+}
+function updateSocialCounter(){
+  const el = document.getElementById('socialCounter');
+  if(!el) return;
+  const count = getActiveSocialCount();
+  el.textContent = `${count} of ${MAX_SOCIAL_LINKS} links added`;
+  el.classList.toggle('max', count>=MAX_SOCIAL_LINKS);
+}
+window.toggleSocialRow = function(key){
+  const input = document.getElementById(`social-${key}`);
+  const toggle = document.getElementById(`socialToggle-${key}`);
+  if(!input || !toggle) return;
+  const isOpen = input.classList.contains('show');
+  if(!isOpen){
+    if(getActiveSocialCount() >= MAX_SOCIAL_LINKS){
+      showToast(`You can add up to ${MAX_SOCIAL_LINKS} social links`);
+      return;
+    }
+    input.classList.add('show');
+    toggle.classList.add('active');
+    input.focus();
+  } else {
+    input.classList.remove('show');
+    input.value = '';
+    toggle.classList.remove('active');
+  }
+  updateSocialCounter();
+};
+window.onSocialInputChange = function(){ updateSocialCounter(); };
+function initSocialLinksUI(){
+  const card = document.getElementById('socialCard');
+  if(!card) return;
+  card.innerHTML = SOCIAL_PLATFORMS.map(p => `
+    <div class="social-row" data-platform="${p.key}">
+      <div class="social-icon"><svg viewBox="0 0 24 24">${p.icon}</svg></div>
+      <div class="social-name">${p.label}</div>
+      <button type="button" class="social-toggle" id="socialToggle-${p.key}" onclick="toggleSocialRow('${p.key}')" aria-label="Add ${p.label} link">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+      <input type="url" class="social-input" id="social-${p.key}" placeholder="${p.placeholder}" oninput="onSocialInputChange()">
+    </div>`).join('');
+  updateSocialCounter();
+}
+initSocialLinksUI();
+
+/* ── AUTH ── */
+onAuthStateChanged(auth, async user => {
+  currentUser = user;
+
+  // Sidebar auth-only / guest-only sections (independent of whose profile is being viewed)
+  const sbProfile = document.getElementById('sbProfileLink');
+  const sbInsights = document.getElementById('sbInsightsLink');
+  const sbSaved = document.getElementById('sbSavedLink');
+  const sbAuthCta = document.getElementById('sidebarAuthCta');
+  if(sbProfile) sbProfile.style.display = user ? 'block' : 'none';
+  if(sbInsights) sbInsights.style.display = user ? 'block' : 'none';
+  if(sbSaved) sbSaved.style.display = user ? 'block' : 'none';
+  if(sbAuthCta) sbAuthCta.style.display = user ? 'none' : 'block';
+  if(user) notif.initNotifications(user.uid); else notif.clearNotifications();
+
+  // ── Resolve uid: support both ?uid= (legacy) and ?username= (new) ──
+  let resolvedUid = profileUid;
+  if (!resolvedUid && profileUsername) {
+    try {
+      const unSnap = await getDoc(doc(db, 'usernames', profileUsername.toLowerCase()));
+      if (unSnap.exists()) resolvedUid = unSnap.data().uid;
+    } catch(e) { console.warn('Username lookup failed:', e.message); }
+    if (!resolvedUid) {
+      // Username not found — show a not-found state
+      document.title = 'Profile not found — MindShift Books';
+      ['nameSkel','avatarSkel','statArticlesSkel','statFollowersSkel','statFollowingSkel']
+        .forEach(id=>{ const el=document.getElementById(id); if(el) el.remove(); });
+      const sec = document.getElementById('articlesSection');
+      if(sec) sec.innerHTML=`<div class="empty-state"><p>No profile found for @${profileUsername}.</p></div>`;
+      return;
+    }
+  }
+
+  const uid = resolvedUid || (user ? user.uid : null);
+  if(!uid){ window.location.href='/login'; return; }
+  isOwner = user && user.uid === uid;
+  await loadProfile(uid);
+  if(isOwner) initPickerHandlers();
+
+  // For non-owner visitors: load their own profile so notifications have correct actorUsername
+  if(user && !isOwner && !myProfile){
+    try{
+      const vs = await getDoc(doc(db,'users',user.uid));
+      if(vs.exists()){
+        const vd = vs.data();
+        myProfile = { name: vd.name||user.displayName||'Someone', photo: vd.photo||user.photoURL||'', username: vd.username||'' };
+      } else {
+        myProfile = { name: user.displayName||'Someone', photo: user.photoURL||'', username: '' };
+      }
+    }catch{ myProfile = { name: user.displayName||'Someone', photo: user.photoURL||'', username: '' }; }
+  }
+});
+
+// Safety net: if skeleton is still visible after 8s, force-clear it
+setTimeout(()=>{
+  ['nameSkel','avatarSkel','statArticlesSkel','statFollowersSkel','statFollowingSkel']
+    .forEach(id=>{ const el=document.getElementById(id); if(el) el.remove(); });
+  const sec = document.getElementById('articlesSection');
+  if(sec && sec.querySelector('.skel-art-row')){
+    sec.innerHTML=`<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><p>Could not load articles.<br>Check your connection and try again.</p></div>`;
+  }
+  ['statArticles','statFollowers','statFollowing'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el && el.querySelector('.skel')) el.textContent='0';
+  });
+}, 8000);
+
+/* ── LOAD PROFILE ── */
+async function loadProfile(uid){
+  try{
+    const snap = await getDoc(doc(db,'users',uid));
+    profileData = snap.exists() ? {uid,...snap.data()} : {uid, name: 'MindShift Books User'};
+  }catch{ profileData = {uid: profileUid||currentUser?.uid, name:'MindShift Books User'}; }
+
+  // If owner, fill in Google photo/name as defaults and auto-sync to Firestore
+  if(isOwner && currentUser){
+    const gPhoto = currentUser.photoURL || '';
+    const gName  = currentUser.displayName || '';
+    if(!profileData.photo && gPhoto){
+      profileData.photo = gPhoto;
+      // Persist Google photo so other pages see it
+      try{ await setDoc(doc(db,'users',currentUser.uid),{photo:gPhoto},{merge:true}); }catch{}
+    }
+    if(!profileData.name || profileData.name==='MindShift Books User'){
+      profileData.name = gName || 'MindShift Books User';
+      if(gName) try{ await setDoc(doc(db,'users',currentUser.uid),{name:gName},{merge:true}); }catch{}
+    }
+    myProfile = { name: profileData.name, photo: profileData.photo || '', username: profileData.username || '' };
+    // Cache for other pages (articles.html goProfile, etc.)
+    try{ localStorage.setItem(`mindshift_my_profile_${currentUser.uid}`, JSON.stringify(myProfile)); }catch{}
+  }
+
+  renderProfileHeader();
+  // loadArticles first so allSubmissions is populated for loadStats article count
+  await loadArticles();
+  await Promise.all([loadStats(), loadFollowState()]);
+  // write profile_view notification (once per session)
+  if(currentUser && !isOwner) notif.trackProfileView(profileData.uid);
+}
+
+/* ── RENDER HEADER ── */
+function renderProfileHeader(){
+  // Clear skeleton placeholders
+  ['nameSkel','avatarSkel','statArticlesSkel','statFollowersSkel','statFollowingSkel'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.remove();
+  });
+  const av = document.getElementById('avatar');
+  const nameEl = document.getElementById('profileName');
+  const hdrName = document.getElementById('hdrName');
+  const actions = document.getElementById('profileActions');
+
+  // cover
+  if(profileData.cover){
+    const img = document.getElementById('coverImg');
+    img.src = profileData.cover; img.style.display='block';
+  }
+  if(isOwner) document.getElementById('coverEditBtn').style.display='flex';
+
+  // avatar — custom photo first, then Google photo for owner
+  const displayPhoto = profileData.photo || (isOwner && currentUser?.photoURL ? currentUser.photoURL : '');
+  if(displayPhoto){
+    av.innerHTML = `<img src="${displayPhoto}" alt="">`;
+    if(isOwner) av.insertAdjacentHTML('beforeend',`<div class="avatar-edit" id="avatarEditBtn" onclick="openEditSheet()"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>`);
+  } else {
+    const init = (profileData.name||'U').slice(0,1).toUpperCase();
+    av.innerHTML = `<span>${init}</span>`;
+    if(isOwner) av.insertAdjacentHTML('beforeend',`<div class="avatar-edit" id="avatarEditBtn" onclick="openEditSheet()"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>`);
+  }
+
+  // name
+  const name = profileData.name || 'MindShift Books User';
+  nameEl.textContent = name;
+  hdrName.textContent = name;
+
+  // job title
+  if(profileData.jobTitle){
+    document.getElementById('profileJobTitle').textContent = profileData.jobTitle;
+    document.getElementById('profileJobTitle').style.display='block';
+  }
+  // bio
+  if(profileData.bio){
+    document.getElementById('profileBio').textContent = profileData.bio;
+    document.getElementById('profileBio').style.display='block';
+  }
+  // location
+  if(profileData.location){
+    document.getElementById('profileLocationText').textContent = profileData.location;
+    document.getElementById('profileLocation').style.display='flex';
+  }
+  // social links
+  const socialWrap = document.getElementById('profileSocialLinks');
+  const savedSocials = profileData.socialLinks || {};
+  const activeSocials = SOCIAL_PLATFORMS.filter(p => savedSocials[p.key]);
+  if(activeSocials.length){
+    socialWrap.innerHTML = activeSocials.map(p => `
+      <a class="social-link-btn" href="${savedSocials[p.key]}" target="_blank" rel="noopener noreferrer" aria-label="${p.label}" title="${p.label}">
+        <svg viewBox="0 0 24 24">${p.icon}</svg>
+      </a>`).join('');
+    socialWrap.style.display='flex';
+  } else {
+    socialWrap.style.display='none';
+  }
+
+  // action buttons
+  const cta = document.getElementById('profileCta');
+  const shareBtn = `
+      <button class="btn-share" onclick="shareProfile()" aria-label="Share profile" title="Share profile">
+        <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+      </button>`;
+  if(isOwner){
+    // Avatar row: single icon — Settings & Activity (insights + share live inside settings.html)
+    actions.innerHTML = `
+      <a class="btn-share" href="/settings" aria-label="Settings &amp; Activity" title="Settings &amp; Activity" style="text-decoration:none">
+        <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      </a>`;
+    // CTA row: Write + Edit Profile — full-width, spaced
+    if(cta) cta.innerHTML = `
+      <button class="btn-write" onclick="window.location.href='/write'">
+        <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Write
+      </button>
+      <button class="btn-edit-profile" onclick="openEditSheet()">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        Edit Profile
+      </button>`;
+    // add pending/rejected tabs for owner
+    document.getElementById('tabsRow').innerHTML = `
+      <div class="tab active" id="tabPublished" onclick="switchTab('published')">Published</div>
+      <div class="tab" id="tabPending" onclick="switchTab('pending')">Under Review</div>
+      <div class="tab" id="tabRejected" onclick="switchTab('rejected')">Rejected</div>`;
+  } else {
+    // Visitor: share icon in avatar row, Follow button in cta row
+    actions.innerHTML = `${shareBtn}`;
+    if(cta && currentUser) cta.innerHTML = `<button class="btn-follow" id="followBtn" onclick="toggleFollow()" style="flex:1">${isFollowing?'Following':'Follow'}</button>`;
+  }
+}
+
+/* ── STATS ── */
+async function loadStats(){
+  const uid = profileData.uid;
+
+  // Articles count — if allSubmissions is already loaded by loadArticles(), use it.
+  // Otherwise fall back to a simple single-field query (no composite index needed).
+  try{
+    if(allSubmissions.length >= 0){
+      // Use in-memory data if available (loadArticles ran first via Promise.all)
+      const approved = allSubmissions.filter(s=>s.status==='approved').length;
+      document.getElementById('statArticles').textContent = approved;
+    } else {
+      const pubQ = query(collection(db,'submissions'), where('userId','==',uid));
+      const pubSnap = await getDocs(pubQ);
+      const count = pubSnap.docs.filter(d=>d.data().status==='approved').length;
+      document.getElementById('statArticles').textContent = count;
+    }
+  }catch(e){
+    console.warn('loadStats articles failed:', e?.code);
+    const el = document.getElementById('statArticles');
+    if(el) el.textContent = '0';
+  }
+
+  // Follower / following counts — read from cached fields on the users doc (zero extra reads).
+  // If the fields don't exist yet (old accounts), fall back to a one-time getDocs count.
+  try{
+    const hasFollowerCount = typeof profileData.followerCount === 'number';
+    const hasFollowingCount = typeof profileData.followingCount === 'number';
+
+    if(hasFollowerCount){
+      const el = document.getElementById('statFollowers');
+      if(el) el.textContent = profileData.followerCount;
+    } else {
+      // First-time fallback: count the follows collection, then cache the result
+      const folQ = query(collection(db,'follows'), where('followingId','==',uid));
+      const folSnap = await getDocs(folQ);
+      const count = folSnap.size;
+      const el = document.getElementById('statFollowers');
+      if(el) el.textContent = count;
+      // Cache it so next load is instant
+      try{ await setDoc(doc(db,'users',uid),{followerCount:count},{merge:true}); }catch{}
+    }
+
+    if(hasFollowingCount){
+      const el = document.getElementById('statFollowing');
+      if(el) el.textContent = profileData.followingCount;
+    } else {
+      const ingQ = query(collection(db,'follows'), where('followerId','==',uid));
+      const ingSnap = await getDocs(ingQ);
+      const count = ingSnap.size;
+      const el = document.getElementById('statFollowing');
+      if(el) el.textContent = count;
+      try{ await setDoc(doc(db,'users',uid),{followingCount:count},{merge:true}); }catch{}
+    }
+  }catch(e){
+    console.warn('loadStats counts failed:', e?.code);
+    const fe = document.getElementById('statFollowers');
+    const ie = document.getElementById('statFollowing');
+    if(fe) fe.textContent = '0';
+    if(ie) ie.textContent = '0';
+  }
+}
+
+/* ── FOLLOW STATE ── */
+async function loadFollowState(){
+  if(!currentUser || isOwner) return;
+  try{
+    const id = `${currentUser.uid}_${profileData.uid}`;
+    const s = await getDoc(doc(db,'follows',id));
+    isFollowing = s.exists();
+    const btn = document.getElementById('followBtn');
+    if(btn){ btn.textContent = isFollowing?'Following':'Follow'; btn.classList.toggle('following',isFollowing); }
+  }catch{}
+}
+
+/* ── SHARE PROFILE ── */
+window.shareProfile = async function(){
+  // Clean URL: /profile/@username  or fallback to ?uid=
+  const url = profileData.username
+    ? `${location.origin}/profile/@${encodeURIComponent(profileData.username)}`
+    : `${location.origin}/profile?uid=${profileData.uid}`;
+  const name = profileData.name || 'this profile';
+  const shareData = {
+    title: `${name} on MindShift Books`,
+    text:  `Check out ${name}'s profile on MindShift Books`,
+    url
+  };
+  if(navigator.share){
+    try{ await navigator.share(shareData); }
+    catch(e){ /* user cancelled */ }
+    return;
+  }
+  try{
+    await navigator.clipboard.writeText(url);
+    showToast('Profile link copied to clipboard');
+  }catch{
+    showToast('Could not copy link');
+  }
+};
+
+/* ── TOGGLE FOLLOW ── */
+window.toggleFollow = async function(){
+  if(!currentUser){ window.location.href='/login'; return; }
+  const btn = document.getElementById('followBtn');
+  const wasFollowing = isFollowing;
+  isFollowing = !wasFollowing;
+  btn.textContent = isFollowing?'Following':'Follow';
+  btn.classList.toggle('following', isFollowing);
+
+  // Optimistically update displayed follower count
+  const fEl = document.getElementById('statFollowers');
+  if(fEl){
+    const cur = parseInt(fEl.textContent)||0;
+    fEl.textContent = Math.max(0, cur + (wasFollowing ? -1 : 1));
+  }
+
+  try{
+    const followId = `${currentUser.uid}_${profileData.uid}`;
+    if(wasFollowing){
+      await deleteDoc(doc(db,'follows',followId));
+      setDoc(doc(db,'users',profileData.uid),{followerCount:increment(-1)},{merge:true}).catch(()=>{});
+    }else{
+      await setDoc(doc(db,'follows',followId),{followerId:currentUser.uid,followingId:profileData.uid,createdAt:serverTimestamp()});
+      setDoc(doc(db,'users',profileData.uid),{followerCount:increment(1)},{merge:true}).catch(()=>{});
+      notif.notifyFollow(profileData.uid);
+    }
+  }catch(e){
+    // Roll back UI on failure
+    isFollowing = wasFollowing;
+    btn.textContent = isFollowing?'Following':'Follow';
+    btn.classList.toggle('following', isFollowing);
+    if(fEl){
+      const cur = parseInt(fEl.textContent)||0;
+      fEl.textContent = Math.max(0, cur + (wasFollowing ? 1 : -1));
+    }
+    showToast('Could not update follow — try again');
+  }
+};
+
+/* ── LOAD ARTICLES ── */
+async function loadArticles(){
+  const uid = profileData.uid;
+  try{
+    // Use simple single-field where() only — no orderBy to avoid needing composite index.
+    // Sort client-side instead.
+    const q = query(collection(db,'submissions'), where('userId','==',uid));
+    const snap = await getDocs(q);
+    allSubmissions = snap.docs
+      .map(d=>({id:d.id,...d.data()}))
+      .filter(s => isOwner || s.status === 'approved')   // hide non-approved from visitors
+      .sort((a,b)=>{
+        const ta = a.createdAt?.toDate?.() || new Date(a.createdAt||0);
+        const tb = b.createdAt?.toDate?.() || new Date(b.createdAt||0);
+        return tb - ta;
+      });
+    renderArticles();
+    if(isOwner) updateTabBadges();
+  }catch(e){
+    console.error('loadArticles failed:', e?.code, e?.message);
+    allSubmissions = [];
+    renderArticles();
+  }
+}
+
+function updateTabBadges(){
+  const pending  = allSubmissions.filter(s=>s.status==='pending').length;
+  const rejected = allSubmissions.filter(s=>s.status==='rejected').length;
+  const tP = document.getElementById('tabPending');
+  const tR = document.getElementById('tabRejected');
+  if(tP && pending>0) tP.innerHTML = `Under Review<span class="tab-badge">${pending}</span>`;
+  if(tR && rejected>0) tR.innerHTML = `Rejected<span class="tab-badge">${rejected}</span>`;
+}
+
+/* ── SWITCH TAB ── */
+window.switchTab = function(tab){
+  activeTab = tab;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  const el = document.getElementById(`tab${tab.charAt(0).toUpperCase()+tab.slice(1)}`);
+  if(el) el.classList.add('active');
+  renderArticles();
+};
+
+/* ── RENDER ARTICLES ── */
+function renderArticles(){
+  const sec = document.getElementById('articlesSection');
+  const filtered = allSubmissions.filter(s=>{
+    if(activeTab==='published') return s.status==='approved';
+    if(activeTab==='pending')   return s.status==='pending';
+    if(activeTab==='rejected')  return s.status==='rejected';
+    return true;
+  });
+
+  if(!filtered.length){
+    const msgs = {
+      published: isOwner
+        ? `<p>No published articles yet.<br>Submit your first one!</p>
+           <button class="btn-write-now" onclick="window.location.href='/write'">Write an Article</button>`
+        : `<p>No published articles yet.</p>`,
+      pending:  `<p>No articles under review.</p>`,
+      rejected: `<p>No rejected articles.</p>`
+    };
+    sec.innerHTML = `<div class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+      </svg>
+      ${msgs[activeTab]||'<p>Nothing here.</p>'}
+    </div>`;
+    return;
+  }
+
+  sec.innerHTML = filtered.map(s=>`
+    <div class="article-row" onclick="openArticle('${s.id}','${s.status}')">
+      <div class="art-thumb" style="${s.cover?`background-image:url(${s.cover});background-size:cover;background-position:center`:''}">&nbsp;</div>
+      <div class="art-info">
+        <div class="art-cat">${s.cat||''}</div>
+        <div class="art-title">${s.title||'Untitled'}</div>
+        <div class="art-meta">
+          ${statusBadge(s.status)}
+          <span class="art-read">${s.readTime||''}</span>
+        </div>
+        ${s.status==='rejected'&&s.reviewNote ? `<div style="font-size:12px;color:var(--sub);margin-top:6px;background:var(--bg);padding:7px 10px;border-radius:8px">💬 ${s.reviewNote}</div>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function statusBadge(status){
+  if(status==='approved') return `<span class="badge badge-approved">✓ Live</span>`;
+  if(status==='rejected') return `<span class="badge badge-rejected">✗ Rejected</span>`;
+  return `<span class="badge badge-pending"><span class="dot"></span> Under Review</span>`;
+}
+
+window.openArticle = function(id, status){
+  if(status==='approved') window.location.href=`/article-read?id=${id}`;
+};
+
+/* ── EDIT PROFILE ── */
+// ── USERNAME AVAILABILITY CHECK ──────────────────────────────────────────────
+let _unTimer = null;
+window._usernameOk = true;
+window.debounceUsernameCheck = function(val){
+  const el = document.getElementById('usernameStatus');
+  window._usernameOk = false;
+  clearTimeout(_unTimer);
+  if(!val){
+    el.style.color='#e11d48'; el.textContent='⚠ Username is required and cannot be left empty';
+    window._usernameOk=false; return;
+  }
+  if(!/^[a-z0-9_]{3,20}$/.test(val)){
+    el.style.color='#e11d48'; el.textContent='3–20 chars · letters, numbers, underscores only'; return;
+  }
+  if(val === (profileData.username||'').toLowerCase()){
+    el.style.color='#059669'; el.textContent='✓ Your current username';
+    window._usernameOk=true; return;
+  }
+  el.style.color='#94a3b8'; el.textContent='Checking…';
+  _unTimer = setTimeout(async()=>{
+    try{
+      const r = await fetch(`/api/check-username?username=${encodeURIComponent(val)}`);
+      const j = await r.json();
+      if(j.available){ el.style.color='#059669'; el.textContent='✓ Available'; window._usernameOk=true; }
+      else { el.style.color='#e11d48'; el.textContent='✗ Already taken'; window._usernameOk=false; }
+    }catch{ el.style.color='#94a3b8'; el.textContent='Could not verify'; window._usernameOk=true; }
+  }, 500);
+};
+
+window.updateBioCount = function(){
+  const el = document.getElementById('eBio');
+  const counter = document.getElementById('bioCharCount');
+  if(!el || !counter) return;
+  const len = el.value.length;
+  const max = 160;
+  counter.textContent = `${len} / ${max}`;
+  counter.classList.toggle('warn', len >= max - 20 && len < max);
+  counter.classList.toggle('max', len >= max);
+};
+/* ── CLOUDINARY IMAGE UPLOAD HELPER ── */
+async function uploadImageToCloudinary(file) {
+  const token = await currentUser.getIdToken();
+  const fd = new FormData();
+  fd.append('image', file);
+  const res = await fetch('/api/upload-image', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + token },
+    body: fd,
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error || 'Upload failed');
+  return json.url;
+}
+
+function initPickerHandlers() {
+  // Photo picker — now delegates to MindshiftUploader modal
+  window._kvOpenProfilePhoto = function() {
+    MindshiftUploader.open({
+      title: 'Update Profile Photo',
+      getToken: () => currentUser.getIdToken(),
+      onSuccess: function(url) {
+        document.getElementById('ePhoto').value = url;
+        const thumb = document.getElementById('photoPickerThumb');
+        const label = document.getElementById('photoPickerLabel');
+        thumb.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+        label.textContent = 'Tap to change photo';
+        document.getElementById('photoPickerZone').style.borderColor = 'var(--p)';
+        document.getElementById('photoPickerZone').style.borderStyle = 'solid';
+      }
+    });
+  };
+
+  // Cover picker — now delegates to MindshiftUploader modal
+  window._kvOpenProfileCover = function() {
+    MindshiftUploader.open({
+      title: 'Update Cover Photo',
+      getToken: () => currentUser.getIdToken(),
+      onSuccess: function(url) {
+        document.getElementById('eCover').value = url;
+        const thumb = document.getElementById('coverPickerThumb');
+        const label = document.getElementById('coverPickerLabel');
+        thumb.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:6px">`;
+        label.textContent = 'Tap to change cover';
+        document.getElementById('coverPickerZone').style.borderColor = 'var(--p)';
+        document.getElementById('coverPickerZone').style.borderStyle = 'solid';
+      }
+    });
+  };
+}
+
+let selectedCategories = [];
+function renderECategoryPills(preselected){
+  selectedCategories = Array.isArray(preselected) ? [...preselected] : [];
+  const wrap = document.getElementById('eCategoryPills');
+  if(!wrap || !window.MSB_CATEGORIES) return;
+  wrap.innerHTML = window.MSB_CATEGORIES.map(c =>
+    `<button type="button" class="cat-pill${selectedCategories.includes(c.code)?' sel':''}" data-cat="${c.code}" onclick="toggleECategory(this)">${c.emoji} ${c.label}</button>`
+  ).join('');
+}
+window.toggleECategory = function(el){
+  const code = el.dataset.cat;
+  const i = selectedCategories.indexOf(code);
+  if(i === -1){ selectedCategories.push(code); el.classList.add('sel'); }
+  else { selectedCategories.splice(i,1); el.classList.remove('sel'); }
+};
+
+window.openEditSheet = function(){
+  document.getElementById('eName').value      = profileData.name||'';
+  document.getElementById('eUsername').value  = profileData.username||'';
+  document.getElementById('usernameStatus').textContent = '';
+  window._usernameOk = true; // current saved username is always valid
+  document.getElementById('eTitle').value     = profileData.jobTitle||'';
+  renderECategoryPills(Array.isArray(profileData.categories) ? profileData.categories : (profileData.category ? [profileData.category] : []));
+  document.getElementById('eBio').value = profileData.bio||'';
+  updateBioCount();
+  document.getElementById('eLocation').value = profileData.location||'';
+  document.getElementById('ePhoto').value = profileData.photo||'';
+  document.getElementById('eCover').value = profileData.cover||'';
+
+  // Pre-populate photo picker thumbnail if photo already set
+  const photoThumb = document.getElementById('photoPickerThumb');
+  const photoLabel = document.getElementById('photoPickerLabel');
+  if (profileData.photo) {
+    photoThumb.innerHTML = `<img src="${profileData.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+    photoLabel.textContent = 'Tap to change photo';
+    document.getElementById('photoPickerZone').style.borderStyle = 'solid';
+  } else {
+    photoThumb.innerHTML = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--mute)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`;
+    photoLabel.textContent = 'Tap to upload profile photo';
+    document.getElementById('photoPickerZone').style.borderStyle = 'dashed';
+  }
+
+  // Pre-populate cover picker thumbnail if cover already set
+  const coverThumb = document.getElementById('coverPickerThumb');
+  const coverLabel = document.getElementById('coverPickerLabel');
+  if (profileData.cover) {
+    coverThumb.innerHTML = `<img src="${profileData.cover}" style="width:100%;height:100%;object-fit:cover;border-radius:6px">`;
+    coverLabel.textContent = 'Tap to change cover';
+    document.getElementById('coverPickerZone').style.borderStyle = 'solid';
+  } else {
+    coverThumb.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--mute)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
+    coverLabel.textContent = 'Tap to upload cover photo';
+    document.getElementById('coverPickerZone').style.borderStyle = 'dashed';
+  }
+
+  const savedSocials = profileData.socialLinks || {};
+  SOCIAL_PLATFORMS.forEach(p=>{
+    const input = document.getElementById(`social-${p.key}`);
+    const toggle = document.getElementById(`socialToggle-${p.key}`);
+    if(!input || !toggle) return;
+    const val = savedSocials[p.key] || '';
+    input.value = val;
+    if(val){ input.classList.add('show'); toggle.classList.add('active'); }
+    else { input.classList.remove('show'); toggle.classList.remove('active'); }
+  });
+  updateSocialCounter();
+  document.getElementById('editScreen').classList.add('show');
+  document.body.style.overflow='hidden';
+};
+window.closeEditSheet = function(){
+  document.getElementById('editScreen').classList.remove('show');
+  document.body.style.overflow='';
+};
+window.saveProfile = async function(){
+  if(!currentUser) return;
+  const newCategories = [...selectedCategories];
+  const newJobTitle = document.getElementById('eTitle').value.trim();
+  const oldCategories = Array.isArray(profileData.categories) ? profileData.categories : (profileData.category ? [profileData.category] : []);
+  const categoryChanged = JSON.stringify([...newCategories].sort()) !== JSON.stringify([...oldCategories].sort());
+
+  // ── Username validation ──
+  const newUsername    = (document.getElementById('eUsername').value||'').toLowerCase().trim();
+  // Username is required — user cannot remove it
+  if(!newUsername){
+    showToast('Username is required — every MindShift Books account must have one'); return;
+  }
+  if(!/^[a-z0-9_]{3,20}$/.test(newUsername)){
+    showToast('Username must be 3–20 chars, letters/numbers/underscores only'); return;
+  }
+  const usernameChanged = newUsername !== (profileData.username||'');
+  if(usernameChanged && window._usernameOk === false){
+    showToast('That username is already taken — choose another'); return;
+  }
+
+  // ── Social links: collect non-empty, normalize, enforce max ──
+  const socialLinks = {};
+  let socialCount = 0;
+  for(const p of SOCIAL_PLATFORMS){
+    const raw = (document.getElementById(`social-${p.key}`)?.value || '').trim();
+    if(raw){ socialCount++; socialLinks[p.key] = normalizeUrl(raw); }
+  }
+  if(socialCount > MAX_SOCIAL_LINKS){
+    showToast(`You can only add up to ${MAX_SOCIAL_LINKS} social links`); return;
+  }
+
+  const data = {
+    name:      document.getElementById('eName').value.trim()||profileData.name,
+    jobTitle:  newJobTitle,
+    categories: newCategories,
+    bio:       document.getElementById('eBio').value.trim(),
+    location:  document.getElementById('eLocation').value.trim(),
+    photo:     document.getElementById('ePhoto').value.trim(),
+    cover:     document.getElementById('eCover').value.trim(),
+    socialLinks,
+    updatedAt: serverTimestamp()
+  };
+
+  try{
+    // ── 1. Claim new username via server if changed (Admin SDK bypasses rules) ──
+    if(usernameChanged){
+      const token = await currentUser.getIdToken();
+      const r = await fetch('/api/claim-username', {
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+        body: JSON.stringify({ newUsername, oldUsername: profileData.username||'' })
+      });
+      const j = await r.json();
+      if(!r.ok){ showToast(j.error || 'Username could not be saved'); return; }
+      data.username = newUsername;
+    } else {
+      // Username unchanged — still include it in the merge so it's never accidentally removed
+      data.username = newUsername;
+    }
+
+    // ── 2. Save profile to Firestore ──
+    await setDoc(doc(db,'users',currentUser.uid), data, {merge:true});
+
+    // ── 3. Sync Firebase Auth displayName so account.html stays in sync ──
+    if(data.name && data.name !== currentUser.displayName){
+      try{ await updateProfile(currentUser, { displayName: data.name }); }
+      catch(e){ console.warn('Auth displayName sync failed:',e.message); }
+    }
+
+    Object.assign(profileData, data);
+    closeEditSheet();
+    renderProfileHeader();
+
+    // ── Sync categories to localStorage (same key articles.html reads for "For You") ──
+    if(newCategories.length){
+      let existing={};
+      try{ existing = JSON.parse(localStorage.getItem(`mindshift_user_cats_${currentUser.uid}`))||{}; }catch{}
+      existing.categories = newCategories; existing.ts = Date.now();
+      localStorage.setItem(`mindshift_user_cats_${currentUser.uid}`, JSON.stringify(existing));
+    }
+
+    showToast(categoryChanged ? 'Profile updated — your feed will refresh ✓' : 'Profile updated ✓');
+  }catch(e){ console.error('saveProfile error:', e); showToast('Could not save: ' + e.message); }
+};
+
+/* ── FOLLOWERS SHEET ── */
+window.showFollowers = async function(type){
+  document.getElementById('followSheetTitle').textContent = type==='followers'?'Followers':'Following';
+  document.getElementById('followList').innerHTML = '<div style="padding:20px;text-align:center;color:var(--mute)">Loading…</div>';
+  document.getElementById('followSheet').classList.add('show');
+  document.getElementById('followBg').classList.add('show');
+
+  try{
+    const field = type==='followers' ? 'followingId' : 'followerId';
+    const otherField = type==='followers' ? 'followerId' : 'followingId';
+    const q = query(collection(db,'follows'), where(field,'==',profileData.uid));
+    const snap = await getDocs(q);
+    const uids = snap.docs.map(d=>d.data()[otherField]);
+
+    if(!uids.length){
+      document.getElementById('followList').innerHTML = `<div style="padding:24px;text-align:center;color:var(--mute);font-size:14px">No ${type} yet.</div>`;
+      return;
+    }
+
+    // Pre-fetch who currentUser already follows (for Follow buttons)
+    let myFollowing = new Set();
+    if(currentUser){
+      try{
+        const mq = query(collection(db,'follows'), where('followerId','==',currentUser.uid));
+        const ms = await getDocs(mq);
+        ms.docs.forEach(d=>myFollowing.add(d.data().followingId));
+      }catch{}
+    }
+
+    const profiles = await Promise.all(uids.map(async uid=>{
+      try{ const s=await getDoc(doc(db,'users',uid)); return s.exists()?{uid,...s.data()}:{uid,name:'MindShift Books User'}; }
+      catch{ return {uid,name:'MindShift Books User'}; }
+    }));
+
+    document.getElementById('followList').innerHTML = profiles.map(p=>{
+      const isMe = currentUser && p.uid === currentUser.uid;
+      const href = isMe ? '/profile' : (p.username ? `/profile/@${encodeURIComponent(p.username)}` : `/profile?uid=${p.uid}`);
+      const alreadyFollowing = myFollowing.has(p.uid);
+      return `
+      <div class="follow-item">
+        <div class="follow-av" onclick="location.href='${href}'">
+          ${p.photo ? `<img src="${p.photo}" alt="">` : `<span>${(p.name||'U').slice(0,1).toUpperCase()}</span>`}
+        </div>
+        <div style="flex:1;min-width:0">
+          <div class="follow-name" onclick="location.href='${href}'">${p.name||'MindShift Books User'}${isMe?'<span class="you-tag">You</span>':''}</div>
+          <div class="follow-title">${p.jobTitle||'MindShift Books Member'}</div>
+        </div>
+        ${!isMe && currentUser && p.uid !== profileData.uid ? `<button class="follow-btn${alreadyFollowing?' ing':''}" onclick="quickFollow('${p.uid}',this)" ${alreadyFollowing?'disabled':''}>${alreadyFollowing?'Following':'Follow'}</button>` : ''}
+      </div>`;
+    }).join('');
+  }catch(e){ document.getElementById('followList').innerHTML='<div style="padding:20px;color:var(--mute)">Could not load.</div>'; }
+};
+window.closeFollowSheet = function(){
+  document.getElementById('followSheet').classList.remove('show');
+  document.getElementById('followBg').classList.remove('show');
+};
+window.goProfile = function(uid, username){
+  if(username) window.location.href=`/profile/@${encodeURIComponent(username)}`;
+  else window.location.href=`/profile?uid=${uid}`;
+};
+window.quickFollow = async function(uid, btn){
+  if(!currentUser) return;
+  try{
+    await setDoc(doc(db,'follows',`${currentUser.uid}_${uid}`),{followerId:currentUser.uid,followingId:uid,createdAt:serverTimestamp()});
+    setDoc(doc(db,'users',uid),{followerCount:increment(1)},{merge:true}).catch(()=>{});
+    notif.notifyFollow(uid);
+    btn.textContent='Following'; btn.classList.add('ing');
+    btn.disabled=true;
+  }catch{}
+};
+
+
+/* ═══════════════════════
+   NOTIFICATION WRITERS
+   ═══════════════════════ */
+/* writeProfileViewNotif moved to /notifications.js as trackProfileView() —
+   profile views are analytics for Insights now, not a bell notification. */
+/* writeFollowNotif moved to /notifications.js — see notif.notifyFollow() */
+/* ── TOAST ── */
+window.showToast = function(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('on');
+  setTimeout(()=>t.classList.remove('on'),2800);
+};
+</script>
+
+<!-- ═══ MINDSHIFT UPLOAD MODAL ═══ -->
+<style>
+#kv-up-bd{position:fixed;inset:0;background:rgba(15,10,30,.55);z-index:9999;display:flex;align-items:flex-end;justify-content:center;opacity:0;transition:opacity .25s;pointer-events:none;backdrop-filter:blur(3px)}
+#kv-up-bd.kv-show{opacity:1;pointer-events:all}
+#kv-up-sheet{width:100%;max-width:480px;background:#fff;border-radius:24px 24px 0 0;transform:translateY(100%);transition:transform .4s cubic-bezier(.22,1,.36,1);padding-bottom:max(env(safe-area-inset-bottom,0px),16px);box-shadow:0 -8px 40px rgba(37,99,235,.18)}
+#kv-up-bd.kv-show #kv-up-sheet{transform:translateY(0)}
+.kv-up-bar{height:3px;background:linear-gradient(90deg,#4f46e5,#06b6d4 55%,#ec4899);border-radius:24px 24px 0 0}
+.kv-up-drag{width:36px;height:4px;border-radius:2px;background:#e5e7eb;margin:12px auto 0}
+.kv-up-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 20px 12px}
+.kv-up-brand{display:flex;align-items:center;gap:9px}
+.kv-up-klogo{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#4f46e5,#06b6d4);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(37,99,235,.3)}
+.kv-up-klogo-k{font-size:17px;font-weight:900;color:#fff;line-height:1;letter-spacing:-.02em;font-family:system-ui,sans-serif}
+.kv-up-ttl{font-size:15px;font-weight:800;color:#0f0a1e;letter-spacing:-.01em}
+.kv-up-close{width:32px;height:32px;border-radius:50%;border:1.5px solid #e5e7eb;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#6b7280;transition:all .15s;flex-shrink:0}
+.kv-up-close:hover{border-color:#4f46e5;color:#4f46e5;background:#eef2ff}
+.kv-up-line{height:1px;background:#f3f4f6}
+/* TILES */
+.kv-up-tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:20px}
+.kv-up-tile{border:1.5px solid #e0e7ff;border-radius:18px;background:#eef2ff;padding:22px 10px 18px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:all .18s;font-family:inherit;width:100%;text-align:center}
+.kv-up-tile:hover{border-color:#4f46e5;background:#eef2ff;box-shadow:0 4px 18px rgba(37,99,235,.13);transform:translateY(-1px)}
+.kv-up-tile:active{transform:scale(.97)}
+.kv-up-tile-ico{width:58px;height:58px;border-radius:16px;background:linear-gradient(135deg,#e0e7ff,#eef2ff);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(37,99,235,.14)}
+.kv-up-tile-ico svg{width:26px;height:26px;stroke:#4f46e5;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.kv-up-tile-lbl{font-size:14px;font-weight:800;color:#0f0a1e}
+.kv-up-tile-sub{font-size:11.5px;color:#9ca3af;line-height:1.45}
+/* PREVIEW */
+.kv-up-prev-img-wrap{position:relative;width:calc(100% - 40px);margin:16px 20px 0;border-radius:16px;overflow:hidden;background:#f3f4f6;height:220px}
+.kv-up-prev-img-wrap img{width:100%;height:100%;object-fit:cover;display:block}
+.kv-up-uploading{position:absolute;inset:0;background:rgba(255,255,255,.88);display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px}
+.kv-up-uploading.kv-on{display:flex}
+.kv-up-spin{width:38px;height:38px;border:3px solid #e0e7ff;border-top-color:#4f46e5;border-radius:50%;animation:kvSpin .72s linear infinite}
+.kv-up-spin-lbl{font-size:13px;font-weight:700;color:#4f46e5}
+@keyframes kvSpin{to{transform:rotate(360deg)}}
+.kv-up-change{display:block;text-align:center;font-size:13px;color:#9ca3af;cursor:pointer;padding:12px 20px 2px;background:none;border:none;font-family:inherit;width:100%;transition:color .15s}
+.kv-up-change:hover{color:#4f46e5}
+.kv-up-err-box{margin:0 20px 10px;background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:10px 14px;font-size:13px;color:#dc2626;display:none;line-height:1.45}
+.kv-up-cta{box-sizing:border-box;width:calc(100% - 40px);margin:6px 20px 0;padding:15px;border-radius:14px;border:none;background:linear-gradient(135deg,#4f46e5,#06b6d4);color:#fff;font-size:15px;font-weight:800;cursor:pointer;letter-spacing:.01em;transition:opacity .15s;font-family:inherit;display:block}
+.kv-up-cta:hover{opacity:.9}
+.kv-up-cta:disabled{opacity:.45;cursor:not-allowed}
+.kv-up-gap{height:10px}
+</style>
+
+<div id="kv-up-bd">
+  <div id="kv-up-sheet">
+    <div class="kv-up-bar"></div>
+    <div class="kv-up-drag"></div>
+    <div class="kv-up-hdr">
+      <div class="kv-up-brand">
+        <div class="kv-up-klogo"><span class="kv-up-klogo-k">K</span></div>
+        <span class="kv-up-ttl" id="kv-up-ttl">Upload Image</span>
+      </div>
+      <button class="kv-up-close" id="kv-up-close" aria-label="Close">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="kv-up-line"></div>
+
+    <!-- PICK -->
+    <div id="kv-up-pick">
+      <div class="kv-up-tiles">
+        <button class="kv-up-tile" id="kv-up-lib-btn">
+          <div class="kv-up-tile-ico">
+            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          </div>
+          <span class="kv-up-tile-lbl">Library</span>
+          <span class="kv-up-tile-sub">Choose from photos<br>or files on device</span>
+        </button>
+        <button class="kv-up-tile" id="kv-up-cam-btn">
+          <div class="kv-up-tile-ico">
+            <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </div>
+          <span class="kv-up-tile-lbl">Camera</span>
+          <span class="kv-up-tile-sub">Snap a new photo<br>right now</span>
+        </button>
+      </div>
+      <input type="file" id="kv-up-lib-in" accept="image/*" style="display:none">
+      <input type="file" id="kv-up-cam-in" accept="image/*" capture="environment" style="display:none">
+    </div>
+
+    <!-- PREVIEW -->
+    <div id="kv-up-prev" style="display:none">
+      <div class="kv-up-prev-img-wrap">
+        <img id="kv-up-prev-img" src="" alt="Preview">
+        <div class="kv-up-uploading" id="kv-up-upl">
+          <div class="kv-up-spin"></div>
+          <span class="kv-up-spin-lbl">Uploading…</span>
+        </div>
+      </div>
+      <button class="kv-up-change" id="kv-up-change">&#8592; Choose a different image</button>
+      <div class="kv-up-err-box" id="kv-up-err"></div>
+      <button class="kv-up-cta" id="kv-up-cta">Upload Image</button>
+      <div class="kv-up-gap"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+window.MindshiftUploader = (function(){
+  var _opts={}, _file=null;
+  var $=function(id){return document.getElementById(id);};
+
+  function open(opts){
+    _opts=opts||{}; _file=null;
+    $('kv-up-ttl').textContent=_opts.title||'Upload Image';
+    $('kv-up-err').style.display='none';
+    $('kv-up-lib-in').value='';
+    $('kv-up-cam-in').value='';
+    setState('pick');
+    requestAnimationFrame(function(){$('kv-up-bd').classList.add('kv-show');});
+    document.body.style.overflow='hidden';
+  }
+
+  function close(){
+    $('kv-up-bd').classList.remove('kv-show');
+    setTimeout(function(){document.body.style.overflow='';},400);
+  }
+
+  function setState(s){
+    $('kv-up-pick').style.display=s==='pick'?'block':'none';
+    $('kv-up-prev').style.display=s==='preview'?'block':'none';
+    $('kv-up-upl').classList.remove('kv-on');
+    $('kv-up-cta').disabled=false;
+  }
+
+  function onFile(e){
+    var file=e.target.files[0];
+    if(!file) return;
+    if(file.size>5*1024*1024){
+      alert('Image too large — please choose one under 5MB.');
+      e.target.value=''; return;
+    }
+    _file=file;
+    var r=new FileReader();
+    r.onload=function(ev){
+      $('kv-up-prev-img').src=ev.target.result;
+      $('kv-up-err').style.display='none';
+      setState('preview');
+    };
+    r.readAsDataURL(file);
+  }
+
+  async function doUpload(){
+    if(!_file) return;
+    $('kv-up-cta').disabled=true;
+    $('kv-up-upl').classList.add('kv-on');
+    $('kv-up-err').style.display='none';
+    try{
+      var token=await _opts.getToken();
+      var fd=new FormData();
+      fd.append('image',_file);
+      var res=await fetch('/api/upload-image',{method:'POST',headers:{'Authorization':'Bearer '+token},body:fd});
+      var json=await res.json();
+      if(!res.ok) throw new Error(json.error||'Upload failed');
+      close();
+      if(_opts.onSuccess) _opts.onSuccess(json.url);
+    }catch(err){
+      $('kv-up-upl').classList.remove('kv-on');
+      $('kv-up-cta').disabled=false;
+      var el=$('kv-up-err');
+      el.textContent='Upload failed — '+err.message+'. Tap to try again.';
+      el.style.display='block';
+    }
+  }
+
+  $('kv-up-bd').addEventListener('click',function(e){if(e.target===$('kv-up-bd'))close();});
+  $('kv-up-close').addEventListener('click',close);
+  $('kv-up-lib-btn').addEventListener('click',function(){$('kv-up-lib-in').click();});
+  $('kv-up-cam-btn').addEventListener('click',function(){$('kv-up-cam-in').click();});
+  $('kv-up-lib-in').addEventListener('change',onFile);
+  $('kv-up-cam-in').addEventListener('change',onFile);
+  $('kv-up-change').addEventListener('click',function(){setState('pick');});
+  $('kv-up-cta').addEventListener('click',doUpload);
+
+  return {open:open,close:close};
+})();
+</script>
+
+<!-- Shared MindShift account nav (renders the acct-nav-slot in the header) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="/auth.js"></script>
+</body>
+</html>
