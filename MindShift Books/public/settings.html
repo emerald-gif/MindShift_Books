@@ -26,6 +26,29 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .hdr-title{font-size:15px;font-weight:800;color:var(--txt);flex:1;text-align:center}
 .hdr-action{width:36px}
 
+/* ── SHARED MINDSHIFT HEADER / SIDEBAR (copied verbatim from profile.html/articles.html —
+   keep all copies in sync if styles.css changes) ── */
+.sticky-header-stack{position:sticky;top:0;z-index:1000}
+.sticky-header-stack header:first-child{position:relative;left:0;right:0;background:white;display:flex;flex-direction:column;gap:10px;padding:16px 20px 18px;box-shadow:0 2px 12px rgba(0,0,0,0.06)}
+.sticky-header-stack .header-top{display:flex;align-items:center;justify-content:space-between;width:100%;flex-wrap:nowrap;gap:8px}
+.sticky-header-stack header:first-child h1{font-size:1.45rem;font-weight:700;display:flex;align-items:center;gap:10px;min-width:0;overflow:hidden;margin:0}
+.sticky-header-stack header:first-child h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.header-icon-group{display:flex;align-items:center;gap:4px;flex-shrink:0}
+.icon-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;border:none;background:transparent;color:#1e293b;cursor:pointer;transition:background-color 150ms ease,color 150ms ease;padding:0}
+.icon-btn:hover{background-color:#f1f5f9;color:#4f46e5}
+.icon-btn:active{background-color:#e6e9ee}
+.sidebar{position:fixed;top:0;left:-300px;width:280px;height:100%;background:#111827;padding-top:84px;padding-bottom:90px;transition:left 0.32s ease;z-index:2000;border-right:1px solid rgba(255,255,255,0.04);color:#fff;overflow-y:auto}
+.sidebar .logo-row{display:flex;align-items:center;gap:12px;padding:18px 20px;position:absolute;top:16px;left:12px}
+.sidebar img{width:36px;height:36px;border-radius:6px}
+.sidebar ul{list-style:none;margin-top:8px}
+.sidebar li{padding:16px 20px;font-weight:600;border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer}
+.sidebar-close-btn{position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.06);color:#fff;font-size:1.15rem;font-weight:800;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:1}
+.sidebar-close-btn:active{background:rgba(255,255,255,0.14)}
+/* nested page-level .hdr sits inside the same sticky stack as the brand header, so let the
+   outer stack handle stickiness instead of the .hdr sticking a second time */
+.sticky-header-stack .hdr{position:relative}
+/* ── /SHARED HEADER ── */
+
 /* ── SECTIONS ── */
 .section{padding:20px 16px 0}
 .section-title{font-size:12px;font-weight:800;color:var(--mute);text-transform:uppercase;
@@ -120,14 +143,60 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 </head>
 <body>
 
+<!-- ══ SHARED MINDSHIFT HEADER + SIDEBAR (matches profile.html) ══ -->
+<div class="sticky-header-stack">
+<header>
+  <div class="header-top">
+    <h1><a href="/" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;"><img src="/MINDSHIFT.jpg" alt="MindShift logo" style="width:36px;height:36px;border-radius:6px;"></a><span>Settings</span></h1>
+    <div class="header-icon-group">
+      <button type="button" id="sidebarToggle" class="icon-btn" onclick="toggleSidebar()" aria-label="Open menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="22" height="22"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
 <!-- HEADER -->
-<header class="hdr">
+<header class="hdr" id="settingsHdr" style="display:none">
   <button class="btn-back" id="settingsBackBtn" onclick="handleBackBtn()">
     <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
   </button>
   <span class="hdr-title" id="settingsHdrTitle">Settings &amp; Activity</span>
   <div class="hdr-action"></div>
 </header>
+</div>
+
+<aside class="sidebar" id="sidebar" aria-hidden="true" data-open="false">
+  <button type="button" class="sidebar-close-btn" onclick="toggleSidebar()" aria-label="Close menu">&times;</button>
+  <div class="logo-row">
+    <img src="/MINDSHIFT.jpg" alt="logo">
+    <div style="font-weight:700">MindShift Books</div>
+  </div>
+  <ul>
+    <li onclick="window.location.href='/books'">Bookstore</li>
+    <li onclick="window.location.href='/articles'">Articles</li>
+    <li onclick="window.location.href='/write'">Write an Article</li>
+    <li onclick="window.location.href='/profile'">My Profile</li>
+    <li onclick="window.location.href='/insights'">My Insights</li>
+    <li onclick="window.location.href='/articles'">Saved Articles</li>
+    <li onclick="window.location.href='/settings'">Settings</li>
+    <li onclick="window.location.href='/wishlist'">My Wishlist</li>
+    <li onclick="window.location.href='/free-ebooks'">Free eBooks</li>
+    <li onclick="window.location.href='/support'">Support</li>
+    <li onclick="window.location.href='/legal'">Terms &amp; Privacy</li>
+    <li onclick="window.location.href='/affiliate'">Become an Affiliate</li>
+  </ul>
+</aside>
+<script>
+  function toggleSidebar(){
+    const sidebar = document.getElementById('sidebar');
+    const open = sidebar.getAttribute('data-open') === 'true';
+    sidebar.setAttribute('data-open', open ? 'false' : 'true');
+    sidebar.style.left = open ? '-300px' : '0px';
+    sidebar.setAttribute('aria-hidden', open ? 'true' : 'false');
+  }
+</script>
+<!-- ══ /SHARED HEADER + SIDEBAR ══ -->
 
 <div id="settingsMain">
 <!-- ACTIVITY -->
@@ -373,6 +442,7 @@ window.showSettingsView = function(view){
   document.getElementById('settingsDetails').style.display = view==='details' ? '' : 'none';
   document.getElementById('settingsHdrTitle').textContent =
     view==='orders' ? 'Order History' : view==='details' ? 'My Details' : 'Settings & Activity';
+  document.getElementById('settingsHdr').style.display = view==='main' ? 'none' : 'flex';
   window.scrollTo({top:0, behavior:'instant' in window ? 'instant' : 'auto'});
   history.replaceState(null, '', view==='main' ? '/settings' : `/settings#${view}`);
   if(view==='orders')  loadOrders();
