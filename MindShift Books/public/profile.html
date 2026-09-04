@@ -939,9 +939,11 @@ window.toggleFollow = async function(){
     if(wasFollowing){
       await deleteDoc(doc(db,'follows',followId));
       setDoc(doc(db,'users',profileData.uid),{followerCount:increment(-1)},{merge:true}).catch(()=>{});
+      setDoc(doc(db,'users',currentUser.uid),{followingCount:increment(-1)},{merge:true}).catch(()=>{});
     }else{
       await setDoc(doc(db,'follows',followId),{followerId:currentUser.uid,followingId:profileData.uid,createdAt:serverTimestamp()});
       setDoc(doc(db,'users',profileData.uid),{followerCount:increment(1)},{merge:true}).catch(()=>{});
+      setDoc(doc(db,'users',currentUser.uid),{followingCount:increment(1)},{merge:true}).catch(()=>{});
       notif.notifyFollow(profileData.uid);
     }
   }catch(e){
@@ -1376,6 +1378,7 @@ window.quickFollow = async function(uid, btn){
   try{
     await setDoc(doc(db,'follows',`${currentUser.uid}_${uid}`),{followerId:currentUser.uid,followingId:uid,createdAt:serverTimestamp()});
     setDoc(doc(db,'users',uid),{followerCount:increment(1)},{merge:true}).catch(()=>{});
+    setDoc(doc(db,'users',currentUser.uid),{followingCount:increment(1)},{merge:true}).catch(()=>{});
     notif.notifyFollow(uid);
     btn.textContent='Following'; btn.classList.add('ing');
     btn.disabled=true;

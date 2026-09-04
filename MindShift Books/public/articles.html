@@ -882,8 +882,8 @@ async function refreshForYou(){
           publishedAt: x.publishedAt||x.createdAt||null,
           author:     x.authorName||'MindShift Books',
           avatar:     x.authorPhoto||'logo.jpg',
-          authorUid:  x.userId||null,
-          isMindshift: x.userId==='official'
+          authorUid:  x.authorUid||x.userId||null,
+          isMindshift: (x.authorUid||x.userId)==='official'
         };
       });
       ARTICLES = shuffleArray(fresh);
@@ -1049,9 +1049,11 @@ window.toggleSugFollow=async function(uid,name){
     if(wasFollowing){
       await deleteDoc(doc(db,'follows',followId));
       updateDoc(doc(db,'users',uid),{followerCount:increment(-1)}).catch(()=>{});
+      updateDoc(doc(db,'users',currentUser.uid),{followingCount:increment(-1)}).catch(()=>{});
     }else{
       await setDoc(doc(db,'follows',followId),{followerId:currentUser.uid,followingId:uid,createdAt:serverTimestamp()});
       updateDoc(doc(db,'users',uid),{followerCount:increment(1)}).catch(()=>{});
+      updateDoc(doc(db,'users',currentUser.uid),{followingCount:increment(1)}).catch(()=>{});
       notif.notifyFollow(uid);
     }
     toast(wasFollowing?`Unfollowed ${name}`:`Following ${name} ✅`);
@@ -1440,9 +1442,11 @@ window.followFromMenu = async function(authorUid, authorName, cardId){
     if(isFollowing){
       await deleteDoc(doc(db,'follows',followDocId));
       updateDoc(doc(db,'users',authorUid),{followerCount:increment(-1)}).catch(()=>{});
+      updateDoc(doc(db,'users',currentUser.uid),{followingCount:increment(-1)}).catch(()=>{});
     }else{
       await setDoc(doc(db,'follows',followDocId),{followerId:currentUser.uid,followingId:authorUid,createdAt:serverTimestamp()});
       updateDoc(doc(db,'users',authorUid),{followerCount:increment(1)}).catch(()=>{});
+      updateDoc(doc(db,'users',currentUser.uid),{followingCount:increment(1)}).catch(()=>{});
       notif.notifyFollow(authorUid);
     }
     toast(isFollowing ? 'Unfollowed' : `Following ${authorName||'author'} ✅`);
@@ -1504,8 +1508,8 @@ async function loadPublishedArticles(){
         publishedAt: x.publishedAt||x.createdAt||null,
         author: x.authorName||'MindShift Books',
         avatar: x.authorPhoto||'logo.jpg',
-        authorUid: x.userId||null,
-        isMindshift: x.userId==='official'
+        authorUid: x.authorUid||x.userId||null,
+        isMindshift: (x.authorUid||x.userId)==='official'
       };
     });
     renderGrid();
