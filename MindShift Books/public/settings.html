@@ -396,7 +396,7 @@ async function loadOrders(){
     const sub = document.getElementById('orderCountSub');
     if(sub) sub.textContent = count ? `${count} order${count===1?'':'s'}` : 'Your eBook purchases';
     if(!count){
-      results.innerHTML = `<div class="empty">No orders yet.<br><a href="/" style="color:var(--p);font-weight:700;">Browse books →</a></div>`;
+      results.innerHTML = `<div class="empty">No orders yet.<br><a href="/books" style="color:var(--p);font-weight:700;">Browse books →</a></div>`;
       return;
     }
     results.innerHTML = data.rows.map(order=>{
