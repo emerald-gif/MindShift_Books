@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Insights · MindShift Books</title>
+<meta name="description" content="Get insights into your content, audience, reach, engagement, and profile performance on MindShift Books."/>
+<meta name="robots" content="noindex, nofollow"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --p:#4f46e5;--p2:#06b6d4;--g:linear-gradient(90deg,#4f46e5,#06b6d4);
+  --txt:#0f172a;--sub:#6b7280;--mute:#9ca3af;
+  --bg:#f8fafc;--card:#fff;--border:#e5e7eb;--border2:#e2e8f0;
+  --green:#10b981;--red:#ef4444;--amber:#f59e0b;--radius:16px;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh}
+
+/* ── HEADER ── */
+.hdr{position:sticky;top:0;z-index:100;background:rgba(248,247,255,.92);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);padding:0 16px;height:56px;
+  display:flex;align-items:center;justify-content:space-between}
+.btn-back{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--border);
+  background:var(--card);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt)}
+.btn-back svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.hdr-title{font-size:15px;font-weight:800;color:var(--txt);flex:1;text-align:center}
+.hdr-action{width:36px;display:flex;justify-content:flex-end}
+
+/* ── SHARED MINDSHIFT HEADER / SIDEBAR (copied verbatim from profile.html/articles.html —
+   keep all copies in sync if styles.css changes) ── */
+.sticky-header-stack{position:sticky;top:0;z-index:1000}
+.sticky-header-stack header:first-child{position:relative;left:0;right:0;background:white;display:flex;flex-direction:column;gap:10px;padding:16px 20px 18px;box-shadow:0 2px 12px rgba(0,0,0,0.06)}
+.sticky-header-stack .header-top{display:flex;align-items:center;justify-content:space-between;width:100%;flex-wrap:nowrap;gap:8px}
+.sticky-header-stack header:first-child h1{font-size:1.45rem;font-weight:700;display:flex;align-items:center;gap:10px;min-width:0;overflow:hidden;margin:0}
+.sticky-header-stack header:first-child h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.header-icon-group{display:flex;align-items:center;gap:4px;flex-shrink:0}
+.icon-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;border:none;background:transparent;color:#1e293b;cursor:pointer;transition:background-color 150ms ease,color 150ms ease;padding:0}
+.icon-btn:hover{background-color:#f1f5f9;color:#4f46e5}
+.icon-btn:active{background-color:#e6e9ee}
+.sidebar{position:fixed;top:0;left:-300px;width:280px;height:100%;background:#111827;padding-top:84px;padding-bottom:90px;transition:left 0.32s ease;z-index:2000;border-right:1px solid rgba(255,255,255,0.04);color:#fff;overflow-y:auto}
+.sidebar .logo-row{display:flex;align-items:center;gap:12px;padding:18px 20px;position:absolute;top:16px;left:12px}
+.sidebar img{width:36px;height:36px;border-radius:6px}
+.sidebar ul{list-style:none;margin-top:8px}
+.sidebar li{padding:16px 20px;font-weight:600;border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer}
+.sidebar-close-btn{position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.06);color:#fff;font-size:1.15rem;font-weight:800;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:1}
+.sidebar-close-btn:active{background:rgba(255,255,255,0.14)}
+/* ── /SHARED HEADER ── */
+
+/* ── HERO CARD ── */
+.hero{margin:16px;border-radius:22px;background:var(--g);padding:22px 20px;color:#fff;
+  position:relative;overflow:hidden;box-shadow:0 10px 30px rgba(37,99,235,.25)}
+.hero-deco{position:absolute;top:-22px;right:-18px;width:120px;height:120px;opacity:.16}
+.hero-deco svg{width:100%;height:100%;fill:none;stroke:#fff;stroke-width:1.4}
+.hero-label{font-size:11.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;opacity:.85;
+  display:flex;align-items:center;gap:6px}
+.hero-label svg{width:14px;height:14px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.hero-value{font-size:40px;font-weight:900;margin:8px 0 4px;line-height:1}
+.hero-sub{font-size:13px;opacity:.88;line-height:1.5;max-width:78%}
+.hero-delta{display:inline-flex;align-items:center;gap:4px;margin-top:10px;
+  background:rgba(255,255,255,.18);padding:5px 11px;border-radius:99px;font-size:12px;font-weight:800}
+.hero-delta svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+
+/* ── TREND CARD ── */
+.section{padding:22px 16px 0}
+.section-title{font-size:15px;font-weight:900;color:var(--txt);margin-bottom:2px}
+.section-sub{font-size:12.5px;color:var(--mute);margin-bottom:14px}
+.trend-card{background:var(--card);border:1.5px solid var(--border);border-radius:20px;padding:18px}
+.trend-chart-wrap{width:100%}
+.trend-chart-wrap svg{width:100%;height:auto;display:block}
+.trend-axis{display:flex;justify-content:space-between;font-size:11px;color:var(--mute);font-weight:600;margin-top:6px}
+.trend-legend{display:flex;gap:18px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border2)}
+.trend-legend-item{display:flex;align-items:center;gap:7px}
+.trend-legend-line{width:16px;height:3px;border-radius:2px}
+.trend-legend-text{font-size:12px;font-weight:700;color:var(--txt)}
+.trend-legend-sub{font-size:11px;color:var(--mute);font-weight:600}
+
+/* ── STATS GRID ── */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:4px 16px 0}
+.stat-card{background:var(--card);border:1.5px solid var(--border);border-radius:16px;
+  padding:14px;display:flex;flex-direction:column;gap:10px;position:relative}
+.stat-icon{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center}
+.stat-icon svg{width:18px;height:18px;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.stat-icon.followers{background:#e0e7ff;color:#4f46e5}
+.stat-icon.articles{background:#d1fae5;color:#059669}
+.stat-icon.views{background:#e0e7ff;color:var(--p)}
+.stat-icon.engagement{background:#fee2e2;color:#dc2626}
+.stat-value-row{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.stat-value{font-size:22px;font-weight:900;color:var(--txt)}
+.stat-label{font-size:11.5px;color:var(--mute);font-weight:600}
+.stat-pill{display:inline-flex;align-items:center;gap:3px;font-size:10.5px;font-weight:800;
+  padding:2px 7px;border-radius:99px}
+.stat-pill svg{width:10px;height:10px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.stat-pill.up{background:#d1fae5;color:#059669}
+.stat-pill.down{background:#fee2e2;color:#dc2626}
+.stat-pill.flat{background:var(--border2);color:var(--mute)}
+
+/* ── BEST ARTICLE CARD ── */
+.best-card{position:relative;border-radius:20px;overflow:hidden;border:1.5px solid var(--border);
+  background:var(--card);display:flex;align-items:center;gap:14px;padding:14px}
+.best-badge{position:absolute;top:10px;left:10px;background:var(--g);color:#fff;font-size:10.5px;
+  font-weight:800;padding:4px 10px;border-radius:99px;display:flex;align-items:center;gap:5px;
+  text-transform:uppercase;letter-spacing:.4px;z-index:1}
+.best-badge svg{width:11px;height:11px;fill:none;stroke:#fff;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.best-thumb{width:84px;height:84px;border-radius:14px;flex-shrink:0;background:#e0e7ff center/cover no-repeat;
+  display:flex;align-items:center;justify-content:center;color:var(--p)}
+.best-thumb svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.best-info{flex:1;min-width:0;padding-left:2px}
+.best-title{font-weight:800;font-size:14px;color:var(--txt);line-height:1.35;margin-bottom:8px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.best-stats{display:flex;gap:14px}
+.best-stat-item{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--mute);font-weight:700}
+.best-stat-item svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* ── BREAKDOWN CARD ── */
+.breakdown-card{background:var(--card);border:1.5px solid var(--border);border-radius:20px;
+  padding:20px;display:flex;align-items:center;gap:22px}
+.donut-wrap{position:relative;width:104px;height:104px;flex-shrink:0}
+.donut-wrap svg{width:100%;height:100%;transform:rotate(-90deg)}
+.donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.donut-center .num{font-size:20px;font-weight:900;color:var(--txt);line-height:1}
+.donut-center .lbl{font-size:9.5px;color:var(--mute);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-top:2px}
+.legend{flex:1;display:flex;flex-direction:column;gap:12px}
+.legend-row{display:flex;align-items:center;gap:10px}
+.legend-dot{width:11px;height:11px;border-radius:4px;flex-shrink:0}
+.legend-text{flex:1}
+.legend-name{font-size:13px;font-weight:700;color:var(--txt)}
+.legend-pct{font-size:11.5px;color:var(--mute)}
+.legend-val{font-size:15px;font-weight:900;color:var(--txt)}
+
+/* ── TOP ARTICLES ── */
+.perf-row{display:flex;align-items:center;gap:12px;padding:13px;border:1.5px solid var(--border);
+  border-radius:14px;margin-bottom:10px;background:var(--card);cursor:pointer}
+.perf-rank{width:30px;height:30px;border-radius:50%;background:var(--border2);
+  display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12.5px;
+  color:var(--p);flex-shrink:0}
+.perf-info{flex:1;min-width:0}
+.perf-title{font-weight:700;font-size:13.5px;color:var(--txt);line-height:1.35;
+  display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:5px}
+.perf-meta{display:flex;gap:14px}
+.perf-meta-item{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--mute);font-weight:600}
+.perf-meta-item svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* ── ACTIVITY FEED ── */
+.activity-row{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--border2)}
+.activity-row:last-child{border-bottom:none}
+.activity-icon{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.activity-icon svg{width:15px;height:15px;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.activity-icon.like{background:#fee2e2;color:#dc2626}
+.activity-icon.comment{background:#fef3c7;color:#d97706}
+.activity-icon.follow{background:#e0e7ff;color:#4f46e5}
+.activity-icon.view{background:#e0e7ff;color:var(--p)}
+.activity-body{flex:1;min-width:0}
+.activity-text{font-size:13px;color:var(--txt);line-height:1.45}
+.activity-text b{font-weight:800}
+.activity-time{font-size:11.5px;color:var(--mute);margin-top:2px;font-weight:600}
+
+/* ── EMPTY STATE ── */
+.empty-state{text-align:center;padding:40px 24px}
+.empty-state svg{width:42px;height:42px;color:#d1d5db;margin:0 auto 12px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.empty-state p{font-size:13.5px;color:var(--mute);line-height:1.6;margin-bottom:4px}
+.card-empty{background:var(--card);border:1.5px solid var(--border);border-radius:18px}
+
+/* ── SKELETON ── */
+.skel{background:linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%);
+  background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:8px}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.skel-stat-val{height:22px;width:50px;border-radius:6px}
+.skel-perf{height:62px;border-radius:14px;margin-bottom:10px}
+.skel-card{height:140px;border-radius:20px}
+.skel-row{height:46px;border-radius:10px;margin-bottom:10px}
+
+.bottom-pad{height:24px}
+</style>
+</head>
+<body>
+
+<!-- ══ SHARED MINDSHIFT HEADER + SIDEBAR (matches profile.html) ══ -->
+<div class="sticky-header-stack">
+<header>
+  <div class="header-top">
+    <h1><a href="/" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;"><img src="/MINDSHIFT.jpg" alt="MindShift logo" style="width:36px;height:36px;border-radius:6px;"></a><span>Insights</span></h1>
+    <div class="header-icon-group">
+      <button type="button" id="sidebarToggle" class="icon-btn" onclick="toggleSidebar()" aria-label="Open menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="22" height="22"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+    </div>
+  </div>
+</header>
+</div>
+
+<aside class="sidebar" id="sidebar" aria-hidden="true" data-open="false">
+  <button type="button" class="sidebar-close-btn" onclick="toggleSidebar()" aria-label="Close menu">&times;</button>
+  <div class="logo-row">
+    <img src="/MINDSHIFT.jpg" alt="logo">
+    <div style="font-weight:700">MindShift Books</div>
+  </div>
+  <ul>
+    <li onclick="window.location.href='/books'">Bookstore</li>
+    <li onclick="window.location.href='/articles'">Articles</li>
+    <li onclick="window.location.href='/write'">Write an Article</li>
+    <li onclick="window.location.href='/profile'">My Profile</li>
+    <li onclick="window.location.href='/insights'">My Insights</li>
+    <li onclick="window.location.href='/articles'">Saved Articles</li>
+    <li onclick="window.location.href='/settings'">Settings</li>
+    <li onclick="window.location.href='/wishlist'">My Wishlist</li>
+    <li onclick="window.location.href='/free-ebooks'">Free eBooks</li>
+    <li onclick="window.location.href='/support'">Support</li>
+    <li onclick="window.location.href='/legal'">Terms &amp; Privacy</li>
+    <li onclick="window.location.href='/affiliate'">Become an Affiliate</li>
+  </ul>
+</aside>
+<script>
+  function toggleSidebar(){
+    const sidebar = document.getElementById('sidebar');
+    const open = sidebar.getAttribute('data-open') === 'true';
+    sidebar.setAttribute('data-open', open ? 'false' : 'true');
+    sidebar.style.left = open ? '-300px' : '0px';
+    sidebar.setAttribute('aria-hidden', open ? 'true' : 'false');
+  }
+</script>
+<!-- ══ /SHARED HEADER + SIDEBAR ══ -->
+
+<!-- HERO: PROFILE VIEWS -->
+<div class="hero">
+  <div class="hero-deco">
+    <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+  </div>
+  <div class="hero-label">
+    <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+    Profile Views
+  </div>
+  <div class="hero-value" id="statViews"><div class="skel" style="height:36px;width:90px;border-radius:8px;background:rgba(255,255,255,.25)"></div></div>
+  <div class="hero-sub">Total times people have viewed your profile</div>
+  <div id="viewsDelta"></div>
+</div>
+
+<!-- TREND CHART -->
+<div class="section">
+  <div class="section-title">14-Day Trend</div>
+  <div class="section-sub">Profile views &amp; new followers over time</div>
+  <div class="trend-card" id="trendCard">
+    <div class="skel skel-card"></div>
+  </div>
+</div>
+
+<!-- STATS GRID -->
+<div class="section">
+  <div class="section-title">Overview</div>
+  <div class="section-sub">Your activity at a glance</div>
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon followers">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      </div>
+      <div class="stat-value-row">
+        <div class="stat-value" id="statFollowers"><div class="skel skel-stat-val"></div></div>
+      </div>
+      <div id="followersDelta"></div>
+      <div class="stat-label">Followers</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon articles">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      </div>
+      <div class="stat-value-row">
+        <div class="stat-value" id="statArticles"><div class="skel skel-stat-val"></div></div>
+      </div>
+      <div class="stat-label">Published Articles</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon views">
+        <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </div>
+      <div class="stat-value-row">
+        <div class="stat-value" id="statArticleViews"><div class="skel skel-stat-val"></div></div>
+      </div>
+      <div class="stat-label">Article Reads</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon engagement">
+        <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+      </div>
+      <div class="stat-value-row">
+        <div class="stat-value" id="statEngagement"><div class="skel skel-stat-val"></div></div>
+      </div>
+      <div class="stat-label">Total Engagement</div>
+    </div>
+  </div>
+</div>
+
+<!-- BEST ARTICLE -->
+<div class="section" id="bestSection" style="display:none">
+  <div class="section-title">Top Article</div>
+  <div class="section-sub">Your best performing piece overall</div>
+  <div class="best-card">
+    <div class="best-badge">
+      <svg viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v3a5 5 0 01-10 0V4z"/><path d="M5 4H3v2a4 4 0 004 4M19 4h2v2a4 4 0 01-4 4"/></svg>
+      Top Article
+    </div>
+    <div class="best-thumb" id="bestThumb">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    </div>
+    <div class="best-info">
+      <div class="best-title" id="bestTitle"></div>
+      <div class="best-stats" id="bestStats"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ENGAGEMENT BREAKDOWN -->
+<div class="section" id="breakdownSection" style="display:none">
+  <div class="section-title">Engagement Breakdown</div>
+  <div class="section-sub">How readers are interacting with your articles</div>
+  <div class="breakdown-card">
+    <div class="donut-wrap">
+      <svg viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="40" fill="none" stroke="var(--border)" stroke-width="12"/>
+        <circle id="donutLikes" cx="50" cy="50" r="40" fill="none" stroke="var(--p)" stroke-width="12" stroke-linecap="round"/>
+        <circle id="donutComments" cx="50" cy="50" r="40" fill="none" stroke="#f59e0b" stroke-width="12" stroke-linecap="round"/>
+      </svg>
+      <div class="donut-center">
+        <div class="num" id="donutTotal">0</div>
+        <div class="lbl">Total</div>
+      </div>
+    </div>
+    <div class="legend">
+      <div class="legend-row">
+        <div class="legend-dot" style="background:var(--p)"></div>
+        <div class="legend-text">
+          <div class="legend-name">Likes</div>
+          <div class="legend-pct" id="likesPct">0%</div>
+        </div>
+        <div class="legend-val" id="legendLikes">0</div>
+      </div>
+      <div class="legend-row">
+        <div class="legend-dot" style="background:#f59e0b"></div>
+        <div class="legend-text">
+          <div class="legend-name">Comments</div>
+          <div class="legend-pct" id="commentsPct">0%</div>
+        </div>
+        <div class="legend-val" id="legendComments">0</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOP PERFORMING ARTICLES -->
+<div class="section">
+  <div class="section-title">Top Performing Articles</div>
+  <div class="section-sub">Ranked by reads, likes &amp; comments</div>
+  <div id="perfList">
+    <div class="skel skel-perf"></div>
+    <div class="skel skel-perf"></div>
+    <div class="skel skel-perf"></div>
+  </div>
+</div>
+
+<!-- RECENT ACTIVITY -->
+<div class="section">
+  <div class="section-title">Recent Activity</div>
+  <div class="section-sub">Latest interactions on your profile &amp; articles</div>
+  <div class="breakdown-card" id="activityCard" style="display:block;padding:6px 16px">
+    <div class="skel skel-row"></div>
+    <div class="skel skel-row"></div>
+    <div class="skel skel-row"></div>
+  </div>
+</div>
+
+<div class="bottom-pad"></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
+import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
+import { getFirestore, doc, getDoc, collection, query, where, getDocs, orderBy, limit, getCountFromServer }
+  from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
+
+const fbApp = initializeApp({
+  apiKey:"AIzaSyDTn70s1_uIiSOR6lPLY_nKh8Ff1FViFCs",
+  authDomain:"mindshiftbooks-c4451.firebaseapp.com",
+  projectId:"mindshiftbooks-c4451",
+  storageBucket:"mindshiftbooks-c4451.firebasestorage.app",
+  messagingSenderId:"388697987853",
+  appId: "1:388697987853:web:f023df9412c22285012e44",
+  measurementId: "G-CHPJDQ4W08"
+});
+const auth = getAuth(fbApp);
+const db   = getFirestore(fbApp, 'default');
+
+const CIRC = 2 * Math.PI * 40; // donut circumference
+const TREND_DAYS = 14;
+
+const ICONS = {
+  eye: `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`,
+  heart: `<path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>`,
+  comment: `<path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/>`,
+  userPlus: `<path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/>`
+};
+
+onAuthStateChanged(auth, async user => {
+  if(!user){ window.location.href='/login'; return; }
+  await loadInsights(user.uid);
+});
+
+async function loadInsights(uid){
+  try{
+
+    // ── Single parallel fetch — 3 queries instead of 4 ──
+    // recentNotifs uses the existing recipientUid+createdAt index (no type filter needed)
+    // followDocs  uses the followingId+createdAt composite index (add in Firebase Console)
+    // articlesSnap uses the existing userId+status+createdAt index
+    const [profileViewDocs, recentNotifs, followDocs, articlesSnap] = await Promise.all([
+      // profileViews replaces the old notifications/type=='profile_view' query — profile
+      // views are analytics now, not bell notifications (see /notifications.js trackProfileView()).
+      safeDocs(query(collection(db,'profileViews'),
+        where('profileUid','==',uid),
+        orderBy('createdAt','desc'),
+        limit(300))),
+      safeDocs(query(collection(db,'notifications'),
+        where('recipientUid','==',uid),
+        orderBy('createdAt','desc'),
+        limit(300))),                                              // FIX: was fetching ALL; now capped
+      safeDocs(query(collection(db,'follows'),
+        where('followingId','==',uid),
+        orderBy('createdAt','desc'),
+        limit(1000))),                                            // uses followingId+createdAt index
+      safeDocs(query(collection(db,'submissions'),
+        where('userId','==',uid),
+        where('status','==','approved'),
+        orderBy('createdAt','desc')))
+    ]);
+
+    // recentNotifs is now purely likes/follows/comments — profile views live in their own
+    // collection and their own hero+trend chart below, not mixed into the activity feed.
+    const viewDocs    = profileViewDocs;
+    const activityTop = recentNotifs.slice(0, 8);
+
+    // ── Total profile views: read the denormalized counter on the user doc — always
+    // accurate, no composite index needed (this replaces the old getCountFromServer
+    // call against notifications/type=='profile_view', which needed one). ──
+    let totalViews = viewDocs.length;
+    try{
+      const userSnap = await getDoc(doc(db,'users',uid));
+      if(userSnap.exists() && typeof userSnap.data().profileViewCount === 'number'){
+        totalViews = userSnap.data().profileViewCount;
+      }
+    }catch{ /* falls back to the filtered viewDocs.length above */ }
+
+    // ── Total followers: getCountFromServer with single-field where (uses auto-index) ──
+    let totalFollowers = followDocs.length;
+    try{
+      const fc = await getCountFromServer(                        // FIX: uses getCountFromServer for accuracy
+        query(collection(db,'follows'), where('followingId','==',uid)));
+      totalFollowers = fc.data().count;
+    }catch{}
+
+    // ── Profile views hero + delta ──
+    setNum('statViews', totalViews);
+    renderDelta('viewsDelta', weekDelta(viewDocs), true);
+
+    // ── Followers + delta ──
+    setNum('statFollowers', totalFollowers);
+    renderDelta('followersDelta', weekDelta(followDocs), false);
+
+    // ── Trend chart ──
+    renderTrend(viewDocs, followDocs);
+
+    // ── Recent activity (reuses recentNotifs — no extra query needed) ──
+    renderActivity(activityTop);
+
+    setNum('statArticles', articlesSnap.length);
+
+    if(!articlesSnap.length){
+      document.getElementById('perfList').innerHTML = emptyState(
+        `<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>`,
+        `No published articles yet.<br>Insights will appear once your articles go live.`
+      );
+      setNum('statArticleViews', 0);
+      setNum('statEngagement', 0);
+      return;
+    }
+
+    // ── Per-article enrichment: views, likes, comments ──
+    const enriched = await Promise.all(articlesSnap.map(async a=>{
+      const [likeSnap, metaSnap] = await Promise.all([
+        getDoc(doc(db,'articleLikes',a.id)).catch(()=>null),
+        getDoc(doc(db,'articleMeta',a.id)).catch(()=>null)
+      ]);
+      const likes    = likeSnap?.exists() ? (likeSnap.data().count||0) : 0;
+      const meta     = metaSnap?.exists() ? metaSnap.data() : {};
+      const comments = meta.commentCount||0;
+      const views    = meta.viewCount||0;
+      return {...a, likes, comments, views, score: views + likes*2 + comments*3};
+    }));
+
+    const totalLikes        = enriched.reduce((s,a)=>s+a.likes,0);
+    const totalComments     = enriched.reduce((s,a)=>s+a.comments,0);
+    const totalArticleViews = enriched.reduce((s,a)=>s+a.views,0);
+
+    setNum('statArticleViews', totalArticleViews);
+    setNum('statEngagement',   totalLikes + totalComments);
+
+    renderBestArticle(enriched);
+    renderBreakdown(totalLikes, totalComments);
+    renderPerfList(enriched);
+
+  }catch(e){
+    // FIX: was completely missing — page would freeze on skeletons on any error
+    console.error('loadInsights failed:', e?.code, e?.message);
+    document.getElementById('perfList').innerHTML = emptyState(
+      `<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>`,
+      `Could not load insights.<br>Check your connection and try again.`
+    );
+    ['statViews','statFollowers','statArticles','statArticleViews','statEngagement']
+      .forEach(id => setNum(id, 0));
+    document.getElementById('trendCard').innerHTML =
+      emptyState(`<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>`, `Trend data unavailable.`);
+    document.getElementById('activityCard').innerHTML =
+      emptyState(ICONS.eye, `Activity unavailable.`);
+  }
+}
+
+/* ── DELTA / PERIOD COMPARISON ── */
+function weekDelta(docs){
+  const now = Date.now(), DAY = 86400000;
+  let thisWeek=0, lastWeek=0;
+  docs.forEach(d=>{
+    const ts = d.createdAt; if(!ts) return;
+    const t = (ts.toDate?ts.toDate():new Date(ts)).getTime();
+    const diffDays = (now-t)/DAY;
+    if(diffDays>=0 && diffDays<7) thisWeek++;
+    else if(diffDays>=7 && diffDays<14) lastWeek++;
+  });
+  return {thisWeek,lastWeek};
+}
+
+function renderDelta(elId, {thisWeek,lastWeek}, isHero){
+  const el = document.getElementById(elId);
+  const diff = thisWeek - lastWeek;
+  let dir='flat', arrow='<line x1="5" y1="12" x2="19" y2="12"/>';
+  if(diff>0){ dir='up'; arrow='<line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>'; }
+  else if(diff<0){ dir='down'; arrow='<line x1="12" y1="5" x2="12" y2="19"/><polyline points="5 12 12 19 19 12"/>'; }
+
+  const label = thisWeek===0 && lastWeek===0
+    ? 'No activity yet'
+    : `${thisWeek} this week`;
+
+  if(isHero){
+    el.innerHTML = `<div class="hero-delta"><svg viewBox="0 0 24 24">${arrow}</svg>${label}</div>`;
+  } else {
+    el.innerHTML = `<span class="stat-pill ${dir}"><svg viewBox="0 0 24 24">${arrow}</svg>${label}</span>`;
+  }
+}
+
+/* ── TREND CHART ── */
+function bucketByDay(docs, days){
+  const buckets = new Array(days).fill(0);
+  const start = new Date(); start.setHours(0,0,0,0); start.setDate(start.getDate()-(days-1));
+  docs.forEach(d=>{
+    const ts = d.createdAt; if(!ts) return;
+    const date = ts.toDate?ts.toDate():new Date(ts);
+    const idx = Math.floor((date - start)/86400000);
+    if(idx>=0 && idx<days) buckets[idx]++;
+  });
+  return buckets;
+}
+
+function renderTrend(viewDocs, followDocs){
+  const views = bucketByDay(viewDocs, TREND_DAYS);
+  const followers = bucketByDay(followDocs, TREND_DAYS);
+  const max = Math.max(...views, ...followers, 1);
+
+  const w=280, h=100, padTop=8, padBottom=8;
+  const innerH = h-padTop-padBottom;
+  const step = w/(TREND_DAYS-1);
+  const toPath = arr => arr.map((v,i)=>{
+    const x=(i*step).toFixed(1);
+    const y=(padTop + innerH - (v/max)*innerH).toFixed(1);
+    return `${i===0?'M':'L'}${x},${y}`;
+  }).join(' ');
+
+  const startDate = new Date(); startDate.setDate(startDate.getDate()-(TREND_DAYS-1));
+  const endDate = new Date();
+  const fmt = d => d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+
+  const totalViews = views.reduce((a,b)=>a+b,0);
+  const totalFollowers = followers.reduce((a,b)=>a+b,0);
+
+  document.getElementById('trendCard').innerHTML = `
+    <div class="trend-chart-wrap">
+      <svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+        <line x1="0" y1="${padTop}" x2="${w}" y2="${padTop}" stroke="var(--border2)" stroke-width="1"/>
+        <line x1="0" y1="${(h/2).toFixed(1)}" x2="${w}" y2="${(h/2).toFixed(1)}" stroke="var(--border2)" stroke-width="1"/>
+        <line x1="0" y1="${h-padBottom}" x2="${w}" y2="${h-padBottom}" stroke="var(--border2)" stroke-width="1"/>
+        <path d="${toPath(views)}" fill="none" stroke="var(--p)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="${toPath(followers)}" fill="none" stroke="var(--amber)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div class="trend-axis"><span>${fmt(startDate)}</span><span>${fmt(endDate)}</span></div>
+    <div class="trend-legend">
+      <div class="trend-legend-item">
+        <div class="trend-legend-line" style="background:var(--p)"></div>
+        <div><div class="trend-legend-text">Profile Views</div><div class="trend-legend-sub">${totalViews} in 14 days</div></div>
+      </div>
+      <div class="trend-legend-item">
+        <div class="trend-legend-line" style="background:var(--amber)"></div>
+        <div><div class="trend-legend-text">New Followers</div><div class="trend-legend-sub">${totalFollowers} in 14 days</div></div>
+      </div>
+    </div>
+  `;
+}
+
+/* ── BEST ARTICLE ── */
+function renderBestArticle(articles){
+  const withScore = articles.filter(a=>a.score>0);
+  if(!withScore.length) return;
+  const best = withScore.reduce((a,b)=> b.score>a.score ? b : a);
+
+  document.getElementById('bestSection').style.display='block';
+  document.getElementById('bestTitle').textContent = best.title || 'Untitled';
+
+  const thumb = document.getElementById('bestThumb');
+  if(best.cover){
+    thumb.style.backgroundImage = `url(${best.cover})`;
+    thumb.innerHTML = '';
+  }
+
+  document.getElementById('bestStats').innerHTML = `
+    <span class="best-stat-item"><svg viewBox="0 0 24 24">${ICONS.eye}</svg>${best.views}</span>
+    <span class="best-stat-item"><svg viewBox="0 0 24 24">${ICONS.heart}</svg>${best.likes}</span>
+    <span class="best-stat-item"><svg viewBox="0 0 24 24">${ICONS.comment}</svg>${best.comments}</span>
+  `;
+  document.getElementById('bestSection').onclick = ()=> location.href=`/article-read?id=${best.id}`;
+  document.getElementById('bestSection').style.cursor='pointer';
+}
+
+/* ── ENGAGEMENT BREAKDOWN ── */
+function renderBreakdown(likes, comments){
+  const total = likes + comments;
+  const section = document.getElementById('breakdownSection');
+  if(total === 0){ section.style.display='none'; return; }
+  section.style.display='block';
+
+  const likesArc = (likes/total)*CIRC;
+  const commentsArc = (comments/total)*CIRC;
+
+  const dl = document.getElementById('donutLikes');
+  const dc = document.getElementById('donutComments');
+  dl.setAttribute('stroke-dasharray', `${likesArc} ${CIRC}`);
+  dc.setAttribute('stroke-dasharray', `${commentsArc} ${CIRC}`);
+  dc.setAttribute('stroke-dashoffset', `-${likesArc}`);
+
+  document.getElementById('donutTotal').textContent = total;
+  document.getElementById('legendLikes').textContent = likes;
+  document.getElementById('legendComments').textContent = comments;
+  document.getElementById('likesPct').textContent = Math.round((likes/total)*100)+'%';
+  document.getElementById('commentsPct').textContent = Math.round((comments/total)*100)+'%';
+}
+
+/* ── TOP PERFORMING ARTICLES ── */
+function renderPerfList(articles){
+  const sorted = [...articles].sort((a,b)=>b.score-a.score).slice(0,5);
+  const list = document.getElementById('perfList');
+  list.innerHTML = sorted.map((a,i)=>`
+    <div class="perf-row" onclick="location.href='/article-read?id=${a.id}'">
+      <div class="perf-rank">${i+1}</div>
+      <div class="perf-info">
+        <div class="perf-title">${esc(a.title||'Untitled')}</div>
+        <div class="perf-meta">
+          <span class="perf-meta-item"><svg viewBox="0 0 24 24">${ICONS.eye}</svg>${a.views}</span>
+          <span class="perf-meta-item"><svg viewBox="0 0 24 24">${ICONS.heart}</svg>${a.likes}</span>
+          <span class="perf-meta-item"><svg viewBox="0 0 24 24">${ICONS.comment}</svg>${a.comments}</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ── RECENT ACTIVITY ── */
+const ACTIVITY_MAP = {
+  /* profile_view removed — no longer written to notifications, see the Profile Views hero above */
+  follow:        {icon:ICONS.userPlus,cls:'follow',  text:a=>`<b>${esc(a.actorName||'Someone')}</b> started following you`},
+  article_like:  {icon:ICONS.heart,   cls:'like',    text:a=>`<b>${esc(a.actorName||'Someone')}</b> liked "${esc(nTrunc(a.targetTitle||'your article',40))}"`},
+  new_comment:   {icon:ICONS.comment, cls:'comment', text:a=>`<b>${esc(a.actorName||'Someone')}</b> commented on "${esc(nTrunc(a.targetTitle||'your article',40))}"`},
+  comment_reply: {icon:ICONS.comment, cls:'comment', text:a=>`<b>${esc(a.actorName||'Someone')}</b> replied to your comment`},
+  comment_like:  {icon:ICONS.heart,   cls:'like',    text:a=>`<b>${esc(a.actorName||'Someone')}</b> liked your comment`}
+};
+
+function renderActivity(docs){
+  const card = document.getElementById('activityCard');
+  if(!docs.length){
+    card.innerHTML = emptyState(ICONS.eye, 'No activity yet.<br>Interactions on your profile and articles will show up here.');
+    return;
+  }
+  card.style.padding='4px 16px';
+  card.innerHTML = docs.map(d=>{
+    const cfg = ACTIVITY_MAP[d.type] || {icon:ICONS.eye, cls:'view', text:()=>'New activity'};
+    return `
+      <div class="activity-row">
+        <div class="activity-icon ${cfg.cls}"><svg viewBox="0 0 24 24">${cfg.icon}</svg></div>
+        <div class="activity-body">
+          <div class="activity-text">${cfg.text(d)}</div>
+          <div class="activity-time">${nTimeAgo(d.createdAt)}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+/* ── HELPERS ── */
+function emptyState(iconPath, text){
+  return `<div class="empty-state"><svg viewBox="0 0 24 24">${iconPath}</svg><p>${text}</p></div>`;
+}
+async function safeDocs(q){
+  try{ const s = await getDocs(q); return s.docs.map(d=>({id:d.id,...d.data()})); }
+  catch{ return []; }
+}
+function setNum(id, val){
+  const el = document.getElementById(id);
+  if(el) el.textContent = (val||0).toLocaleString();
+}
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function nTrunc(s,n){ return s.length>n?s.slice(0,n)+'…':s; }
+function nTimeAgo(ts){
+  if(!ts) return '';
+  const date = ts.toDate?ts.toDate():new Date(ts);
+  const sec=(Date.now()-date.getTime())/1000;
+  if(sec<60) return 'just now';
+  if(sec<3600) return Math.floor(sec/60)+'m ago';
+  if(sec<86400) return Math.floor(sec/3600)+'h ago';
+  if(sec<604800) return Math.floor(sec/86400)+'d ago';
+  return date.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
+</script>
+</body>
+</html>
