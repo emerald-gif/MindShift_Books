@@ -10,8 +10,8 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"/>
 <style>
 :root{
-  --p:#06b6d4;--p2:#22d3ee;--ps:#0891b2;
-  --g:linear-gradient(135deg,#06b6d4,#22d3ee);
+  --p:#4f46e5;--p2:#06b6d4;--ps:#4338ca;
+  --g:linear-gradient(135deg,#4f46e5,#06b6d4);
   --bg:#fff;--border:#e2e8f0;--border2:#e2e8f0;
   --txt:#0f172a;--sub:#6b7280;--mute:#9ca3af;
   --red:#ef4444;--red-bg:#fff1f1;
@@ -177,7 +177,7 @@ header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .act-btn svg{width:16px;height:16px;flex-shrink:0}
 .act-btn:hover{border-color:var(--p);color:var(--p)}
 .act-download-locked{opacity:.75}
-.act-lock-badge{position:absolute;top:-6px;right:-6px;font-size:9px;background:linear-gradient(135deg,#06b6d4,#22d3ee);color:#fff;border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(37,99,235,.4)}
+.act-lock-badge{position:absolute;top:-6px;right:-6px;font-size:9px;background:linear-gradient(135deg,#4f46e5,#06b6d4);color:#fff;border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(37,99,235,.4)}
 .act-like{border-color:var(--border2)}
 .act-like.liked{border-color:var(--red);color:var(--red);background:var(--red-bg)}
 .act-like.liked svg{fill:var(--red);stroke:var(--red);animation:hpop .25s ease}
@@ -197,7 +197,7 @@ header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .art-body li{margin-bottom:7px;line-height:1.72}
 .art-body strong{color:var(--txt);font-weight:800}
 .art-body hr{border:none;border-top:2px solid #f3f4f6;margin:28px 0}
-.art-body .pull-quote{background:#ecfeff;border-left:4px solid var(--p);border-radius:0 12px 12px 0;padding:16px 18px;margin:22px 0;font-size:15px;font-style:italic;color:var(--ps);line-height:1.7}
+.art-body .pull-quote{background:#eef2ff;border-left:4px solid var(--p);border-radius:0 12px 12px 0;padding:16px 18px;margin:22px 0;font-size:15px;font-style:italic;color:var(--ps);line-height:1.7}
 .art-body .pull-quote::before{content:'\201C';font-size:42px;color:var(--p);line-height:0;vertical-align:-14px;margin-right:4px;font-family:Georgia,serif}
 .art-body .key-box{background:#ecfeff;border:1.5px solid var(--border2);border-radius:14px;padding:16px 18px;margin:18px 0}
 .art-body .key-box-title{font-size:11px;font-weight:800;color:var(--p);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
@@ -327,13 +327,13 @@ header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 
 /* ── WELCOME NUDGE ── */
-.welcome-nudge{position:fixed;bottom:0;left:0;right:0;z-index:400;background:linear-gradient(135deg,#06b6d4,#22d3ee);color:#fff;padding:16px 20px 36px;transform:translateY(100%);transition:transform .38s cubic-bezier(.32,0,.15,1);display:flex;align-items:center;gap:14px}
+.welcome-nudge{position:fixed;bottom:0;left:0;right:0;z-index:400;background:linear-gradient(135deg,#4f46e5,#06b6d4);color:#fff;padding:16px 20px 36px;transform:translateY(100%);transition:transform .38s cubic-bezier(.32,0,.15,1);display:flex;align-items:center;gap:14px}
 .welcome-nudge.on{transform:none}
 .welcome-nudge-ico{font-size:28px;flex-shrink:0;line-height:1}
 .welcome-nudge-txt{flex:1;min-width:0}
 .welcome-nudge-txt strong{display:block;font-size:14px;font-weight:800;margin-bottom:3px}
 .welcome-nudge-txt span{font-size:12px;opacity:.85;line-height:1.4;display:block}
-.welcome-nudge-cta{flex-shrink:0;background:#fff;color:#06b6d4;font-size:12px;font-weight:800;border:none;border-radius:99px;padding:9px 14px;cursor:pointer;white-space:nowrap}
+.welcome-nudge-cta{flex-shrink:0;background:#fff;color:#4f46e5;font-size:12px;font-weight:800;border:none;border-radius:99px;padding:9px 14px;cursor:pointer;white-space:nowrap}
 .welcome-nudge-close{position:absolute;top:10px;right:14px;background:none;border:none;color:rgba(255,255,255,.7);font-size:18px;cursor:pointer;padding:4px;line-height:1}
 
 /* ── COMMENTS SECTION ── */
@@ -364,7 +364,7 @@ header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .c-meta-row{display:flex;align-items:center;gap:6px;margin-bottom:3px;flex-wrap:wrap}
 .c-name{font-size:13px;font-weight:800;color:var(--txt);cursor:pointer;line-height:1}
 .c-name:hover{color:var(--p)}
-.c-author-badge{display:inline-flex;align-items:center;gap:3px;background:linear-gradient(135deg,#06b6d418,#22d3ee18);color:var(--p);font-size:10px;font-weight:800;padding:2px 7px;border-radius:99px;border:1px solid #bfdbfe;letter-spacing:.1px;flex-shrink:0}
+.c-author-badge{display:inline-flex;align-items:center;gap:3px;background:linear-gradient(135deg,#4f46e518,#06b6d418);color:var(--p);font-size:10px;font-weight:800;padding:2px 7px;border-radius:99px;border:1px solid #bfdbfe;letter-spacing:.1px;flex-shrink:0}
 .c-author-badge svg{width:9px;height:9px;fill:var(--p)}
 .c-text{font-size:14px;color:#374151;line-height:1.65;word-break:break-word;margin-bottom:6px}
 .c-foot{display:flex;align-items:center;gap:2px;flex-wrap:wrap}
@@ -837,7 +837,7 @@ async function renderArticle(){
       <h1 class="art-title">${article.title}</h1>
       <div class="author-row-wrap">
         <div class="author-row" onclick="goAuthor()" style="cursor:pointer">
-          <img class="author-logo" src="${article.avatar||'logo.jpg'}" alt="${article.author||'MindShift Books'}" onerror="this.style.background='linear-gradient(135deg,#06b6d4,#22d3ee)'">
+          <img class="author-logo" src="${article.avatar||'logo.jpg'}" alt="${article.author||'MindShift Books'}" onerror="this.style.background='linear-gradient(135deg,#4f46e5,#06b6d4)'">
           <div>
             <div class="author-name">
               ${article.author||'MindShift Books'}
