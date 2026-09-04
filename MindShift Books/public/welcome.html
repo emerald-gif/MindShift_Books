@@ -1,114 +1,50 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Welcome | MindShift Books</title>
-  <meta name="description" content="Your MindShift Books account is ready." />
-  <meta name="robots" content="noindex, follow">
-  <link rel="shortcut icon" href="/MINDSHIFT.jpg" type="image/jpg">
-  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="/article-categories.js"></script>
-  <style>
+<!doctype html><html><head><meta charset="utf-8">
+<style>
 :root{ --primary:#0f172a; --accent:#06b6d4; --indigo:#4f46e5; --paper:#fdfdfc; --border:#e5e7eb; }
 *{box-sizing:border-box;margin:0;padding:0;}
-body{
-  font-family:'Inter',sans-serif; color:var(--primary); background:var(--paper);
-  min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;
-}
-
-.card{ width:100%; max-width:460px; text-align:center; padding:44px 32px 40px; }
-
-.brand{ display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:28px; }
-.brand img{ width:32px; height:32px; border-radius:7px; }
-.brand span{ font-weight:700; font-size:1rem; letter-spacing:0.01em; }
-
-.step-dots{ display:flex; justify-content:center; gap:6px; margin-bottom:28px; }
-.step-dots span{ width:7px; height:7px; border-radius:99px; background:#e2e8f0; transition:background .2s,width .2s; }
-.step-dots span.on{ background:linear-gradient(90deg,var(--indigo),var(--accent)); width:20px; }
-
-.icon-wrap{
-  width:96px; height:96px; margin:0 auto 28px; border-radius:50%;
-  display:flex; align-items:center; justify-content:center;
-  background:radial-gradient(circle at 30% 25%, rgba(6,182,212,0.16), rgba(79,70,229,0.1) 70%);
-}
-.icon-wrap svg{ width:52px; height:52px; }
-
-h1{
-  font-family:'Source Serif 4',serif; font-weight:600; font-size:1.55rem;
-  line-height:1.25; margin-bottom:10px;
-}
-h1 .accent{ color:var(--indigo); }
-
-.subtext{ color:#64748b; font-size:0.94rem; line-height:1.6; margin-bottom:26px; }
-.subtext b{ color:var(--primary); }
-
+body{ font-family:'Inter',sans-serif; color:var(--primary); background:var(--paper); padding:24px; }
+.card{ width:100%; max-width:460px; text-align:center; padding:44px 32px 40px; margin:0 auto; border:1px dashed #ccc;}
 .cat-pills{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-bottom:8px; }
-.cat-pill{
-  padding:9px 14px; border-radius:99px; border:1.5px solid var(--border); background:#fff;
-  font-size:12.5px; font-weight:600; color:var(--primary); cursor:pointer; transition:all .15s;
-  font-family:inherit;
-}
+.cat-pill{ padding:9px 14px; border-radius:99px; border:1.5px solid var(--border); background:#fff;
+  font-size:12.5px; font-weight:600; color:var(--primary); cursor:pointer; font-family:inherit; }
 .cat-pill.sel{ background:linear-gradient(90deg,var(--indigo),var(--accent)); color:#fff; border-color:transparent; }
-.cat-hint{ font-size:11.5px; color:#94a3b8; margin:10px 0 26px; }
-
-.uname-row{
-  display:flex; align-items:center; justify-content:center; gap:8px;
-  font-size:13px; color:#64748b; margin-bottom:26px; flex-wrap:wrap;
-}
-.uname-row b{ color:var(--primary); }
-.uname-row button{ border:none; background:none; color:var(--indigo); font-weight:700; font-size:12.5px; cursor:pointer; padding:2px 4px; }
-.uname-edit{ display:none; align-items:center; gap:8px; justify-content:center; margin-bottom:26px; flex-wrap:wrap; }
-.uname-edit.show{ display:flex; }
-.uname-edit input{
-  border:1.5px solid var(--border); border-radius:10px; padding:8px 10px; font-size:13px;
-  font-family:inherit; width:160px; text-align:center;
-}
-.uname-status{ font-size:11.5px; min-height:14px; width:100%; text-align:center; }
-
-.browse-btn{
-  display:block; width:100%; padding:15px 20px; border-radius:12px; border:none;
-  background:linear-gradient(90deg,var(--indigo),var(--accent)); color:#fff;
-  font-weight:700; font-size:1rem; text-decoration:none; cursor:pointer;
-  box-shadow:0 10px 26px rgba(79,70,229,0.25);
-}
-.browse-btn:disabled{ opacity:.5; cursor:not-allowed; box-shadow:none; }
-.browse-btn:hover:not(:disabled){ filter:brightness(1.05); }
-
-.skip-link{ display:block; margin-top:14px; font-size:12.5px; color:#94a3b8; text-decoration:underline; cursor:pointer; background:none; border:none; font-family:inherit; }
-
-.footer-links{ margin-top:26px; font-size:0.82rem; color:#94a3b8; }
-.footer-links a{ color:#64748b; text-decoration:underline; }
-
-#stepInterests, #stepDone{ display:none; }
-#stepInterests.active, #stepDone.active{ display:block; }
-  </style>
-</head>
-<body>
-
-<div class="card">
-  <div class="brand">
-    <img src="/MINDSHIFT.jpg" alt="MindShift Books logo">
-    <span>MindShift Books</span>
-  </div>
-
-  <div class="step-dots">
-    <span id="dot1" class="on"></span>
-    <span id="dot2"></span>
-  </div>
-
-  <!-- STEP 1: INTERESTS -->
-  <div id="stepInterests" class="active">
-    <h1>What draws <span class="accent">you</span> in?</h1>
-    <p class="subtext">Pick what fits — we'll use it to shape your <b>For You</b> feed and recommend books that match.</p>
-
-    <div class="cat-pills" id="onboardCatPills"></div>
-    <div class="cat-hint">Pick as many as you like — you can change these anytime in Settings.</div>
-
-    <div class="uname-row" id="unameRow" style="display:none">
-      Your username is <b id="unameDisplay"></b>
-      <button type="button" id="unameEditBtn">Change</button>
-    </div>
+</style></head><body>
+<div class="card"><div class="cat-pills" id="p"></div></div>
+<script>
+var cats = [
+ {label:'Mindset & Personal Development', emoji:'🧠'},
+ {label:'Money & Financial Growth', emoji:'💰'},
+ {label:'Productivity & Success', emoji:'🎯'},
+ {label:'Relationships & Emotional Wellbeing', emoji:'❤'},
+ {label:'Health, Wellness & Lifestyle', emoji:'🌱'},
+ {label:'Career, Leadership & Entrepreneurship', emoji:'🚀'},
+ {label:'Education & Learning', emoji:'📚'},
+ {label:'Purpose, Spirituality & Life', emoji:'🌍'},
+ {label:'Inspirational & Reflective Writing', emoji:'✍'},
+ {label:'Fiction With Meaning', emoji:'📖'}
+];
+document.getElementById('p').innerHTML = cats.map(function(c){return '<button class="cat-pill">'+c.emoji+' '+c.label+'</button>'}).join('');
+</script>
+</body></html>
+EOF
+cat > /home/claude/preview/after.html << 'EOF'
+<!doctype html><html><head><meta charset="utf-8">
+<style>
+:root{ --primary:#0f172a; --accent:#06b6d4; --indigo:#4f46e5; --paper:#fdfdfc; --border:#e5e7eb; }
+*{box-sizing:border-box;margin:0;padding:0;}
+body{ font-family:'Inter',sans-serif; color:var(--primary); background:var(--paper); padding:24px; }
+.card{ width:100%; max-width:460px; text-align:center; padding:44px 32px 40px; margin:0 auto; border:1px dashed #ccc;}
+.cat-pills{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-bottom:8px; }
+.cat-pill{ padding:9px 14px; border-radius:99px; border:1.5px solid var(--border); background:#fff;
+  font-size:12.5px; font-weight:600; color:var(--primary); cursor:pointer; font-family:inherit; }
+.cat-pill.sel{ background:linear-gradient(90deg,var(--indigo),var(--accent)); color:#fff; border-color:transparent; }
+</style></head><body>
+<div class="card"><div class="cat-pills" id="p"></div></div>
+<script>
+var cats = ['Mindset','Money','Productivity','Relationships','Health','Career','Education','Purpose','Reflective Writing','Fiction'];
+document.getElementById('p').innerHTML = cats.map(function(c){return '<button class="cat-pill">'+c+'</button>'}).join('');
+</script>
+</body></html>    </div>
     <div class="uname-edit" id="unameEdit">
       <input id="unameInput" type="text" maxlength="20" placeholder="username">
       <button type="button" class="browse-btn" id="unameSaveBtn" style="width:auto;padding:8px 16px;font-size:13px;">Save</button>
