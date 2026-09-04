@@ -43,6 +43,7 @@
   }
   .nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
   .nav-item.active { background: rgba(255,255,255,0.1); color: #fff; }
+  .nav-badge { margin-left: auto; background: #ef4444; color: #fff; font-size: 0.68rem; font-weight: 800; padding: 1px 7px; border-radius: 99px; }
   .nav-item:not(.active):hover { background: rgba(255,255,255,0.05); color: #d8dee9; }
 
   .sidebar-controls { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; margin-top: auto; border-top: 1px solid rgba(255,255,255,0.08); }
@@ -177,6 +178,7 @@
   .aff-badge { display:inline-block; padding:3px 9px; border-radius:999px; font-size:0.72rem; font-weight:700; }
   .aff-badge.owed { background:#fef3c7; color:#92400e; }
   .aff-badge.settled { background:#dcfce7; color:#166534; }
+  .aff-badge.rejected { background:#fee2e2; color:#991b1b; }
   .pay-btn {
     padding:6px 12px; border-radius:8px; border:none; font-weight:700; font-size:0.76rem;
     background: linear-gradient(90deg, #4f46e5, #06b6d4); color: #fff; cursor:pointer;
@@ -322,6 +324,7 @@
     <button class="nav-item" id="tabPayouts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2.2"/><circle cx="12" cy="12" r="2.6"/></svg>Payouts</button>
     <button class="nav-item" id="tabBroadcast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.3v3.4a1.3 1.3 0 001.3 1.3h1.2l4.8 3.9V5.1l-4.8 3.9H4.3A1.3 1.3 0 003 10.3z"/><path d="M14.5 9a3.5 3.5 0 010 6"/></svg>Updates</button>
     <button class="nav-item" id="tabCreators"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="8" r="3.3"/><path d="M1.8 20a6.7 6.7 0 0113.4 0"/><path d="M18 7v6"/><path d="M15 10h6"/></svg>Creators</button>
+    <button class="nav-item" id="tabArticles"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/><line x1="9" y1="7" x2="15" y2="7"/><line x1="9" y1="11" x2="15" y2="11"/></svg>Articles<span class="nav-badge" id="articlesPendingBadge" style="display:none">0</span></button>
   </nav>
 
   <div class="sidebar-controls">
@@ -812,6 +815,46 @@
     </div>
   </div>
 
+  <div id="articlesPage" style="display:none;">
+    <div class="payouts-header">
+      <div class="status-filter">
+        <button class="active" data-status="pending" id="artFilterPending">Pending</button>
+        <button data-status="approved" id="artFilterApproved">Approved</button>
+        <button data-status="rejected" id="artFilterRejected">Rejected</button>
+        <button data-status="all" id="artFilterAll">All</button>
+      </div>
+    </div>
+    <div class="panel full-panel" style="padding-bottom:16px;">
+      <h2><span class="h2-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></span>Article Submissions</h2>
+      <table>
+        <thead><tr><th>Title</th><th>Author</th><th>Category</th><th>Submitted</th><th>Status</th><th class="num">Action</th></tr></thead>
+        <tbody id="articlesBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Article preview overlay — shown when an admin clicks a submission's title -->
+  <div id="articlePreviewOverlay" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(15,23,42,0.55);align-items:flex-start;justify-content:center;overflow-y:auto;padding:40px 16px;">
+    <div style="background:#fff;border-radius:16px;max-width:640px;width:100%;padding:28px;margin-bottom:40px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:14px;">
+        <div>
+          <div id="apCategory" style="font-size:0.72rem;font-weight:800;color:var(--indigo);text-transform:uppercase;letter-spacing:.03em;margin-bottom:6px;"></div>
+          <h2 id="apTitle" style="font-size:1.3rem;font-weight:800;color:var(--primary);margin:0;"></h2>
+          <div id="apMeta" style="font-size:0.8rem;color:var(--muted);margin-top:6px;"></div>
+        </div>
+        <button id="apCloseBtn" style="flex-shrink:0;width:32px;height:32px;border-radius:50%;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-size:1.1rem;line-height:1;">&times;</button>
+      </div>
+      <img id="apCover" src="" alt="" style="width:100%;border-radius:10px;margin-bottom:16px;display:none;object-fit:cover;max-height:280px;">
+      <div id="apBrief" style="font-size:0.92rem;color:var(--muted);font-style:italic;margin-bottom:16px;border-left:3px solid var(--border);padding-left:12px;"></div>
+      <div id="apBody" style="font-size:0.92rem;line-height:1.7;color:var(--primary);"></div>
+      <div id="apRejectNote" style="display:none;margin-top:16px;padding:12px 14px;background:#fef2f2;border-radius:10px;font-size:0.85rem;color:#991b1b;"></div>
+      <div style="display:flex;gap:10px;margin-top:24px;">
+        <button id="apApproveBtn" class="gen-btn" style="flex:1;justify-content:center;">Approve &amp; Publish</button>
+        <button id="apRejectBtn" style="flex:1;padding:10px 16px;border-radius:10px;border:1.5px solid var(--border);background:#fff;color:#991b1b;font-weight:700;font-size:0.82rem;cursor:pointer;">Reject</button>
+      </div>
+    </div>
+  </div>
+
 </div>
 </div>
 </div>
@@ -993,9 +1036,11 @@
   const tabPayouts = document.getElementById('tabPayouts');
   const tabBroadcast = document.getElementById('tabBroadcast');
   const tabCreators = document.getElementById('tabCreators');
+  const tabArticles = document.getElementById('tabArticles');
   const payoutsPage = document.getElementById('payoutsPage');
   const broadcastPage = document.getElementById('broadcastPage');
   const creatorsPage = document.getElementById('creatorsPage');
+  const articlesPage = document.getElementById('articlesPage');
   let overviewLoadedOnce = true; // loadStats() already ran once above on page load
 
   // Generic accordion toggle, shared by all four discovery/import panels —
@@ -1016,7 +1061,7 @@
   });
 
   function setActiveTab(active) {
-    [tabOverview, tabPayouts, tabBroadcast, tabCreators].forEach(b => b.classList.toggle('active', b === active));
+    [tabOverview, tabPayouts, tabBroadcast, tabCreators, tabArticles].forEach(b => b.classList.toggle('active', b === active));
     // Auto-close the mobile dropdown menu whenever a tab is picked — no
     // reason to make the admin close it manually every time.
     document.getElementById('sidebarNav').classList.remove('open');
@@ -1026,6 +1071,7 @@
     payoutsPage.style.display = 'none';
     broadcastPage.style.display = 'none';
     creatorsPage.style.display = 'none';
+    articlesPage.style.display = 'none';
   }
 
   tabOverview.addEventListener('click', () => {
@@ -1068,6 +1114,164 @@
     loadCreatorSummary();
     loadCreators();
   });
+  tabArticles.addEventListener('click', () => {
+    setActiveTab(tabArticles);
+    rangeSelect.style.display = 'none';
+    loadingWrap.style.display = 'none';
+    content.style.display = 'none';
+    hideAllPages();
+    articlesPage.style.display = 'block';
+    loadArticleSubmissions();
+  });
+
+  // ── Article Submissions ──
+  let currentArtStatus = 'pending';
+  const artFilterBtns = {
+    pending: document.getElementById('artFilterPending'),
+    approved: document.getElementById('artFilterApproved'),
+    rejected: document.getElementById('artFilterRejected'),
+    all: document.getElementById('artFilterAll'),
+  };
+  Object.entries(artFilterBtns).forEach(([status, btn]) => {
+    btn.addEventListener('click', () => {
+      currentArtStatus = status;
+      Object.values(artFilterBtns).forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      loadArticleSubmissions();
+    });
+  });
+
+  let articleSubmissions = [];
+
+  async function loadArticleSubmissions() {
+    const tbody = document.getElementById('articlesBody');
+    tbody.innerHTML = '<tr><td colspan="6" class="empty">Loading…</td></tr>';
+    try {
+      const res = await fetch(`/api/admin/submissions?status=${currentArtStatus}`);
+      if (res.status === 401) { window.location.href = '/admin/login'; return; }
+      if (!res.ok) throw new Error('Request failed: ' + res.status);
+      const data = await res.json();
+      articleSubmissions = data.submissions || [];
+      renderArticleSubmissions();
+      refreshArticlesPendingBadge();
+    } catch (err) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty">Could not load submissions.</td></tr>';
+    }
+  }
+
+  // The sidebar badge always reflects the true pending count, independent
+  // of whichever status filter is currently selected in the table below —
+  // fetched once on load and refreshed after every approve/reject action.
+  async function refreshArticlesPendingBadge() {
+    try {
+      const res = await fetch(`/api/admin/submissions?status=pending`);
+      if (!res.ok) return;
+      const data = await res.json();
+      const n = (data.submissions || []).length;
+      const badge = document.getElementById('articlesPendingBadge');
+      badge.textContent = n;
+      badge.style.display = n > 0 ? 'inline-block' : 'none';
+    } catch (e) {}
+  }
+  refreshArticlesPendingBadge();
+
+  function renderArticleSubmissions() {
+    const tbody = document.getElementById('articlesBody');
+    if (!articleSubmissions.length) {
+      tbody.innerHTML = `<tr><td colspan="6" class="empty">No ${currentArtStatus === 'all' ? '' : currentArtStatus + ' '}submissions right now.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = articleSubmissions.map(s => {
+      const badgeClass = s.status === 'approved' ? 'settled' : s.status === 'rejected' ? 'rejected' : 'owed';
+      const badgeLabel = s.status === 'approved' ? 'Approved' : s.status === 'rejected' ? 'Rejected' : 'Pending';
+      return `
+      <tr>
+        <td><a href="#" class="art-title-link" data-id="${esc(s.id)}" style="color:var(--primary);font-weight:700;text-decoration:none;">${esc(s.title || 'Untitled')}</a></td>
+        <td>${esc(s.authorName || 'Unknown')}${s.authorUsername ? `<br><span style="font-size:0.72rem;color:var(--muted);">@${esc(s.authorUsername)}</span>` : ''}</td>
+        <td>${esc(s.cat || '—')}</td>
+        <td>${fmtDateTime(s.createdAt)}</td>
+        <td><span class="aff-badge ${badgeClass}">${badgeLabel}</span></td>
+        <td class="num">
+          <button class="art-preview-btn" data-id="${esc(s.id)}" style="padding:6px 12px;border-radius:8px;border:1.5px solid var(--border);background:#fff;font-weight:700;font-size:0.76rem;cursor:pointer;">Review</button>
+        </td>
+      </tr>`;
+    }).join('');
+
+    tbody.querySelectorAll('.art-title-link, .art-preview-btn').forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.preventDefault();
+        openArticlePreview(el.dataset.id);
+      });
+    });
+  }
+
+  function openArticlePreview(id) {
+    const s = articleSubmissions.find(x => x.id === id);
+    if (!s) return;
+    document.getElementById('apCategory').textContent = s.cat || '';
+    document.getElementById('apTitle').textContent = s.title || 'Untitled';
+    document.getElementById('apMeta').textContent = `${s.authorName || 'Unknown'}${s.authorUsername ? ' · @' + s.authorUsername : ''} · ${fmtDateTime(s.createdAt)}`;
+    const cover = document.getElementById('apCover');
+    if (s.cover) { cover.src = s.cover; cover.style.display = 'block'; } else { cover.style.display = 'none'; }
+    document.getElementById('apBrief').textContent = s.brief || '';
+    document.getElementById('apBody').innerHTML = s.body || '';
+    const rejectNote = document.getElementById('apRejectNote');
+    if (s.status === 'rejected' && s.reviewNote) {
+      rejectNote.style.display = 'block';
+      rejectNote.textContent = 'Rejection note: ' + s.reviewNote;
+    } else {
+      rejectNote.style.display = 'none';
+    }
+    const approveBtn = document.getElementById('apApproveBtn');
+    const rejectBtn = document.getElementById('apRejectBtn');
+    approveBtn.disabled = false;
+    approveBtn.textContent = s.status === 'approved' ? 'Re-Publish' : 'Approve & Publish';
+    rejectBtn.style.display = s.status === 'rejected' ? 'none' : '';
+    approveBtn.onclick = () => approveSubmission(s.id);
+    rejectBtn.onclick = () => rejectSubmission(s.id);
+    document.getElementById('articlePreviewOverlay').style.display = 'flex';
+  }
+  document.getElementById('apCloseBtn').addEventListener('click', () => {
+    document.getElementById('articlePreviewOverlay').style.display = 'none';
+  });
+  document.getElementById('articlePreviewOverlay').addEventListener('click', (e) => {
+    if (e.target.id === 'articlePreviewOverlay') e.target.style.display = 'none';
+  });
+
+  async function approveSubmission(id) {
+    const btn = document.getElementById('apApproveBtn');
+    btn.disabled = true;
+    btn.textContent = 'Publishing…';
+    try {
+      const res = await fetch(`/api/admin/submissions/${encodeURIComponent(id)}/approve`, { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Approve failed');
+      document.getElementById('articlePreviewOverlay').style.display = 'none';
+      loadArticleSubmissions();
+    } catch (err) {
+      alert('Could not approve: ' + err.message);
+      btn.disabled = false;
+      btn.textContent = 'Approve & Publish';
+    }
+  }
+
+  async function rejectSubmission(id) {
+    const reason = prompt('Optional note to the author for why this was rejected (leave blank to skip):', '');
+    if (reason === null) return; // cancelled
+    try {
+      const res = await fetch(`/api/admin/submissions/${encodeURIComponent(id)}/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Reject failed');
+      document.getElementById('articlePreviewOverlay').style.display = 'none';
+      loadArticleSubmissions();
+    } catch (err) {
+      alert('Could not reject: ' + err.message);
+    }
+  }
 
   // ── Creators ──
   async function loadCreatorSummary() {
