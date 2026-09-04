@@ -286,13 +286,6 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   <div class="header-top">
     <h1><a href="/" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;"><img src="/MINDSHIFT.jpg" alt="MindShift logo" style="width:36px;height:36px;border-radius:6px;"></a><span>Profile</span></h1>
     <div class="header-icon-group">
-      <span class="acct-nav-slot"></span>
-      <div class="notif-wrap" id="notifWrap" style="display:none">
-        <button type="button" class="icon-btn" id="notifBtn" onclick="openNotifPanel()" aria-label="Notifications">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
-          <span class="notif-badge" id="notifBadge">0</span>
-        </button>
-      </div>
       <button type="button" id="sidebarToggle" class="icon-btn" onclick="toggleSidebar()" aria-label="Open menu">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="22" height="22"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
       </button>
@@ -300,14 +293,6 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   </div>
 </header>
 
-<!-- HEADER -->
-<header class="hdr">
-  <button class="btn-back" onclick="history.back()">
-    <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
-  </button>
-  <span class="hdr-title" id="hdrName">Profile</span>
-  <div class="hdr-action" style="width:36px"></div>
-</header>
 </div>
 
 <aside class="sidebar" id="sidebar" aria-hidden="true" data-open="false">
@@ -746,7 +731,6 @@ function renderProfileHeader(){
   });
   const av = document.getElementById('avatar');
   const nameEl = document.getElementById('profileName');
-  const hdrName = document.getElementById('hdrName');
   const actions = document.getElementById('profileActions');
 
   // cover
@@ -770,7 +754,6 @@ function renderProfileHeader(){
   // name
   const name = profileData.name || 'MindShift Books User';
   nameEl.textContent = name;
-  hdrName.textContent = name;
 
   // job title
   if(profileData.jobTitle){
