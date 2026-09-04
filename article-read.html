@@ -1,0 +1,1944 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<title>Article · MindShift Books</title>
+<meta name="description" content="Read career articles and insights from the MindShift Books community."/>
+<meta name="robots" content="noindex, nofollow"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"/>
+<style>
+:root{
+  --p:#06b6d4;--p2:#22d3ee;--ps:#0891b2;
+  --g:linear-gradient(135deg,#06b6d4,#22d3ee);
+  --bg:#fff;--border:#e2e8f0;--border2:#e2e8f0;
+  --txt:#0f172a;--sub:#6b7280;--mute:#9ca3af;
+  --red:#ef4444;--red-bg:#fff1f1;
+  --primary:#0f172a;--accent:#06b6d4;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',system-ui,sans-serif;background:#fff;color:var(--txt);-webkit-font-smoothing:antialiased}
+
+/* ── SHARED MINDSHIFT HEADER / SEARCH / SIDEBAR (copied verbatim from styles.css — see the same
+   block in articles.html; keep both in sync if styles.css changes) ── */
+header{position:relative;left:0;right:0;background:white;z-index:1000;display:flex;flex-direction:column;gap:10px;padding:16px 20px 18px;box-shadow:0 2px 12px rgba(0,0,0,0.06)}
+.header-top{display:flex;align-items:center;justify-content:space-between;width:100%;flex-wrap:nowrap;gap:8px}
+header h1{font-size:1.45rem;font-weight:700;display:flex;align-items:center;gap:10px;min-width:0;overflow:hidden}
+header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.header-icon-group{display:flex;align-items:center;gap:4px;flex-shrink:0}
+.icon-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;border:none;background:transparent;color:#1e293b;cursor:pointer;transition:background-color 150ms ease,color 150ms ease;padding:0}
+.icon-btn:hover{background-color:#f1f5f9;color:#4f46e5}
+.icon-btn:active{background-color:#e6e9ee}
+.search-wrapper{position:relative;display:flex;align-items:center;gap:8px;background:#eef2f6;padding:6px 8px;border-radius:12px;width:420px;max-width:calc(100% - 40px);margin:0 auto;box-shadow:0 6px 18px rgba(2,6,23,0.04)}
+.search-wrapper input{flex:1;border:none;outline:none;background:transparent;font-size:0.95rem;padding:6px 8px;color:var(--primary)}
+.search-wrapper button{display:inline-flex;align-items:center;justify-content:center;background:linear-gradient(90deg,#4f46e5,#06b6d4);border:none;color:#fff;padding:8px 10px;border-radius:10px;cursor:pointer;box-shadow:0 8px 20px rgba(79,70,229,0.12)}
+.search-wrapper .search-icon-prefix{width:16px;height:16px;color:#94a3b8;flex-shrink:0}
+.sidebar{position:fixed;top:0;left:-300px;width:280px;height:100%;background:#111827;padding-top:84px;padding-bottom:90px;transition:left 0.32s ease;z-index:2000;border-right:1px solid rgba(255,255,255,0.04);color:#fff;overflow-y:auto}
+.sidebar .logo-row{display:flex;align-items:center;gap:12px;padding:18px 20px;position:absolute;top:16px;left:12px}
+.sidebar img{width:36px;height:36px;border-radius:6px}
+.sidebar ul{list-style:none;margin-top:8px}
+.sidebar li{padding:16px 20px;font-weight:600;border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer}
+.sidebar-close-btn{position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.06);color:#fff;font-size:1.15rem;font-weight:800;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:1}
+.sidebar-close-btn:active{background:rgba(255,255,255,0.14)}
+.sidebar-auth-cta{padding:16px 20px;margin-top:6px}
+.sidebar-auth-icon{font-size:1.3rem;margin-bottom:4px}
+.sidebar-auth-text{color:#e2e8f0;font-size:0.78rem;line-height:1.4;margin-bottom:12px}
+.sidebar-auth-cta .btn{display:block;width:100%;padding:9px 10px;font-size:0.8rem;text-decoration:none;margin-bottom:8px;text-align:center;border-radius:10px;font-weight:700}
+.sidebar-auth-cta .btn:last-child{margin-bottom:0}
+.sidebar-auth-signup{background:linear-gradient(90deg,#4f46e5,#06b6d4);color:#fff}
+.sidebar-auth-login{background:rgba(255,255,255,0.08);color:#fff;border:1px solid rgba(255,255,255,0.3)!important}
+.sidebar-auth-login:hover{background:rgba(255,255,255,0.16)}
+@media (max-width:600px){ .search-wrapper{width:100%!important;max-width:100%!important} header{padding:14px 14px 18px} }
+@media (max-width:450px){ header h1{font-size:1.15rem} .header-icon-group .icon-btn{width:36px;height:36px} }
+/* ── /SHARED HEADER ── */
+
+/* ── READING BAR (page-specific: back button + scroll-linked title/avatar, sits directly
+   under the shared header above) ── */
+.hdr{position:relative;z-index:99;background:rgba(255,255,255,.96);border-bottom:1px solid var(--border);padding:0 16px;height:52px;display:flex;flex-direction:row;align-items:center;gap:12px;box-shadow:none}
+.sticky-header-stack{position:sticky;top:0;z-index:1000}
+.back-btn{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--border2);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all .18s;color:var(--txt)}
+.back-btn:hover{border-color:var(--p);color:var(--p)}
+.back-btn svg{width:16px;height:16px}
+.hdr-title{flex:1;font-size:14px;font-weight:700;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:0;transition:opacity .25s}
+.hdr-title.show{opacity:1}
+.hdr-av{width:32px;height:32px;border-radius:50%;background:var(--g);display:none;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;border:2px solid var(--border);cursor:pointer;background-size:cover;background-position:center;flex-shrink:0}
+
+/* ── RATING SECTION ── */
+.rating-card{
+  margin:24px 0 0;
+  background:linear-gradient(135deg,#ecfeff,#cffafe);
+  border-radius:20px;
+  border:1.5px solid var(--border);
+  padding:24px 20px 28px;
+}
+.rating-card.done{background:linear-gradient(135deg,#f0fdf4,#dcfce7)}
+
+.rating-dismiss{position:absolute;top:12px;right:14px;background:none;border:none;font-size:18px;cursor:pointer;color:var(--mute);line-height:1;padding:4px}
+
+.rating-emoji{font-size:36px;text-align:center;margin-bottom:4px;min-height:44px;display:flex;align-items:center;justify-content:center;
+  animation:emojiIdle 2s ease-in-out infinite}
+@keyframes emojiIdle{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+.rating-emoji.picked{animation:emojiBounce .5s cubic-bezier(.34,1.56,.64,1) forwards}
+@keyframes emojiBounce{0%{transform:scale(1)}40%{transform:scale(1.5) rotate(-10deg)}70%{transform:scale(.9) rotate(5deg)}100%{transform:scale(1.2) rotate(0deg)}}
+
+.rating-title{text-align:center;font-size:15px;font-weight:800;color:var(--txt);margin-bottom:2px}
+.rating-label{text-align:center;font-size:13px;color:var(--p);font-weight:600;min-height:20px;margin-bottom:16px;
+  transition:all .2s;letter-spacing:-.1px}
+
+.stars-row{display:flex;justify-content:center;gap:10px;margin-bottom:20px}
+.star-btn{background:none;border:none;cursor:pointer;padding:4px;position:relative;
+  transition:transform .15s;-webkit-tap-highlight-color:transparent}
+.star-btn:active{transform:scale(.9)}
+.star-btn svg{width:42px;height:42px;display:block;
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1),filter .2s}
+.star-btn.lit svg{filter:drop-shadow(0 0 8px rgba(251,191,36,.8))}
+.star-btn.hov svg{transform:scale(1.25) rotate(-5deg)}
+
+@keyframes starPop{
+  0%{transform:scale(1)}
+  30%{transform:scale(1.5) rotate(-8deg)}
+  60%{transform:scale(.85) rotate(4deg)}
+  80%{transform:scale(1.15) rotate(-2deg)}
+  100%{transform:scale(1) rotate(0deg)}
+}
+@keyframes starWiggle{
+  0%,100%{transform:rotate(0deg)}
+  25%{transform:rotate(-12deg) scale(1.1)}
+  75%{transform:rotate(12deg) scale(1.1)}
+}
+.star-btn.popping svg{animation:starPop .45s cubic-bezier(.34,1.56,.64,1) forwards}
+
+/* particles */
+.particle{position:fixed;width:8px;height:8px;border-radius:50%;pointer-events:none;z-index:9999;animation:particleFly .8s ease-out forwards}
+@keyframes particleFly{
+  0%{opacity:1;transform:translate(0,0) scale(1)}
+  100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(0)}
+}
+
+/* rating submit btn */
+.rating-submit{width:100%;padding:14px;border-radius:99px;background:var(--g);border:none;color:#fff;
+  font-size:15px;font-weight:800;cursor:pointer;letter-spacing:-.2px;
+  transition:transform .2s,box-shadow .2s;
+  box-shadow:0 4px 20px rgba(37,99,235,.35)}
+.rating-submit:active{transform:scale(.97)}
+.rating-submit:disabled{opacity:.5;cursor:not-allowed}
+.rating-submit:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 8px 28px rgba(37,99,235,.45)}
+
+/* done state */
+.rating-done{text-align:center;display:none}
+.rating-done.show{display:block}
+.rating-form.hide{display:none}
+.rating-avg{font-size:32px;font-weight:900;color:var(--p);margin:8px 0 4px;
+  animation:countUp .6s cubic-bezier(.34,1.56,.64,1)}
+@keyframes countUp{0%{transform:scale(0) rotate(-180deg);opacity:0}100%{transform:scale(1) rotate(0);opacity:1}}
+.rating-avg-label{font-size:13px;color:var(--sub)}
+
+/* confetti */
+.confetti-piece{position:fixed;width:10px;height:10px;pointer-events:none;z-index:9999;
+  animation:confettiFall 1s ease-out forwards}
+@keyframes confettiFall{
+  0%{opacity:1;transform:translate(var(--sx),var(--sy)) rotate(0deg) scale(1)}
+  100%{opacity:0;transform:translate(var(--ex),var(--ey)) rotate(720deg) scale(0)}
+}
+
+
+/* ── HERO IMG ── */
+.art-hero{width:100%;height:220px;object-fit:cover;display:block;background:linear-gradient(135deg,#cffafe,#ecfeff);border-radius:14px;margin:2px 0 22px}
+
+/* ── ARTICLE ── */
+.art-wrap{max-width:680px;margin:0 auto;padding:0 20px 60px}
+
+/* author row wrapper */
+.author-row-wrap{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:16px;border-bottom:1px solid #f3f4f6;margin-bottom:0}
+.author-row{display:flex;align-items:center;gap:10px;cursor:pointer;width:fit-content;border-bottom:none;padding-bottom:0}
+.author-row:hover .author-name{color:var(--p)}
+/* follow button */
+.follow-author-btn{padding:7px 18px;border-radius:99px;border:1.5px solid var(--p);background:#fff;color:var(--p);font-size:12.5px;font-weight:700;cursor:pointer;transition:all .2s;flex-shrink:0;font-family:'Inter',sans-serif;white-space:nowrap}
+.follow-author-btn:hover{background:var(--p);color:#fff}
+.follow-author-btn.following{background:var(--p);color:#fff;border-color:var(--p)}
+.follow-author-btn.following:hover{background:#0e7490;border-color:#0e7490}
+
+.art-cat{display:inline-block;background:var(--g);color:#fff;font-size:10px;font-weight:800;padding:4px 11px;border-radius:99px;letter-spacing:.4px;text-transform:uppercase;margin:20px 0 12px}
+
+.art-title{font-size:26px;font-weight:900;line-height:1.22;letter-spacing:-.5px;color:var(--txt);margin-bottom:16px}
+
+/* author name */
+.author-logo{width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--border);flex-shrink:0;background:var(--g)}
+.author-name{font-size:14px;font-weight:700;color:var(--txt);display:flex;align-items:center;gap:5px}
+.author-name svg{width:15px;height:15px;fill:var(--p)}
+.author-meta{font-size:12px;color:var(--mute)}
+
+/* action bar */
+.action-bar{display:flex;align-items:center;gap:8px;padding:14px 2px 16px;border-bottom:1px solid #f3f4f6;margin-bottom:22px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.action-bar::-webkit-scrollbar{display:none}
+.act-btn{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:99px;border:1.5px solid var(--border2);background:#fff;font-size:13px;font-weight:700;color:var(--sub);cursor:pointer;transition:all .2s;white-space:nowrap;flex-shrink:0;position:relative}
+.act-btn svg{width:16px;height:16px;flex-shrink:0}
+.act-btn:hover{border-color:var(--p);color:var(--p)}
+.act-download-locked{opacity:.75}
+.act-lock-badge{position:absolute;top:-6px;right:-6px;font-size:9px;background:linear-gradient(135deg,#06b6d4,#22d3ee);color:#fff;border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(37,99,235,.4)}
+.act-like{border-color:var(--border2)}
+.act-like.liked{border-color:var(--red);color:var(--red);background:var(--red-bg)}
+.act-like.liked svg{fill:var(--red);stroke:var(--red);animation:hpop .25s ease}
+.act-like svg{fill:none;stroke:currentColor;stroke-width:2;transition:all .2s}
+@keyframes hpop{0%{transform:scale(1)}50%{transform:scale(1.45)}100%{transform:scale(1)}}
+.act-save.saved{border-color:var(--p);color:var(--p);background:#ecfeff}
+.act-save svg{fill:none;stroke:currentColor;stroke-width:2;transition:all .2s}
+.act-save.saved svg{fill:var(--p);stroke:var(--p)}
+
+/* article body */
+.art-body{font-size:16px;line-height:1.8;color:#374151}
+.art-body p{margin-bottom:18px}
+.art-body div{margin-bottom:18px} /* safety net for articles written before write.html forced <p> wrapping */
+.art-body h2{font-size:20px;font-weight:900;color:var(--txt);line-height:1.3;margin:30px 0 12px;letter-spacing:-.3px}
+.art-body h3{font-size:17px;font-weight:800;color:var(--txt);margin:22px 0 8px}
+.art-body ul,.art-body ol{padding-left:22px;margin-bottom:16px}
+.art-body li{margin-bottom:7px;line-height:1.72}
+.art-body strong{color:var(--txt);font-weight:800}
+.art-body hr{border:none;border-top:2px solid #f3f4f6;margin:28px 0}
+.art-body .pull-quote{background:#ecfeff;border-left:4px solid var(--p);border-radius:0 12px 12px 0;padding:16px 18px;margin:22px 0;font-size:15px;font-style:italic;color:var(--ps);line-height:1.7}
+.art-body .pull-quote::before{content:'\201C';font-size:42px;color:var(--p);line-height:0;vertical-align:-14px;margin-right:4px;font-family:Georgia,serif}
+.art-body .key-box{background:#ecfeff;border:1.5px solid var(--border2);border-radius:14px;padding:16px 18px;margin:18px 0}
+.art-body .key-box-title{font-size:11px;font-weight:800;color:var(--p);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+.art-body code{font-size:13px;background:#f1f5f9;padding:2px 7px;border-radius:5px;font-family:monospace;color:#0f172a}
+.art-body em{font-style:italic;color:var(--sub)}
+.art-body img{max-width:100%;height:auto;border-radius:12px;margin:18px 0;display:block}
+.art-body blockquote{background:#ecfeff;border-left:4px solid var(--p);border-radius:0 12px 12px 0;
+  padding:14px 18px;margin:18px 0;font-style:italic;color:var(--ps)}
+.art-body a{color:var(--p);text-decoration:underline;font-weight:600}
+.art-body s{color:var(--sub)}
+
+/* auth gate */
+.art-gate{background:linear-gradient(160deg,#ecfeff,#fff);border:1.5px solid var(--border2);border-radius:20px;padding:32px 24px;text-align:center;margin:28px 0}
+.art-gate-ico{font-size:40px;margin-bottom:12px}
+.art-gate h3{font-size:20px;font-weight:900;color:var(--txt);margin-bottom:6px}
+.art-gate p{font-size:14px;color:var(--sub);line-height:1.65;margin-bottom:22px}
+.art-gate-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.art-gate-btns a{display:inline-flex;align-items:center;gap:6px;padding:12px 24px;border-radius:99px;font-size:14px;font-weight:700;text-decoration:none;transition:all .2s}
+.gate-li{background:#fff;border:1.5px solid var(--border2);color:var(--txt)}
+.gate-su{background:var(--g);color:#fff;box-shadow:0 4px 16px rgba(37,99,235,.28)}
+.gate-su:hover{opacity:.9}
+.art-fade{height:80px;background:linear-gradient(to bottom,transparent,#fff);margin-bottom:-4px;pointer-events:none}
+
+/* ── MORE ARTICLES ── */
+.more-section{padding:28px 20px 16px;border-top:1px solid #f3f4f6;margin-top:20px}
+.more-title{font-size:16px;font-weight:800;color:var(--txt);margin-bottom:16px}
+.more-list{display:flex;flex-direction:column;gap:12px}
+.more-card{display:flex;gap:12px;align-items:flex-start;cursor:pointer;padding:12px;border-radius:14px;border:1px solid var(--border);background:#fff;transition:all .2s}
+.more-card:hover{border-color:var(--p);background:#ecfeff}
+.more-img{width:72px;height:64px;border-radius:10px;object-fit:cover;flex-shrink:0;background:linear-gradient(135deg,#cffafe,#ecfeff)}
+.more-body{flex:1;min-width:0}
+.more-cat{font-size:10px;font-weight:800;color:var(--p);text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}
+.more-ttl{font-size:13px;font-weight:700;color:var(--txt);line-height:1.38;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.more-meta{font-size:11px;color:var(--mute);margin-top:4px;font-weight:600}
+.more-see-all{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-top:14px;padding:13px;border-radius:99px;border:1.5px solid var(--border2);background:#fff;color:var(--p);font-size:14px;font-weight:800;text-decoration:none;transition:all .2s}
+.more-see-all svg{width:15px;height:15px;transition:transform .2s}
+.more-see-all:hover{background:var(--g);color:#fff;border-color:transparent;box-shadow:0 4px 16px rgba(37,99,235,.28)}
+.more-see-all:hover svg{transform:translateX(3px)}
+
+/* ── AUTH SHEET ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;opacity:0;pointer-events:none;transition:opacity .25s;backdrop-filter:blur(3px)}
+.overlay.on{opacity:1;pointer-events:all}
+.auth-sheet{position:fixed;left:0;right:0;bottom:0;z-index:301;background:#fff;border-radius:24px 24px 0 0;padding:20px 20px 44px;transform:translateY(100%);transition:transform .32s cubic-bezier(.32,0,.15,1)}
+.auth-sheet.on{transform:none}
+.sheet-bar{width:36px;height:4px;background:#e5e7eb;border-radius:99px;margin:0 auto 20px}
+.auth-sheet h3{font-size:22px;font-weight:900;text-align:center;margin-bottom:6px}
+.auth-sheet p{font-size:13.5px;color:var(--sub);text-align:center;line-height:1.6;margin-bottom:22px}
+.auth-sheet-btns{display:flex;flex-direction:column;gap:10px}
+.auth-sheet-btns a{display:flex;align-items:center;justify-content:center;padding:15px;border-radius:14px;font-size:15px;font-weight:700;text-decoration:none;transition:opacity .18s}
+.ash-su{background:var(--g);color:#fff;box-shadow:0 4px 16px rgba(37,99,235,.28)}
+.ash-li{background:#fff;border:1.5px solid var(--border2);color:var(--txt)}
+.auth-cancel{display:block;text-align:center;margin-top:14px;font-size:13px;color:var(--mute);cursor:pointer;font-weight:600}
+
+/* ── SHARE SHEET ── */
+.share-sheet{position:fixed;left:0;right:0;bottom:0;z-index:302;background:#fff;border-radius:24px 24px 0 0;padding:18px 20px 44px;transform:translateY(100%);transition:transform .3s cubic-bezier(.32,0,.15,1)}
+.share-sheet.on{transform:none}
+.share-sheet h4{font-size:15px;font-weight:800;text-align:center;margin-bottom:16px}
+.share-opts{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.s-opt{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;transition:transform .15s}
+.s-opt:active{transform:scale(.93)}
+.s-ico{width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center}
+.s-lbl{font-size:10.5px;font-weight:600;color:var(--sub)}
+.copy-row{background:#ecfeff;border:1.5px solid var(--border2);border-radius:11px;display:flex;align-items:center;gap:8px;padding:10px 12px;cursor:pointer}
+.copy-url{font-size:12px;color:var(--sub);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.copy-lbl{font-size:12px;font-weight:700;color:var(--p);flex-shrink:0}
+.share-cancel{display:block;text-align:center;margin-top:14px;font-size:13px;color:var(--mute);cursor:pointer;font-weight:600}
+
+/* ── DOWNLOAD SHEET ── */
+.download-sheet{position:fixed;left:0;right:0;bottom:0;z-index:302;background:#fff;border-radius:24px 24px 0 0;padding:18px 20px 40px;transform:translateY(100%);transition:transform .3s cubic-bezier(.32,0,.15,1)}
+.download-sheet.on{transform:none}
+.dl-preview{background:linear-gradient(160deg,#ecfeff,#fff);border:1.5px solid var(--border2);border-radius:18px;padding:18px;margin-bottom:14px}
+.dl-preview-top{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.dl-preview-badge{display:inline-flex;align-items:center;gap:5px;background:var(--g);color:#fff;font-size:10px;font-weight:800;padding:4px 10px;border-radius:99px;letter-spacing:.5px}
+.dl-preview-badge svg{width:11px;height:11px}
+.dl-preview-cat{font-size:10px;font-weight:800;color:var(--p);text-transform:uppercase;letter-spacing:.4px}
+.dl-preview-title{font-size:15px;font-weight:900;color:var(--txt);line-height:1.35;margin-bottom:6px}
+.dl-preview-meta{font-size:12px;color:var(--mute);font-weight:600}
+.dl-stats{display:flex;align-items:center;justify-content:center;gap:6px;font-size:13px;color:var(--sub);font-weight:600;margin-bottom:16px}
+.dl-stats svg{width:14px;height:14px;stroke:var(--p)}
+.dl-stats b{color:var(--p);font-weight:800}
+.dl-confirm-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:15px;border-radius:14px;border:none;background:var(--g);color:#fff;font-size:15px;font-weight:800;cursor:pointer;transition:opacity .18s;box-shadow:0 4px 16px rgba(37,99,235,.28);font-family:'Inter',sans-serif}
+.dl-confirm-btn:hover{opacity:.92}
+.dl-confirm-btn:disabled{opacity:.6;cursor:wait}
+.dl-confirm-btn svg{width:17px;height:17px;flex-shrink:0}
+.dl-note{text-align:center;font-size:11.5px;color:var(--mute);margin-top:10px;line-height:1.5}
+
+/* download action button + count */
+.act-download.downloaded{border-color:var(--p);color:var(--p);background:#ecfeff}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(8px);background:#111;color:#fff;font-size:13px;font-weight:600;padding:10px 20px;border-radius:99px;z-index:500;opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── HAMBURGER MENU ── */
+.hamburger-wrap{position:relative}
+.hbg-btn{width:36px;height:36px;border-radius:12px;border:1.5px solid var(--border2);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;color:var(--txt);flex-shrink:0;padding:0}
+.hbg-btn:hover{border-color:var(--p);color:var(--p);background:#ecfeff}
+.hbg-btn svg{width:17px;height:17px;transition:all .22s}
+.hbg-drop{position:absolute;top:calc(100% + 10px);right:0;width:210px;background:#fff;border-radius:18px;border:1.5px solid var(--border);box-shadow:0 8px 40px rgba(37,99,235,.16),0 2px 12px rgba(0,0,0,.08);padding:8px;z-index:200;opacity:0;transform:translateY(-6px) scale(.97);pointer-events:none;transition:all .22s cubic-bezier(.32,0,.15,1);transform-origin:top right}
+.hbg-drop.open{opacity:1;transform:translateY(0) scale(1);pointer-events:all}
+.hbg-item{display:flex;align-items:center;gap:10px;width:100%;padding:11px 13px;border-radius:11px;font-size:13.5px;font-weight:600;color:var(--txt);text-decoration:none;border:none;background:none;cursor:pointer;transition:background .15s,color .15s;text-align:left}
+.hbg-item:hover{background:#ecfeff;color:var(--p)}
+.hbg-item svg{width:16px;height:16px;flex-shrink:0;opacity:.7}
+.hbg-div{height:1px;background:var(--border);margin:4px 6px}
+.hbg-signup{background:var(--g);color:#fff !important;margin-top:2px}
+.hbg-signup:hover{opacity:.88;background:var(--g) !important;color:#fff !important}
+.hbg-signout{color:var(--red) !important}
+.hbg-signout:hover{background:#fff1f1 !important;color:var(--red) !important}
+
+/* ── VERIFIED BADGE (brand standard) ── */
+.vbadge{display:inline-flex;align-items:center;justify-content:center;
+  width:18px;height:18px;border-radius:50%;background:var(--g);flex-shrink:0;
+  box-shadow:0 1px 6px rgba(37,99,235,.35)}
+.vbadge svg{width:10px;height:10px;fill:none;stroke:#fff;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+
+/* ── SKELETON ── */
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+.skel{background:linear-gradient(90deg,#f1f0f9 25%,#e0ecff 50%,#f1f0f9 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:8px}
+.skel-hero{width:100%;height:220px;border-radius:14px}
+.skel-art-wrap{max-width:680px;margin:0 auto;padding:24px 20px;display:flex;flex-direction:column;gap:14px}
+.skel-author-row{display:flex;align-items:center;gap:10px;margin:4px 0 8px}
+.skel-av{width:38px;height:38px;border-radius:50%;flex-shrink:0}
+.skel-body-line{height:15px;width:100%}
+.skel-body-line.short{width:65%}
+.skel-body-line.med{width:82%}
+
+
+
+/* ── WELCOME NUDGE ── */
+.welcome-nudge{position:fixed;bottom:0;left:0;right:0;z-index:400;background:linear-gradient(135deg,#06b6d4,#22d3ee);color:#fff;padding:16px 20px 36px;transform:translateY(100%);transition:transform .38s cubic-bezier(.32,0,.15,1);display:flex;align-items:center;gap:14px}
+.welcome-nudge.on{transform:none}
+.welcome-nudge-ico{font-size:28px;flex-shrink:0;line-height:1}
+.welcome-nudge-txt{flex:1;min-width:0}
+.welcome-nudge-txt strong{display:block;font-size:14px;font-weight:800;margin-bottom:3px}
+.welcome-nudge-txt span{font-size:12px;opacity:.85;line-height:1.4;display:block}
+.welcome-nudge-cta{flex-shrink:0;background:#fff;color:#06b6d4;font-size:12px;font-weight:800;border:none;border-radius:99px;padding:9px 14px;cursor:pointer;white-space:nowrap}
+.welcome-nudge-close{position:absolute;top:10px;right:14px;background:none;border:none;color:rgba(255,255,255,.7);font-size:18px;cursor:pointer;padding:4px;line-height:1}
+
+/* ── COMMENTS SECTION ── */
+.comments-sec{padding:28px 20px 8px;border-top:2px solid var(--border);margin-top:4px}
+.comments-sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.comments-sec-title{font-size:16px;font-weight:900;color:var(--txt)}
+.comments-count-badge{font-size:13px;font-weight:700;color:var(--mute);margin-left:6px}
+.add-comment-row{display:flex;gap:10px;align-items:flex-start;margin-bottom:8px}
+.c-user-av{width:34px;height:34px;border-radius:50%;background:var(--g);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;overflow:hidden}
+.c-user-av img{width:100%;height:100%;object-fit:cover}
+.c-input-wrap{flex:1}
+.c-input{width:100%;border:none;border-bottom:1.5px solid var(--border2);padding:8px 0 10px;font-size:14px;font-family:'Inter',sans-serif;color:var(--txt);outline:none;resize:none;min-height:36px;max-height:140px;transition:border-color .2s;background:transparent}
+.c-input:focus{border-color:var(--p)}
+.c-input-actions{display:none;justify-content:flex-end;gap:8px;margin-top:10px}
+.c-input-actions.show{display:flex}
+.c-cancel-btn{padding:7px 14px;border-radius:99px;border:1.5px solid var(--border2);background:#fff;font-size:12.5px;font-weight:600;color:var(--sub);cursor:pointer;font-family:inherit}
+.c-post-btn{padding:7px 20px;border-radius:99px;background:var(--g);border:none;color:#fff;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;transition:opacity .2s}
+.c-post-btn:disabled{opacity:.4;cursor:not-allowed}
+.c-login-cta{background:#ecfeff;border:1.5px solid var(--border2);border-radius:14px;padding:14px 16px;font-size:13px;color:var(--sub);display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px}
+.c-login-cta span{line-height:1.5}
+.c-login-cta a{color:var(--p);font-weight:700;text-decoration:none;white-space:nowrap}
+
+/* flat comment item */
+.comment-item{display:flex;gap:10px;margin-bottom:20px;position:relative}
+.c-av{width:34px;height:34px;border-radius:50%;background:var(--g);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0;overflow:hidden;cursor:pointer}
+.c-av img{width:100%;height:100%;object-fit:cover}
+.c-body{flex:1;min-width:0;padding-right:28px;position:relative}
+.c-meta-row{display:flex;align-items:center;gap:6px;margin-bottom:3px;flex-wrap:wrap}
+.c-name{font-size:13px;font-weight:800;color:var(--txt);cursor:pointer;line-height:1}
+.c-name:hover{color:var(--p)}
+.c-author-badge{display:inline-flex;align-items:center;gap:3px;background:linear-gradient(135deg,#06b6d418,#22d3ee18);color:var(--p);font-size:10px;font-weight:800;padding:2px 7px;border-radius:99px;border:1px solid #bfdbfe;letter-spacing:.1px;flex-shrink:0}
+.c-author-badge svg{width:9px;height:9px;fill:var(--p)}
+.c-text{font-size:14px;color:#374151;line-height:1.65;word-break:break-word;margin-bottom:6px}
+.c-foot{display:flex;align-items:center;gap:2px;flex-wrap:wrap}
+.c-time{font-size:11px;color:var(--mute);font-weight:500;padding:3px 4px 3px 0}
+.c-dot{font-size:10px;color:var(--mute);opacity:.5;padding:0 1px}
+.c-like-btn,.c-reply-btn,.c-view-replies-btn{background:none;border:none;cursor:pointer;font-size:12px;font-weight:600;color:var(--mute);padding:3px 6px;border-radius:6px;transition:all .15s;font-family:inherit;display:inline-flex;align-items:center;gap:3px}
+.c-like-btn:hover{color:var(--red);background:var(--red-bg)}
+.c-like-btn.liked{color:var(--red);font-weight:700}
+.c-like-btn svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0;transition:all .15s}
+.c-like-btn.liked svg{fill:var(--red);stroke:var(--red)}
+.c-reply-btn:hover{color:var(--p);background:#ecfeff}
+.c-view-replies-btn{color:var(--p);font-size:12px;font-weight:700}
+.c-view-replies-btn:hover{background:#ecfeff}
+
+/* 3-dot menu */
+.c-more-btn{position:absolute;top:0;right:0;width:26px;height:26px;border-radius:50%;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--mute);opacity:0;transition:opacity .15s,background .15s;flex-shrink:0;padding:0}
+.comment-item:hover .c-more-btn,.c-more-btn:focus,.c-more-btn.open{opacity:1}
+.c-more-btn:hover{background:#f3f4f6;color:var(--txt)}
+.c-more-btn svg{width:14px;height:14px;pointer-events:none}
+.c-menu{position:absolute;top:24px;right:0;background:#fff;border-radius:14px;border:1.5px solid var(--border);box-shadow:0 6px 28px rgba(37,99,235,.13),0 2px 8px rgba(0,0,0,.07);padding:6px;z-index:400;min-width:150px;opacity:0;transform:translateY(-6px) scale(.96);pointer-events:none;transition:all .18s cubic-bezier(.32,0,.15,1);transform-origin:top right}
+.c-menu.open{opacity:1;transform:translateY(0) scale(1);pointer-events:all}
+.c-menu-item{display:flex;align-items:center;gap:9px;width:100%;padding:9px 12px;border-radius:9px;font-size:13px;font-weight:600;color:var(--txt);background:none;border:none;cursor:pointer;font-family:inherit;transition:background .13s,color .13s;text-align:left;white-space:nowrap}
+.c-menu-item:hover{background:#ecfeff;color:var(--p)}
+.c-menu-item svg{width:14px;height:14px;flex-shrink:0;opacity:.7}
+.c-menu-item.danger{color:var(--red)}
+.c-menu-item.danger:hover{background:#fff1f1;color:var(--red)}
+.c-menu-item.danger svg{opacity:.7}
+
+.c-replies-wrap{margin-left:44px;margin-top:2px}
+.reply-input-row{display:flex;gap:8px;margin-top:10px;align-items:flex-start}
+.r-input{flex:1;border:none;border-bottom:1.5px solid var(--border2);padding:6px 0 8px;font-size:13px;font-family:'Inter',sans-serif;color:var(--txt);outline:none;resize:none;min-height:32px;background:transparent;transition:border-color .2s}
+.r-input:focus{border-color:var(--p)}
+.r-post-btn{padding:7px 14px;border-radius:99px;background:var(--g);border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0}
+.r-post-btn:disabled{opacity:.4}
+.r-cancel-btn{padding:7px 8px;background:none;border:none;cursor:pointer;font-size:15px;color:var(--mute);flex-shrink:0;line-height:1}
+.comment-item.reply .c-av{width:28px;height:28px;font-size:11px}
+.comment-item.reply .c-name{font-size:12.5px}
+.comment-item.reply .c-text{font-size:13px}
+.comments-list-empty{text-align:center;padding:36px 16px;color:var(--mute)}
+.comments-list-empty-ico{font-size:32px;margin-bottom:8px;opacity:.5}
+.comments-list-empty-txt{font-size:13px;font-weight:600}
+
+/* ── COMMENT DRAWER ── */
+.comment-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:310;opacity:0;pointer-events:none;transition:opacity .25s;backdrop-filter:blur(3px)}
+.comment-overlay.on{opacity:1;pointer-events:all}
+.comment-sheet{position:fixed;left:0;right:0;bottom:0;z-index:311;background:#fff;border-radius:24px 24px 0 0;max-height:88vh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .34s cubic-bezier(.32,0,.15,1)}
+.comment-sheet.on{transform:none}
+.comment-sheet-top{display:flex;align-items:center;gap:12px;padding:14px 20px 12px;flex-shrink:0;border-bottom:1px solid var(--border)}
+.comment-sheet-title{flex:1;font-size:15px;font-weight:900;color:var(--txt)}
+.comment-sheet-close{width:30px;height:30px;border-radius:50%;background:#f3f4f6;border:none;cursor:pointer;color:var(--sub);display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;transition:all .15s}
+.comment-sheet-close:hover{background:#e5e7eb;color:var(--txt)}
+.comment-sheet-close svg{width:14px;height:14px}
+.comment-sheet-list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 16px 0}
+.comment-sheet-input-wrap{padding:10px 16px 28px;border-top:1px solid var(--border);flex-shrink:0;background:#fff}
+.sb-comment{display:flex;align-items:center;gap:7px;padding:10px 18px;border-radius:99px;border:1.5px solid var(--border2);background:#fff;font-size:14px;font-weight:700;color:var(--sub);cursor:pointer;transition:all .2s;flex:1;justify-content:center}
+.sb-comment svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2}
+.sb-comment:hover{border-color:var(--p);color:var(--p)}
+</style>
+<script src="/article-categories.js"></script>
+</head>
+<body>
+
+<!-- HEADER -->
+<!-- ══ SHARED MINDSHIFT HEADER + SIDEBAR (matches articles.html / index.html) ══ -->
+<div class="sticky-header-stack">
+<header>
+  <div class="header-top">
+    <h1 style="display:flex;align-items:center;gap:10px;margin:0;">
+      <a href="/" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;">
+        <img src="/MINDSHIFT.jpg" alt="MindShift logo" style="width:36px;height:36px;border-radius:6px;">
+      </a>
+      <span>Articles</span>
+    </h1>
+    <div class="header-icon-group">
+      <span class="acct-nav-slot"></span>
+      <div class="notif-wrap" id="notifWrap" style="display:none">
+        <button type="button" class="icon-btn" id="notifBtn" onclick="openNotifPanel()" aria-label="Notifications">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path fill-rule="evenodd" clip-rule="evenodd" d="M5.25 9a6.75 6.75 0 0113.5 0v.75c0 2.123.8 4.057 2.118 5.52a.75.75 0 01-.297 1.206 24.585 24.585 0 01-4.831 1.243 3.75 3.75 0 11-7.48 0 24.585 24.585 0 01-4.831-1.244.75.75 0 01-.298-1.205A8.217 8.217 0 005.25 9.75V9zm4.502 8.9a2.25 2.25 0 104.496 0 25.057 25.057 0 01-4.496 0z"/></svg>
+          <span class="notif-badge" id="notifBadge">0</span>
+        </button>
+      </div>
+      <button type="button" id="sidebarToggle" class="icon-btn" onclick="toggleSidebar()" aria-label="Open menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="22" height="22"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- READING BAR: back button + scroll-linked article title -->
+<header class="hdr">
+  <button class="back-btn" onclick="history.back()">
+    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+  </button>
+  <div class="hdr-title" id="hdrTitle"></div>
+</header>
+</div>
+
+<aside class="sidebar" id="sidebar" aria-hidden="true" data-open="false">
+  <button type="button" class="sidebar-close-btn" onclick="toggleSidebar()" aria-label="Close menu">&times;</button>
+  <div class="logo-row">
+    <img src="/MINDSHIFT.jpg" alt="logo">
+    <div style="font-weight:700">MindShift Books</div>
+  </div>
+  <ul>
+    <li onclick="window.location.href='/books'">Bookstore</li>
+    <li onclick="window.location.href='/articles'"><strong>Articles</strong></li>
+    <li onclick="window.location.href='/write'">Write an Article</li>
+    <li id="sbProfileLink" style="display:none" onclick="window.location.href='/profile'">My Profile</li>
+    <li id="sbInsightsLink" style="display:none" onclick="window.location.href='/insights'">My Insights</li>
+    <li id="sbSavedLink" style="display:none" onclick="window.location.href='/articles'">Saved Articles</li>
+    <li onclick="window.location.href='/settings'">Settings</li>
+    <li onclick="window.location.href='/wishlist'">My Wishlist</li>
+    <li onclick="window.location.href='/free-ebooks'">Free eBooks</li>
+    <li onclick="window.location.href='/support'">Support</li>
+    <li onclick="window.location.href='/legal'">Terms &amp; Privacy</li>
+    <li onclick="window.location.href='/affiliate'">Become an Affiliate</li>
+  </ul>
+  <div class="sidebar-auth-cta" id="sidebarAuthCta" style="display:none;">
+    <div class="sidebar-auth-icon" aria-hidden="true">✨</div>
+    <div class="sidebar-auth-text">Sign up to write articles, follow authors, and get a feed picked for you.</div>
+    <a href="/signup" class="btn sidebar-auth-signup">Sign Up Free</a>
+    <a href="/login" class="btn sidebar-auth-login">Log In</a>
+  </div>
+</aside>
+<script>
+  function toggleSidebar(){
+    const sidebar = document.getElementById('sidebar');
+    const open = sidebar.getAttribute('data-open') === 'true';
+    sidebar.setAttribute('data-open', open ? 'false' : 'true');
+    sidebar.style.left = open ? '-300px' : '0px';
+    sidebar.setAttribute('aria-hidden', open ? 'true' : 'false');
+  }
+</script>
+<!-- ══ /SHARED HEADER + SIDEBAR ══ -->
+
+<!-- PROGRESS -->
+<div class="prog" id="prog"></div>
+
+<!-- CONTENT -->
+<div id="artContent"></div>
+
+<!-- WELCOME NUDGE (shown once to users who signed up from this article) -->
+<div class="welcome-nudge" id="welcomeNudge">
+  <button class="welcome-nudge-close" onclick="dismissWelcome()" aria-label="Close">×</button>
+  <div class="welcome-nudge-ico">🚀</div>
+  <div class="welcome-nudge-txt">
+    <strong>Welcome to MindShift Books!</strong>
+    <span>We also help you build a resume that gets interviews — totally free.</span>
+  </div>
+  <button class="welcome-nudge-cta" onclick="goResume()">Build mine →</button>
+</div>
+
+<!-- AUTH SHEET -->
+<div class="overlay" id="authOverlay" onclick="closeAll()"></div>
+<div class="auth-sheet" id="authSheet">
+  <div class="sheet-bar"></div>
+  <h3>Join MindShift Books Free 🚀</h3>
+  <p>Create a free account to like and save articles, get personalized career tips, and build your winning resume.</p>
+  <div class="auth-sheet-btns">
+    <a href="/signup" class="ash-su" id="authSignupBtn">✨ Create free account</a>
+    <a href="/login" class="ash-li" id="authLoginBtn">I already have an account</a>
+  </div>
+  <span class="auth-cancel" onclick="closeAll()">Maybe later</span>
+</div>
+
+<!-- SHARE SHEET -->
+<div class="share-sheet" id="shareSheet">
+  <div class="sheet-bar"></div>
+  <h4>Share this article</h4>
+  <div class="share-opts">
+    <div class="s-opt" onclick="doShare('whatsapp')">
+      <div class="s-ico" style="background:#dcfce7"><svg width="22" height="22" viewBox="0 0 24 24" fill="#16a34a"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.121 1.534 5.852L.057 23.213a.75.75 0 00.918.918l5.42-1.464A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22a9.95 9.95 0 01-5.193-1.456l-.371-.221-3.857 1.042 1.063-3.748-.242-.385A9.951 9.951 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg></div>
+      <span class="s-lbl">WhatsApp</span>
+    </div>
+    <div class="s-opt" onclick="doShare('twitter')">
+      <div class="s-ico" style="background:#e0f2fe"><svg width="18" height="18" viewBox="0 0 24 24" fill="#0284c7"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.402 6.231H2.74l7.73-8.835L1.254 2.25H8.08l4.265 5.638 5.899-5.638zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></div>
+      <span class="s-lbl">X / Twitter</span>
+    </div>
+    <div class="s-opt" onclick="doShare('linkedin')">
+      <div class="s-ico" style="background:#cffafe"><svg width="18" height="18" viewBox="0 0 24 24" fill="#0891b2"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></div>
+      <span class="s-lbl">LinkedIn</span>
+    </div>
+    <div class="s-opt" onclick="doShare('copy')">
+      <div class="s-ico" style="background:#f1f5f9"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#64748b" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path stroke-linecap="round" d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></div>
+      <span class="s-lbl">Copy link</span>
+    </div>
+  </div>
+  <div class="copy-row" onclick="doShare('copy')">
+    <span class="copy-url" id="copyUrl"></span>
+    <span class="copy-lbl">Copy</span>
+  </div>
+  <span class="share-cancel" onclick="closeShare()">Cancel</span>
+</div>
+
+<!-- DOWNLOAD SHEET -->
+<div class="download-sheet" id="downloadSheet">
+  <div class="sheet-bar"></div>
+  <div class="dl-preview">
+    <div class="dl-preview-top">
+      <span class="dl-preview-badge">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path stroke-linecap="round" stroke-linejoin="round" d="M14 2v6h6"/></svg>
+        MindShift Books PDF
+      </span>
+      <span class="dl-preview-cat" id="dlCat"></span>
+    </div>
+    <div class="dl-preview-title" id="dlTitle"></div>
+    <div class="dl-preview-meta" id="dlMeta"></div>
+  </div>
+  <div class="dl-stats">
+    <svg fill="none" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
+    <span><b id="dlCount">0</b> downloads</span>
+  </div>
+  <button class="dl-confirm-btn" id="dlConfirmBtn" onclick="confirmDownload()">
+    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
+    Download PDF
+  </button>
+  <div class="dl-note">A nicely formatted PDF of this article will be saved to your device.</div>
+  <span class="share-cancel" onclick="closeDownload()">Cancel</span>
+</div>
+
+<!-- COMMENT OVERLAY -->
+<div class="comment-overlay" id="commentOverlay" onclick="closeCommentDrawer()"></div>
+<!-- COMMENT SHEET -->
+<div class="comment-sheet" id="commentSheet">
+  <div class="sheet-bar" style="margin:12px auto 0;flex-shrink:0"></div>
+  <div class="comment-sheet-top">
+    <span class="comment-sheet-title">Comments <span id="commentSheetCount" style="font-size:13px;font-weight:600;color:var(--mute)"></span></span>
+    <button class="comment-sheet-close" onclick="closeCommentDrawer()" aria-label="Close">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="comment-sheet-list" id="commentsList">
+    <div class="comments-list-empty"><div class="comments-list-empty-ico">&#128172;</div><div class="comments-list-empty-txt">Be the first to comment</div></div>
+  </div>
+  <div class="comment-sheet-input-wrap" id="commentSheetInput"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
+import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
+import { getFirestore, doc, getDoc, setDoc, deleteDoc, updateDoc, increment, onSnapshot,
+         collection, query, where, orderBy, limit, addDoc, serverTimestamp, getDocs, writeBatch } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
+import { initNotificationUI } from '/notifications.js';
+
+const fbApp = initializeApp({
+  apiKey:"AIzaSyDTn70s1_uIiSOR6lPLY_nKh8Ff1FViFCs",
+  authDomain:"mindshiftbooks-c4451.firebaseapp.com",
+  projectId:"mindshiftbooks-c4451",
+  storageBucket:"mindshiftbooks-c4451.firebasestorage.app",
+  messagingSenderId:"388697987853",
+  appId: "1:388697987853:web:f023df9412c22285012e44",
+  measurementId: "G-CHPJDQ4W08"
+});
+const auth = getAuth(fbApp);
+const db   = getFirestore(fbApp, 'default');
+const notif = initNotificationUI({
+  db, getCurrentUser: () => currentUser, getMyProfile: () => myProfile,
+  fs: { collection, query, where, onSnapshot, getDocs, orderBy, limit, addDoc, writeBatch, serverTimestamp, doc, getDoc, setDoc, increment }
+});
+
+/* ── ARTICLE DATA ── */
+// Real articles are fetched from Firestore by id below — no hardcoded fallback content
+const ARTICLES = [];
+
+/* ── STATE ── */
+let currentUser = null;
+let myProfile = null; // {name, photo} — cached from users doc + Google fallback
+let artId = null;
+let article = null;
+let likeCount = 0;
+let isLiked = false;
+let isSaved = false;
+let isFollowing = false;
+let likeUnsub = null;
+let downloadCount = 0;
+let hasDownloaded = false;
+let downloadUnsub = null;
+
+/* ── INIT ── */
+// Show article skeleton immediately
+document.getElementById('artContent').innerHTML = `
+  <div class="skel-art-wrap">
+    <div class="skel" style="height:12px;width:70px;border-radius:99px"></div>
+    <div class="skel" style="height:26px;width:90%"></div>
+    <div class="skel" style="height:22px;width:65%"></div>
+    <div class="skel-author-row">
+      <div class="skel skel-av"></div>
+      <div style="display:flex;flex-direction:column;gap:6px;flex:1">
+        <div class="skel" style="height:13px;width:120px"></div>
+        <div class="skel" style="height:11px;width:80px"></div>
+      </div>
+    </div>
+    <div class="skel skel-hero"></div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px">
+      <div class="skel skel-body-line"></div>
+      <div class="skel skel-body-line med"></div>
+      <div class="skel skel-body-line"></div>
+      <div class="skel skel-body-line short"></div>
+      <div class="skel skel-body-line med"></div>
+      <div class="skel skel-body-line"></div>
+      <div class="skel skel-body-line short"></div>
+      <div class="skel skel-body-line"></div>
+      <div class="skel skel-body-line med"></div>
+    </div>
+  </div>
+`;
+
+const params = new URLSearchParams(location.search);
+artId = params.get('id');
+article = ARTICLES.find(a=>a.id===artId);
+
+/* ── VIEW TRACKING (once per session per article) ── */
+(function trackArticleView(){
+  if(!artId) return;
+  const key = `viewed_${artId}`;
+  if(sessionStorage.getItem(key)) return;
+  sessionStorage.setItem(key, '1');
+  updateDoc(doc(db,'articleMeta',artId),{viewCount:increment(1)})
+    .catch(()=>setDoc(doc(db,'articleMeta',artId),{viewCount:1},{merge:true}).catch(()=>{}));
+})();
+
+if(!article){
+  // Try Firestore — user-submitted articles won't be in the hardcoded array
+  (async()=>{
+    try{
+      const snap = await getDoc(doc(db,'articles',artId));
+      if(snap.exists()){
+        const x = snap.data();
+        article = {
+          id: snap.id,
+          cat: x.cat||'CAREERS',
+          title: x.title||'',
+          brief: x.brief||'',
+          img: x.cover||x.img||'',
+          read: x.readTime||x.read||'5 min read',
+          author: x.authorName||'MindShift Books',
+          avatar: x.authorPhoto||'logo.jpg',
+          authorUid: x.authorUid||x.userId||null,
+          authorUsername: x.authorUsername||'',
+          isMindshift: x.userId==='official'||x.isMindshift,
+          content: x.body||''
+        };
+        document.title = article.title + ' · MindShift Books';
+        document.getElementById('hdrTitle').textContent = article.title;
+        document.getElementById('copyUrl').textContent = location.href;
+        renderArticle();
+      } else {
+        document.getElementById('artContent').innerHTML = `<div style="text-align:center;padding:60px 20px"><h2>Article not found</h2><a href="/articles" style="color:var(--p)">← Back</a></div>`;
+      }
+    }catch(e){
+      document.getElementById('artContent').innerHTML = `<div style="text-align:center;padding:60px 20px"><h2>Article not found</h2><a href="/articles" style="color:var(--p)">← Back</a></div>`;
+    }
+  })();
+} else {
+  document.title = article.title + ' · MindShift Books';
+  document.getElementById('hdrTitle').textContent = article.title;
+  document.getElementById('copyUrl').textContent = location.href;
+}
+
+/* ── MY PROFILE CACHE ── */
+async function loadMyProfile(){
+  if(!currentUser){ myProfile=null; return; }
+  const fallbackName  = currentUser.displayName || 'Someone';
+  const fallbackPhoto = currentUser.photoURL    || '';
+  try{
+    const s = await getDoc(doc(db,'users',currentUser.uid));
+    if(s.exists()){
+      const ud = s.data();
+      myProfile = {
+        name:     ud.name  || ud.displayName  || fallbackName,
+        photo:    ud.photo || ud.photoURL     || fallbackPhoto,
+        username: ud.username || ''
+      };
+    } else {
+      myProfile = { name: fallbackName, photo: fallbackPhoto };
+    }
+  }catch{ myProfile = { name: fallbackName, photo: fallbackPhoto }; }
+}
+
+/* ── AUTH ── */
+onAuthStateChanged(auth, async user => {
+  currentUser = user;
+  const isAuth = !!user;
+  const sbProfile = document.getElementById('sbProfileLink');
+  const sbInsights = document.getElementById('sbInsightsLink');
+  const sbSaved = document.getElementById('sbSavedLink');
+  const sbAuthCta = document.getElementById('sidebarAuthCta');
+  if(sbProfile) sbProfile.style.display = isAuth ? 'block' : 'none';
+  if(sbInsights) sbInsights.style.display = isAuth ? 'block' : 'none';
+  if(sbSaved) sbSaved.style.display = isAuth ? 'block' : 'none';
+  if(sbAuthCta) sbAuthCta.style.display = isAuth ? 'none' : 'block';
+  if(user) notif.initNotifications(user.uid); else notif.clearNotifications();
+  await loadMyProfile();
+  if(article) renderArticle();
+});
+
+// One-time check (not tied to the frequent download-count snapshot listener)
+// that adds a small "🔒 Premium" badge on the download button for free users.
+async function renderDownloadLockBadge(){
+  const btn = document.getElementById('actDownload');
+  if(!btn || !currentUser) return;
+  const allowed = await checkArticleDownloadAllowed();
+  btn.classList.toggle('act-download-locked', !allowed);
+  let badge = btn.querySelector('.act-lock-badge');
+  if(!allowed && !badge){
+    badge = document.createElement('span');
+    badge.className = 'act-lock-badge';
+    badge.textContent = '🔒';
+    btn.appendChild(badge);
+  } else if(allowed && badge){
+    badge.remove();
+  }
+}
+
+/* ── FIRESTORE ── */
+async function fetchUserLiked(){
+  if(!currentUser) return false;
+  try{ const s=await getDoc(doc(db,'userLikes',currentUser.uid)); return s.exists()&&!!s.data()[artId]; }catch{ return false; }
+}
+async function fetchUserSaved(){
+  if(!currentUser) return false;
+  try{ const s=await getDoc(doc(db,'userSaves',currentUser.uid)); return s.exists()&&!!s.data()[artId]; }catch{ return false; }
+}
+async function fetchUserFollowing(){
+  if(!currentUser||!article||!article.authorUid) return false;
+  try{ const s=await getDoc(doc(db,'follows',`${currentUser.uid}_${article.authorUid}`)); return s.exists(); }catch{ return false; }
+}
+async function fetchUserDownloaded(){
+  if(!currentUser) return false;
+  try{ const s=await getDoc(doc(db,'userDownloads',currentUser.uid)); return s.exists()&&!!s.data()[artId]; }catch{ return false; }
+}
+
+function subDownloads(){
+  if(downloadUnsub) downloadUnsub();
+  downloadUnsub = onSnapshot(doc(db,'articleDownloads',artId), snap=>{
+    downloadCount = snap.exists()?(snap.data().count||0):0;
+    syncDownloadUI();
+  });
+}
+
+function subLives(){
+  if(likeUnsub) likeUnsub();
+  likeUnsub = onSnapshot(doc(db,'articleLikes',artId), snap=>{
+    likeCount = snap.exists()?(snap.data().count||0):0;
+    syncLikeUI();
+  });
+}
+
+/* ── RENDER ── */
+async function renderArticle(){
+  // likeCount and downloadCount come from the onSnapshot first emission — no extra getDoc needed
+  isLiked       = await fetchUserLiked();
+  isSaved       = await fetchUserSaved();
+  isFollowing   = await fetchUserFollowing();
+  hasDownloaded = await fetchUserDownloaded();
+  subLives();
+  subDownloads();
+
+
+  const isAuth = !!currentUser;
+  const contentHtml = isAuth ? article.content : getGatedContent(article.content);
+
+  document.getElementById('artContent').innerHTML = `
+    <div class="art-wrap">
+      <span class="art-cat">${window.msbCatLabel ? window.msbCatLabel(article.cat) : article.cat}</span>
+      <h1 class="art-title">${article.title}</h1>
+      <div class="author-row-wrap">
+        <div class="author-row" onclick="goAuthor()" style="cursor:pointer">
+          <img class="author-logo" src="${article.avatar||'logo.jpg'}" alt="${article.author||'MindShift Books'}" onerror="this.style.background='linear-gradient(135deg,#06b6d4,#22d3ee)'">
+          <div>
+            <div class="author-name">
+              ${article.author||'MindShift Books'}
+              ${(article.isMindshift||!article.authorUid) ? `<span class="vbadge"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>` : ''}
+            </div>
+            <div class="author-meta">${article.read}</div>
+          </div>
+        </div>
+        ${(!article.isMindshift && article.authorUid && article.authorUid !== (currentUser&&currentUser.uid)) ? `
+        <button class="follow-author-btn ${isFollowing?'following':''}" id="followAuthorBtn" onclick="doFollow()">
+          ${isFollowing?'Following':'Follow'}
+        </button>` : ''}
+      </div>
+      <div class="action-bar">
+        <button class="act-btn act-like ${isLiked?'liked':''}" id="actLike" onclick="doLike()">
+          <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+          <span id="actLikeTxt">${likeCount||0}</span>
+        </button>
+        <button class="act-btn" id="actComment" onclick="openCommentDrawer()" style="gap:5px">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          <span id="actCommentTxt">0</span>
+        </button>
+        <button class="act-btn" onclick="openShare()" aria-label="Share">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        </button>
+        <button class="act-btn act-download ${hasDownloaded?'downloaded':''}" id="actDownload" onclick="openDownloadSheet()">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
+          <span id="actDownloadTxt">${downloadCount||0}</span>
+        </button>
+        <button class="act-btn act-save ${isSaved?'saved':''}" id="actSave" onclick="doSave()" aria-label="Save">
+          <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+        </button>
+      </div>
+      <img class="art-hero" src="${article.img}" alt="${article.title}" onerror="this.style.display='none'">
+      <div class="art-body">${contentHtml}</div>
+      ${buildMoreArticles()}
+      <div id="ratingCard" class="rating-card"></div>
+    </div>
+  `;
+
+  syncLikeUI();
+  syncSaveUI();
+  syncDownloadUI();
+  startProgress();
+  injectRatingCard();
+  loadComments();
+  renderDownloadLockBadge();
+}
+
+function getGatedContent(html){
+  const split = html.split('</p>');
+  const preview = split.slice(0,2).join('</p>') + '</p>';
+  const redirect = encodeURIComponent(location.pathname + location.search);
+  return `
+    ${preview}
+    <div class="art-fade"></div>
+    <div class="art-gate">
+      <div class="art-gate-ico">🔒</div>
+      <h3>Continue Reading Free</h3>
+      <p>Create a free MindShift Books account to read the full article, like posts, save articles, and get personalized career tips.</p>
+      <div class="art-gate-btns">
+        <a href="/login?redirect=${redirect}" class="gate-li">Log in</a>
+        <a href="/signup?redirect=${redirect}" class="gate-su">✨ Sign up free</a>
+      </div>
+    </div>
+  `;
+}
+
+function buildMoreArticles(){
+  const others = ARTICLES.filter(a=>a.id!==artId).slice(0,3);
+  if(!others.length) return '';
+  return `
+    <div class="more-section">
+      <div class="more-title">More Articles</div>
+      <div class="more-list">
+        ${others.map(a=>`
+          <div class="more-card" onclick="location.href='/article-read?id=${a.id}'">
+            <img class="more-img" src="${a.img}" alt="${a.title}" loading="lazy" onerror="this.style.background='linear-gradient(135deg,#cffafe,#93c5fd)'">
+            <div class="more-body">
+              <div class="more-cat">${window.msbCatLabel ? window.msbCatLabel(a.cat) : a.cat}</div>
+              <div class="more-ttl">${a.title}</div>
+              <div class="more-meta">${a.read}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+      <a class="more-see-all" href="/articles">
+        See more articles
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </a>
+    </div>
+  `;
+}
+
+/* ── SYNC UI ── */
+function syncLikeUI(){
+  const el=document.getElementById('actLike');
+  if(el) el.classList.toggle('liked',isLiked);
+  const txt=document.getElementById('actLikeTxt');
+  if(txt) txt.textContent = likeCount||0;
+}
+function syncSaveUI(){
+  const el=document.getElementById('actSave');
+  if(el) el.classList.toggle('saved',isSaved);
+  const st=document.getElementById('actSaveTxt');
+  if(st) st.textContent=isSaved?'Saved':'Save';
+}
+function syncFollowUI(){
+  const btn=document.getElementById('followAuthorBtn');
+  if(!btn) return;
+  btn.classList.toggle('following',isFollowing);
+  btn.textContent = isFollowing ? 'Following' : 'Follow';
+}
+function syncDownloadUI(){
+  const el=document.getElementById('actDownload');
+  if(el) el.classList.toggle('downloaded',hasDownloaded);
+  const txt=document.getElementById('actDownloadTxt');
+  if(txt) txt.textContent = downloadCount||0;
+  const dlc=document.getElementById('dlCount');
+  if(dlc) dlc.textContent = downloadCount||0;
+}
+
+/* ── LIKE ── */
+/* ── LIKE ── */
+window.doLike = function(){
+  if(!currentUser){ openAuth(); return; }
+
+  const wasLiked = isLiked;
+  isLiked = !wasLiked;
+  // only toggle heart instantly — count comes from onSnapshot, no double update
+  syncLikeUI();
+
+  (async () => {
+    try {
+      await setDoc(doc(db,'userLikes',currentUser.uid),{[artId]:!wasLiked},{merge:true});
+      const cRef = doc(db,'articleLikes',artId);
+      if(wasLiked){
+        try{await updateDoc(cRef,{count:increment(-1)});}catch{await setDoc(cRef,{count:0},{merge:true});}
+      } else {
+        try{await updateDoc(cRef,{count:increment(1)});}catch{await setDoc(cRef,{count:1},{merge:true});}
+        notif.notifyArticleLike(article); // notify article author
+      }
+    } catch(e) {
+      // revert heart on failure
+      isLiked = wasLiked;
+      syncLikeUI();
+      console.error('Like error:', e.code, e.message);
+      showToast('Could not update like — try again.');
+    }
+  })();
+};
+
+/* ── SAVE ── */
+window.doSave = function(){
+  if(!currentUser){ openAuth(); return; }
+
+  const wasSaved = isSaved;
+  isSaved = !wasSaved;
+  syncSaveUI();
+  showToast(isSaved ? 'Article saved 🔖 — view in Saved' : 'Removed from saves');
+
+  (async () => {
+    try {
+      await setDoc(doc(db,'userSaves',currentUser.uid),{[artId]:!wasSaved},{merge:true});
+      const sRef = doc(db,'articleSaves',artId);
+      if(wasSaved){
+        try{ await updateDoc(sRef,{count:increment(-1)}); }catch{ await setDoc(sRef,{count:0},{merge:true}); }
+      } else {
+        try{ await updateDoc(sRef,{count:increment(1)}); }catch{ await setDoc(sRef,{count:1},{merge:true}); }
+      }
+    } catch(e) {
+      isSaved = wasSaved;
+      syncSaveUI();
+      console.error('Save error:', e.code, e.message);
+      showToast('Could not save article — try again.');
+    }
+  })();
+};
+
+/* ── PROGRESS BAR ── */
+function startProgress(){
+  const prog=document.getElementById('prog');
+  const hdr=document.getElementById('hdrTitle');
+  window.addEventListener('scroll',()=>{
+    const el=document.getElementById('artContent');
+    if(!el) return;
+    const h=el.scrollHeight-window.innerHeight;
+    const pct=Math.min(100,Math.round((window.scrollY/h)*100));
+    prog.style.width=pct+'%';
+    if(window.scrollY>200) hdr.classList.add('show');
+    else hdr.classList.remove('show');
+  },{passive:true});
+}
+
+/* ── AUTH SHEET ── */
+/* Nav chrome (profile link, sign out, menu) now lives in the shared MindShift
+   header/sidebar + auth.js — no per-page hamburger menu needed here. */
+
+window.goAuthor = function(){
+  if(!article) return;
+  if(article.isMindshift || article.authorUid === 'official' || !article.authorUid){
+    location.href = '/mindshift-profile';
+  } else if(article.authorUsername) {
+    location.href = `/profile/@${encodeURIComponent(article.authorUsername)}`;
+  } else {
+    location.href = `/profile?uid=${article.authorUid}`;
+  }
+};
+
+window.openAuth=function(){
+  // Set redirect links so user returns to this article after login/signup
+  const redirect = encodeURIComponent(location.pathname + location.search);
+  const loginBtn = document.getElementById('authLoginBtn');
+  const signupBtn = document.getElementById('authSignupBtn');
+  if(loginBtn) loginBtn.href = '/login?redirect=' + redirect;
+  if(signupBtn) signupBtn.href = '/signup?redirect=' + redirect;
+  document.getElementById('authOverlay').classList.add('on');
+  document.getElementById('authSheet').classList.add('on');
+  document.body.style.overflow='hidden';
+};
+window.closeAuth=function(){
+  document.getElementById('authSheet').classList.remove('on');
+  document.getElementById('authOverlay').classList.remove('on');
+  document.body.style.overflow='';
+};
+window.closeAll=function(){
+  document.getElementById('authOverlay').classList.remove('on');
+  document.getElementById('authSheet').classList.remove('on');
+  document.getElementById('shareSheet').classList.remove('on');
+  document.getElementById('downloadSheet').classList.remove('on');
+  closeCommentDrawer();
+  document.body.style.overflow='';
+};
+
+
+
+/* ══════════════════════════════════════
+   COMMENTS SYSTEM
+   ══════════════════════════════════════ */
+let cList=[],cReplies={},cLikedSet=new Set(),cOpenReplies=new Set(),cActiveReplyId=null,cCommentCount=0;
+
+window.loadComments=async function(){
+  if(!artId){buildCommentsUI([]);return;}
+  try{
+    const countSnap=await getDoc(doc(db,'articleMeta',artId));
+    cCommentCount=countSnap.exists()?(countSnap.data().commentCount||0):0;
+    updateCCount();
+    const q=query(collection(db,'comments'),where('articleId','==',artId),where('parentId','==',null),orderBy('createdAt','asc'));
+    const snap=await getDocs(q);
+    cList=snap.docs.map(d=>({id:d.id,...d.data()}));
+    cLikedSet.clear();
+    if(currentUser){
+      // likedBy is a map field on each comment doc: { uid: true/false }
+      // No extra reads needed — the data is already in the comment docs we just fetched
+      cList.forEach(c=>{
+        if(c.likedBy && c.likedBy[currentUser.uid] === true) cLikedSet.add(c.id);
+      });
+    }
+    buildCommentsUI(cList);
+  }catch(e){console.error('loadComments:',e);buildCommentsUI([]);}
+};
+
+function updateCCount(){
+  const el=document.getElementById('actCommentTxt');if(el)el.textContent=cCommentCount||0;
+  const sb=document.getElementById('sbCommentTxt');if(sb)sb.textContent=cCommentCount||0;
+  const sc=document.getElementById('commentSheetCount');if(sc)sc.textContent=cCommentCount>0?cCommentCount:'';
+  const b=document.getElementById('commentCountBadge');if(b)b.textContent=cCommentCount||0;
+}
+
+function buildCommentsUI(comments){
+  const inputEl=document.getElementById('commentSheetInput');
+  const listEl=document.getElementById('commentsList');
+  if(!inputEl||!listEl) return;
+  let avIn='';
+  if(currentUser){
+    const ph=myProfile?.photo||'',nm=myProfile?.name||currentUser.displayName||'';
+    avIn=ph?`<div class="c-user-av"><img src="${cEsc(ph)}" alt="" onerror="this.style.display='none'"></div>`:`<div class="c-user-av">${(nm||'U').charAt(0).toUpperCase()}</div>`;
+  }
+  const redir=encodeURIComponent(location.pathname+location.search);
+  const inputArea=currentUser
+    ?`<div class="add-comment-row">${avIn}<div class="c-input-wrap"><textarea class="c-input" id="mainCI" placeholder="Add a comment…" rows="1" oninput="onCI(this)" onfocus="document.getElementById('mainCA').classList.add('show')"></textarea><div class="c-input-actions" id="mainCA"><button class="c-cancel-btn" onclick="cancelCI()">Cancel</button><button class="c-post-btn" id="mainCPost" onclick="submitComment()" disabled>Post</button></div></div></div>`
+    :`<div class="c-login-cta"><span>Join the conversation</span><a href="/login?redirect=${redir}">Log in</a></div>`;
+  inputEl.innerHTML=inputArea;
+  const listHTML=comments.length
+    ?comments.map(c=>buildCHTML(c,false)).join('')
+    :`<div class="comments-list-empty"><div class="comments-list-empty-ico">&#128172;</div><div class="comments-list-empty-txt">Be the first to comment</div></div>`;
+  listEl.innerHTML=listHTML;
+}
+
+function buildCHTML(c,isReply){
+  const liked=cLikedSet.has(c.id);
+  const init=(c.authorName||'U').charAt(0).toUpperCase();
+  const avIn=c.authorPhoto?`<img src="${cEsc(c.authorPhoto)}" alt="" onerror="this.style.display='none'">`:init;
+  const lc=c.likeCount>0?String(c.likeCount):'';
+  const isAuthor=article&&c.authorUid&&c.authorUid===article.authorUid&&!article.isMindshift;
+  const authorBadge=isAuthor?`<span class="c-author-badge"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>Author</span>`:'';
+  const heart=`<button class="c-like-btn${liked?' liked':''}" id="clb-${c.id}" onclick="likeComment('${c.id}','${cEsc(c.authorUid||'')}')"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg><span id="clc-${c.id}">${lc}</span></button>`;
+  const replyBtn=!isReply?`<button class="c-reply-btn" onclick="showRI('${c.id}')">Reply</button>`:'';
+  const vrBtn=(!isReply&&c.replyCount>0)?`<button class="c-view-replies-btn" id="vrb-${c.id}" onclick="toggleReplies('${c.id}')"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg> ${c.replyCount} ${c.replyCount===1?'reply':'replies'}</button>`:'';
+  const isOwn=currentUser&&c.authorUid===currentUser.uid;
+  const deleteItem=isOwn?`<button class="c-menu-item danger" onclick="deleteComment('${c.id}','${cEsc(c.parentId||'')}')"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path stroke-linecap="round" d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path stroke-linecap="round" d="M10 11v6m4-6v6"/><path stroke-linecap="round" d="M9 6V4h6v2"/></svg>Delete</button>`:'';
+  const moreBtn=`<button class="c-more-btn" id="mbtn-${c.id}" onclick="toggleCMenu(event,'${c.id}')" aria-label="More"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></button><div class="c-menu" id="cmenu-${c.id}"><button class="c-menu-item" onclick="shareComment('${c.id}')"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path stroke-linecap="round" d="M8.59 13.51l6.83 3.98m-.01-10.98L8.59 10.49"/></svg>Share comment</button>${deleteItem}</div>`;
+  const extra=!isReply
+    ?`<div class="c-replies-wrap" id="rep-${c.id}" style="display:none"></div><div class="c-replies-wrap" id="ri-wrap-${c.id}" style="display:none"><div class="reply-input-row"><textarea class="r-input" id="ri-${c.id}" placeholder="Write a reply…" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px';document.getElementById('rpb-${c.id}').disabled=!this.value.trim()"></textarea><button class="r-post-btn" id="rpb-${c.id}" onclick="submitReply('${c.id}')" disabled>Post</button><button class="r-cancel-btn" onclick="hideRI('${c.id}')"><svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button></div></div>`
+    :'';
+  return `<div class="comment-item${isReply?' reply':''}" id="ci-${c.id}"><div class="c-av" onclick="cGo('${cEsc(c.authorUid||'')}','${cEsc(c.authorUsername||'')}')">${avIn}</div><div class="c-body"><div class="c-meta-row"><span class="c-name" onclick="cGo('${cEsc(c.authorUid||'')}','${cEsc(c.authorUsername||'')}')">${cEsc(c.authorName||'User')}</span>${authorBadge}</div><div class="c-text">${cEsc(c.text||'')}</div><div class="c-foot"><span class="c-time">${cTA(c.createdAt)}</span><span class="c-dot">·</span>${heart}${replyBtn}${vrBtn}</div>${extra}</div>${moreBtn}</div>`;
+}
+
+window.onCI=function(el){el.style.height='auto';el.style.height=el.scrollHeight+'px';const b=document.getElementById('mainCPost');if(b)b.disabled=!el.value.trim();};
+window.cancelCI=function(){const i=document.getElementById('mainCI'),a=document.getElementById('mainCA'),b=document.getElementById('mainCPost');if(i){i.value='';i.style.height='auto';}if(a)a.classList.remove('show');if(b)b.disabled=true;};
+window.openCommentDrawer=function(){
+  document.getElementById('commentOverlay').classList.add('on');
+  document.getElementById('commentSheet').classList.add('on');
+  document.body.style.overflow='hidden';
+};
+window.closeCommentDrawer=function(){
+  document.getElementById('commentOverlay').classList.remove('on');
+  document.getElementById('commentSheet').classList.remove('on');
+  document.body.style.overflow='';
+};
+window.scrollToComments=window.openCommentDrawer;
+
+window.submitComment=async function(){
+  if(!currentUser){openAuth();return;}
+  const inp=document.getElementById('mainCI');
+  const text=(inp&&inp.value||'').trim();if(!text)return;
+  const btn=document.getElementById('mainCPost');
+  if(btn){btn.disabled=true;btn.textContent='Posting…';}
+  const an=myProfile?.name||'Someone', ap=myProfile?.photo||'', au=myProfile?.username||'';
+  try{
+    const ref=await addDoc(collection(db,'comments'),{articleId:artId,parentId:null,authorUid:currentUser.uid,authorName:an,authorPhoto:ap,authorUsername:au,text,likeCount:0,replyCount:0,createdAt:serverTimestamp()});
+    try{await updateDoc(doc(db,'articleMeta',artId),{commentCount:increment(1)});}catch{await setDoc(doc(db,'articleMeta',artId),{commentCount:1},{merge:true});}
+    cCommentCount++;updateCCount();
+    const nc={id:ref.id,articleId:artId,parentId:null,authorUid:currentUser.uid,authorName:an,authorPhoto:ap,authorUsername:au,text,likeCount:0,replyCount:0,createdAt:{toDate:()=>new Date()}};
+    cList.push(nc);
+    const le=document.getElementById('commentsList');
+    if(le){const em=le.querySelector('.comments-list-empty');if(em)le.innerHTML='';le.insertAdjacentHTML('beforeend',buildCHTML(nc,false));}
+    cancelCI();
+    if(article&&article.authorUid&&article.authorUid!==currentUser.uid&&!article.isMindshift)notif.notifyComment({type:'new_comment',recipientUid:article.authorUid,articleId:artId,articleTitle:article.title});
+  }catch(e){console.error('submitComment:',e);}
+  finally{if(btn){btn.disabled=false;btn.textContent='Post';}}
+};
+
+window.showRI=function(cid){
+  if(cActiveReplyId&&cActiveReplyId!==cid)hideRI(cActiveReplyId);
+  cActiveReplyId=cid;
+  const w=document.getElementById('ri-wrap-'+cid);if(w){w.style.display='block';const i=document.getElementById('ri-'+cid);if(i)i.focus();}
+};
+window.hideRI=function(cid){
+  const w=document.getElementById('ri-wrap-'+cid);if(w)w.style.display='none';
+  const i=document.getElementById('ri-'+cid);if(i){i.value='';i.style.height='auto';}
+  const b=document.getElementById('rpb-'+cid);if(b)b.disabled=true;
+  if(cActiveReplyId===cid)cActiveReplyId=null;
+};
+
+window.submitReply=async function(parentId){
+  if(!currentUser){openAuth();return;}
+  const inp=document.getElementById('ri-'+parentId);
+  const text=(inp&&inp.value||'').trim();if(!text)return;
+  const btn=document.getElementById('rpb-'+parentId);
+  if(btn){btn.disabled=true;btn.textContent='Posting…';}
+  const an=myProfile?.name||'Someone', ap=myProfile?.photo||'', au=myProfile?.username||'';
+  try{
+    const ref=await addDoc(collection(db,'comments'),{articleId:artId,parentId,authorUid:currentUser.uid,authorName:an,authorPhoto:ap,authorUsername:au,text,likeCount:0,replyCount:0,createdAt:serverTimestamp()});
+    try{await updateDoc(doc(db,'comments',parentId),{replyCount:increment(1)});}catch{}
+    try{await updateDoc(doc(db,'articleMeta',artId),{commentCount:increment(1)});}catch{await setDoc(doc(db,'articleMeta',artId),{commentCount:1},{merge:true});}
+    cCommentCount++;updateCCount();
+    const nr={id:ref.id,articleId:artId,parentId,authorUid:currentUser.uid,authorName:an,authorPhoto:ap,authorUsername:au,text,likeCount:0,replyCount:0,createdAt:{toDate:()=>new Date()}};
+    if(!cReplies[parentId])cReplies[parentId]=[];
+    cReplies[parentId].push(nr);
+    const re=document.getElementById('rep-'+parentId);
+    if(re){if(re.style.display==='none')re.style.display='block';re.insertAdjacentHTML('beforeend',buildCHTML(nr,true));}
+    const pc=cList.find(c=>c.id===parentId);
+    if(pc){pc.replyCount=(pc.replyCount||0)+1;updVRB(parentId,pc.replyCount);}
+    hideRI(parentId);
+    if(pc&&pc.authorUid&&pc.authorUid!==currentUser.uid)notif.notifyComment({type:'comment_reply',recipientUid:pc.authorUid,articleId:artId,articleTitle:article?article.title:'',commentId:parentId});
+    if(article&&article.authorUid&&article.authorUid!==currentUser.uid&&!article.isMindshift){
+      if(!pc||pc.authorUid!==article.authorUid)notif.notifyComment({type:'new_comment',recipientUid:article.authorUid,articleId:artId,articleTitle:article.title});
+    }
+  }catch(e){console.error('submitReply:',e);}
+  finally{if(btn){btn.disabled=false;btn.textContent='Post';}}
+};
+
+function updVRB(cid,count){
+  const btn=document.getElementById('vrb-'+cid);
+  if(!btn){
+    const foot=document.querySelector('#ci-'+cid+' .c-foot');
+    if(foot)foot.insertAdjacentHTML('beforeend',`<button class="c-view-replies-btn" id="vrb-${cid}" onclick="toggleReplies('${cid}')"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg> ${count} ${count===1?'reply':'replies'}</button>`);
+    return;
+  }
+  btn.innerHTML=`<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg> ${count} ${count===1?'reply':'replies'}`;
+}
+
+window.toggleReplies=async function(cid){
+  const re=document.getElementById('rep-'+cid);if(!re)return;
+  if(cOpenReplies.has(cid)){cOpenReplies.delete(cid);re.style.display='none';return;}
+  cOpenReplies.add(cid);re.style.display='block';
+  if(cReplies[cid]){re.innerHTML=cReplies[cid].map(r=>buildCHTML(r,true)).join('');return;}
+  re.innerHTML='<div style="padding:8px 0;font-size:12px;color:var(--mute)">Loading…</div>';
+  try{
+    const q=query(collection(db,'comments'),where('articleId','==',artId),where('parentId','==',cid),orderBy('createdAt','asc'));
+    const snap=await getDocs(q);
+    const replies=snap.docs.map(d=>({id:d.id,...d.data()}));
+    if(currentUser){
+      replies.forEach(r=>{
+        if(r.likedBy && r.likedBy[currentUser.uid] === true) cLikedSet.add(r.id);
+      });
+    }
+    cReplies[cid]=replies;
+    re.innerHTML=replies.length?replies.map(r=>buildCHTML(r,true)).join(''):'<div style="padding:8px 0;font-size:12px;color:var(--mute)">No replies yet.</div>';
+  }catch(e){re.innerHTML='<div style="padding:8px 0;font-size:12px;color:var(--red)">Could not load.</div>';}
+};
+
+window.likeComment=async function(cid,authorUid){
+  if(!currentUser){openAuth();return;}
+  const wasLiked=cLikedSet.has(cid);
+  const btn=document.getElementById('clb-'+cid),cel=document.getElementById('clc-'+cid);
+  if(wasLiked){cLikedSet.delete(cid);if(btn)btn.classList.remove('liked');}
+  else{cLikedSet.add(cid);if(btn)btn.classList.add('liked');}
+  const c=[...cList,...Object.values(cReplies).flat()].find(x=>x.id===cid);
+  if(c){c.likeCount=(c.likeCount||0)+(wasLiked?-1:1);if(cel)cel.textContent=c.likeCount>0?String(c.likeCount):'';}
+  try{
+    const commentRef = doc(db,'comments',cid);
+    if(wasLiked){
+      await updateDoc(commentRef,{
+        [`likedBy.${currentUser.uid}`]: false,
+        likeCount: increment(-1)
+      });
+    } else {
+      await updateDoc(commentRef,{
+        [`likedBy.${currentUser.uid}`]: true,
+        likeCount: increment(1)
+      });
+      if(authorUid&&authorUid!==currentUser.uid) notif.notifyComment({type:'comment_like',recipientUid:authorUid,articleId:artId,articleTitle:article?article.title:'',commentId:cid});
+    }
+  }catch(e){
+    if(wasLiked){cLikedSet.add(cid);if(btn)btn.classList.add('liked');}
+    else{cLikedSet.delete(cid);if(btn)btn.classList.remove('liked');}
+    if(c){c.likeCount=(c.likeCount||0)+(wasLiked?1:-1);if(cel)cel.textContent=c.likeCount>0?String(c.likeCount):'';}
+  }
+};
+
+window.cGo=function(uid,username){if(!uid)return;if(uid===currentUser?.uid){location.href='/profile';}else if(username){location.href=`/profile/@${encodeURIComponent(username)}`;}else{location.href=`/profile?uid=${uid}`;}};
+
+/* ── 3-DOT COMMENT MENU ── */
+let openMenuId=null;
+window.toggleCMenu=function(e,cid){
+  e.stopPropagation();
+  const menu=document.getElementById('cmenu-'+cid);
+  const btn=document.getElementById('mbtn-'+cid);
+  if(!menu)return;
+  const isOpen=menu.classList.contains('open');
+  closeAllCMenus();
+  if(!isOpen){menu.classList.add('open');if(btn)btn.classList.add('open');openMenuId=cid;}
+};
+function closeAllCMenus(){
+  if(openMenuId){
+    const m=document.getElementById('cmenu-'+openMenuId);if(m)m.classList.remove('open');
+    const b=document.getElementById('mbtn-'+openMenuId);if(b)b.classList.remove('open');
+    openMenuId=null;
+  }
+}
+document.addEventListener('click',()=>closeAllCMenus());
+
+/* ── SHARE COMMENT ── */
+window.shareComment=function(cid){
+  closeAllCMenus();
+  const url=`${location.origin}${location.pathname}${location.search}#c-${cid}`;
+  if(navigator.share){navigator.share({title:'Comment on '+document.title,url}).catch(()=>{});}
+  else{navigator.clipboard.writeText(url).then(()=>showToast('Comment link copied ✅')).catch(()=>showToast('Could not copy link'));}
+};
+
+/* ── DELETE COMMENT ── */
+window.deleteComment=async function(cid,parentId){
+  closeAllCMenus();
+  if(!currentUser)return;
+  if(!confirm('Delete this comment?'))return;
+  const el=document.getElementById('ci-'+cid);
+  if(el){el.style.opacity='.4';el.style.pointerEvents='none';}
+  try{
+    await deleteDoc(doc(db,'comments',cid));
+    // decrement counts
+    try{await updateDoc(doc(db,'articleMeta',artId),{commentCount:increment(-1)});}catch{}
+    if(parentId){try{await updateDoc(doc(db,'comments',parentId),{replyCount:increment(-1)});}catch{}}
+    if(el)el.remove();
+    cCommentCount=Math.max(0,cCommentCount-1);updateCCount();
+    // remove from local lists
+    if(parentId){if(cReplies[parentId])cReplies[parentId]=cReplies[parentId].filter(r=>r.id!==cid);}
+    else{cList=cList.filter(c=>c.id!==cid);}
+    showToast('Comment deleted');
+  }catch(e){
+    if(el){el.style.opacity='';el.style.pointerEvents='';}
+    showToast('Could not delete — try again');
+  }
+};
+/* writeComNotif moved to /notifications.js — see notif.notifyComment() */
+
+function cEsc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function cTA(ts){
+  if(!ts)return'';
+  const date=ts.toDate?ts.toDate():new Date(ts);
+  const sec=(Date.now()-date.getTime())/1000;
+  if(sec<60)return'just now';if(sec<3600)return Math.floor(sec/60)+'m ago';
+  if(sec<86400)return Math.floor(sec/3600)+'h ago';if(sec<604800)return Math.floor(sec/86400)+'d ago';
+  return date.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
+
+/* ══════════════════════════════════════
+   NOTIFICATION WRITER
+   ══════════════════════════════════════ */
+
+/* writeNotification (article_like) moved to /notifications.js — see notif.notifyArticleLike().
+   Comment notifications (new_comment/comment_reply/comment_like) also moved —
+   see notif.notifyComment() below, at the actual submitComment/submitReply/like sites. */
+
+/* ── SHARE ── */
+window.openShare=function(){
+  document.getElementById('authOverlay').classList.add('on');
+  document.getElementById('shareSheet').classList.add('on');
+  document.body.style.overflow='hidden';
+};
+window.closeShare=function(){
+  document.getElementById('authOverlay').classList.remove('on');
+  document.getElementById('shareSheet').classList.remove('on');
+  document.body.style.overflow='';
+};
+window.doShare=function(platform){
+  const url=encodeURIComponent(location.href);
+  const txt=encodeURIComponent((article?article.title:'Career article')+' — MindShift Books');
+  if(artId){
+    const shRef=doc(db,'articleShares',artId);
+    updateDoc(shRef,{count:increment(1)}).catch(()=>setDoc(shRef,{count:1},{merge:true}).catch(()=>{}));
+  }
+  if(platform==='whatsapp') window.open(`https://wa.me/?text=${txt}%20${url}`,'_blank');
+  else if(platform==='twitter') window.open(`https://twitter.com/intent/tweet?text=${txt}&url=${url}`,'_blank');
+  else if(platform==='linkedin') window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`,'_blank');
+  else if(platform==='copy'){
+    navigator.clipboard.writeText(location.href).then(()=>showToast('Link copied! 🎉')).catch(()=>showToast('Copy failed'));
+    closeShare(); return;
+  }
+  closeShare();
+};
+
+/* ══════════════════════════════════════
+   DOWNLOAD AS PDF
+   ══════════════════════════════════════ */
+let _planGateCache = null; // { plan, gates } — cached after first check this session
+async function checkArticleDownloadAllowed() {
+  if (_planGateCache) return _planGateCache.gates.articleDownload;
+  try {
+    const token = await currentUser.getIdToken();
+    const res   = await fetch('/api/plan-config', { headers: { 'Authorization': `Bearer ${token}` } });
+    const data  = await res.json();
+    _planGateCache = data;
+    return !!(data.gates && data.gates.articleDownload);
+  } catch (e) {
+    return false; // fail closed — if we can't confirm the plan, don't claim it's unlocked
+  }
+}
+
+window.openDownloadSheet=async function(){
+  if(!currentUser){ openAuth(); return; }
+  if(!article) return;
+  const allowed = await checkArticleDownloadAllowed();
+  if (!allowed) {
+    let msg = 'Downloading articles needs a paid plan — Pro or Premier both unlock it.';
+    try {
+      const token = await currentUser.getIdToken();
+      const res   = await fetch('/api/upgrade-message?feature=articleDownload', { headers: { 'Authorization': `Bearer ${token}` } });
+      const data  = await res.json();
+      if (data && data.message) msg = data.message;
+    } catch (e) { /* use default */ }
+    showToast('🔒 ' + msg);
+    return;
+  }
+  document.getElementById('dlCat').textContent  = (window.msbCatLabel ? window.msbCatLabel(article.cat) : article.cat) || '';
+  document.getElementById('dlTitle').textContent = article.title||'';
+  document.getElementById('dlMeta').textContent  = `by ${article.author||'MindShift Books'} · ${article.read||''}`;
+  document.getElementById('dlCount').textContent = downloadCount||0;
+  document.getElementById('authOverlay').classList.add('on');
+  document.getElementById('downloadSheet').classList.add('on');
+  document.body.style.overflow='hidden';
+};
+window.closeDownload=function(){
+  document.getElementById('authOverlay').classList.remove('on');
+  document.getElementById('downloadSheet').classList.remove('on');
+  document.body.style.overflow='';
+};
+
+window.confirmDownload=async function(){
+  if(!currentUser){ openAuth(); return; }
+  if(!article) return;
+  const allowed = await checkArticleDownloadAllowed();
+  if (!allowed) {
+    closeDownload();
+    showToast('🔒 Downloading articles needs a paid plan — Pro or Premier both unlock it.');
+    return;
+  }
+  const btn=document.getElementById('dlConfirmBtn');
+  const origHtml=btn.innerHTML;
+  btn.disabled=true;
+  btn.innerHTML='Preparing your PDF…';
+
+  try{
+    await generateArticlePdf();
+    closeDownload();
+    showToast('PDF downloaded ✅');
+
+    // record unique download (count only on first download per user)
+    if(!hasDownloaded){
+      hasDownloaded = true;
+      syncDownloadUI();
+      try{
+        await setDoc(doc(db,'userDownloads',currentUser.uid),{[artId]:true},{merge:true});
+        const cRef = doc(db,'articleDownloads',artId);
+        try{ await updateDoc(cRef,{count:increment(1)}); }
+        catch{ await setDoc(cRef,{count:1},{merge:true}); }
+      }catch(e){ console.error('download count error:', e); }
+    }
+  }catch(e){
+    console.error('PDF generation error:', e);
+    showToast('Could not generate PDF — try again.');
+  }finally{
+    btn.disabled=false;
+    btn.innerHTML=origHtml;
+  }
+};
+
+/* ── PDF BRAND ASSETS ── */
+async function getLogoBase64(){
+  try{
+    const res = await fetch('logo.jpg');
+    if(!res.ok) return null;
+    const blob = await res.blob();
+    return await new Promise((resolve)=>{
+      const reader = new FileReader();
+      reader.onloadend = ()=>resolve(reader.result);
+      reader.onerror   = ()=>resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  }catch{ return null; }
+}
+
+/* ── HTML → pdfMake CONTENT CONVERTER ── */
+function pdfInlineRuns(node, baseStyle={}){
+  let runs=[];
+  node.childNodes.forEach(child=>{
+    if(child.nodeType===3){
+      const t=child.textContent;
+      if(t && t.trim()!=='') runs.push(Object.assign({text:t},baseStyle));
+      else if(t==' ') runs.push(Object.assign({text:' '},baseStyle));
+    } else if(child.nodeType===1){
+      const tag=child.tagName.toLowerCase();
+      let style={...baseStyle};
+      if(tag==='strong'||tag==='b') style.bold=true;
+      if(tag==='em'||tag==='i') style.italics=true;
+      if(tag==='code'){ style.font='Courier'; style.color='#0f172a'; style.fontSize=9.5; }
+      runs = runs.concat(pdfInlineRuns(child, style));
+    }
+  });
+  if(!runs.length) runs.push(Object.assign({text:node.textContent||''},baseStyle));
+  return runs;
+}
+
+function pdfParseBlock(node){
+  if(node.nodeType===3){
+    const t=node.textContent.trim();
+    return t ? {text:t, style:'body'} : null;
+  }
+  if(node.nodeType!==1) return null;
+  const tag=node.tagName.toLowerCase();
+
+  switch(tag){
+    case 'p':{
+      const runs=pdfInlineRuns(node);
+      return {text:runs, style:'body'};
+    }
+    case 'h2':
+      return {text:node.textContent.trim(), style:'h2'};
+    case 'h3':
+      return {text:node.textContent.trim(), style:'h3'};
+    case 'ul':
+      return {ul: Array.from(node.children).map(li=>({text:pdfInlineRuns(li), style:'liText'})), margin:[0,0,0,12]};
+    case 'ol':
+      return {ol: Array.from(node.children).map(li=>({text:pdfInlineRuns(li), style:'liText'})), margin:[0,0,0,12]};
+    case 'hr':
+      return {canvas:[{type:'line',x1:0,y1:0,x2:515,y2:0,lineWidth:1,lineColor:'#f3f4f6'}], margin:[0,8,0,16]};
+    case 'div':{
+      if(node.classList.contains('pull-quote')){
+        return {
+          table:{ widths:['*'], body:[[
+            { text:[{text:'\u201C  ',bold:true,fontSize:18,color:'#22d3ee'}, ...pdfInlineRuns(node,{italics:true,color:'#0e7490'})],
+              fillColor:'#ecfeff', margin:[12,10,12,10] }
+          ]] },
+          layout:'noBorders',
+          margin:[0,12,0,16]
+        };
+      }
+      if(node.classList.contains('key-box')){
+        const titleEl=node.querySelector('.key-box-title');
+        const listEl=node.querySelector('ul,ol');
+        const stack=[];
+        if(titleEl) stack.push({text:titleEl.textContent.trim().toUpperCase(), style:'keyTitle', margin:[0,0,0,6]});
+        if(listEl){
+          const tag2=listEl.tagName.toLowerCase();
+          const items=Array.from(listEl.children).map(li=>({text:pdfInlineRuns(li), style:'liText'}));
+          stack.push(tag2==='ol' ? {ol:items} : {ul:items});
+        }
+        return {
+          table:{ widths:['*'], body:[[ { stack, fillColor:'#ecfeff', margin:[12,12,12,12] } ]] },
+          layout:'noBorders',
+          margin:[0,8,0,16]
+        };
+      }
+      // generic div: recurse into children
+      const inner=[];
+      node.childNodes.forEach(c=>{
+        const b=pdfParseBlock(c);
+        if(b) inner.push(b);
+      });
+      return inner.length ? inner : null;
+    }
+    default:
+      return null;
+  }
+}
+
+function htmlToPdfContent(html){
+  const parsed = new DOMParser().parseFromString(html,'text/html');
+  const out=[];
+  parsed.body.childNodes.forEach(node=>{
+    const block=pdfParseBlock(node);
+    if(!block) return;
+    if(Array.isArray(block)) out.push(...block);
+    else out.push(block);
+  });
+  return out;
+}
+
+/* ── BUILD & DOWNLOAD PDF ── */
+async function generateArticlePdf(){
+  const logoData = await getLogoBase64();
+  const dateStr = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const bodyContent = htmlToPdfContent(article.content);
+
+  const brandStack = {
+    columns:[
+      logoData ? {image:'mindshiftLogo', width:26, height:26, margin:[0,1,0,0]} : {text:''},
+      {
+        stack:[
+          {text:'MindShift Books', style:'brandName'},
+          {text:'AI-Powered Career Platform', style:'brandTag'}
+        ],
+        margin:[logoData?8:0,0,0,0]
+      }
+    ],
+    columnGap:0
+  };
+
+  const docDefinition = {
+    pageSize:'A4',
+    pageMargins:[40,86,40,64],
+    images: logoData ? {mindshiftLogo:logoData} : {},
+    header:{
+      margin:[40,22,40,0],
+      stack:[
+        brandStack,
+        {canvas:[{type:'line',x1:0,y1:10,x2:515,y2:10,lineWidth:1,lineColor:'#cffafe'}]}
+      ]
+    },
+    footer:function(currentPage,pageCount){
+      return {
+        margin:[40,8,40,0],
+        stack:[
+          {canvas:[{type:'line',x1:0,y1:0,x2:515,y2:0,lineWidth:1,lineColor:'#cffafe'}]},
+          {
+            columns:[
+              {text:'mindshiftbooks.shop', style:'footerText'},
+              {text:`Page ${currentPage} of ${pageCount}`, style:'footerText', alignment:'right'}
+            ],
+            margin:[0,6,0,0]
+          },
+          {text:`Generated ${dateStr}  ·  © MindShift Books — build your career with AI`, style:'footerSub', margin:[0,2,0,0]}
+        ]
+      };
+    },
+    content:[
+      {
+        table:{ widths:['auto'], body:[[
+          {text:((window.msbCatLabel ? window.msbCatLabel(article.cat) : article.cat)||'MindShift').toUpperCase(), style:'catPillText', fillColor:'#06b6d4'}
+        ]] },
+        layout:'noBorders',
+        margin:[0,0,0,10]
+      },
+      {text:article.title||'', style:'docTitle'},
+      {
+        columns:[
+          {text:`By ${article.author||'MindShift Books'}`, style:'byline'},
+          {text:article.read||'', style:'byline', alignment:'right'}
+        ],
+        margin:[0,4,0,16]
+      },
+      {canvas:[{type:'line',x1:0,y1:0,x2:515,y2:0,lineWidth:1,lineColor:'#cffafe'}], margin:[0,0,0,16]},
+      ...bodyContent
+    ],
+    styles:{
+      brandName:{fontSize:14,bold:true,color:'#06b6d4'},
+      brandTag:{fontSize:7,color:'#9ca3af'},
+      footerText:{fontSize:8,color:'#9ca3af'},
+      footerSub:{fontSize:7,italics:true,color:'#93c5fd'},
+      catPillText:{fontSize:8,bold:true,color:'#ffffff',characterSpacing:1},
+      docTitle:{fontSize:21,bold:true,color:'#0f0e17',lineHeight:1.2},
+      byline:{fontSize:9,color:'#9ca3af',bold:true},
+      h2:{fontSize:14.5,bold:true,color:'#0f0e17',margin:[0,16,0,8]},
+      h3:{fontSize:12.5,bold:true,color:'#0f0e17',margin:[0,12,0,6]},
+      body:{fontSize:10.5,color:'#374151',lineHeight:1.45,margin:[0,0,0,10]},
+      liText:{fontSize:10.5,color:'#374151',lineHeight:1.4,margin:[0,0,0,4]},
+      keyTitle:{fontSize:8.5,bold:true,color:'#06b6d4',characterSpacing:.5}
+    },
+    defaultStyle:{fontSize:10.5, lineHeight:1.4, color:'#374151'}
+  };
+
+  const safeName=(article.title||'mindshift-article').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'').slice(0,60);
+  pdfMake.createPdf(docDefinition).download(`${safeName}.pdf`);
+}
+
+
+
+/* ── RATING STATE ── */
+let userRating = 0;
+let hoveredRating = 0;
+let ratingSubmitted = false;
+const RATING_LABELS = ['','Terrible 😣','Not good 😕','Okay 👍','Great! 🔥','Mind-blowing! 🤯'];
+const RATING_EMOJIS = ['🤔','😣','😕','👍','🔥','🤯'];
+
+/* ── INJECT RATING CARD ── */
+function injectRatingCard(){
+  const card = document.getElementById('ratingCard');
+  if(!card) return;
+  card.innerHTML = `
+    <div id="ratingEmoji" class="rating-emoji">🤔</div>
+    <div class="rating-title">Rate this article</div>
+    <div id="ratingLabel" class="rating-label">Tap a star to rate</div>
+    <div class="rating-form" id="ratingForm">
+      <div class="stars-row" id="starsRow">
+        ${[1,2,3,4,5].map(i=>`
+          <button class="star-btn" id="star${i}"
+            onmouseenter="hoverStar(${i})"
+            onmouseleave="unhoverStar()"
+            onclick="selectStar(${i}, event)">
+            <svg viewBox="0 0 24 24">
+              <defs>
+                <linearGradient id="sg${i}" x1="0" y1="0" x2="1" y2="0">
+                  <stop id="sg${i}a" offset="0%" stop-color="#fbbf24"/>
+                  <stop id="sg${i}b" offset="0%" stop-color="#e5e7eb"/>
+                </linearGradient>
+              </defs>
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+                fill="url(#sg${i})" stroke="#fbbf24" stroke-width=".5"/>
+            </svg>
+          </button>
+        `).join('')}
+      </div>
+      <button class="rating-submit" id="ratingSubmit" onclick="submitRating()" disabled>Submit Rating</button>
+    </div>
+    <div class="rating-done" id="ratingDone">
+      <div style="font-size:48px;margin-bottom:8px" id="doneEmoji">🎉</div>
+      <div style="font-size:15px;font-weight:800;color:var(--txt);margin-bottom:4px">Thanks for rating!</div>
+      <div class="rating-avg" id="ratingAvgDisplay"></div>
+      <div class="rating-avg-label">average rating from <span id="ratingCount">—</span> readers</div>
+    </div>
+  `;
+  loadUserRating();
+}
+
+/* ── LOAD USER RATING ── */
+async function loadUserRating(){
+  if(!currentUser) return;
+  try{
+    const s = await getDoc(doc(db,'userRatings',currentUser.uid));
+    if(s.exists() && s.data()[artId]){
+      userRating = s.data()[artId];
+      ratingSubmitted = true;
+      showRatingDone();
+    }
+  }catch{}
+}
+
+/* ── STAR HOVER ── */
+window.hoverStar = function(n){
+  if(ratingSubmitted) return;
+  hoveredRating = n;
+  updateStarVisuals(n);
+  document.getElementById('ratingLabel').textContent = RATING_LABELS[n];
+  document.getElementById('ratingEmoji').textContent = RATING_EMOJIS[n];
+  // wiggle hovered star
+  const btn = document.getElementById(`star${n}`);
+  btn.style.animation = 'none';
+  btn.offsetHeight;
+  btn.style.animation = 'starWiggle .3s ease';
+};
+window.unhoverStar = function(){
+  if(ratingSubmitted) return;
+  hoveredRating = 0;
+  updateStarVisuals(userRating);
+  document.getElementById('ratingLabel').textContent = userRating ? RATING_LABELS[userRating] : 'Tap a star to rate';
+  document.getElementById('ratingEmoji').textContent = RATING_EMOJIS[userRating||0];
+};
+
+/* ── STAR SELECT ── */
+window.selectStar = function(n, e){
+  if(ratingSubmitted) return;
+  userRating = n;
+  updateStarVisuals(n);
+  document.getElementById('ratingLabel').textContent = RATING_LABELS[n];
+  document.getElementById('ratingSubmit').disabled = false;
+  // pop each lit star sequentially
+  for(let i=1;i<=n;i++){
+    setTimeout(()=>{
+      const btn = document.getElementById(`star${i}`);
+      btn.classList.remove('popping');
+      btn.offsetHeight;
+      btn.classList.add('popping');
+      setTimeout(()=>btn.classList.remove('popping'),450);
+    }, (i-1)*60);
+  }
+  // emoji bounce
+  const em = document.getElementById('ratingEmoji');
+  em.textContent = RATING_EMOJIS[n];
+  em.classList.remove('picked');
+  em.offsetHeight;
+  em.classList.add('picked');
+  // burst particles from click point
+  burstParticles(e.clientX, e.clientY, n);
+};
+
+/* ── UPDATE STAR VISUALS ── */
+function updateStarVisuals(n){
+  for(let i=1;i<=5;i++){
+    const btn = document.getElementById(`star${i}`);
+    if(!btn) continue;
+    const stopA = document.getElementById(`sg${i}a`);
+    const stopB = document.getElementById(`sg${i}b`);
+    if(i<=n){
+      stopA.setAttribute('offset','100%');
+      stopB.setAttribute('offset','100%');
+      btn.classList.add('lit');
+      btn.classList.toggle('hov', hoveredRating===i);
+    } else {
+      stopA.setAttribute('offset','0%');
+      stopB.setAttribute('offset','0%');
+      btn.classList.remove('lit','hov');
+    }
+  }
+}
+
+/* ── BURST PARTICLES ── */
+function burstParticles(x, y, rating){
+  const colors = rating===5
+    ? ['#fbbf24','#f59e0b','#06b6d4','#22d3ee','#ef4444','#10b981']
+    : ['#fbbf24','#f59e0b','#fde68a'];
+  const count = rating===5 ? 20 : 10;
+  for(let i=0;i<count;i++){
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const angle = (i/count)*360;
+    const dist = 60 + Math.random()*80;
+    const tx = Math.cos(angle*Math.PI/180)*dist + 'px';
+    const ty = Math.sin(angle*Math.PI/180)*dist + 'px';
+    p.style.cssText = `left:${x}px;top:${y}px;background:${colors[i%colors.length]};--tx:${tx};--ty:${ty};width:${6+Math.random()*6}px;height:${6+Math.random()*6}px`;
+    document.body.appendChild(p);
+    setTimeout(()=>p.remove(), 900);
+  }
+  if(rating===5) launchConfetti();
+}
+
+/* ── CONFETTI ── */
+function launchConfetti(){
+  const colors=['#06b6d4','#fbbf24','#ef4444','#10b981','#22d3ee','#f97316'];
+  const shapes=['50%','0%','0% 50%'];
+  for(let i=0;i<40;i++){
+    const c=document.createElement('div');
+    c.className='confetti-piece';
+    const sx=(Math.random()*window.innerWidth)+'px';
+    const sy=(window.innerHeight*0.6)+'px';
+    const ex=(Math.random()*window.innerWidth)+'px';
+    const ey=(-100-Math.random()*300)+'px';
+    c.style.cssText=`left:0;top:0;background:${colors[i%colors.length]};border-radius:${shapes[i%shapes.length]};--sx:${sx};--sy:${sy};--ex:${ex};--ey:${ey};width:${8+Math.random()*8}px;height:${8+Math.random()*8}px;animation-delay:${Math.random()*0.4}s;animation-duration:${0.8+Math.random()*0.6}s`;
+    document.body.appendChild(c);
+    setTimeout(()=>c.remove(),1500);
+  }
+}
+
+/* ── SUBMIT RATING ── */
+window.submitRating = async function(){
+  if(!currentUser){ openAuth(); return; }
+  if(!userRating || ratingSubmitted) return;
+  ratingSubmitted = true;
+  const btn = document.getElementById('ratingSubmit');
+  btn.textContent = 'Submitting...';
+  btn.disabled = true;
+  try{
+    await setDoc(doc(db,'userRatings',currentUser.uid),{[artId]:userRating},{merge:true});
+    const rRef = doc(db,'articleRatings',artId);
+    try{ await updateDoc(rRef,{total:increment(userRating),count:increment(1)}); }
+    catch{ await setDoc(rRef,{total:userRating,count:1}); }
+    showRatingDone();
+    if(userRating===5) launchConfetti();
+  }catch(e){
+    ratingSubmitted=false;
+    btn.textContent='Submit Rating';
+    btn.disabled=false;
+    showToast('Could not submit — try again');
+  }
+};
+
+/* ── SHOW DONE STATE ── */
+async function showRatingDone(){
+  document.getElementById('ratingForm').classList.add('hide');
+  const doneEl = document.getElementById('ratingDone');
+  doneEl.classList.add('show');
+  document.getElementById('doneEmoji').textContent = RATING_EMOJIS[userRating]||'🎉';
+  document.getElementById('ratingCard').classList.add('done');
+  // fetch average
+  try{
+    const s = await getDoc(doc(db,'articleRatings',artId));
+    if(s.exists()){
+      const {total,count} = s.data();
+      const avg = (total/count).toFixed(1);
+      document.getElementById('ratingAvgDisplay').textContent = `⭐ ${avg}`;
+      document.getElementById('ratingCount').textContent = count;
+    }
+  }catch{}
+}
+
+
+/* ── FOLLOW ── */
+window.doFollow = async function(){
+  if(!currentUser){ openAuth(); return; }
+  if(!article||!article.authorUid) return;
+  const wasFollowing = isFollowing;
+  isFollowing = !wasFollowing;
+  syncFollowUI();
+  try{
+    const followId = `${currentUser.uid}_${article.authorUid}`;
+    if(wasFollowing){
+      await deleteDoc(doc(db,'follows',followId));
+      updateDoc(doc(db,'users',article.authorUid),{followerCount:increment(-1)}).catch(()=>{});
+    }else{
+      await setDoc(doc(db,'follows',followId),{followerId:currentUser.uid,followingId:article.authorUid,createdAt:serverTimestamp()});
+      updateDoc(doc(db,'users',article.authorUid),{followerCount:increment(1)}).catch(()=>{});
+      notif.notifyFollow(article.authorUid);
+    }
+    showToast(wasFollowing ? 'Unfollowed' : `Following ${article.author||'author'} ✅`);
+  }catch(e){
+    isFollowing = wasFollowing;
+    syncFollowUI();
+    showToast('Could not update — try again.');
+  }
+};
+
+/* writeFollowNotif moved to /notifications.js — see notif.notifyFollow() */
+
+/* ── TOAST ── */
+window.showToast=function(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('on');
+  setTimeout(()=>t.classList.remove('on'),2800);
+};
+/* ── WELCOME NUDGE ── */
+(function(){
+  const params = new URLSearchParams(location.search);
+  if(params.get('welcome')==='1' && !sessionStorage.getItem('rsmk_welcomed')){
+    sessionStorage.setItem('rsmk_welcomed','1');
+    // Clean ?welcome=1 from the URL without reloading
+    params.delete('welcome');
+    const clean = location.pathname + (params.toString() ? '?'+params.toString() : '');
+    history.replaceState(null,'',clean);
+    // Show nudge after a short delay so the article renders first
+    setTimeout(()=>{
+      const el = document.getElementById('welcomeNudge');
+      if(el) el.classList.add('on');
+    }, 1200);
+    // Auto-dismiss after 8 seconds
+    setTimeout(()=>dismissWelcome(), 9200);
+  }
+})();
+window.dismissWelcome=function(){
+  const el=document.getElementById('welcomeNudge');
+  if(el){ el.classList.remove('on'); }
+};
+window.goResume=function(){
+  dismissWelcome();
+  window.location.href='/dashboard';
+};
+
+</script>
+<!-- Shared MindShift account nav (renders the acct-nav-slot in the header) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="/auth.js"></script>
+</body>
+</html>

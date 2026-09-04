@@ -1,0 +1,1806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<title>Articles | MindShift Books</title>
+<meta name="description" content="Discover articles, ideas, insights, and stories on mindset, money, productivity, relationships, wellness, career, purpose, and personal growth from the MindShift Books community."/>
+<meta name="robots" content="index, follow"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"/>
+<style>
+:root{
+  --p:#4f46e5;--p2:#06b6d4;--ps:#4338ca;
+  --g:linear-gradient(90deg,#4f46e5,#06b6d4);
+  --bg:#f8fafc;--card:#fff;
+  --border:#e2e8f0;--border2:#e2e8f0;
+  --txt:#0f172a;--sub:#6b7280;--mute:#9ca3af;
+  --red:#ef4444;--red-bg:#fff1f1;
+  --save:#06b6d4;--save-bg:#ecfeff;
+  --primary:#0f172a;--accent:#06b6d4;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--txt);-webkit-font-smoothing:antialiased}
+
+/* ── SHARED MINDSHIFT HEADER / SEARCH / SIDEBAR (copied verbatim from styles.css so this page
+   doesn't need to load the full storefront stylesheet — keep these rules in sync if styles.css changes) ── */
+header{position:sticky;top:0;left:0;right:0;background:white;z-index:1000;display:flex;flex-direction:column;gap:10px;padding:16px 20px 18px;box-shadow:0 2px 12px rgba(0,0,0,0.06)}
+.header-top{display:flex;align-items:center;justify-content:space-between;width:100%;flex-wrap:nowrap;gap:8px}
+header h1{font-size:1.45rem;font-weight:700;display:flex;align-items:center;gap:10px;min-width:0;overflow:hidden}
+header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.header-icon-group{display:flex;align-items:center;gap:4px;flex-shrink:0}
+.icon-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;border:none;background:transparent;color:#1e293b;cursor:pointer;transition:background-color 150ms ease,color 150ms ease;padding:0}
+.icon-btn:hover{background-color:#f1f5f9;color:#4f46e5}
+.icon-btn:active{background-color:#e6e9ee}
+.search-wrapper{position:relative;display:flex;align-items:center;gap:8px;background:#eef2f6;padding:6px 8px;border-radius:12px;width:420px;max-width:calc(100% - 40px);margin:0 auto;box-shadow:0 6px 18px rgba(2,6,23,0.04)}
+.search-wrapper input{flex:1;border:none;outline:none;background:transparent;font-size:0.95rem;padding:6px 8px;color:var(--primary)}
+.search-wrapper button{display:inline-flex;align-items:center;justify-content:center;background:linear-gradient(90deg,#4f46e5,#06b6d4);border:none;color:#fff;padding:8px 10px;border-radius:10px;cursor:pointer;box-shadow:0 8px 20px rgba(79,70,229,0.12)}
+.search-wrapper .search-icon-prefix{width:16px;height:16px;color:#94a3b8;flex-shrink:0}
+.sidebar{position:fixed;top:0;left:-300px;width:280px;height:100%;background:#111827;padding-top:84px;padding-bottom:90px;transition:left 0.32s ease;z-index:2000;border-right:1px solid rgba(255,255,255,0.04);color:#fff;overflow-y:auto}
+.sidebar .logo-row{display:flex;align-items:center;gap:12px;padding:18px 20px;position:absolute;top:16px;left:12px}
+.sidebar img{width:36px;height:36px;border-radius:6px}
+.sidebar ul{list-style:none;margin-top:8px}
+.sidebar li{padding:16px 20px;font-weight:600;border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer}
+.sidebar-close-btn{position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.06);color:#fff;font-size:1.15rem;font-weight:800;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:1}
+.sidebar-close-btn:active{background:rgba(255,255,255,0.14)}
+.sidebar-auth-cta{padding:16px 20px;margin-top:6px}
+.sidebar-auth-icon{font-size:1.3rem;margin-bottom:4px}
+.sidebar-auth-text{color:#e2e8f0;font-size:0.78rem;line-height:1.4;margin-bottom:12px}
+.sidebar-auth-cta .btn{display:block;width:100%;padding:9px 10px;font-size:0.8rem;text-decoration:none;margin-bottom:8px;text-align:center;border-radius:10px;font-weight:700}
+.sidebar-auth-cta .btn:last-child{margin-bottom:0}
+.sidebar-auth-signup{background:linear-gradient(90deg,#4f46e5,#06b6d4);color:#fff}
+.sidebar-auth-login{background:rgba(255,255,255,0.08);color:#fff;border:1px solid rgba(255,255,255,0.3)!important}
+.sidebar-auth-login:hover{background:rgba(255,255,255,0.16)}
+@media (max-width:600px){ .search-wrapper{width:100%!important;max-width:100%!important} header{padding:14px 14px 18px} }
+@media (max-width:450px){ header h1{font-size:1.15rem} .header-icon-group .icon-btn{width:36px;height:36px} }
+main{max-width:1100px;margin:0 auto}
+/* ── /SHARED HEADER ── */
+
+/* ── HAMBURGER MENU (retained from the article-ecosystem extract; unused now that nav lives in
+   the shared header/sidebar above — dead but harmless, left in place rather than risking a
+   half-finished CSS removal pass) ── */
+.hamburger-wrap{position:relative}
+.hbg-btn{width:38px;height:38px;border-radius:12px;border:1.5px solid var(--border2);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;color:var(--txt);flex-shrink:0;padding:0}
+.hbg-btn:hover{border-color:var(--p);color:var(--p);background:#eef2ff}
+.hbg-btn svg{width:18px;height:18px;transition:all .22s}
+.hbg-drop{position:absolute;top:calc(100% + 10px);right:0;width:210px;background:#fff;border-radius:18px;border:1.5px solid var(--border);box-shadow:0 8px 40px rgba(37,99,235,.16),0 2px 12px rgba(0,0,0,.08);padding:8px;z-index:200;opacity:0;transform:translateY(-6px) scale(.97);pointer-events:none;transition:all .22s cubic-bezier(.32,0,.15,1);transform-origin:top right}
+.hbg-drop.open{opacity:1;transform:translateY(0) scale(1);pointer-events:all}
+.hbg-item{display:flex;align-items:center;gap:10px;width:100%;padding:11px 13px;border-radius:11px;font-size:13.5px;font-weight:600;color:var(--txt);text-decoration:none;border:none;background:none;cursor:pointer;transition:background .15s,color .15s;text-align:left}
+.hbg-item:hover{background:#eef2ff;color:var(--p)}
+.hbg-item svg{width:16px;height:16px;flex-shrink:0;opacity:.7}
+.hbg-div{height:1px;background:var(--border);margin:4px 6px}
+.hbg-signup{background:var(--g);color:#fff !important;margin-top:2px}
+.hbg-signup:hover{opacity:.88;background:var(--g) !important;color:#fff !important}
+.hbg-signout{color:var(--red) !important}
+.hbg-signout:hover{background:#fff1f1 !important;color:var(--red) !important}
+
+/* ── HERO ── */
+.hero{background:#fff;padding:28px 16px 0;border-bottom:1px solid var(--border);position:relative;transition:opacity .25s ease, max-height .25s ease;overflow:hidden}
+.hero.hero-hidden{opacity:0;max-height:0;padding-top:0;padding-bottom:0;border-bottom:none;pointer-events:none}
+.hero-inner{max-width:480px;margin:0 auto;position:relative}
+.hero-close{position:absolute;top:0;right:0;width:28px;height:28px;border-radius:50%;background:#f4f4f6;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--sub);z-index:2}
+.hero-close svg{width:14px;height:14px}
+.hero-close:active{background:#e9e9ee}
+.hero-pill{display:inline-flex;align-items:center;gap:5px;background:rgba(37,99,235,.1);color:var(--p);font-size:11px;font-weight:800;padding:4px 11px;border-radius:99px;letter-spacing:.4px;margin-bottom:12px}
+.hero-pill svg{width:12px;height:12px}
+.hero h1{font-size:26px;font-weight:900;line-height:1.2;letter-spacing:-.5px;margin-bottom:8px}
+.hero h1 span{color:var(--p)}
+.hero-sub{font-size:13.5px;color:var(--sub);line-height:1.65;margin-bottom:20px}
+.search-row{display:flex;gap:8px;margin-bottom:0}
+.search-wrap{flex:1;position:relative}
+.search-ico{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--mute)}
+.search-ico svg{width:15px;height:15px}
+.search-inp{width:100%;padding:10px 12px 10px 36px;border-radius:10px;border:1.5px solid var(--border2);background:#eef2ff;font-size:13px;font-family:'Inter',sans-serif;color:var(--txt);outline:none;transition:border-color .18s}
+.search-inp:focus{border-color:var(--p);background:#fff}
+.search-inp::placeholder{color:var(--mute)}
+.search-btn{padding:10px 18px;background:var(--g);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;transition:opacity .18s}
+.search-btn:hover{opacity:.88}
+
+/* filter pills */
+.filter-row{display:flex;gap:8px;overflow-x:auto;padding:14px 16px;scrollbar-width:none;background:#fff;border-bottom:1px solid var(--border)}
+.filter-row::-webkit-scrollbar{display:none}
+.fpill{flex-shrink:0;padding:6px 14px;border-radius:99px;font-size:12px;font-weight:700;border:1.5px solid var(--border2);background:#fff;color:var(--sub);cursor:pointer;transition:all .18s;user-select:none}
+.fpill.active{background:var(--p);border-color:var(--p);color:#fff}
+
+/* ── SECTION HEADER ── */
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;padding:20px 16px 12px}
+.sec-title{font-size:17px;font-weight:800;color:var(--txt)}
+.view-all{font-size:13px;font-weight:700;color:var(--p);text-decoration:none;display:flex;align-items:center;gap:4px}
+.view-all svg{width:13px;height:13px}
+
+/* ── LIST (Medium-style) ── */
+.grid{display:flex;flex-direction:column;padding:0 0 100px;background:#fff}
+
+/* ── ARTICLE CARD – horizontal row ── */
+.acard{display:flex;flex-direction:row;align-items:flex-start;gap:14px;background:#fff;padding:20px 16px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .18s;position:relative;-webkit-tap-highlight-color:transparent}
+.acard:active:not(:has(button:active,.acard-author:active)){background:#eef2ff}
+.acard-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+/* ── VERIFIED BADGE (brand standard) ── */
+.vbadge{display:inline-flex;align-items:center;justify-content:center;
+  width:16px;height:16px;border-radius:50%;background:var(--g);flex-shrink:0;
+  box-shadow:0 1px 6px rgba(37,99,235,.35)}
+.vbadge svg{width:9px;height:9px;fill:none;stroke:#fff;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.acard-author{display:flex;align-items:center;gap:7px;margin-bottom:7px;cursor:pointer;width:fit-content;border-radius:6px;padding:2px 0;-webkit-tap-highlight-color:transparent}
+.acard-author:hover .acard-author-name{color:var(--p);text-decoration:underline}
+.acard-av{width:24px;height:24px;border-radius:50%;object-fit:cover;flex-shrink:0;background:var(--g);border:1.5px solid var(--border)}
+.acard-author-name{font-size:12.5px;font-weight:700;color:var(--txt)}
+.acard-author-dot{font-size:11px;color:var(--mute)}
+.acard-author-date{font-size:11.5px;color:var(--mute)}
+.acard-meta{margin-bottom:6px}
+.acard-cat{display:inline-flex;align-items:center;background:rgba(37,99,235,.1);color:var(--p);font-size:9.5px;font-weight:800;padding:3px 9px;border-radius:99px;letter-spacing:.3px;text-transform:uppercase}
+.acard-title{font-size:17px;font-weight:800;color:var(--txt);line-height:1.35;letter-spacing:-.3px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:6px}
+.acard-brief{font-size:13px;color:var(--sub);line-height:1.58;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.acard-img{width:110px;height:110px;border-radius:10px;overflow:hidden;flex-shrink:0;background:linear-gradient(135deg,#e0e7ff,#eef2ff);align-self:flex-start;margin-top:2px}
+.acard-img img{width:100%;height:100%;object-fit:cover;display:block}
+.acard-foot{display:flex;align-items:center;gap:8px;margin-top:10px}
+.acard-read{font-size:11px;color:var(--mute);font-weight:600;white-space:nowrap;margin-right:2px}
+.acard-like{display:flex;align-items:center;gap:4px;background:none;border:none;cursor:pointer;padding:4px 6px;font-size:12px;font-weight:700;color:var(--mute);transition:color .18s;border-radius:8px;-webkit-tap-highlight-color:transparent}
+.acard-like:hover{color:var(--red);background:#fff1f1}
+.acard-like svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;transition:all .2s;flex-shrink:0}
+.acard-like.liked{color:var(--red)}
+.acard-like.liked svg{fill:var(--red);stroke:var(--red);animation:hpop .25s ease}
+/* ── SKELETON ── */
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+.skel{background:linear-gradient(90deg,#eef2ff 25%,#e0e7ff 50%,#eef2ff 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:8px}
+.skel-card{display:flex;flex-direction:row;align-items:flex-start;gap:14px;background:#fff;padding:20px 16px;border-bottom:1px solid var(--border)}
+.skel-card-body{flex:1;display:flex;flex-direction:column;gap:10px}
+.skel-av{width:28px;height:28px;border-radius:50%;flex-shrink:0}
+.skel-author-row{display:flex;align-items:center;gap:8px}
+.skel-img{width:88px;height:88px;border-radius:10px;flex-shrink:0}
+
+@keyframes hpop{0%{transform:scale(1)}50%{transform:scale(1.45)}100%{transform:scale(1)}}
+.acard-save{display:flex;align-items:center;gap:4px;padding:4px 6px;background:none;border:none;cursor:pointer;color:var(--mute);transition:color .18s;border-radius:8px;font-size:12px;font-weight:700;-webkit-tap-highlight-color:transparent}
+.acard-save:hover{color:var(--save);background:#eef2ff}
+.acard-save svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;transition:all .2s}
+.acard-save.saved{color:var(--save)}
+.acard-save.saved svg{fill:var(--save);stroke:var(--save);animation:hpop .25s ease}
+.acard-share{display:flex;align-items:center;padding:4px 6px;background:none;border:none;cursor:pointer;color:var(--mute);transition:color .18s;margin-left:auto;border-radius:8px;-webkit-tap-highlight-color:transparent}
+.acard-share:hover{color:var(--p);background:#eef2ff}
+.acard-share svg{width:14px;height:14px}
+
+/* ── CARD 3-DOT MENU ── */
+.acard-menu-wrap{position:relative;margin-left:auto}
+.acard-menu-btn{display:flex;align-items:center;justify-content:center;padding:4px 7px;background:none;border:none;cursor:pointer;color:var(--mute);transition:color .18s;border-radius:8px;-webkit-tap-highlight-color:transparent}
+.acard-menu-btn:hover{color:var(--p);background:#eef2ff}
+.acard-menu-btn svg{width:16px;height:16px}
+.acard-menu-drop{position:absolute;bottom:calc(100% + 6px);right:0;width:178px;background:#fff;border-radius:14px;border:1.5px solid var(--border);box-shadow:0 6px 28px rgba(37,99,235,.14),0 2px 8px rgba(0,0,0,.07);padding:6px;z-index:150;opacity:0;transform:translateY(4px) scale(.97);pointer-events:none;transition:all .18s cubic-bezier(.32,0,.15,1);transform-origin:bottom right}
+.acard-menu-drop.open{opacity:1;transform:translateY(0) scale(1);pointer-events:all}
+.acard-menu-item{display:flex;align-items:center;gap:9px;width:100%;padding:10px 12px;border-radius:9px;font-size:13px;font-weight:600;color:var(--txt);border:none;background:none;cursor:pointer;transition:background .15s,color .15s;text-align:left;font-family:'Inter',sans-serif}
+.acard-menu-item:hover{background:#eef2ff;color:var(--p)}
+.acard-menu-item svg{width:15px;height:15px;flex-shrink:0;opacity:.75}
+
+/* ── GUEST BAR ── */
+.guest-bar{background:linear-gradient(135deg,rgba(37,99,235,.08),rgba(59,130,246,.05));border:1px solid rgba(37,99,235,.15);border-radius:14px;padding:13px 14px;margin:0 16px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.guest-bar-txt{font-size:12px;font-weight:700;color:var(--p)}
+.guest-bar-sub{font-size:10.5px;color:var(--sub);margin-top:1px}
+.guest-bar-btns{display:flex;gap:7px;flex-shrink:0}
+.guest-bar-btns a{padding:6px 12px;border-radius:99px;font-size:11.5px;font-weight:700;text-decoration:none;transition:all .18s;display:inline-flex}
+.gbl{background:#fff;border:1.5px solid var(--border2);color:var(--txt)}
+.gbs{background:var(--g);color:#fff}
+
+/* ── NO RESULTS ── */
+.no-res{display:none;text-align:center;padding:60px 20px;color:var(--mute)}
+.no-res svg{margin:0 auto 12px;opacity:.3;display:block}
+.no-res p{font-size:14px;font-weight:700}
+
+/* ── FEED TABS ── */
+.feed-tabs{display:flex;background:var(--card);border-bottom:1.5px solid var(--border);
+  position:sticky;top:56px;z-index:50}
+.feed-tab{flex:1;padding:13px 8px;text-align:center;font-size:13.5px;font-weight:700;
+  color:var(--mute);background:none;border:none;border-bottom:2.5px solid transparent;
+  cursor:pointer;transition:all .18s;font-family:'Inter',sans-serif;-webkit-tap-highlight-color:transparent}
+.feed-tab.active{color:var(--p);border-bottom-color:var(--p)}
+.feed-tab:hover:not(.active){color:var(--txt)}
+
+/* ── FOLLOWING FEED ── */
+.following-empty{padding:32px 20px;text-align:center}
+.following-empty svg{margin:0 auto 14px;opacity:.3;display:block}
+.following-empty h3{font-size:17px;font-weight:800;color:var(--txt);margin-bottom:6px}
+.following-empty p{font-size:13px;color:var(--sub);line-height:1.6;max-width:280px;margin:0 auto 22px}
+/* Suggested accounts */
+.suggested-section-hdr{padding:16px 16px 10px;display:flex;align-items:center;justify-content:space-between}
+.suggested-section-hdr span{font-size:13px;font-weight:800;color:var(--txt)}
+.suggested-list{padding:0 16px 8px;display:flex;flex-direction:column;gap:10px}
+.sug-card{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:14px;
+  border:1.5px solid var(--border);padding:12px 14px;transition:all .18s}
+.sug-card:hover{border-color:var(--p2);background:#eef2ff}
+.sug-clickable{display:flex;align-items:center;gap:12px;flex:1;min-width:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.sug-av{width:42px;height:42px;border-radius:50%;background:var(--g);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;
+  flex-shrink:0;overflow:hidden;border:2px solid var(--border)}
+.sug-av img{width:100%;height:100%;object-fit:cover;display:block}
+.sug-info{flex:1;min-width:0}
+.sug-name{font-size:13.5px;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sug-handle{font-size:11.5px;color:var(--mute);font-weight:600;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sug-cat{font-size:11px;color:var(--p);font-weight:700;background:rgba(37,99,235,.1);
+  display:inline-flex;padding:2px 8px;border-radius:99px;margin-top:3px}
+.sug-follow{padding:7px 14px;background:var(--g);color:#fff;border:none;border-radius:99px;
+  font-size:12px;font-weight:700;cursor:pointer;transition:all .18s;font-family:inherit;
+  flex-shrink:0;box-shadow:0 2px 8px rgba(37,99,235,.25)}
+.sug-follow:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(37,99,235,.4)}
+.sug-follow.following-btn{background:var(--card);color:var(--txt);border:1.5px solid var(--border);box-shadow:none}
+.sug-dismiss{width:28px;height:28px;border-radius:50%;border:none;background:none;
+  color:var(--mute);cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all .18s;flex-shrink:0;font-size:15px}
+.sug-dismiss:hover{background:#f1f5f9;color:var(--txt)}
+/* See more banner (at end of following feed) */
+.see-more-banner{margin:20px 16px;background:linear-gradient(135deg,#eef2ff,#eef2ff);
+  border:1.5px solid var(--border2);border-radius:16px;padding:18px 16px;text-align:center}
+.see-more-banner p{font-size:13px;font-weight:700;color:var(--txt);margin-bottom:10px}
+.see-more-banner span{font-size:12px;color:var(--sub);display:block;margin-bottom:14px;line-height:1.5}
+.smb-follow-btn{padding:9px 20px;background:var(--g);color:#fff;border:none;border-radius:99px;
+  font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;
+  box-shadow:0 3px 12px rgba(37,99,235,.3);transition:all .18s}
+.smb-follow-btn:hover{transform:translateY(-1px);box-shadow:0 5px 18px rgba(37,99,235,.4)}
+
+/* Invite friends card (shown inline in feed) */
+.invite-card{position:relative;margin:0;background:#fff;border-top:8px solid #eef2ff;border-bottom:8px solid #eef2ff;padding:28px 20px 26px;text-align:center}
+.invite-close{position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:50%;background:#f4f4f6;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--sub)}
+.invite-close svg{width:14px;height:14px}
+.invite-close:active{background:#e9e9ee}
+.invite-icon{width:60px;height:60px;border-radius:50%;background:var(--g);margin:0 auto 16px;display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 6px 16px rgba(37,99,235,.3)}
+.invite-icon svg{width:28px;height:28px}
+.invite-card h3{font-size:18px;font-weight:800;color:var(--txt);margin-bottom:6px}
+.invite-card p{font-size:13px;color:var(--sub);line-height:1.6;max-width:280px;margin:0 auto 18px}
+.invite-btn{padding:12px 32px;background:var(--g);color:#fff;border:none;border-radius:99px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(37,99,235,.32);transition:all .18s}
+.invite-btn:active{transform:scale(.97)}
+
+/* ── AUTH DRAWER ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;opacity:0;pointer-events:none;transition:opacity .25s;backdrop-filter:blur(3px)}
+.overlay.on{opacity:1;pointer-events:all}
+.auth-sheet{position:fixed;left:0;right:0;bottom:0;z-index:301;background:#fff;border-radius:24px 24px 0 0;padding:20px 20px 44px;transform:translateY(100%);transition:transform .32s cubic-bezier(.32,0,.15,1)}
+.auth-sheet.on{transform:none}
+.sheet-bar{width:36px;height:4px;background:#e5e7eb;border-radius:99px;margin:0 auto 20px}
+.auth-sheet h3{font-size:22px;font-weight:900;text-align:center;margin-bottom:6px}
+.auth-sheet p{font-size:13.5px;color:var(--sub);text-align:center;line-height:1.6;margin-bottom:22px}
+.auth-sheet-btns{display:flex;flex-direction:column;gap:10px}
+.auth-sheet-btns a{display:flex;align-items:center;justify-content:center;padding:15px;border-radius:14px;font-size:15px;font-weight:700;text-decoration:none;transition:opacity .18s}
+.ash-su{background:var(--g);color:#fff;box-shadow:0 4px 16px rgba(37,99,235,.28)}
+.ash-li{background:#fff;border:1.5px solid var(--border2);color:var(--txt)}
+.auth-sheet-cancel{display:block;text-align:center;margin-top:14px;font-size:13px;color:var(--mute);cursor:pointer;font-weight:600}
+
+/* ── SHARE SHEET ── */
+.share-sheet{position:fixed;left:0;right:0;bottom:0;z-index:302;background:#fff;border-radius:24px 24px 0 0;padding:18px 20px 44px;transform:translateY(100%);transition:transform .3s cubic-bezier(.32,0,.15,1)}
+.share-sheet.on{transform:none}
+.share-sheet h4{font-size:15px;font-weight:800;text-align:center;margin-bottom:16px}
+.share-opts{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.s-opt{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;transition:transform .15s}
+.s-opt:active{transform:scale(.93)}
+.s-ico{width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center}
+.s-lbl{font-size:10.5px;font-weight:600;color:var(--sub)}
+.copy-row{background:#eef2ff;border:1.5px solid var(--border2);border-radius:11px;display:flex;align-items:center;gap:8px;padding:10px 12px;cursor:pointer}
+.copy-url{font-size:12px;color:var(--sub);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.copy-lbl{font-size:12px;font-weight:700;color:var(--p);flex-shrink:0}
+.share-cancel{display:block;text-align:center;margin-top:14px;font-size:13px;color:var(--mute);cursor:pointer;font-weight:600}
+
+/* ── SAVED SHEET ── */
+.saved-sheet{position:fixed;left:0;right:0;bottom:0;z-index:302;background:#fff;border-radius:24px 24px 0 0;padding:18px 20px 44px;transform:translateY(100%);transition:transform .3s cubic-bezier(.32,0,.15,1);max-height:85vh;overflow-y:auto}
+.saved-sheet.on{transform:none}
+.saved-sheet-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.saved-sheet-hdr h4{font-size:17px;font-weight:900;color:var(--txt)}
+.saved-count{font-size:12px;font-weight:700;color:var(--p);background:rgba(37,99,235,.1);padding:3px 10px;border-radius:99px}
+.saved-list{display:flex;flex-direction:column;gap:10px}
+.saved-card{display:flex;gap:10px;align-items:center;padding:10px;border-radius:14px;border:1px solid var(--border);background:#fff;cursor:pointer;transition:all .2s}
+.saved-card:hover{border-color:var(--p);background:#eef2ff}
+.saved-card-img{width:60px;height:54px;border-radius:9px;object-fit:cover;flex-shrink:0;background:linear-gradient(135deg,#e0e7ff,#eef2ff)}
+.saved-card-body{flex:1;min-width:0}
+.saved-card-cat{font-size:9px;font-weight:800;color:var(--p);text-transform:uppercase;letter-spacing:.3px;margin-bottom:3px}
+.saved-card-ttl{font-size:12.5px;font-weight:700;color:var(--txt);line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.saved-card-read{font-size:11px;color:var(--mute);font-weight:600;margin-top:3px}
+.saved-card-unsave{width:30px;height:30px;border-radius:50%;background:none;border:none;cursor:pointer;color:var(--mute);display:flex;align-items:center;justify-content:center;transition:all .18s;flex-shrink:0}
+.saved-card-unsave:hover{background:#fff1f1;color:var(--red)}
+.saved-card-unsave svg{width:14px;height:14px}
+.saved-empty{text-align:center;padding:40px 20px;color:var(--mute)}
+.saved-empty svg{margin:0 auto 12px;display:block;opacity:.3}
+.saved-empty p{font-size:14px;font-weight:700;margin-bottom:6px}
+.saved-empty span{font-size:12px}
+.saved-guest{background:linear-gradient(135deg,rgba(37,99,235,.06),rgba(59,130,246,.04));border:1.5px solid var(--border2);border-radius:16px;padding:24px 20px;text-align:center}
+.saved-guest h4{font-size:16px;font-weight:900;color:var(--txt);margin-bottom:6px}
+.saved-guest p{font-size:13px;color:var(--sub);line-height:1.6;margin-bottom:18px}
+.saved-guest-btns{display:flex;gap:10px;justify-content:center}
+.saved-guest-btns a{padding:11px 22px;border-radius:99px;font-size:13px;font-weight:700;text-decoration:none;transition:opacity .18s}
+.sgb-su{background:var(--g);color:#fff}
+.sgb-li{background:#fff;border:1.5px solid var(--border2);color:var(--txt)}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(8px);background:#111;color:#fff;font-size:13px;font-weight:600;padding:10px 20px;border-radius:99px;z-index:500;opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+/* ── WELCOME NUDGE ── */
+.welcome-nudge{position:fixed;bottom:0;left:0;right:0;z-index:400;background:linear-gradient(135deg,#4f46e5,#06b6d4);color:#fff;padding:16px 20px 36px;transform:translateY(100%);transition:transform .38s cubic-bezier(.32,0,.15,1);display:flex;align-items:center;gap:14px}
+.welcome-nudge.on{transform:none}
+.welcome-nudge-ico{font-size:28px;flex-shrink:0;line-height:1}
+.welcome-nudge-txt{flex:1;min-width:0}
+.welcome-nudge-txt strong{display:block;font-size:14px;font-weight:800;margin-bottom:3px}
+.welcome-nudge-txt span{font-size:12px;opacity:.85;line-height:1.4;display:block}
+.welcome-nudge-cta{flex-shrink:0;background:#fff;color:#4f46e5;font-size:12px;font-weight:800;border:none;border-radius:99px;padding:9px 14px;cursor:pointer;white-space:nowrap}
+.welcome-nudge-close{position:absolute;top:10px;right:14px;background:none;border:none;color:rgba(255,255,255,.7);font-size:18px;cursor:pointer;padding:4px;line-height:1}
+
+/* ── NOTIFICATION BELL/PANEL: styles now injected by /notifications.js ── */
+/* ── SEARCH ICON BTN ── */
+.search-open-btn{width:38px;height:38px;border-radius:50%;border:none;background:none;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .18s,color .18s;color:var(--txt);padding:0;-webkit-tap-highlight-color:transparent}
+.search-open-btn:hover{background:rgba(37,99,235,.08);color:var(--p)}
+.search-open-btn svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+/* ── FULLSCREEN SEARCH / EXPLORE ── */
+.search-screen{position:fixed;inset:0;background:#fff;z-index:1500;transform:translateX(100%);transition:transform .3s cubic-bezier(.32,0,.15,1);display:flex;flex-direction:column;overflow:hidden}
+.search-screen.on{transform:none}
+.xs-top{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
+.xs-back{width:36px;height:36px;border-radius:10px;border:none;background:none;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt);flex-shrink:0;-webkit-tap-highlight-color:transparent}
+.xs-back svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.xs-search-wrap{flex:1;position:relative}
+.xs-search-ico{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--mute);display:flex}
+.xs-search-ico svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.xs-inp{width:100%;padding:10px 36px;border-radius:99px;border:1.5px solid var(--border2);background:#eef2ff;font-size:14px;font-family:'Inter',sans-serif;color:var(--txt);outline:none;transition:border-color .18s}
+.xs-inp:focus{border-color:var(--p);background:#fff}
+.xs-clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:22px;height:22px;border-radius:50%;background:var(--border2);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--sub);padding:0}
+.xs-clear svg{width:11px;height:11px;stroke:currentColor;stroke-width:2.6;fill:none;stroke-linecap:round}
+.xs-tabs{display:none;background:var(--card);border-bottom:1.5px solid var(--border)}
+.xs-tabs.show{display:flex}
+.xs-tab{flex:1;padding:12px 8px;text-align:center;font-size:13.5px;font-weight:700;color:var(--mute);background:none;border:none;border-bottom:2.5px solid transparent;cursor:pointer;transition:all .18s;font-family:'Inter',sans-serif;-webkit-tap-highlight-color:transparent}
+.xs-tab.active{color:var(--p);border-bottom-color:var(--p)}
+.xs-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.xs-section-lbl{padding:14px 16px 8px;font-size:12px;font-weight:800;color:var(--mute);text-transform:uppercase;letter-spacing:.4px}
+.xgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:6px}
+.xcard{position:relative;border-radius:12px;overflow:hidden;cursor:pointer;background:linear-gradient(135deg,#e0e7ff,#eef2ff);aspect-ratio:3/4;-webkit-tap-highlight-color:transparent}
+.xcard.big{grid-column:span 2;aspect-ratio:16/9}
+.xcard img{width:100%;height:100%;object-fit:cover;display:block}
+.xcard-ov{position:absolute;left:0;right:0;bottom:0;padding:10px;background:linear-gradient(to top,rgba(0,0,0,.78),rgba(0,0,0,.05) 70%,transparent);color:#fff}
+.xcard-cat{display:inline-block;font-size:8.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;background:rgba(255,255,255,.2);padding:2px 7px;border-radius:99px;margin-bottom:5px;backdrop-filter:blur(4px)}
+.xcard-title{font-size:12.5px;font-weight:800;line-height:1.3;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.xcard.big .xcard-title{font-size:15px;-webkit-line-clamp:2}
+.xcard-author{position:absolute;top:8px;left:8px;display:flex;align-items:center;gap:5px;background:rgba(0,0,0,.35);backdrop-filter:blur(4px);padding:3px 9px 3px 3px;border-radius:99px}
+.xcard-author img{width:18px;height:18px;border-radius:50%;object-fit:cover;display:block}
+.xcard-author span{font-size:10px;font-weight:700;color:#fff;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.xres-list{padding-bottom:40px}
+.xacc-row{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .15s}
+.xacc-row:active{background:#eef2ff}
+.xacc-av{width:42px;height:42px;border-radius:50%;object-fit:cover;background:var(--g);flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px;overflow:hidden}
+.xacc-info{flex:1;min-width:0}
+.xacc-name{font-size:14px;font-weight:800;color:var(--txt);display:flex;align-items:center;gap:5px}
+.xacc-sub{font-size:12px;color:var(--mute);margin-top:1px}
+.xs-empty{text-align:center;padding:60px 24px;color:var(--mute)}
+.xs-empty svg{width:40px;height:40px;margin:0 auto 12px;display:block;opacity:.6;fill:none;stroke:currentColor;stroke-width:1.5}
+.xs-empty p{font-size:14px;font-weight:700}
+
+</style>
+<script src="/article-categories.js"></script>
+</head>
+<body>
+
+<!-- HEADER -->
+<!-- ══ SHARED MINDSHIFT HEADER + SIDEBAR (matches index.html — do not fork this markup per-page) ══ -->
+<header>
+  <div class="header-top">
+    <h1 style="display:flex;align-items:center;gap:10px;margin:0;">
+      <a href="/" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;">
+        <img src="/MINDSHIFT.jpg" alt="MindShift logo" style="width:36px;height:36px;border-radius:6px;">
+      </a>
+      <span>MindShift Books</span>
+    </h1>
+    <div class="header-icon-group">
+      <button type="button" class="icon-btn" onclick="openSearchScreen()" aria-label="Search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </button>
+      <div class="notif-wrap" id="notifWrap" style="display:none">
+        <button type="button" class="icon-btn" id="notifBtn" onclick="openNotifPanel()" aria-label="Notifications">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path fill-rule="evenodd" clip-rule="evenodd" d="M5.25 9a6.75 6.75 0 0113.5 0v.75c0 2.123.8 4.057 2.118 5.52a.75.75 0 01-.297 1.206 24.585 24.585 0 01-4.831 1.243 3.75 3.75 0 11-7.48 0 24.585 24.585 0 01-4.831-1.244.75.75 0 01-.298-1.205A8.217 8.217 0 005.25 9.75V9zm4.502 8.9a2.25 2.25 0 104.496 0 25.057 25.057 0 01-4.496 0z"/></svg>
+          <span class="notif-badge" id="notifBadge" style="display:none;position:absolute;top:2px;right:2px;background:#ef4444;color:#fff;font-size:10px;font-weight:800;min-width:16px;height:16px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</span>
+        </button>
+      </div>
+      <button type="button" id="sidebarToggle" class="icon-btn" onclick="toggleSidebar()" aria-label="Open menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="22" height="22"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<aside class="sidebar" id="sidebar" aria-hidden="true" data-open="false">
+  <button type="button" class="sidebar-close-btn" onclick="toggleSidebar()" aria-label="Close menu">&times;</button>
+  <div class="logo-row">
+    <img src="/MINDSHIFT.jpg" alt="logo">
+    <div style="font-weight:700">MindShift Books</div>
+  </div>
+  <ul>
+    <li onclick="window.location.href='/books'">Bookstore</li>
+    <li onclick="window.location.href='/articles'"><strong>Articles</strong></li>
+    <li onclick="window.location.href='/write'">Write an Article</li>
+    <li id="sbProfileLink" style="display:none" onclick="window.location.href='/profile'">My Profile</li>
+    <li id="sbInsightsLink" style="display:none" onclick="window.location.href='/insights'">My Insights</li>
+    <li id="sbSavedLink" style="display:none" onclick="openSaved()">Saved Articles</li>
+    <li onclick="window.location.href='/settings'">Settings</li>
+    <li onclick="window.location.href='/wishlist'">My Wishlist</li>
+    <li onclick="window.location.href='/free-ebooks'">Free eBooks</li>
+    <li onclick="window.location.href='/support'">Support</li>
+    <li onclick="window.location.href='/legal'">Terms &amp; Privacy</li>
+    <li onclick="window.location.href='/affiliate'">Become an Affiliate</li>
+  </ul>
+  <div class="sidebar-auth-cta" id="sidebarAuthCta" style="display:none;">
+    <div class="sidebar-auth-icon" aria-hidden="true">✨</div>
+    <div class="sidebar-auth-text">Sign up to write articles, follow authors, and get a feed picked for you.</div>
+    <a href="/signup" class="btn sidebar-auth-signup">Sign Up Free</a>
+    <a href="/login" class="btn sidebar-auth-login">Log In</a>
+  </div>
+</aside>
+<script>
+  function toggleSidebar(){
+    const sidebar = document.getElementById('sidebar');
+    const open = sidebar.getAttribute('data-open') === 'true';
+    sidebar.setAttribute('data-open', open ? 'false' : 'true');
+    sidebar.style.left = open ? '-300px' : '0px';
+    sidebar.setAttribute('aria-hidden', open ? 'true' : 'false');
+  }
+</script>
+<!-- ══ /SHARED HEADER + SIDEBAR ══ -->
+
+<!-- HERO -->
+<div class="hero" id="heroBanner">
+  <div class="hero-inner">
+    <button class="hero-close" id="heroCloseBtn" type="button" aria-label="Dismiss">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <div class="hero-pill">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+      MindShift Reads
+    </div>
+    <h1>Ideas Worth<br><span>Thinking About</span></h1>
+    <p class="hero-sub">Mindset, money, productivity, relationships, and more — from our writers and yours.</p>
+  </div>
+</div>
+
+<!-- FILTER PILLS (rendered from window.MSB_CATEGORIES — see renderFilterPills()) -->
+<div class="filter-row" id="filterRow" style="display:none">
+  <span class="fpill active" data-cat="all">All</span>
+</div>
+
+<!-- GUEST BAR -->
+<div class="guest-bar" id="guestBar">
+  <div>
+    <div class="guest-bar-txt">❤️ Like, save & share articles</div>
+    <div class="guest-bar-sub">Free account — takes 30 seconds</div>
+  </div>
+  <div class="guest-bar-btns">
+    <a href="/login" class="gbl">Log in</a>
+    <a href="/signup" class="gbs">Sign up</a>
+  </div>
+</div>
+
+<!-- FEED TABS: For You | Following | Explore -->
+<div class="feed-tabs" id="feedTabs">
+  <button class="feed-tab active" data-tab="for-you" onclick="switchFeedTab('for-you')">For You</button>
+  <button class="feed-tab" data-tab="following" onclick="switchFeedTab('following')">Following</button>
+  <button class="feed-tab" data-tab="explore" onclick="switchFeedTab('explore')">Explore</button>
+</div>
+
+<!-- GRID (For You) -->
+<div id="forYouFeed">
+<div class="grid" id="grid"></div>
+<div class="no-res" id="noRes">
+  <svg width="44" height="44" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="m21 21-4.35-4.35"/></svg>
+  <p>No articles found</p>
+</div>
+</div>
+
+<!-- FOLLOWING FEED -->
+<div id="followingFeed" style="display:none;padding-bottom:80px"></div>
+
+<!-- EXPLORE FEED -->
+<div id="exploreFeed" style="display:none;padding:40px 16px 80px;text-align:center">
+  <div style="width:64px;height:64px;background:linear-gradient(135deg,#e0e7ff,#bfdbfe);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+    <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="#4f46e5" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35"/></svg>
+  </div>
+  <p style="font-size:17px;font-weight:800;color:#0f0e17;margin-bottom:8px">Explore is coming soon</p>
+  <p style="font-size:13px;color:#6b7280;line-height:1.6;max-width:280px;margin:0 auto">Discover trending content from across all categories. Stay tuned!</p>
+</div>
+
+<!-- WELCOME NUDGE (shown once to users who signed up from this page) -->
+<div class="welcome-nudge" id="welcomeNudge">
+  <button class="welcome-nudge-close" onclick="dismissWelcome()" aria-label="Close">×</button>
+  <div class="welcome-nudge-ico">🚀</div>
+  <div class="welcome-nudge-txt">
+    <strong>Welcome to MindShift Books!</strong>
+    <span>We also help you build a resume that gets interviews — totally free.</span>
+  </div>
+  <button class="welcome-nudge-cta" onclick="goResume()">Build mine →</button>
+</div>
+
+<!-- AUTH SHEET -->
+<div class="overlay" id="authOverlay" onclick="closeAll()"></div>
+<div class="auth-sheet" id="authSheet">
+  <div class="sheet-bar"></div>
+  <h3>Join MindShift Books Free 🚀</h3>
+  <p>Create a free account to like, save, and share articles, get personalized career tips and build your winning resume.</p>
+  <div class="auth-sheet-btns">
+    <a href="/signup" class="ash-su" id="authSignupBtn">✨ Create free account</a>
+    <a href="/login" class="ash-li" id="authLoginBtn">I already have an account</a>
+  </div>
+  <span class="auth-sheet-cancel" onclick="closeAll()">Maybe later</span>
+</div>
+
+<!-- SHARE SHEET -->
+<div class="share-sheet" id="shareSheet">
+  <div class="sheet-bar"></div>
+  <h4>Share this article</h4>
+  <div class="share-opts">
+    <div class="s-opt" onclick="doShare('whatsapp')">
+      <div class="s-ico" style="background:#dcfce7"><svg width="22" height="22" viewBox="0 0 24 24" fill="#16a34a"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.121 1.534 5.852L.057 23.213a.75.75 0 00.918.918l5.42-1.464A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22a9.95 9.95 0 01-5.193-1.456l-.371-.221-3.857 1.042 1.063-3.748-.242-.385A9.951 9.951 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg></div>
+      <span class="s-lbl">WhatsApp</span>
+    </div>
+    <div class="s-opt" onclick="doShare('twitter')">
+      <div class="s-ico" style="background:#e0f2fe"><svg width="18" height="18" viewBox="0 0 24 24" fill="#0284c7"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.402 6.231H2.74l7.73-8.835L1.254 2.25H8.08l4.265 5.638 5.899-5.638zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></div>
+      <span class="s-lbl">X / Twitter</span>
+    </div>
+    <div class="s-opt" onclick="doShare('linkedin')">
+      <div class="s-ico" style="background:#e0e7ff"><svg width="18" height="18" viewBox="0 0 24 24" fill="#4338ca"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></div>
+      <span class="s-lbl">LinkedIn</span>
+    </div>
+    <div class="s-opt" onclick="doShare('copy')">
+      <div class="s-ico" style="background:#f1f5f9"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#64748b" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path stroke-linecap="round" d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></div>
+      <span class="s-lbl">Copy link</span>
+    </div>
+  </div>
+  <div class="copy-row" onclick="doShare('copy')">
+    <span class="copy-url" id="copyUrl"></span>
+    <span class="copy-lbl">Copy</span>
+  </div>
+  <span class="share-cancel" onclick="closeAll()">Cancel</span>
+</div>
+
+<!-- SAVED SHEET -->
+<div class="saved-sheet" id="savedSheet">
+  <div class="sheet-bar"></div>
+  <div class="saved-sheet-hdr">
+    <h4>🔖 Saved Articles</h4>
+    <span class="saved-count" id="savedCount">0 saved</span>
+  </div>
+  <div id="savedList"></div>
+  <span class="share-cancel" style="margin-top:20px;display:block" onclick="closeSaved()">Close</span>
+</div>
+
+<!-- NOTIF SHEET now injected by /notifications.js — no markup needed here -->
+
+<!-- FULLSCREEN SEARCH / EXPLORE -->
+<div class="search-screen" id="searchScreen">
+  <div class="xs-top">
+    <button class="xs-back" onclick="closeSearchScreen()" aria-label="Back">
+      <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <div class="xs-search-wrap">
+      <span class="xs-search-ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="m21 21-4.35-4.35"/></svg></span>
+      <input class="xs-inp" id="xSearchInp" type="text" placeholder="People, articles, or topics" oninput="onXSearchInput()" autocomplete="off"/>
+      <button class="xs-clear" id="xClearBtn" onclick="clearXSearch()" style="display:none" aria-label="Clear search">
+        <svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="xs-tabs" id="xTabs">
+    <button class="xs-tab active" data-xtab="articles" onclick="switchXTab('articles')">Articles</button>
+    <button class="xs-tab" data-xtab="accounts" onclick="switchXTab('accounts')">People</button>
+  </div>
+  <div class="xs-body" id="xBody">
+    <div id="xDiscover"></div>
+    <div id="xArticlesRes" class="xgrid" style="display:none"></div>
+    <div id="xAccountsRes" class="xres-list" style="display:none"></div>
+    <div class="xs-empty" id="xEmpty" style="display:none">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="m21 21-4.35-4.35"/></svg>
+      <p>No results found</p>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
+import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
+import { getFirestore, doc, getDoc, setDoc, deleteDoc, updateDoc, increment, onSnapshot, collection, query, where, getDocs, orderBy, addDoc, serverTimestamp, writeBatch, limit } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
+import { initNotificationUI } from '/notifications.js';
+
+const fbApp = initializeApp({
+  apiKey:"AIzaSyDTn70s1_uIiSOR6lPLY_nKh8Ff1FViFCs",
+  authDomain:"mindshiftbooks-c4451.firebaseapp.com",
+  projectId:"mindshiftbooks-c4451",
+  storageBucket:"mindshiftbooks-c4451.firebasestorage.app",
+  messagingSenderId:"388697987853",
+  appId: "1:388697987853:web:f023df9412c22285012e44",
+  measurementId: "G-CHPJDQ4W08"
+});
+const auth = getAuth(fbApp);
+const db   = getFirestore(fbApp, 'default');
+const notif = initNotificationUI({
+  db, getCurrentUser: () => currentUser, getMyProfile: () => myProfile,
+  fs: { collection, query, where, onSnapshot, getDocs, orderBy, limit, addDoc, writeBatch, serverTimestamp, doc, getDoc, setDoc, increment }
+});
+
+/* ── HERO BANNER DISMISS (per-account, persists across reloads) ── */
+const HERO_LASTUID_KEY = 'mindshift_hero_last_uid';
+function dismissKeyFor(feature, uid){ return `mindshift_${feature}_dismissed_${uid || 'guest'}`; }
+function isDismissed(feature, uid){
+  try{ return localStorage.getItem(dismissKeyFor(feature, uid)) === '1'; }catch{ return false; }
+}
+function markDismissed(feature, uid){
+  try{ localStorage.setItem(dismissKeyFor(feature, uid), '1'); }catch{}
+}
+function isHeroDismissed(uid){ return isDismissed('hero', uid); }
+function markHeroDismissed(uid){ markDismissed('hero', uid); }
+function setHeroVisible(visible){
+  const hero = document.getElementById('heroBanner');
+  if(hero) hero.classList.toggle('hero-hidden', !visible);
+}
+// Best-effort early hide using the last-known account on this browser, so returning
+// users don't see a flash of the banner before auth resolves.
+try{
+  const lastUid = localStorage.getItem(HERO_LASTUID_KEY);
+  if(lastUid !== null){
+    const uidForCheck = lastUid === 'guest' ? null : lastUid;
+    if(isHeroDismissed(uidForCheck)) setHeroVisible(false);
+  }
+}catch{}
+document.getElementById('heroCloseBtn')?.addEventListener('click', ()=>{
+  markHeroDismissed(currentUser ? currentUser.uid : null);
+  setHeroVisible(false);
+});
+
+/* ── FILTER PILLS (from window.MSB_CATEGORIES, article-categories.js) ── */
+function renderFilterPills(){
+  const row = document.getElementById('filterRow');
+  if(!row || !window.MSB_CATEGORIES) return;
+  row.innerHTML = `<span class="fpill active" data-cat="all">All</span>` +
+    window.MSB_CATEGORIES.map(c => `<span class="fpill" data-cat="${c.code}">${c.emoji} ${c.label}</span>`).join('');
+}
+renderFilterPills();
+
+/* ── TOP SEARCH BAR (shared MindShift header) — filters this page's article grid ── */
+let _searchDebounce = null;
+window.handleArticleSearchInput = function(val){
+  clearTimeout(_searchDebounce);
+  _searchDebounce = setTimeout(()=>{
+    searchQuery = (val || '').trim().toLowerCase();
+    renderGrid();
+  }, 150);
+};
+
+/* ── INVITE FRIENDS CARD (shown inline in feed, once per cooldown window) ── */
+const INVITE_AFTER_INDEX = 3; // appears after the 3rd article in the feed
+const INVITE_COOLDOWN_MS = 24 * 60 * 60 * 1000; // once per day. Set to 48*60*60*1000 for once every 2 days.
+function inviteCardHtml(){
+  return `
+  <div class="invite-card" id="inviteCard">
+    <button class="invite-close" onclick="dismissInviteCard()" aria-label="Dismiss">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <div class="invite-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path stroke-linecap="round" stroke-linejoin="round" d="M22 21v-2a4 4 0 00-3-3.87"/><path stroke-linecap="round" stroke-linejoin="round" d="M16 3.13a4 4 0 010 7.75"/></svg>
+    </div>
+    <h3>Invite your friends</h3>
+    <p>Tell your friends about MindShift Books — career tools, resume help, and career reads in one place.</p>
+    <button class="invite-btn" onclick="handleInviteFriends()">Invite Friends</button>
+  </div>`;
+}
+function inviteLastShownKey(uid){ return `mindshift_invite_lastshown_${uid || 'guest'}`; }
+function shouldShowInvite(uid){
+  try{
+    const last = parseInt(localStorage.getItem(inviteLastShownKey(uid)) || '0', 10);
+    return (Date.now() - last) >= INVITE_COOLDOWN_MS;
+  }catch{ return true; }
+}
+function markInviteShown(uid){
+  try{ localStorage.setItem(inviteLastShownKey(uid), String(Date.now())); }catch{}
+}
+// Splice the invite card into an array of card-html strings, right after INVITE_AFTER_INDEX items.
+// Only included once per cooldown window (shared across For You + Following), and only if the feed is long enough.
+function withInviteCard(cardsArr, uid){
+  if(cardsArr.length <= INVITE_AFTER_INDEX) return cardsArr;
+  if(!shouldShowInvite(uid)) return cardsArr;
+  markInviteShown(uid);
+  const out = cardsArr.slice();
+  out.splice(INVITE_AFTER_INDEX, 0, inviteCardHtml());
+  return out;
+}
+window.dismissInviteCard = function(){
+  markInviteShown(currentUser ? currentUser.uid : null); // resets the cooldown clock from the moment they close it
+  document.querySelectorAll('#inviteCard').forEach(el=>el.remove());
+};
+window.handleInviteFriends = async function(){
+  const shareUrl = location.origin; // just the app's domain — no profile link, no referral tracking
+  const shareData = { title:'Join me on MindShift Books', text:'Career tools, resume help, and career reads — check out MindShift Books.', url: shareUrl };
+  if(navigator.share){
+    try{ await navigator.share(shareData); }catch(e){ /* user cancelled — no-op */ }
+  } else {
+    try{ await navigator.clipboard.writeText(shareUrl); toast('Link copied! 🎉'); }catch{ toast('Could not copy link'); }
+  }
+};
+
+/* ── DATA ── */
+// Live feed — populated from Firestore once loadPublishedArticles() resolves
+let ARTICLES = [];
+
+/* ── STATE ── */
+let currentUser = null;
+let myProfile = null;
+let activeFilter = 'all';
+let searchQuery = '';
+let shareId = null;
+let likeSubs = {};
+let likeCountCache = {};
+let savedSet = new Set();
+let likedSet = new Set();
+let activeFeedTab = 'for-you';
+let userCategories = [];      // from onboarding / profile — array of MSB_CATEGORIES codes
+let dismissedSuggestions = new Set(); // UIDs dismissed from suggested list
+
+function esc(str){
+  return String(str==null?'':str).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ── AUTH ── */
+// Show skeleton immediately while auth + data loads
+showSkeletons();
+
+/* ── MY PROFILE CACHE ── */
+async function loadMyProfile(){
+  if(!currentUser){ myProfile=null; return; }
+  const fallbackName  = currentUser.displayName || 'Someone';
+  const fallbackPhoto = currentUser.photoURL    || '';
+  try{
+    const s = await getDoc(doc(db,'users',currentUser.uid));
+    if(s.exists()){
+      const ud = s.data();
+      myProfile = { name: ud.name||ud.displayName||fallbackName, photo: ud.photo||ud.photoURL||fallbackPhoto, username: ud.username||'' };
+    } else { myProfile = { name: fallbackName, photo: fallbackPhoto }; }
+  }catch{ myProfile = { name: fallbackName, photo: fallbackPhoto }; }
+}
+
+onAuthStateChanged(auth, async user => {
+  currentUser = user;
+  const isAuth = !!user;
+  try{
+    localStorage.setItem(HERO_LASTUID_KEY, user ? user.uid : 'guest');
+    setHeroVisible(!isHeroDismissed(user ? user.uid : null));
+  }catch{}
+  // Sidebar auth-only / guest-only sections (My Insights, Saved Articles, sign-up CTA)
+  const sbProfile = document.getElementById('sbProfileLink');
+  const sbInsights = document.getElementById('sbInsightsLink');
+  const sbSaved = document.getElementById('sbSavedLink');
+  const sbAuthCta = document.getElementById('sidebarAuthCta');
+  if(sbProfile) sbProfile.style.display = isAuth ? 'block' : 'none';
+  if(sbInsights) sbInsights.style.display = isAuth ? 'block' : 'none';
+  if(sbSaved) sbSaved.style.display = isAuth ? 'block' : 'none';
+  if(sbAuthCta) sbAuthCta.style.display = isAuth ? 'none' : 'block';
+  const gBar = document.getElementById('guestBar');
+  const nw = document.getElementById('notifWrap');
+  if(user){
+    if(gBar) gBar.style.display='none';
+    if(nw) nw.style.display='block';
+    await Promise.all([loadSavedSet(), loadLikedSet(), loadMyProfile()]);
+    notif.initNotifications(user.uid);
+    // Load user's onboarding categories — array of MSB_CATEGORIES codes, used for "For You" + Following.
+    // Falls back to a legacy singular `category` string (pre-taxonomy accounts) wrapped in an array.
+    try{
+      const cd = JSON.parse(localStorage.getItem(`mindshift_user_cats_${user.uid}`));
+      if(Array.isArray(cd?.categories) && cd.categories.length) userCategories = cd.categories;
+    }catch(e){}
+    if(!userCategories.length){
+      try{
+        const s = await getDoc(doc(db,'users',user.uid));
+        if(s.exists()){
+          const ud = s.data();
+          if(Array.isArray(ud.categories) && ud.categories.length) userCategories = ud.categories;
+          else if(ud.category) userCategories = [ud.category]; // legacy single-category accounts
+          if(userCategories.length){
+            let existing={}; try{existing=JSON.parse(localStorage.getItem(`mindshift_user_cats_${user.uid}`))||{};}catch{}
+            existing.categories = userCategories; existing.ts=Date.now();
+            localStorage.setItem(`mindshift_user_cats_${user.uid}`, JSON.stringify(existing));
+          }
+        }
+      }catch(e){}
+    }
+  } else {
+    if(gBar) gBar.style.display='flex';
+    if(nw) nw.style.display='none';
+    savedSet.clear(); likedSet.clear();
+    notif.clearNotifications();
+    userCategories = [];
+  }
+  renderGrid();
+  loadPublishedArticles();
+  const p = new URLSearchParams(location.search);
+  if(p.get('id')) location.href = `/article-read?id=${p.get('id')}`;
+});
+
+/* ── FEED TAB SWITCHING ── */
+/* ── FEED TAB SWITCHING ── */
+let _tabRefreshing = false; // prevent double-taps triggering two refreshes at once
+
+window.switchFeedTab = async function(tab){
+  const isRetap = tab === activeFeedTab;
+
+  // ── Re-tap on Following → bust cache, reload fresh ───────────────────────
+  if(isRetap && tab === 'following'){
+    if(_tabRefreshing) return;
+    _tabRefreshing = true;
+    // Scroll to top first so user sees the content refresh
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    await renderFollowingTab(true);
+    _tabRefreshing = false;
+    return;
+  }
+
+  // ── Re-tap on For You → re-fetch + shuffle ────────────────────────────────
+  if(isRetap && tab === 'for-you'){
+    if(_tabRefreshing) return;
+    _tabRefreshing = true;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    await refreshForYou();
+    _tabRefreshing = false;
+    return;
+  }
+
+  // ── Normal tab switch ─────────────────────────────────────────────────────
+  activeFeedTab = tab;
+  document.querySelectorAll('.feed-tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===tab));
+  document.getElementById('forYouFeed').style.display    = tab==='for-you'   ? '' : 'none';
+  document.getElementById('followingFeed').style.display = tab==='following' ? '' : 'none';
+  document.getElementById('exploreFeed').style.display   = tab==='explore'   ? '' : 'none';
+  // filter-row (category pills) stays removed from view regardless of tab
+  if(tab==='following') renderFollowingTab();
+};
+
+/* ── FOR YOU REFRESH (re-fetch + shuffle) ────────────────────────────────────
+   Fisher-Yates shuffle on freshly fetched articles.
+   Category priority in getFiltered() still applies — articles within each
+   priority group end up in a random order so the feed feels different each tap.
+── */
+function shuffleArray(arr){
+  const a = [...arr];
+  for(let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+async function refreshForYou(){
+  showSkeletons(4);
+  try{
+    const q = query(
+      collection(db,'articles'),
+      where('status','==','published'),
+      orderBy('publishedAt','desc')
+    );
+    const snap = await getDocs(q);
+    if(!snap.empty){
+      const fresh = snap.docs.map(d=>{
+        const x = d.data();
+        return {
+          id:         d.id,
+          cat:        (x.cat||'CAREERS').toUpperCase(),
+          title:      x.title||'',
+          brief:      x.brief||'',
+          img:        x.cover||x.img||'',
+          read:       x.readTime||x.read||'5 min read',
+          author:     x.authorName||'MindShift Books',
+          avatar:     x.authorPhoto||'logo.jpg',
+          authorUid:  x.userId||null,
+          isMindshift: x.userId==='official'
+        };
+      });
+      ARTICLES = shuffleArray(fresh);
+    } else {
+      // No new data — just shuffle what we already have
+      ARTICLES = shuffleArray(ARTICLES);
+    }
+  }catch(e){
+    // Firestore failed — still shuffle current articles so re-tap feels responsive
+    console.warn('refreshForYou fetch failed, shuffling in-memory:', e);
+    ARTICLES = shuffleArray(ARTICLES);
+  }
+  renderGrid();
+}
+
+/* ── FOLLOWING TAB ── */
+let _followingRendered = false;
+async function renderFollowingTab(fresh = false){
+  const feed = document.getElementById('followingFeed');
+  if(!feed) return;
+  if(!currentUser){
+    feed.innerHTML=`<div style="padding:40px 20px;text-align:center">
+      <svg width="44" height="44" fill="none" viewBox="0 0 24 24" stroke="#9ca3af" stroke-width="1.5" style="margin:0 auto 14px;display:block"><path stroke-linecap="round" stroke-linejoin="round" d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path stroke-linecap="round" stroke-linejoin="round" d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+      <p style="font-size:17px;font-weight:800;color:#0f0e17;margin-bottom:8px">Sign in to see your feed</p>
+      <p style="font-size:13px;color:#6b7280;margin-bottom:18px">Follow people in your field and see their posts here.</p>
+      <a href="/login" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#4f46e5,#06b6d4);color:#fff;font-weight:700;font-size:14px;border-radius:99px;text-decoration:none">Sign In →</a>
+    </div>`;
+    return;
+  }
+  // Show skeleton only on first load, not on pull-to-refresh
+  if(!fresh){
+    feed.innerHTML=`<div style="padding:16px 16px">${Array(3).fill(0).map(()=>`
+      <div class="skel-card" style="margin-bottom:1px;padding:20px 0"><div class="skel-card-body">
+        <div class="skel-author-row"><div class="skel skel-av"></div><div class="skel" style="width:120px;height:12px"></div></div>
+        <div class="skel" style="height:16px;width:88%;margin-top:10px"></div>
+        <div class="skel" style="height:13px;width:68%;margin-top:7px"></div>
+      </div><div class="skel skel-img"></div></div>`).join('')}</div>`;
+  }
+
+  try{
+    // Was calling a server route that doesn't exist (/api/following-feed) —
+    // now resolved directly: who you follow, then their published articles.
+    // Firestore's `in` operator caps at 30 values, so this covers your most
+    // recent 30 follows; a "you follow a lot of people" pagination story is
+    // a reasonable follow-up if that limit is ever actually hit.
+    const followQ = query(collection(db,'follows'), where('followerId','==',currentUser.uid), orderBy('createdAt','desc'), limit(30));
+    const followSnap = await getDocs(followQ);
+    const followedUids = followSnap.docs.map(d => d.data().followingId).filter(Boolean);
+
+    if(!followedUids.length){
+      await renderSuggestedAccounts(feed);
+      return;
+    }
+
+    const artQ = query(
+      collection(db,'articles'),
+      where('authorUid','in', followedUids),
+      where('status','==','published'),
+      orderBy('publishedAt','desc'),
+      limit(40)
+    );
+    const artSnap = await getDocs(artQ);
+    const feedArts = artSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    if(!feedArts.length){
+      feed.innerHTML=`<div style="padding:40px 20px;text-align:center">
+        <svg width="44" height="44" fill="none" viewBox="0 0 24 24" stroke="#9ca3af" stroke-width="1.5" style="margin:0 auto 14px;display:block"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        <p style="font-size:16px;font-weight:800;color:#0f0e17;margin-bottom:8px">Nothing posted yet</p>
+        <p style="font-size:13px;color:#6b7280;max-width:260px;margin:0 auto">People you follow haven't posted yet. Discover more writers below.</p>
+      </div>`;
+      const banner = document.createElement('div');
+      banner.innerHTML=`<div class="suggested-section-hdr"><span>People you might like</span></div><div class="suggested-list" id="suggestedList"><div style="padding:16px;text-align:center;color:#9ca3af;font-size:13px">Loading…</div></div>`;
+      feed.appendChild(banner);
+      await loadSugList(followedUids);
+      return;
+    }
+
+    // Render articles
+    const grid=document.createElement('div'); grid.className='grid';
+    const cardsHtml = feedArts.map(a=>buildAcard(a));
+    grid.innerHTML = withInviteCard(cardsHtml, currentUser ? currentUser.uid : null).join('');
+    feed.innerHTML=''; feed.appendChild(grid);
+    feedArts.forEach(a=>{ if(currentUser){const b=document.getElementById(`lb-${a.id}`);if(b)b.classList.toggle('liked',likedSet.has(a.id));} });
+    fetchLikeCounts(feedArts.map(a=>a.id));
+
+    // "See more" banner at end
+    const banner=document.createElement('div'); banner.className='see-more-banner';
+    banner.innerHTML=`<p>✨ You're all caught up!</p>
+      <span>Discover more writers ${userCategories[0]?`in <strong>${msbCatLabel(userCategories[0])}</strong>`:''} to keep your feed growing.</span>
+      <div style="margin-top:4px"><div class="suggested-section-hdr" style="padding:0 0 10px"><span>People you might like</span></div>
+      <div class="suggested-list" id="suggestedList"><div style="padding:12px;text-align:center;color:#9ca3af;font-size:13px">Loading…</div></div></div>`;
+    feed.appendChild(banner);
+    await loadSugList(followedUids);
+
+  }catch(e){
+    console.warn('Following tab error:',e);
+    feed.innerHTML=`<div style="padding:40px 20px;text-align:center;color:#9ca3af;font-size:13px">Could not load feed — check your connection.</div>`;
+  }
+}
+
+async function renderSuggestedAccounts(container){
+  const cat=userCategories[0];
+  const catLabel = cat ? msbCatLabel(cat) : '';
+  container.innerHTML=`
+    <div style="padding:32px 20px 16px;text-align:center">
+      <svg width="44" height="44" fill="none" viewBox="0 0 24 24" stroke="#9ca3af" stroke-width="1.5" style="margin:0 auto 14px;display:block"><path stroke-linecap="round" stroke-linejoin="round" d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path stroke-linecap="round" stroke-linejoin="round" d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+      <p style="font-size:17px;font-weight:800;color:#0f0e17;margin-bottom:8px">Start following people</p>
+      <p style="font-size:13px;color:#6b7280;line-height:1.6;max-width:280px;margin:0 auto">Follow writers whose work fits your interests and their posts will show up here.${catLabel?` Here are some people writing about <strong>${catLabel}</strong> to start with.`:''}</p>
+    </div>
+    <div class="suggested-section-hdr"><span>${catLabel?`People writing about ${catLabel}`:'Suggested for you'}</span></div>
+    <div class="suggested-list" id="suggestedList"><div style="padding:16px;text-align:center;color:#9ca3af;font-size:13px">Loading…</div></div>`;
+  await loadSugList();
+}
+
+let _dismissedUids = new Set();
+async function loadSugList(excludeUids=[]){
+  const list=document.getElementById('suggestedList');
+  if(!list) return;
+  try{
+    let q; const cat=userCategories[0];
+    if(cat){ q=query(collection(db,'users'),where('categories','array-contains',cat),limit(10)); }
+    else    { q=query(collection(db,'users'),limit(10)); }
+    const snap=await getDocs(q);
+    let users=snap.docs.map(d=>({uid:d.id,...d.data()}))
+      .filter(u=>u.uid!==currentUser?.uid && !_dismissedUids.has(u.uid) && !excludeUids.includes(u.uid));
+    if(!users.length && cat){
+      const fb=await getDocs(query(collection(db,'users'),limit(10)));
+      users=fb.docs.map(d=>({uid:d.id,...d.data()})).filter(u=>u.uid!==currentUser?.uid && !_dismissedUids.has(u.uid));
+    }
+    renderSugList(users, list);
+  }catch(e){ if(list) list.innerHTML=`<div style="padding:16px;text-align:center;color:#9ca3af;font-size:13px">Couldn't load suggestions right now.</div>`; }
+}
+
+function renderSugList(users, list){
+  if(!list) list=document.getElementById('suggestedList');
+  if(!list) return;
+  if(!users.length){ list.innerHTML=`<div style="padding:16px;text-align:center;color:#9ca3af;font-size:13px">No suggestions yet — check back soon!</div>`; return; }
+  list.innerHTML=users.map(u=>{
+    const ini=(u.name||u.displayName||'?')[0].toUpperCase();
+    const ph=u.photo||u.photoURL||'';
+    const sub = u.username ? `@${esc(u.username)}` : esc(u.category||u.jobTitle||'MindShift Books member');
+    return `<div class="sug-card" id="sug-${u.uid}">
+      <div class="sug-clickable" onclick="goAuthor('${u.uid}',false)">
+        <div class="sug-av">${ph?`<img src="${ph}" alt="${esc(u.name||'User')}" onerror="this.style.display='none'">`:ini}</div>
+        <div class="sug-info">
+          <div class="sug-name">${esc(u.name||u.displayName||'MindShift Books User')}</div>
+          <div class="sug-handle">${sub}</div>
+        </div>
+      </div>
+      <button class="sug-follow" id="sf-${u.uid}" onclick="event.stopPropagation();toggleSugFollow('${u.uid}','${esc(u.name||u.displayName||'User')}')">Follow</button>
+      <button class="sug-dismiss" onclick="event.stopPropagation();dismissSug('${u.uid}')" title="Remove">✕</button>
+    </div>`;
+  }).join('');
+}
+
+window.toggleSugFollow=async function(uid,name){
+  if(!currentUser){openAuth();return;}
+  const btn=document.getElementById(`sf-${uid}`);
+  const wasFollowing=btn?.classList.contains('following-btn');
+  if(btn){btn.textContent=wasFollowing?'Follow':'Following';btn.classList.toggle('following-btn',!wasFollowing);}
+  const followId = `${currentUser.uid}_${uid}`;
+  try{
+    if(wasFollowing){
+      await deleteDoc(doc(db,'follows',followId));
+      updateDoc(doc(db,'users',uid),{followerCount:increment(-1)}).catch(()=>{});
+    }else{
+      await setDoc(doc(db,'follows',followId),{followerId:currentUser.uid,followingId:uid,createdAt:serverTimestamp()});
+      updateDoc(doc(db,'users',uid),{followerCount:increment(1)}).catch(()=>{});
+      notif.notifyFollow(uid);
+    }
+    toast(wasFollowing?`Unfollowed ${name}`:`Following ${name} ✅`);
+    // On follow: dismiss the card so they never reappear in suggestions on re-render
+    if(!wasFollowing){
+      _dismissedUids.add(uid);
+      const card=document.getElementById(`sug-${uid}`);
+      if(card){card.style.transition='all .2s';card.style.opacity='0';card.style.transform='translateX(10px)';setTimeout(()=>card.remove(),200);}
+    }
+  }catch(e){
+    if(btn){btn.textContent=wasFollowing?'Following':'Follow';btn.classList.toggle('following-btn',wasFollowing);}
+    toast('Could not update — try again');
+  }
+};
+window.dismissSug=function(uid){
+  _dismissedUids.add(uid);
+  const card=document.getElementById(`sug-${uid}`);
+  if(card){card.style.transition='all .2s';card.style.opacity='0';card.style.transform='translateX(10px)';setTimeout(()=>card.remove(),200);}
+};
+
+// Reusable article card builder (for following feed)
+function buildAcard(a){
+  return `<div class="acard" onclick="goRead('${a.id}')">
+    <div class="acard-body">
+      <div class="acard-author" onclick="event.stopPropagation();goAuthor('${a.authorUid||''}',false)">
+        <img class="acard-av" src="${a.avatar||a.authorPhoto||'logo.jpg'}" alt="${a.author||a.authorName||'Author'}" onerror="this.style.background='linear-gradient(135deg,#4f46e5,#06b6d4)'">
+        <span class="acard-author-name">${esc(a.author||a.authorName||'Author')}</span>
+        <span class="acard-author-dot">·</span>
+        <span class="acard-author-date">${a.read||fmtRel(a.createdAt)}</span>
+      </div>
+      <div class="acard-meta"><span class="acard-cat">${a.cat||a.category||'ARTICLE'}</span></div>
+      <div class="acard-title">${esc(a.title||'')}</div>
+      <div class="acard-brief">${esc(a.brief||a.excerpt||'')}</div>
+      <div class="acard-foot">
+        <button class="acard-like" id="lb-${a.id}" onclick="event.stopPropagation();handleLike('${a.id}')">
+          <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+          <span id="lc-${a.id}"></span>
+        </button>
+        <button class="acard-save ${savedSet.has(a.id)?'saved':''}" id="sv-${a.id}" onclick="event.stopPropagation();handleSave('${a.id}')">
+          <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="acard-img"><img src="${a.img||a.coverImage||''}" alt="${esc(a.title||'')}" loading="lazy" onerror="this.parentElement.style.background='linear-gradient(135deg,#e0e7ff,#93c5fd)'"></div>
+  </div>`;
+}
+function fmtRel(ts){
+  if(!ts) return '';
+  const ms=ts.seconds?ts.seconds*1000:ts;
+  const d=Date.now()-ms;
+  if(d<3600000) return `${Math.floor(d/60000)||1}m ago`;
+  if(d<86400000) return `${Math.floor(d/3600000)}h ago`;
+  if(d<604800000) return `${Math.floor(d/86400000)}d ago`;
+  return new Date(ms).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
+
+/* ── LOAD ALL SAVES ── */
+async function loadSavedSet(){
+  if(!currentUser) return;
+  try{
+    const s = await getDoc(doc(db,'userSaves',currentUser.uid));
+    savedSet.clear();
+    if(s.exists()){
+      const data = s.data();
+      Object.keys(data).forEach(id=>{ if(data[id]) savedSet.add(id); });
+    }
+    updateSavesBadge();
+  }catch(e){}
+}
+
+function updateSavesBadge(){
+  const badge = document.getElementById('savesBadge');
+  if(!badge) return;
+  if(savedSet.size > 0){ badge.textContent = savedSet.size > 9 ? '9+' : savedSet.size; badge.classList.add('on'); }
+  else badge.classList.remove('on');
+}
+
+/* ── LOAD ALL LIKES ── */
+async function loadLikedSet(){
+  if(!currentUser) return;
+  try{
+    const s = await getDoc(doc(db,'userLikes',currentUser.uid));
+    likedSet.clear();
+    if(s.exists()){
+      const data = s.data();
+      Object.keys(data).forEach(id=>{ if(data[id]) likedSet.add(id); });
+    }
+  }catch(e){}
+}
+
+/* ── FIRESTORE LIKES ── */
+async function userLiked(id){
+  return likedSet.has(id);
+}
+async function toggleLike(id, wasLiked){
+  if(!currentUser){ openAuth(); return null; }
+  const cRef = doc(db,'articleLikes',id);
+  try {
+    await setDoc(doc(db,'userLikes',currentUser.uid),{[id]:!wasLiked},{merge:true});
+    if(wasLiked){
+      try{ await updateDoc(cRef,{count:increment(-1)}); }catch{ await setDoc(cRef,{count:0},{merge:true}); }
+      return false;
+    } else {
+      try{ await updateDoc(cRef,{count:increment(1)}); }catch{ await setDoc(cRef,{count:1},{merge:true}); }
+      return true;
+    }
+  } catch(e) {
+    console.error('Like error:', e.code, e.message);
+    toast('Could not update like — try again.');
+    return null;
+  }
+}
+// Fetch like counts for a batch of article IDs in one parallel round-trip
+// No live listeners — counts are static on the feed, updated optimistically on interaction
+async function fetchLikeCounts(ids){
+  if(!ids.length) return;
+  try{
+    const results = await Promise.all(
+      ids.map(id => getDoc(doc(db,'articleLikes',id)).catch(()=>null))
+    );
+    results.forEach((snap,i)=>{
+      const id = ids[i];
+      const c = snap&&snap.exists() ? (snap.data().count||0) : 0;
+      likeCountCache[id] = c;
+      const el = document.getElementById(`lc-${id}`);
+      if(el) el.textContent = c > 0 ? c : (likedSet.has(id) ? 1 : '');
+    });
+  }catch(e){}
+}
+
+/* ── FIRESTORE SAVES ── */
+async function toggleSave(id){
+  if(!currentUser){ openAuth(); return; }
+  // Use flat doc: userSaves/{uid}  with  {[articleId]: true/false}
+  // (consistent with loadSavedSet and unsaveFromSheet)
+  const isSaved = savedSet.has(id);
+  // Optimistic update
+  if(isSaved){ savedSet.delete(id); } else { savedSet.add(id); }
+  updateSavesBadge();
+  const btn = document.getElementById(`sv-${id}`);
+  if(btn) btn.classList.toggle('saved', !isSaved);
+  toast(!isSaved ? 'Article saved! 🔖' : 'Removed from saves');
+  try {
+    await setDoc(doc(db,'userSaves',currentUser.uid),{[id]:!isSaved},{merge:true});
+    const sRef = doc(db,'articleSaves',id);
+    if(isSaved){
+      try{ await updateDoc(sRef,{count:increment(-1)}); }catch{ await setDoc(sRef,{count:0},{merge:true}); }
+    } else {
+      try{ await updateDoc(sRef,{count:increment(1)}); }catch{ await setDoc(sRef,{count:1},{merge:true}); }
+    }
+  } catch(e) {
+    console.error('Save error:', e.code, e.message);
+    // revert
+    if(isSaved){ savedSet.add(id); } else { savedSet.delete(id); }
+    updateSavesBadge();
+    if(btn) btn.classList.toggle('saved', isSaved);
+    toast('Could not save article — try again.');
+  }
+}
+
+/* ── RENDER ── */
+
+function getFiltered(){
+  let list = ARTICLES;
+  if(activeFilter!=='all') list = list.filter(a=>a.cat===activeFilter);
+  if(searchQuery) list = list.filter(a=>a.title.toLowerCase().includes(searchQuery)||a.brief.toLowerCase().includes(searchQuery)||a.cat.toLowerCase().includes(searchQuery));
+  // Sort: prioritise articles in the reader's onboarding categories first (in the order they picked them)
+  if(userCategories.length && activeFilter==='all' && !searchQuery){
+    list = [...list].sort((a,b)=>{
+      const aP = userCategories.indexOf(a.cat);
+      const bP = userCategories.indexOf(b.cat);
+      if(aP!==-1 && bP===-1) return -1;
+      if(aP===-1 && bP!==-1) return 1;
+      if(aP!==-1 && bP!==-1) return aP - bP;
+      return 0;
+    });
+  }
+  return list;
+}
+function showSkeletons(count=4){
+  const grid = document.getElementById('grid');
+  if(!grid) return;
+  grid.innerHTML = Array.from({length:count}).map(()=>`
+    <div class="skel-card">
+      <div class="skel-card-body">
+        <div class="skel-author-row">
+          <div class="skel skel-av"></div>
+          <div class="skel" style="width:90px;height:12px"></div>
+          <div class="skel" style="width:40px;height:12px;margin-left:4px"></div>
+        </div>
+        <div class="skel" style="height:16px;width:90%"></div>
+        <div class="skel" style="height:14px;width:75%"></div>
+        <div class="skel" style="height:12px;width:50%;margin-top:4px"></div>
+      </div>
+      <div class="skel skel-img"></div>
+    </div>
+  `).join('');
+}
+
+function renderGrid(){
+  const grid = document.getElementById('grid');
+  const noRes = document.getElementById('noRes');
+  const list = getFiltered();
+  likeCountCache = {};
+  if(!list.length){ grid.innerHTML=''; noRes.style.display='block'; return; }
+  noRes.style.display='none';
+  const cardsHtml = list.map(a=>`
+    <div class="acard" onclick="goRead('${a.id}')">
+      <div class="acard-body">
+        <div class="acard-author" onclick="event.stopPropagation();goAuthor('${a.authorUid||''}',${!!a.isMindshift})">
+          <img class="acard-av" src="${a.avatar||'logo.jpg'}" alt="${a.author||'MindShift Books'}" onerror="this.style.background='linear-gradient(135deg,#4f46e5,#06b6d4)'">
+          <span class="acard-author-name">${a.author||'MindShift Books'}</span>
+          ${a.isMindshift ? `<span class="vbadge"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>` : ''}
+          <span class="acard-author-dot">·</span>
+          <span class="acard-author-date">${a.read}</span>
+        </div>
+        <div class="acard-meta">
+          <span class="acard-cat">${a.cat}</span>
+        </div>
+        <div class="acard-title">${a.title}</div>
+        <div class="acard-brief">${a.brief}</div>
+        <div class="acard-foot">
+          <button class="acard-like" id="lb-${a.id}" onclick="event.stopPropagation();handleLike('${a.id}')">
+            <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+            <span id="lc-${a.id}"></span>
+          </button>
+          <button class="acard-save ${savedSet.has(a.id)?'saved':''}" id="sv-${a.id}" onclick="event.stopPropagation();handleSave('${a.id}')" title="Save article">
+            <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+          </button>
+          <div class="acard-menu-wrap" onclick="event.stopPropagation()">
+            <button class="acard-menu-btn" onclick="toggleCardMenu('${a.id}',event)" title="More options">
+              <svg fill="currentColor" viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+            </button>
+            <div class="acard-menu-drop" id="cmenu-${a.id}">
+              <button class="acard-menu-item" onclick="copyCardLink('${a.id}')">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path stroke-linecap="round" d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+                Copy Link
+              </button>
+              ${!a.isMindshift && a.authorUid && a.authorUid !== (currentUser&&currentUser.uid) ? `
+              <button class="acard-menu-item" id="cfbtn-${a.id}" onclick="followFromMenu('${a.authorUid||''}','${a.author||''}','${a.id}')">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path stroke-linecap="round" d="M22 11v6m-3-3h6"/></svg>
+                Follow
+              </button>` : ''}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="acard-img">
+        <img src="${a.img}" alt="${a.title}" loading="lazy" onerror="this.parentElement.style.background='linear-gradient(135deg,#e0e7ff,#93c5fd)'">
+      </div>
+    </div>
+  `);
+  grid.innerHTML = withInviteCard(cardsHtml, currentUser ? currentUser.uid : null).join('');
+  list.forEach(a=>{
+    if(currentUser){
+      const btn = document.getElementById(`lb-${a.id}`);
+      if(btn) btn.classList.toggle('liked', likedSet.has(a.id));
+    }
+  });
+  // One parallel batch for all like counts — no per-card listeners
+  fetchLikeCounts(list.map(a=>a.id));
+}
+
+/* ── LIKE ── */
+window.handleLike = function(id){
+  if(!currentUser){ openAuth(); return; }
+  const btn = document.getElementById(`lb-${id}`);
+  const countEl = document.getElementById(`lc-${id}`);
+
+  // Optimistic update — instant, no waiting for Firestore
+  const wasLiked = likedSet.has(id);
+  if(wasLiked){ likedSet.delete(id); } else { likedSet.add(id); }
+  if(btn) btn.classList.toggle('liked', !wasLiked);
+
+  // Update count display immediately from cache
+  if(countEl){
+    const cur = likeCountCache[id] || 0;
+    const next = Math.max(0, cur + (wasLiked ? -1 : 1));
+    likeCountCache[id] = next;
+    countEl.textContent = next > 0 ? next : '';
+  }
+
+  // Write Firestore in background
+  (async()=>{
+    const didLike = await toggleLike(id, wasLiked);
+    if(didLike === null){
+      // Roll back on error
+      if(wasLiked){ likedSet.add(id); } else { likedSet.delete(id); }
+      if(btn) btn.classList.toggle('liked', wasLiked);
+      if(countEl){
+        const cur = likeCountCache[id] || 0;
+        const rolled = Math.max(0, cur + (wasLiked ? 1 : -1));
+        likeCountCache[id] = rolled;
+        countEl.textContent = rolled > 0 ? rolled : '';
+      }
+    } else if(didLike === true){
+      const art = ARTICLES.find(a=>a.id===id);
+      if(art) notif.notifyArticleLike(art);
+    }
+  })();
+};
+
+/* ── SAVE ── */
+window.handleSave = function(id){
+  if(!currentUser){ openAuth(); return; }
+  const wasSaved = savedSet.has(id);
+
+  // Optimistic update instantly
+  if(wasSaved){ savedSet.delete(id); } else { savedSet.add(id); }
+  updateSavesBadge();
+  const btn = document.getElementById(`sv-${id}`);
+  if(btn) btn.classList.toggle('saved', !wasSaved);
+  toast(!wasSaved ? 'Article saved! 🔖' : 'Removed from saves');
+
+  // Write Firestore in background — single doc, one write
+  (async()=>{
+    try{
+      await setDoc(doc(db,'userSaves',currentUser.uid),{[id]:!wasSaved},{merge:true});
+    }catch(e){
+      if(wasSaved){ savedSet.add(id); } else { savedSet.delete(id); }
+      updateSavesBadge();
+      if(btn) btn.classList.toggle('saved', wasSaved);
+      toast('Could not save article — try again.');
+    }
+  })();
+};
+
+/* ── NAVIGATE TO READ ── */
+window.goRead = function(id){ location.href=`/article-read?id=${id}`; };
+
+/* ── CARD 3-DOT MENU ── */
+let openCardMenuId = null;
+window.toggleCardMenu = function(id, event){
+  event.stopPropagation();
+  const drop = document.getElementById(`cmenu-${id}`);
+  if(!drop) return;
+  if(openCardMenuId && openCardMenuId !== id){
+    const prev = document.getElementById(`cmenu-${openCardMenuId}`);
+    if(prev) prev.classList.remove('open');
+  }
+  if(drop.classList.contains('open')){
+    drop.classList.remove('open');
+    openCardMenuId = null;
+  } else {
+    drop.classList.add('open');
+    openCardMenuId = id;
+    // Update follow button label based on real-time state
+    const art = ARTICLES.find(a=>a.id===id);
+    const fbtn = document.getElementById(`cfbtn-${id}`);
+    if(fbtn && art && art.authorUid && currentUser){
+      (async()=>{
+        try{
+          const s = await getDoc(doc(db,'follows',`${currentUser.uid}_${art.authorUid}`));
+          const svgEl = fbtn.querySelector('svg');
+          fbtn.childNodes[fbtn.childNodes.length-1].textContent = s.exists() ? ' Following' : ' Follow';
+        }catch{}
+      })();
+    }
+  }
+};
+function closeOpenCardMenu(){
+  if(openCardMenuId){
+    const drop = document.getElementById(`cmenu-${openCardMenuId}`);
+    if(drop) drop.classList.remove('open');
+    openCardMenuId = null;
+  }
+}
+document.addEventListener('click', e=>{
+  if(openCardMenuId && !e.target.closest('.acard-menu-wrap')) closeOpenCardMenu();
+});
+
+window.copyCardLink = function(id){
+  closeOpenCardMenu();
+  const url = `${location.origin}/article-read?id=${id}`;
+  navigator.clipboard.writeText(url).then(()=>toast('Link copied! 🎉')).catch(()=>toast('Copy failed'));
+};
+
+window.followFromMenu = async function(authorUid, authorName, cardId){
+  closeOpenCardMenu();
+  if(!currentUser){ openAuth(); return; }
+  if(!authorUid) return;
+  try{
+    const followDocId = `${currentUser.uid}_${authorUid}`;
+    const s = await getDoc(doc(db,'follows',followDocId));
+    const isFollowing = s.exists();
+    if(isFollowing){
+      await deleteDoc(doc(db,'follows',followDocId));
+      updateDoc(doc(db,'users',authorUid),{followerCount:increment(-1)}).catch(()=>{});
+    }else{
+      await setDoc(doc(db,'follows',followDocId),{followerId:currentUser.uid,followingId:authorUid,createdAt:serverTimestamp()});
+      updateDoc(doc(db,'users',authorUid),{followerCount:increment(1)}).catch(()=>{});
+      notif.notifyFollow(authorUid);
+    }
+    toast(isFollowing ? 'Unfollowed' : `Following ${authorName||'author'} ✅`);
+    // Update the button label inside the card menu
+    const fbtn = document.getElementById(`cfbtn-${cardId}`);
+    if(fbtn) fbtn.childNodes[fbtn.childNodes.length-1].textContent = isFollowing ? ' Follow' : ' Following';
+  }catch(e){ toast('Could not update — try again'); }
+};
+
+/* writeFollowNotif moved to /notifications.js — see notif.notifyFollow() */
+
+/* ── FILTER ── */
+document.getElementById('filterRow').addEventListener('click', e=>{
+  const fp = e.target.closest('.fpill');
+  if(!fp) return;
+  document.querySelectorAll('.fpill').forEach(p=>p.classList.remove('active'));
+  fp.classList.add('active');
+  activeFilter = fp.dataset.cat;
+  renderGrid();
+});
+
+/* ── PROFILE NAV (used by feed avatar taps etc — nav chrome itself now lives in the shared MindShift header/sidebar) ── */
+window.goProfile = function(){
+  if(!currentUser){ location.href = '/login'; return; }
+  if(myProfile?.username) location.href = `/profile/@${encodeURIComponent(myProfile.username)}`;
+  else location.href = '/profile';
+};
+
+/* ── GO AUTHOR ── */
+window.goAuthor = function(uid, isMindshift){
+  if(isMindshift || uid === 'official') {
+    location.href = '/mindshift-profile';
+    return;
+  }
+  if(!uid) return;
+  location.href = `/profile?uid=${uid}`;
+};
+
+/* ── LOAD PUBLISHED ARTICLES FROM FIRESTORE (primary source) ── */
+async function loadPublishedArticles(){
+  try{
+    const q = query(
+      collection(db,'articles'),
+      where('status','==','published'),
+      orderBy('publishedAt','desc')
+    );
+    const snap = await getDocs(q);
+    if(snap.empty) return; // nothing published yet — empty state from initial renderGrid() stays up
+    // Fully replace with Firestore data — what admin approves is what shows
+    ARTICLES = snap.docs.map(d=>{
+      const x = d.data();
+      return {
+        id: d.id,
+        cat: (x.cat||'CAREERS').toUpperCase(),
+        title: x.title||'',
+        brief: x.brief||'',
+        img: x.cover||x.img||'',
+        read: x.readTime||x.read||'5 min read',
+        author: x.authorName||'MindShift Books',
+        avatar: x.authorPhoto||'logo.jpg',
+        authorUid: x.userId||null,
+        isMindshift: x.userId==='official'
+      };
+    });
+    renderGrid();
+    _xDiscoverBuilt = false;
+  }catch(e){ console.error('Firestore articles error:',e); }
+}
+
+/* ── FULLSCREEN SEARCH / EXPLORE ── */
+let xQuery = '';
+let _xActiveTab = 'articles';
+let _xDiscoverBuilt = false;
+let _allUsersCache = null;
+
+function shuffleArr(arr){
+  const a = [...arr];
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+
+// Mix the user's category-relevant articles with a healthy dose of variety,
+// so the discovery feed feels tailored but never feels like a narrow tunnel.
+function buildDiscoverFeed(){
+  const all = ARTICLES.filter(a=>a.title);
+  if(!all.length) return [];
+  if(!userCategories.length) return shuffleArr(all);
+  const forYou = shuffleArr(all.filter(a=>userCategories.includes(a.cat)));
+  const other  = shuffleArr(all.filter(a=>!userCategories.includes(a.cat)));
+  const result=[]; let fi=0, oi=0;
+  while(fi<forYou.length || oi<other.length){
+    if(fi<forYou.length) result.push(forYou[fi++]);
+    if(fi<forYou.length) result.push(forYou[fi++]);
+    if(oi<other.length) result.push(other[oi++]);
+  }
+  return result;
+}
+
+function buildXCard(a, big){
+  return `<div class="xcard${big?' big':''}" onclick="closeSearchScreen();goRead('${a.id}')">
+    <img src="${a.img||''}" alt="${esc(a.title||'')}" loading="lazy" onerror="this.style.display='none'">
+    <div class="xcard-author" onclick="event.stopPropagation();closeSearchScreen();goAuthor('${a.authorUid||''}',${!!a.isMindshift})">
+      <img src="${a.avatar||'logo.jpg'}" alt="" onerror="this.style.display='none'">
+      <span>${esc(a.author||'MindShift Books')}</span>
+    </div>
+    <div class="xcard-ov">
+      <span class="xcard-cat">${esc(a.cat||'')}</span>
+      <div class="xcard-title">${esc(a.title||'')}</div>
+    </div>
+  </div>`;
+}
+
+function renderXGrid(list, container){
+  container.innerHTML = list.map((a,i)=> buildXCard(a, i%5===2)).join('');
+}
+
+function renderDiscover(){
+  const el = document.getElementById('xDiscover');
+  const feed = buildDiscoverFeed();
+  if(!feed.length){ el.innerHTML=''; return; }
+  el.innerHTML = `<div class="xs-section-lbl">For you</div><div class="xgrid">${feed.map((a,i)=>buildXCard(a,i%5===2)).join('')}</div>`;
+}
+
+window.openSearchScreen = function(){
+  document.getElementById('searchScreen').classList.add('on');
+  document.body.style.overflow = 'hidden';
+  if(!_xDiscoverBuilt){ renderDiscover(); _xDiscoverBuilt = true; }
+  setTimeout(()=>{ const i=document.getElementById('xSearchInp'); if(i) i.focus(); }, 280);
+};
+window.closeSearchScreen = function(){
+  document.getElementById('searchScreen').classList.remove('on');
+  document.body.style.overflow = '';
+};
+window.clearXSearch = function(){
+  const inp = document.getElementById('xSearchInp');
+  inp.value = '';
+  onXSearchInput();
+  inp.focus();
+};
+
+async function searchAccountsList(q){
+  if(!_allUsersCache){
+    try{
+      const snap = await getDocs(query(collection(db,'users'), limit(200)));
+      _allUsersCache = snap.docs.map(d=>({uid:d.id,...d.data()}));
+    }catch(e){ _allUsersCache = []; }
+  }
+  const matches = _allUsersCache.filter(u=>{
+    const name=(u.name||u.displayName||'').toLowerCase();
+    const job=(u.jobTitle||'').toLowerCase();
+    const cat=(u.category||'').toLowerCase();
+    return name.includes(q) || job.includes(q) || cat.includes(q);
+  });
+  if('official'.includes(q)){
+    matches.unshift({uid:'official', name:'MindShift Books', photo:'logo.jpg', jobTitle:'Official Account', isMindshift:true});
+  }
+  return matches;
+}
+
+function renderXAccounts(users, container){
+  container.innerHTML = users.map(u=>{
+    const ini=(u.name||u.displayName||'?')[0].toUpperCase();
+    const ph=u.photo||u.photoURL||'';
+    return `<div class="xacc-row" onclick="closeSearchScreen();goAuthor('${u.uid}',${!!u.isMindshift})">
+      <div class="xacc-av">${ph?`<img src="${ph}" style="width:100%;height:100%;border-radius:50%;object-fit:cover" onerror="this.parentElement.textContent='${ini}'">`:ini}</div>
+      <div class="xacc-info">
+        <div class="xacc-name">${esc(u.name||u.displayName||'MindShift Books User')}${u.isMindshift?` <span class="vbadge"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>`:''}</div>
+        <div class="xacc-sub">${esc(u.jobTitle||u.category||'MindShift Books member')}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.onXSearchInput = async function(){
+  xQuery = document.getElementById('xSearchInp').value.trim().toLowerCase();
+  document.getElementById('xClearBtn').style.display = xQuery ? 'flex' : 'none';
+  const discover = document.getElementById('xDiscover');
+  const tabs     = document.getElementById('xTabs');
+  const artRes   = document.getElementById('xArticlesRes');
+  const accRes   = document.getElementById('xAccountsRes');
+  const empty    = document.getElementById('xEmpty');
+
+  if(!xQuery){
+    discover.style.display='block'; tabs.classList.remove('show');
+    artRes.style.display='none'; accRes.style.display='none'; empty.style.display='none';
+    return;
+  }
+  discover.style.display='none'; tabs.classList.add('show');
+
+  const artMatches = ARTICLES.filter(a =>
+    (a.title||'').toLowerCase().includes(xQuery) ||
+    (a.brief||'').toLowerCase().includes(xQuery)  ||
+    (a.cat||'').toLowerCase().includes(xQuery)    ||
+    (a.author||'').toLowerCase().includes(xQuery)
+  );
+  const accMatches = await searchAccountsList(xQuery);
+
+  // Auto-surface whichever tab actually has results for this query
+  if(artMatches.length===0 && accMatches.length>0) _xActiveTab='accounts';
+  else if(accMatches.length===0 && artMatches.length>0) _xActiveTab='articles';
+
+  document.querySelectorAll('.xs-tab').forEach(t=>t.classList.toggle('active', t.dataset.xtab===_xActiveTab));
+
+  const showArt = _xActiveTab==='articles';
+  artRes.style.display = showArt ? 'grid' : 'none';
+  accRes.style.display = showArt ? 'none' : 'block';
+
+  const list = showArt ? artMatches : accMatches;
+  if(!list.length){
+    empty.style.display='block';
+    artRes.innerHTML=''; accRes.innerHTML='';
+  } else {
+    empty.style.display='none';
+    if(showArt) renderXGrid(artMatches, artRes);
+    else renderXAccounts(accMatches, accRes);
+  }
+};
+
+window.switchXTab = function(tab){
+  _xActiveTab = tab;
+  onXSearchInput();
+};
+
+/* ── CLOSE ALL ── */
+window.closeAll = function(){
+  document.getElementById('authOverlay').classList.remove('on');
+  document.getElementById('authSheet').classList.remove('on');
+  document.getElementById('shareSheet').classList.remove('on');
+  if(document.getElementById('notifSheet').classList.contains('on')){
+    document.getElementById('notifSheet').classList.remove('on');
+    markAllRead();
+  }
+  document.body.style.overflow='';
+};
+
+/* ── AUTH SHEET ── */
+window.openAuth = function(redirectHint){
+  // Pass current page as redirect so user returns after login
+  const redirect = encodeURIComponent(redirectHint || (location.pathname + location.search));
+  const loginBtn = document.getElementById('authLoginBtn');
+  const signupBtn = document.getElementById('authSignupBtn');
+  if(loginBtn) loginBtn.href = '/login?redirect=' + redirect;
+  if(signupBtn) signupBtn.href = '/signup?redirect=' + redirect;
+  document.getElementById('authOverlay').classList.add('on');
+  document.getElementById('authSheet').classList.add('on');
+  document.body.style.overflow='hidden';
+};
+
+/* ── SHARE ── */
+window.openShare = function(id){
+  shareId = id;
+  const url = `${location.origin}/article-read?id=${id}`;
+  document.getElementById('copyUrl').textContent = url;
+  document.getElementById('authOverlay').classList.add('on');
+  document.getElementById('shareSheet').classList.add('on');
+  document.body.style.overflow='hidden';
+};
+window.doShare = function(platform){
+  if(!shareId) return;
+  const art = ARTICLES.find(a=>a.id===shareId);
+  const url = encodeURIComponent(`${location.origin}/article-read?id=${shareId}`);
+  const txt = encodeURIComponent((art?art.title:'Career article')+' — MindShift Books');
+  if(platform==='whatsapp') window.open(`https://wa.me/?text=${txt}%20${url}`,'_blank');
+  else if(platform==='twitter') window.open(`https://twitter.com/intent/tweet?text=${txt}&url=${url}`,'_blank');
+  else if(platform==='linkedin') window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`,'_blank');
+  else if(platform==='copy'){
+    navigator.clipboard.writeText(decodeURIComponent(url)).then(()=>toast('Link copied! 🎉')).catch(()=>toast('Copy failed'));
+    closeAll(); return;
+  }
+  closeAll();
+};
+
+/* ── SAVED SHEET ── */
+window.openSaved = function(){
+  if(!currentUser){ openAuth(); return; }
+  renderSavedSheet();
+  document.getElementById('authOverlay').classList.add('on');
+  document.getElementById('savedSheet').classList.add('on');
+  document.body.style.overflow='hidden';
+};
+window.closeSaved = function(){
+  document.getElementById('authOverlay').classList.remove('on');
+  document.getElementById('savedSheet').classList.remove('on');
+  document.body.style.overflow='';
+};
+function renderSavedSheet(){
+  const list = document.getElementById('savedList');
+  const countEl = document.getElementById('savedCount');
+  const savedArticles = ARTICLES.filter(a=>savedSet.has(a.id));
+  countEl.textContent = `${savedArticles.length} saved`;
+  if(!savedArticles.length){
+    list.innerHTML = `
+      <div class="saved-empty">
+        <svg width="44" height="44" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+        <p>No saved articles yet</p>
+        <span>Tap the bookmark icon on any article to save it here.</span>
+      </div>`;
+    return;
+  }
+  list.innerHTML = savedArticles.map(a=>`
+    <div class="saved-card" onclick="goRead('${a.id}');closeSaved()">
+      <img class="saved-card-img" src="${a.img}" alt="${a.title}" loading="lazy" onerror="this.style.background='linear-gradient(135deg,#e0e7ff,#93c5fd)'">
+      <div class="saved-card-body">
+        <div class="saved-card-cat">${a.cat}</div>
+        <div class="saved-card-ttl">${a.title}</div>
+        <div class="saved-card-read">${a.read}</div>
+      </div>
+      <button class="saved-card-unsave" onclick="event.stopPropagation();unsaveFromSheet('${a.id}')" title="Remove">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+  `).join('');
+}
+window.unsaveFromSheet = function(id){
+  savedSet.delete(id);
+  updateSavesBadge();
+  const btn = document.getElementById(`sv-${id}`);
+  if(btn) btn.classList.remove('saved');
+  renderSavedSheet();
+  toast('Removed from saves');
+  setDoc(doc(db,'userSaves',currentUser.uid),{[id]:false},{merge:true}).catch(e=>console.error(e));
+};
+
+
+/* ── TOAST ── */
+window.toast = function(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('on');
+  setTimeout(()=>t.classList.remove('on'),2400);
+};
+/* ── WELCOME NUDGE ── */
+(function(){
+  const params = new URLSearchParams(location.search);
+  if(params.get('welcome')==='1' && !sessionStorage.getItem('rsmk_welcomed')){
+    sessionStorage.setItem('rsmk_welcomed','1');
+    params.delete('welcome');
+    const clean = location.pathname + (params.toString() ? '?'+params.toString() : '');
+    history.replaceState(null,'',clean);
+    setTimeout(()=>{
+      const el = document.getElementById('welcomeNudge');
+      if(el) el.classList.add('on');
+    }, 1200);
+    setTimeout(()=>dismissWelcome(), 9200);
+  }
+})();
+window.dismissWelcome=function(){
+  const el=document.getElementById('welcomeNudge');
+  if(el) el.classList.remove('on');
+};
+window.goResume=function(){
+  dismissWelcome();
+  window.location.href='/dashboard';
+};
+
+</script>
+<!-- Shared MindShift account nav (renders the acct-nav-slot in the header + drives sidebarAuthCta on login pages that use it elsewhere) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="/auth.js"></script>
+</body>
+</html>
