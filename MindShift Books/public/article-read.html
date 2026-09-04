@@ -704,6 +704,7 @@ if(!article){
           brief: x.brief||'',
           img: x.cover||x.img||'',
           read: x.readTime||x.read||'5 min read',
+          publishedAt: x.publishedAt||x.createdAt||null,
           author: x.authorName||'MindShift Books',
           avatar: x.authorPhoto||'logo.jpg',
           authorUid: x.authorUid||x.userId||null,
@@ -818,6 +819,16 @@ function subLives(){
 }
 
 /* ── RENDER ── */
+function fmtRel(ts){
+  if(!ts) return '';
+  const ms=ts.seconds?ts.seconds*1000:ts;
+  const d=Date.now()-ms;
+  if(d<3600000) return `${Math.floor(d/60000)||1}m ago`;
+  if(d<86400000) return `${Math.floor(d/3600000)}h ago`;
+  if(d<604800000) return `${Math.floor(d/86400000)}d ago`;
+  return new Date(ms).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
+
 async function renderArticle(){
   // likeCount and downloadCount come from the onSnapshot first emission — no extra getDoc needed
   isLiked       = await fetchUserLiked();
@@ -843,7 +854,7 @@ async function renderArticle(){
               ${article.author||'MindShift Books'}
               ${(article.isMindshift||!article.authorUid) ? `<span class="vbadge"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>` : ''}
             </div>
-            <div class="author-meta">${article.read}</div>
+            <div class="author-meta">${article.read}${article.publishedAt||article.createdAt ? ` · ${fmtRel(article.publishedAt||article.createdAt)}` : ''}</div>
           </div>
         </div>
         ${(!article.isMindshift && article.authorUid && article.authorUid !== (currentUser&&currentUser.uid)) ? `

@@ -879,6 +879,7 @@ async function refreshForYou(){
           brief:      x.brief||'',
           img:        x.cover||x.img||'',
           read:       x.readTime||x.read||'5 min read',
+          publishedAt: x.publishedAt||x.createdAt||null,
           author:     x.authorName||'MindShift Books',
           avatar:     x.authorPhoto||'logo.jpg',
           authorUid:  x.userId||null,
@@ -1079,7 +1080,7 @@ function buildAcard(a){
         <img class="acard-av" src="${a.avatar||a.authorPhoto||'logo.jpg'}" alt="${a.author||a.authorName||'Author'}" onerror="this.style.background='linear-gradient(135deg,#4f46e5,#06b6d4)'">
         <span class="acard-author-name">${esc(a.author||a.authorName||'Author')}</span>
         <span class="acard-author-dot">·</span>
-        <span class="acard-author-date">${a.read||fmtRel(a.createdAt)}</span>
+        <span class="acard-author-date">${fmtRel(a.publishedAt||a.createdAt)}</span>
       </div>
       <div class="acard-meta"><span class="acard-cat">${a.cat||a.category||'ARTICLE'}</span></div>
       <div class="acard-title">${esc(a.title||'')}</div>
@@ -1265,7 +1266,7 @@ function renderGrid(){
           <span class="acard-author-name">${a.author||'MindShift Books'}</span>
           ${a.isMindshift ? `<span class="vbadge"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>` : ''}
           <span class="acard-author-dot">·</span>
-          <span class="acard-author-date">${a.read}</span>
+          <span class="acard-author-date">${fmtRel(a.publishedAt||a.createdAt)}</span>
         </div>
         <div class="acard-meta">
           <span class="acard-cat">${a.cat}</span>
@@ -1500,6 +1501,7 @@ async function loadPublishedArticles(){
         brief: x.brief||'',
         img: x.cover||x.img||'',
         read: x.readTime||x.read||'5 min read',
+        publishedAt: x.publishedAt||x.createdAt||null,
         author: x.authorName||'MindShift Books',
         avatar: x.authorPhoto||'logo.jpg',
         authorUid: x.userId||null,
