@@ -203,6 +203,8 @@ export function initNotificationUI({ db, getCurrentUser, getMyProfile, fs }) {
         if (n.targetId) location.href = `/article-read?id=${n.targetId}`; break;
       case 'article_approved':
         if (n.articleId) location.href = `/article-read?id=${n.articleId}`; break;
+      case 'article_rejected': case 'admin_message':
+        location.href = `/profile`; break;
     }
   };
   window.markAllRead = async function () {
