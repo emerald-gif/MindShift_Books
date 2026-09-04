@@ -159,6 +159,19 @@ app.get('/books', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'books.html'));
 });
 
+// /profile/@username is a client-side-parsed clean URL — profile.html reads
+// the username straight out of location.pathname (see the _pathUsername
+// regex in profile.html). But express.static's `extensions:['html']` fallback
+// below only maps an EXACT path to a same-named file (/profile -> profile.html);
+// it has no file called "public/profile/@someone.html" to find, so every
+// author-name / avatar link built as `/profile/@${username}` (article-read.html,
+// articles.html, notifications.js, etc.) fell through to the catch-all 404
+// handler at the bottom of this file. Registered here, before express.static,
+// so it always wins over that 404 for this one path shape.
+app.get('/profile/@:username', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'profile.html'));
+});
+
 // /my-order is the old email-lookup page, and /account is the retired
 // account.html (Order History + My Details now live inline inside
 // /settings — see settings.html: showSettingsView('orders'/'details'),
