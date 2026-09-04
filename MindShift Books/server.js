@@ -57,10 +57,10 @@ app.use(cors({
 // ── Affiliate subdomain routing ─────────────────────────────────────────────
 // The affiliate area lives at affiliate.mindshiftbooks.shop instead of
 // mindshiftbooks.shop/affiliate/*. This has to run before express.static()
-// further down: express.static serves "/" as public/index.html (the main
-// store) on its own, so if this ran any later, every request to the
-// subdomain's root would already be answered — main site, not affiliate.html
-// — before this code ever got a chance to look at it.
+// further down: "/" on the main domain now has its own explicit route (see
+// the homepage routing block below — Articles, not the bookstore, is the
+// homepage), and express.static would otherwise catch the subdomain's root
+// on its own before this code ever got a chance to look at it.
 //   - Request arrives on the affiliate subdomain, on one of the four known
 //     page paths ("/", "/apply", "/dashboard", "/payout"): rewrite to the
 //     matching /affiliate/... path so it falls through to the actual
@@ -140,6 +140,40 @@ app.get(/\.html$/, (req, res, next) => {
   const clean = req.path.replace(/\.html$/, '') || '/';
   const qs = req.url.slice(req.path.length); // preserves ?query
   return res.redirect(301, clean + qs);
+});
+
+// ── Homepage: Articles, not the bookstore ──────────────────────────────────
+// mindshiftbooks.shop's default landing page is now the article ecosystem.
+// The bookstore didn't go away — it moved to /books (the sidebar's
+// "Bookstore" link already points there) — but "/" itself now serves
+// articles.html instead of the old index.html. Both routes are explicit
+// sendFile calls rather than relying on express.static's default-index
+// behavior, so which file answers "/" is a one-line, easy-to-find decision
+// here rather than an implicit consequence of what's named index.html on
+// disk. Registered before express.static for the same shadowing reason as
+// the /my-order and /account redirects right below.
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'articles.html'));
+});
+app.get('/books', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'books.html'));
+});
+
+// /my-order is the old email-lookup page, and /account is the retired
+// account.html (Order History + My Details now live inline inside
+// /settings — see settings.html: showSettingsView('orders'/'details'),
+// same /api/my-orders and /api/account backend either way). Both
+// permanently redirect so old links/bookmarks still land somewhere useful
+// instead of breaking. Registered BEFORE express.static below on purpose:
+// account.html may still physically exist in public/ until it's deleted,
+// and static-file resolution runs in registration order — if it were
+// registered after, a lingering account.html would get served directly
+// and this redirect would silently never fire.
+app.get('/my-order', (req, res) => {
+  res.redirect(301, '/settings');
+});
+app.get('/account', (req, res) => {
+  res.redirect(301, '/settings');
 });
 
 // Serve static assets (public folder only — /files is NOT served statically)
@@ -255,12 +289,15 @@ const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET || null;
 // encoding or extra dependency required. The signature is a sha1 of every
 // non-file param (sorted, `key=value` joined by `&`) with the API secret
 // appended, per Cloudinary's signed-upload spec.
-async function uploadBannerImageToCloudinary(dataUrl) {
+// `folder` defaults to the affiliate-broadcast one this was originally
+// built for — callers uploading for a different feature (article covers,
+// avatars) should pass their own so images land somewhere sensible in the
+// Cloudinary media library instead of all piling into one folder.
+async function uploadImageToCloudinary(dataUrl, folder = 'affiliate-broadcasts') {
   if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_API_KEY || !CLOUDINARY_API_SECRET) {
     return { ok: false, error: 'Image hosting is not configured (missing Cloudinary credentials).' };
   }
   const timestamp = Math.round(Date.now() / 1000);
-  const folder = 'affiliate-broadcasts';
   const signaturePayload = `folder=${folder}&timestamp=${timestamp}${CLOUDINARY_API_SECRET}`;
   const signature = crypto.createHash('sha1').update(signaturePayload).digest('hex');
 
@@ -287,6 +324,9 @@ async function uploadBannerImageToCloudinary(dataUrl) {
     return { ok: false, error: (e.message || String(e)).slice(0, 160) };
   }
 }
+// Old name kept as an alias — the affiliate-broadcast route below still
+// calls it by this name, no need to touch working code just to rename it.
+const uploadBannerImageToCloudinary = uploadImageToCloudinary;
 
 // Fires once, right after a brand-new account doc is created (see
 // /api/account/init). Fire-and-forget — a failed welcome email should never
@@ -3449,21 +3489,6 @@ app.get('/wishlist', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'wishlist.html'));
 });
 
-// /my-order is the old email-lookup page — permanently point it at the new
-// account-based page so old links/bookmarks still land somewhere useful.
-app.get('/my-order', (req, res) => {
-  res.redirect(301, '/settings');
-});
-
-// account.html is retired — Order History and My Details now live inline
-// inside /settings (see settings.html: showSettingsView('orders'/'details')),
-// same /api/my-orders and /api/account backend, just no longer a separate
-// page. This redirect (not a 404) means every old link/bookmark to /account
-// or /account#orders still lands somewhere useful instead of breaking.
-app.get('/account', (req, res) => {
-  res.redirect(301, '/settings');
-});
-
 app.get('/login', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
@@ -4240,6 +4265,43 @@ app.post('/api/admin/payouts/:id/mark-paid', async (req, res) => {
 });
 
 // ---------------- Admin: affiliate broadcast ----------------
+
+// POST /api/upload-image — used by write.html (article cover + inline
+// editor images) and profile.html (avatar/cover) via the shared
+// MindshiftUploader widget. Reuses the same Cloudinary helper as the
+// affiliate-broadcast uploader above, just under an "article-ecosystem"
+// folder and gated behind requireUser instead of admin-only, since any
+// signed-in reader can publish an article or set their own avatar.
+//
+// Needs its own body-size limit: the global bodyParser.json() below is
+// capped at 400kb (deliberately tight everywhere else), but a base64-
+// encoded 5MB source image is ~6.7MB of JSON — this route alone gets more
+// headroom rather than loosening the limit for the whole app.
+app.post('/api/upload-image',
+  bodyParser.json({ limit: '8mb' }),
+  requireUser,
+  async (req, res) => {
+    try {
+      const dataUrl = String((req.body && req.body.dataUrl) || '');
+      if (!/^data:image\/(jpeg|jpg|png|webp|gif);base64,/.test(dataUrl)) {
+        return res.status(400).json({ error: 'Expected a JPG, PNG, WEBP, or GIF image.' });
+      }
+      // Rough size check on the base64 payload itself (base64 runs ~33%
+      // larger than the source file) — catches an oversized image before
+      // spending a Cloudinary call on something we're going to reject anyway.
+      const approxBytes = dataUrl.length * 0.75;
+      if (approxBytes > 6 * 1024 * 1024) {
+        return res.status(400).json({ error: 'Image too large — please choose one under 5MB.' });
+      }
+      const result = await uploadImageToCloudinary(dataUrl, 'article-ecosystem');
+      if (!result.ok) return res.status(502).json({ error: result.error || 'Upload failed.' });
+      return res.json({ ok: true, url: result.url });
+    } catch (err) {
+      console.error('/api/upload-image error', err);
+      return res.status(500).json({ error: 'Could not upload image' });
+    }
+  }
+);
 
 // POST /api/admin/affiliate-broadcast/upload-image — takes the banner image
 // the dashboard just read locally as a base64 data URI, hosts it on
