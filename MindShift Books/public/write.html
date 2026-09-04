@@ -944,9 +944,13 @@ async function uploadAndInsertImage(file, range){
 
   try{
     const token = await currentUser.getIdToken();
-    const fd = new FormData();
-    fd.append('image', file);
-    const res  = await fetch('/api/upload-image', { method:'POST', headers:{'Authorization':'Bearer '+token}, body: fd });
+    const dataUrl = await new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result);
+      r.onerror = reject;
+      r.readAsDataURL(file);
+    });
+    const res  = await fetch('/api/upload-image', { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}, body: JSON.stringify({dataUrl}) });
     const json = await res.json();
     if (!res.ok) throw new Error(json.error || 'Upload failed');
     const img = document.createElement('img');
@@ -1307,11 +1311,11 @@ loadDraft();
 
 <script>
 window.MindshiftUploader = (function(){
-  var _opts={}, _file=null;
+  var _opts={}, _file=null, _dataUrl=null;
   var $=function(id){return document.getElementById(id);};
 
   function open(opts){
-    _opts=opts||{}; _file=null;
+    _opts=opts||{}; _file=null; _dataUrl=null;
     $('kv-up-ttl').textContent=_opts.title||'Upload Image';
     $('kv-up-err').style.display='none';
     $('kv-up-lib-in').value='';
@@ -1343,6 +1347,7 @@ window.MindshiftUploader = (function(){
     _file=file;
     var r=new FileReader();
     r.onload=function(ev){
+      _dataUrl=ev.target.result; // reused directly by doUpload() below — already base64
       $('kv-up-prev-img').src=ev.target.result;
       $('kv-up-err').style.display='none';
       setState('preview');
@@ -1351,15 +1356,13 @@ window.MindshiftUploader = (function(){
   }
 
   async function doUpload(){
-    if(!_file) return;
+    if(!_file||!_dataUrl) return;
     $('kv-up-cta').disabled=true;
     $('kv-up-upl').classList.add('kv-on');
     $('kv-up-err').style.display='none';
     try{
       var token=await _opts.getToken();
-      var fd=new FormData();
-      fd.append('image',_file);
-      var res=await fetch('/api/upload-image',{method:'POST',headers:{'Authorization':'Bearer '+token},body:fd});
+      var res=await fetch('/api/upload-image',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({dataUrl:_dataUrl})});
       var json=await res.json();
       if(!res.ok) throw new Error(json.error||'Upload failed');
       close();
