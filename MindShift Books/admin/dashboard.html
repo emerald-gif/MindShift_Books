@@ -324,7 +324,7 @@
     <button class="nav-item" id="tabPayouts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2.2"/><circle cx="12" cy="12" r="2.6"/></svg>Payouts</button>
     <button class="nav-item" id="tabBroadcast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.3v3.4a1.3 1.3 0 001.3 1.3h1.2l4.8 3.9V5.1l-4.8 3.9H4.3A1.3 1.3 0 003 10.3z"/><path d="M14.5 9a3.5 3.5 0 010 6"/></svg>Updates</button>
     <button class="nav-item" id="tabCreators"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="8" r="3.3"/><path d="M1.8 20a6.7 6.7 0 0113.4 0"/><path d="M18 7v6"/><path d="M15 10h6"/></svg>Creators</button>
-    <button class="nav-item" id="tabArticles"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/><line x1="9" y1="7" x2="15" y2="7"/><line x1="9" y1="11" x2="15" y2="11"/></svg>Articles<span class="nav-badge" id="articlesPendingBadge" style="display:none">0</span></button>
+    <button class="nav-item" id="tabArticles"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/><line x1="9" y1="7" x2="15" y2="7"/><line x1="9" y1="11" x2="15" y2="11"/></svg>Content</button>
   </nav>
 
   <div class="sidebar-controls">
@@ -818,22 +818,24 @@
   <div id="articlesPage" style="display:none;">
     <div class="payouts-header">
       <div class="status-filter">
-        <button class="active" data-status="pending" id="artFilterPending">Pending</button>
-        <button data-status="approved" id="artFilterApproved">Approved</button>
-        <button data-status="rejected" id="artFilterRejected">Rejected</button>
-        <button data-status="all" id="artFilterAll">All</button>
+        <button class="active" data-type="all" id="artFilterAll">All</button>
+        <button data-type="articles" id="artFilterArticles">Articles</button>
+        <button data-type="posts" id="artFilterPosts">Posts</button>
       </div>
     </div>
     <div class="panel full-panel" style="padding-bottom:16px;">
-      <h2><span class="h2-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></span>Article Submissions</h2>
+      <h2><span class="h2-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></span>Live Content</h2>
+      <p class="empty" style="padding-top:0;margin-top:-8px;margin-bottom:14px;">
+        Articles and posts publish the moment the author hits Publish/Post — there's no review queue anymore. This is everything that's currently live; delete anything that shouldn't be up.
+      </p>
       <table>
-        <thead><tr><th>Title</th><th>Author</th><th>Category</th><th>Submitted</th><th>Status</th><th class="num">Action</th></tr></thead>
+        <thead><tr><th>Title / Text</th><th>Author</th><th>Type</th><th>Published</th><th class="num">Action</th></tr></thead>
         <tbody id="articlesBody"></tbody>
       </table>
     </div>
   </div>
 
-  <!-- Article preview overlay — shown when an admin clicks a submission's title -->
+  <!-- Content preview overlay — shown when an admin clicks an item's title -->
   <div id="articlePreviewOverlay" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(15,23,42,0.55);align-items:flex-start;justify-content:center;overflow-y:auto;padding:40px 16px;">
     <div style="background:#fff;border-radius:16px;max-width:640px;width:100%;padding:28px;margin-bottom:40px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:14px;">
@@ -847,10 +849,10 @@
       <img id="apCover" src="" alt="" style="width:100%;border-radius:10px;margin-bottom:16px;display:none;object-fit:cover;max-height:280px;">
       <div id="apBrief" style="font-size:0.92rem;color:var(--muted);font-style:italic;margin-bottom:16px;border-left:3px solid var(--border);padding-left:12px;"></div>
       <div id="apBody" style="font-size:0.92rem;line-height:1.7;color:var(--primary);"></div>
-      <div id="apRejectNote" style="display:none;margin-top:16px;padding:12px 14px;background:#fef2f2;border-radius:10px;font-size:0.85rem;color:#991b1b;"></div>
+      <div id="apImages" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;"></div>
       <div style="display:flex;gap:10px;margin-top:24px;">
-        <button id="apApproveBtn" class="gen-btn" style="flex:1;justify-content:center;">Approve &amp; Publish</button>
-        <button id="apRejectBtn" style="flex:1;padding:10px 16px;border-radius:10px;border:1.5px solid var(--border);background:#fff;color:#991b1b;font-weight:700;font-size:0.82rem;cursor:pointer;">Reject</button>
+        <button id="apViewLiveBtn" style="flex:1;padding:10px 16px;border-radius:10px;border:1.5px solid var(--border);background:#fff;color:var(--primary);font-weight:700;font-size:0.82rem;cursor:pointer;">View live</button>
+        <button id="apDeleteBtn" style="flex:1;padding:10px 16px;border-radius:10px;border:1.5px solid var(--border);background:#fff;color:#991b1b;font-weight:700;font-size:0.82rem;cursor:pointer;">Delete</button>
       </div>
     </div>
   </div>
@@ -1121,78 +1123,58 @@
     content.style.display = 'none';
     hideAllPages();
     articlesPage.style.display = 'block';
-    loadArticleSubmissions();
+    loadContent();
   });
 
-  // ── Article Submissions ──
-  let currentArtStatus = 'pending';
+  // ── Live Content (articles + posts) ──
+  let currentContentType = 'all';
   const artFilterBtns = {
-    pending: document.getElementById('artFilterPending'),
-    approved: document.getElementById('artFilterApproved'),
-    rejected: document.getElementById('artFilterRejected'),
     all: document.getElementById('artFilterAll'),
+    articles: document.getElementById('artFilterArticles'),
+    posts: document.getElementById('artFilterPosts'),
   };
-  Object.entries(artFilterBtns).forEach(([status, btn]) => {
+  Object.entries(artFilterBtns).forEach(([type, btn]) => {
     btn.addEventListener('click', () => {
-      currentArtStatus = status;
+      currentContentType = type;
       Object.values(artFilterBtns).forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      loadArticleSubmissions();
+      loadContent();
     });
   });
 
-  let articleSubmissions = [];
+  let contentItems = [];
 
-  async function loadArticleSubmissions() {
+  async function loadContent() {
     const tbody = document.getElementById('articlesBody');
-    tbody.innerHTML = '<tr><td colspan="6" class="empty">Loading…</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" class="empty">Loading…</td></tr>';
     try {
-      const res = await fetch(`/api/admin/submissions?status=${currentArtStatus}`);
+      const res = await fetch(`/api/admin/content?type=${currentContentType}`);
       if (res.status === 401) { window.location.href = '/admin/login'; return; }
       if (!res.ok) throw new Error('Request failed: ' + res.status);
       const data = await res.json();
-      articleSubmissions = data.submissions || [];
-      renderArticleSubmissions();
-      refreshArticlesPendingBadge();
+      contentItems = data.items || [];
+      renderContent();
     } catch (err) {
-      tbody.innerHTML = '<tr><td colspan="6" class="empty">Could not load submissions.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5" class="empty">Could not load content.</td></tr>';
     }
   }
 
-  // The sidebar badge always reflects the true pending count, independent
-  // of whichever status filter is currently selected in the table below —
-  // fetched once on load and refreshed after every approve/reject action.
-  async function refreshArticlesPendingBadge() {
-    try {
-      const res = await fetch(`/api/admin/submissions?status=pending`);
-      if (!res.ok) return;
-      const data = await res.json();
-      const n = (data.submissions || []).length;
-      const badge = document.getElementById('articlesPendingBadge');
-      badge.textContent = n;
-      badge.style.display = n > 0 ? 'inline-block' : 'none';
-    } catch (e) {}
-  }
-  refreshArticlesPendingBadge();
-
-  function renderArticleSubmissions() {
+  function renderContent() {
     const tbody = document.getElementById('articlesBody');
-    if (!articleSubmissions.length) {
-      tbody.innerHTML = `<tr><td colspan="6" class="empty">No ${currentArtStatus === 'all' ? '' : currentArtStatus + ' '}submissions right now.</td></tr>`;
+    if (!contentItems.length) {
+      tbody.innerHTML = `<tr><td colspan="5" class="empty">Nothing live right now.</td></tr>`;
       return;
     }
-    tbody.innerHTML = articleSubmissions.map(s => {
-      const badgeClass = s.status === 'approved' ? 'settled' : s.status === 'rejected' ? 'rejected' : 'owed';
-      const badgeLabel = s.status === 'approved' ? 'Approved' : s.status === 'rejected' ? 'Rejected' : 'Pending';
+    tbody.innerHTML = contentItems.map(s => {
+      const label = s.title || (s.text ? (s.text.length > 60 ? s.text.slice(0, 60) + '…' : s.text) : 'Untitled');
       return `
       <tr>
-        <td><a href="#" class="art-title-link" data-id="${esc(s.id)}" style="color:var(--primary);font-weight:700;text-decoration:none;">${esc(s.title || 'Untitled')}</a></td>
+        <td><a href="#" class="art-title-link" data-id="${esc(s.id)}" data-type="${esc(s.type)}" style="color:var(--primary);font-weight:700;text-decoration:none;">${esc(label)}</a></td>
         <td>${esc(s.authorName || 'Unknown')}${s.authorUsername ? `<br><span style="font-size:0.72rem;color:var(--muted);">@${esc(s.authorUsername)}</span>` : ''}</td>
-        <td>${esc(s.cat || '—')}</td>
+        <td><span class="aff-badge ${s.type === 'article' ? 'settled' : 'owed'}">${s.type === 'article' ? 'Article' : 'Post'}</span></td>
         <td>${fmtDateTime(s.createdAt)}</td>
-        <td><span class="aff-badge ${badgeClass}">${badgeLabel}</span></td>
         <td class="num">
-          <button class="art-preview-btn" data-id="${esc(s.id)}" style="padding:6px 12px;border-radius:8px;border:1.5px solid var(--border);background:#fff;font-weight:700;font-size:0.76rem;cursor:pointer;">Review</button>
+          <button class="art-preview-btn" data-id="${esc(s.id)}" data-type="${esc(s.type)}" style="padding:6px 12px;border-radius:8px;border:1.5px solid var(--border);background:#fff;font-weight:700;font-size:0.76rem;cursor:pointer;">View</button>
         </td>
       </tr>`;
     }).join('');
@@ -1200,35 +1182,36 @@
     tbody.querySelectorAll('.art-title-link, .art-preview-btn').forEach(el => {
       el.addEventListener('click', (e) => {
         e.preventDefault();
-        openArticlePreview(el.dataset.id);
+        openArticlePreview(el.dataset.id, el.dataset.type);
       });
     });
   }
 
-  function openArticlePreview(id) {
-    const s = articleSubmissions.find(x => x.id === id);
+  function openArticlePreview(id, type) {
+    const s = contentItems.find(x => x.id === id && x.type === type);
     if (!s) return;
-    document.getElementById('apCategory').textContent = s.cat || '';
-    document.getElementById('apTitle').textContent = s.title || 'Untitled';
+    const isArticle = s.type === 'article';
+    document.getElementById('apCategory').textContent = isArticle ? (s.cat || '') : 'POST';
+    document.getElementById('apTitle').textContent = isArticle ? (s.title || 'Untitled') : (s.authorName ? `${s.authorName}'s post` : 'Post');
     document.getElementById('apMeta').textContent = `${s.authorName || 'Unknown'}${s.authorUsername ? ' · @' + s.authorUsername : ''} · ${fmtDateTime(s.createdAt)}`;
     const cover = document.getElementById('apCover');
-    if (s.cover) { cover.src = s.cover; cover.style.display = 'block'; } else { cover.style.display = 'none'; }
-    document.getElementById('apBrief').textContent = s.brief || '';
-    document.getElementById('apBody').innerHTML = s.body || '';
-    const rejectNote = document.getElementById('apRejectNote');
-    if (s.status === 'rejected' && s.reviewNote) {
-      rejectNote.style.display = 'block';
-      rejectNote.textContent = 'Rejection note: ' + s.reviewNote;
+    if (isArticle && s.cover) { cover.src = s.cover; cover.style.display = 'block'; } else { cover.style.display = 'none'; }
+    document.getElementById('apBrief').textContent = isArticle ? (s.brief || '') : '';
+    document.getElementById('apBody').innerHTML = isArticle ? (s.body || '') : esc(s.text || '');
+    const imagesEl = document.getElementById('apImages');
+    if (!isArticle && Array.isArray(s.images) && s.images.length) {
+      imagesEl.style.display = 'flex';
+      imagesEl.innerHTML = s.images.map(u => `<img src="${esc(u)}" alt="" style="width:100px;height:100px;object-fit:cover;border-radius:8px;">`).join('');
     } else {
-      rejectNote.style.display = 'none';
+      imagesEl.style.display = 'none';
+      imagesEl.innerHTML = '';
     }
-    const approveBtn = document.getElementById('apApproveBtn');
-    const rejectBtn = document.getElementById('apRejectBtn');
-    approveBtn.disabled = false;
-    approveBtn.textContent = s.status === 'approved' ? 'Re-Publish' : 'Approve & Publish';
-    rejectBtn.style.display = s.status === 'rejected' ? 'none' : '';
-    approveBtn.onclick = () => approveSubmission(s.id);
-    rejectBtn.onclick = () => rejectSubmission(s.id);
+    const viewLiveBtn = document.getElementById('apViewLiveBtn');
+    viewLiveBtn.onclick = () => window.open(isArticle ? `/article-read?id=${encodeURIComponent(s.id)}` : `/post-read?id=${encodeURIComponent(s.id)}`, '_blank');
+    const deleteBtn = document.getElementById('apDeleteBtn');
+    deleteBtn.disabled = false;
+    deleteBtn.textContent = 'Delete';
+    deleteBtn.onclick = () => deleteContentItem(s.id, s.type);
     document.getElementById('articlePreviewOverlay').style.display = 'flex';
   }
   document.getElementById('apCloseBtn').addEventListener('click', () => {
@@ -1238,38 +1221,22 @@
     if (e.target.id === 'articlePreviewOverlay') e.target.style.display = 'none';
   });
 
-  async function approveSubmission(id) {
-    const btn = document.getElementById('apApproveBtn');
+  async function deleteContentItem(id, type) {
+    if (!confirm(`Delete this ${type}? This removes it for everyone and can't be undone.`)) return;
+    const btn = document.getElementById('apDeleteBtn');
     btn.disabled = true;
-    btn.textContent = 'Publishing…';
+    btn.textContent = 'Deleting…';
     try {
-      const res = await fetch(`/api/admin/submissions/${encodeURIComponent(id)}/approve`, { method: 'POST' });
+      const collectionName = type === 'article' ? 'articles' : 'posts';
+      const res = await fetch(`/api/admin/content/${collectionName}/${encodeURIComponent(id)}`, { method: 'DELETE' });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'Approve failed');
+      if (!res.ok) throw new Error(data.error || 'Delete failed');
       document.getElementById('articlePreviewOverlay').style.display = 'none';
-      loadArticleSubmissions();
+      loadContent();
     } catch (err) {
-      alert('Could not approve: ' + err.message);
+      alert('Could not delete: ' + err.message);
       btn.disabled = false;
-      btn.textContent = 'Approve & Publish';
-    }
-  }
-
-  async function rejectSubmission(id) {
-    const reason = prompt('Optional note to the author for why this was rejected (leave blank to skip):', '');
-    if (reason === null) return; // cancelled
-    try {
-      const res = await fetch(`/api/admin/submissions/${encodeURIComponent(id)}/reject`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason })
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'Reject failed');
-      document.getElementById('articlePreviewOverlay').style.display = 'none';
-      loadArticleSubmissions();
-    } catch (err) {
-      alert('Could not reject: ' + err.message);
+      btn.textContent = 'Delete';
     }
   }
 
