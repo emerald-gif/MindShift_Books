@@ -7,159 +7,152 @@
   <meta name="description" content="Sign in to your MindShift Books account." />
   <meta name="robots" content="noindex, follow" />
   <link rel="shortcut icon" href="MINDSHIFT.jpg" type="image/jpg">
-  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
 :root{ --primary:#0f172a; --accent:#06b6d4; --indigo:#4f46e5; --paper:#fdfdfc; }
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Inter',sans-serif;color:var(--primary);background:var(--paper);min-height:100vh;}
+html,body{height:100%;}
+body{font-family:'Inter',sans-serif;color:var(--primary);background:#0f172a;min-height:100vh;overflow-x:hidden;}
 
-.split{ display:grid; grid-template-columns: 44% 56%; min-height:100vh; }
+/* ══════════════════════════════════════════════════════════
+   PIN FIELD — Pinterest-style masonry backdrop. Mixes real book
+   covers with "article" / "post" / "profile" pins so the page
+   reads as a whole creator platform, not just a bookstore.
+   ══════════════════════════════════════════════════════════ */
+.pin-field{
+  position:fixed; inset:0; z-index:0;
+  columns:5 190px; column-gap:14px; padding:14px;
+  overflow:hidden;
+}
+.pin{
+  break-inside:avoid; margin-bottom:14px; border-radius:18px; overflow:hidden;
+  box-shadow:0 10px 26px rgba(0,0,0,0.28);
+  background:#1e293b;
+}
+.pin img{ width:100%; display:block; }
+.pin.tone-a{ background:linear-gradient(155deg,#4f46e5,#312e81); }
+.pin.tone-b{ background:linear-gradient(155deg,#06b6d4,#0e7490); }
+.pin.tone-c{ background:linear-gradient(155deg,#ec4899,#831843); }
+.pin.tone-d{ background:linear-gradient(155deg,#1e293b,#0f172a); border:1px solid rgba(255,255,255,0.08); }
+.pin-card{ padding:20px 18px; color:#fff; display:flex; flex-direction:column; justify-content:flex-end; gap:8px; }
+.pin-card .pin-kicker{ font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.08em; opacity:0.75; display:flex; align-items:center; gap:6px; }
+.pin-card .pin-kicker svg{ width:12px; height:12px; }
+.pin-card p{ font-size:0.92rem; font-weight:600; line-height:1.4; }
+.pin-card .pin-quote{ font-family:'Source Serif 4', serif; font-weight:500; font-size:1.05rem; line-height:1.4; }
+.pin-avatar-row{ display:flex; align-items:center; gap:8px; margin-top:2px; }
+.pin-avatar{ width:26px; height:26px; border-radius:50%; background:rgba(255,255,255,0.22); display:flex; align-items:center; justify-content:center; font-size:0.7rem; font-weight:800; flex-shrink:0; }
+.pin-stat{ font-size:0.72rem; font-weight:700; opacity:0.8; }
+.h-sm{ min-height:130px; } .h-md{ min-height:180px; } .h-lg{ min-height:240px; }
 
-/* ---------- LEFT: editorial / shelf panel ---------- */
-.shelf{
-  position:relative; overflow:hidden;
+/* Scrim so the centered card stays readable over the pins */
+.scrim{
+  position:fixed; inset:0; z-index:1; pointer-events:none;
   background:
-    radial-gradient(ellipse at 30% -10%, rgba(6,182,212,0.18), transparent 55%),
-    linear-gradient(200deg, #0f172a 0%, #131029 55%, #0f172a 100%);
-  padding:36px 40px;
-  display:flex; flex-direction:column; justify-content:space-between;
+    radial-gradient(ellipse 70% 55% at 50% 46%, rgba(15,23,42,0.86), rgba(15,23,42,0.55) 60%, rgba(15,23,42,0.15) 100%);
 }
-.shelf-brand{ display:flex; align-items:center; gap:10px; }
-.shelf-brand img{ width:30px; height:30px; border-radius:6px; }
-.shelf-brand a{ color:#e2e8f0; font-weight:700; font-size:0.95rem; text-decoration:none; letter-spacing:0.01em; }
 
-.stack{ position:relative; height:320px; margin:24px 0 0 6px; }
-.stack img{
-  position:absolute; top:0; width:120px; border-radius:3px;
-  box-shadow: 0 24px 48px rgba(0,0,0,0.5), 0 2px 6px rgba(0,0,0,0.3);
-  border:1px solid rgba(255,255,255,0.06);
+/* ══════════════════════════════════════════════════════════
+   STAGE — centered floating card
+   ══════════════════════════════════════════════════════════ */
+.stage{ position:relative; z-index:2; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:32px 20px; }
+
+.authcard{
+  width:100%; max-width:400px; background:#fff; border-radius:28px;
+  padding:34px 32px 30px; box-shadow:0 30px 70px rgba(0,0,0,0.45);
+  animation: riseIn 0.5s ease both;
 }
-.stack img:nth-child(1){ left:0px;   transform:rotate(-9deg);  z-index:1; }
-.stack img:nth-child(2){ left:64px;  transform:rotate(-2deg) translateY(6px); z-index:2; }
-.stack img:nth-child(3){ left:136px; transform:rotate(6deg)  translateY(-8px); z-index:3; }
-.stack img:nth-child(4){ left:202px; transform:rotate(13deg) translateY(6px); z-index:1; opacity:0.92; }
 
-.shelf-quote{ margin-top:60px; max-width:340px; }
-.shelf-quote p{
-  font-family:'Source Serif 4', serif; font-weight:500; font-size:1.5rem; line-height:1.35;
-  color:#f1f5f9;
-}
-.shelf-quote span{ display:block; margin-top:14px; font-size:0.78rem; color:#67e8f9; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; }
+.brand-row{ display:flex; align-items:center; gap:9px; margin-bottom:22px; }
+.brand-row img{ width:28px; height:28px; border-radius:7px; }
+.brand-row span{ font-weight:800; font-size:0.9rem; letter-spacing:0.01em; }
 
-.shelf-foot{ font-size:0.75rem; color:#475569; }
+.authcard .back{ font-size:0.78rem; color:#94a3b8; text-decoration:none; display:inline-block; margin-bottom:18px; }
+.authcard .back:hover{ color:var(--indigo); }
 
-/* ---------- RIGHT: form panel ---------- */
-.formside{ display:flex; align-items:center; justify-content:center; padding:40px 32px; }
-.formwrap{ width:100%; max-width:380px; }
+.authcard h1{ font-family:'Source Serif 4', serif; font-weight:600; font-size:1.7rem; letter-spacing:-0.01em; }
+.authcard .sub{ color:#6b7280; font-size:0.88rem; margin-top:7px; margin-bottom:26px; line-height:1.45; }
 
-.formwrap .back{ font-size:0.8rem; color:#94a3b8; text-decoration:none; display:inline-block; margin-bottom:28px; }
-.formwrap .back:hover{ color:var(--indigo); }
-
-.formwrap h1{ font-family:'Source Serif 4', serif; font-weight:600; font-size:2rem; letter-spacing:-0.01em; }
-.formwrap .sub{ color:#6b7280; font-size:0.92rem; margin-top:8px; margin-bottom:32px; }
-
-.field{ margin-top:22px; }
+.field{ margin-top:16px; }
 .field:first-of-type{ margin-top:0; }
 .field label{
-  display:block; font-size:0.72rem; font-weight:700; color:#94a3b8;
-  text-transform:uppercase; letter-spacing:0.07em; margin-bottom:8px;
+  display:block; font-size:0.7rem; font-weight:700; color:#6b7280;
+  text-transform:uppercase; letter-spacing:0.06em; margin-bottom:7px;
 }
 .field-label-row{ display:flex; align-items:baseline; justify-content:space-between; }
-.field-label-row label{ margin-bottom:8px; }
+.field-label-row label{ margin-bottom:7px; }
 .forgot-link{ font-size:0.76rem; font-weight:700; color:var(--indigo); text-decoration:none; text-transform:none; letter-spacing:0; }
 .forgot-link:hover{ text-decoration:underline; }
 .forgot-link:focus-visible{ outline:2px solid var(--indigo); outline-offset:2px; border-radius:2px; }
 .field input{
-  width:100%; border:none; border-bottom:1.5px solid #e2e8f0; background:transparent;
-  padding:8px 2px 10px; font-size:1rem; color:var(--primary); outline:none;
-  font-family:'Inter',sans-serif; transition:border-color 0.2s;
+  width:100%; border:1.5px solid #e5e7eb; border-radius:14px; background:#f8fafc;
+  padding:13px 14px; font-size:0.95rem; color:var(--primary); outline:none;
+  font-family:'Inter',sans-serif; transition:border-color 0.15s, background 0.15s, box-shadow 0.15s;
 }
-.field input::placeholder{ color:#cbd5e1; }
-.field input:focus{ border-bottom-color:var(--indigo); }
+.field input::placeholder{ color:#a3adc2; }
+.field input:focus{ border-color:var(--indigo); background:#fff; box-shadow:0 0 0 3px rgba(79,70,229,0.12); }
 
 .error{
-  display:none; margin-top:16px; padding:10px 0; border-bottom:2px solid #ef4444;
-  color:#b91c1c; font-size:0.83rem;
+  display:none; margin-top:14px; padding:10px 12px; border-radius:12px;
+  background:#fef2f2; border:1px solid #fecaca;
+  color:#b91c1c; font-size:0.82rem; font-weight:500;
 }
 
-.submit-row{ display:flex; align-items:center; gap:14px; margin-top:32px; }
+.submit-row{ margin-top:24px; }
 .submit-btn{
-  padding:13px 26px; border:none; border-radius:999px; cursor:pointer;
+  width:100%; padding:14px 26px; border:none; border-radius:999px; cursor:pointer;
   background:linear-gradient(90deg,#4f46e5,#06b6d4); color:#fff;
-  font-weight:700; font-size:0.9rem; font-family:'Inter',sans-serif;
-  box-shadow:0 10px 22px rgba(79,70,229,0.24); transition:opacity 0.2s, transform 0.15s;
+  font-weight:800; font-size:0.92rem; font-family:'Inter',sans-serif;
+  box-shadow:0 10px 22px rgba(79,70,229,0.28); transition:opacity 0.2s, transform 0.15s;
 }
 .submit-btn:hover{ opacity:0.93; transform:translateY(-1px); }
-.submit-btn:disabled{ opacity:0.55; cursor:default; transform:none; }
+.submit-btn:disabled{ opacity:0.6; cursor:default; transform:none; }
 
-.or-sep{ display:flex; align-items:center; gap:14px; margin:26px 0 18px; color:#cbd5e1; font-size:0.78rem; }
-.or-sep::before, .or-sep::after{ content:''; flex:1; height:1px; background:#eef2f7; }
+.or-sep{ display:flex; align-items:center; gap:12px; margin:20px 0 16px; color:#c3cad6; font-size:0.75rem; font-weight:600; }
+.or-sep::before, .or-sep::after{ content:''; flex:1; height:1px; background:#eef1f6; }
 
 .google-btn{
   width:100%; display:flex; align-items:center; justify-content:center; gap:10px;
-  padding:13px; border-radius:12px; border:1.5px solid #e2e8f0;
+  padding:12px; border-radius:999px; border:1.5px solid #e5e7eb;
   background:#fff; cursor:pointer;
-  box-shadow:0 1px 2px rgba(15,23,42,0.04);
   transition:border-color 0.15s, box-shadow 0.15s, transform 0.1s;
 }
 .google-btn:hover{ border-color:#cbd5e1; box-shadow:0 4px 14px rgba(15,23,42,0.08); }
 .google-btn:active{ transform:translateY(1px); }
-.google-btn svg{ width:19px; height:19px; flex-shrink:0; }
-.google-btn span{ font-size:0.92rem; font-weight:600; color:var(--primary); }
+.google-btn svg{ width:18px; height:18px; flex-shrink:0; }
+.google-btn span{ font-size:0.88rem; font-weight:700; color:var(--primary); }
 
 .facebook-btn{
   width:100%; display:flex; align-items:center; justify-content:center; gap:10px;
-  padding:13px; border-radius:12px; border:none;
-  background:#1877F2; cursor:pointer; margin-top:10px;
-  box-shadow:0 1px 2px rgba(15,23,42,0.04);
+  padding:12px; border-radius:999px; border:none;
+  background:#1877F2; cursor:pointer; margin-top:9px;
   transition:filter 0.15s, box-shadow 0.15s, transform 0.1s;
 }
-.facebook-btn:hover{ filter:brightness(1.05); box-shadow:0 4px 14px rgba(24,119,242,0.28); }
+.facebook-btn:hover{ filter:brightness(1.06); box-shadow:0 4px 14px rgba(24,119,242,0.3); }
 .facebook-btn:active{ transform:translateY(1px); }
-.facebook-btn svg{ width:19px; height:19px; flex-shrink:0; }
-.facebook-btn span{ font-size:0.92rem; font-weight:600; color:#fff; }
+.facebook-btn svg{ width:18px; height:18px; flex-shrink:0; }
+.facebook-btn span{ font-size:0.88rem; font-weight:700; color:#fff; }
 
-.switch-note{ margin-top:34px; font-size:0.87rem; color:#6b7280; }
+.switch-note{ margin-top:24px; font-size:0.85rem; color:#6b7280; text-align:center; }
 .switch-note a{ color:var(--indigo); font-weight:700; text-decoration:none; }
-
-/* Mobile: stack, shrink the shelf into a header strip */
-@media (max-width: 860px){
-  .split{ grid-template-columns:1fr; }
-  .shelf{ padding:24px 24px 22px; }
-  .stack{ height:150px; margin-top:14px; }
-  .stack img{ width:82px; }
-  .stack img:nth-child(2){ left:44px; }
-  .stack img:nth-child(3){ left:92px; }
-  .stack img:nth-child(4){ left:138px; }
-  .shelf-quote{ margin-top:26px; max-width:none; }
-  .shelf-quote p{ font-size:1.15rem; }
-  .shelf-foot{ display:none; }
-  .formside{ padding:32px 24px 60px; }
-}
-
-/* ---------- Entrance polish ---------- */
-@keyframes riseIn{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:translateY(0); } }
-.formwrap{ animation: riseIn 0.5s ease both; }
-.shelf-quote{ animation: riseIn 0.6s ease 0.1s both; }
 
 /* ---------- Password show/hide ---------- */
 .pw-wrap{ position:relative; }
-.pw-wrap input{ padding-right:32px; }
+.pw-wrap input{ padding-right:38px; }
 .pw-toggle{
-  position:absolute; right:0; bottom:8px; background:none; border:none; padding:2px;
+  position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; padding:2px;
   color:#94a3b8; cursor:pointer; display:flex; align-items:center; line-height:0;
   transition: color 0.15s;
 }
 .pw-toggle:hover{ color:var(--indigo); }
 .pw-toggle svg{ width:18px; height:18px; }
 
-/* ---------- Consistent keyboard focus states ---------- */
+/* ---------- Focus states ---------- */
 .submit-btn:focus-visible, .google-btn:focus-visible, .facebook-btn:focus-visible, .pw-toggle:focus-visible{
   outline:2px solid var(--indigo); outline-offset:2px;
 }
 .back:focus-visible, .switch-note a:focus-visible{ outline:2px solid var(--indigo); outline-offset:2px; border-radius:2px; }
 
-/* ---------- Submit-button loading spinner — keys off the existing :disabled state, no script change needed ---------- */
+/* ---------- Submit spinner ---------- */
 .submit-btn{ display:inline-flex; align-items:center; justify-content:center; gap:9px; }
 .submit-btn:disabled::before{
   content:''; width:15px; height:15px; border-radius:50%; flex-shrink:0;
@@ -167,78 +160,118 @@ body{font-family:'Inter',sans-serif;color:var(--primary);background:var(--paper)
   animation: spin 0.7s linear infinite;
 }
 @keyframes spin{ to{ transform:rotate(360deg); } }
+@keyframes riseIn{ from{ opacity:0; transform:translateY(14px); } to{ opacity:1; transform:translateY(0); } }
+
+/* ---------- Mobile: pins become a fading strip, card becomes a bottom sheet ---------- */
+@media (max-width: 760px){
+  .pin-field{ columns:2 140px; height:58vh; }
+  .scrim{ background:
+      linear-gradient(180deg, rgba(15,23,42,0.35) 0%, rgba(15,23,42,0.55) 42%, #0f172a 76%),
+      radial-gradient(ellipse 90% 60% at 50% 20%, rgba(15,23,42,0.2), transparent 60%);
+  }
+  .stage{ align-items:flex-end; padding:0; }
+  .authcard{ max-width:none; border-radius:26px 26px 0 0; padding:28px 22px max(env(safe-area-inset-bottom,0px),26px); box-shadow:none; }
+  .brand-row{ justify-content:center; }
+}
   </style>
 </head>
 <body>
 
-<div class="split">
-
-  <div class="shelf">
-    <div>
-      <div class="shelf-brand">
-        <a href="/"><img src="MINDSHIFT.jpg" alt=""></a>
-        <a href="/">MindShift Books</a>
-      </div>
-      <div class="stack">
-        <img src="escape.jpg" alt="">
-        <img src="gcwa.jpg" alt="">
-        <img src="Think%20and%20grow%20rich.jpg" alt="">
-        <img src="Atomic%20habit.jpg" alt="">
+<div class="pin-field" aria-hidden="true">
+  <div class="pin"><img src="Think%20and%20grow%20rich.jpg" alt=""></div>
+  <div class="pin tone-a pin-card h-sm">
+    <div class="pin-kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Article</div>
+    <p>Why most people quit right before their breakthrough</p>
+  </div>
+  <div class="pin"><img src="Rich%20dad%20poor%20dad.jpg" alt=""></div>
+  <div class="pin tone-d pin-card h-md">
+    <div class="pin-avatar-row">
+      <div class="pin-avatar">CJ</div>
+      <div>
+        <div style="font-size:0.78rem;font-weight:800;">Chioma J.</div>
+        <div class="pin-stat">2,140 followers</div>
       </div>
     </div>
-    <div class="shelf-quote">
-      <p>"The books you keep returning to are the ones quietly rewriting how you think."</p>
+    <p style="margin-top:8px;">Building an audience one honest post at a time.</p>
+  </div>
+  <div class="pin"><img src="escape.jpg" alt=""></div>
+  <div class="pin tone-b pin-card h-sm">
+    <div class="pin-kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>Post</div>
+    <p>Small update, big shift in how I think about money.</p>
+  </div>
+  <div class="pin"><img src="The%20psychology%20of%20money.jpg" alt=""></div>
+  <div class="pin tone-c pin-card h-lg">
+    <div class="pin-quote">"Come for a book. Stay for the people rewriting how you think."</div>
+  </div>
+  <div class="pin"><img src="gcwa.jpg" alt=""></div>
+  <div class="pin"><img src="The%2048%20laws%20of%20power.jpg" alt=""></div>
+  <div class="pin tone-a pin-card h-sm">
+    <div class="pin-kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>Insights</div>
+    <p>3.2k profile views this week</p>
+  </div>
+  <div class="pin"><img src="tda.jpg" alt=""></div>
+  <div class="pin tone-b pin-card h-md">
+    <div class="pin-kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Follow</div>
+    <p>Follow authors and get a feed picked just for you.</p>
+  </div>
+  <div class="pin"><img src="mmg.jpg" alt=""></div>
+  <div class="pin"><img src="The%20art%20of%20seduction.jpg" alt=""></div>
+  <div class="pin tone-d pin-card h-sm">
+    <div class="pin-kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>Verified Author</div>
+    <p>Build a name readers trust, one article at a time.</p>
+  </div>
+  <div class="pin"><img src="Atomic%20habit.jpg" alt=""></div>
+</div>
+<div class="scrim"></div>
+
+<div class="stage">
+  <div class="authcard">
+    <div class="brand-row">
+      <img src="MINDSHIFT.jpg" alt="">
       <span>MindShift Books</span>
     </div>
-    <div class="shelf-foot">© 2026 MindShift Books</div>
-  </div>
+    <a class="back" href="/books">← Back to browsing</a>
+    <h1>Welcome back.</h1>
+    <div class="sub">Sign in to read, write, follow authors, and pick up your orders.</div>
 
-  <div class="formside">
-    <div class="formwrap">
-      <a class="back" href="/books">← Back to browsing</a>
-      <h1>Welcome back.</h1>
-      <div class="sub">Sign in to check out and pick up your orders.</div>
-
-      <form id="loginForm">
-        <div class="field">
-          <label for="email">Email</label>
-          <input id="email" type="email" placeholder="you@example.com" autocomplete="email" required>
-        </div>
-
-        <div class="field">
-          <div class="field-label-row">
-            <label for="password">Password</label>
-            <a href="/forgot-password" class="forgot-link">Forgot?</a>
-          </div>
-          <div class="pw-wrap">
-            <input id="password" type="password" placeholder="Your password" autocomplete="current-password" required>
-            <button type="button" class="pw-toggle" id="pwToggle" aria-label="Show password"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.7"/></svg></button>
-          </div>
-        </div>
-
-        <div class="error" id="authError"></div>
-
-        <div class="submit-row">
-          <button type="submit" class="submit-btn" id="submitBtn">Sign In</button>
-        </div>
-      </form>
-
-      <div class="or-sep">or</div>
-
-      <div class="google-btn" id="googleBtn">
-        <svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.9 18.9 13 24 13c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.5 0 10.4-1.9 14-5.7l-6.5-5.4c-1.9 1.3-4.4 2.1-7.5 2.1-5.2 0-9.6-3.3-11.3-8l-6.6 5C9.7 39.7 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.2 4.3-4.1 5.7l6.5 5.4C41.5 35.9 44 30.5 44 24c0-1.3-.1-2.7-.4-3.5z"/></svg>
-        <span>Continue with Google</span>
+    <form id="loginForm">
+      <div class="field">
+        <label for="email">Email</label>
+        <input id="email" type="email" placeholder="you@example.com" autocomplete="email" required>
       </div>
 
-      <div class="facebook-btn" id="facebookBtn">
-        <svg viewBox="0 0 24 24"><path fill="#fff" d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-        <span>Continue with Facebook</span>
+      <div class="field">
+        <div class="field-label-row">
+          <label for="password">Password</label>
+          <a href="/forgot-password" class="forgot-link">Forgot?</a>
+        </div>
+        <div class="pw-wrap">
+          <input id="password" type="password" placeholder="Your password" autocomplete="current-password" required>
+          <button type="button" class="pw-toggle" id="pwToggle" aria-label="Show password"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.7"/></svg></button>
+        </div>
       </div>
 
-      <div class="switch-note">Don't have an account? <a href="#" id="signupLink">Sign up</a></div>
+      <div class="error" id="authError"></div>
+
+      <div class="submit-row">
+        <button type="submit" class="submit-btn" id="submitBtn">Sign In</button>
+      </div>
+    </form>
+
+    <div class="or-sep">or</div>
+
+    <div class="google-btn" id="googleBtn">
+      <svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.9 18.9 13 24 13c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.6 6.1 29.6 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.5 0 10.4-1.9 14-5.7l-6.5-5.4c-1.9 1.3-4.4 2.1-7.5 2.1-5.2 0-9.6-3.3-11.3-8l-6.6 5C9.7 39.7 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.2 4.3-4.1 5.7l6.5 5.4C41.5 35.9 44 30.5 44 24c0-1.3-.1-2.7-.4-3.5z"/></svg>
+      <span>Continue with Google</span>
     </div>
-  </div>
 
+    <div class="facebook-btn" id="facebookBtn">
+      <svg viewBox="0 0 24 24"><path fill="#fff" d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+      <span>Continue with Facebook</span>
+    </div>
+
+    <div class="switch-note">Don't have an account? <a href="#" id="signupLink">Sign up</a></div>
+  </div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
