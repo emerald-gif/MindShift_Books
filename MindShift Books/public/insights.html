@@ -268,13 +268,22 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
       <div class="stat-label">Published Articles</div>
     </div>
     <div class="stat-card">
+      <div class="stat-icon articles">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      </div>
+      <div class="stat-value-row">
+        <div class="stat-value" id="statPosts"><div class="skel skel-stat-val"></div></div>
+      </div>
+      <div class="stat-label">Posts</div>
+    </div>
+    <div class="stat-card">
       <div class="stat-icon views">
         <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
       </div>
       <div class="stat-value-row">
         <div class="stat-value" id="statArticleViews"><div class="skel skel-stat-val"></div></div>
       </div>
-      <div class="stat-label">Article Reads</div>
+      <div class="stat-label">Total Views</div>
     </div>
     <div class="stat-card">
       <div class="stat-icon engagement">
@@ -290,12 +299,12 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 
 <!-- BEST ARTICLE -->
 <div class="section" id="bestSection" style="display:none">
-  <div class="section-title">Top Article</div>
-  <div class="section-sub">Your best performing piece overall</div>
+  <div class="section-title">Top Content</div>
+  <div class="section-sub">Your best performing article or post overall</div>
   <div class="best-card">
     <div class="best-badge">
       <svg viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v3a5 5 0 01-10 0V4z"/><path d="M5 4H3v2a4 4 0 004 4M19 4h2v2a4 4 0 01-4 4"/></svg>
-      Top Article
+      Top Content
     </div>
     <div class="best-thumb" id="bestThumb">
       <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
@@ -310,7 +319,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 <!-- ENGAGEMENT BREAKDOWN -->
 <div class="section" id="breakdownSection" style="display:none">
   <div class="section-title">Engagement Breakdown</div>
-  <div class="section-sub">How readers are interacting with your articles</div>
+  <div class="section-sub">How readers are interacting with your content</div>
   <div class="breakdown-card">
     <div class="donut-wrap">
       <svg viewBox="0 0 100 100">
@@ -346,8 +355,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 
 <!-- TOP PERFORMING ARTICLES -->
 <div class="section">
-  <div class="section-title">Top Performing Articles</div>
-  <div class="section-sub">Ranked by reads, likes &amp; comments</div>
+  <div class="section-title">Top Performing Content</div>
+  <div class="section-sub">Articles &amp; posts ranked by views, likes &amp; comments</div>
   <div id="perfList">
     <div class="skel skel-perf"></div>
     <div class="skel skel-perf"></div>
@@ -358,7 +367,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 <!-- RECENT ACTIVITY -->
 <div class="section">
   <div class="section-title">Recent Activity</div>
-  <div class="section-sub">Latest interactions on your profile &amp; articles</div>
+  <div class="section-sub">Latest interactions on your profile, articles &amp; posts</div>
   <div class="breakdown-card" id="activityCard" style="display:block;padding:6px 16px">
     <div class="skel skel-row"></div>
     <div class="skel skel-row"></div>
@@ -404,11 +413,12 @@ onAuthStateChanged(auth, async user => {
 async function loadInsights(uid){
   try{
 
-    // ── Single parallel fetch — 3 queries instead of 4 ──
+    // ── Single parallel fetch ──
     // recentNotifs uses the existing recipientUid+createdAt index (no type filter needed)
     // followDocs  uses the followingId+createdAt composite index (add in Firebase Console)
-    // articlesSnap uses the existing userId+status+createdAt index
-    const [profileViewDocs, recentNotifs, followDocs, articlesSnap] = await Promise.all([
+    // articlesSnap/postsSnap: everything now auto-publishes (no more submissions/pending
+    // gate), so these read straight from the live articles/posts collections by author.
+    const [profileViewDocs, recentNotifs, followDocs, articlesSnap, postsSnap] = await Promise.all([
       // profileViews replaces the old notifications/type=='profile_view' query — profile
       // views are analytics now, not bell notifications (see /notifications.js trackProfileView()).
       safeDocs(query(collection(db,'profileViews'),
@@ -423,10 +433,10 @@ async function loadInsights(uid){
         where('followingId','==',uid),
         orderBy('createdAt','desc'),
         limit(1000))),                                            // uses followingId+createdAt index
-      safeDocs(query(collection(db,'submissions'),
-        where('userId','==',uid),
-        where('status','==','approved'),
-        orderBy('createdAt','desc')))
+      safeDocs(query(collection(db,'articles'),
+        where('authorUid','==',uid))),
+      safeDocs(query(collection(db,'posts'),
+        where('authorUid','==',uid)))
     ]);
 
     // recentNotifs is now purely likes/follows/comments — profile views live in their own
@@ -468,22 +478,30 @@ async function loadInsights(uid){
     renderActivity(activityTop);
 
     setNum('statArticles', articlesSnap.length);
+    setNum('statPosts', postsSnap.length);
 
-    if(!articlesSnap.length){
+    const content = [
+      ...articlesSnap.map(a=>({...a, type:'article'})),
+      ...postsSnap.map(p=>({...p, type:'post'}))
+    ];
+
+    if(!content.length){
       document.getElementById('perfList').innerHTML = emptyState(
         `<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>`,
-        `No published articles yet.<br>Insights will appear once your articles go live.`
+        `No posts or articles yet.<br>Insights will appear once you share something.`
       );
       setNum('statArticleViews', 0);
       setNum('statEngagement', 0);
       return;
     }
 
-    // ── Per-article enrichment: views, likes, comments ──
-    const enriched = await Promise.all(articlesSnap.map(async a=>{
+    // ── Per-item enrichment: views, likes, comments (likes/views are keyed the
+    // same way for both articles and posts — articleLikes/{id}, {article,post}Meta/{id}) ──
+    const enriched = await Promise.all(content.map(async a=>{
+      const metaCollection = a.type==='post' ? 'postMeta' : 'articleMeta';
       const [likeSnap, metaSnap] = await Promise.all([
         getDoc(doc(db,'articleLikes',a.id)).catch(()=>null),
-        getDoc(doc(db,'articleMeta',a.id)).catch(()=>null)
+        getDoc(doc(db,metaCollection,a.id)).catch(()=>null)
       ]);
       const likes    = likeSnap?.exists() ? (likeSnap.data().count||0) : 0;
       const meta     = metaSnap?.exists() ? metaSnap.data() : {};
@@ -510,7 +528,7 @@ async function loadInsights(uid){
       `<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>`,
       `Could not load insights.<br>Check your connection and try again.`
     );
-    ['statViews','statFollowers','statArticles','statArticleViews','statEngagement']
+    ['statViews','statFollowers','statArticles','statPosts','statArticleViews','statEngagement']
       .forEach(id => setNum(id, 0));
     document.getElementById('trendCard').innerHTML =
       emptyState(`<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>`, `Trend data unavailable.`);
@@ -609,18 +627,22 @@ function renderTrend(viewDocs, followDocs){
   `;
 }
 
-/* ── BEST ARTICLE ── */
-function renderBestArticle(articles){
-  const withScore = articles.filter(a=>a.score>0);
+/* ── BEST CONTENT (article or post) ── */
+function renderBestArticle(items){
+  const withScore = items.filter(a=>a.score>0);
   if(!withScore.length) return;
   const best = withScore.reduce((a,b)=> b.score>a.score ? b : a);
+  const isPost = best.type==='post';
 
   document.getElementById('bestSection').style.display='block';
-  document.getElementById('bestTitle').textContent = best.title || 'Untitled';
+  document.getElementById('bestTitle').textContent = isPost
+    ? (best.text ? best.text.slice(0,80) : 'Untitled post')
+    : (best.title || 'Untitled');
 
   const thumb = document.getElementById('bestThumb');
-  if(best.cover){
-    thumb.style.backgroundImage = `url(${best.cover})`;
+  const img = isPost ? (best.images && best.images[0]) : best.cover;
+  if(img){
+    thumb.style.backgroundImage = `url(${img})`;
     thumb.innerHTML = '';
   }
 
@@ -629,7 +651,7 @@ function renderBestArticle(articles){
     <span class="best-stat-item"><svg viewBox="0 0 24 24">${ICONS.heart}</svg>${best.likes}</span>
     <span class="best-stat-item"><svg viewBox="0 0 24 24">${ICONS.comment}</svg>${best.comments}</span>
   `;
-  document.getElementById('bestSection').onclick = ()=> location.href=`/article-read?id=${best.id}`;
+  document.getElementById('bestSection').onclick = ()=> location.href = isPost ? `/post-read?id=${best.id}` : `/article-read?id=${best.id}`;
   document.getElementById('bestSection').style.cursor='pointer';
 }
 
@@ -656,15 +678,19 @@ function renderBreakdown(likes, comments){
   document.getElementById('commentsPct').textContent = Math.round((comments/total)*100)+'%';
 }
 
-/* ── TOP PERFORMING ARTICLES ── */
-function renderPerfList(articles){
-  const sorted = [...articles].sort((a,b)=>b.score-a.score).slice(0,5);
+/* ── TOP PERFORMING CONTENT (articles + posts) ── */
+function renderPerfList(items){
+  const sorted = [...items].sort((a,b)=>b.score-a.score).slice(0,5);
   const list = document.getElementById('perfList');
-  list.innerHTML = sorted.map((a,i)=>`
-    <div class="perf-row" onclick="location.href='/article-read?id=${a.id}'">
+  list.innerHTML = sorted.map((a,i)=>{
+    const isPost = a.type==='post';
+    const title = isPost ? (a.text ? a.text.slice(0,60) : 'Untitled post') : (a.title||'Untitled');
+    const href  = isPost ? `/post-read?id=${a.id}` : `/article-read?id=${a.id}`;
+    return `
+    <div class="perf-row" onclick="location.href='${href}'">
       <div class="perf-rank">${i+1}</div>
       <div class="perf-info">
-        <div class="perf-title">${esc(a.title||'Untitled')}</div>
+        <div class="perf-title">${esc(title)}${isPost ? ' <span style="color:var(--mute);font-weight:600;font-size:11px">· Post</span>' : ''}</div>
         <div class="perf-meta">
           <span class="perf-meta-item"><svg viewBox="0 0 24 24">${ICONS.eye}</svg>${a.views}</span>
           <span class="perf-meta-item"><svg viewBox="0 0 24 24">${ICONS.heart}</svg>${a.likes}</span>
@@ -672,15 +698,16 @@ function renderPerfList(articles){
         </div>
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
 /* ── RECENT ACTIVITY ── */
 const ACTIVITY_MAP = {
   /* profile_view removed — no longer written to notifications, see the Profile Views hero above */
   follow:        {icon:ICONS.userPlus,cls:'follow',  text:a=>`<b>${esc(a.actorName||'Someone')}</b> started following you`},
-  article_like:  {icon:ICONS.heart,   cls:'like',    text:a=>`<b>${esc(a.actorName||'Someone')}</b> liked "${esc(nTrunc(a.targetTitle||'your article',40))}"`},
-  new_comment:   {icon:ICONS.comment, cls:'comment', text:a=>`<b>${esc(a.actorName||'Someone')}</b> commented on "${esc(nTrunc(a.targetTitle||'your article',40))}"`},
+  article_like:  {icon:ICONS.heart,   cls:'like',    text:a=>`<b>${esc(a.actorName||'Someone')}</b> liked "${esc(nTrunc(a.targetTitle||'your content',40))}"`},
+  new_comment:   {icon:ICONS.comment, cls:'comment', text:a=>`<b>${esc(a.actorName||'Someone')}</b> commented on "${esc(nTrunc(a.targetTitle||'your content',40))}"`},
   comment_reply: {icon:ICONS.comment, cls:'comment', text:a=>`<b>${esc(a.actorName||'Someone')}</b> replied to your comment`},
   comment_like:  {icon:ICONS.heart,   cls:'like',    text:a=>`<b>${esc(a.actorName||'Someone')}</b> liked your comment`}
 };
