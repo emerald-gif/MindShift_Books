@@ -1437,7 +1437,7 @@ function buildMediaGridHtml(images, postId){
   return `
     <div class="pcard-carousel" onclick="event.stopPropagation()">
       <div class="pcard-track" id="ptrack-${postId}" onscroll="onPostScroll('${postId}')">
-        ${images.map(url=>`<div class="pcard-slide"><img src="${url}" alt="" loading="lazy" onclick="goPostRead('${postId}')" onload="fitCarouselSlide(this)"></div>`).join('')}
+        ${images.map(url=>`<div class="pcard-slide"><img src="${url}" alt="" loading="lazy" onclick="goPostRead('${postId}')" onload="fitCarouselSlide(this)" onerror="fitCarouselSlide(this)"></div>`).join('')}
       </div>
       <div class="pcard-count" id="pcount-${postId}">1/${images.length}</div>
     </div>`;
@@ -1490,27 +1490,45 @@ function buildPostCardHtml(p){
 }
 
 // Wide/landscape images, when forced to the row's fixed height, can end up
-// far wider than the screen. Cap that slide's width AND shrink its height to
-// match, so it sits snug (like the single-image case) with no gray bars —
-// normal/portrait images never hit this branch and are untouched.
+// far wider than the screen. We wait until every image in a given row has
+// loaded, then work out the row's real height: if at least one image is a
+// normal/portrait shape, the row stays its usual height (unchanged — this
+// is the case that already worked well). Only when EVERY image in the row
+// is landscape does the whole row shrink to fit them, closing the leftover
+// gap that a fixed-height row would otherwise leave underneath.
 window.fitCarouselSlide = function(img){
   const slide = img.closest('.pcard-slide');
   const track = img.closest('.pcard-track');
-  if(!slide || !track || !img.naturalWidth || !img.naturalHeight) return;
-  const trackHeight = track.clientHeight;
-  const aspect = img.naturalWidth / img.naturalHeight;
-  const idealWidth = trackHeight * aspect;
-  const maxAllowed = track.clientWidth * 0.82;
-  if(idealWidth > maxAllowed){
-    const fitHeight = maxAllowed / aspect;
-    slide.style.width = maxAllowed + 'px';
-    slide.style.flexBasis = maxAllowed + 'px';
-    slide.style.height = fitHeight + 'px';
-    slide.style.alignSelf = 'flex-start';
-    img.style.width = '100%';
-    img.style.height = '100%';
-  }
+  if(!slide || !track) return;
+  if(!track._carouselAspects) track._carouselAspects = [];
+  const aspect = (img.naturalWidth && img.naturalHeight) ? (img.naturalWidth / img.naturalHeight) : 1;
+  track._carouselAspects.push({ slide, aspect });
+  if(track._carouselAspects.length < track.children.length) return; // still waiting on siblings
+  finalizeCarouselTrack(track);
 };
+
+function finalizeCarouselTrack(track){
+  const baseHeight = track.clientHeight;
+  const maxAllowed = track.clientWidth * 0.82;
+  let finalHeight = 0;
+  track._carouselAspects.forEach(({aspect})=>{
+    const widthAtBase = baseHeight * aspect;
+    const h = widthAtBase > maxAllowed ? (maxAllowed / aspect) : baseHeight;
+    if(h > finalHeight) finalHeight = h;
+  });
+  if(finalHeight > 0 && finalHeight < baseHeight){
+    track.style.height = finalHeight + 'px';
+  }
+  track._carouselAspects.forEach(({slide, aspect})=>{
+    const w = Math.min(finalHeight * aspect, maxAllowed);
+    slide.style.width = w + 'px';
+    slide.style.flexBasis = w + 'px';
+    slide.style.height = finalHeight + 'px';
+    slide.style.alignSelf = 'flex-start';
+    const img = slide.querySelector('img');
+    if(img){ img.style.width = '100%'; img.style.height = '100%'; }
+  });
+}
 
 window.onPostScroll = function(id){
   const track = document.getElementById(`ptrack-${id}`);
