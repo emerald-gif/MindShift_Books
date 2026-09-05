@@ -794,7 +794,9 @@ async function loadMyProfile(){
   }catch{ myProfile = { name: fallbackName, photo: fallbackPhoto }; }
 }
 
+let authCallSeq = 0;
 onAuthStateChanged(auth, async user => {
+  const seq = ++authCallSeq; // ignore stale work if a newer auth event supersedes this one
   currentUser = user;
   const isAuth = !!user;
   try{
@@ -845,12 +847,42 @@ onAuthStateChanged(auth, async user => {
     notif.clearNotifications();
     userCategories = [];
   }
+  if(seq !== authCallSeq) return; // a newer auth event has already taken over
   renderGrid();
   loadPublishedArticles();
   loadPublishedPosts();
   const p = new URLSearchParams(location.search);
   if(p.get('id')) location.href = `/article-read?id=${p.get('id')}`;
 });
+
+// Safety net: if the feed is still showing its skeleton after 8s (dropped
+// connection, slow Firestore, etc.), stop spinning forever and offer a retry.
+setTimeout(()=>{
+  const grid = document.getElementById('grid');
+  if(grid && grid.querySelector('.skel-card')){
+    grid.innerHTML = `<div class="no-res" style="display:flex">
+      <svg width="44" height="44" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="m21 21-4.35-4.35"/></svg>
+      <p>Could not load the feed.<br>Check your connection and try again.</p>
+      <button onclick="retryLoadFeed()" style="margin-top:12px;background:var(--p);color:#fff;border:none;padding:10px 20px;border-radius:99px;font-size:13px;font-weight:700;cursor:pointer">Retry</button>
+    </div>`;
+  }
+}, 8000);
+
+window.retryLoadFeed = function(){
+  showSkeletons(4);
+  loadPublishedArticles();
+  loadPublishedPosts();
+  setTimeout(()=>{
+    const grid = document.getElementById('grid');
+    if(grid && grid.querySelector('.skel-card')){
+      grid.innerHTML = `<div class="no-res" style="display:flex">
+        <svg width="44" height="44" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="m21 21-4.35-4.35"/></svg>
+        <p>Still having trouble loading.<br>Check your connection and try again.</p>
+        <button onclick="retryLoadFeed()" style="margin-top:12px;background:var(--p);color:#fff;border:none;padding:10px 20px;border-radius:99px;font-size:13px;font-weight:700;cursor:pointer">Retry</button>
+      </div>`;
+    }
+  }, 8000);
+};
 
 /* ── FEED TAB SWITCHING ── */
 /* ── FEED TAB SWITCHING ── */
@@ -1458,19 +1490,25 @@ function buildPostCardHtml(p){
 }
 
 // Wide/landscape images, when forced to the row's fixed height, can end up
-// far wider than the screen. Cap only those slides to a sane max width and
-// letterbox the image inside it — normal/portrait images are left untouched.
+// far wider than the screen. Cap that slide's width AND shrink its height to
+// match, so it sits snug (like the single-image case) with no gray bars —
+// normal/portrait images never hit this branch and are untouched.
 window.fitCarouselSlide = function(img){
   const slide = img.closest('.pcard-slide');
   const track = img.closest('.pcard-track');
   if(!slide || !track || !img.naturalWidth || !img.naturalHeight) return;
   const trackHeight = track.clientHeight;
-  const idealWidth = trackHeight * (img.naturalWidth / img.naturalHeight);
+  const aspect = img.naturalWidth / img.naturalHeight;
+  const idealWidth = trackHeight * aspect;
   const maxAllowed = track.clientWidth * 0.82;
   if(idealWidth > maxAllowed){
+    const fitHeight = maxAllowed / aspect;
     slide.style.width = maxAllowed + 'px';
     slide.style.flexBasis = maxAllowed + 'px';
+    slide.style.height = fitHeight + 'px';
+    slide.style.alignSelf = 'flex-start';
     img.style.width = '100%';
+    img.style.height = '100%';
   }
 };
 

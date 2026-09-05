@@ -877,19 +877,25 @@ function esc(str){
 }
 
 // Wide/landscape images, when forced to the row's fixed height, can end up
-// far wider than the screen. Cap only those slides to a sane max width and
-// letterbox the image inside it — normal/portrait images are left untouched.
+// far wider than the screen. Cap that slide's width AND shrink its height to
+// match, so it sits snug (like the single-image case) with no gray bars —
+// normal/portrait images never hit this branch and are untouched.
 window.fitCarouselSlide = function(img){
   const slide = img.closest('.post-carousel-slide');
   const track = img.closest('.post-carousel-track');
   if(!slide || !track || !img.naturalWidth || !img.naturalHeight) return;
   const trackHeight = track.clientHeight;
-  const idealWidth = trackHeight * (img.naturalWidth / img.naturalHeight);
+  const aspect = img.naturalWidth / img.naturalHeight;
+  const idealWidth = trackHeight * aspect;
   const maxAllowed = track.clientWidth * 0.82;
   if(idealWidth > maxAllowed){
+    const fitHeight = maxAllowed / aspect;
     slide.style.width = maxAllowed + 'px';
     slide.style.flexBasis = maxAllowed + 'px';
+    slide.style.height = fitHeight + 'px';
+    slide.style.alignSelf = 'flex-start';
     img.style.width = '100%';
+    img.style.height = '100%';
   }
 };
 

@@ -649,7 +649,9 @@ function initSocialLinksUI(){
 initSocialLinksUI();
 
 /* ── AUTH ── */
+let authCallSeq = 0;
 onAuthStateChanged(auth, async user => {
+  const seq = ++authCallSeq; // ignore this run if a newer auth event starts before it finishes
   currentUser = user;
 
   // Sidebar auth-only / guest-only sections (independent of whose profile is being viewed)
@@ -682,9 +684,11 @@ onAuthStateChanged(auth, async user => {
   }
 
   const uid = resolvedUid || (user ? user.uid : null);
-  if(!uid){ window.location.href='/login'; return; }
+  if(!uid){ if(seq===authCallSeq) window.location.href='/login'; return; }
+  if(seq !== authCallSeq) return; // a newer auth event has since superseded this one
   isOwner = user && user.uid === uid;
   await loadProfile(uid);
+  if(seq !== authCallSeq) return; // stale — a newer call already re-rendered the page
   if(isOwner) initPickerHandlers();
 
   // For non-owner visitors: load their own profile so notifications have correct actorUsername
@@ -1039,12 +1043,17 @@ window.fitCarouselSlide = function(img){
   const track = img.closest('.pcard-track');
   if(!slide || !track || !img.naturalWidth || !img.naturalHeight) return;
   const trackHeight = track.clientHeight;
-  const idealWidth = trackHeight * (img.naturalWidth / img.naturalHeight);
+  const aspect = img.naturalWidth / img.naturalHeight;
+  const idealWidth = trackHeight * aspect;
   const maxAllowed = track.clientWidth * 0.82;
   if(idealWidth > maxAllowed){
+    const fitHeight = maxAllowed / aspect;
     slide.style.width = maxAllowed + 'px';
     slide.style.flexBasis = maxAllowed + 'px';
+    slide.style.height = fitHeight + 'px';
+    slide.style.alignSelf = 'flex-start';
     img.style.width = '100%';
+    img.style.height = '100%';
   }
 };
 
