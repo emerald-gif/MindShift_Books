@@ -463,9 +463,9 @@ header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   <div class="welcome-nudge-ico">🚀</div>
   <div class="welcome-nudge-txt">
     <strong>Welcome to MindShift Books!</strong>
-    <span>We also help you build a resume that gets interviews — totally free.</span>
+    <span>You've got a personalized feed now — articles picked for what you're into.</span>
   </div>
-  <button class="welcome-nudge-cta" onclick="goResume()">Build mine →</button>
+  <button class="welcome-nudge-cta" onclick="goToFeed()">See my feed →</button>
 </div>
 
 <!-- AUTH SHEET -->
@@ -473,7 +473,7 @@ header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 <div class="auth-sheet" id="authSheet">
   <div class="sheet-bar"></div>
   <h3>Join MindShift Books Free 🚀</h3>
-  <p>Create a free account to like and save articles, get personalized career tips, and build your winning resume.</p>
+  <p>Create a free account to like and save articles, follow your favorite authors, and get a feed picked just for you.</p>
   <div class="auth-sheet-btns">
     <a href="/signup" class="ash-su" id="authSignupBtn">✨ Create free account</a>
     <a href="/login" class="ash-li" id="authLoginBtn">I already have an account</a>
@@ -870,7 +870,7 @@ function getGatedContent(html){
     <div class="art-gate">
       <div class="art-gate-ico">🔒</div>
       <h3>Continue Reading Free</h3>
-      <p>Create a free MindShift Books account to read the full article, like posts, save articles, and get personalized career tips.</p>
+      <p>Create a free MindShift Books account to read the full article, like posts, save articles, and get a feed picked for you.</p>
       <div class="art-gate-btns">
         <a href="/login?redirect=${redirect}" class="gate-li">Log in</a>
         <a href="/signup?redirect=${redirect}" class="gate-su">✨ Sign up free</a>
@@ -1342,7 +1342,7 @@ window.closeShare=function(){
 };
 window.doShare=function(platform){
   const url=encodeURIComponent(location.href);
-  const txt=encodeURIComponent((article?article.title:'Career article')+' — MindShift Books');
+  const txt=encodeURIComponent((article?article.title:'Article')+' — MindShift Books');
   if(artId){
     const shRef=doc(db,'articleShares',artId);
     updateDoc(shRef,{count:increment(1)}).catch(()=>setDoc(shRef,{count:1},{merge:true}).catch(()=>{}));
@@ -1360,19 +1360,15 @@ window.doShare=function(platform){
 /* ══════════════════════════════════════
    DOWNLOAD AS PDF
    ══════════════════════════════════════ */
-let _planGateCache = null; // { plan, gates } — cached after first check this session
+// Article downloads aren't gated behind a paid plan right now — everything
+// is free while there's no premium tier live. (This used to call a
+// /api/plan-config endpoint that was never actually built on the server,
+// so it silently failed closed and blocked downloads for everyone —
+// unlocked here instead of leaving that dead, broken check in place.)
 async function checkArticleDownloadAllowed() {
-  if (_planGateCache) return _planGateCache.gates.articleDownload;
-  try {
-    const token = await currentUser.getIdToken();
-    const res   = await fetch('/api/plan-config', { headers: { 'Authorization': `Bearer ${token}` } });
-    const data  = await res.json();
-    _planGateCache = data;
-    return !!(data.gates && data.gates.articleDownload);
-  } catch (e) {
-    return false; // fail closed — if we can't confirm the plan, don't claim it's unlocked
-  }
+  return true;
 }
+
 
 window.openDownloadSheet=async function(){
   if(!currentUser){ openAuth(); return; }
@@ -1565,7 +1561,7 @@ async function generateArticlePdf(){
       {
         stack:[
           {text:'MindShift Books', style:'brandName'},
-          {text:'AI-Powered Career Platform', style:'brandTag'}
+          {text:'Ideas Worth Thinking About', style:'brandTag'}
         ],
         margin:[logoData?8:0,0,0,0]
       }
@@ -1596,7 +1592,7 @@ async function generateArticlePdf(){
             ],
             margin:[0,6,0,0]
           },
-          {text:`Generated ${dateStr}  ·  © MindShift Books — build your career with AI`, style:'footerSub', margin:[0,2,0,0]}
+          {text:`Generated ${dateStr}  ·  © MindShift Books`, style:'footerSub', margin:[0,2,0,0]}
         ]
       };
     },
@@ -1905,9 +1901,9 @@ window.dismissWelcome=function(){
   const el=document.getElementById('welcomeNudge');
   if(el){ el.classList.remove('on'); }
 };
-window.goResume=function(){
+window.goToFeed=function(){
   dismissWelcome();
-  window.location.href='/dashboard';
+  window.location.href='/';
 };
 
 </script>

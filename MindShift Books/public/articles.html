@@ -525,9 +525,9 @@ main{max-width:1100px;margin:0 auto}
   <div class="welcome-nudge-ico">🚀</div>
   <div class="welcome-nudge-txt">
     <strong>Welcome to MindShift Books!</strong>
-    <span>We also help you build a resume that gets interviews — totally free.</span>
+    <span>You've got a personalized feed now — articles picked for what you're into.</span>
   </div>
-  <button class="welcome-nudge-cta" onclick="goResume()">Build mine →</button>
+  <button class="welcome-nudge-cta" onclick="goToFeed()">See my feed →</button>
 </div>
 
 <!-- AUTH SHEET -->
@@ -535,7 +535,7 @@ main{max-width:1100px;margin:0 auto}
 <div class="auth-sheet" id="authSheet">
   <div class="sheet-bar"></div>
   <h3>Join MindShift Books Free 🚀</h3>
-  <p>Create a free account to like, save, and share articles, get personalized career tips and build your winning resume.</p>
+  <p>Create a free account to like, save, and share articles, follow your favorite authors, and get a feed picked just for you.</p>
   <div class="auth-sheet-btns">
     <a href="/signup" class="ash-su" id="authSignupBtn">✨ Create free account</a>
     <a href="/login" class="ash-li" id="authLoginBtn">I already have an account</a>
@@ -701,7 +701,7 @@ function inviteCardHtml(){
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path stroke-linecap="round" stroke-linejoin="round" d="M22 21v-2a4 4 0 00-3-3.87"/><path stroke-linecap="round" stroke-linejoin="round" d="M16 3.13a4 4 0 010 7.75"/></svg>
     </div>
     <h3>Invite your friends</h3>
-    <p>Tell your friends about MindShift Books — career tools, resume help, and career reads in one place.</p>
+    <p>Tell your friends about MindShift Books — mindset, money, productivity, and relationship reads in one place.</p>
     <button class="invite-btn" onclick="handleInviteFriends()">Invite Friends</button>
   </div>`;
 }
@@ -731,7 +731,7 @@ window.dismissInviteCard = function(){
 };
 window.handleInviteFriends = async function(){
   const shareUrl = location.origin; // just the app's domain — no profile link, no referral tracking
-  const shareData = { title:'Join me on MindShift Books', text:'Career tools, resume help, and career reads — check out MindShift Books.', url: shareUrl };
+  const shareData = { title:'Join me on MindShift Books', text:'Ideas worth thinking about — check out MindShift Books.', url: shareUrl };
   if(navigator.share){
     try{ await navigator.share(shareData); }catch(e){ /* user cancelled — no-op */ }
   } else {
@@ -2061,7 +2061,7 @@ window.doShare = function(platform){
   if(!shareId) return;
   const art = ARTICLES.find(a=>a.id===shareId);
   const url = encodeURIComponent(`${location.origin}/article-read?id=${shareId}`);
-  const txt = encodeURIComponent((art?art.title:'Career article')+' — MindShift Books');
+  const txt = encodeURIComponent((art?art.title:'Article')+' — MindShift Books');
   if(platform==='whatsapp') window.open(`https://wa.me/?text=${txt}%20${url}`,'_blank');
   else if(platform==='twitter') window.open(`https://twitter.com/intent/tweet?text=${txt}&url=${url}`,'_blank');
   else if(platform==='linkedin') window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`,'_blank');
@@ -2149,9 +2149,9 @@ window.dismissWelcome=function(){
   const el=document.getElementById('welcomeNudge');
   if(el) el.classList.remove('on');
 };
-window.goResume=function(){
+window.goToFeed=function(){
   dismissWelcome();
-  window.location.href='/dashboard';
+  window.location.href='/';
 };
 
 </script>
