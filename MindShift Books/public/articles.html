@@ -375,6 +375,13 @@ main{max-width:1100px;margin:0 auto}
 .xacc-info{flex:1;min-width:0}
 .xacc-name{font-size:14px;font-weight:800;color:var(--txt);display:flex;align-items:center;gap:5px}
 .xacc-sub{font-size:12px;color:var(--mute);margin-top:1px}
+.xpost-row{display:flex;align-items:flex-start;gap:12px;padding:12px 16px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .15s}
+.xpost-row:active{background:#eef2ff}
+.xpost-av{width:38px;height:38px;border-radius:50%;object-fit:cover;background:var(--g);flex-shrink:0}
+.xpost-body{flex:1;min-width:0}
+.xpost-name{font-size:13.5px;font-weight:800;color:var(--txt);display:flex;align-items:center;gap:5px}
+.xpost-text{font-size:13px;color:var(--sub);margin-top:3px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.xpost-thumb{width:52px;height:52px;border-radius:10px;object-fit:cover;flex-shrink:0;background:#f1f5f9}
 .xs-empty{text-align:center;padding:60px 24px;color:var(--mute)}
 .xs-empty svg{width:40px;height:40px;margin:0 auto 12px;display:block;opacity:.6;fill:none;stroke:currentColor;stroke-width:1.5}
 .xs-empty p{font-size:14px;font-weight:700}
@@ -583,7 +590,7 @@ main{max-width:1100px;margin:0 auto}
     </button>
     <div class="xs-search-wrap">
       <span class="xs-search-ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="m21 21-4.35-4.35"/></svg></span>
-      <input class="xs-inp" id="xSearchInp" type="text" placeholder="People, articles, or topics" oninput="onXSearchInput()" autocomplete="off"/>
+      <input class="xs-inp" id="xSearchInp" type="text" placeholder="People, articles, or posts" oninput="onXSearchInput()" autocomplete="off"/>
       <button class="xs-clear" id="xClearBtn" onclick="clearXSearch()" style="display:none" aria-label="Clear search">
         <svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
       </button>
@@ -591,11 +598,13 @@ main{max-width:1100px;margin:0 auto}
   </div>
   <div class="xs-tabs" id="xTabs">
     <button class="xs-tab active" data-xtab="articles" onclick="switchXTab('articles')">Articles</button>
+    <button class="xs-tab" data-xtab="posts" onclick="switchXTab('posts')">Posts</button>
     <button class="xs-tab" data-xtab="accounts" onclick="switchXTab('accounts')">People</button>
   </div>
   <div class="xs-body" id="xBody">
     <div id="xDiscover"></div>
     <div id="xArticlesRes" class="xgrid" style="display:none"></div>
+    <div id="xPostsRes" class="xres-list" style="display:none"></div>
     <div id="xAccountsRes" class="xres-list" style="display:none"></div>
     <div class="xs-empty" id="xEmpty" style="display:none">
       <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="m21 21-4.35-4.35"/></svg>
@@ -1449,8 +1458,8 @@ window.handleLike = function(id){
         countEl.textContent = rolled > 0 ? rolled : '';
       }
     } else if(didLike === true){
-      const art = ARTICLES.find(a=>a.id===id);
-      if(art) notif.notifyArticleLike(art);
+      const item = ARTICLES.find(a=>a.id===id) || POSTS.find(p=>p.id===id);
+      if(item) notif.notifyArticleLike(item);
     }
   })();
 };
@@ -1767,18 +1776,33 @@ function renderXAccounts(users, container){
   }).join('');
 }
 
+function renderXPosts(posts, container){
+  container.innerHTML = posts.map(p=>{
+    const thumb = p.images && p.images[0];
+    return `<div class="xpost-row" onclick="closeSearchScreen();goPostRead('${p.id}')">
+      <img class="xpost-av" src="${p.avatar||'logo.jpg'}" alt="" onerror="this.style.background='linear-gradient(135deg,#4f46e5,#06b6d4)'">
+      <div class="xpost-body">
+        <div class="xpost-name">${esc(p.author||'MindShift Books User')}${p.isMindshift?` <span class="vbadge"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>`:''}</div>
+        <div class="xpost-text">${esc(p.text||'')}</div>
+      </div>
+      ${thumb ? `<img class="xpost-thumb" src="${thumb}" alt="" loading="lazy" onerror="this.style.display='none'">` : ''}
+    </div>`;
+  }).join('');
+}
+
 window.onXSearchInput = async function(){
   xQuery = document.getElementById('xSearchInp').value.trim().toLowerCase();
   document.getElementById('xClearBtn').style.display = xQuery ? 'flex' : 'none';
   const discover = document.getElementById('xDiscover');
   const tabs     = document.getElementById('xTabs');
   const artRes   = document.getElementById('xArticlesRes');
+  const postRes  = document.getElementById('xPostsRes');
   const accRes   = document.getElementById('xAccountsRes');
   const empty    = document.getElementById('xEmpty');
 
   if(!xQuery){
     discover.style.display='block'; tabs.classList.remove('show');
-    artRes.style.display='none'; accRes.style.display='none'; empty.style.display='none';
+    artRes.style.display='none'; postRes.style.display='none'; accRes.style.display='none'; empty.style.display='none';
     return;
   }
   discover.style.display='none'; tabs.classList.add('show');
@@ -1789,25 +1813,33 @@ window.onXSearchInput = async function(){
     (a.cat||'').toLowerCase().includes(xQuery)    ||
     (a.author||'').toLowerCase().includes(xQuery)
   );
+  const postMatches = POSTS.filter(p =>
+    (p.text||'').toLowerCase().includes(xQuery) ||
+    (p.author||'').toLowerCase().includes(xQuery)
+  );
   const accMatches = await searchAccountsList(xQuery);
 
-  // Auto-surface whichever tab actually has results for this query
-  if(artMatches.length===0 && accMatches.length>0) _xActiveTab='accounts';
-  else if(accMatches.length===0 && artMatches.length>0) _xActiveTab='articles';
+  // Auto-surface whichever tab actually has results for this query — prefer
+  // keeping the user's current tab if it has any results at all.
+  const counts = { articles: artMatches.length, posts: postMatches.length, accounts: accMatches.length };
+  if(!counts[_xActiveTab]){
+    _xActiveTab = ['articles','posts','accounts'].find(t => counts[t]) || _xActiveTab;
+  }
 
   document.querySelectorAll('.xs-tab').forEach(t=>t.classList.toggle('active', t.dataset.xtab===_xActiveTab));
 
-  const showArt = _xActiveTab==='articles';
-  artRes.style.display = showArt ? 'grid' : 'none';
-  accRes.style.display = showArt ? 'none' : 'block';
+  artRes.style.display  = _xActiveTab==='articles' ? 'grid'  : 'none';
+  postRes.style.display = _xActiveTab==='posts'    ? 'block' : 'none';
+  accRes.style.display  = _xActiveTab==='accounts' ? 'block' : 'none';
 
-  const list = showArt ? artMatches : accMatches;
+  const list = _xActiveTab==='articles' ? artMatches : _xActiveTab==='posts' ? postMatches : accMatches;
   if(!list.length){
     empty.style.display='block';
-    artRes.innerHTML=''; accRes.innerHTML='';
+    artRes.innerHTML=''; postRes.innerHTML=''; accRes.innerHTML='';
   } else {
     empty.style.display='none';
-    if(showArt) renderXGrid(artMatches, artRes);
+    if(_xActiveTab==='articles') renderXGrid(artMatches, artRes);
+    else if(_xActiveTab==='posts') renderXPosts(postMatches, postRes);
     else renderXAccounts(accMatches, accRes);
   }
 };
