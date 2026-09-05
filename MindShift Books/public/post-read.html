@@ -152,7 +152,7 @@ header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .post-carousel-track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .post-carousel-track::-webkit-scrollbar{display:none}
 .post-carousel-slide{flex:0 0 100%;scroll-snap-align:start;aspect-ratio:4/3;background:#f1f5f9}
-.post-carousel-slide img{width:100%;height:100%;object-fit:cover;display:block}
+.post-carousel-slide img{width:100%;height:100%;object-fit:contain;display:block}
 .post-carousel-dots{position:absolute;bottom:12px;left:0;right:0;display:flex;justify-content:center;gap:6px}
 .post-carousel-dots .pdot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.55)}
 .post-carousel-dots .pdot.on{background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.15)}
@@ -424,17 +424,10 @@ body{padding-bottom:64px} /* room for the fixed comment bar on post-read */
 .comments-list-empty-txt{font-size:13px;font-weight:600}
 
 /* ── COMMENT DRAWER ── */
-.comment-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:310;opacity:0;pointer-events:none;transition:opacity .25s;backdrop-filter:blur(3px)}
-.comment-overlay.on{opacity:1;pointer-events:all}
-.comment-sheet{position:fixed;left:0;right:0;bottom:0;z-index:311;background:#fff;border-radius:24px 24px 0 0;max-height:88vh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .34s cubic-bezier(.32,0,.15,1)}
-.comment-sheet.on{transform:none}
-.comment-sheet-top{display:flex;align-items:center;gap:12px;padding:14px 20px 12px;flex-shrink:0;border-bottom:1px solid var(--border)}
-.comment-sheet-title{flex:1;font-size:15px;font-weight:900;color:var(--txt)}
-.comment-sheet-close{width:30px;height:30px;border-radius:50%;background:#f3f4f6;border:none;cursor:pointer;color:var(--sub);display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;transition:all .15s}
-.comment-sheet-close:hover{background:#e5e7eb;color:var(--txt)}
-.comment-sheet-close svg{width:14px;height:14px}
-.comment-sheet-list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 16px 0}
-.comment-sheet-input-wrap{padding:10px 16px 28px;border-top:1px solid var(--border);flex-shrink:0;background:#fff}
+/* ── INLINE COMMENTS (below the post, no more slide-up sheet) ── */
+.comments-inline{margin-top:8px;padding-top:18px;border-top:1px solid var(--border)}
+.comments-inline-title{font-size:15px;font-weight:900;color:var(--txt);margin-bottom:14px}
+.comments-inline-list{margin-bottom:14px}
 .sb-comment{display:flex;align-items:center;gap:7px;padding:10px 18px;border-radius:99px;border:1.5px solid var(--border2);background:#fff;font-size:14px;font-weight:700;color:var(--sub);cursor:pointer;transition:all .2s;flex:1;justify-content:center}
 .sb-comment svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2}
 .sb-comment:hover{border-color:var(--p);color:var(--p)}
@@ -605,23 +598,6 @@ body{padding-bottom:64px} /* room for the fixed comment bar on post-read */
   </button>
   <div class="dl-note">A nicely formatted PDF of this article will be saved to your device.</div>
   <span class="share-cancel" onclick="closeDownload()">Cancel</span>
-</div>
-
-<!-- COMMENT OVERLAY -->
-<div class="comment-overlay" id="commentOverlay" onclick="closeCommentDrawer()"></div>
-<!-- COMMENT SHEET -->
-<div class="comment-sheet" id="commentSheet">
-  <div class="sheet-bar" style="margin:12px auto 0;flex-shrink:0"></div>
-  <div class="comment-sheet-top">
-    <span class="comment-sheet-title">Comments <span id="commentSheetCount" style="font-size:13px;font-weight:600;color:var(--mute)"></span></span>
-    <button class="comment-sheet-close" onclick="closeCommentDrawer()" aria-label="Close">
-      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
-    </button>
-  </div>
-  <div class="comment-sheet-list" id="commentsList">
-    <div class="comments-list-empty"><div class="comments-list-empty-ico">&#128172;</div><div class="comments-list-empty-txt">Be the first to comment</div></div>
-  </div>
-  <div class="comment-sheet-input-wrap" id="commentSheetInput"></div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -903,6 +879,13 @@ async function renderArticle(){
         <button class="act-btn act-save ${isSaved?'saved':''}" id="actSave" onclick="doSave()" aria-label="Save">
           <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
         </button>
+      </div>
+      <div class="comments-inline" id="commentsInline">
+        <div class="comments-inline-title">Comments <span id="commentSheetCount" style="font-size:13px;font-weight:600;color:var(--mute)"></span></div>
+        <div class="comments-inline-list" id="commentsList">
+          <div class="comments-list-empty"><div class="comments-list-empty-ico">&#128172;</div><div class="comments-list-empty-txt">Be the first to comment</div></div>
+        </div>
+        <div id="commentSheetInput"></div>
       </div>
     </div>
   `;
@@ -1187,16 +1170,23 @@ function buildCHTML(c,isReply){
 
 window.onCI=function(el){el.style.height='auto';el.style.height=el.scrollHeight+'px';const b=document.getElementById('mainCPost');if(b)b.disabled=!el.value.trim();};
 window.cancelCI=function(){const i=document.getElementById('mainCI'),a=document.getElementById('mainCA'),b=document.getElementById('mainCPost');if(i){i.value='';i.style.height='auto';}if(a)a.classList.remove('show');if(b)b.disabled=true;};
+// No more slide-up sheet — tapping the comment icon or the "Comment on
+// this post…" bar just scrolls the inline comments section into view and
+// focuses the input right there, which triggers the on-screen keyboard.
 window.openCommentDrawer=function(){
-  document.getElementById('commentOverlay').classList.add('on');
-  document.getElementById('commentSheet').classList.add('on');
-  document.body.style.overflow='hidden';
+  const section=document.getElementById('commentsInline');
+  if(section)section.scrollIntoView({behavior:'smooth',block:'start'});
+  const focusInput=()=>{
+    const ci=document.getElementById('mainCI');
+    if(ci){ci.focus();return true;}
+    return false;
+  };
+  if(!focusInput()){
+    // input not built yet (comments still loading) — try again shortly
+    setTimeout(focusInput,400);
+  }
 };
-window.closeCommentDrawer=function(){
-  document.getElementById('commentOverlay').classList.remove('on');
-  document.getElementById('commentSheet').classList.remove('on');
-  document.body.style.overflow='';
-};
+window.closeCommentDrawer=function(){};
 window.scrollToComments=window.openCommentDrawer;
 
 window.submitComment=async function(){
