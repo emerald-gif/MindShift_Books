@@ -865,36 +865,27 @@ async function loadStats(){
     if(el) el.textContent = '0';
   }
 
-  // Follower / following counts — read from cached fields on the users doc (zero extra reads).
-  // If the fields don't exist yet (old accounts), fall back to a one-time getDocs count.
+  // Follower / following counts — always computed fresh from the follows
+  // collection (the source of truth), then the cached fields on the user
+  // doc are refreshed in the background. This keeps the numbers correct
+  // even if a previous increment/decrement write ever failed silently.
   try{
-    const hasFollowerCount = typeof profileData.followerCount === 'number';
-    const hasFollowingCount = typeof profileData.followingCount === 'number';
-
-    if(hasFollowerCount){
-      const el = document.getElementById('statFollowers');
-      if(el) el.textContent = profileData.followerCount;
-    } else {
-      // First-time fallback: count the follows collection, then cache the result
-      const folQ = query(collection(db,'follows'), where('followingId','==',uid));
-      const folSnap = await getDocs(folQ);
-      const count = folSnap.size;
-      const el = document.getElementById('statFollowers');
-      if(el) el.textContent = count;
-      // Cache it so next load is instant
-      try{ await setDoc(doc(db,'users',uid),{followerCount:count},{merge:true}); }catch{}
+    const folQ = query(collection(db,'follows'), where('followingId','==',uid));
+    const folSnap = await getDocs(folQ);
+    const followerCount = folSnap.size;
+    const fe = document.getElementById('statFollowers');
+    if(fe) fe.textContent = followerCount;
+    if(profileData.followerCount !== followerCount){
+      try{ await setDoc(doc(db,'users',uid),{followerCount},{merge:true}); }catch{}
     }
 
-    if(hasFollowingCount){
-      const el = document.getElementById('statFollowing');
-      if(el) el.textContent = profileData.followingCount;
-    } else {
-      const ingQ = query(collection(db,'follows'), where('followerId','==',uid));
-      const ingSnap = await getDocs(ingQ);
-      const count = ingSnap.size;
-      const el = document.getElementById('statFollowing');
-      if(el) el.textContent = count;
-      try{ await setDoc(doc(db,'users',uid),{followingCount:count},{merge:true}); }catch{}
+    const ingQ = query(collection(db,'follows'), where('followerId','==',uid));
+    const ingSnap = await getDocs(ingQ);
+    const followingCount = ingSnap.size;
+    const ie = document.getElementById('statFollowing');
+    if(ie) ie.textContent = followingCount;
+    if(profileData.followingCount !== followingCount){
+      try{ await setDoc(doc(db,'users',uid),{followingCount},{merge:true}); }catch{}
     }
   }catch(e){
     console.warn('loadStats counts failed:', e?.code);
