@@ -47,13 +47,14 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 /* ── PROFILE CARD ── */
 .profile-card{background:var(--card);border-radius:0 0 28px 28px;
   padding:0 16px 22px;border-bottom:1.5px solid var(--border);margin-bottom:2px;
-  position:relative;z-index:1;overflow:visible}
+  position:relative;z-index:1;overflow:visible;
+  box-shadow:0 12px 32px -18px rgba(15,23,42,.18)}
 
 /* Avatar sits ON the cover — Pinterest style */
 .avatar-wrap{position:absolute;top:-44px;left:16px;z-index:10}
 .avatar{width:84px;height:84px;border-radius:50%;border:3.5px solid var(--card);
   overflow:hidden;background:var(--g);
-  box-shadow:0 6px 24px rgba(37,99,235,.3)}
+  box-shadow:0 6px 24px rgba(37,99,235,.3),0 0 0 5px rgba(79,70,229,.08)}
 .avatar img{width:100%;height:100%;object-fit:cover;display:block}
 
 /* ── VERIFIED BADGE — Pinterest style, pinned to avatar corner ── */
@@ -80,10 +81,17 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .name-row{display:flex;align-items:center;gap:7px;margin-bottom:3px;flex-wrap:wrap;padding-left:2px}
 .profile-name{font-size:22px;font-weight:900;color:var(--txt);letter-spacing:-.3px}
 
+/* ── VERIFIED BADGE (brand standard, matches feed cards) ── */
+.vbadge{display:inline-flex;align-items:center;justify-content:center;
+  width:19px;height:19px;border-radius:50%;background:var(--g);flex-shrink:0;
+  box-shadow:0 1px 6px rgba(37,99,235,.4)}
+.vbadge svg{width:10px;height:10px;fill:none;stroke:#fff;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}
+
 /* Official chip */
 .official-chip{display:inline-flex;align-items:center;gap:4px;
   background:#eef2ff;border:1.5px solid #e0e7ff;color:var(--p);
-  font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;letter-spacing:.2px;margin-top:5px}
+  font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;letter-spacing:.2px;margin-top:5px;
+  box-shadow:0 2px 8px -2px rgba(79,70,229,.25)}
 .official-chip svg{width:10px;height:10px}
 
 .profile-tagline{font-size:13.5px;color:var(--p);font-weight:600;margin-bottom:8px}
@@ -186,7 +194,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 
 <!-- COVER -->
 <div class="cover">
-  <img src="kie.jpg" alt="MindShift Books Cover" id="kvCoverImg" onerror="this.style.display='none'">
+  <img src="COVER.jpg" alt="MindShift Books Cover" id="kvCoverImg" onerror="this.style.display='none'">
   <div class="cover-overlay"></div>
 </div>
 
@@ -195,7 +203,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   <!-- Avatar overlapping the cover -->
   <div class="avatar-wrap">
     <div class="avatar">
-      <img src="logo.jpg" alt="MindShift Books" id="kvAvatarImg" onerror="this.style.background='linear-gradient(135deg,#4f46e5,#06b6d4)'">
+      <img src="MINDSHIFT.jpg" alt="MindShift Books" id="kvAvatarImg" onerror="this.style.background='linear-gradient(135deg,#4f46e5,#06b6d4)'">
     </div>
     <div class="avatar-badge">
       <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
@@ -212,6 +220,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 
   <div class="name-row">
     <span class="profile-name" id="kvName">MindShift Books</span>
+    <span class="vbadge" title="Verified"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>
   </div>
 
   <div class="profile-tagline" id="kvTagline">Your Career, Elevated.</div>
@@ -223,7 +232,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   </div>
 
   <div class="profile-bio" id="kvBio" style="margin-top:10px">
-    MindShift Books is Africa's leading career platform — helping professionals land better jobs, write standout resumes, and build careers that pay. Every article is written by our editorial team or approved community experts.
+    MindShift Books is Africa's home for career growth and mindset shift — real frameworks on landing better jobs, building wealth, and thinking like the 1%, backed by our own self-published titles. Every article is written or vetted by our editorial team, so what's here is built to be acted on, not just read.
   </div>
 
   <div class="stats-row">
@@ -265,7 +274,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
 import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection,
-  query, where, getDocs, orderBy, serverTimestamp, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
+  query, where, getDocs, orderBy, serverTimestamp, onSnapshot, increment, limit } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
 
 const fbApp = initializeApp({
   apiKey:"AIzaSyDTn70s1_uIiSOR6lPLY_nKh8Ff1FViFCs",
@@ -323,13 +332,14 @@ async function loadArticles(){
       collection(db,'articles'),
       where('userId','==','official'),
       where('status','==','published'),
-      orderBy('publishedAt','desc')
+      orderBy('publishedAt','desc'),
+      limit(60)
     );
     const snap = await getDocs(q);
 
     if(snap.empty){
       // Fallback: load all published articles from the seed
-      const q2 = query(collection(db,'articles'), where('status','==','published'), orderBy('publishedAt','desc'));
+      const q2 = query(collection(db,'articles'), where('status','==','published'), orderBy('publishedAt','desc'), limit(60));
       const snap2 = await getDocs(q2);
       articles = snap2.docs.map(d=>({id:d.id,...d.data()}));
     } else {
@@ -347,10 +357,14 @@ async function loadArticles(){
 
 async function loadFollowerCount(){
   try{
-    const q = query(collection(db,'follows'), where('followingId','==','official'));
-    // Live listener so count stays accurate without refresh
-    onSnapshot(q, snap=>{
-      document.getElementById('statFollowers').textContent = fmtNum(snap.size);
+    // Reads one denormalized counter (users/official.followerCount) instead of
+    // live-scanning every follow doc for the official account. Every other
+    // follow/unfollow site in the app (articles.html, profile.html, etc.)
+    // already keeps users/{uid}.followerCount in sync on toggle — toggleFollow()
+    // below does the same for 'official', so this just reads that same field.
+    onSnapshot(doc(db,'users','official'), snap=>{
+      const count = snap.exists() ? (snap.data().followerCount||0) : 0;
+      document.getElementById('statFollowers').textContent = fmtNum(count);
     });
   }catch{ document.getElementById('statFollowers').textContent = '0'; }
 }
@@ -405,6 +419,7 @@ window.toggleFollow = async function(){
   try{
     if(isFollowing){
       await deleteDoc(ref);
+      setDoc(doc(db,'users','official'),{followerCount:increment(-1)},{merge:true}).catch(()=>{});
       isFollowing = false;
       showToast('Unfollowed MindShift Books');
     } else {
@@ -413,11 +428,16 @@ window.toggleFollow = async function(){
         followingId: 'official',
         createdAt: serverTimestamp()
       });
+      setDoc(doc(db,'users','official'),{followerCount:increment(1)},{merge:true}).catch(()=>{});
       isFollowing = true;
       showToast('Following MindShift Books ✓');
     }
     updateFollowBtn();
-    loadFollowerCount();
+    // No re-subscribe needed — loadFollowerCount()'s listener (attached once,
+    // on page load) already updates the instant the increment above commits.
+    // Calling loadFollowerCount() again here, like before, would stack a
+    // fresh live listener on every single click without ever closing the
+    // old one.
   }catch(e){ showToast('Something went wrong'); }
 };
 

@@ -621,7 +621,7 @@ main{max-width:1100px;margin:0 auto}
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
-import { getFirestore, doc, getDoc, setDoc, deleteDoc, updateDoc, increment, onSnapshot, collection, query, where, getDocs, orderBy, addDoc, serverTimestamp, writeBatch, limit } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
+import { getFirestore, doc, getDoc, setDoc, deleteDoc, updateDoc, increment, onSnapshot, collection, query, where, getDocs, orderBy, addDoc, serverTimestamp, writeBatch, limit, startAfter } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
 import { initNotificationUI } from '/notifications.js';
 
 const fbApp = initializeApp({
@@ -744,6 +744,19 @@ window.handleInviteFriends = async function(){
 let ARTICLES = [];
 // Posts — the lighter-weight text+photos content type, merged into the main feed
 let POSTS = [];
+
+/* ── ARTICLE PAGINATION ──
+   loadPublishedArticles() used to fetch every published article with no
+   limit — fine at low volume, but it means every feed load reads the whole
+   collection. It's now paged (ARTICLES_PAGE_SIZE per fetch), with more pages
+   pulled in automatically as the user scrolls near the bottom, or if a
+   category tab's client-side filter comes up thin on what's loaded so far.
+   The feed still looks and scrolls exactly the same — this only changes how
+   many reads happen behind it. */
+const ARTICLES_PAGE_SIZE = 60;
+let _articlesLastDoc = null;
+let _articlesExhausted = false;
+let _articlesLoadingMore = false;
 
 /* ── STATE ── */
 let currentUser = null;
@@ -1175,6 +1188,90 @@ async function loadLikedSet(){
   }catch(e){}
 }
 
+/* ── SHARED VIEW RECORDER (once per device per calendar day per item) ──
+   Same dedup key (viewed_{id}_{date}) that post-read.html / article-read.html
+   use, so whichever moment claims the day's view first — a feed dwell, a
+   like, or actually opening the read page — wins, and nothing double-counts.
+   Returns true if this call is the one that recorded the view. */
+function recordViewOnce(id, metaCollection){
+  if(!id) return false;
+  const now = new Date();
+  const today = `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`;
+  const key = `viewed_${id}_${today}`;
+  try{
+    if(localStorage.getItem(key)) return false;
+    localStorage.setItem(key,'1');
+  }catch(e){ /* storage blocked (private mode etc.) — fall through, count once */ }
+  updateDoc(doc(db,metaCollection,id),{viewCount:increment(1)})
+    .catch(()=>setDoc(doc(db,metaCollection,id),{viewCount:1},{merge:true}).catch(()=>{}));
+  return true;
+}
+
+/* ── FEED IMPRESSION TRACKING (posts only) ──
+   Post cards render their full text in-feed (clamped at 6 lines), so someone
+   can read a short post start-to-finish without ever tapping in. Articles
+   never show body text in the feed (title/author/brief only), so they stay
+   open-to-count — no impression tracking needed there.
+   If a post card sits ~60% visible in the viewport for DWELL_MS while
+   scrolling, that counts as a view via the same recordViewOnce() dedup key
+   the open-page tracker uses. Leaving the viewport before the timer fires
+   cancels it — a fast scroll-by doesn't count. */
+const DWELL_MS = 1750;
+let _feedViewObserver = null;
+const _dwellTimers = new Map();
+
+function getFeedViewObserver(){
+  if(_feedViewObserver) return _feedViewObserver;
+  _feedViewObserver = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      const id = entry.target.dataset.postId;
+      if(!id) return;
+      if(entry.isIntersecting){
+        if(_dwellTimers.has(id)) return; // already timing this card
+        const t = setTimeout(()=>{
+          _dwellTimers.delete(id);
+          recordViewOnce(id, 'postMeta');
+          _feedViewObserver.unobserve(entry.target); // counted — stop watching
+        }, DWELL_MS);
+        _dwellTimers.set(id, t);
+      } else {
+        const t = _dwellTimers.get(id);
+        if(t){ clearTimeout(t); _dwellTimers.delete(id); }
+      }
+    });
+  }, { threshold: 0.6 });
+  return _feedViewObserver;
+}
+
+// Call after every renderGrid() — old cards are gone from the DOM (their
+// pending timers are cleared first), new post cards get freshly observed.
+function observeFeedPostCards(){
+  _dwellTimers.forEach(t=>clearTimeout(t));
+  _dwellTimers.clear();
+  const observer = getFeedViewObserver();
+  document.querySelectorAll('.pcard[data-post-id]').forEach(el=>observer.observe(el));
+}
+
+/* ── INFINITE SCROLL (articles) ──
+   A tiny sentinel div sits at the bottom of the rendered feed. When it
+   scrolls into view, pull the next page of articles — same endless-feed
+   feel as before, just fetched as the user scrolls instead of all at once
+   up front. rootMargin gives it a head start so more loads in before the
+   user actually hits the bottom. */
+let _loadMoreObserver = null;
+function observeLoadMoreSentinel(){
+  const sentinel = document.getElementById('feedEndSentinel');
+  if(!sentinel) return;
+  if(!_loadMoreObserver){
+    _loadMoreObserver = new IntersectionObserver((entries)=>{
+      if(entries.some(e=>e.isIntersecting)) loadMoreArticles();
+    }, { rootMargin: '600px' });
+  } else {
+    _loadMoreObserver.disconnect();
+  }
+  _loadMoreObserver.observe(sentinel);
+}
+
 /* ── FIRESTORE LIKES ── */
 async function userLiked(id){
   return likedSet.has(id);
@@ -1316,7 +1413,7 @@ function buildMediaGridHtml(images, postId){
 
 function buildPostCardHtml(p){
   const carousel = buildMediaGridHtml(p.images, p.id);
-  return `<div class="acard pcard" onclick="goPostRead('${p.id}')">
+  return `<div class="acard pcard" data-post-id="${p.id}" onclick="goPostRead('${p.id}')">
     <div class="acard-body">
       <div class="acard-author" onclick="event.stopPropagation();goAuthor('${p.authorUid||''}',${!!p.isMindshift})">
         <img class="acard-av" src="${p.avatar||'logo.jpg'}" alt="${p.author||'MindShift Books'}" onerror="this.style.background='linear-gradient(135deg,#4f46e5,#06b6d4)'">
@@ -1382,7 +1479,7 @@ function renderGrid(){
   likeCountCache = {};
   if(!list.length){ grid.innerHTML=''; noRes.style.display='block'; return; }
   noRes.style.display='none';
-  const cardsHtml = list.map(a=>{
+  const cardsHtml = list.map((a) => {
     if(a.type==='post') return buildPostCardHtml(a);
     return `
     <div class="acard" onclick="goRead('${a.id}')">
@@ -1431,7 +1528,10 @@ function renderGrid(){
     </div>
   `;
   });
-  grid.innerHTML = withInviteCard(cardsHtml, currentUser ? currentUser.uid : null).join('');
+  grid.innerHTML = withInviteCard(cardsHtml, currentUser ? currentUser.uid : null).join('')
+    + '<div id="feedEndSentinel" style="height:1px"></div>';
+  observeFeedPostCards();
+  observeLoadMoreSentinel();
   list.forEach(a=>{
     if(currentUser){
       const btn = document.getElementById(`lb-${a.id}`);
@@ -1479,6 +1579,10 @@ window.handleLike = function(id){
     } else if(didLike === true){
       const item = ARTICLES.find(a=>a.id===id) || POSTS.find(p=>p.id===id);
       if(item) notif.notifyArticleLike(item);
+      // A like is at least as strong a signal as a glance — count it as a
+      // view too (only on liking, not unliking), sharing the same
+      // day-dedup key as feed dwell / opening the read page.
+      recordViewOnce(id, (item && item.type==='post') ? 'postMeta' : 'articleMeta');
     }
   })();
 };
@@ -1612,6 +1716,7 @@ document.getElementById('filterRow').addEventListener('click', e=>{
   fp.classList.add('active');
   activeFilter = fp.dataset.cat;
   renderGrid();
+  ensureFilteredResultsFilled();
 });
 
 /* ── PROFILE NAV (used by feed avatar taps etc — nav chrome itself now lives in the shared MindShift header/sidebar) ── */
@@ -1632,35 +1737,78 @@ window.goAuthor = function(uid, isMindshift){
 };
 
 /* ── LOAD PUBLISHED ARTICLES FROM FIRESTORE (primary source) ── */
+function mapArticleDoc(d){
+  const x = d.data();
+  return {
+    id: d.id,
+    cat: (x.cat||'CAREERS').toUpperCase(),
+    title: x.title||'',
+    brief: x.brief||'',
+    img: x.cover||x.img||'',
+    read: x.readTime||x.read||'5 min read',
+    publishedAt: x.publishedAt||x.createdAt||null,
+    author: x.authorName||'MindShift Books',
+    avatar: x.authorPhoto||'logo.jpg',
+    authorUid: x.authorUid||x.userId||null,
+    isMindshift: (x.authorUid||x.userId)==='official'
+  };
+}
 async function loadPublishedArticles(){
   try{
     const q = query(
       collection(db,'articles'),
       where('status','==','published'),
-      orderBy('publishedAt','desc')
+      orderBy('publishedAt','desc'),
+      limit(ARTICLES_PAGE_SIZE)
     );
     const snap = await getDocs(q);
     if(snap.empty) return; // nothing published yet — empty state from initial renderGrid() stays up
     // Fully replace with Firestore data — what admin approves is what shows
-    ARTICLES = snap.docs.map(d=>{
-      const x = d.data();
-      return {
-        id: d.id,
-        cat: (x.cat||'CAREERS').toUpperCase(),
-        title: x.title||'',
-        brief: x.brief||'',
-        img: x.cover||x.img||'',
-        read: x.readTime||x.read||'5 min read',
-        publishedAt: x.publishedAt||x.createdAt||null,
-        author: x.authorName||'MindShift Books',
-        avatar: x.authorPhoto||'logo.jpg',
-        authorUid: x.authorUid||x.userId||null,
-        isMindshift: (x.authorUid||x.userId)==='official'
-      };
-    });
+    ARTICLES = snap.docs.map(mapArticleDoc);
+    _articlesLastDoc = snap.docs[snap.docs.length-1];
+    _articlesExhausted = snap.docs.length < ARTICLES_PAGE_SIZE;
     renderGrid();
     _xDiscoverBuilt = false;
   }catch(e){ console.error('Firestore articles error:',e); }
+}
+
+// Pulls the next page and appends it — used by infinite scroll, and by the
+// filter-tab handler when a category's client-side filter comes up thin.
+// Returns the number of new articles added (0 if exhausted or already loading).
+async function loadMoreArticles(){
+  if(_articlesLoadingMore || _articlesExhausted || !_articlesLastDoc) return 0;
+  _articlesLoadingMore = true;
+  try{
+    const q = query(
+      collection(db,'articles'),
+      where('status','==','published'),
+      orderBy('publishedAt','desc'),
+      startAfter(_articlesLastDoc),
+      limit(ARTICLES_PAGE_SIZE)
+    );
+    const snap = await getDocs(q);
+    if(snap.empty){ _articlesExhausted = true; return 0; }
+    ARTICLES = ARTICLES.concat(snap.docs.map(mapArticleDoc));
+    _articlesLastDoc = snap.docs[snap.docs.length-1];
+    _articlesExhausted = snap.docs.length < ARTICLES_PAGE_SIZE;
+    renderGrid();
+    _xDiscoverBuilt = false;
+    return snap.docs.length;
+  }catch(e){ console.error('Firestore load-more articles error:',e); return 0; }
+  finally{ _articlesLoadingMore = false; }
+}
+
+// If a category tab's filtered result looks thin but more articles remain
+// unfetched, keep paging in the background (capped) so the tab doesn't look
+// emptier than it really is — same visual behavior as when everything used
+// to load at once, just paid for lazily instead of upfront.
+async function ensureFilteredResultsFilled(){
+  let guard = 0;
+  while(activeFilter!=='all' && !searchQuery && getFiltered().length < 20 && !_articlesExhausted && guard < 5){
+    const added = await loadMoreArticles();
+    if(!added) break;
+    guard++;
+  }
 }
 
 /* ── LOAD PUBLISHED POSTS FROM FIRESTORE ── */
@@ -1762,7 +1910,13 @@ window.clearXSearch = function(){
   inp.focus();
 };
 
+// Typing any of these should immediately surface the verified official
+// account, pinned first — not just the literal word "official" like before,
+// which meant searching "MindShift" or "MindShift Books" (its actual name)
+// never found it.
+const OFFICIAL_ALIASES = ['official','mindshift','mindshift books'];
 async function searchAccountsList(q){
+  const isOfficialMatch = OFFICIAL_ALIASES.some(alias => alias.includes(q) || q.includes(alias));
   if(!_allUsersCache){
     try{
       const snap = await getDocs(query(collection(db,'users'), limit(200)));
@@ -1770,13 +1924,14 @@ async function searchAccountsList(q){
     }catch(e){ _allUsersCache = []; }
   }
   const matches = _allUsersCache.filter(u=>{
+    if(u.uid==='official') return false; // canonical entry added below — avoid a duplicate
     const name=(u.name||u.displayName||'').toLowerCase();
     const job=(u.jobTitle||'').toLowerCase();
     const cat=(u.category||'').toLowerCase();
     return name.includes(q) || job.includes(q) || cat.includes(q);
   });
-  if('official'.includes(q)){
-    matches.unshift({uid:'official', name:'MindShift Books', photo:'logo.jpg', jobTitle:'Official Account', isMindshift:true});
+  if(isOfficialMatch){
+    matches.unshift({uid:'official', name:'MindShift Books', photo:'MINDSHIFT.jpg', jobTitle:'Official Account', isMindshift:true});
   }
   return matches;
 }
