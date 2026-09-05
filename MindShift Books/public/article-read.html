@@ -672,7 +672,9 @@ if(!article){
           authorUid: x.authorUid||x.userId||null,
           authorUsername: x.authorUsername||'',
           isMindshift: x.userId==='official'||x.isMindshift,
-          content: x.body||''
+          content: x.body||'',
+          commentsOff: !!x.commentsOff,
+          hideLikeCount: !!x.hideLikeCount
         };
         document.title = article.title + ' · MindShift Books';
         document.getElementById('hdrTitle').textContent = article.title;
@@ -829,7 +831,7 @@ async function renderArticle(){
           <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
           <span id="actLikeTxt">${likeCount||0}</span>
         </button>
-        <button class="act-btn" id="actComment" onclick="openCommentDrawer()" style="gap:5px">
+        <button class="act-btn" id="actComment" onclick="openCommentDrawer()" style="gap:5px${article.commentsOff?';opacity:.45':''}" ${article.commentsOff?'title="Comments are off"':''}>
           <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
           <span id="actCommentTxt">0</span>
         </button>
@@ -856,7 +858,15 @@ async function renderArticle(){
   syncDownloadUI();
   startProgress();
   injectRatingCard();
-  loadComments();
+  // Comment data is never deleted when comments are turned off — we just
+  // don't query/render it, so re-enabling instantly brings everything back.
+  if(!article.commentsOff) loadComments();
+  else {
+    const listEl=document.getElementById('commentsList');
+    const inputEl=document.getElementById('commentSheetInput');
+    if(listEl) listEl.innerHTML = `<div class="comments-list-empty" style="padding:24px 0"><div class="comments-list-empty-ico">&#128172;</div><div class="comments-list-empty-txt">Comments are off for this article</div></div>`;
+    if(inputEl) inputEl.innerHTML = '';
+  }
   renderDownloadLockBadge();
 }
 
@@ -910,7 +920,9 @@ function syncLikeUI(){
   const el=document.getElementById('actLike');
   if(el) el.classList.toggle('liked',isLiked);
   const txt=document.getElementById('actLikeTxt');
-  if(txt) txt.textContent = likeCount||0;
+  if(!txt) return;
+  const hide = article && article.hideLikeCount && !(currentUser && article.authorUid===currentUser.uid);
+  txt.textContent = hide ? '' : (likeCount||0);
 }
 function syncSaveUI(){
   const el=document.getElementById('actSave');

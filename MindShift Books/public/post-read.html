@@ -676,7 +676,9 @@ if(!article){
           avatar: x.authorPhoto||'logo.jpg',
           authorUid: x.authorUid||null,
           authorUsername: x.authorUsername||'',
-          isMindshift: x.authorUid==='official'
+          isMindshift: x.authorUid==='official',
+          commentsOff: !!x.commentsOff,
+          hideLikeCount: !!x.hideLikeCount
         };
         document.title = (article.text ? article.text.slice(0,60) : 'Post') + ' · MindShift Books';
         document.getElementById('hdrTitle').textContent = 'Post';
@@ -844,7 +846,7 @@ async function renderArticle(){
           <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
           <span id="actLikeTxt">${likeCount||0}</span>
         </button>
-        <button class="act-btn" id="actComment" onclick="openCommentDrawer()" style="gap:5px">
+        <button class="act-btn" id="actComment" onclick="openCommentDrawer()" style="gap:5px${article.commentsOff?';opacity:.45':''}" ${article.commentsOff?'title="Comments are off"':''}>
           <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
           <span id="actCommentTxt">0</span>
         </button>
@@ -855,19 +857,30 @@ async function renderArticle(){
           <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
         </button>
       </div>
+      ${article.commentsOff ? `
+      <div class="comments-inline" id="commentsInline">
+        <div class="comments-inline-title">Comments</div>
+        <div class="comments-off-msg" style="text-align:center;padding:24px 20px;color:var(--mute);font-size:13.5px">
+          Comments are off for this post.
+        </div>
+      </div>` : `
       <div class="comments-inline" id="commentsInline">
         <div class="comments-inline-title">Comments <span id="commentSheetCount" style="font-size:13px;font-weight:600;color:var(--mute)"></span></div>
         <div class="comments-inline-list" id="commentsList">
           <div class="comments-list-empty"><div class="comments-list-empty-ico">&#128172;</div><div class="comments-list-empty-txt">Be the first to comment</div></div>
         </div>
         <div id="commentSheetInput"></div>
-      </div>
+      </div>`}
     </div>
   `;
 
   syncLikeUI();
   syncSaveUI();
-  loadComments();
+  const persistentBar = document.getElementById('postCommentBar');
+  if(persistentBar) persistentBar.style.display = article.commentsOff ? 'none' : '';
+  // Comment data is never deleted when comments are turned off — we just
+  // don't query/render it, so re-enabling instantly brings everything back.
+  if(!article.commentsOff) loadComments();
 }
 
 function esc(str){
@@ -979,7 +992,10 @@ function syncLikeUI(){
   const el=document.getElementById('actLike');
   if(el) el.classList.toggle('liked',isLiked);
   const txt=document.getElementById('actLikeTxt');
-  if(txt) txt.textContent = likeCount||0;
+  if(!txt) return;
+  // hideLikeCount hides the number from everyone except the post's own author
+  const hide = article && article.hideLikeCount && !(currentUser && article.authorUid===currentUser.uid);
+  txt.textContent = hide ? '' : (likeCount||0);
 }
 function syncSaveUI(){
   const el=document.getElementById('actSave');
@@ -1190,6 +1206,7 @@ window.cancelCI=function(){const i=document.getElementById('mainCI'),b=document.
 // The comment box is the persistent bottom bar itself now — tapping the
 // comment icon just scrolls the comments into view and focuses that bar.
 window.openCommentDrawer=function(){
+  if(article && article.commentsOff) return;
   const section=document.getElementById('commentsInline');
   if(section)section.scrollIntoView({behavior:'smooth',block:'start'});
   if(!currentUser){openAuth();return;}

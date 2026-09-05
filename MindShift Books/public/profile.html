@@ -179,7 +179,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .articles-section{padding:0 0 80px}
 .acard-list{display:flex;flex-direction:column}
 /* ── FEED-STYLE CARD (matches articles.html / post-read.html) ── */
-.acard{display:flex;flex-direction:row;align-items:flex-start;gap:14px;background:#fff;padding:20px 16px;
+.acard{position:relative;display:flex;flex-direction:row;align-items:flex-start;gap:14px;background:#fff;padding:20px 16px;
   cursor:pointer;border-bottom:1px solid var(--border);transition:background .18s;position:relative;
   -webkit-tap-highlight-color:transparent;max-width:100%;overflow:hidden}
 .acard:active:not(:has(button:active,.acard-author:active)){background:#eef2ff}
@@ -211,6 +211,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .acard-save.saved{color:var(--p)}
 .acard-save.saved svg{fill:var(--p);stroke:var(--p)}
 .acard-menu-wrap{position:relative;margin-left:auto}
+.acard-menu-wrap.corner{position:absolute;top:16px;right:14px;margin-left:0;z-index:5}
 .acard-menu-btn{background:none;border:none;cursor:pointer;padding:4px 6px;border-radius:8px;color:var(--mute)}
 .acard-menu-btn svg{width:16px;height:16px}
 .acard-menu-drop{position:absolute;right:0;top:calc(100% + 4px);background:#fff;border:1px solid var(--border);
@@ -221,6 +222,31 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   padding:9px 10px;border-radius:8px;font-size:13px;font-weight:600;color:var(--txt);text-align:left;width:100%}
 .acard-menu-item:hover{background:#f1f5f9}
 .acard-menu-item svg{width:15px;height:15px;flex-shrink:0}
+/* ── MANAGE POST/ARTICLE SHEET ── */
+.manage-hdr{display:flex;align-items:center;justify-content:space-between;padding:0 20px}
+.manage-close{background:none;border:none;cursor:pointer;padding:6px;border-radius:50%;color:var(--mute);
+  display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
+.manage-close:hover{background:#f1f5f9;color:var(--txt)}
+.manage-close svg{width:18px;height:18px;stroke-width:2.3}
+.manage-body{padding:8px 12px 4px}
+.manage-row{display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;cursor:pointer;
+  padding:13px 10px;border-radius:12px;font-size:14.5px;font-weight:600;color:var(--txt);text-align:left;
+  -webkit-tap-highlight-color:transparent}
+.manage-row:hover{background:#f8fafc}
+.manage-row svg{width:19px;height:19px;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:2;color:var(--sub)}
+.manage-row-danger{color:var(--red)}
+.manage-row-danger svg{color:var(--red)}
+.manage-toggle-row{cursor:default}
+.manage-toggle-row:hover{background:none}
+.manage-toggle-row span:first-of-type{flex:1}
+.manage-switch{position:relative;display:inline-block;width:42px;height:24px;flex-shrink:0}
+.manage-switch input{opacity:0;width:0;height:0}
+.manage-switch-track{position:absolute;cursor:pointer;inset:0;background:#e2e8f0;border-radius:99px;transition:.2s}
+.manage-switch-track::before{content:'';position:absolute;height:18px;width:18px;left:3px;top:3px;
+  background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.manage-switch input:checked + .manage-switch-track{background:var(--p)}
+.manage-switch input:checked + .manage-switch-track::before{transform:translateX(18px)}
+.delete-warning{font-size:13.5px;color:var(--sub);line-height:1.5;padding:0 10px 12px}
 /* ── POST CARD (text posts) ── */
 .pcard-text{font-size:14.5px;color:var(--txt);line-height:1.5;white-space:pre-wrap;word-break:break-word;
   display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden}
@@ -526,6 +552,67 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   <div class="sheet-handle"></div>
   <div class="sheet-title" id="followSheetTitle">Followers</div>
   <div class="follow-list" id="followList"></div>
+</div>
+
+<!-- MANAGE POST/ARTICLE SHEET -->
+<div class="sheet-bg" id="manageBg" onclick="closeManageSheet()"></div>
+<div class="sheet" id="manageSheet">
+  <div class="manage-hdr">
+    <div class="sheet-title" id="manageSheetTitle" style="border-bottom:none;padding:16px 0 4px">Manage post</div>
+    <button class="manage-close" onclick="closeManageSheet()" aria-label="Close">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="manage-body">
+    <button class="manage-row" id="manageEditBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4z"/></svg>
+      <span>Edit</span>
+    </button>
+    <div class="manage-row manage-toggle-row">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+      <span>Turn off commenting</span>
+      <label class="manage-switch">
+        <input type="checkbox" id="manageCommentsToggle" onchange="onManageCommentsToggle(this.checked)">
+        <span class="manage-switch-track"></span>
+      </label>
+    </div>
+    <div class="manage-row manage-toggle-row">
+      <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+      <span>Hide like count</span>
+      <label class="manage-switch">
+        <input type="checkbox" id="manageLikeCountToggle" onchange="onManageLikeCountToggle(this.checked)">
+        <span class="manage-switch-track"></span>
+      </label>
+    </div>
+    <button class="manage-row" onclick="copyManageLink()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+      <span>Copy link</span>
+    </button>
+    <button class="manage-row manage-row-danger" onclick="confirmDeleteFromManage()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+      <span>Delete</span>
+    </button>
+  </div>
+</div>
+
+<!-- DELETE CONFIRM SHEET -->
+<div class="sheet-bg" id="deleteBg" onclick="closeDeleteConfirm()"></div>
+<div class="sheet" id="deleteSheet" style="padding-bottom:24px">
+  <div class="manage-hdr">
+    <div class="sheet-title" id="deleteSheetTitle" style="border-bottom:none;padding:16px 0 4px">Delete this post?</div>
+    <button class="manage-close" onclick="closeDeleteConfirm()" aria-label="Close">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="manage-body">
+    <p class="delete-warning">This can't be undone. Likes and comments on it will be gone for good.</p>
+    <button class="manage-row manage-row-danger" onclick="doDeleteConfirmed()">
+      <span>Delete</span>
+    </button>
+    <button class="manage-row" onclick="closeDeleteConfirm()">
+      <span>Cancel</span>
+    </button>
+  </div>
 </div>
 
 <!-- TOAST -->
@@ -1101,6 +1188,14 @@ function renderArticles(){
   const authorName = esc(profileData.name || 'MindShift Books User');
   const authorAv = profileData.photo || 'logo.jpg';
 
+  // Manage ("⋯") button — only on your own profile, on your own content.
+  const manageBtnHtml = (s) => isOwner ? `
+    <div class="acard-menu-wrap corner" onclick="event.stopPropagation()">
+      <button class="acard-menu-btn" onclick="openManageSheet('${s.id}','${s.type}')" title="Manage">
+        <svg fill="currentColor" viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+      </button>
+    </div>` : '';
+
   const cardsHtml = filtered.map(s=>{
     if(s.type==='post'){
       const media = buildMediaGridHtml(s.images, s.id);
@@ -1111,6 +1206,7 @@ function renderArticles(){
             <span class="acard-author-name">${authorName}</span>
             <span class="acard-author-dot">·</span>
             <span class="acard-author-date">${fmtRel(s.publishedAt||s.createdAt)}</span>
+            ${manageBtnHtml(s)}
           </div>
           ${s.text ? `<div class="pcard-text">${esc(s.text)}</div>` : ''}
           ${media}
@@ -1122,10 +1218,14 @@ function renderArticles(){
             <button class="acard-save ${savedSet.has(s.id)?'saved':''}" id="sv-${s.id}" onclick="event.stopPropagation();handleSave('${s.id}')" title="Save post">
               <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
             </button>
+            ${s.commentsOff ? `
+            <span class="pcard-comment" style="opacity:.4;cursor:default" title="Comments are off" onclick="event.stopPropagation()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+            </span>` : `
             <button class="pcard-comment" onclick="event.stopPropagation();openArticle('${s.id}','post')" title="Comment">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
               <span id="pcc-${s.id}"></span>
-            </button>
+            </button>`}
           </div>
         </div>
       </div>`;
@@ -1137,6 +1237,7 @@ function renderArticles(){
           <span class="acard-author-name">${authorName}</span>
           <span class="acard-author-dot">·</span>
           <span class="acard-author-date">${fmtRel(s.publishedAt||s.createdAt)}</span>
+          ${manageBtnHtml(s)}
         </div>
         <div class="acard-meta"><span class="acard-cat">${esc(s.cat||'ARTICLE')}</span></div>
         <div class="acard-title">${esc(s.title||'Untitled')}</div>
@@ -1157,12 +1258,14 @@ function renderArticles(){
 
   sec.innerHTML = `<div class="acard-list">${cardsHtml.join('')}</div>`;
 
-  const ids = filtered.map(s=>s.id);
-  fetchLikeCounts(ids);
-  fetchPostCommentCounts(filtered.filter(s=>s.type==='post').map(s=>s.id));
-  ids.forEach(id=>{
-    const btn = document.getElementById(`lb-${id}`);
-    if(btn) btn.classList.toggle('liked', likedSet.has(id));
+  // hideLikeCount hides the number from everyone except the owner
+  // (isOwner here already means "this is my own profile", so every item
+  // shown on it is mine — no per-item authorUid check needed).
+  fetchLikeCounts(filtered.map(s=>({ id:s.id, hideLikeCount: !!s.hideLikeCount, isOwnerViewing: isOwner })));
+  fetchPostCommentCounts(filtered.filter(s=>s.type==='post' && !s.commentsOff).map(s=>s.id));
+  filtered.forEach(s=>{
+    const btn = document.getElementById(`lb-${s.id}`);
+    if(btn) btn.classList.toggle('liked', likedSet.has(s.id));
   });
 }
 
@@ -1189,18 +1292,25 @@ async function loadLikedSet(){
   }catch(e){}
 }
 
-async function fetchLikeCounts(ids){
-  if(!ids.length) return;
+// items: array of ids (string) OR {id, hideLikeCount, isOwnerViewing} objects.
+// hideLikeCount hides the number from everyone except the owner viewing their
+// own profile — same rule enforced everywhere else this count is shown.
+async function fetchLikeCounts(items){
+  if(!items.length) return;
+  const ids = items.map(it => typeof it==='string' ? it : it.id);
   try{
     const results = await Promise.all(
       ids.map(id => getDoc(doc(db,'articleLikes',id)).catch(()=>null))
     );
     results.forEach((snap,i)=>{
+      const it = items[i];
       const id = ids[i];
       const c = snap&&snap.exists() ? (snap.data().count||0) : 0;
       likeCountCache[id] = c;
       const el = document.getElementById(`lc-${id}`);
-      if(el) el.textContent = c > 0 ? c : (likedSet.has(id) ? 1 : '');
+      if(!el) return;
+      const hide = typeof it==='object' && it.hideLikeCount && !it.isOwnerViewing;
+      el.textContent = hide ? '' : (c > 0 ? c : (likedSet.has(id) ? 1 : ''));
     });
   }catch(e){}
 }
@@ -1227,10 +1337,15 @@ window.handleLike = function(id){
   if(!currentUser){ window.location.href='/login'; return; }
   const btn = document.getElementById(`lb-${id}`);
   const countEl = document.getElementById(`lc-${id}`);
+  const item = allSubmissions.find(a=>a.id===id);
+  // hideLikeCount hides the number from everyone except the item's owner —
+  // isOwner here means "this is my own profile", so if the item's showing
+  // here at all with isOwner true, I'm its author.
+  const hideCount = !!(item && item.hideLikeCount && !isOwner);
   const wasLiked = likedSet.has(id);
   if(wasLiked){ likedSet.delete(id); } else { likedSet.add(id); }
   if(btn) btn.classList.toggle('liked', !wasLiked);
-  if(countEl){
+  if(countEl && !hideCount){
     const cur = likeCountCache[id] || 0;
     const next = Math.max(0, cur + (wasLiked ? -1 : 1));
     likeCountCache[id] = next;
@@ -1241,17 +1356,120 @@ window.handleLike = function(id){
     if(didLike === null){
       if(wasLiked){ likedSet.add(id); } else { likedSet.delete(id); }
       if(btn) btn.classList.toggle('liked', wasLiked);
-      if(countEl){
+      if(countEl && !hideCount){
         const cur = likeCountCache[id] || 0;
         const rolled = Math.max(0, cur + (wasLiked ? 1 : -1));
         likeCountCache[id] = rolled;
         countEl.textContent = rolled > 0 ? rolled : '';
       }
     } else if(didLike === true){
-      const item = allSubmissions.find(a=>a.id===id);
       if(item) notif.notifyArticleLike(item);
     }
   })();
+};
+
+/* ── MANAGE SHEET (edit / delete / comments off / hide like count) ──
+   Only ever opened for items in allSubmissions, which on this page are
+   always the profile owner's own content, so no extra authorUid check
+   is needed here. */
+let _manageId = null;
+let _manageType = null; // 'article' | 'post'
+
+window.openManageSheet = function(id, type){
+  const item = allSubmissions.find(a=>a.id===id);
+  if(!item) return;
+  _manageId = id; _manageType = type;
+  document.getElementById('manageSheetTitle').textContent = type==='post' ? 'Manage post' : 'Manage article';
+  document.getElementById('manageEditBtn').onclick = () => {
+    location.href = type==='post' ? `/create-post?edit=${id}` : `/write?edit=${id}`;
+  };
+  document.getElementById('manageCommentsToggle').checked = !!item.commentsOff;
+  document.getElementById('manageLikeCountToggle').checked = !!item.hideLikeCount;
+  document.getElementById('manageBg').classList.add('show');
+  document.getElementById('manageSheet').classList.add('show');
+};
+
+window.closeManageSheet = function(){
+  document.getElementById('manageBg').classList.remove('show');
+  document.getElementById('manageSheet').classList.remove('show');
+};
+
+window.copyManageLink = function(){
+  if(!_manageId) return;
+  const url = `${location.origin}/${_manageType==='post'?'post-read':'article-read'}?id=${_manageId}`;
+  navigator.clipboard.writeText(url).then(()=>showToast('Link copied! 🎉')).catch(()=>showToast('Copy failed'));
+};
+
+window.onManageCommentsToggle = async function(checked){
+  if(!_manageId) return;
+  const coll = _manageType==='post' ? 'posts' : 'articles';
+  const item = allSubmissions.find(a=>a.id===_manageId);
+  try{
+    await updateDoc(doc(db,coll,_manageId),{ commentsOff: checked });
+    if(item) item.commentsOff = checked;
+    showToast(checked ? 'Comments turned off' : 'Comments turned back on');
+    renderArticles();
+  }catch(e){
+    console.error('toggle commentsOff failed:', e);
+    document.getElementById('manageCommentsToggle').checked = !checked;
+    showToast('Could not update — try again');
+  }
+};
+
+window.onManageLikeCountToggle = async function(checked){
+  if(!_manageId) return;
+  const coll = _manageType==='post' ? 'posts' : 'articles';
+  const item = allSubmissions.find(a=>a.id===_manageId);
+  try{
+    await updateDoc(doc(db,coll,_manageId),{ hideLikeCount: checked });
+    if(item) item.hideLikeCount = checked;
+    showToast(checked ? 'Like count hidden from others' : 'Like count is visible again');
+    renderArticles();
+  }catch(e){
+    console.error('toggle hideLikeCount failed:', e);
+    document.getElementById('manageLikeCountToggle').checked = !checked;
+    showToast('Could not update — try again');
+  }
+};
+
+window.confirmDeleteFromManage = function(){
+  if(!_manageId) return;
+  closeManageSheet();
+  document.getElementById('deleteSheetTitle').textContent =
+    _manageType==='post' ? 'Delete this post?' : 'Delete this article?';
+  document.getElementById('deleteBg').classList.add('show');
+  document.getElementById('deleteSheet').classList.add('show');
+};
+
+window.closeDeleteConfirm = function(){
+  document.getElementById('deleteBg').classList.remove('show');
+  document.getElementById('deleteSheet').classList.remove('show');
+};
+
+window.doDeleteConfirmed = async function(){
+  if(!_manageId) return;
+  const id = _manageId, type = _manageType;
+  const coll = type==='post' ? 'posts' : 'articles';
+  closeDeleteConfirm();
+  try{
+    await deleteDoc(doc(db,coll,id));
+    // Best-effort cleanup of associated engagement docs — a missing one
+    // here isn't worth blocking the delete over.
+    deleteDoc(doc(db,'articleLikes',id)).catch(()=>{});
+    deleteDoc(doc(db, type==='post' ? 'postMeta' : 'articleMeta', id)).catch(()=>{});
+    allSubmissions = allSubmissions.filter(a=>a.id!==id);
+    const statEl = document.getElementById('statArticles');
+    if(statEl && type==='article'){
+      const cur = parseInt(statEl.textContent)||0;
+      statEl.textContent = Math.max(0, cur-1);
+    }
+    renderArticles();
+    showToast('Deleted');
+  }catch(e){
+    console.error('delete failed:', e);
+    showToast('Could not delete — try again');
+  }
+  _manageId = null; _manageType = null;
 };
 
 /* ── SAVES ── */

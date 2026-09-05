@@ -959,7 +959,9 @@ async function refreshForYou(){
           author:     x.authorName||'MindShift Books',
           avatar:     x.authorPhoto||'logo.jpg',
           authorUid:  x.authorUid||x.userId||null,
-          isMindshift: (x.authorUid||x.userId)==='official'
+          isMindshift: (x.authorUid||x.userId)==='official',
+          commentsOff: !!x.commentsOff,
+          hideLikeCount: !!x.hideLikeCount
         };
       });
       ARTICLES = shuffleArray(fresh);
@@ -1047,7 +1049,9 @@ async function renderFollowingTab(fresh = false){
         author: x.authorName||'MindShift Books',
         avatar: x.authorPhoto||'logo.jpg',
         authorUid: x.authorUid||x.userId||null,
-        isMindshift: (x.authorUid||x.userId)==='official'
+        isMindshift: (x.authorUid||x.userId)==='official',
+        commentsOff: !!x.commentsOff,
+        hideLikeCount: !!x.hideLikeCount
       };
     });
     const feedPostsRaw = postSnap.docs.map(d=>{
@@ -1061,7 +1065,9 @@ async function renderFollowingTab(fresh = false){
         author: x.authorName||'MindShift Books User',
         avatar: x.authorPhoto||'logo.jpg',
         authorUid: x.authorUid||null,
-        isMindshift: x.authorUid==='official'
+        isMindshift: x.authorUid==='official',
+        commentsOff: !!x.commentsOff,
+        hideLikeCount: !!x.hideLikeCount
       };
     });
     const feedArts = [...feedArtsRaw, ...feedPostsRaw].sort((x,y)=>{
@@ -1099,7 +1105,7 @@ async function renderFollowingTab(fresh = false){
     grid.innerHTML = withInviteCard(cardsHtml, currentUser ? currentUser.uid : null).join('');
     feed.innerHTML=''; feed.appendChild(grid);
     feedArts.forEach(a=>{ if(currentUser){const b=document.getElementById(`lb-${a.id}`);if(b)b.classList.toggle('liked',likedSet.has(a.id));} });
-    fetchLikeCounts(feedArts.map(a=>a.id));
+    fetchLikeCounts(feedArts.map(a=>({ id:a.id, hideLikeCount:!!a.hideLikeCount, authorUid:a.authorUid })));
     const _followingPostIds = feedArts.filter(a=>a.type==='post').map(a=>a.id);
     if(_followingPostIds.length) fetchPostCommentCounts(_followingPostIds);
     // Wire up the same 1.75s-in-viewport dwell tracker the "For You" grid
@@ -1232,6 +1238,27 @@ function buildAcard(a){
         <button class="acard-save ${savedSet.has(a.id)?'saved':''}" id="sv-${a.id}" onclick="event.stopPropagation();handleSave('${a.id}')">
           <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
         </button>
+        ${a.authorUid && currentUser && a.authorUid===currentUser.uid ? `
+        <div class="acard-menu-wrap" onclick="event.stopPropagation()">
+          <button class="acard-menu-btn" onclick="toggleCardMenu('${a.id}',event)" title="More options">
+            <svg fill="currentColor" viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+          </button>
+          <div class="acard-menu-drop" id="cmenu-${a.id}">
+            <button class="acard-menu-item" onclick="closeOpenCardMenu();location.href='/write?edit=${a.id}'">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4z"/></svg>
+              Edit
+            </button>
+            <button class="acard-menu-item" style="color:var(--red)" onclick="closeOpenCardMenu();deleteFromFeedMenu('${a.id}','article')">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+              Delete
+            </button>
+            <div style="height:1px;background:var(--border);margin:4px 0"></div>
+            <button class="acard-menu-item" onclick="copyCardLink('${a.id}')">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path stroke-linecap="round" d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+              Copy Link
+            </button>
+          </div>
+        </div>` : ''}
       </div>
     </div>
     <div class="acard-img"><img src="${a.img||a.coverImage||''}" alt="${esc(a.title||'')}" loading="lazy" onerror="this.parentElement.style.background='linear-gradient(135deg,#e0e7ff,#93c5fd)'"></div>
@@ -1389,18 +1416,24 @@ async function toggleLike(id, wasLiked){
 }
 // Fetch like counts for a batch of article IDs in one parallel round-trip
 // No live listeners — counts are static on the feed, updated optimistically on interaction
-async function fetchLikeCounts(ids){
-  if(!ids.length) return;
+// items: array of ids (string) OR {id, hideLikeCount, authorUid} objects.
+// hideLikeCount hides the number from everyone except the item's own author.
+async function fetchLikeCounts(items){
+  if(!items.length) return;
+  const ids = items.map(it => typeof it==='string' ? it : it.id);
   try{
     const results = await Promise.all(
       ids.map(id => getDoc(doc(db,'articleLikes',id)).catch(()=>null))
     );
     results.forEach((snap,i)=>{
+      const it = items[i];
       const id = ids[i];
       const c = snap&&snap.exists() ? (snap.data().count||0) : 0;
       likeCountCache[id] = c;
       const el = document.getElementById(`lc-${id}`);
-      if(el) el.textContent = c > 0 ? c : (likedSet.has(id) ? 1 : '');
+      if(!el) return;
+      const hide = typeof it==='object' && it.hideLikeCount && !(currentUser && it.authorUid===currentUser.uid);
+      el.textContent = hide ? '' : (c > 0 ? c : (likedSet.has(id) ? 1 : ''));
     });
   }catch(e){}
 }
@@ -1525,15 +1558,29 @@ function buildPostCardHtml(p){
         <button class="acard-save ${savedSet.has(p.id)?'saved':''}" id="sv-${p.id}" onclick="event.stopPropagation();handleSave('${p.id}')" title="Save post">
           <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
         </button>
+        ${p.commentsOff ? `
+        <span class="pcard-comment" style="opacity:.4;cursor:default" title="Comments are off" onclick="event.stopPropagation()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+        </span>` : `
         <button class="pcard-comment" onclick="event.stopPropagation();goPostRead('${p.id}')" title="Comment">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
           <span id="pcc-${p.id}"></span>
-        </button>
+        </button>`}
         <div class="acard-menu-wrap" onclick="event.stopPropagation()">
           <button class="acard-menu-btn" onclick="toggleCardMenu('${p.id}',event)" title="More options">
             <svg fill="currentColor" viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
           </button>
           <div class="acard-menu-drop" id="cmenu-${p.id}">
+            ${p.authorUid && currentUser && p.authorUid===currentUser.uid ? `
+            <button class="acard-menu-item" onclick="closeOpenCardMenu();location.href='/create-post?edit=${p.id}'">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4z"/></svg>
+              Edit
+            </button>
+            <button class="acard-menu-item" style="color:var(--red)" onclick="closeOpenCardMenu();deleteFromFeedMenu('${p.id}','post')">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+              Delete
+            </button>
+            <div style="height:1px;background:var(--border);margin:4px 0"></div>` : ''}
             <button class="acard-menu-item" onclick="copyCardLink('${p.id}')">
               <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path stroke-linecap="round" d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
               Copy Link
@@ -1673,7 +1720,7 @@ function renderGrid(){
     }
   });
   // One parallel batch for all like counts — no per-card listeners
-  fetchLikeCounts(list.map(a=>a.id));
+  fetchLikeCounts(list.map(a=>({ id:a.id, hideLikeCount:!!a.hideLikeCount, authorUid:a.authorUid })));
   const postIds = list.filter(a=>a.type==='post').map(a=>a.id);
   if(postIds.length) fetchPostCommentCounts(postIds);
 }
@@ -1683,6 +1730,9 @@ window.handleLike = function(id){
   if(!currentUser){ openAuth(); return; }
   const btn = document.getElementById(`lb-${id}`);
   const countEl = document.getElementById(`lc-${id}`);
+  const item = ARTICLES.find(a=>a.id===id) || POSTS.find(p=>p.id===id);
+  // hideLikeCount hides the number from everyone except the item's own author
+  const hideCount = !!(item && item.hideLikeCount && item.authorUid !== currentUser.uid);
 
   // Optimistic update — instant, no waiting for Firestore
   const wasLiked = likedSet.has(id);
@@ -1690,7 +1740,7 @@ window.handleLike = function(id){
   if(btn) btn.classList.toggle('liked', !wasLiked);
 
   // Update count display immediately from cache
-  if(countEl){
+  if(countEl && !hideCount){
     const cur = likeCountCache[id] || 0;
     const next = Math.max(0, cur + (wasLiked ? -1 : 1));
     likeCountCache[id] = next;
@@ -1704,14 +1754,13 @@ window.handleLike = function(id){
       // Roll back on error
       if(wasLiked){ likedSet.add(id); } else { likedSet.delete(id); }
       if(btn) btn.classList.toggle('liked', wasLiked);
-      if(countEl){
+      if(countEl && !hideCount){
         const cur = likeCountCache[id] || 0;
         const rolled = Math.max(0, cur + (wasLiked ? 1 : -1));
         likeCountCache[id] = rolled;
         countEl.textContent = rolled > 0 ? rolled : '';
       }
     } else if(didLike === true){
-      const item = ARTICLES.find(a=>a.id===id) || POSTS.find(p=>p.id===id);
       if(item) notif.notifyArticleLike(item);
       // A like is at least as strong a signal as a glance — count it as a
       // view too (only on liking, not unliking), sharing the same
@@ -1795,6 +1844,31 @@ window.copyCardLink = function(id){
   const isPost = POSTS.some(p=>p.id===id);
   const url = `${location.origin}/${isPost?'post-read':'article-read'}?id=${id}`;
   navigator.clipboard.writeText(url).then(()=>toast('Link copied! 🎉')).catch(()=>toast('Copy failed'));
+};
+
+// Delete straight from a feed card's "⋯" menu (own content only — the menu
+// item is only rendered for a.authorUid/p.authorUid === currentUser.uid).
+// Firestore is the single source of truth here: once the doc is gone, we
+// also strip it from the in-memory ARTICLES/POSTS caches and re-render so
+// every open tab reflects it immediately, matching what the profile page's
+// delete does.
+window.deleteFromFeedMenu = async function(id, type){
+  if(!confirm(`Delete this ${type}? This can't be undone.`)) return;
+  const coll = type==='post' ? 'posts' : 'articles';
+  try{
+    await deleteDoc(doc(db,coll,id));
+    deleteDoc(doc(db,'articleLikes',id)).catch(()=>{});
+    deleteDoc(doc(db, type==='post' ? 'postMeta' : 'articleMeta', id)).catch(()=>{});
+    if(type==='post') POSTS = POSTS.filter(p=>p.id!==id);
+    else ARTICLES = ARTICLES.filter(a=>a.id!==id);
+    document.querySelectorAll(`[data-post-id="${id}"]`).forEach(el=>el.remove());
+    renderGrid();
+    if(_followingRendered) renderFollowingTab(true);
+    toast('Deleted');
+  }catch(e){
+    console.error('deleteFromFeedMenu failed:', e);
+    toast('Could not delete — try again');
+  }
 };
 
 window.goPostRead = function(id){ location.href=`/post-read?id=${id}`; };
@@ -1884,7 +1958,9 @@ function mapArticleDoc(d){
     author: x.authorName||'MindShift Books',
     avatar: x.authorPhoto||'logo.jpg',
     authorUid: x.authorUid||x.userId||null,
-    isMindshift: (x.authorUid||x.userId)==='official'
+    isMindshift: (x.authorUid||x.userId)==='official',
+    commentsOff: !!x.commentsOff,
+    hideLikeCount: !!x.hideLikeCount
   };
 }
 async function loadPublishedArticles(){
@@ -1966,7 +2042,9 @@ async function loadPublishedPosts(){
         author: x.authorName||'MindShift Books User',
         avatar: x.authorPhoto||'logo.jpg',
         authorUid: x.authorUid||null,
-        isMindshift: x.authorUid==='official'
+        isMindshift: x.authorUid==='official',
+        commentsOff: !!x.commentsOff,
+        hideLikeCount: !!x.hideLikeCount
       };
     });
     renderGrid();

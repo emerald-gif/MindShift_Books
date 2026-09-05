@@ -97,7 +97,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
     <button class="btn-back" onclick="history.back()">
       <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
     </button>
-    <span class="hdr-title">Create Post</span>
+    <span class="hdr-title" id="hdrTitle">Create Post</span>
   </div>
   <button class="btn-post" id="postBtn" onclick="submitPost()" disabled>Post</button>
 </div>
@@ -165,6 +165,10 @@ let userProfile = {};
 let images = [];
 const MAX_IMAGES = 5;
 
+/* ── EDIT MODE ── /create-post?edit=<postId> loads the existing post instead
+   of a blank composer, and submitPost() below updates that doc in place. */
+const editId = new URLSearchParams(location.search).get('edit');
+
 onAuthStateChanged(auth, async user => {
   currentUser = user;
   if(!user){ window.location.href = '/login'; return; }
@@ -176,7 +180,26 @@ onAuthStateChanged(auth, async user => {
   const av = document.getElementById('composerAv');
   av.src = userProfile.photo || user.photoURL || '';
   av.onerror = () => { av.style.background = 'linear-gradient(135deg,#4f46e5,#06b6d4)'; };
+  if(editId) loadPostForEdit(editId);
 });
+
+async function loadPostForEdit(id){
+  try{
+    const snap = await getDoc(doc(db,'posts',id));
+    if(!snap.exists()){ showToast('Post not found'); return; }
+    const p = snap.data();
+    if(p.authorUid !== currentUser.uid){ showToast("You can't edit this post"); location.href='/profile'; return; }
+    document.getElementById('hdrTitle').textContent = 'Edit Post';
+    document.getElementById('postBtn').textContent = 'Save';
+    document.getElementById('postText').value = p.text||'';
+    images = (p.images||[]).map(url=>({ url, uploading:false }));
+    onTextInput();
+    renderImages();
+  }catch(e){
+    console.error('loadPostForEdit failed:', e);
+    showToast("Couldn't load post — try again");
+  }
+}
 
 /* ── TEXT ── */
 window.onTextInput = function(){
@@ -276,9 +299,20 @@ window.submitPost = async function(){
 
   const btn = document.getElementById('postBtn');
   btn.disabled = true;
-  btn.textContent = 'Posting…';
+  btn.textContent = editId ? 'Saving…' : 'Posting…';
 
   try{
+    if(editId){
+      // Editing an existing post — update in place, keep id/author/dates and
+      // any commentsOff/hideLikeCount settings untouched.
+      await setDoc(doc(db,'posts',editId),{
+        text, images: urls,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+      showToast('Post updated');
+      setTimeout(()=>{ location.href = `/post-read?id=${editId}`; }, 700);
+      return;
+    }
     const id = `post_${currentUser.uid}_${Date.now()}`;
     await setDoc(doc(db,'posts',id),{
       id, authorUid: currentUser.uid,
@@ -294,9 +328,9 @@ window.submitPost = async function(){
     document.getElementById('successOverlay').classList.add('show');
   }catch(e){
     console.error(e);
-    showToast('Could not post — try again');
+    showToast((editId?'Update':'Post')+' failed — try again');
     btn.disabled = false;
-    btn.textContent = 'Post';
+    btn.textContent = editId ? 'Save' : 'Post';
   }
 };
 

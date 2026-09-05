@@ -273,7 +273,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
     <button class="btn-back" onclick="history.back()">
       <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
     </button>
-    <span class="hdr-title">Write Article</span>
+    <span class="hdr-title" id="hdrTitle">Write Article</span>
     <a class="btn-guide" href="/article-guide" title="How to use this editor">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 115.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
     </a>
@@ -498,12 +498,51 @@ let selectedCat = '';
 let selectedSubCat = '';
 let submissions = [];
 
+/* ── EDIT MODE ── /write?edit=<articleId> loads the existing article instead
+   of a blank draft, and submitArticle() below updates that doc in place
+   instead of creating a new one. */
+const editId = new URLSearchParams(location.search).get('edit');
+
 /* ── AUTH ── */
 onAuthStateChanged(auth, async user => {
   currentUser = user;
-  if(user) loadSubmissions();
+  if(user){
+    loadSubmissions();
+    if(editId) loadArticleForEdit(editId);
+    else loadDraft();
+  }
   else window.location.href = '/login';
 });
+
+async function loadArticleForEdit(id){
+  try{
+    const snap = await getDoc(doc(db,'articles',id));
+    if(!snap.exists()){ showToast('Article not found'); return; }
+    const a = snap.data();
+    if(a.authorUid !== currentUser.uid){ showToast("You can't edit this article"); location.href='/profile'; return; }
+    document.getElementById('hdrTitle').textContent = 'Edit Article';
+    document.getElementById('titleInput').value = a.title||'';
+    document.getElementById('briefInput').value = a.brief||'';
+    document.getElementById('editorBody').innerHTML = a.body||'';
+    if(a.cover) window.previewCover(a.cover);
+    if(a.cat){
+      const pill = document.querySelector(`#catPills .cat-pill[data-cat="${a.cat}"]`);
+      if(pill){ pill.classList.add('sel'); selectedCat = a.cat; renderSubCatPills(a.cat); }
+    }
+    if(a.subCat){
+      setTimeout(()=>{
+        const subPill = document.querySelector(`#subCatPills .cat-pill[data-subcat="${a.subCat}"]`);
+        if(subPill){ subPill.classList.add('sel'); selectedSubCat = a.subCat; }
+      }, 0);
+    }
+    updateWordCount();
+    const btn = document.getElementById('submitBtn');
+    if(btn) btn.innerHTML = `<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Save Changes`;
+  }catch(e){
+    console.error('loadArticleForEdit failed:', e);
+    showToast("Couldn't load article — try again");
+  }
+}
 
 /* ── CATEGORY PILLS (from window.MSB_CATEGORIES, article-categories.js) ── */
 function renderCatPills(){
@@ -1062,10 +1101,27 @@ window.submitArticle = async function(){
 
   const btn = document.getElementById('submitBtn');
   btn.disabled = true;
-  btn.innerHTML = '<div class="spinner"></div> Submitting…';
+  btn.innerHTML = editId ? '<div class="spinner"></div> Saving…' : '<div class="spinner"></div> Submitting…';
 
   try{
     const words = document.getElementById('editorBody').innerText.trim().split(/\s+/).length;
+    const readTime = `${Math.max(1,Math.ceil(words/200))} min read`;
+
+    if(editId){
+      // Editing an existing article — update in place, keep its id, author
+      // fields, createdAt and publishedAt (and any commentsOff/hideLikeCount
+      // settings) untouched.
+      await setDoc(doc(db,'articles',editId),{
+        title, brief, body, cat: selectedCat, subCat: selectedSubCat, cover,
+        readTime,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+      localStorage.removeItem('mindshift_draft');
+      showToast('Article updated');
+      setTimeout(()=>{ location.href = `/article-read?id=${editId}`; }, 700);
+      return;
+    }
+
     // Articles now publish immediately — no submissions/pending/review queue.
     const id = `art_${currentUser.uid}_${Date.now()}`;
     const profile = await getUserProfile();
@@ -1076,7 +1132,7 @@ window.submitArticle = async function(){
       authorBio: profile.bio || '',
       authorUsername: profile.username || '',
       title, brief, body, cat: selectedCat, subCat: selectedSubCat, cover,
-      readTime: `${Math.max(1,Math.ceil(words/200))} min read`,
+      readTime,
       status: 'published',
       createdAt: serverTimestamp(),
       publishedAt: serverTimestamp()
@@ -1088,10 +1144,12 @@ window.submitArticle = async function(){
     document.getElementById('successOverlay').classList.add('show');
   }catch(e){
     console.error(e);
-    showToast('Publish failed — try again');
+    showToast((editId?'Update':'Publish')+' failed — try again');
   }
   btn.disabled = false;
-  btn.innerHTML = `<svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Publish`;
+  btn.innerHTML = editId
+    ? `<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Save Changes`
+    : `<svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Publish`;
 };
 
 async function getUserProfile(){
@@ -1191,8 +1249,8 @@ window.showToast = function(msg){
   setTimeout(()=>t.classList.remove('on'),2800);
 };
 
-// load draft on start
-loadDraft();
+// draft/edit loading now happens from the auth handler above,
+// once we know whether this is a fresh draft or an ?edit=<id> load
 </script>
 
 <!-- ═══ MINDSHIFT UPLOAD MODAL ═══ -->
