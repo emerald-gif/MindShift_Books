@@ -140,6 +140,22 @@ main{max-width:1100px;margin:0 auto}
 .acard-like svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;transition:all .2s;flex-shrink:0}
 .acard-like.liked{color:var(--red)}
 .acard-like.liked svg{fill:var(--red);stroke:var(--red);animation:hpop .25s ease}
+/* ── POST CARD ── */
+.pcard-text{font-size:14.5px;color:var(--txt);line-height:1.5;white-space:pre-wrap;word-break:break-word;
+  display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden}
+.pcard-carousel{position:relative;margin-top:8px;border-radius:14px;overflow:hidden}
+.pcard-track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
+  scrollbar-width:none}
+.pcard-track::-webkit-scrollbar{display:none}
+.pcard-slide{flex:0 0 100%;scroll-snap-align:start;aspect-ratio:4/3;background:#f1f5f9}
+.pcard-slide img{width:100%;height:100%;object-fit:cover;display:block;cursor:pointer}
+.pcard-dots{position:absolute;bottom:10px;left:0;right:0;display:flex;justify-content:center;gap:5px}
+.pdot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.55)}
+.pdot.on{background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.15)}
+.pcard-comment{display:flex;align-items:center;gap:4px;background:none;border:none;cursor:pointer;padding:4px 6px;
+  font-size:12px;font-weight:700;color:var(--mute);transition:color .18s;border-radius:8px;-webkit-tap-highlight-color:transparent}
+.pcard-comment:hover{color:var(--p);background:#eef2ff}
+.pcard-comment svg{width:14px;height:14px;flex-shrink:0}
 /* ── SKELETON ── */
 @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
 .skel{background:linear-gradient(90deg,#eef2ff 25%,#e0e7ff 50%,#eef2ff 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:8px}
@@ -404,7 +420,7 @@ main{max-width:1100px;margin:0 auto}
   <ul>
     <li onclick="window.location.href='/books'">Bookstore</li>
     <li onclick="window.location.href='/articles'"><strong>Articles</strong></li>
-    <li onclick="window.location.href='/write'">Write an Article</li>
+    <li onclick="openCreatePicker()">Create</li>
     <li id="sbProfileLink" style="display:none" onclick="window.location.href='/profile'">My Profile</li>
     <li id="sbInsightsLink" style="display:none" onclick="window.location.href='/insights'">My Insights</li>
     <li id="sbSavedLink" style="display:none" onclick="openSaved()">Saved Articles</li>
@@ -714,6 +730,8 @@ window.handleInviteFriends = async function(){
 /* ── DATA ── */
 // Live feed — populated from Firestore once loadPublishedArticles() resolves
 let ARTICLES = [];
+// Posts — the lighter-weight text+photos content type, merged into the main feed
+let POSTS = [];
 
 /* ── STATE ── */
 let currentUser = null;
@@ -804,6 +822,7 @@ onAuthStateChanged(auth, async user => {
   }
   renderGrid();
   loadPublishedArticles();
+  loadPublishedPosts();
   const p = new URLSearchParams(location.search);
   if(p.get('id')) location.href = `/article-read?id=${p.get('id')}`;
 });
@@ -1253,14 +1272,91 @@ function showSkeletons(count=4){
   `).join('');
 }
 
+function getMergedFeed(){
+  const articles = getFiltered().map(a=>({...a, type:'article'}));
+  // Posts don't have categories/search fields the way articles do, so they
+  // only join the merged feed on the plain, unfiltered "All" view.
+  if(activeFilter!=='all' || searchQuery) return articles;
+  const merged = [...articles, ...POSTS];
+  merged.sort((x,y)=>{
+    const tx = (x.publishedAt&&x.publishedAt.seconds) ? x.publishedAt.seconds*1000 : (x.publishedAt||0);
+    const ty = (y.publishedAt&&y.publishedAt.seconds) ? y.publishedAt.seconds*1000 : (y.publishedAt||0);
+    return ty - tx;
+  });
+  return merged;
+}
+
+function buildPostCardHtml(p){
+  const hasImgs = p.images && p.images.length;
+  const carousel = !hasImgs ? '' : `
+    <div class="pcard-carousel" id="pcarousel-${p.id}" onclick="event.stopPropagation()">
+      <div class="pcard-track" id="ptrack-${p.id}" onscroll="onPostScroll('${p.id}')">
+        ${p.images.map(url=>`<div class="pcard-slide"><img src="${url}" alt="" loading="lazy" onclick="goPostRead('${p.id}')"></div>`).join('')}
+      </div>
+      ${p.images.length>1 ? `<div class="pcard-dots" id="pdots-${p.id}">${p.images.map((_,i)=>`<span class="pdot${i===0?' on':''}"></span>`).join('')}</div>` : ''}
+    </div>`;
+  return `<div class="acard pcard" onclick="goPostRead('${p.id}')">
+    <div class="acard-body">
+      <div class="acard-author" onclick="event.stopPropagation();goAuthor('${p.authorUid||''}',${!!p.isMindshift})">
+        <img class="acard-av" src="${p.avatar||'logo.jpg'}" alt="${p.author||'MindShift Books'}" onerror="this.style.background='linear-gradient(135deg,#4f46e5,#06b6d4)'">
+        <span class="acard-author-name">${esc(p.author||'MindShift Books User')}</span>
+        ${p.isMindshift ? `<span class="vbadge"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>` : ''}
+        <span class="acard-author-dot">·</span>
+        <span class="acard-author-date">${fmtRel(p.publishedAt)}</span>
+      </div>
+      ${p.text ? `<div class="pcard-text">${esc(p.text)}</div>` : ''}
+      ${carousel}
+      <div class="acard-foot">
+        <button class="acard-like" id="lb-${p.id}" onclick="event.stopPropagation();handleLike('${p.id}')">
+          <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+          <span id="lc-${p.id}"></span>
+        </button>
+        <button class="acard-save ${savedSet.has(p.id)?'saved':''}" id="sv-${p.id}" onclick="event.stopPropagation();handleSave('${p.id}')" title="Save post">
+          <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+        </button>
+        <button class="pcard-comment" onclick="event.stopPropagation();goPostRead('${p.id}')" title="Comment">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+          <span id="pcc-${p.id}"></span>
+        </button>
+        <div class="acard-menu-wrap" onclick="event.stopPropagation()">
+          <button class="acard-menu-btn" onclick="toggleCardMenu('${p.id}',event)" title="More options">
+            <svg fill="currentColor" viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+          </button>
+          <div class="acard-menu-drop" id="cmenu-${p.id}">
+            <button class="acard-menu-item" onclick="copyCardLink('${p.id}')">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path stroke-linecap="round" d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+              Copy Link
+            </button>
+            ${!p.isMindshift && p.authorUid && p.authorUid !== (currentUser&&currentUser.uid) ? `
+            <button class="acard-menu-item" id="cfbtn-${p.id}" onclick="followFromMenu('${p.authorUid||''}','${p.author||''}','${p.id}')">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path stroke-linecap="round" d="M22 11v6m-3-3h6"/></svg>
+              Follow
+            </button>` : ''}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+window.onPostScroll = function(id){
+  const track = document.getElementById(`ptrack-${id}`);
+  const dotsWrap = document.getElementById(`pdots-${id}`);
+  if(!track || !dotsWrap) return;
+  const idx = Math.round(track.scrollLeft / track.clientWidth);
+  dotsWrap.querySelectorAll('.pdot').forEach((d,i)=>d.classList.toggle('on', i===idx));
+};
+
 function renderGrid(){
   const grid = document.getElementById('grid');
   const noRes = document.getElementById('noRes');
-  const list = getFiltered();
+  const list = getMergedFeed();
   likeCountCache = {};
   if(!list.length){ grid.innerHTML=''; noRes.style.display='block'; return; }
   noRes.style.display='none';
-  const cardsHtml = list.map(a=>`
+  const cardsHtml = list.map(a=>{
+    if(a.type==='post') return buildPostCardHtml(a);
+    return `
     <div class="acard" onclick="goRead('${a.id}')">
       <div class="acard-body">
         <div class="acard-author" onclick="event.stopPropagation();goAuthor('${a.authorUid||''}',${!!a.isMindshift})">
@@ -1305,7 +1401,8 @@ function renderGrid(){
         <img src="${a.img}" alt="${a.title}" loading="lazy" onerror="this.parentElement.style.background='linear-gradient(135deg,#e0e7ff,#93c5fd)'">
       </div>
     </div>
-  `);
+  `;
+  });
   grid.innerHTML = withInviteCard(cardsHtml, currentUser ? currentUser.uid : null).join('');
   list.forEach(a=>{
     if(currentUser){
@@ -1315,6 +1412,8 @@ function renderGrid(){
   });
   // One parallel batch for all like counts — no per-card listeners
   fetchLikeCounts(list.map(a=>a.id));
+  const postIds = list.filter(a=>a.type==='post').map(a=>a.id);
+  if(postIds.length) fetchPostCommentCounts(postIds);
 }
 
 /* ── LIKE ── */
@@ -1401,12 +1500,12 @@ window.toggleCardMenu = function(id, event){
     drop.classList.add('open');
     openCardMenuId = id;
     // Update follow button label based on real-time state
-    const art = ARTICLES.find(a=>a.id===id);
+    const item = ARTICLES.find(a=>a.id===id) || POSTS.find(p=>p.id===id);
     const fbtn = document.getElementById(`cfbtn-${id}`);
-    if(fbtn && art && art.authorUid && currentUser){
+    if(fbtn && item && item.authorUid && currentUser){
       (async()=>{
         try{
-          const s = await getDoc(doc(db,'follows',`${currentUser.uid}_${art.authorUid}`));
+          const s = await getDoc(doc(db,'follows',`${currentUser.uid}_${item.authorUid}`));
           const svgEl = fbtn.querySelector('svg');
           fbtn.childNodes[fbtn.childNodes.length-1].textContent = s.exists() ? ' Following' : ' Follow';
         }catch{}
@@ -1427,9 +1526,28 @@ document.addEventListener('click', e=>{
 
 window.copyCardLink = function(id){
   closeOpenCardMenu();
-  const url = `${location.origin}/article-read?id=${id}`;
+  const isPost = POSTS.some(p=>p.id===id);
+  const url = `${location.origin}/${isPost?'post-read':'article-read'}?id=${id}`;
   navigator.clipboard.writeText(url).then(()=>toast('Link copied! 🎉')).catch(()=>toast('Copy failed'));
 };
+
+window.goPostRead = function(id){ location.href=`/post-read?id=${id}`; };
+
+/* ── POST COMMENT COUNTS (postMeta/{id}.commentCount) ── */
+async function fetchPostCommentCounts(ids){
+  if(!ids.length) return;
+  try{
+    const results = await Promise.all(
+      ids.map(id => getDoc(doc(db,'postMeta',id)).catch(()=>null))
+    );
+    results.forEach((snap,i)=>{
+      const id = ids[i];
+      const c = snap&&snap.exists() ? (snap.data().commentCount||0) : 0;
+      const el = document.getElementById(`pcc-${id}`);
+      if(el) el.textContent = c > 0 ? c : '';
+    });
+  }catch(e){}
+}
 
 window.followFromMenu = async function(authorUid, authorName, cardId){
   closeOpenCardMenu();
@@ -1515,6 +1633,34 @@ async function loadPublishedArticles(){
     renderGrid();
     _xDiscoverBuilt = false;
   }catch(e){ console.error('Firestore articles error:',e); }
+}
+
+/* ── LOAD PUBLISHED POSTS FROM FIRESTORE ── */
+async function loadPublishedPosts(){
+  try{
+    const q = query(
+      collection(db,'posts'),
+      where('status','==','published'),
+      orderBy('publishedAt','desc'),
+      limit(60)
+    );
+    const snap = await getDocs(q);
+    POSTS = snap.docs.map(d=>{
+      const x = d.data();
+      return {
+        id: d.id,
+        type: 'post',
+        text: x.text||'',
+        images: Array.isArray(x.images) ? x.images.slice(0,5) : [],
+        publishedAt: x.publishedAt||x.createdAt||null,
+        author: x.authorName||'MindShift Books User',
+        avatar: x.authorPhoto||'logo.jpg',
+        authorUid: x.authorUid||null,
+        isMindshift: x.authorUid==='official'
+      };
+    });
+    renderGrid();
+  }catch(e){ console.error('Firestore posts error:',e); }
 }
 
 /* ── FULLSCREEN SEARCH / EXPLORE ── */
@@ -1808,5 +1954,6 @@ window.goResume=function(){
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="/auth.js"></script>
+<script src="/create-picker.js"></script>
 </body>
 </html>

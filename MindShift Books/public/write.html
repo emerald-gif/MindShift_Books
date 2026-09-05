@@ -407,25 +407,25 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
     </div>
   </div>
 
-  <!-- SUBMIT -->
+  <!-- PUBLISH -->
   <div class="submit-card">
     <div class="submit-info">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
       </svg>
       <div class="submit-info-text">
-        <strong>How it works:</strong> After you submit, our team reviews your article — usually within <strong>24–48 hours</strong>. Once approved it goes live on MindShift Books with your name and profile. You'll be notified of the status.
+        <strong>How it works:</strong> Your article goes live immediately on MindShift Books with your name and profile — no review wait.
       </div>
     </div>
     <button class="btn-submit" id="submitBtn" onclick="submitArticle()">
       <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-      Submit for Review
+      Publish
     </button>
   </div>
 
-  <!-- MY SUBMISSIONS -->
+  <!-- MY ARTICLES -->
   <div class="section-hd">
-    <h2>My Submissions</h2>
+    <h2>My Articles</h2>
     <span class="sub-count" id="subCount">0</span>
   </div>
   <div id="submissionsList">
@@ -436,7 +436,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
         <line x1="16" y1="13" x2="8" y2="13"/>
         <line x1="16" y1="17" x2="8" y2="17"/>
       </svg>
-      <p>No submissions yet.<br>Write your first article above!</p>
+      <p>No articles yet.<br>Write your first one above!</p>
     </div>
   </div>
 
@@ -450,28 +450,21 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
         <polyline points="20 6 9 17 4 12"/>
       </svg>
     </div>
-    <h3>Article Submitted! 🎉</h3>
-    <p>Your article is now in our review queue. Here's what happens next:</p>
+    <h3>Article Published! 🎉</h3>
+    <p>Your article is live now, under your name, for everyone to read.</p>
     <div class="success-timeline">
       <div class="timeline-item">
         <div class="timeline-dot">✅</div>
         <div>
-          <div class="timeline-text">Submitted successfully</div>
+          <div class="timeline-text">Published successfully</div>
           <div class="timeline-sub">Right now</div>
-        </div>
-      </div>
-      <div class="timeline-item">
-        <div class="timeline-dot">👀</div>
-        <div>
-          <div class="timeline-text">Team reviews your article</div>
-          <div class="timeline-sub">Within 24–48 hours</div>
         </div>
       </div>
       <div class="timeline-item">
         <div class="timeline-dot">🚀</div>
         <div>
-          <div class="timeline-text">Goes live with your name</div>
-          <div class="timeline-sub">After approval</div>
+          <div class="timeline-text">Live on your profile</div>
+          <div class="timeline-sub">Visible to readers immediately</div>
         </div>
       </div>
     </div>
@@ -1073,19 +1066,20 @@ window.submitArticle = async function(){
 
   try{
     const words = document.getElementById('editorBody').innerText.trim().split(/\s+/).length;
-    const id = `sub_${currentUser.uid}_${Date.now()}`;
+    // Articles now publish immediately — no submissions/pending/review queue.
+    const id = `art_${currentUser.uid}_${Date.now()}`;
     const profile = await getUserProfile();
-    await setDoc(doc(db,'submissions',id),{
-      id, userId: currentUser.uid,
+    await setDoc(doc(db,'articles',id),{
+      id, authorUid: currentUser.uid,
       authorName: profile.name || currentUser.displayName || currentUser.email.split('@')[0],
       authorPhoto: profile.photo || currentUser.photoURL || '',
       authorBio: profile.bio || '',
       authorUsername: profile.username || '',
       title, brief, body, cat: selectedCat, subCat: selectedSubCat, cover,
       readTime: `${Math.max(1,Math.ceil(words/200))} min read`,
-      status: 'pending',
+      status: 'published',
       createdAt: serverTimestamp(),
-      reviewNote: ''
+      publishedAt: serverTimestamp()
     });
     // clear draft
     localStorage.removeItem('mindshift_draft');
@@ -1094,10 +1088,10 @@ window.submitArticle = async function(){
     document.getElementById('successOverlay').classList.add('show');
   }catch(e){
     console.error(e);
-    showToast('Submit failed — try again');
+    showToast('Publish failed — try again');
   }
   btn.disabled = false;
-  btn.innerHTML = `<svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Submit for Review`;
+  btn.innerHTML = `<svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Publish`;
 };
 
 async function getUserProfile(){
@@ -1125,12 +1119,12 @@ function clearForm(){
   updateWordCount();
 }
 
-/* ── LOAD SUBMISSIONS ── */
+/* ── LOAD MY ARTICLES (everything here is already live — no review states) ── */
 async function loadSubmissions(){
   if(!currentUser) return;
   try{
     // Single-field where only — avoids needing a composite index with orderBy
-    const q = query(collection(db,'submissions'), where('userId','==',currentUser.uid));
+    const q = query(collection(db,'articles'), where('authorUid','==',currentUser.uid));
     const snap = await getDocs(q);
     submissions = snap.docs
       .map(d=>({id:d.id,...d.data()}))
@@ -1156,22 +1150,16 @@ function renderSubmissions(){
         <div class="sub-cat">${s.cat||''}</div>
         <div class="sub-title">${s.title}</div>
         <div class="sub-meta">
-          ${statusBadge(s.status)}
+          <span class="badge badge-approved">✓ Live</span>
           <span class="sub-date">${formatDate(s.createdAt)}</span>
         </div>
-        ${s.reviewNote ? `<div class="sub-note show">💬 ${s.reviewNote}</div>` : ''}
         <div class="sub-actions">
+          <button class="sub-action-btn" onclick="window.location.href='/article-read?id=${s.id}'">View</button>
           <button class="sub-action-btn danger" onclick="deleteSubmission('${s.id}')">Delete</button>
         </div>
       </div>
     </div>
   `).join('');
-}
-
-function statusBadge(status){
-  if(status==='approved') return `<span class="badge badge-approved">✓ Approved</span>`;
-  if(status==='rejected') return `<span class="badge badge-rejected">✗ Rejected</span>`;
-  return `<span class="badge badge-pending"><span class="dot"></span> Under Review</span>`;
 }
 
 function formatDate(ts){
@@ -1180,20 +1168,14 @@ function formatDate(ts){
   return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
 }
 
-/* ── DELETE SUBMISSION ── */
+/* ── DELETE ARTICLE ── */
 window.deleteSubmission = async function(id, silent=false){
-  if(!silent && !confirm('Delete this submission?')) return;
+  if(!silent && !confirm('Delete this article?')) return;
   try{
-    // When admin approves a submission, it gets copied into the `articles`
-    // collection as a separate doc sharing the same ID. Deleting only the
-    // submission left that published copy live forever — clean up both.
-    await Promise.all([
-      deleteDoc(doc(db,'submissions',id)),
-      deleteDoc(doc(db,'articles',id)),
-    ]);
+    await deleteDoc(doc(db,'articles',id));
     submissions = submissions.filter(s=>s.id!==id);
     renderSubmissions();
-    if(!silent) showToast('Submission deleted');
+    if(!silent) showToast('Article deleted');
   }catch(e){ showToast('Could not delete — try again'); }
 };
 

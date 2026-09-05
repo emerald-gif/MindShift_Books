@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
-<title>Article · MindShift Books</title>
-<meta name="description" content="Read career articles and insights from the MindShift Books community."/>
+<title>Post · MindShift Books</title>
+<meta name="description" content="See what the MindShift Books community is sharing."/>
 <meta name="robots" content="noindex, nofollow"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"/>
@@ -146,6 +146,22 @@ header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* ── HERO IMG ── */
 .art-hero{width:100%;height:220px;object-fit:cover;display:block;background:linear-gradient(135deg,#cffafe,#ecfeff);border-radius:14px;margin:2px 0 22px}
+/* ── POST (vs. article) content ── */
+.post-text{font-size:16.5px;line-height:1.6;color:var(--txt);white-space:pre-wrap;word-break:break-word;margin:16px 0}
+.post-carousel{position:relative;margin:6px 0 18px;border-radius:16px;overflow:hidden}
+.post-carousel-track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.post-carousel-track::-webkit-scrollbar{display:none}
+.post-carousel-slide{flex:0 0 100%;scroll-snap-align:start;aspect-ratio:4/3;background:#f1f5f9}
+.post-carousel-slide img{width:100%;height:100%;object-fit:cover;display:block}
+.post-carousel-dots{position:absolute;bottom:12px;left:0;right:0;display:flex;justify-content:center;gap:6px}
+.post-carousel-dots .pdot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.55)}
+.post-carousel-dots .pdot.on{background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.15)}
+.post-comment-bar{position:fixed;left:0;right:0;bottom:0;z-index:150;background:#fff;border-top:1px solid var(--border);
+  padding:10px max(16px,env(safe-area-inset-left)) max(10px,env(safe-area-inset-bottom)) 16px;
+  display:flex;align-items:center;gap:10px;cursor:pointer;max-width:720px;margin:0 auto}
+.post-comment-bar-av{width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;background:#e0e7ff}
+.post-comment-bar-input{flex:1;background:#f1f5f9;border-radius:99px;padding:10px 16px;font-size:14px;color:var(--mute)}
+body{padding-bottom:64px} /* room for the fixed comment bar on post-read */
 
 /* ── ARTICLE ── */
 .art-wrap{max-width:680px;margin:0 auto;padding:0 20px 60px}
@@ -506,6 +522,12 @@ header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 <!-- CONTENT -->
 <div id="artContent"></div>
 
+<!-- PERSISTENT COMMENT BAR (posts only — always visible, taps into the same comment drawer) -->
+<div class="post-comment-bar" onclick="openCommentDrawer()">
+  <img class="post-comment-bar-av" id="postCommentBarAv" src="" alt="" onerror="this.style.display='none'">
+  <div class="post-comment-bar-input">Comment on this post…</div>
+</div>
+
 <!-- WELCOME NUDGE (shown once to users who signed up from this article) -->
 <div class="welcome-nudge" id="welcomeNudge">
   <button class="welcome-nudge-close" onclick="dismissWelcome()" aria-label="Close">×</button>
@@ -686,46 +708,42 @@ article = ARTICLES.find(a=>a.id===artId);
   const key = `viewed_${artId}`;
   if(sessionStorage.getItem(key)) return;
   sessionStorage.setItem(key, '1');
-  updateDoc(doc(db,'articleMeta',artId),{viewCount:increment(1)})
-    .catch(()=>setDoc(doc(db,'articleMeta',artId),{viewCount:1},{merge:true}).catch(()=>{}));
+  updateDoc(doc(db,'postMeta',artId),{viewCount:increment(1)})
+    .catch(()=>setDoc(doc(db,'postMeta',artId),{viewCount:1},{merge:true}).catch(()=>{}));
 })();
 
 if(!article){
   // Try Firestore — user-submitted articles won't be in the hardcoded array
   (async()=>{
     try{
-      const snap = await getDoc(doc(db,'articles',artId));
+      const snap = await getDoc(doc(db,'posts',artId));
       if(snap.exists()){
         const x = snap.data();
         article = {
           id: snap.id,
-          cat: x.cat||'CAREERS',
-          title: x.title||'',
-          brief: x.brief||'',
-          img: x.cover||x.img||'',
-          read: x.readTime||x.read||'5 min read',
+          text: x.text||'',
+          images: Array.isArray(x.images) ? x.images.slice(0,5) : [],
           publishedAt: x.publishedAt||x.createdAt||null,
-          author: x.authorName||'MindShift Books',
+          author: x.authorName||'MindShift Books User',
           avatar: x.authorPhoto||'logo.jpg',
-          authorUid: x.authorUid||x.userId||null,
+          authorUid: x.authorUid||null,
           authorUsername: x.authorUsername||'',
-          isMindshift: x.userId==='official'||x.isMindshift,
-          content: x.body||''
+          isMindshift: x.authorUid==='official'
         };
-        document.title = article.title + ' · MindShift Books';
-        document.getElementById('hdrTitle').textContent = article.title;
+        document.title = (article.text ? article.text.slice(0,60) : 'Post') + ' · MindShift Books';
+        document.getElementById('hdrTitle').textContent = 'Post';
         document.getElementById('copyUrl').textContent = location.href;
         renderArticle();
       } else {
-        document.getElementById('artContent').innerHTML = `<div style="text-align:center;padding:60px 20px"><h2>Article not found</h2><a href="/articles" style="color:var(--p)">← Back</a></div>`;
+        document.getElementById('artContent').innerHTML = `<div style="text-align:center;padding:60px 20px"><h2>Post not found</h2><a href="/articles" style="color:var(--p)">← Back</a></div>`;
       }
     }catch(e){
-      document.getElementById('artContent').innerHTML = `<div style="text-align:center;padding:60px 20px"><h2>Article not found</h2><a href="/articles" style="color:var(--p)">← Back</a></div>`;
+      document.getElementById('artContent').innerHTML = `<div style="text-align:center;padding:60px 20px"><h2>Post not found</h2><a href="/articles" style="color:var(--p)">← Back</a></div>`;
     }
   })();
 } else {
-  document.title = article.title + ' · MindShift Books';
-  document.getElementById('hdrTitle').textContent = article.title;
+  document.title = 'Post · MindShift Books';
+  document.getElementById('hdrTitle').textContent = 'Post';
   document.getElementById('copyUrl').textContent = location.href;
 }
 
@@ -763,6 +781,8 @@ onAuthStateChanged(auth, async user => {
   if(sbAuthCta) sbAuthCta.style.display = isAuth ? 'none' : 'block';
   if(user) notif.initNotifications(user.uid); else notif.clearNotifications();
   await loadMyProfile();
+  const barAv = document.getElementById('postCommentBarAv');
+  if(barAv) barAv.src = (myProfile&&myProfile.photo) || 'logo.jpg';
   if(article) renderArticle();
 });
 
@@ -839,22 +859,26 @@ async function renderArticle(){
   subDownloads();
 
 
-  const isAuth = !!currentUser;
-  const contentHtml = isAuth ? article.content : getGatedContent(article.content);
+  const imgs = article.images || [];
+  const carouselHtml = !imgs.length ? '' : `
+    <div class="post-carousel" id="postCarousel">
+      <div class="post-carousel-track" id="postCarouselTrack" onscroll="onPostReadScroll()">
+        ${imgs.map(url=>`<div class="post-carousel-slide"><img src="${url}" alt="" loading="lazy"></div>`).join('')}
+      </div>
+      ${imgs.length>1 ? `<div class="post-carousel-dots" id="postCarouselDots">${imgs.map((_,i)=>`<span class="pdot${i===0?' on':''}"></span>`).join('')}</div>` : ''}
+    </div>`;
 
   document.getElementById('artContent').innerHTML = `
     <div class="art-wrap">
-      <span class="art-cat">${window.msbCatLabel ? window.msbCatLabel(article.cat) : article.cat}</span>
-      <h1 class="art-title">${article.title}</h1>
       <div class="author-row-wrap">
         <div class="author-row" onclick="goAuthor()" style="cursor:pointer">
           <img class="author-logo" src="${article.avatar||'logo.jpg'}" alt="${article.author||'MindShift Books'}" onerror="this.style.background='linear-gradient(135deg,#4f46e5,#06b6d4)'">
           <div>
             <div class="author-name">
-              ${article.author||'MindShift Books'}
-              ${(article.isMindshift||!article.authorUid) ? `<span class="vbadge"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>` : ''}
+              ${article.author||'MindShift Books User'}
+              ${(article.isMindshift) ? `<span class="vbadge"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>` : ''}
             </div>
-            <div class="author-meta">${article.read}${article.publishedAt||article.createdAt ? ` · ${fmtRel(article.publishedAt||article.createdAt)}` : ''}</div>
+            <div class="author-meta">${article.publishedAt ? fmtRel(article.publishedAt) : ''}</div>
           </div>
         </div>
         ${(!article.isMindshift && article.authorUid && article.authorUid !== (currentUser&&currentUser.uid)) ? `
@@ -862,6 +886,8 @@ async function renderArticle(){
           ${isFollowing?'Following':'Follow'}
         </button>` : ''}
       </div>
+      ${article.text ? `<div class="post-text">${esc(article.text)}</div>` : ''}
+      ${carouselHtml}
       <div class="action-bar">
         <button class="act-btn act-like ${isLiked?'liked':''}" id="actLike" onclick="doLike()">
           <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
@@ -874,29 +900,31 @@ async function renderArticle(){
         <button class="act-btn" onclick="openShare()" aria-label="Share">
           <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
         </button>
-        <button class="act-btn act-download ${hasDownloaded?'downloaded':''}" id="actDownload" onclick="openDownloadSheet()">
-          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
-          <span id="actDownloadTxt">${downloadCount||0}</span>
-        </button>
         <button class="act-btn act-save ${isSaved?'saved':''}" id="actSave" onclick="doSave()" aria-label="Save">
           <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
         </button>
       </div>
-      <img class="art-hero" src="${article.img}" alt="${article.title}" onerror="this.style.display='none'">
-      <div class="art-body">${contentHtml}</div>
-      ${buildMoreArticles()}
-      <div id="ratingCard" class="rating-card"></div>
     </div>
   `;
 
   syncLikeUI();
   syncSaveUI();
-  syncDownloadUI();
-  startProgress();
-  injectRatingCard();
   loadComments();
-  renderDownloadLockBadge();
 }
+
+function esc(str){
+  const d = document.createElement('div');
+  d.textContent = str||'';
+  return d.innerHTML.replace(/\n/g,'<br>');
+}
+
+window.onPostReadScroll = function(){
+  const track = document.getElementById('postCarouselTrack');
+  const dotsWrap = document.getElementById('postCarouselDots');
+  if(!track || !dotsWrap) return;
+  const idx = Math.round(track.scrollLeft / track.clientWidth);
+  dotsWrap.querySelectorAll('.pdot').forEach((d,i)=>d.classList.toggle('on', i===idx));
+};
 
 function getGatedContent(html){
   const split = html.split('</p>');
@@ -925,7 +953,7 @@ function buildMoreArticles(){
       <div class="more-title">More Articles</div>
       <div class="more-list">
         ${others.map(a=>`
-          <div class="more-card" onclick="location.href='/article-read?id=${a.id}'">
+          <div class="more-card" onclick="location.href='/post-read?id=${a.id}'">
             <img class="more-img" src="${a.img}" alt="${a.title}" loading="lazy" onerror="this.style.background='linear-gradient(135deg,#cffafe,#93c5fd)'">
             <div class="more-body">
               <div class="more-cat">${window.msbCatLabel ? window.msbCatLabel(a.cat) : a.cat}</div>
@@ -1093,10 +1121,10 @@ let cList=[],cReplies={},cLikedSet=new Set(),cOpenReplies=new Set(),cActiveReply
 window.loadComments=async function(){
   if(!artId){buildCommentsUI([]);return;}
   try{
-    const countSnap=await getDoc(doc(db,'articleMeta',artId));
+    const countSnap=await getDoc(doc(db,'postMeta',artId));
     cCommentCount=countSnap.exists()?(countSnap.data().commentCount||0):0;
     updateCCount();
-    const q=query(collection(db,'comments'),where('articleId','==',artId),where('parentId','==',null),orderBy('createdAt','asc'));
+    const q=query(collection(db,'comments'),where('postId','==',artId),where('parentId','==',null),orderBy('createdAt','asc'));
     const snap=await getDocs(q);
     cList=snap.docs.map(d=>({id:d.id,...d.data()}));
     cLikedSet.clear();
@@ -1179,15 +1207,15 @@ window.submitComment=async function(){
   if(btn){btn.disabled=true;btn.textContent='Posting…';}
   const an=myProfile?.name||'Someone', ap=myProfile?.photo||'', au=myProfile?.username||'';
   try{
-    const ref=await addDoc(collection(db,'comments'),{articleId:artId,parentId:null,authorUid:currentUser.uid,authorName:an,authorPhoto:ap,authorUsername:au,text,likeCount:0,replyCount:0,createdAt:serverTimestamp()});
-    try{await updateDoc(doc(db,'articleMeta',artId),{commentCount:increment(1)});}catch{await setDoc(doc(db,'articleMeta',artId),{commentCount:1},{merge:true});}
+    const ref=await addDoc(collection(db,'comments'),{postId:artId,parentId:null,authorUid:currentUser.uid,authorName:an,authorPhoto:ap,authorUsername:au,text,likeCount:0,replyCount:0,createdAt:serverTimestamp()});
+    try{await updateDoc(doc(db,'postMeta',artId),{commentCount:increment(1)});}catch{await setDoc(doc(db,'postMeta',artId),{commentCount:1},{merge:true});}
     cCommentCount++;updateCCount();
-    const nc={id:ref.id,articleId:artId,parentId:null,authorUid:currentUser.uid,authorName:an,authorPhoto:ap,authorUsername:au,text,likeCount:0,replyCount:0,createdAt:{toDate:()=>new Date()}};
+    const nc={id:ref.id,postId:artId,parentId:null,authorUid:currentUser.uid,authorName:an,authorPhoto:ap,authorUsername:au,text,likeCount:0,replyCount:0,createdAt:{toDate:()=>new Date()}};
     cList.push(nc);
     const le=document.getElementById('commentsList');
     if(le){const em=le.querySelector('.comments-list-empty');if(em)le.innerHTML='';le.insertAdjacentHTML('beforeend',buildCHTML(nc,false));}
     cancelCI();
-    if(article&&article.authorUid&&article.authorUid!==currentUser.uid&&!article.isMindshift)notif.notifyComment({type:'new_comment',recipientUid:article.authorUid,articleId:artId,articleTitle:article.title});
+    if(article&&article.authorUid&&article.authorUid!==currentUser.uid&&!article.isMindshift)notif.notifyComment({type:'new_comment',recipientUid:article.authorUid,articleId:artId,articleTitle:(article.text||'').slice(0,60)});
   }catch(e){console.error('submitComment:',e);}
   finally{if(btn){btn.disabled=false;btn.textContent='Post';}}
 };
@@ -1212,11 +1240,11 @@ window.submitReply=async function(parentId){
   if(btn){btn.disabled=true;btn.textContent='Posting…';}
   const an=myProfile?.name||'Someone', ap=myProfile?.photo||'', au=myProfile?.username||'';
   try{
-    const ref=await addDoc(collection(db,'comments'),{articleId:artId,parentId,authorUid:currentUser.uid,authorName:an,authorPhoto:ap,authorUsername:au,text,likeCount:0,replyCount:0,createdAt:serverTimestamp()});
+    const ref=await addDoc(collection(db,'comments'),{postId:artId,parentId,authorUid:currentUser.uid,authorName:an,authorPhoto:ap,authorUsername:au,text,likeCount:0,replyCount:0,createdAt:serverTimestamp()});
     try{await updateDoc(doc(db,'comments',parentId),{replyCount:increment(1)});}catch{}
-    try{await updateDoc(doc(db,'articleMeta',artId),{commentCount:increment(1)});}catch{await setDoc(doc(db,'articleMeta',artId),{commentCount:1},{merge:true});}
+    try{await updateDoc(doc(db,'postMeta',artId),{commentCount:increment(1)});}catch{await setDoc(doc(db,'postMeta',artId),{commentCount:1},{merge:true});}
     cCommentCount++;updateCCount();
-    const nr={id:ref.id,articleId:artId,parentId,authorUid:currentUser.uid,authorName:an,authorPhoto:ap,authorUsername:au,text,likeCount:0,replyCount:0,createdAt:{toDate:()=>new Date()}};
+    const nr={id:ref.id,postId:artId,parentId,authorUid:currentUser.uid,authorName:an,authorPhoto:ap,authorUsername:au,text,likeCount:0,replyCount:0,createdAt:{toDate:()=>new Date()}};
     if(!cReplies[parentId])cReplies[parentId]=[];
     cReplies[parentId].push(nr);
     const re=document.getElementById('rep-'+parentId);
@@ -1224,9 +1252,9 @@ window.submitReply=async function(parentId){
     const pc=cList.find(c=>c.id===parentId);
     if(pc){pc.replyCount=(pc.replyCount||0)+1;updVRB(parentId,pc.replyCount);}
     hideRI(parentId);
-    if(pc&&pc.authorUid&&pc.authorUid!==currentUser.uid)notif.notifyComment({type:'comment_reply',recipientUid:pc.authorUid,articleId:artId,articleTitle:article?article.title:'',commentId:parentId});
+    if(pc&&pc.authorUid&&pc.authorUid!==currentUser.uid)notif.notifyComment({type:'comment_reply',recipientUid:pc.authorUid,articleId:artId,articleTitle:article?(article.text||'').slice(0,60):'',commentId:parentId});
     if(article&&article.authorUid&&article.authorUid!==currentUser.uid&&!article.isMindshift){
-      if(!pc||pc.authorUid!==article.authorUid)notif.notifyComment({type:'new_comment',recipientUid:article.authorUid,articleId:artId,articleTitle:article.title});
+      if(!pc||pc.authorUid!==article.authorUid)notif.notifyComment({type:'new_comment',recipientUid:article.authorUid,articleId:artId,articleTitle:(article.text||'').slice(0,60)});
     }
   }catch(e){console.error('submitReply:',e);}
   finally{if(btn){btn.disabled=false;btn.textContent='Post';}}
@@ -1249,7 +1277,7 @@ window.toggleReplies=async function(cid){
   if(cReplies[cid]){re.innerHTML=cReplies[cid].map(r=>buildCHTML(r,true)).join('');return;}
   re.innerHTML='<div style="padding:8px 0;font-size:12px;color:var(--mute)">Loading…</div>';
   try{
-    const q=query(collection(db,'comments'),where('articleId','==',artId),where('parentId','==',cid),orderBy('createdAt','asc'));
+    const q=query(collection(db,'comments'),where('postId','==',artId),where('parentId','==',cid),orderBy('createdAt','asc'));
     const snap=await getDocs(q);
     const replies=snap.docs.map(d=>({id:d.id,...d.data()}));
     if(currentUser){
@@ -1282,7 +1310,7 @@ window.likeComment=async function(cid,authorUid){
         [`likedBy.${currentUser.uid}`]: true,
         likeCount: increment(1)
       });
-      if(authorUid&&authorUid!==currentUser.uid) notif.notifyComment({type:'comment_like',recipientUid:authorUid,articleId:artId,articleTitle:article?article.title:'',commentId:cid});
+      if(authorUid&&authorUid!==currentUser.uid) notif.notifyComment({type:'comment_like',recipientUid:authorUid,articleId:artId,articleTitle:article?(article.text||'').slice(0,60):'',commentId:cid});
     }
   }catch(e){
     if(wasLiked){cLikedSet.add(cid);if(btn)btn.classList.add('liked');}
@@ -1331,7 +1359,7 @@ window.deleteComment=async function(cid,parentId){
   try{
     await deleteDoc(doc(db,'comments',cid));
     // decrement counts
-    try{await updateDoc(doc(db,'articleMeta',artId),{commentCount:increment(-1)});}catch{}
+    try{await updateDoc(doc(db,'postMeta',artId),{commentCount:increment(-1)});}catch{}
     if(parentId){try{await updateDoc(doc(db,'comments',parentId),{replyCount:increment(-1)});}catch{}}
     if(el)el.remove();
     cCommentCount=Math.max(0,cCommentCount-1);updateCCount();
@@ -1377,7 +1405,7 @@ window.closeShare=function(){
 };
 window.doShare=function(platform){
   const url=encodeURIComponent(location.href);
-  const txt=encodeURIComponent((article?article.title:'Career article')+' — MindShift Books');
+  const txt=encodeURIComponent((article&&article.text ? article.text.slice(0,80) : 'A post')+' — MindShift Books');
   if(artId){
     const shRef=doc(db,'articleShares',artId);
     updateDoc(shRef,{count:increment(1)}).catch(()=>setDoc(shRef,{count:1},{merge:true}).catch(()=>{}));

@@ -304,7 +304,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   <ul>
     <li onclick="window.location.href='/books'">Bookstore</li>
     <li onclick="window.location.href='/articles'">Articles</li>
-    <li onclick="window.location.href='/write'">Write an Article</li>
+    <li onclick="openCreatePicker()">Create</li>
     <li id="sbProfileLink" style="display:none" onclick="window.location.href='/profile'">My Profile</li>
     <li id="sbInsightsLink" style="display:none" onclick="window.location.href='/insights'">My Insights</li>
     <li id="sbSavedLink" style="display:none" onclick="window.location.href='/articles'">Saved Articles</li>
@@ -379,8 +379,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 
 <!-- TABS -->
 <div class="tabs" id="tabsRow">
-  <div class="tab active" id="tabPublished" onclick="switchTab('published')">Published</div>
-  <!-- pending/rejected tabs only for owner — added by JS -->
+  <div class="tab active" id="tabAll" onclick="switchTab('all')">All</div>
+  <div class="tab" id="tabArticle" onclick="switchTab('article')">Articles</div>
+  <div class="tab" id="tabPost" onclick="switchTab('post')">Posts</div>
 </div>
 
 <!-- ARTICLES -->
@@ -542,7 +543,7 @@ let currentUser = null;
 let myProfile = null;
 let isOwner = false;
 let profileData = {};
-let activeTab = 'published';
+let activeTab = 'all';
 let isFollowing = false;
 let allSubmissions = [];
 
@@ -796,21 +797,16 @@ function renderProfileHeader(){
       <a class="btn-share" href="/settings" aria-label="Settings &amp; Activity" title="Settings &amp; Activity" style="text-decoration:none">
         <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
       </a>`;
-    // CTA row: Write + Edit Profile — full-width, spaced
+    // CTA row: Create + Edit Profile — full-width, spaced
     if(cta) cta.innerHTML = `
-      <button class="btn-write" onclick="window.location.href='/write'">
+      <button class="btn-write" onclick="openCreatePicker()">
         <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-        Write
+        Create
       </button>
       <button class="btn-edit-profile" onclick="openEditSheet()">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
         Edit Profile
       </button>`;
-    // add pending/rejected tabs for owner
-    document.getElementById('tabsRow').innerHTML = `
-      <div class="tab active" id="tabPublished" onclick="switchTab('published')">Published</div>
-      <div class="tab" id="tabPending" onclick="switchTab('pending')">Under Review</div>
-      <div class="tab" id="tabRejected" onclick="switchTab('rejected')">Rejected</div>`;
   } else {
     // Visitor: share icon in avatar row, Follow button in cta row
     actions.innerHTML = `${shareBtn}`;
@@ -827,13 +823,12 @@ async function loadStats(){
   try{
     if(allSubmissions.length >= 0){
       // Use in-memory data if available (loadArticles ran first via Promise.all)
-      const approved = allSubmissions.filter(s=>s.status==='approved').length;
-      document.getElementById('statArticles').textContent = approved;
-    } else {
-      const pubQ = query(collection(db,'submissions'), where('userId','==',uid));
-      const pubSnap = await getDocs(pubQ);
-      const count = pubSnap.docs.filter(d=>d.data().status==='approved').length;
+      const count = allSubmissions.filter(s=>s.type==='article').length;
       document.getElementById('statArticles').textContent = count;
+    } else {
+      const pubQ = query(collection(db,'articles'), where('authorUid','==',uid));
+      const pubSnap = await getDocs(pubQ);
+      document.getElementById('statArticles').textContent = pubSnap.size;
     }
   }catch(e){
     console.warn('loadStats articles failed:', e?.code);
@@ -959,24 +954,24 @@ window.toggleFollow = async function(){
   }
 };
 
-/* ── LOAD ARTICLES ── */
+/* ── LOAD ARTICLES + POSTS (everything auto-publishes now — no review states) ── */
 async function loadArticles(){
   const uid = profileData.uid;
   try{
-    // Use simple single-field where() only — no orderBy to avoid needing composite index.
+    // Simple single-field where() only — no orderBy, so no composite index needed.
     // Sort client-side instead.
-    const q = query(collection(db,'submissions'), where('userId','==',uid));
-    const snap = await getDocs(q);
-    allSubmissions = snap.docs
-      .map(d=>({id:d.id,...d.data()}))
-      .filter(s => isOwner || s.status === 'approved')   // hide non-approved from visitors
-      .sort((a,b)=>{
-        const ta = a.createdAt?.toDate?.() || new Date(a.createdAt||0);
-        const tb = b.createdAt?.toDate?.() || new Date(b.createdAt||0);
-        return tb - ta;
-      });
+    const [artSnap, postSnap] = await Promise.all([
+      getDocs(query(collection(db,'articles'), where('authorUid','==',uid))),
+      getDocs(query(collection(db,'posts'), where('authorUid','==',uid)))
+    ]);
+    const arts  = artSnap.docs.map(d=>({id:d.id,type:'article',...d.data()}));
+    const posts = postSnap.docs.map(d=>({id:d.id,type:'post',...d.data()}));
+    allSubmissions = [...arts, ...posts].sort((a,b)=>{
+      const ta = a.createdAt?.toDate?.() || new Date(a.createdAt||0);
+      const tb = b.createdAt?.toDate?.() || new Date(b.createdAt||0);
+      return tb - ta;
+    });
     renderArticles();
-    if(isOwner) updateTabBadges();
   }catch(e){
     console.error('loadArticles failed:', e?.code, e?.message);
     allSubmissions = [];
@@ -984,16 +979,7 @@ async function loadArticles(){
   }
 }
 
-function updateTabBadges(){
-  const pending  = allSubmissions.filter(s=>s.status==='pending').length;
-  const rejected = allSubmissions.filter(s=>s.status==='rejected').length;
-  const tP = document.getElementById('tabPending');
-  const tR = document.getElementById('tabRejected');
-  if(tP && pending>0) tP.innerHTML = `Under Review<span class="tab-badge">${pending}</span>`;
-  if(tR && rejected>0) tR.innerHTML = `Rejected<span class="tab-badge">${rejected}</span>`;
-}
-
-/* ── SWITCH TAB ── */
+/* ── SWITCH TAB (content-type filter: all / article / post) ── */
 window.switchTab = function(tab){
   activeTab = tab;
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
@@ -1002,24 +988,19 @@ window.switchTab = function(tab){
   renderArticles();
 };
 
-/* ── RENDER ARTICLES ── */
+/* ── RENDER ARTICLES + POSTS ── */
 function renderArticles(){
   const sec = document.getElementById('articlesSection');
-  const filtered = allSubmissions.filter(s=>{
-    if(activeTab==='published') return s.status==='approved';
-    if(activeTab==='pending')   return s.status==='pending';
-    if(activeTab==='rejected')  return s.status==='rejected';
-    return true;
-  });
+  const filtered = activeTab==='all' ? allSubmissions : allSubmissions.filter(s=>s.type===activeTab);
 
   if(!filtered.length){
     const msgs = {
-      published: isOwner
-        ? `<p>No published articles yet.<br>Submit your first one!</p>
-           <button class="btn-write-now" onclick="window.location.href='/write'">Write an Article</button>`
-        : `<p>No published articles yet.</p>`,
-      pending:  `<p>No articles under review.</p>`,
-      rejected: `<p>No rejected articles.</p>`
+      all: isOwner
+        ? `<p>Nothing shared yet.<br>Create your first post or article!</p>
+           <button class="btn-write-now" onclick="openCreatePicker()">Create</button>`
+        : `<p>Nothing shared yet.</p>`,
+      article: `<p>No articles yet.</p>`,
+      post: `<p>No posts yet.</p>`
     };
     sec.innerHTML = `<div class="empty-state">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -1031,30 +1012,34 @@ function renderArticles(){
     return;
   }
 
-  sec.innerHTML = filtered.map(s=>`
-    <div class="article-row" onclick="openArticle('${s.id}','${s.status}')">
-      <div class="art-thumb" style="${s.cover?`background-image:url(${s.cover});background-size:cover;background-position:center`:''}">&nbsp;</div>
+  sec.innerHTML = filtered.map(s=>{
+    const thumb = s.type==='post' ? (s.images&&s.images[0]) : s.cover;
+    const title = s.type==='post' ? (s.text||'').slice(0,80) : (s.title||'Untitled');
+    return `
+    <div class="article-row" onclick="openArticle('${s.id}','${s.type}')">
+      <div class="art-thumb" style="${thumb?`background-image:url(${thumb});background-size:cover;background-position:center`:''}">&nbsp;</div>
       <div class="art-info">
-        <div class="art-cat">${s.cat||''}</div>
-        <div class="art-title">${s.title||'Untitled'}</div>
+        <div class="art-cat">${s.type==='post' ? 'POST' : (s.cat||'')}</div>
+        <div class="art-title">${title}</div>
         <div class="art-meta">
-          ${statusBadge(s.status)}
-          <span class="art-read">${s.readTime||''}</span>
+          <span class="art-read">${s.type==='post' ? fmtRel(s.createdAt) : (s.readTime||'')}</span>
         </div>
-        ${s.status==='rejected'&&s.reviewNote ? `<div style="font-size:12px;color:var(--sub);margin-top:6px;background:var(--bg);padding:7px 10px;border-radius:8px">💬 ${s.reviewNote}</div>` : ''}
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
-function statusBadge(status){
-  if(status==='approved') return `<span class="badge badge-approved">✓ Live</span>`;
-  if(status==='rejected') return `<span class="badge badge-rejected">✗ Rejected</span>`;
-  return `<span class="badge badge-pending"><span class="dot"></span> Under Review</span>`;
+function fmtRel(ts){
+  if(!ts) return '';
+  const ms = ts.seconds ? ts.seconds*1000 : ts;
+  const d = Date.now()-ms;
+  if(d<86400000) return 'Today';
+  if(d<604800000) return `${Math.floor(d/86400000)}d ago`;
+  return new Date(ms).toLocaleDateString('en-US',{month:'short',day:'numeric'});
 }
 
-window.openArticle = function(id, status){
-  if(status==='approved') window.location.href=`/article-read?id=${id}`;
+window.openArticle = function(id, type){
+  window.location.href = type==='post' ? `/post-read?id=${id}` : `/article-read?id=${id}`;
 };
 
 /* ── EDIT PROFILE ── */
@@ -1581,5 +1566,6 @@ window.MindshiftUploader = (function(){
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="/auth.js"></script>
+<script src="/create-picker.js"></script>
 </body>
 </html>

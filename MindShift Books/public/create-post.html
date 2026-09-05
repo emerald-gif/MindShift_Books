@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Create a Post · MindShift Books</title>
+<meta name="description" content="Share a quick update with the MindShift Books community."/>
+<meta name="robots" content="noindex, nofollow"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --p:#4f46e5;--p2:#06b6d4;--g:linear-gradient(90deg,#4f46e5,#06b6d4);
+  --txt:#0f172a;--sub:#6b7280;--mute:#9ca3af;
+  --bg:#f8fafc;--card:#fff;--border:#e5e7eb;
+  --green:#10b981;--yellow:#f59e0b;--red:#ef4444;
+  --radius:16px;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh}
+
+/* ── HEADER ── */
+.hdr{position:sticky;top:0;z-index:100;background:rgba(248,247,255,.92);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);padding:0 16px;height:56px;
+  display:flex;align-items:center;justify-content:space-between;gap:12px}
+.hdr-left{display:flex;align-items:center;gap:10px}
+.btn-back{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--border);background:var(--card);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt)}
+.btn-back svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.hdr-title{font-size:16px;font-weight:800;color:var(--txt)}
+.btn-post{padding:9px 20px;border-radius:99px;border:none;background:var(--g);color:#fff;
+  font-size:13.5px;font-weight:800;cursor:pointer;transition:opacity .2s}
+.btn-post:disabled{opacity:.45;cursor:not-allowed}
+
+/* ── MAIN ── */
+.main{max-width:640px;margin:0 auto;padding:20px 16px 60px}
+
+.composer{background:var(--card);border-radius:var(--radius);border:1px solid var(--border);padding:16px}
+.composer-author{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.composer-av{width:38px;height:38px;border-radius:50%;object-fit:cover;background:linear-gradient(135deg,#4f46e5,#06b6d4)}
+.composer-name{font-size:14px;font-weight:800;color:var(--txt)}
+.composer-sub{font-size:11.5px;color:var(--mute)}
+
+.post-textarea{width:100%;border:none;outline:none;resize:none;font-family:inherit;font-size:16px;line-height:1.55;
+  color:var(--txt);min-height:120px;background:transparent}
+.post-textarea::placeholder{color:var(--mute)}
+
+.char-count{text-align:right;font-size:11.5px;color:var(--mute);margin-top:4px}
+.char-count.over{color:var(--red);font-weight:700}
+
+/* ── IMAGE GRID ── */
+.img-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.img-tile{position:relative;aspect-ratio:1;border-radius:12px;overflow:hidden;background:#f1f5f9}
+.img-tile img{width:100%;height:100%;object-fit:cover;display:block}
+.img-tile .rm-btn{position:absolute;top:5px;right:5px;width:22px;height:22px;border-radius:50%;
+  background:rgba(15,10,30,.65);border:none;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.img-tile .rm-btn svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round}
+.img-tile.uploading::after{content:'';position:absolute;inset:0;background:rgba(255,255,255,.6);
+  border:2px solid #e0e7ff;border-top-color:#4f46e5;border-radius:50%;width:22px;height:22px;margin:auto;
+  top:0;bottom:0;left:0;right:0;animation:spin .72s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.add-img-tile{aspect-ratio:1;border-radius:12px;border:2px dashed var(--border);background:#fafbff;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;
+  color:var(--mute);transition:all .2s}
+.add-img-tile:hover{border-color:var(--p);color:var(--p);background:#eef2ff}
+.add-img-tile svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.add-img-tile span{font-size:10.5px;font-weight:700}
+
+.img-hint{font-size:11.5px;color:var(--mute);margin-top:10px}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:#0f172a;color:#fff;padding:12px 20px;border-radius:99px;font-size:13.5px;font-weight:600;
+  opacity:0;pointer-events:none;transition:all .3s;z-index:999;white-space:nowrap;max-width:90vw;
+  overflow:hidden;text-overflow:ellipsis}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── SUCCESS OVERLAY ── */
+.success-overlay{position:fixed;inset:0;background:rgba(15,10,30,.6);z-index:2000;
+  display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s;padding:20px}
+.success-overlay.show{opacity:1;pointer-events:all}
+.success-card{background:#fff;border-radius:20px;padding:32px 24px;max-width:340px;width:100%;text-align:center}
+.success-icon{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#4f46e5,#06b6d4);
+  display:flex;align-items:center;justify-content:center;margin:0 auto 16px;color:#fff}
+.success-icon svg{width:32px;height:32px}
+.success-card h3{font-size:18px;font-weight:800;margin-bottom:8px;color:var(--txt)}
+.success-card p{font-size:13.5px;color:var(--sub);margin-bottom:22px;line-height:1.5}
+.btn-done{width:100%;padding:13px;border:none;border-radius:14px;background:var(--g);color:#fff;
+  font-size:14.5px;font-weight:800;cursor:pointer}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-left">
+    <button class="btn-back" onclick="history.back()">
+      <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+    </button>
+    <span class="hdr-title">Create Post</span>
+  </div>
+  <button class="btn-post" id="postBtn" onclick="submitPost()" disabled>Post</button>
+</div>
+
+<main class="main">
+  <div class="composer">
+    <div class="composer-author">
+      <img class="composer-av" id="composerAv" src="" alt="">
+      <div>
+        <div class="composer-name" id="composerName">You</div>
+        <div class="composer-sub">Posting publicly · goes live immediately</div>
+      </div>
+    </div>
+    <textarea class="post-textarea" id="postText" placeholder="What's on your mind?" oninput="onTextInput()" maxlength="2000"></textarea>
+    <div class="char-count" id="charCount">0 / 2000</div>
+
+    <div class="img-grid" id="imgGrid" style="display:none"></div>
+    <div class="img-hint" id="imgHint">Add up to 5 photos</div>
+
+    <input type="file" id="fileInput" accept="image/*" multiple style="display:none">
+  </div>
+</main>
+
+<!-- SUCCESS OVERLAY -->
+<div class="success-overlay" id="successOverlay">
+  <div class="success-card">
+    <div class="success-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+    </div>
+    <h3>Post Published! 🎉</h3>
+    <p>Your post is live now on your profile and in the feed.</p>
+    <button class="btn-done" onclick="location.href='/'">Got it, thanks!</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
+import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
+import { getFirestore, collection, doc, setDoc, getDoc, serverTimestamp }
+  from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
+
+const fbApp = initializeApp({
+  apiKey:"AIzaSyDTn70s1_uIiSOR6lPLY_nKh8Ff1FViFCs",
+  authDomain:"mindshiftbooks-c4451.firebaseapp.com",
+  projectId:"mindshiftbooks-c4451",
+  storageBucket:"mindshiftbooks-c4451.firebasestorage.app",
+  messagingSenderId:"388697987853",
+  appId: "1:388697987853:web:f023df9412c22285012e44",
+  measurementId: "G-CHPJDQ4W08"
+});
+const auth = getAuth(fbApp);
+const db   = getFirestore(fbApp, 'default');
+
+let currentUser = null;
+let userProfile = {};
+// Each item: {url, uploading} — url filled in once /api/upload-image responds
+let images = [];
+const MAX_IMAGES = 5;
+
+onAuthStateChanged(auth, async user => {
+  currentUser = user;
+  if(!user){ window.location.href = '/login'; return; }
+  try{
+    const s = await getDoc(doc(db,'users',user.uid));
+    userProfile = s.exists() ? s.data() : {};
+  }catch{}
+  document.getElementById('composerName').textContent = userProfile.name || user.displayName || (user.email||'').split('@')[0] || 'You';
+  const av = document.getElementById('composerAv');
+  av.src = userProfile.photo || user.photoURL || '';
+  av.onerror = () => { av.style.background = 'linear-gradient(135deg,#4f46e5,#06b6d4)'; };
+});
+
+/* ── TEXT ── */
+window.onTextInput = function(){
+  const val = document.getElementById('postText').value;
+  const cc = document.getElementById('charCount');
+  cc.textContent = `${val.length} / 2000`;
+  cc.classList.toggle('over', val.length > 2000);
+  updatePostBtn();
+};
+
+function updatePostBtn(){
+  const val = document.getElementById('postText').value.trim();
+  const stillUploading = images.some(i => i.uploading);
+  document.getElementById('postBtn').disabled = (!val && !images.length) || stillUploading;
+}
+
+/* ── IMAGES ── */
+document.getElementById('fileInput').addEventListener('change', async (e) => {
+  const files = Array.from(e.target.files || []).slice(0, MAX_IMAGES - images.length);
+  e.target.value = '';
+  for(const file of files){
+    if(images.length >= MAX_IMAGES) break;
+    if(file.size > 5*1024*1024){ showToast('Each image must be under 5MB'); continue; }
+    const idx = images.length;
+    images.push({ url:'', uploading:true });
+    renderImages();
+    try{
+      const dataUrl = await new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(r.result);
+        r.onerror = reject;
+        r.readAsDataURL(file);
+      });
+      // show local preview immediately while the real upload happens
+      images[idx].preview = dataUrl;
+      renderImages();
+      const token = await currentUser.getIdToken();
+      const res = await fetch('/api/upload-image', {
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+        body: JSON.stringify({dataUrl})
+      });
+      const json = await res.json();
+      if(!res.ok) throw new Error(json.error || 'Upload failed');
+      images[idx].url = json.url;
+      images[idx].uploading = false;
+    }catch(err){
+      showToast('Image upload failed — removed');
+      images.splice(idx,1);
+    }
+    renderImages();
+  }
+});
+
+window.openImagePicker = function(){
+  if(images.length >= MAX_IMAGES){ showToast(`Max ${MAX_IMAGES} photos per post`); return; }
+  document.getElementById('fileInput').click();
+};
+
+window.removeImage = function(idx){
+  images.splice(idx,1);
+  renderImages();
+};
+
+function renderImages(){
+  const grid = document.getElementById('imgGrid');
+  const hint = document.getElementById('imgHint');
+  if(!images.length){ grid.style.display='none'; hint.style.display='block'; updatePostBtn(); return; }
+  grid.style.display = 'grid';
+  hint.style.display = 'none';
+  let html = images.map((img,i)=>`
+    <div class="img-tile${img.uploading?' uploading':''}">
+      <img src="${img.preview||img.url||''}" alt="">
+      <button class="rm-btn" onclick="removeImage(${i})">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+  `).join('');
+  if(images.length < MAX_IMAGES){
+    html += `<div class="add-img-tile" onclick="openImagePicker()">
+      <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      <span>Add</span>
+    </div>`;
+  }
+  grid.innerHTML = html;
+  updatePostBtn();
+}
+// Show the "Add" tile from the start so a bare textarea isn't the only entry point.
+renderImages();
+
+/* ── SUBMIT ── */
+window.submitPost = async function(){
+  if(!currentUser) return;
+  const text = document.getElementById('postText').value.trim();
+  const urls = images.filter(i=>i.url).map(i=>i.url);
+  if(!text && !urls.length){ showToast('Write something or add a photo first'); return; }
+
+  const btn = document.getElementById('postBtn');
+  btn.disabled = true;
+  btn.textContent = 'Posting…';
+
+  try{
+    const id = `post_${currentUser.uid}_${Date.now()}`;
+    await setDoc(doc(db,'posts',id),{
+      id, authorUid: currentUser.uid,
+      authorName: userProfile.name || currentUser.displayName || (currentUser.email||'').split('@')[0] || 'MindShift Books User',
+      authorPhoto: userProfile.photo || currentUser.photoURL || '',
+      authorUsername: userProfile.username || '',
+      text, images: urls,
+      status: 'published',
+      likeCount: 0, commentCount: 0, saveCount: 0,
+      createdAt: serverTimestamp(),
+      publishedAt: serverTimestamp()
+    });
+    document.getElementById('successOverlay').classList.add('show');
+  }catch(e){
+    console.error(e);
+    showToast('Could not post — try again');
+    btn.disabled = false;
+    btn.textContent = 'Post';
+  }
+};
+
+/* ── TOAST ── */
+window.showToast = function(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('on');
+  setTimeout(()=>t.classList.remove('on'),2800);
+};
+</script>
+</body>
+</html>

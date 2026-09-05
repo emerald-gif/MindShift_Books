@@ -175,7 +175,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   <ul>
     <li onclick="window.location.href='/books'">Bookstore</li>
     <li onclick="window.location.href='/articles'">Articles</li>
-    <li onclick="window.location.href='/write'">Write an Article</li>
+    <li onclick="openCreatePicker()">Create</li>
     <li onclick="window.location.href='/profile'">My Profile</li>
     <li onclick="window.location.href='/insights'">My Insights</li>
     <li onclick="window.location.href='/articles'">Saved Articles</li>
@@ -581,5 +581,6 @@ window.shareProfile = async function(){
   }
 };
 </script>
+<script src="/create-picker.js"></script>
 </body>
 </html>
