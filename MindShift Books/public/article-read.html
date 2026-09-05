@@ -656,12 +656,23 @@ const params = new URLSearchParams(location.search);
 artId = params.get('id');
 article = ARTICLES.find(a=>a.id===artId);
 
-/* ── VIEW TRACKING (once per session per article) ── */
+/* ── VIEW TRACKING (once per device per calendar day per article) ──
+   Was once-per-session (sessionStorage), which resets the moment a tab
+   closes or a new tab is opened — so someone hitting refresh, or opening
+   the link a few times in the same day, could rack up several counted
+   views. This keys off the local calendar date in localStorage instead,
+   so the same device only ever adds +1 to an article's view count per
+   day, no matter how many times it's opened that day — and it counts
+   again the next day, same as normal analytics. */
 (function trackArticleView(){
   if(!artId) return;
-  const key = `viewed_${artId}`;
-  if(sessionStorage.getItem(key)) return;
-  sessionStorage.setItem(key, '1');
+  const now=new Date();
+  const today=`${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`;
+  const key=`viewed_${artId}_${today}`;
+  try{
+    if(localStorage.getItem(key)) return;
+    localStorage.setItem(key,'1');
+  }catch(e){ /* storage blocked (private mode etc.) — fall through, count once */ }
   updateDoc(doc(db,'articleMeta',artId),{viewCount:increment(1)})
     .catch(()=>setDoc(doc(db,'articleMeta',artId),{viewCount:1},{merge:true}).catch(()=>{}));
 })();
