@@ -4207,145 +4207,92 @@ app.get('/api/admin/affiliates', async (req, res) => {
 // GET /api/admin/payouts?status=pending — the Monday payout queue for the
 // admin's dedicated Payouts page. Defaults to pending only; ?status=all
 // returns everything (for a full history view).
-// ── Article submissions (admin review queue) ────────────────────────────────
-// GET  /api/admin/submissions?status=pending|approved|rejected|all
-// POST /api/admin/submissions/:id/approve
-// POST /api/admin/submissions/:id/reject   body: { reason }
+// ── Content moderation (articles + posts) ───────────────────────────────────
+// GET    /api/admin/content?type=articles|posts|all
+// DELETE /api/admin/content/:type/:id   (type is 'articles' or 'posts')
 //
-// "Approve" copies the submission into articles/{sameId} with status:
-// 'published' — the doc articles.html's feed and article-read.html actually
-// query. Firestore rules lock articles writes to server-side only (Admin
-// SDK bypasses rules, same as everywhere else admin-only), so this route is
-// the ONLY way an article goes live; there is no client-side path that can
-// do it, by design.
-//
-// Idempotent on purpose: re-approving an already-approved submission just
-// re-runs the copy. That's what lets a submission whose status field got
-// hand-edited to "approved" directly in the Firebase console (skipping this
-// route entirely) get properly fixed — its articles/{id} doc was never
-// created, so it shows as "Live" on the author's profile but 404s
-// everywhere else. Hitting Approve again here for that submission creates
-// the missing articles doc without needing to reset its status first.
-app.get('/api/admin/submissions', async (req, res) => {
+// Articles and posts now publish straight from the client the moment the
+// author hits Publish/Post (see firestore.rules -- the author's own uid has
+// to match authorUid, same trust boundary as everything else client-owned).
+// There's no pending/review queue anymore, so this replaces the old
+// submissions-based approve/reject flow: it's a live list of everything
+// that's already public, with a single Delete action for taking down
+// something that shouldn't be up (the old submissions collection is no
+// longer written to by anything and is left alone in firestore.rules).
+app.get('/api/admin/content', async (req, res) => {
   try {
     if (!db) return res.status(500).json({ error: 'Database unavailable' });
-    const status = String(req.query.status || 'pending');
-    // Filtered in JS rather than a status+createdAt composite index, same
-    // reasoning as /api/admin/payouts above.
-    const snap = await db.collection('submissions').orderBy('createdAt', 'desc').limit(300).get();
-    const filteredDocs = status === 'all' ? snap.docs : snap.docs.filter(d => (d.data().status || 'pending') === status);
-    const submissions = filteredDocs.map(d => {
-      const s = d.data();
-      return {
-        id: d.id,
-        userId: s.userId || null,
-        authorName: s.authorName || '',
-        authorPhoto: s.authorPhoto || '',
-        authorUsername: s.authorUsername || '',
-        title: s.title || '',
-        brief: s.brief || '',
-        body: s.body || '',
-        cat: s.cat || '',
-        subCat: s.subCat || '',
-        cover: s.cover || '',
-        readTime: s.readTime || '',
-        status: s.status || 'pending',
-        reviewNote: s.reviewNote || '',
-        createdAt: s.createdAt ? (s.createdAt.toDate ? s.createdAt.toDate().toISOString() : s.createdAt) : null
-      };
+    const type = String(req.query.type || 'all');
+    const collections = type === 'all' ? ['articles', 'posts'] : [type];
+    if (collections.some(c => c !== 'articles' && c !== 'posts')) {
+      return res.status(400).json({ error: 'type must be articles, posts, or all' });
+    }
+    const snaps = await Promise.all(collections.map(c =>
+      db.collection(c).orderBy('createdAt', 'desc').limit(300).get()
+    ));
+    const items = [];
+    snaps.forEach((snap, i) => {
+      const kind = collections[i]; // 'articles' | 'posts'
+      snap.docs.forEach(d => {
+        const s = d.data();
+        items.push({
+          id: d.id,
+          type: kind === 'articles' ? 'article' : 'post',
+          authorUid: s.authorUid || null,
+          authorName: s.authorName || '',
+          authorPhoto: s.authorPhoto || '',
+          authorUsername: s.authorUsername || '',
+          title: s.title || '',
+          brief: s.brief || '',
+          body: s.body || '',
+          text: s.text || '',
+          images: Array.isArray(s.images) ? s.images : [],
+          cat: s.cat || '',
+          cover: s.cover || '',
+          status: s.status || '',
+          createdAt: s.createdAt ? (s.createdAt.toDate ? s.createdAt.toDate().toISOString() : s.createdAt) : null
+        });
+      });
     });
-    return res.json({ submissions });
+    items.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    return res.json({ items: items.slice(0, 300) });
   } catch (err) {
-    console.error('/api/admin/submissions error', err);
-    return res.status(500).json({ error: 'Could not load submissions' });
+    console.error('/api/admin/content error', err);
+    return res.status(500).json({ error: 'Could not load content' });
   }
 });
 
-app.post('/api/admin/submissions/:id/approve', async (req, res) => {
+app.delete('/api/admin/content/:type/:id', async (req, res) => {
   try {
     if (!db) return res.status(500).json({ error: 'Database unavailable' });
-    const id = req.params.id;
-    const subRef = db.collection('submissions').doc(id);
-    const subSnap = await subRef.get();
-    if (!subSnap.exists) return res.status(404).json({ error: 'Submission not found' });
-    const s = subSnap.data();
-    if (!s.title || !s.body) return res.status(400).json({ error: 'Submission is missing a title or body' });
+    const { type, id } = req.params;
+    if (type !== 'articles' && type !== 'posts') {
+      return res.status(400).json({ error: 'type must be articles or posts' });
+    }
+    const ref = db.collection(type).doc(id);
+    const snap = await ref.get();
+    if (!snap.exists) return res.status(404).json({ error: 'Not found' });
+    const s = snap.data();
+    await ref.delete();
 
-    const now = admin.firestore.Timestamp.now();
-    await db.collection('articles').doc(id).set({
-      cat: s.cat || '',
-      subCat: s.subCat || '',
-      title: s.title,
-      brief: s.brief || '',
-      body: s.body,
-      cover: s.cover || '',
-      readTime: s.readTime || '',
-      authorUid: s.userId || null,
-      authorName: s.authorName || '',
-      authorPhoto: s.authorPhoto || '',
-      authorUsername: s.authorUsername || '',
-      status: 'published',
-      publishedAt: now
-    });
-    await subRef.update({ status: 'approved', reviewNote: '' });
-
-    if (s.userId) {
+    if (s.authorUid) {
       await db.collection('notifications').add({
-        recipientUid: s.userId,
-        type: 'article_approved',
+        recipientUid: s.authorUid,
+        type: type === 'articles' ? 'article_removed' : 'post_removed',
         actorUid: 'official',
         actorName: 'MindShift Books',
         actorPhoto: '',
         actorUsername: 'official',
-        articleId: id,
-        title: 'Your article was approved!',
-        message: s.title,
+        title: type === 'articles' ? 'Your article was removed' : 'Your post was removed',
+        message: s.title || (s.text || '').slice(0, 120) || '',
         read: false,
-        createdAt: now
+        createdAt: admin.firestore.Timestamp.now()
       }).catch(() => {});
     }
     return res.json({ ok: true });
   } catch (err) {
-    console.error('/api/admin/submissions/:id/approve error', err);
-    return res.status(500).json({ error: 'Could not approve submission' });
-  }
-});
-
-app.post('/api/admin/submissions/:id/reject', async (req, res) => {
-  try {
-    if (!db) return res.status(500).json({ error: 'Database unavailable' });
-    const id = req.params.id;
-    const reason = String((req.body && req.body.reason) || '').slice(0, 500);
-    const subRef = db.collection('submissions').doc(id);
-    const subSnap = await subRef.get();
-    if (!subSnap.exists) return res.status(404).json({ error: 'Submission not found' });
-    const s = subSnap.data();
-
-    const now = admin.firestore.Timestamp.now();
-    await subRef.update({ status: 'rejected', reviewNote: reason });
-    // If a previous approve had already created a live articles/{id} doc
-    // (re-reviewing something), take it back down rather than leaving a
-    // published article whose submission now says "rejected".
-    await db.collection('articles').doc(id).delete().catch(() => {});
-
-    if (s.userId) {
-      await db.collection('notifications').add({
-        recipientUid: s.userId,
-        type: 'article_rejected',
-        actorUid: 'official',
-        actorName: 'MindShift Books',
-        actorPhoto: '',
-        actorUsername: 'official',
-        title: 'Article update',
-        message: reason || `"${s.title || 'Your submission'}" wasn't approved this time.`,
-        read: false,
-        createdAt: now
-      }).catch(() => {});
-    }
-    return res.json({ ok: true });
-  } catch (err) {
-    console.error('/api/admin/submissions/:id/reject error', err);
-    return res.status(500).json({ error: 'Could not reject submission' });
+    console.error('/api/admin/content/:type/:id delete error', err);
+    return res.status(500).json({ error: 'Could not delete' });
   }
 });
 
