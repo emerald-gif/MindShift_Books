@@ -430,30 +430,6 @@ header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 <!-- HEADER -->
 <!-- ══ SHARED MINDSHIFT HEADER + SIDEBAR (matches articles.html / index.html) ══ -->
 <div class="sticky-header-stack">
-<header>
-  <div class="header-top">
-    <h1 style="display:flex;align-items:center;gap:10px;margin:0;">
-      <a href="/" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;">
-        <img src="/MINDSHIFT.jpg" alt="MindShift logo" style="width:36px;height:36px;border-radius:6px;">
-      </a>
-      <span>Articles</span>
-    </h1>
-    <div class="header-icon-group">
-      <span class="acct-nav-slot"></span>
-      <div class="notif-wrap" id="notifWrap" style="display:none">
-        <button type="button" class="icon-btn" id="notifBtn" onclick="openNotifPanel()" aria-label="Notifications">
-          <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path fill-rule="evenodd" clip-rule="evenodd" d="M5.25 9a6.75 6.75 0 0113.5 0v.75c0 2.123.8 4.057 2.118 5.52a.75.75 0 01-.297 1.206 24.585 24.585 0 01-4.831 1.243 3.75 3.75 0 11-7.48 0 24.585 24.585 0 01-4.831-1.244.75.75 0 01-.298-1.205A8.217 8.217 0 005.25 9.75V9zm4.502 8.9a2.25 2.25 0 104.496 0 25.057 25.057 0 01-4.496 0z"/></svg>
-          <span class="notif-badge" id="notifBadge">0</span>
-        </button>
-      </div>
-      <button type="button" id="sidebarToggle" class="icon-btn" onclick="toggleSidebar()" aria-label="Open menu">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="22" height="22"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-      </button>
-    </div>
-  </div>
-</header>
-
-<!-- READING BAR: back button + scroll-linked article title -->
 <header class="hdr">
   <button class="back-btn" onclick="history.back()">
     <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>

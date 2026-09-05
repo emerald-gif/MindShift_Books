@@ -148,14 +148,18 @@ header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .art-hero{width:100%;height:220px;object-fit:cover;display:block;background:linear-gradient(135deg,#cffafe,#ecfeff);border-radius:14px;margin:2px 0 22px}
 /* ── POST (vs. article) content ── */
 .post-text{font-size:16.5px;line-height:1.6;color:var(--txt);white-space:pre-wrap;word-break:break-word;margin:16px 0}
+/* ── Horizontal swipeable image carousel ── */
 .post-carousel{position:relative;margin:6px 0 18px;border-radius:16px;overflow:hidden}
-.post-carousel-track{display:flex;align-items:flex-start;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;transition:height .2s ease}
+.post-carousel-track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
+  scrollbar-width:none;aspect-ratio:4/5;background:#f1f5f9}
 .post-carousel-track::-webkit-scrollbar{display:none}
-.post-carousel-slide{flex:0 0 100%;scroll-snap-align:start;background:#f1f5f9}
-.post-carousel-slide img{width:100%;height:auto;max-height:70vh;object-fit:contain;display:block}
+.post-carousel-slide{flex:0 0 100%;scroll-snap-align:start;height:100%}
+.post-carousel-slide img{width:100%;height:100%;object-fit:cover;display:block}
 .post-carousel-dots{position:absolute;bottom:12px;left:0;right:0;display:flex;justify-content:center;gap:6px}
 .post-carousel-dots .pdot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.55)}
 .post-carousel-dots .pdot.on{background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.15)}
+.post-carousel-count{position:absolute;top:10px;right:10px;background:rgba(0,0,0,.55);color:#fff;font-size:11.5px;
+  font-weight:700;padding:3px 9px;border-radius:99px}
 .post-comment-bar{position:fixed;left:0;right:0;bottom:0;z-index:150;background:#fff;border-top:1px solid var(--border);
   padding:10px max(16px,env(safe-area-inset-left)) max(10px,env(safe-area-inset-bottom)) 16px;
   display:flex;align-items:center;gap:10px;cursor:pointer;max-width:720px;margin:0 auto}
@@ -439,30 +443,6 @@ body{padding-bottom:64px} /* room for the fixed comment bar on post-read */
 <!-- HEADER -->
 <!-- ══ SHARED MINDSHIFT HEADER + SIDEBAR (matches articles.html / index.html) ══ -->
 <div class="sticky-header-stack">
-<header>
-  <div class="header-top">
-    <h1 style="display:flex;align-items:center;gap:10px;margin:0;">
-      <a href="/" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;">
-        <img src="/MINDSHIFT.jpg" alt="MindShift logo" style="width:36px;height:36px;border-radius:6px;">
-      </a>
-      <span>Articles</span>
-    </h1>
-    <div class="header-icon-group">
-      <span class="acct-nav-slot"></span>
-      <div class="notif-wrap" id="notifWrap" style="display:none">
-        <button type="button" class="icon-btn" id="notifBtn" onclick="openNotifPanel()" aria-label="Notifications">
-          <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path fill-rule="evenodd" clip-rule="evenodd" d="M5.25 9a6.75 6.75 0 0113.5 0v.75c0 2.123.8 4.057 2.118 5.52a.75.75 0 01-.297 1.206 24.585 24.585 0 01-4.831 1.243 3.75 3.75 0 11-7.48 0 24.585 24.585 0 01-4.831-1.244.75.75 0 01-.298-1.205A8.217 8.217 0 005.25 9.75V9zm4.502 8.9a2.25 2.25 0 104.496 0 25.057 25.057 0 01-4.496 0z"/></svg>
-          <span class="notif-badge" id="notifBadge">0</span>
-        </button>
-      </div>
-      <button type="button" id="sidebarToggle" class="icon-btn" onclick="toggleSidebar()" aria-label="Open menu">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="22" height="22"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-      </button>
-    </div>
-  </div>
-</header>
-
-<!-- READING BAR: back button + scroll-linked article title -->
 <header class="hdr">
   <button class="back-btn" onclick="history.back()">
     <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
@@ -837,11 +817,13 @@ async function renderArticle(){
 
   const imgs = article.images || [];
   const carouselHtml = !imgs.length ? '' : `
-    <div class="post-carousel" id="postCarousel">
+    <div class="post-carousel">
       <div class="post-carousel-track" id="postCarouselTrack" onscroll="onPostReadScroll()">
-        ${imgs.map(url=>`<div class="post-carousel-slide"><img src="${url}" alt="" loading="lazy" onload="syncPostCarouselHeight(this)"></div>`).join('')}
+        ${imgs.map(url=>`<div class="post-carousel-slide"><img src="${url}" alt="" loading="lazy"></div>`).join('')}
       </div>
-      ${imgs.length>1 ? `<div class="post-carousel-dots" id="postCarouselDots">${imgs.map((_,i)=>`<span class="pdot${i===0?' on':''}"></span>`).join('')}</div>` : ''}
+      ${imgs.length>1 ? `
+      <div class="post-carousel-dots" id="postCarouselDots">${imgs.map((_,i)=>`<span class="pdot${i===0?' on':''}"></span>`).join('')}</div>
+      <div class="post-carousel-count" id="postCarouselCount">1/${imgs.length}</div>` : ''}
     </div>`;
 
   document.getElementById('artContent').innerHTML = `
@@ -907,34 +889,9 @@ window.onPostReadScroll = function(){
   const idx = Math.round(track.scrollLeft / (track.clientWidth||1));
   const dotsWrap = document.getElementById('postCarouselDots');
   if(dotsWrap) dotsWrap.querySelectorAll('.pdot').forEach((d,i)=>d.classList.toggle('on', i===idx));
-  const activeImg = track.children[idx] && track.children[idx].querySelector('img');
-  if(activeImg && activeImg.complete) track.style.height = activeImg.offsetHeight + 'px';
+  const countEl = document.getElementById('postCarouselCount');
+  if(countEl) countEl.textContent = `${idx+1}/${track.children.length}`;
 };
-
-// Post images can be any shape (photo, quote graphic, screenshot, etc).
-// Instead of forcing every slide into one fixed box, size the carousel
-// to whichever slide is currently in view so nothing gets cropped or
-// padded with empty space.
-window.syncPostCarouselHeight = function(img){
-  const track = document.getElementById('postCarouselTrack');
-  if(!track) return;
-  const slide = img.closest('.post-carousel-slide');
-  const idx = Array.prototype.indexOf.call(track.children, slide);
-  const activeIdx = Math.round(track.scrollLeft / (track.clientWidth||1));
-  if(idx === activeIdx) track.style.height = img.offsetHeight + 'px';
-};
-
-let postCarouselResizeTimer;
-window.addEventListener('resize', () => {
-  clearTimeout(postCarouselResizeTimer);
-  postCarouselResizeTimer = setTimeout(() => {
-    const track = document.getElementById('postCarouselTrack');
-    if(!track) return;
-    const idx = Math.round(track.scrollLeft / (track.clientWidth||1));
-    const activeImg = track.children[idx] && track.children[idx].querySelector('img');
-    if(activeImg && activeImg.complete) track.style.height = activeImg.offsetHeight + 'px';
-  }, 150);
-});
 
 function getGatedContent(html){
   const split = html.split('</p>');

@@ -143,15 +143,18 @@ main{max-width:1100px;margin:0 auto}
 /* ── POST CARD ── */
 .pcard-text{font-size:14.5px;color:var(--txt);line-height:1.5;white-space:pre-wrap;word-break:break-word;
   display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden}
+/* ── Horizontal swipeable image carousel ── */
 .pcard-carousel{position:relative;margin-top:8px;border-radius:14px;overflow:hidden}
-.pcard-track{display:flex;align-items:flex-start;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
-  scrollbar-width:none;transition:height .2s ease}
+.pcard-track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
+  scrollbar-width:none;aspect-ratio:4/5;background:#f1f5f9}
 .pcard-track::-webkit-scrollbar{display:none}
-.pcard-slide{flex:0 0 100%;scroll-snap-align:start;background:#f1f5f9}
-.pcard-slide img{width:100%;height:auto;max-height:70vh;object-fit:contain;display:block;cursor:pointer}
+.pcard-slide{flex:0 0 100%;scroll-snap-align:start;height:100%}
+.pcard-slide img{width:100%;height:100%;object-fit:cover;display:block;cursor:pointer}
 .pcard-dots{position:absolute;bottom:10px;left:0;right:0;display:flex;justify-content:center;gap:5px}
 .pdot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.55)}
 .pdot.on{background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.15)}
+.pcard-count{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.55);color:#fff;font-size:11px;
+  font-weight:700;padding:2px 8px;border-radius:99px}
 .pcard-comment{display:flex;align-items:center;gap:4px;background:none;border:none;cursor:pointer;padding:4px 6px;
   font-size:12px;font-weight:700;color:var(--mute);transition:color .18s;border-radius:8px;-webkit-tap-highlight-color:transparent}
 .pcard-comment:hover{color:var(--p);background:#eef2ff}
@@ -1295,15 +1298,21 @@ function getMergedFeed(){
   return merged;
 }
 
-function buildPostCardHtml(p){
-  const hasImgs = p.images && p.images.length;
-  const carousel = !hasImgs ? '' : `
-    <div class="pcard-carousel" id="pcarousel-${p.id}" onclick="event.stopPropagation()">
-      <div class="pcard-track" id="ptrack-${p.id}" onscroll="onPostScroll('${p.id}')">
-        ${p.images.map(url=>`<div class="pcard-slide"><img src="${url}" alt="" loading="lazy" onclick="goPostRead('${p.id}')" onload="syncPcardHeight(this)"></div>`).join('')}
+function buildMediaGridHtml(images, postId){
+  if(!images || !images.length) return '';
+  return `
+    <div class="pcard-carousel" onclick="event.stopPropagation()">
+      <div class="pcard-track" id="ptrack-${postId}" onscroll="onPostScroll('${postId}')">
+        ${images.map(url=>`<div class="pcard-slide"><img src="${url}" alt="" loading="lazy" onclick="goPostRead('${postId}')"></div>`).join('')}
       </div>
-      ${p.images.length>1 ? `<div class="pcard-dots" id="pdots-${p.id}">${p.images.map((_,i)=>`<span class="pdot${i===0?' on':''}"></span>`).join('')}</div>` : ''}
+      ${images.length>1 ? `
+      <div class="pcard-dots" id="pdots-${postId}">${images.map((_,i)=>`<span class="pdot${i===0?' on':''}"></span>`).join('')}</div>
+      <div class="pcard-count" id="pcount-${postId}">1/${images.length}</div>` : ''}
     </div>`;
+}
+
+function buildPostCardHtml(p){
+  const carousel = buildMediaGridHtml(p.images, p.id);
   return `<div class="acard pcard" onclick="goPostRead('${p.id}')">
     <div class="acard-body">
       <div class="acard-author" onclick="event.stopPropagation();goAuthor('${p.authorUid||''}',${!!p.isMindshift})">
@@ -1354,34 +1363,9 @@ window.onPostScroll = function(id){
   const idx = Math.round(track.scrollLeft / (track.clientWidth||1));
   const dotsWrap = document.getElementById(`pdots-${id}`);
   if(dotsWrap) dotsWrap.querySelectorAll('.pdot').forEach((d,i)=>d.classList.toggle('on', i===idx));
-  const activeImg = track.children[idx] && track.children[idx].querySelector('img');
-  if(activeImg && activeImg.complete) track.style.height = activeImg.offsetHeight + 'px';
+  const countEl = document.getElementById(`pcount-${id}`);
+  if(countEl) countEl.textContent = `${idx+1}/${track.children.length}`;
 };
-
-// Post images can be any shape (photo, quote graphic, screenshot, etc).
-// Instead of forcing every slide into one fixed box, size the carousel
-// to whichever slide is currently in view so nothing gets cropped or
-// padded with empty space.
-window.syncPcardHeight = function(img){
-  const track = img.closest('.pcard-track');
-  if(!track) return;
-  const slide = img.closest('.pcard-slide');
-  const idx = Array.prototype.indexOf.call(track.children, slide);
-  const activeIdx = Math.round(track.scrollLeft / (track.clientWidth||1));
-  if(idx === activeIdx) track.style.height = img.offsetHeight + 'px';
-};
-
-let pcardResizeTimer;
-window.addEventListener('resize', () => {
-  clearTimeout(pcardResizeTimer);
-  pcardResizeTimer = setTimeout(() => {
-    document.querySelectorAll('.pcard-track').forEach(track => {
-      const idx = Math.round(track.scrollLeft / (track.clientWidth||1));
-      const activeImg = track.children[idx] && track.children[idx].querySelector('img');
-      if(activeImg && activeImg.complete) track.style.height = activeImg.offsetHeight + 'px';
-    });
-  }, 150);
-});
 
 function renderGrid(){
   const grid = document.getElementById('grid');
