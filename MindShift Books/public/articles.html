@@ -1021,8 +1021,54 @@ async function renderFollowingTab(fresh = false){
       orderBy('publishedAt','desc'),
       limit(40)
     );
-    const artSnap = await getDocs(artQ);
-    const feedArts = artSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const postQ = query(
+      collection(db,'posts'),
+      where('authorUid','in', followedUids),
+      where('status','==','published'),
+      orderBy('publishedAt','desc'),
+      limit(40)
+    );
+    const [artSnap, postSnap] = await Promise.all([getDocs(artQ), getDocs(postQ)]);
+
+    // Normalize the same way refreshForYou() does — raw Firestore field
+    // names (e.g. `cover`) don't match what buildAcard/buildPostCardHtml
+    // expect (`img`), which is why covers, and posts (which carry the
+    // comment button), were missing from this tab before.
+    const feedArtsRaw = artSnap.docs.map(d=>{
+      const x = d.data();
+      return {
+        id: d.id,
+        cat: (x.cat||'CAREERS').toUpperCase(),
+        title: x.title||'',
+        brief: x.brief||'',
+        img: x.cover||x.img||'',
+        read: x.readTime||x.read||'5 min read',
+        publishedAt: x.publishedAt||x.createdAt||null,
+        author: x.authorName||'MindShift Books',
+        avatar: x.authorPhoto||'logo.jpg',
+        authorUid: x.authorUid||x.userId||null,
+        isMindshift: (x.authorUid||x.userId)==='official'
+      };
+    });
+    const feedPostsRaw = postSnap.docs.map(d=>{
+      const x = d.data();
+      return {
+        id: d.id,
+        type: 'post',
+        text: x.text||'',
+        images: Array.isArray(x.images) ? x.images.slice(0,5) : [],
+        publishedAt: x.publishedAt||x.createdAt||null,
+        author: x.authorName||'MindShift Books User',
+        avatar: x.authorPhoto||'logo.jpg',
+        authorUid: x.authorUid||null,
+        isMindshift: x.authorUid==='official'
+      };
+    });
+    const feedArts = [...feedArtsRaw, ...feedPostsRaw].sort((x,y)=>{
+      const tx = x.publishedAt?.seconds ? x.publishedAt.seconds*1000 : (x.publishedAt||0);
+      const ty = y.publishedAt?.seconds ? y.publishedAt.seconds*1000 : (y.publishedAt||0);
+      return ty - tx;
+    });
 
     if(!feedArts.length){
       feed.innerHTML=`<div style="padding:40px 20px;text-align:center">
@@ -1037,13 +1083,28 @@ async function renderFollowingTab(fresh = false){
       return;
     }
 
-    // Render articles
+    // Merge into the global ARTICLES/POSTS caches (dedup by id) so
+    // handleLike()'s `ARTICLES.find(...) || POSTS.find(...)` lookup can find
+    // items liked from THIS tab too — otherwise that lookup silently misses,
+    // like-notifications never fire, and the view-on-like fallback logs
+    // every liked post under 'articleMeta' instead of 'postMeta'.
+    const _existingArtIds = new Set(ARTICLES.map(a=>a.id));
+    feedArtsRaw.forEach(a=>{ if(!_existingArtIds.has(a.id)) ARTICLES.push(a); });
+    const _existingPostIds = new Set(POSTS.map(p=>p.id));
+    feedPostsRaw.forEach(p=>{ if(!_existingPostIds.has(p.id)) POSTS.push(p); });
+
+    // Render articles + posts
     const grid=document.createElement('div'); grid.className='grid';
-    const cardsHtml = feedArts.map(a=>buildAcard(a));
+    const cardsHtml = feedArts.map(a=> a.type==='post' ? buildPostCardHtml(a) : buildAcard(a));
     grid.innerHTML = withInviteCard(cardsHtml, currentUser ? currentUser.uid : null).join('');
     feed.innerHTML=''; feed.appendChild(grid);
     feedArts.forEach(a=>{ if(currentUser){const b=document.getElementById(`lb-${a.id}`);if(b)b.classList.toggle('liked',likedSet.has(a.id));} });
     fetchLikeCounts(feedArts.map(a=>a.id));
+    const _followingPostIds = feedArts.filter(a=>a.type==='post').map(a=>a.id);
+    if(_followingPostIds.length) fetchPostCommentCounts(_followingPostIds);
+    // Wire up the same 1.75s-in-viewport dwell tracker the "For You" grid
+    // uses, so posts scrolled past in Following register a view too.
+    observeFeedPostCards();
 
     // "See more" banner at end
     const banner=document.createElement('div'); banner.className='see-more-banner';
