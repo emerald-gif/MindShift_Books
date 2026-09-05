@@ -152,6 +152,9 @@ main{max-width:1100px;margin:0 auto}
 .pcard-slide img{height:100%;width:auto;max-width:none;object-fit:contain;display:block;cursor:pointer}
 .pcard-count{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.55);color:#fff;font-size:11px;
   font-weight:700;padding:2px 8px;border-radius:99px}
+.pcard-single{margin-top:8px;display:flex;justify-content:center}
+.pcard-single img{max-width:100%;max-height:340px;width:auto;height:auto;object-fit:contain;
+  border-radius:14px;display:block;cursor:pointer;background:#f1f5f9}
 .pcard-comment{display:flex;align-items:center;gap:4px;background:none;border:none;cursor:pointer;padding:4px 6px;
   font-size:12px;font-weight:700;color:var(--mute);transition:color .18s;border-radius:8px;-webkit-tap-highlight-color:transparent}
 .pcard-comment:hover{color:var(--p);background:#eef2ff}
@@ -1297,12 +1300,17 @@ function getMergedFeed(){
 
 function buildMediaGridHtml(images, postId){
   if(!images || !images.length) return '';
+  if(images.length===1){
+    return `<div class="pcard-single" onclick="event.stopPropagation()">
+      <img src="${images[0]}" alt="" loading="lazy" onclick="goPostRead('${postId}')">
+    </div>`;
+  }
   return `
     <div class="pcard-carousel" onclick="event.stopPropagation()">
       <div class="pcard-track" id="ptrack-${postId}" onscroll="onPostScroll('${postId}')">
         ${images.map(url=>`<div class="pcard-slide"><img src="${url}" alt="" loading="lazy" onclick="goPostRead('${postId}')"></div>`).join('')}
       </div>
-      ${images.length>1 ? `<div class="pcard-count" id="pcount-${postId}">1/${images.length}</div>` : ''}
+      <div class="pcard-count" id="pcount-${postId}">1/${images.length}</div>
     </div>`;
 }
 
