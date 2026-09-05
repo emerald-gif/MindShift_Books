@@ -176,20 +176,65 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   color:#fff;font-size:10px;font-weight:800;padding:1px 5px;border-radius:99px;min-width:16px}
 
 /* ── ARTICLES LIST ── */
-.articles-section{padding:12px 16px 80px}
-.article-row{background:var(--card);border-radius:var(--radius);border:1.5px solid var(--border);
-  display:flex;gap:12px;padding:12px;margin-bottom:10px;cursor:pointer;
-  transition:box-shadow .2s;align-items:flex-start}
-.article-row:hover{box-shadow:0 4px 20px rgba(0,0,0,.07)}
-.art-thumb{width:72px;height:72px;border-radius:10px;object-fit:cover;flex-shrink:0;
-  background:linear-gradient(135deg,#e0e7ff,#93c5fd)}
-.art-info{flex:1;min-width:0}
-.art-cat{font-size:11px;font-weight:700;color:var(--p);text-transform:uppercase;
-  letter-spacing:.4px;margin-bottom:3px}
-.art-title{font-size:14px;font-weight:700;color:var(--txt);line-height:1.4;margin-bottom:5px;
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.art-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.art-read{font-size:12px;color:var(--mute)}
+.articles-section{padding:0 0 80px}
+.acard-list{display:flex;flex-direction:column}
+/* ── FEED-STYLE CARD (matches articles.html / post-read.html) ── */
+.acard{display:flex;flex-direction:row;align-items:flex-start;gap:14px;background:#fff;padding:20px 16px;
+  cursor:pointer;border-bottom:1px solid var(--border);transition:background .18s;position:relative;
+  -webkit-tap-highlight-color:transparent}
+.acard:active:not(:has(button:active,.acard-author:active)){background:#eef2ff}
+.acard-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.vbadge{display:inline-flex;align-items:center;justify-content:center;
+  width:16px;height:16px;border-radius:50%;background:var(--g);flex-shrink:0;
+  box-shadow:0 1px 6px rgba(37,99,235,.35)}
+.vbadge svg{width:9px;height:9px;fill:none;stroke:#fff;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.acard-author{display:flex;align-items:center;gap:7px;margin-bottom:7px;width:fit-content;border-radius:6px;padding:2px 0}
+.acard-av{width:24px;height:24px;border-radius:50%;object-fit:cover;flex-shrink:0;background:var(--g);border:1.5px solid var(--border)}
+.acard-author-name{font-size:12.5px;font-weight:700;color:var(--txt)}
+.acard-author-dot{font-size:11px;color:var(--mute)}
+.acard-author-date{font-size:11.5px;color:var(--mute)}
+.acard-meta{margin-bottom:6px}
+.acard-cat{display:inline-flex;align-items:center;background:rgba(37,99,235,.1);color:var(--p);font-size:9.5px;font-weight:800;padding:3px 9px;border-radius:99px;letter-spacing:.3px;text-transform:uppercase}
+.acard-title{font-size:17px;font-weight:800;color:var(--txt);line-height:1.35;letter-spacing:-.3px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:6px}
+.acard-brief{font-size:13px;color:var(--sub);line-height:1.58;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.acard-img{width:110px;height:110px;border-radius:10px;overflow:hidden;flex-shrink:0;background:linear-gradient(135deg,#e0e7ff,#eef2ff);align-self:flex-start;margin-top:2px}
+.acard-img img{width:100%;height:100%;object-fit:cover;display:block}
+.acard-foot{display:flex;align-items:center;gap:8px;margin-top:10px}
+.acard-like,.pcard-comment{display:flex;align-items:center;gap:4px;background:none;border:none;cursor:pointer;padding:4px 6px;font-size:12px;font-weight:700;color:var(--mute);transition:color .18s;border-radius:8px;-webkit-tap-highlight-color:transparent}
+.acard-like:hover{color:var(--red);background:#fff1f1}
+.pcard-comment:hover{color:var(--p);background:#eef2ff}
+.acard-like svg,.pcard-comment svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;transition:all .2s;flex-shrink:0}
+.acard-like.liked{color:var(--red)}
+.acard-like.liked svg{fill:var(--red);stroke:var(--red)}
+.acard-save{background:none;border:none;cursor:pointer;padding:4px 6px;border-radius:8px;color:var(--mute);-webkit-tap-highlight-color:transparent}
+.acard-save svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2}
+.acard-save.saved{color:var(--p)}
+.acard-save.saved svg{fill:var(--p);stroke:var(--p)}
+.acard-menu-wrap{position:relative;margin-left:auto}
+.acard-menu-btn{background:none;border:none;cursor:pointer;padding:4px 6px;border-radius:8px;color:var(--mute)}
+.acard-menu-btn svg{width:16px;height:16px}
+.acard-menu-drop{position:absolute;right:0;top:calc(100% + 4px);background:#fff;border:1px solid var(--border);
+  border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.12);min-width:160px;padding:6px;z-index:20;
+  display:none;flex-direction:column}
+.acard-menu-drop.open{display:flex}
+.acard-menu-item{display:flex;align-items:center;gap:8px;background:none;border:none;cursor:pointer;
+  padding:9px 10px;border-radius:8px;font-size:13px;font-weight:600;color:var(--txt);text-align:left;width:100%}
+.acard-menu-item:hover{background:#f1f5f9}
+.acard-menu-item svg{width:15px;height:15px;flex-shrink:0}
+/* ── POST CARD (text posts) ── */
+.pcard-text{font-size:14.5px;color:var(--txt);line-height:1.5;white-space:pre-wrap;word-break:break-word;
+  display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden}
+.pcard-single{margin-top:8px;display:flex;justify-content:center}
+.pcard-single img{max-width:100%;max-height:340px;width:auto;height:auto;object-fit:contain;
+  border-radius:14px;display:block;cursor:pointer;background:#f1f5f9}
+.pcard-carousel{position:relative;margin-top:8px}
+.pcard-track{display:flex;gap:4px;overflow-x:auto;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;
+  scrollbar-width:none;height:340px;max-height:60vh}
+.pcard-track::-webkit-scrollbar{display:none}
+.pcard-slide{flex:0 0 auto;height:100%;scroll-snap-align:start;border-radius:14px;overflow:hidden;background:#f1f5f9}
+.pcard-slide img{height:100%;width:auto;max-width:none;object-fit:contain;display:block;cursor:pointer}
+.pcard-count{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.55);color:#fff;font-size:11px;
+  font-weight:700;padding:2px 8px;border-radius:99px}
 .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:99px;
   font-size:11px;font-weight:700}
 .badge-pending{background:#fef3c7;color:#92400e}
@@ -514,7 +559,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged, updateProfile } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
-import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, query, where, getDocs, orderBy, serverTimestamp, onSnapshot, addDoc, writeBatch, increment, limit }
+import { getFirestore, doc, getDoc, setDoc, deleteDoc, updateDoc, collection, query, where, getDocs, orderBy, serverTimestamp, onSnapshot, addDoc, writeBatch, increment, limit }
   from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
 import { initNotificationUI } from '/notifications.js';
 
@@ -546,6 +591,10 @@ let profileData = {};
 let activeTab = 'all';
 let isFollowing = false;
 let allSubmissions = [];
+let likedSet = new Set();
+let savedSet = new Set();
+let likeCountCache = {};
+let commentCountCache = {};
 
 /* ── SOCIAL LINKS CONFIG ── */
 const MAX_SOCIAL_LINKS = 5;
@@ -718,6 +767,7 @@ async function loadProfile(uid){
 
   renderProfileHeader();
   // loadArticles first so allSubmissions is populated for loadStats article count
+  await Promise.all([loadLikedSet(), loadSavedSet()]);
   await loadArticles();
   await Promise.all([loadStats(), loadFollowState()]);
   // write profile_view notification (once per session)
@@ -989,6 +1039,38 @@ window.switchTab = function(tab){
 };
 
 /* ── RENDER ARTICLES + POSTS ── */
+function esc(str){
+  return String(str==null?'':str).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function buildMediaGridHtml(images, postId){
+  if(!images || !images.length) return '';
+  if(images.length===1){
+    return `<div class="pcard-single" onclick="event.stopPropagation()">
+      <img src="${images[0]}" alt="" loading="lazy" onclick="openArticle('${postId}','post')">
+    </div>`;
+  }
+  return `
+    <div class="pcard-carousel" onclick="event.stopPropagation()">
+      <div class="pcard-track" id="ptrack-${postId}" onscroll="onPostScroll('${postId}')">
+        ${images.map(url=>`<div class="pcard-slide"><img src="${url}" alt="" loading="lazy" onclick="openArticle('${postId}','post')"></div>`).join('')}
+      </div>
+      <div class="pcard-count" id="pcount-${postId}">1/${images.length}</div>
+    </div>`;
+}
+
+window.onPostScroll = function(id){
+  const track = document.getElementById(`ptrack-${id}`);
+  if(!track) return;
+  let idx = 0;
+  const mid = track.scrollLeft + track.clientWidth/2;
+  Array.prototype.forEach.call(track.children, (slide,i)=>{
+    if(slide.offsetLeft <= mid) idx = i;
+  });
+  const countEl = document.getElementById(`pcount-${id}`);
+  if(countEl) countEl.textContent = `${idx+1}/${track.children.length}`;
+};
+
 function renderArticles(){
   const sec = document.getElementById('articlesSection');
   const filtered = activeTab==='all' ? allSubmissions : allSubmissions.filter(s=>s.type===activeTab);
@@ -1012,31 +1094,221 @@ function renderArticles(){
     return;
   }
 
-  sec.innerHTML = filtered.map(s=>{
-    const thumb = s.type==='post' ? (s.images&&s.images[0]) : s.cover;
-    const title = s.type==='post' ? (s.text||'').slice(0,80) : (s.title||'Untitled');
-    return `
-    <div class="article-row" onclick="openArticle('${s.id}','${s.type}')">
-      <div class="art-thumb" style="${thumb?`background-image:url(${thumb});background-size:cover;background-position:center`:''}">&nbsp;</div>
-      <div class="art-info">
-        <div class="art-cat">${s.type==='post' ? 'POST' : (s.cat||'')}</div>
-        <div class="art-title">${title}</div>
-        <div class="art-meta">
-          <span class="art-read">${s.type==='post' ? fmtRel(s.createdAt) : (s.readTime||'')}</span>
+  const authorName = esc(profileData.name || 'MindShift Books User');
+  const authorAv = profileData.photo || 'logo.jpg';
+
+  const cardsHtml = filtered.map(s=>{
+    if(s.type==='post'){
+      const media = buildMediaGridHtml(s.images, s.id);
+      return `<div class="acard pcard" onclick="openArticle('${s.id}','post')">
+        <div class="acard-body">
+          <div class="acard-author">
+            <img class="acard-av" src="${authorAv}" alt="${authorName}" onerror="this.style.background='linear-gradient(135deg,#4f46e5,#06b6d4)'">
+            <span class="acard-author-name">${authorName}</span>
+            <span class="acard-author-dot">·</span>
+            <span class="acard-author-date">${fmtRel(s.publishedAt||s.createdAt)}</span>
+          </div>
+          ${s.text ? `<div class="pcard-text">${esc(s.text)}</div>` : ''}
+          ${media}
+          <div class="acard-foot">
+            <button class="acard-like" id="lb-${s.id}" onclick="event.stopPropagation();handleLike('${s.id}')">
+              <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+              <span id="lc-${s.id}"></span>
+            </button>
+            <button class="acard-save ${savedSet.has(s.id)?'saved':''}" id="sv-${s.id}" onclick="event.stopPropagation();handleSave('${s.id}')" title="Save post">
+              <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+            </button>
+            <button class="pcard-comment" onclick="event.stopPropagation();openArticle('${s.id}','post')" title="Comment">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+              <span id="pcc-${s.id}"></span>
+            </button>
+          </div>
+        </div>
+      </div>`;
+    }
+    return `<div class="acard" onclick="openArticle('${s.id}','article')">
+      <div class="acard-body">
+        <div class="acard-author">
+          <img class="acard-av" src="${authorAv}" alt="${authorName}" onerror="this.style.background='linear-gradient(135deg,#4f46e5,#06b6d4)'">
+          <span class="acard-author-name">${authorName}</span>
+          <span class="acard-author-dot">·</span>
+          <span class="acard-author-date">${fmtRel(s.publishedAt||s.createdAt)}</span>
+        </div>
+        <div class="acard-meta"><span class="acard-cat">${esc(s.cat||'ARTICLE')}</span></div>
+        <div class="acard-title">${esc(s.title||'Untitled')}</div>
+        <div class="acard-brief">${esc(s.brief||'')}</div>
+        <div class="acard-foot">
+          <button class="acard-like" id="lb-${s.id}" onclick="event.stopPropagation();handleLike('${s.id}')">
+            <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+            <span id="lc-${s.id}"></span>
+          </button>
+          <button class="acard-save ${savedSet.has(s.id)?'saved':''}" id="sv-${s.id}" onclick="event.stopPropagation();handleSave('${s.id}')" title="Save article">
+            <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+          </button>
         </div>
       </div>
+      ${s.cover ? `<div class="acard-img"><img src="${s.cover}" alt="${esc(s.title||'')}" loading="lazy" onerror="this.parentElement.style.background='linear-gradient(135deg,#e0e7ff,#93c5fd)'"></div>` : ''}
     </div>`;
-  }).join('');
+  });
+
+  sec.innerHTML = `<div class="acard-list">${cardsHtml.join('')}</div>`;
+
+  const ids = filtered.map(s=>s.id);
+  fetchLikeCounts(ids);
+  fetchPostCommentCounts(filtered.filter(s=>s.type==='post').map(s=>s.id));
+  ids.forEach(id=>{
+    const btn = document.getElementById(`lb-${id}`);
+    if(btn) btn.classList.toggle('liked', likedSet.has(id));
+  });
 }
 
 function fmtRel(ts){
   if(!ts) return '';
   const ms = ts.seconds ? ts.seconds*1000 : ts;
   const d = Date.now()-ms;
-  if(d<86400000) return 'Today';
+  if(d<3600000) return `${Math.floor(d/60000)||1}m ago`;
+  if(d<86400000) return `${Math.floor(d/3600000)}h ago`;
   if(d<604800000) return `${Math.floor(d/86400000)}d ago`;
   return new Date(ms).toLocaleDateString('en-US',{month:'short',day:'numeric'});
 }
+
+/* ── LIKES ── */
+async function loadLikedSet(){
+  if(!currentUser) return;
+  try{
+    const s = await getDoc(doc(db,'userLikes',currentUser.uid));
+    likedSet.clear();
+    if(s.exists()){
+      const data = s.data();
+      Object.keys(data).forEach(id=>{ if(data[id]) likedSet.add(id); });
+    }
+  }catch(e){}
+}
+
+async function fetchLikeCounts(ids){
+  if(!ids.length) return;
+  try{
+    const results = await Promise.all(
+      ids.map(id => getDoc(doc(db,'articleLikes',id)).catch(()=>null))
+    );
+    results.forEach((snap,i)=>{
+      const id = ids[i];
+      const c = snap&&snap.exists() ? (snap.data().count||0) : 0;
+      likeCountCache[id] = c;
+      const el = document.getElementById(`lc-${id}`);
+      if(el) el.textContent = c > 0 ? c : (likedSet.has(id) ? 1 : '');
+    });
+  }catch(e){}
+}
+
+async function toggleLike(id, wasLiked){
+  if(!currentUser){ window.location.href='/login'; return null; }
+  const cRef = doc(db,'articleLikes',id);
+  try {
+    await setDoc(doc(db,'userLikes',currentUser.uid),{[id]:!wasLiked},{merge:true});
+    if(wasLiked){
+      try{ await updateDoc(cRef,{count:increment(-1)}); }catch{ await setDoc(cRef,{count:0},{merge:true}); }
+      return false;
+    } else {
+      try{ await updateDoc(cRef,{count:increment(1)}); }catch{ await setDoc(cRef,{count:1},{merge:true}); }
+      return true;
+    }
+  } catch(e) {
+    toast('Could not update like — try again.');
+    return null;
+  }
+}
+
+window.handleLike = function(id){
+  if(!currentUser){ window.location.href='/login'; return; }
+  const btn = document.getElementById(`lb-${id}`);
+  const countEl = document.getElementById(`lc-${id}`);
+  const wasLiked = likedSet.has(id);
+  if(wasLiked){ likedSet.delete(id); } else { likedSet.add(id); }
+  if(btn) btn.classList.toggle('liked', !wasLiked);
+  if(countEl){
+    const cur = likeCountCache[id] || 0;
+    const next = Math.max(0, cur + (wasLiked ? -1 : 1));
+    likeCountCache[id] = next;
+    countEl.textContent = next > 0 ? next : '';
+  }
+  (async()=>{
+    const didLike = await toggleLike(id, wasLiked);
+    if(didLike === null){
+      if(wasLiked){ likedSet.add(id); } else { likedSet.delete(id); }
+      if(btn) btn.classList.toggle('liked', wasLiked);
+      if(countEl){
+        const cur = likeCountCache[id] || 0;
+        const rolled = Math.max(0, cur + (wasLiked ? 1 : -1));
+        likeCountCache[id] = rolled;
+        countEl.textContent = rolled > 0 ? rolled : '';
+      }
+    } else if(didLike === true){
+      const item = allSubmissions.find(a=>a.id===id);
+      if(item) notif.notifyArticleLike(item);
+    }
+  })();
+};
+
+/* ── SAVES ── */
+async function loadSavedSet(){
+  if(!currentUser) return;
+  try{
+    const s = await getDoc(doc(db,'userSaves',currentUser.uid));
+    savedSet.clear();
+    if(s.exists()){
+      const data = s.data();
+      Object.keys(data).forEach(id=>{ if(data[id]) savedSet.add(id); });
+    }
+  }catch(e){}
+}
+
+window.handleSave = function(id){
+  if(!currentUser){ window.location.href='/login'; return; }
+  const wasSaved = savedSet.has(id);
+  if(wasSaved){ savedSet.delete(id); } else { savedSet.add(id); }
+  const btn = document.getElementById(`sv-${id}`);
+  if(btn) btn.classList.toggle('saved', !wasSaved);
+  toast(!wasSaved ? 'Saved! 🔖' : 'Removed from saves');
+  (async()=>{
+    try{
+      await setDoc(doc(db,'userSaves',currentUser.uid),{[id]:!wasSaved},{merge:true});
+      const sRef = doc(db,'articleSaves',id);
+      if(wasSaved){
+        try{ await updateDoc(sRef,{count:increment(-1)}); }catch{ await setDoc(sRef,{count:0},{merge:true}); }
+      } else {
+        try{ await updateDoc(sRef,{count:increment(1)}); }catch{ await setDoc(sRef,{count:1},{merge:true}); }
+      }
+    }catch(e){
+      if(wasSaved){ savedSet.add(id); } else { savedSet.delete(id); }
+      if(btn) btn.classList.toggle('saved', wasSaved);
+      toast('Could not save — try again.');
+    }
+  })();
+};
+
+/* ── POST COMMENT COUNTS (postMeta/{id}.commentCount) ── */
+async function fetchPostCommentCounts(ids){
+  if(!ids.length) return;
+  try{
+    const results = await Promise.all(
+      ids.map(id => getDoc(doc(db,'postMeta',id)).catch(()=>null))
+    );
+    results.forEach((snap,i)=>{
+      const id = ids[i];
+      const c = snap&&snap.exists() ? (snap.data().commentCount||0) : 0;
+      commentCountCache[id] = c;
+      const el = document.getElementById(`pcc-${id}`);
+      if(el) el.textContent = c > 0 ? c : '';
+    });
+  }catch(e){}
+}
+
+window.toast = function(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('on');
+  setTimeout(()=>t.classList.remove('on'),2400);
+};
 
 window.openArticle = function(id, type){
   window.location.href = type==='post' ? `/post-read?id=${id}` : `/article-read?id=${id}`;
