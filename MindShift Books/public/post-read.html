@@ -148,16 +148,13 @@ header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .art-hero{width:100%;height:220px;object-fit:cover;display:block;background:linear-gradient(135deg,#cffafe,#ecfeff);border-radius:14px;margin:2px 0 22px}
 /* ── POST (vs. article) content ── */
 .post-text{font-size:16.5px;line-height:1.6;color:var(--txt);white-space:pre-wrap;word-break:break-word;margin:16px 0}
-/* ── Horizontal swipeable image carousel ── */
-.post-carousel{position:relative;margin:6px 0 18px;border-radius:16px;overflow:hidden}
-.post-carousel-track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
-  scrollbar-width:none;aspect-ratio:4/5;background:#f1f5f9}
+/* ── Horizontal peek carousel: images keep their natural aspect ratio, scaled to a shared height ── */
+.post-carousel{position:relative;margin:6px 0 18px}
+.post-carousel-track{display:flex;gap:4px;overflow-x:auto;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;
+  scrollbar-width:none;height:380px;max-height:65vh}
 .post-carousel-track::-webkit-scrollbar{display:none}
-.post-carousel-slide{flex:0 0 100%;scroll-snap-align:start;height:100%}
-.post-carousel-slide img{width:100%;height:100%;object-fit:cover;display:block}
-.post-carousel-dots{position:absolute;bottom:12px;left:0;right:0;display:flex;justify-content:center;gap:6px}
-.post-carousel-dots .pdot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.55)}
-.post-carousel-dots .pdot.on{background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.15)}
+.post-carousel-slide{flex:0 0 auto;height:100%;scroll-snap-align:start;border-radius:16px;overflow:hidden;background:#f1f5f9}
+.post-carousel-slide img{height:100%;width:auto;max-width:none;object-fit:contain;display:block}
 .post-carousel-count{position:absolute;top:10px;right:10px;background:rgba(0,0,0,.55);color:#fff;font-size:11.5px;
   font-weight:700;padding:3px 9px;border-radius:99px}
 .post-comment-bar{position:fixed;left:0;right:0;bottom:0;z-index:150;background:#fff;border-top:1px solid var(--border);
@@ -821,9 +818,7 @@ async function renderArticle(){
       <div class="post-carousel-track" id="postCarouselTrack" onscroll="onPostReadScroll()">
         ${imgs.map(url=>`<div class="post-carousel-slide"><img src="${url}" alt="" loading="lazy"></div>`).join('')}
       </div>
-      ${imgs.length>1 ? `
-      <div class="post-carousel-dots" id="postCarouselDots">${imgs.map((_,i)=>`<span class="pdot${i===0?' on':''}"></span>`).join('')}</div>
-      <div class="post-carousel-count" id="postCarouselCount">1/${imgs.length}</div>` : ''}
+      ${imgs.length>1 ? `<div class="post-carousel-count" id="postCarouselCount">1/${imgs.length}</div>` : ''}
     </div>`;
 
   document.getElementById('artContent').innerHTML = `
@@ -886,9 +881,11 @@ function esc(str){
 window.onPostReadScroll = function(){
   const track = document.getElementById('postCarouselTrack');
   if(!track) return;
-  const idx = Math.round(track.scrollLeft / (track.clientWidth||1));
-  const dotsWrap = document.getElementById('postCarouselDots');
-  if(dotsWrap) dotsWrap.querySelectorAll('.pdot').forEach((d,i)=>d.classList.toggle('on', i===idx));
+  let idx = 0;
+  const mid = track.scrollLeft + track.clientWidth/2;
+  Array.prototype.forEach.call(track.children, (slide,i)=>{
+    if(slide.offsetLeft <= mid) idx = i;
+  });
   const countEl = document.getElementById('postCarouselCount');
   if(countEl) countEl.textContent = `${idx+1}/${track.children.length}`;
 };
