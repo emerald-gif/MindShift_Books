@@ -162,9 +162,13 @@ header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   border-radius:16px;display:block;background:#f1f5f9}
 .post-comment-bar{position:fixed;left:0;right:0;bottom:0;z-index:150;background:#fff;border-top:1px solid var(--border);
   padding:10px max(16px,env(safe-area-inset-left)) max(10px,env(safe-area-inset-bottom)) 16px;
-  display:flex;align-items:center;gap:10px;cursor:pointer;max-width:720px;margin:0 auto}
+  display:flex;align-items:flex-end;gap:8px;max-width:720px;margin:0 auto}
 .post-comment-bar-av{width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;background:#e0e7ff}
-.post-comment-bar-input{flex:1;background:#f1f5f9;border-radius:99px;padding:10px 16px;font-size:14px;color:var(--mute)}
+.post-comment-bar-input{flex:1;background:#f1f5f9;border:none;border-radius:18px;padding:9px 16px;font-size:14px;
+  font-family:'Inter',sans-serif;color:var(--txt);outline:none;resize:none;min-height:20px;max-height:100px;
+  line-height:1.4;overflow-y:auto}
+.post-comment-bar-input::placeholder{color:var(--mute)}
+.post-comment-bar .c-post-btn{flex-shrink:0;margin-bottom:1px}
 body{padding-bottom:64px} /* room for the fixed comment bar on post-read */
 
 /* ── ARTICLE ── */
@@ -495,10 +499,12 @@ body{padding-bottom:64px} /* room for the fixed comment bar on post-read */
 <!-- CONTENT -->
 <div id="artContent"></div>
 
-<!-- PERSISTENT COMMENT BAR (posts only — always visible, taps into the same comment drawer) -->
-<div class="post-comment-bar" onclick="openCommentDrawer()">
+<!-- PERSISTENT COMMENT BAR (posts only — this IS the comment input, always visible) -->
+<div class="post-comment-bar" id="postCommentBar">
   <img class="post-comment-bar-av" id="postCommentBarAv" src="" alt="" onerror="this.style.display='none'">
-  <div class="post-comment-bar-input">Comment on this post…</div>
+  <textarea class="post-comment-bar-input" id="mainCI" placeholder="Comment on this post…" rows="1"
+    oninput="onCI(this)" onfocus="onCIFocus(this)"></textarea>
+  <button class="c-post-btn" id="mainCPost" onclick="submitComment()" disabled>Post</button>
 </div>
 
 <!-- WELCOME NUDGE (shown once to users who signed up from this article) -->
@@ -1119,17 +1125,13 @@ function updateCCount(){
 function buildCommentsUI(comments){
   const inputEl=document.getElementById('commentSheetInput');
   const listEl=document.getElementById('commentsList');
-  if(!inputEl||!listEl) return;
-  let avIn='';
-  if(currentUser){
-    const ph=myProfile?.photo||'',nm=myProfile?.name||currentUser.displayName||'';
-    avIn=ph?`<div class="c-user-av"><img src="${cEsc(ph)}" alt="" onerror="this.style.display='none'"></div>`:`<div class="c-user-av">${(nm||'U').charAt(0).toUpperCase()}</div>`;
+  if(!listEl) return;
+  // The actual comment box lives in the persistent bottom bar (#mainCI/#mainCPost) —
+  // here we only show a "log in" nudge inline when the user isn't signed in.
+  if(inputEl){
+    const redir=encodeURIComponent(location.pathname+location.search);
+    inputEl.innerHTML=currentUser?'':`<div class="c-login-cta"><span>Join the conversation</span><a href="/login?redirect=${redir}">Log in</a></div>`;
   }
-  const redir=encodeURIComponent(location.pathname+location.search);
-  const inputArea=currentUser
-    ?`<div class="add-comment-row">${avIn}<div class="c-input-wrap"><textarea class="c-input" id="mainCI" placeholder="Add a comment…" rows="1" oninput="onCI(this)" onfocus="document.getElementById('mainCA').classList.add('show')"></textarea><div class="c-input-actions" id="mainCA"><button class="c-cancel-btn" onclick="cancelCI()">Cancel</button><button class="c-post-btn" id="mainCPost" onclick="submitComment()" disabled>Post</button></div></div></div>`
-    :`<div class="c-login-cta"><span>Join the conversation</span><a href="/login?redirect=${redir}">Log in</a></div>`;
-  inputEl.innerHTML=inputArea;
   const listHTML=comments.length
     ?comments.map(c=>buildCHTML(c,false)).join('')
     :`<div class="comments-list-empty"><div class="comments-list-empty-ico">&#128172;</div><div class="comments-list-empty-txt">Be the first to comment</div></div>`;
@@ -1156,22 +1158,16 @@ function buildCHTML(c,isReply){
 }
 
 window.onCI=function(el){el.style.height='auto';el.style.height=el.scrollHeight+'px';const b=document.getElementById('mainCPost');if(b)b.disabled=!el.value.trim();};
-window.cancelCI=function(){const i=document.getElementById('mainCI'),a=document.getElementById('mainCA'),b=document.getElementById('mainCPost');if(i){i.value='';i.style.height='auto';}if(a)a.classList.remove('show');if(b)b.disabled=true;};
-// No more slide-up sheet — tapping the comment icon or the "Comment on
-// this post…" bar just scrolls the inline comments section into view and
-// focuses the input right there, which triggers the on-screen keyboard.
+window.onCIFocus=function(el){if(!currentUser){el.blur();openAuth();}};
+window.cancelCI=function(){const i=document.getElementById('mainCI'),b=document.getElementById('mainCPost');if(i){i.value='';i.style.height='auto';i.blur();}if(b)b.disabled=true;};
+// The comment box is the persistent bottom bar itself now — tapping the
+// comment icon just scrolls the comments into view and focuses that bar.
 window.openCommentDrawer=function(){
   const section=document.getElementById('commentsInline');
   if(section)section.scrollIntoView({behavior:'smooth',block:'start'});
-  const focusInput=()=>{
-    const ci=document.getElementById('mainCI');
-    if(ci){ci.focus();return true;}
-    return false;
-  };
-  if(!focusInput()){
-    // input not built yet (comments still loading) — try again shortly
-    setTimeout(focusInput,400);
-  }
+  if(!currentUser){openAuth();return;}
+  const ci=document.getElementById('mainCI');
+  if(ci)ci.focus();
 };
 window.closeCommentDrawer=function(){};
 window.scrollToComments=window.openCommentDrawer;
@@ -1293,6 +1289,9 @@ window.likeComment=async function(cid,authorUid){
     if(wasLiked){cLikedSet.add(cid);if(btn)btn.classList.add('liked');}
     else{cLikedSet.delete(cid);if(btn)btn.classList.remove('liked');}
     if(c){c.likeCount=(c.likeCount||0)+(wasLiked?1:-1);if(cel)cel.textContent=c.likeCount>0?String(c.likeCount):'';}
+    console.error('likeComment:',e.code,e.message);
+    if(e.code==='permission-denied')showToast('Could not like — check Firestore rules for comment likes.');
+    else showToast('Could not update like — try again.');
   }
 };
 

@@ -1264,6 +1264,9 @@ window.likeComment=async function(cid,authorUid){
     if(wasLiked){cLikedSet.add(cid);if(btn)btn.classList.add('liked');}
     else{cLikedSet.delete(cid);if(btn)btn.classList.remove('liked');}
     if(c){c.likeCount=(c.likeCount||0)+(wasLiked?1:-1);if(cel)cel.textContent=c.likeCount>0?String(c.likeCount):'';}
+    console.error('likeComment:',e.code,e.message);
+    if(e.code==='permission-denied')showToast('Could not like — check Firestore rules for comment likes.');
+    else showToast('Could not update like — try again.');
   }
 };
 
