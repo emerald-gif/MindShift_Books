@@ -64,7 +64,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .settings-row.link:active,.settings-row.action:active{background:var(--border2)}
 .row-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;
   justify-content:center;flex-shrink:0}
-.row-icon svg{width:17px;height:17px;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.row-icon svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .row-icon.email{background:#e0e7ff;color:var(--p)}
 .row-icon.account{background:#e0e7ff;color:#4f46e5}
 .row-icon.privacy{background:#d1fae5;color:#059669}
@@ -258,42 +258,15 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   </div>
 </div>
 
-<!-- VERIFIED AUTHOR -->
-<div class="section">
-  <div class="section-title">Author Status</div>
-  <div class="verified-card">
-    <div class="verified-deco">
-      <svg viewBox="0 0 24 24"><path d="M12 2l2.4 4.86 5.36.78-3.88 3.78.92 5.34L12 14.27 7.2 16.76l.92-5.34L4.24 7.64l5.36-.78z"/></svg>
-    </div>
-    <div class="verified-icon">
-      <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
-    </div>
-    <div class="verified-body">
-      <div class="verified-title-row">
-        <span class="verified-title">Become a Verified Author</span>
-        <span class="soon-pill">Coming Soon</span>
-      </div>
-      <div class="verified-sub">Earn a verified badge on your profile, get priority publishing, and stand out to readers.</div>
-    </div>
-  </div>
-</div>
-
 <!-- LEGAL & SUPPORT -->
 <div class="section">
   <div class="section-title">Legal &amp; Support</div>
   <div class="settings-card">
-    <a class="settings-row link" href="/privacy">
-      <div class="row-icon privacy">
-        <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-      </div>
-      <div class="row-text"><div class="row-label">Privacy Policy</div></div>
-      <div class="row-chevron"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
-    </a>
-    <a class="settings-row link" href="/terms">
+    <a class="settings-row link" href="/legal">
       <div class="row-icon terms">
         <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>
       </div>
-      <div class="row-text"><div class="row-label">Terms of Service</div></div>
+      <div class="row-text"><div class="row-label">Legal</div></div>
       <div class="row-chevron"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
     </a>
     <a class="settings-row link" href="/support">
