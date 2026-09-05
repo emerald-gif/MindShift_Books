@@ -145,28 +145,8 @@
   </div>
 </header>
 
-<aside class="sidebar" id="sidebar" aria-hidden="true" data-open="false">
-  <div class="logo-row">
-    <img src="MINDSHIFT.jpg" alt="logo">
-    <div style="font-weight:700">MindShift Books</div>
-  </div>
-  <ul>
-    <li onclick="window.location.href='/books'">Browse Books</li>
-    <li onclick="window.location.href='/articles'">Articles</li>
-    <li onclick="openMyOrders()">My Account</li>
-    <li onclick="openWishlist()">My Wishlist</li>
-    <li onclick="window.location.href='/free-ebooks'">Free eBooks</li>
-    <li class="active" onclick="toggleSidebar()">Support</li>
-    <li onclick="window.location.href='/legal'">Terms &amp; Privacy</li>
-    <li onclick="openContact()">Contact Us</li>
-    <li onclick="followYoutube()">Follow us on YouTube</li>
-    <li onclick="window.location.href='/affiliate'">Become an Affiliate</li>
-  </ul>
-  <div style="position:absolute;bottom:18px;left:18px;right:18px;color:#9ca3af;font-size:0.9rem;">
-    <div>© 2026 MindShift Books</div>
-    <div style="margin-top:6px">Shift your thinking, change your life.</div>
-  </div>
-</aside>
+<div id="sidebar-slot"></div>
+<script src="/sidebar-nav.js"></script>
 
 <main>
 

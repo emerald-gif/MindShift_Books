@@ -455,33 +455,8 @@ body{padding-bottom:64px} /* room for the fixed comment bar on post-read */
 </header>
 </div>
 
-<aside class="sidebar" id="sidebar" aria-hidden="true" data-open="false">
-  <button type="button" class="sidebar-close-btn" onclick="toggleSidebar()" aria-label="Close menu">&times;</button>
-  <div class="logo-row">
-    <img src="/MINDSHIFT.jpg" alt="logo">
-    <div style="font-weight:700">MindShift Books</div>
-  </div>
-  <ul>
-    <li onclick="window.location.href='/books'">Bookstore</li>
-    <li onclick="window.location.href='/articles'"><strong>Articles</strong></li>
-    <li onclick="openCreatePicker()">Create</li>
-    <li id="sbProfileLink" style="display:none" onclick="window.location.href='/profile'">My Profile</li>
-    <li id="sbInsightsLink" style="display:none" onclick="window.location.href='/insights'">My Insights</li>
-    <li id="sbSavedLink" style="display:none" onclick="window.location.href='/articles'">Saved Articles</li>
-    <li onclick="window.location.href='/settings'">Settings</li>
-    <li onclick="window.location.href='/wishlist'">My Wishlist</li>
-    <li onclick="window.location.href='/free-ebooks'">Free eBooks</li>
-    <li onclick="window.location.href='/support'">Support</li>
-    <li onclick="window.location.href='/legal'">Terms &amp; Privacy</li>
-    <li onclick="window.location.href='/affiliate'">Become an Affiliate</li>
-  </ul>
-  <div class="sidebar-auth-cta" id="sidebarAuthCta" style="display:none;">
-    <div class="sidebar-auth-icon" aria-hidden="true">✨</div>
-    <div class="sidebar-auth-text">Sign up to write articles, follow authors, and get a feed picked for you.</div>
-    <a href="/signup" class="btn sidebar-auth-signup">Sign Up Free</a>
-    <a href="/login" class="btn sidebar-auth-login">Log In</a>
-  </div>
-</aside>
+<div id="sidebar-slot"></div>
+<script src="/sidebar-nav.js"></script>
 <script>
   function toggleSidebar(){
     const sidebar = document.getElementById('sidebar');
