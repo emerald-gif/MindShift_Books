@@ -118,6 +118,7 @@ function notifMessage(n) {
     case 'admin_message':    return `<strong>${nEsc(n.title || 'Message from MindShift Books')}</strong>${n.message ? ' — ' + nEsc(n.message) : ''}`;
     case 'article_approved': return `<strong>${nEsc(n.title || 'Your article was approved!')}</strong>${n.message ? ' — ' + nEsc(n.message) : ''}`;
     case 'article_rejected': return `<strong>${nEsc(n.title || 'Article update')}</strong>${n.message ? ' — ' + nEsc(n.message) : ''}`;
+    case 'article_removed': case 'post_removed': return `<strong>${nEsc(n.title || 'Content removed')}</strong>${n.message ? ' — ' + nEsc(n.message) : ''}`;
     default:              return `${name} interacted with you`;
   }
 }
@@ -203,7 +204,7 @@ export function initNotificationUI({ db, getCurrentUser, getMyProfile, fs }) {
         if (n.targetId) location.href = `/article-read?id=${n.targetId}`; break;
       case 'article_approved':
         if (n.articleId) location.href = `/article-read?id=${n.articleId}`; break;
-      case 'article_rejected': case 'admin_message':
+      case 'article_rejected': case 'admin_message': case 'article_removed': case 'post_removed':
         location.href = `/profile`; break;
     }
   };
