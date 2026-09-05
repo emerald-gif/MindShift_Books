@@ -113,9 +113,9 @@ main{max-width:1100px;margin:0 auto}
 .grid{display:flex;flex-direction:column;padding:0 0 100px;background:#fff}
 
 /* ── ARTICLE CARD – horizontal row ── */
-.acard{display:flex;flex-direction:row;align-items:flex-start;gap:14px;background:#fff;padding:20px 16px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .18s;position:relative;-webkit-tap-highlight-color:transparent}
+.acard{display:flex;flex-direction:row;align-items:flex-start;gap:14px;background:#fff;padding:20px 16px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .18s;position:relative;-webkit-tap-highlight-color:transparent;max-width:100%;overflow:hidden}
 .acard:active:not(:has(button:active,.acard-author:active)){background:#eef2ff}
-.acard-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.acard-body{flex:1;min-width:0;max-width:100%;display:flex;flex-direction:column;gap:4px}
 /* ── VERIFIED BADGE (brand standard) ── */
 .vbadge{display:inline-flex;align-items:center;justify-content:center;
   width:16px;height:16px;border-radius:50%;background:var(--g);flex-shrink:0;
@@ -144,7 +144,7 @@ main{max-width:1100px;margin:0 auto}
 .pcard-text{font-size:14.5px;color:var(--txt);line-height:1.5;white-space:pre-wrap;word-break:break-word;
   display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden}
 /* ── Horizontal peek carousel: images keep their natural aspect ratio, scaled to a shared height ── */
-.pcard-carousel{position:relative;margin-top:8px}
+.pcard-carousel{position:relative;margin-top:8px;max-width:100%;overflow:hidden}
 .pcard-track{display:flex;gap:4px;overflow-x:auto;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;
   scrollbar-width:none;height:340px;max-height:60vh}
 .pcard-track::-webkit-scrollbar{display:none}
@@ -1405,7 +1405,7 @@ function buildMediaGridHtml(images, postId){
   return `
     <div class="pcard-carousel" onclick="event.stopPropagation()">
       <div class="pcard-track" id="ptrack-${postId}" onscroll="onPostScroll('${postId}')">
-        ${images.map(url=>`<div class="pcard-slide"><img src="${url}" alt="" loading="lazy" onclick="goPostRead('${postId}')"></div>`).join('')}
+        ${images.map(url=>`<div class="pcard-slide"><img src="${url}" alt="" loading="lazy" onclick="goPostRead('${postId}')" onload="fitCarouselSlide(this)"></div>`).join('')}
       </div>
       <div class="pcard-count" id="pcount-${postId}">1/${images.length}</div>
     </div>`;
@@ -1456,6 +1456,23 @@ function buildPostCardHtml(p){
     </div>
   </div>`;
 }
+
+// Wide/landscape images, when forced to the row's fixed height, can end up
+// far wider than the screen. Cap only those slides to a sane max width and
+// letterbox the image inside it — normal/portrait images are left untouched.
+window.fitCarouselSlide = function(img){
+  const slide = img.closest('.pcard-slide');
+  const track = img.closest('.pcard-track');
+  if(!slide || !track || !img.naturalWidth || !img.naturalHeight) return;
+  const trackHeight = track.clientHeight;
+  const idealWidth = trackHeight * (img.naturalWidth / img.naturalHeight);
+  const maxAllowed = track.clientWidth * 0.82;
+  if(idealWidth > maxAllowed){
+    slide.style.width = maxAllowed + 'px';
+    slide.style.flexBasis = maxAllowed + 'px';
+    img.style.width = '100%';
+  }
+};
 
 window.onPostScroll = function(id){
   const track = document.getElementById(`ptrack-${id}`);

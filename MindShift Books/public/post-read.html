@@ -149,7 +149,7 @@ header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* ── POST (vs. article) content ── */
 .post-text{font-size:16.5px;line-height:1.6;color:var(--txt);white-space:pre-wrap;word-break:break-word;margin:16px 0}
 /* ── Horizontal peek carousel: images keep their natural aspect ratio, scaled to a shared height ── */
-.post-carousel{position:relative;margin:6px 0 18px}
+.post-carousel{position:relative;margin:6px 0 18px;max-width:100%;overflow:hidden}
 .post-carousel-track{display:flex;gap:4px;overflow-x:auto;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;
   scrollbar-width:none;height:380px;max-height:65vh}
 .post-carousel-track::-webkit-scrollbar{display:none}
@@ -814,7 +814,7 @@ async function renderArticle(){
     </div>` : `
     <div class="post-carousel">
       <div class="post-carousel-track" id="postCarouselTrack" onscroll="onPostReadScroll()">
-        ${imgs.map(url=>`<div class="post-carousel-slide"><img src="${url}" alt="" loading="lazy"></div>`).join('')}
+        ${imgs.map(url=>`<div class="post-carousel-slide"><img src="${url}" alt="" loading="lazy" onload="fitCarouselSlide(this)"></div>`).join('')}
       </div>
       <div class="post-carousel-count" id="postCarouselCount">1/${imgs.length}</div>
     </div>`;
@@ -875,6 +875,23 @@ function esc(str){
   d.textContent = str||'';
   return d.innerHTML.replace(/\n/g,'<br>');
 }
+
+// Wide/landscape images, when forced to the row's fixed height, can end up
+// far wider than the screen. Cap only those slides to a sane max width and
+// letterbox the image inside it — normal/portrait images are left untouched.
+window.fitCarouselSlide = function(img){
+  const slide = img.closest('.post-carousel-slide');
+  const track = img.closest('.post-carousel-track');
+  if(!slide || !track || !img.naturalWidth || !img.naturalHeight) return;
+  const trackHeight = track.clientHeight;
+  const idealWidth = trackHeight * (img.naturalWidth / img.naturalHeight);
+  const maxAllowed = track.clientWidth * 0.82;
+  if(idealWidth > maxAllowed){
+    slide.style.width = maxAllowed + 'px';
+    slide.style.flexBasis = maxAllowed + 'px';
+    img.style.width = '100%';
+  }
+};
 
 window.onPostReadScroll = function(){
   const track = document.getElementById('postCarouselTrack');

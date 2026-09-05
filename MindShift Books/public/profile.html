@@ -181,9 +181,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 /* ── FEED-STYLE CARD (matches articles.html / post-read.html) ── */
 .acard{display:flex;flex-direction:row;align-items:flex-start;gap:14px;background:#fff;padding:20px 16px;
   cursor:pointer;border-bottom:1px solid var(--border);transition:background .18s;position:relative;
-  -webkit-tap-highlight-color:transparent}
+  -webkit-tap-highlight-color:transparent;max-width:100%;overflow:hidden}
 .acard:active:not(:has(button:active,.acard-author:active)){background:#eef2ff}
-.acard-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.acard-body{flex:1;min-width:0;max-width:100%;display:flex;flex-direction:column;gap:4px}
 .vbadge{display:inline-flex;align-items:center;justify-content:center;
   width:16px;height:16px;border-radius:50%;background:var(--g);flex-shrink:0;
   box-shadow:0 1px 6px rgba(37,99,235,.35)}
@@ -227,7 +227,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .pcard-single{margin-top:8px;display:flex;justify-content:center}
 .pcard-single img{max-width:100%;max-height:340px;width:auto;height:auto;object-fit:contain;
   border-radius:14px;display:block;cursor:pointer;background:#f1f5f9}
-.pcard-carousel{position:relative;margin-top:8px}
+.pcard-carousel{position:relative;margin-top:8px;max-width:100%;overflow:hidden}
 .pcard-track{display:flex;gap:4px;overflow-x:auto;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;
   scrollbar-width:none;height:340px;max-height:60vh}
 .pcard-track::-webkit-scrollbar{display:none}
@@ -1028,11 +1028,25 @@ function buildMediaGridHtml(images, postId){
   return `
     <div class="pcard-carousel" onclick="event.stopPropagation()">
       <div class="pcard-track" id="ptrack-${postId}" onscroll="onPostScroll('${postId}')">
-        ${images.map(url=>`<div class="pcard-slide"><img src="${url}" alt="" loading="lazy" onclick="openArticle('${postId}','post')"></div>`).join('')}
+        ${images.map(url=>`<div class="pcard-slide"><img src="${url}" alt="" loading="lazy" onclick="openArticle('${postId}','post')" onload="fitCarouselSlide(this)"></div>`).join('')}
       </div>
       <div class="pcard-count" id="pcount-${postId}">1/${images.length}</div>
     </div>`;
 }
+
+window.fitCarouselSlide = function(img){
+  const slide = img.closest('.pcard-slide');
+  const track = img.closest('.pcard-track');
+  if(!slide || !track || !img.naturalWidth || !img.naturalHeight) return;
+  const trackHeight = track.clientHeight;
+  const idealWidth = trackHeight * (img.naturalWidth / img.naturalHeight);
+  const maxAllowed = track.clientWidth * 0.82;
+  if(idealWidth > maxAllowed){
+    slide.style.width = maxAllowed + 'px';
+    slide.style.flexBasis = maxAllowed + 'px';
+    img.style.width = '100%';
+  }
+};
 
 window.onPostScroll = function(id){
   const track = document.getElementById(`ptrack-${id}`);
