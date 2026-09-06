@@ -1891,6 +1891,7 @@ window.toggleCardMenu = function(id, event){
     }
     drop.classList.add('open');
     openCardMenuId = id;
+    _cardMenuOpenScrollY = window.scrollY;
     // Update follow button label based on real-time state
     const item = ARTICLES.find(a=>a.id===id) || POSTS.find(p=>p.id===id);
     const fbtn = document.getElementById(`cfbtn-${id}`);
@@ -1905,9 +1906,18 @@ window.toggleCardMenu = function(id, event){
     }
   }
 };
-// Fixed-position menus don't move with their card, so if the page scrolls
-// while one is open, close it rather than leaving a stale floating menu.
-window.addEventListener('scroll', ()=>{ if(openCardMenuId) closeOpenCardMenu(); }, { passive:true, capture:true });
+let _cardMenuOpenScrollY = 0;
+// Fixed-position menus don't move with their card, so a real scroll should
+// close a stale one — but on a phone, simply TAPPING a button can itself
+// nudge scrollY by a pixel or two (address bar collapsing, momentum
+// settling, touch jitter), which fired this on every single tap and closed
+// the menu before the click underneath it could register. Requiring a real
+// scroll distance (not just any scroll event) fixes that while still
+// closing on an actual scroll.
+window.addEventListener('scroll', ()=>{
+  if(!openCardMenuId) return;
+  if(Math.abs(window.scrollY - _cardMenuOpenScrollY) > 24) closeOpenCardMenu();
+}, { passive:true, capture:true });
 function closeOpenCardMenu(){
   if(openCardMenuId){
     const drop = document.getElementById(`cmenu-${openCardMenuId}`);
