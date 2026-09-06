@@ -48,7 +48,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   border-radius:99px;margin-left:5px;vertical-align:middle;letter-spacing:.2px}
 
 /* ── COVER BANNER ── */
-.cover-banner{width:100%;height:160px;background:var(--g);position:relative;overflow:hidden}
+.cover-banner{width:100%;height:160px;background:var(--g);position:relative;overflow:hidden;cursor:pointer}
 .cover-banner img{width:100%;height:100%;object-fit:cover}
 .cover-banner-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(15,10,30,.4))}
 .cover-edit-btn{position:absolute;top:12px;right:12px;background:rgba(0,0,0,.4);backdrop-filter:blur(4px);
@@ -62,7 +62,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .avatar-row{display:flex;align-items:flex-end;justify-content:space-between;margin-top:-36px;margin-bottom:12px}
 .avatar{width:80px;height:80px;border-radius:50%;border:3px solid var(--card);
   background:var(--g);display:flex;align-items:center;justify-content:center;
-  font-size:28px;font-weight:900;color:#fff;overflow:hidden;flex-shrink:0;position:relative}
+  font-size:28px;font-weight:900;color:#fff;overflow:hidden;flex-shrink:0;position:relative;cursor:pointer}
 .avatar img{width:100%;height:100%;object-fit:cover}
 .avatar-edit{position:absolute;bottom:0;right:0;width:24px;height:24px;background:var(--p);
   border-radius:50%;border:2px solid var(--card);display:flex;align-items:center;justify-content:center;cursor:pointer}
@@ -102,11 +102,53 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .btn-share svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 
 /* ── EDIT PROFILE SCREEN (full page) ── */
-.edit-screen{position:fixed;inset:0;background:var(--bg);z-index:300;
+.edit-screen{position:fixed;inset:0;background:var(--bg);z-index:2000;
   transform:translateX(100%);transition:transform .35s cubic-bezier(.32,0,.15,1);
   overflow-y:auto;-webkit-overflow-scrolling:touch}
 .edit-screen.show{transform:translateX(0)}
 .edit-screen .hdr{position:sticky}
+/* While the edit-profile screen is open, hide the shared site header (logo/title/
+   hamburger) so the edit screen reads as a true full-screen overlay */
+body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-header-stack, body.image-viewer-open .sticky-header-stack{display:none}
+.btn-close-x{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--border);
+  background:var(--card);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt)}
+.btn-close-x svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+
+/* ── DISCARD / SAVE CONFIRM MODAL ── */
+.discard-modal-bg{position:fixed;inset:0;background:rgba(15,10,30,.5);backdrop-filter:blur(4px);
+  z-index:2100;opacity:0;pointer-events:none;transition:opacity .2s}
+.discard-modal-bg.show{opacity:1;pointer-events:all}
+.discard-modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(.95);
+  width:min(340px,86vw);background:var(--card);border-radius:18px;padding:22px 20px;
+  z-index:2101;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;
+  box-shadow:0 20px 60px rgba(15,10,30,.25)}
+.discard-modal.show{opacity:1;pointer-events:all;transform:translate(-50%,-50%) scale(1)}
+.discard-modal-title{font-size:16px;font-weight:800;color:var(--txt);margin-bottom:8px}
+.discard-modal-msg{font-size:13.5px;color:var(--sub);line-height:1.5;margin-bottom:18px}
+.discard-modal-actions{display:flex;flex-direction:column;gap:8px}
+.discard-btn{width:100%;padding:11px;border-radius:99px;font-size:13.5px;font-weight:700;
+  cursor:pointer;font-family:inherit;border:none}
+.discard-btn-primary{background:var(--g);color:#fff}
+.discard-btn-danger{background:var(--card);color:var(--red);border:1.5px solid var(--border)}
+.discard-btn-ghost{background:transparent;color:var(--sub)}
+
+/* ── IMAGE VIEWER (tap avatar / cover to view full-size) ── */
+.img-viewer-bg{position:fixed;inset:0;background:rgba(10,8,20,.92);z-index:2200;
+  display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;
+  transition:opacity .2s}
+.img-viewer-bg.show{opacity:1;pointer-events:all}
+.img-viewer-close{position:absolute;top:18px;right:18px;width:40px;height:40px;border-radius:50%;
+  background:rgba(0,0,0,.55);border:none;color:#fff;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;z-index:2201}
+.img-viewer-close svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+#imgViewerImg{max-width:88vw;max-height:80vh;object-fit:contain}
+#imgViewerImg.img-viewer-avatar{width:min(78vw,340px);height:min(78vw,340px);border-radius:50%;object-fit:cover}
+#imgViewerImg.img-viewer-cover{width:92vw;border-radius:12px}
+
+/* ── FOLLOWERS / FOLLOWING FULL SCREEN ── */
+.follow-screen-name{font-size:14px;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.follow-screen-handle{font-size:11.5px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#followScreen .tabs{position:sticky;top:56px}
 
 .profile-name{font-size:20px;font-weight:900;color:var(--txt);margin-bottom:3px}
 .profile-title{font-size:13px;color:var(--p);font-weight:600;margin-bottom:6px}
@@ -367,10 +409,10 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 <!-- ══ /SHARED HEADER + SIDEBAR ══ -->
 
 <!-- COVER BANNER -->
-<div class="cover-banner" id="coverBanner">
+<div class="cover-banner" id="coverBanner" onclick="openImageViewer('cover')">
   <img id="coverImg" src="" alt="" style="display:none">
   <div class="cover-banner-overlay"></div>
-  <button class="cover-edit-btn" id="coverEditBtn" style="display:none" onclick="openEditSheet()">
+  <button class="cover-edit-btn" id="coverEditBtn" style="display:none" onclick="event.stopPropagation();openEditSheet()">
     <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
     Change Cover
   </button>
@@ -379,7 +421,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 <!-- PROFILE CARD -->
 <div class="profile-card" id="profileCard">
   <div class="avatar-row">
-    <div class="avatar" id="avatar"><div class="skel skel-avatar" id="avatarSkel" style="border:3px solid var(--card)"></div></div>
+    <div class="avatar" id="avatar" onclick="openImageViewer('avatar')"><div class="skel skel-avatar" id="avatarSkel" style="border:3px solid var(--card)"></div></div>
     <div class="profile-actions" id="profileActions">
       <!-- filled by JS -->
     </div>
@@ -460,11 +502,15 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 <!-- EDIT PROFILE SCREEN (full page) -->
 <div class="edit-screen" id="editScreen">
   <header class="hdr">
-    <button class="btn-back" onclick="closeEditSheet()">
+    <button class="btn-back" onclick="handleEditClose()" aria-label="Back">
       <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
     </button>
     <span class="hdr-title">Edit Profile</span>
-    <div class="hdr-action"></div>
+    <div class="hdr-action">
+      <button class="btn-close-x" onclick="handleEditClose()" aria-label="Close">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
   </header>
   <div class="sheet-body">
     <div class="field"><label>Display Name</label><input id="eName" type="text" maxlength="50" placeholder="Your full name"></div>
@@ -533,11 +579,42 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   </div>
 </div>
 
-<!-- FOLLOWERS SHEET -->
-<div class="sheet-bg" id="followBg" onclick="closeFollowSheet()"></div>
-<div class="sheet" id="followSheet">
-  <div class="sheet-handle"></div>
-  <div class="sheet-title" id="followSheetTitle">Followers</div>
+<!-- SAVE / DISCARD CONFIRM MODAL (shown when closing Edit Profile with unsaved changes) -->
+<div class="discard-modal-bg" id="discardModalBg" onclick="cancelDiscardModal()"></div>
+<div class="discard-modal" id="discardModal" role="dialog" aria-modal="true" aria-labelledby="discardModalTitle">
+  <div class="discard-modal-title" id="discardModalTitle">Save changes?</div>
+  <div class="discard-modal-msg">You have unsaved changes to your profile. Save them before leaving, or discard them?</div>
+  <div class="discard-modal-actions">
+    <button class="discard-btn discard-btn-primary" onclick="confirmSaveFromDiscard()">Save Changes</button>
+    <button class="discard-btn discard-btn-danger" onclick="confirmDiscardEdit()">Discard Changes</button>
+    <button class="discard-btn discard-btn-ghost" onclick="cancelDiscardModal()">Keep Editing</button>
+  </div>
+</div>
+
+<!-- IMAGE VIEWER (tap avatar or cover photo to view full-size) -->
+<div class="img-viewer-bg" id="imgViewerBg" onclick="closeImageViewer()">
+  <button class="img-viewer-close" onclick="closeImageViewer()" aria-label="Close">
+    <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+  </button>
+  <img id="imgViewerImg" src="" alt="" onclick="event.stopPropagation()">
+</div>
+
+<!-- FOLLOWERS / FOLLOWING — FULL SCREEN (mirrors edit-screen's overlay pattern) -->
+<div class="edit-screen" id="followScreen">
+  <header class="hdr">
+    <button class="btn-back" onclick="closeFollowScreen()" aria-label="Back">
+      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div style="flex:1;min-width:0;text-align:center">
+      <div class="follow-screen-name" id="followScreenName"></div>
+      <div class="follow-screen-handle" id="followScreenHandle"></div>
+    </div>
+    <div class="hdr-action"></div>
+  </header>
+  <div class="tabs" id="followTabs">
+    <div class="tab" id="followTabFollowers" onclick="switchFollowTab('followers')">Followers</div>
+    <div class="tab" id="followTabFollowing" onclick="switchFollowTab('following')">Following</div>
+  </div>
   <div class="follow-list" id="followList"></div>
 </div>
 
@@ -848,11 +925,11 @@ function renderProfileHeader(){
   const displayPhoto = profileData.photo || (isOwner && currentUser?.photoURL ? currentUser.photoURL : '');
   if(displayPhoto){
     av.innerHTML = `<img src="${displayPhoto}" alt="">`;
-    if(isOwner) av.insertAdjacentHTML('beforeend',`<div class="avatar-edit" id="avatarEditBtn" onclick="openEditSheet()"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>`);
+    if(isOwner) av.insertAdjacentHTML('beforeend',`<div class="avatar-edit" id="avatarEditBtn" onclick="event.stopPropagation();openEditSheet()"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>`);
   } else {
     const init = (profileData.name||'U').slice(0,1).toUpperCase();
     av.innerHTML = `<span>${init}</span>`;
-    if(isOwner) av.insertAdjacentHTML('beforeend',`<div class="avatar-edit" id="avatarEditBtn" onclick="openEditSheet()"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>`);
+    if(isOwner) av.insertAdjacentHTML('beforeend',`<div class="avatar-edit" id="avatarEditBtn" onclick="event.stopPropagation();openEditSheet()"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>`);
   }
 
   // name
@@ -1545,11 +1622,11 @@ window.debounceUsernameCheck = function(val){
   el.style.color='#94a3b8'; el.textContent='Checking…';
   _unTimer = setTimeout(async()=>{
     try{
-      const r = await fetch(`/api/check-username?username=${encodeURIComponent(val)}`);
+      const r = await fetch(`/api/username/available?u=${encodeURIComponent(val)}`);
       const j = await r.json();
       if(j.available){ el.style.color='#059669'; el.textContent='✓ Available'; window._usernameOk=true; }
-      else { el.style.color='#e11d48'; el.textContent='✗ Already taken'; window._usernameOk=false; }
-    }catch{ el.style.color='#94a3b8'; el.textContent='Could not verify'; window._usernameOk=true; }
+      else { el.style.color='#e11d48'; el.textContent=j.reason ? `✗ ${j.reason}` : '✗ Already taken'; window._usernameOk=false; }
+    }catch{ el.style.color='#e11d48'; el.textContent='Could not verify — check your connection'; window._usernameOk=false; }
   }, 500);
 };
 
@@ -1688,10 +1765,67 @@ window.openEditSheet = function(){
   updateSocialCounter();
   document.getElementById('editScreen').classList.add('show');
   document.body.style.overflow='hidden';
+  document.body.classList.add('editing-profile');
+  // Snapshot the form right after it's populated so we can tell later whether
+  // the user actually changed anything before they try to leave.
+  _editSnapshot = getEditSnapshot();
 };
 window.closeEditSheet = function(){
   document.getElementById('editScreen').classList.remove('show');
   document.body.style.overflow='';
+  document.body.classList.remove('editing-profile');
+  _editSnapshot = null;
+};
+
+// ── UNSAVED-CHANGES GUARD ────────────────────────────────────────────────
+// Captures every editable field into one comparable string. Used to detect
+// whether the user has made changes since opening the edit screen.
+let _editSnapshot = null;
+function getEditSnapshot(){
+  const socials = {};
+  SOCIAL_PLATFORMS.forEach(p=>{
+    const input = document.getElementById(`social-${p.key}`);
+    if(input) socials[p.key] = input.value.trim();
+  });
+  return JSON.stringify({
+    name: document.getElementById('eName').value.trim(),
+    username: (document.getElementById('eUsername').value||'').toLowerCase().trim(),
+    title: document.getElementById('eTitle').value.trim(),
+    categories: [...selectedCategories].sort(),
+    bio: document.getElementById('eBio').value.trim(),
+    location: document.getElementById('eLocation').value.trim(),
+    photo: document.getElementById('ePhoto').value.trim(),
+    cover: document.getElementById('eCover').value.trim(),
+    socials
+  });
+}
+function isEditDirty(){
+  return _editSnapshot !== null && getEditSnapshot() !== _editSnapshot;
+}
+// Called from both the back arrow and the X — if nothing changed, just close;
+// if something did, ask whether to save or discard before leaving.
+window.handleEditClose = function(){
+  if(isEditDirty()){
+    document.getElementById('discardModalBg').classList.add('show');
+    document.getElementById('discardModal').classList.add('show');
+  } else {
+    closeEditSheet();
+  }
+};
+function hideDiscardModal(){
+  document.getElementById('discardModalBg').classList.remove('show');
+  document.getElementById('discardModal').classList.remove('show');
+}
+window.cancelDiscardModal = function(){
+  hideDiscardModal(); // "Keep Editing" — leave the edit screen open, changes intact
+};
+window.confirmDiscardEdit = function(){
+  hideDiscardModal();
+  closeEditSheet(); // throws away the in-progress edits
+};
+window.confirmSaveFromDiscard = async function(){
+  hideDiscardModal();
+  await saveProfile(); // saveProfile() itself calls closeEditSheet() once it succeeds
 };
 window.saveProfile = async function(){
   if(!currentUser) return;
@@ -1779,22 +1913,40 @@ window.saveProfile = async function(){
   }catch(e){ console.error('saveProfile error:', e); showToast('Could not save: ' + e.message); }
 };
 
-/* ── FOLLOWERS SHEET ── */
+/* ── FOLLOWERS / FOLLOWING — FULL SCREEN (replaces the old bottom sheet) ── */
 window.showFollowers = async function(type){
-  document.getElementById('followSheetTitle').textContent = type==='followers'?'Followers':'Following';
+  document.getElementById('followScreenName').textContent = profileData.name || 'MindShift Books User';
+  document.getElementById('followScreenHandle').textContent = profileData.username ? '@'+profileData.username : '';
+  document.getElementById('followScreen').classList.add('show');
+  document.body.style.overflow='hidden';
+  document.body.classList.add('follow-screen-open');
+  await switchFollowTab(type);
+};
+// Bumped on every call so a stale, still-in-flight fetch from a tab the user
+// already switched away from can't overwrite the list with old results.
+let _followReqId = 0;
+window.switchFollowTab = async function(type){
+  const reqId = ++_followReqId;
+  document.getElementById('followTabFollowers').classList.toggle('active', type==='followers');
+  document.getElementById('followTabFollowing').classList.toggle('active', type==='following');
   document.getElementById('followList').innerHTML = '<div style="padding:20px;text-align:center;color:var(--mute)">Loading…</div>';
-  document.getElementById('followSheet').classList.add('show');
-  document.getElementById('followBg').classList.add('show');
 
   try{
     const field = type==='followers' ? 'followingId' : 'followerId';
     const otherField = type==='followers' ? 'followerId' : 'followingId';
     const q = query(collection(db,'follows'), where(field,'==',profileData.uid));
     const snap = await getDocs(q);
+    if(reqId !== _followReqId) return;
     const uids = snap.docs.map(d=>d.data()[otherField]);
 
     if(!uids.length){
-      document.getElementById('followList').innerHTML = `<div style="padding:24px;text-align:center;color:var(--mute);font-size:14px">No ${type} yet.</div>`;
+      document.getElementById('followList').innerHTML = `
+        <div style="padding:44px 28px;text-align:center">
+          <div style="font-size:19px;font-weight:800;color:var(--txt);margin-bottom:10px">Looking for ${type}?</div>
+          <div style="font-size:13.5px;color:var(--mute);line-height:1.55">${type==='followers'
+            ? 'When someone follows this account, they’ll show up here. Posting and interacting with others helps boost followers.'
+            : 'Accounts this profile follows will show up here.'}</div>
+        </div>`;
       return;
     }
 
@@ -1807,11 +1959,13 @@ window.showFollowers = async function(type){
         ms.docs.forEach(d=>myFollowing.add(d.data().followingId));
       }catch{}
     }
+    if(reqId !== _followReqId) return;
 
     const profiles = await Promise.all(uids.map(async uid=>{
       try{ const s=await getDoc(doc(db,'users',uid)); return s.exists()?{uid,...s.data()}:{uid,name:'MindShift Books User'}; }
       catch{ return {uid,name:'MindShift Books User'}; }
     }));
+    if(reqId !== _followReqId) return;
 
     document.getElementById('followList').innerHTML = profiles.map(p=>{
       const isMe = currentUser && p.uid === currentUser.uid;
@@ -1829,11 +1983,31 @@ window.showFollowers = async function(type){
         ${!isMe && currentUser && p.uid !== profileData.uid ? `<button class="follow-btn${alreadyFollowing?' ing':''}" onclick="quickFollow('${p.uid}',this)" ${alreadyFollowing?'disabled':''}>${alreadyFollowing?'Following':'Follow'}</button>` : ''}
       </div>`;
     }).join('');
-  }catch(e){ document.getElementById('followList').innerHTML='<div style="padding:20px;color:var(--mute)">Could not load.</div>'; }
+  }catch(e){ if(reqId===_followReqId) document.getElementById('followList').innerHTML='<div style="padding:20px;color:var(--mute)">Could not load.</div>'; }
 };
-window.closeFollowSheet = function(){
-  document.getElementById('followSheet').classList.remove('show');
-  document.getElementById('followBg').classList.remove('show');
+window.closeFollowScreen = function(){
+  document.getElementById('followScreen').classList.remove('show');
+  document.body.style.overflow='';
+  document.body.classList.remove('follow-screen-open');
+};
+
+/* ── IMAGE VIEWER (tap avatar or cover photo to view full-size) ── */
+window.openImageViewer = function(kind){
+  const src = kind==='avatar'
+    ? (profileData.photo || (isOwner && currentUser?.photoURL ? currentUser.photoURL : ''))
+    : (profileData.cover || '');
+  if(!src) return; // nothing uploaded yet — nothing to view
+  const img = document.getElementById('imgViewerImg');
+  img.src = src;
+  img.className = kind==='avatar' ? 'img-viewer-avatar' : 'img-viewer-cover';
+  document.getElementById('imgViewerBg').classList.add('show');
+  document.body.style.overflow='hidden';
+  document.body.classList.add('image-viewer-open');
+};
+window.closeImageViewer = function(){
+  document.getElementById('imgViewerBg').classList.remove('show');
+  document.body.style.overflow='';
+  document.body.classList.remove('image-viewer-open');
 };
 window.goProfile = function(uid, username){
   if(username) window.location.href=`/profile/@${encodeURIComponent(username)}`;
