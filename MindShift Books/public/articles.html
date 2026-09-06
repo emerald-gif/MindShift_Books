@@ -183,7 +183,7 @@ main{max-width:1100px;margin:0 auto}
 .acard-menu-btn{display:flex;align-items:center;justify-content:center;padding:4px 7px;background:none;border:none;cursor:pointer;color:var(--mute);transition:color .18s;border-radius:8px;-webkit-tap-highlight-color:transparent}
 .acard-menu-btn:hover{color:var(--p);background:#eef2ff}
 .acard-menu-btn svg{width:16px;height:16px}
-.acard-menu-drop{position:absolute;bottom:calc(100% + 6px);right:0;width:178px;background:#fff;border-radius:14px;border:1.5px solid var(--border);box-shadow:0 6px 28px rgba(37,99,235,.14),0 2px 8px rgba(0,0,0,.07);padding:6px;z-index:150;opacity:0;transform:translateY(4px) scale(.97);pointer-events:none;transition:all .18s cubic-bezier(.32,0,.15,1);transform-origin:bottom right}
+.acard-menu-drop{position:fixed;width:178px;background:#fff;border-radius:14px;border:1.5px solid var(--border);box-shadow:0 6px 28px rgba(37,99,235,.14),0 2px 8px rgba(0,0,0,.07);padding:6px;z-index:9999;opacity:0;transform:translateY(4px) scale(.97);pointer-events:none;transition:all .18s cubic-bezier(.32,0,.15,1);transform-origin:bottom right}
 .acard-menu-drop.open{opacity:1;transform:translateY(0) scale(1);pointer-events:all}
 .acard-menu-item{display:flex;align-items:center;gap:9px;width:100%;padding:10px 12px;border-radius:9px;font-size:13px;font-weight:600;color:var(--txt);border:none;background:none;cursor:pointer;transition:background .15s,color .15s;text-align:left;font-family:'Inter',sans-serif}
 .acard-menu-item:hover{background:#eef2ff;color:var(--p)}
@@ -974,6 +974,7 @@ async function refreshForYou(){
     console.warn('refreshForYou fetch failed, shuffling in-memory:', e);
     ARTICLES = shuffleArray(ARTICLES);
   }
+  rebuildMergedFeedOrder();
   renderGrid();
 }
 
@@ -1507,18 +1508,27 @@ function showSkeletons(count=4){
   `).join('');
 }
 
-function getMergedFeed(){
+// The actual on-screen order for the unfiltered "All" feed. Kept as its own
+// stable array instead of being recomputed by sorting ARTICLES+POSTS by date
+// on every render — that recompute is exactly what was silently undoing the
+// shuffle below every time renderGrid() ran (after a like, a delete, a
+// pagination append...), which is why the feed always looked chronological
+// no matter how much shuffling happened upstream. Only rebuilt+reshuffled on
+// an actual fresh fetch (initial load, re-tap refresh); appended to (not
+// reshuffled) on pagination; spliced on delete — everything else just reads
+// from it as-is, so scroll position and card order stay put between renders.
+let mergedFeedOrder = [];
+function rebuildMergedFeedOrder(){
+  if(activeFilter!=='all' || searchQuery) return; // filtered/search views don't use this
   const articles = getFiltered().map(a=>({...a, type:'article'}));
-  // Posts don't have categories/search fields the way articles do, so they
-  // only join the merged feed on the plain, unfiltered "All" view.
-  if(activeFilter!=='all' || searchQuery) return articles;
-  const merged = [...articles, ...POSTS];
-  merged.sort((x,y)=>{
-    const tx = (x.publishedAt&&x.publishedAt.seconds) ? x.publishedAt.seconds*1000 : (x.publishedAt||0);
-    const ty = (y.publishedAt&&y.publishedAt.seconds) ? y.publishedAt.seconds*1000 : (y.publishedAt||0);
-    return ty - tx;
-  });
-  return merged;
+  mergedFeedOrder = shuffleArray([...articles, ...POSTS]);
+}
+
+function getMergedFeed(){
+  if(activeFilter!=='all' || searchQuery){
+    return getFiltered().map(a=>({...a, type:'article'}));
+  }
+  return mergedFeedOrder;
 }
 
 function buildMediaGridHtml(images, postId){
@@ -1812,6 +1822,27 @@ window.toggleCardMenu = function(id, event){
     drop.classList.remove('open');
     openCardMenuId = null;
   } else {
+    // Position via fixed viewport coordinates computed from the "⋯"
+    // button's actual on-screen rect, every time it opens. This is
+    // deliberate: anchoring with position:absolute inside a card that has
+    // overflow:hidden (needed for the card's rounded corners/cover image)
+    // silently clips the menu on short cards — Edit/Delete would render
+    // partly or fully outside the card's own clipped box, sometimes still
+    // paintable in a way that looks fine but doesn't reliably receive taps.
+    // position:fixed escapes that clipping entirely and is guaranteed to
+    // match what's tappable to what's visible.
+    const btn = event.currentTarget || event.target.closest('.acard-menu-btn');
+    if(btn){
+      const rect = btn.getBoundingClientRect();
+      const dropWidth = 178;
+      let right = window.innerWidth - rect.right;
+      if(right < 8) right = 8;
+      if(right + dropWidth > window.innerWidth - 8) right = window.innerWidth - dropWidth - 8;
+      drop.style.right = `${right}px`;
+      drop.style.left = 'auto';
+      drop.style.bottom = `${window.innerHeight - rect.top + 6}px`;
+      drop.style.top = 'auto';
+    }
     drop.classList.add('open');
     openCardMenuId = id;
     // Update follow button label based on real-time state
@@ -1828,6 +1859,9 @@ window.toggleCardMenu = function(id, event){
     }
   }
 };
+// Fixed-position menus don't move with their card, so if the page scrolls
+// while one is open, close it rather than leaving a stale floating menu.
+window.addEventListener('scroll', ()=>{ if(openCardMenuId) closeOpenCardMenu(); }, { passive:true, capture:true });
 function closeOpenCardMenu(){
   if(openCardMenuId){
     const drop = document.getElementById(`cmenu-${openCardMenuId}`);
@@ -1861,6 +1895,7 @@ window.deleteFromFeedMenu = async function(id, type){
     deleteDoc(doc(db, type==='post' ? 'postMeta' : 'articleMeta', id)).catch(()=>{});
     if(type==='post') POSTS = POSTS.filter(p=>p.id!==id);
     else ARTICLES = ARTICLES.filter(a=>a.id!==id);
+    mergedFeedOrder = mergedFeedOrder.filter(a=>a.id!==id);
     document.querySelectorAll(`[data-post-id="${id}"]`).forEach(el=>el.remove());
     renderGrid();
     if(_followingRendered) renderFollowingTab(true);
@@ -1977,6 +2012,7 @@ async function loadPublishedArticles(){
     ARTICLES = snap.docs.map(mapArticleDoc);
     _articlesLastDoc = snap.docs[snap.docs.length-1];
     _articlesExhausted = snap.docs.length < ARTICLES_PAGE_SIZE;
+    rebuildMergedFeedOrder();
     renderGrid();
     _xDiscoverBuilt = false;
   }catch(e){ console.error('Firestore articles error:',e); }
@@ -2001,6 +2037,14 @@ async function loadMoreArticles(){
     ARTICLES = ARTICLES.concat(snap.docs.map(mapArticleDoc));
     _articlesLastDoc = snap.docs[snap.docs.length-1];
     _articlesExhausted = snap.docs.length < ARTICLES_PAGE_SIZE;
+    // Append-only — reshuffling the whole feed here would jump cards around
+    // under the user's thumb mid-scroll. New articles from this page just
+    // join the end of whatever's already on screen, honoring any active
+    // category filter the same way getFiltered() would.
+    if(activeFilter==='all' && !searchQuery){
+      const newOnes = snap.docs.map(mapArticleDoc).map(a=>({...a, type:'article'}));
+      mergedFeedOrder = mergedFeedOrder.concat(newOnes);
+    }
     renderGrid();
     _xDiscoverBuilt = false;
     return snap.docs.length;
@@ -2047,6 +2091,7 @@ async function loadPublishedPosts(){
         hideLikeCount: !!x.hideLikeCount
       };
     });
+    rebuildMergedFeedOrder();
     renderGrid();
   }catch(e){ console.error('Firestore posts error:',e); }
 }

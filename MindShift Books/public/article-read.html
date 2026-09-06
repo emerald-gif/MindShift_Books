@@ -243,6 +243,30 @@ header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .auth-sheet{position:fixed;left:0;right:0;bottom:0;z-index:301;background:#fff;border-radius:24px 24px 0 0;padding:20px 20px 44px;transform:translateY(100%);transition:transform .32s cubic-bezier(.32,0,.15,1)}
 .auth-sheet.on{transform:none}
 .sheet-bar{width:36px;height:4px;background:#e5e7eb;border-radius:99px;margin:0 auto 20px}
+/* ── MANAGE ARTICLE SHEET ── */
+.manage-hdr{display:flex;align-items:center;justify-content:space-between;padding:0 8px}
+.manage-close{background:none;border:none;cursor:pointer;padding:6px;border-radius:50%;color:var(--mute);
+  display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
+.manage-close:hover{background:#f1f5f9}
+.manage-close svg{width:18px;height:18px;stroke-width:2.3}
+.manage-body{padding:6px 4px 0}
+.manage-row{display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;cursor:pointer;
+  padding:13px 10px;border-radius:12px;font-size:14.5px;font-weight:600;color:var(--txt);text-align:left;
+  -webkit-tap-highlight-color:transparent}
+.manage-row:hover{background:#f8fafc}
+.manage-row svg{width:19px;height:19px;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:2;color:var(--mute)}
+.manage-row-danger{color:#ef4444}
+.manage-row-danger svg{color:#ef4444}
+.manage-toggle-row{cursor:default}
+.manage-toggle-row:hover{background:none}
+.manage-toggle-row span:first-of-type{flex:1}
+.manage-switch{position:relative;display:inline-block;width:42px;height:24px;flex-shrink:0}
+.manage-switch input{opacity:0;width:0;height:0}
+.manage-switch-track{position:absolute;cursor:pointer;inset:0;background:#e2e8f0;border-radius:99px;transition:.2s}
+.manage-switch-track::before{content:'';position:absolute;height:18px;width:18px;left:3px;top:3px;
+  background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.manage-switch input:checked + .manage-switch-track{background:var(--p, #4f46e5)}
+.manage-switch input:checked + .manage-switch-track::before{transform:translateX(18px)}
 .auth-sheet h3{font-size:22px;font-weight:900;text-align:center;margin-bottom:6px}
 .auth-sheet p{font-size:13.5px;color:var(--sub);text-align:center;line-height:1.6;margin-bottom:22px}
 .auth-sheet-btns{display:flex;flex-direction:column;gap:10px}
@@ -435,7 +459,69 @@ header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
   </button>
   <div class="hdr-title" id="hdrTitle"></div>
+  <button class="back-btn" id="hdrManageBtn" style="display:none;margin-left:auto" onclick="openManageSheet()" aria-label="Manage article">
+    <svg fill="currentColor" viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+  </button>
 </header>
+</div>
+
+<!-- MANAGE SHEET (owner only) -->
+<div class="overlay" id="manageOverlay" onclick="closeManageSheet()"></div>
+<div class="share-sheet" id="manageSheet" style="padding:6px 20px 28px">
+  <div class="sheet-bar"></div>
+  <div class="manage-hdr">
+    <h4 style="margin:0 0 4px;padding:0 8px">Manage article</h4>
+    <button class="manage-close" onclick="closeManageSheet()" aria-label="Close">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="manage-body">
+    <button class="manage-row" onclick="location.href='/write?edit='+article.id">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4z"/></svg>
+      <span>Edit</span>
+    </button>
+    <div class="manage-row manage-toggle-row">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+      <span>Turn off commenting</span>
+      <label class="manage-switch">
+        <input type="checkbox" id="manageCommentsToggle" onchange="onManageCommentsToggle(this.checked)">
+        <span class="manage-switch-track"></span>
+      </label>
+    </div>
+    <div class="manage-row manage-toggle-row">
+      <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+      <span>Hide like count</span>
+      <label class="manage-switch">
+        <input type="checkbox" id="manageLikeCountToggle" onchange="onManageLikeCountToggle(this.checked)">
+        <span class="manage-switch-track"></span>
+      </label>
+    </div>
+    <button class="manage-row" onclick="closeManageSheet();copyLink()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+      <span>Copy link</span>
+    </button>
+    <button class="manage-row manage-row-danger" onclick="confirmDeletePost()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+      <span>Delete</span>
+    </button>
+  </div>
+</div>
+
+<!-- DELETE CONFIRM SHEET -->
+<div class="overlay" id="deleteOverlay" onclick="closeDeleteConfirm()"></div>
+<div class="share-sheet" id="deleteSheet" style="padding:6px 20px 28px">
+  <div class="sheet-bar"></div>
+  <div class="manage-hdr">
+    <h4 style="margin:0 0 4px;padding:0 8px">Delete this article?</h4>
+    <button class="manage-close" onclick="closeDeleteConfirm()" aria-label="Close">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="manage-body">
+    <p style="font-size:13.5px;color:var(--mute);line-height:1.5;padding:0 10px 12px">This can't be undone. Likes and comments on it will be gone for good.</p>
+    <button class="manage-row manage-row-danger" onclick="doDeletePost()"><span>Delete</span></button>
+    <button class="manage-row" onclick="closeDeleteConfirm()"><span>Cancel</span></button>
+  </div>
 </div>
 
 <div id="sidebar-slot"></div>
@@ -868,6 +954,8 @@ async function renderArticle(){
     if(inputEl) inputEl.innerHTML = '';
   }
   renderDownloadLockBadge();
+  const manageBtn = document.getElementById('hdrManageBtn');
+  if(manageBtn) manageBtn.style.display = (currentUser && article.authorUid === currentUser.uid) ? '' : 'none';
 }
 
 function getGatedContent(html){
@@ -1369,9 +1457,79 @@ window.doShare=function(platform){
   closeShare();
 };
 
-/* ══════════════════════════════════════
-   DOWNLOAD AS PDF
-   ══════════════════════════════════════ */
+/* ── MANAGE SHEET (owner only — the "⋯" in the header) ── */
+window.copyLink=function(){
+  navigator.clipboard.writeText(location.href).then(()=>showToast('Link copied! 🎉')).catch(()=>showToast('Copy failed'));
+};
+
+window.openManageSheet=function(){
+  if(!article || !currentUser || article.authorUid!==currentUser.uid) return;
+  document.getElementById('manageCommentsToggle').checked = !!article.commentsOff;
+  document.getElementById('manageLikeCountToggle').checked = !!article.hideLikeCount;
+  document.getElementById('manageOverlay').classList.add('on');
+  document.getElementById('manageSheet').classList.add('on');
+  document.body.style.overflow='hidden';
+};
+window.closeManageSheet=function(){
+  document.getElementById('manageOverlay').classList.remove('on');
+  document.getElementById('manageSheet').classList.remove('on');
+  document.body.style.overflow='';
+};
+
+window.onManageCommentsToggle=async function(checked){
+  if(!article) return;
+  try{
+    await updateDoc(doc(db,'articles',article.id),{ commentsOff: checked });
+    article.commentsOff = checked;
+    showToast(checked ? 'Comments turned off' : 'Comments turned back on');
+    renderArticle();
+  }catch(e){
+    console.error('toggle commentsOff failed:', e);
+    document.getElementById('manageCommentsToggle').checked = !checked;
+    showToast('Could not update — try again');
+  }
+};
+
+window.onManageLikeCountToggle=async function(checked){
+  if(!article) return;
+  try{
+    await updateDoc(doc(db,'articles',article.id),{ hideLikeCount: checked });
+    article.hideLikeCount = checked;
+    showToast(checked ? 'Like count hidden from others' : 'Like count is visible again');
+    syncLikeUI();
+  }catch(e){
+    console.error('toggle hideLikeCount failed:', e);
+    document.getElementById('manageLikeCountToggle').checked = !checked;
+    showToast('Could not update — try again');
+  }
+};
+
+window.confirmDeletePost=function(){
+  closeManageSheet();
+  document.getElementById('deleteOverlay').classList.add('on');
+  document.getElementById('deleteSheet').classList.add('on');
+  document.body.style.overflow='hidden';
+};
+window.closeDeleteConfirm=function(){
+  document.getElementById('deleteOverlay').classList.remove('on');
+  document.getElementById('deleteSheet').classList.remove('on');
+  document.body.style.overflow='';
+};
+window.doDeletePost=async function(){
+  if(!article) return;
+  const id = article.id;
+  try{
+    await deleteDoc(doc(db,'articles',id));
+    deleteDoc(doc(db,'articleLikes',id)).catch(()=>{});
+    deleteDoc(doc(db,'articleMeta',id)).catch(()=>{});
+    showToast('Deleted');
+    setTimeout(()=>{ location.href='/profile'; }, 600);
+  }catch(e){
+    console.error('doDeletePost failed:', e);
+    showToast('Could not delete — try again');
+    closeDeleteConfirm();
+  }
+};
 // Article downloads aren't gated behind a paid plan right now — everything
 // is free while there's no premium tier live. (This used to call a
 // /api/plan-config endpoint that was never actually built on the server,
