@@ -530,6 +530,7 @@ body{padding-bottom:64px} /* room for the fixed comment bar on post-read */
 
 <div id="sidebar-slot"></div>
 <script src="/sidebar-nav.js"></script>
+<script src="/author-live.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="/share-image.js"></script>
 <script>
@@ -903,11 +904,11 @@ async function renderArticle(){
   document.getElementById('artContent').innerHTML = `
     <div class="art-wrap">
       <div class="author-row-wrap">
-        <div class="author-row" onclick="goAuthor()" style="cursor:pointer">
-          <img class="author-logo" src="${article.avatar||'logo.jpg'}" alt="${article.author||'MindShift Books'}" onerror="this.style.background='linear-gradient(135deg,#4f46e5,#06b6d4)'">
+        <div class="author-row" data-author-uid="${article.authorUid||''}" onclick="goAuthor()" style="cursor:pointer">
+          <img class="author-logo" data-author-photo src="${article.avatar||'logo.jpg'}" alt="${article.author||'MindShift Books'}" onerror="this.style.background='linear-gradient(135deg,#4f46e5,#06b6d4)'">
           <div>
             <div class="author-name">
-              ${article.author||'MindShift Books User'}
+              <span data-author-name>${article.author||'MindShift Books User'}</span>
               ${(article.isMindshift) ? `<span class="vbadge"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>` : ''}
             </div>
             <div class="author-meta">${article.publishedAt ? fmtRel(article.publishedAt) : ''}</div>
@@ -955,6 +956,7 @@ async function renderArticle(){
 
   syncLikeUI();
   syncSaveUI();
+  window.MSBAuthorLive && window.MSBAuthorLive.refresh(db, { doc, getDoc }, document.getElementById('artContent'));
   const persistentBar = document.getElementById('postCommentBar');
   if(persistentBar) persistentBar.style.display = article.commentsOff ? 'none' : '';
   // Comment data is never deleted when comments are turned off — we just
@@ -1261,12 +1263,15 @@ function buildCommentsUI(comments){
     ?comments.map(c=>buildCHTML(c,false)).join('')
     :`<div class="comments-list-empty"><div class="comments-list-empty-ico">&#128172;</div><div class="comments-list-empty-txt">Be the first to comment</div></div>`;
   listEl.innerHTML=listHTML;
+  window.MSBAuthorLive && window.MSBAuthorLive.refresh(db, { doc, getDoc }, listEl);
 }
 
 function buildCHTML(c,isReply){
   const liked=cLikedSet.has(c.id);
   const init=(c.authorName||'U').charAt(0).toUpperCase();
-  const avIn=c.authorPhoto?`<img src="${cEsc(c.authorPhoto)}" alt="" onerror="this.style.display='none'">`:init;
+  const photoAttr=c.authorPhoto?` src="${cEsc(c.authorPhoto)}"`:'';
+  const photoStyle=c.authorPhoto?'':'display:none';
+  const avIn=`<span class="c-av-fallback">${init}</span><img class="c-av-img" data-author-photo alt=""${photoAttr} style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;${photoStyle}" onerror="this.style.display='none'">`;
   const lc=c.likeCount>0?String(c.likeCount):'';
   const isAuthor=article&&c.authorUid&&c.authorUid===article.authorUid&&!article.isMindshift;
   const authorBadge=isAuthor?`<span class="c-author-badge"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>Author</span>`:'';
@@ -1279,7 +1284,7 @@ function buildCHTML(c,isReply){
   const extra=!isReply
     ?`<div class="c-replies-wrap" id="rep-${c.id}" style="display:none"></div><div class="c-replies-wrap" id="ri-wrap-${c.id}" style="display:none"><div class="reply-input-row"><textarea class="r-input" id="ri-${c.id}" placeholder="Write a reply…" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px';document.getElementById('rpb-${c.id}').disabled=!this.value.trim()"></textarea><button class="r-post-btn" id="rpb-${c.id}" onclick="submitReply('${c.id}')" disabled>Post</button><button class="r-cancel-btn" onclick="hideRI('${c.id}')"><svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button></div></div>`
     :'';
-  return `<div class="comment-item${isReply?' reply':''}" id="ci-${c.id}"><div class="c-av" onclick="cGo('${cEsc(c.authorUid||'')}','${cEsc(c.authorUsername||'')}')">${avIn}</div><div class="c-body"><div class="c-meta-row"><span class="c-name" onclick="cGo('${cEsc(c.authorUid||'')}','${cEsc(c.authorUsername||'')}')">${cEsc(c.authorName||'User')}</span>${authorBadge}</div><div class="c-text">${cEsc(c.text||'')}</div><div class="c-foot"><span class="c-time">${cTA(c.createdAt)}</span><span class="c-dot">·</span>${heart}${replyBtn}${vrBtn}</div>${extra}</div>${moreBtn}</div>`;
+  return `<div class="comment-item${isReply?' reply':''}" id="ci-${c.id}"><div class="c-av" data-author-uid="${cEsc(c.authorUid||'')}" style="position:relative" onclick="cGo('${cEsc(c.authorUid||'')}','${cEsc(c.authorUsername||'')}')">${avIn}</div><div class="c-body"><div class="c-meta-row"><span class="c-name" data-author-uid="${cEsc(c.authorUid||'')}" data-author-name onclick="cGo('${cEsc(c.authorUid||'')}','${cEsc(c.authorUsername||'')}')">${cEsc(c.authorName||'User')}</span>${authorBadge}</div><div class="c-text">${cEsc(c.text||'')}</div><div class="c-foot"><span class="c-time">${cTA(c.createdAt)}</span><span class="c-dot">·</span>${heart}${replyBtn}${vrBtn}</div>${extra}</div>${moreBtn}</div>`;
 }
 
 window.onCI=function(el){el.style.height='auto';el.style.height=el.scrollHeight+'px';const b=document.getElementById('mainCPost');if(b)b.disabled=!el.value.trim();};
@@ -1386,6 +1391,7 @@ window.toggleReplies=async function(cid){
     }
     cReplies[cid]=replies;
     re.innerHTML=replies.length?replies.map(r=>buildCHTML(r,true)).join(''):'<div style="padding:8px 0;font-size:12px;color:var(--mute)">No replies yet.</div>';
+    window.MSBAuthorLive && window.MSBAuthorLive.refresh(db, { doc, getDoc }, re);
   }catch(e){re.innerHTML='<div style="padding:8px 0;font-size:12px;color:var(--red)">Could not load.</div>';}
 };
 

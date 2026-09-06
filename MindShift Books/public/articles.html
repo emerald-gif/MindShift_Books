@@ -410,6 +410,7 @@ main{max-width:1100px;margin:0 auto}
 
 <div id="sidebar-slot"></div>
 <script src="/sidebar-nav.js"></script>
+<script src="/author-live.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="/share-image.js"></script>
 <script>
@@ -1102,6 +1103,7 @@ async function renderFollowingTab(fresh = false){
     const cardsHtml = feedArts.map(a=> a.type==='post' ? buildPostCardHtml(a) : buildAcard(a));
     grid.innerHTML = withInviteCard(cardsHtml, currentUser ? currentUser.uid : null).join('');
     feed.innerHTML=''; feed.appendChild(grid);
+    window.MSBAuthorLive && window.MSBAuthorLive.refresh(db, { doc, getDoc }, grid);
     feedArts.forEach(a=>{ if(currentUser){const b=document.getElementById(`lb-${a.id}`);if(b)b.classList.toggle('liked',likedSet.has(a.id));} });
     fetchLikeCounts(feedArts.map(a=>({ id:a.id, hideLikeCount:!!a.hideLikeCount, authorUid:a.authorUid })));
     const _followingPostIds = feedArts.filter(a=>a.type==='post').map(a=>a.id);
@@ -1219,9 +1221,9 @@ window.dismissSug=function(uid){
 function buildAcard(a){
   return `<div class="acard" onclick="goRead('${a.id}')">
     <div class="acard-body">
-      <div class="acard-author" onclick="event.stopPropagation();goAuthor('${a.authorUid||''}',false)">
-        <img class="acard-av" src="${a.avatar||a.authorPhoto||'logo.jpg'}" alt="${a.author||a.authorName||'Author'}" onerror="this.style.background='linear-gradient(135deg,#4f46e5,#06b6d4)'">
-        <span class="acard-author-name">${esc(a.author||a.authorName||'Author')}</span>
+      <div class="acard-author" data-author-uid="${a.authorUid||''}" onclick="event.stopPropagation();goAuthor('${a.authorUid||''}',false)">
+        <img class="acard-av" data-author-photo src="${a.avatar||a.authorPhoto||'logo.jpg'}" alt="${a.author||a.authorName||'Author'}" onerror="this.style.background='linear-gradient(135deg,#4f46e5,#06b6d4)'">
+        <span class="acard-author-name" data-author-name>${esc(a.author||a.authorName||'Author')}</span>
         <span class="acard-author-dot">·</span>
         <span class="acard-author-date">${fmtRel(a.publishedAt||a.createdAt)}</span>
       </div>
@@ -1579,9 +1581,9 @@ function buildPostCardHtml(p){
   const carousel = buildMediaGridHtml(p.images, p.id);
   return `<div class="acard pcard" data-post-id="${p.id}" onclick="goPostRead('${p.id}')">
     <div class="acard-body">
-      <div class="acard-author" onclick="event.stopPropagation();goAuthor('${p.authorUid||''}',${!!p.isMindshift})">
-        <img class="acard-av" src="${p.avatar||'logo.jpg'}" alt="${p.author||'MindShift Books'}" onerror="this.style.background='linear-gradient(135deg,#4f46e5,#06b6d4)'">
-        <span class="acard-author-name">${esc(p.author||'MindShift Books User')}</span>
+      <div class="acard-author" data-author-uid="${p.authorUid||''}" onclick="event.stopPropagation();goAuthor('${p.authorUid||''}',${!!p.isMindshift})">
+        <img class="acard-av" data-author-photo src="${p.avatar||'logo.jpg'}" alt="${p.author||'MindShift Books'}" onerror="this.style.background='linear-gradient(135deg,#4f46e5,#06b6d4)'">
+        <span class="acard-author-name" data-author-name>${esc(p.author||'MindShift Books User')}</span>
         ${p.isMindshift ? `<span class="vbadge"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>` : ''}
         <span class="acard-author-dot">·</span>
         <span class="acard-author-date">${fmtRel(p.publishedAt)}</span>
@@ -1707,9 +1709,9 @@ function renderGrid(){
     return `
     <div class="acard" data-post-id="${a.id}" onclick="goRead('${a.id}')">
       <div class="acard-body">
-        <div class="acard-author" onclick="event.stopPropagation();goAuthor('${a.authorUid||''}',${!!a.isMindshift})">
-          <img class="acard-av" src="${a.avatar||'logo.jpg'}" alt="${a.author||'MindShift Books'}" onerror="this.style.background='linear-gradient(135deg,#4f46e5,#06b6d4)'">
-          <span class="acard-author-name">${a.author||'MindShift Books'}</span>
+        <div class="acard-author" data-author-uid="${a.authorUid||''}" onclick="event.stopPropagation();goAuthor('${a.authorUid||''}',${!!a.isMindshift})">
+          <img class="acard-av" data-author-photo src="${a.avatar||'logo.jpg'}" alt="${a.author||'MindShift Books'}" onerror="this.style.background='linear-gradient(135deg,#4f46e5,#06b6d4)'">
+          <span class="acard-author-name" data-author-name>${a.author||'MindShift Books'}</span>
           ${a.isMindshift ? `<span class="vbadge"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>` : ''}
           <span class="acard-author-dot">·</span>
           <span class="acard-author-date">${fmtRel(a.publishedAt||a.createdAt)}</span>
@@ -1767,6 +1769,7 @@ function renderGrid(){
   });
   grid.innerHTML = withInviteCard(cardsHtml, currentUser ? currentUser.uid : null).join('')
     + '<div id="feedEndSentinel" style="height:1px"></div>';
+  window.MSBAuthorLive && window.MSBAuthorLive.refresh(db, { doc, getDoc }, grid);
   observeFeedPostCards();
   observeLoadMoreSentinel();
   list.forEach(a=>{
