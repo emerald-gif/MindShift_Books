@@ -513,6 +513,8 @@ header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 <div id="sidebar-slot"></div>
 <script src="/sidebar-nav.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="/share-image.js"></script>
 <script>
   function toggleSidebar(){
     const sidebar = document.getElementById('sidebar');
@@ -574,6 +576,10 @@ header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     <div class="s-opt" onclick="doShare('copy')">
       <div class="s-ico" style="background:#f1f5f9"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#64748b" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path stroke-linecap="round" d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></div>
       <span class="s-lbl">Copy link</span>
+    </div>
+    <div class="s-opt" onclick="closeShare();openShareAsImageFromArticle()">
+      <div class="s-ico" style="background:#ede9fe"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>
+      <span class="s-lbl">Image</span>
     </div>
   </div>
   <div class="copy-row" onclick="doShare('copy')">
@@ -1447,6 +1453,16 @@ window.doShare=function(platform){
 /* ── MANAGE SHEET (owner only — the "⋯" in the header) ── */
 window.copyLink=function(){
   navigator.clipboard.writeText(location.href).then(()=>showToast('Link copied! 🎉')).catch(()=>showToast('Copy failed'));
+};
+
+window.openShareAsImageFromArticle=function(){
+  if(!article || typeof openShareImageCard!=='function') return;
+  openShareImageCard({
+    type: 'article', id: article.id,
+    author: article.author, avatar: article.avatar, publishedAt: article.publishedAt,
+    title: article.title, brief: article.brief,
+    image: article.img
+  });
 };
 
 window.openManageSheet=function(){
