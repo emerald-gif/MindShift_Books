@@ -35,21 +35,8 @@ header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .search-wrapper input{flex:1;border:none;outline:none;background:transparent;font-size:0.95rem;padding:6px 8px;color:var(--primary)}
 .search-wrapper button{display:inline-flex;align-items:center;justify-content:center;background:linear-gradient(90deg,#4f46e5,#06b6d4);border:none;color:#fff;padding:8px 10px;border-radius:10px;cursor:pointer;box-shadow:0 8px 20px rgba(79,70,229,0.12)}
 .search-wrapper .search-icon-prefix{width:16px;height:16px;color:#94a3b8;flex-shrink:0}
-.sidebar{position:fixed;top:0;left:-300px;width:280px;height:100%;background:#111827;padding-top:84px;padding-bottom:90px;transition:left 0.32s ease;z-index:2000;border-right:1px solid rgba(255,255,255,0.04);color:#fff;overflow-y:auto}
-.sidebar .logo-row{display:flex;align-items:center;gap:12px;padding:18px 20px;position:absolute;top:16px;left:12px}
-.sidebar img{width:36px;height:36px;border-radius:6px}
-.sidebar ul{list-style:none;margin-top:8px}
-.sidebar li{padding:16px 20px;font-weight:600;border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer}
-.sidebar-close-btn{position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.06);color:#fff;font-size:1.15rem;font-weight:800;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:1}
-.sidebar-close-btn:active{background:rgba(255,255,255,0.14)}
-.sidebar-auth-cta{padding:16px 20px;margin-top:6px}
-.sidebar-auth-icon{font-size:1.3rem;margin-bottom:4px}
-.sidebar-auth-text{color:#e2e8f0;font-size:0.78rem;line-height:1.4;margin-bottom:12px}
-.sidebar-auth-cta .btn{display:block;width:100%;padding:9px 10px;font-size:0.8rem;text-decoration:none;margin-bottom:8px;text-align:center;border-radius:10px;font-weight:700}
-.sidebar-auth-cta .btn:last-child{margin-bottom:0}
-.sidebar-auth-signup{background:linear-gradient(90deg,#4f46e5,#06b6d4);color:#fff}
-.sidebar-auth-login{background:rgba(255,255,255,0.08);color:#fff;border:1px solid rgba(255,255,255,0.3)!important}
-.sidebar-auth-login:hover{background:rgba(255,255,255,0.16)}
+/* Sidebar styles now live in /sidebar-nav.js (injected once, shared across
+   every page) instead of being duplicated here. */
 @media (max-width:600px){ .search-wrapper{width:100%!important;max-width:100%!important} header{padding:14px 14px 18px} }
 @media (max-width:450px){ header h1{font-size:1.15rem} .header-icon-group .icon-btn{width:36px;height:36px} }
 /* ── /SHARED HEADER ── */

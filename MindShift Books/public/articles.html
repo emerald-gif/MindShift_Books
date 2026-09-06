@@ -37,21 +37,8 @@ header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .search-wrapper input{flex:1;border:none;outline:none;background:transparent;font-size:0.95rem;padding:6px 8px;color:var(--primary)}
 .search-wrapper button{display:inline-flex;align-items:center;justify-content:center;background:linear-gradient(90deg,#4f46e5,#06b6d4);border:none;color:#fff;padding:8px 10px;border-radius:10px;cursor:pointer;box-shadow:0 8px 20px rgba(79,70,229,0.12)}
 .search-wrapper .search-icon-prefix{width:16px;height:16px;color:#94a3b8;flex-shrink:0}
-.sidebar{position:fixed;top:0;left:-300px;width:280px;height:100%;background:#111827;padding-top:84px;padding-bottom:90px;transition:left 0.32s ease;z-index:2000;border-right:1px solid rgba(255,255,255,0.04);color:#fff;overflow-y:auto}
-.sidebar .logo-row{display:flex;align-items:center;gap:12px;padding:18px 20px;position:absolute;top:16px;left:12px}
-.sidebar img{width:36px;height:36px;border-radius:6px}
-.sidebar ul{list-style:none;margin-top:8px}
-.sidebar li{padding:16px 20px;font-weight:600;border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer}
-.sidebar-close-btn{position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.06);color:#fff;font-size:1.15rem;font-weight:800;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:1}
-.sidebar-close-btn:active{background:rgba(255,255,255,0.14)}
-.sidebar-auth-cta{padding:16px 20px;margin-top:6px}
-.sidebar-auth-icon{font-size:1.3rem;margin-bottom:4px}
-.sidebar-auth-text{color:#e2e8f0;font-size:0.78rem;line-height:1.4;margin-bottom:12px}
-.sidebar-auth-cta .btn{display:block;width:100%;padding:9px 10px;font-size:0.8rem;text-decoration:none;margin-bottom:8px;text-align:center;border-radius:10px;font-weight:700}
-.sidebar-auth-cta .btn:last-child{margin-bottom:0}
-.sidebar-auth-signup{background:linear-gradient(90deg,#4f46e5,#06b6d4);color:#fff}
-.sidebar-auth-login{background:rgba(255,255,255,0.08);color:#fff;border:1px solid rgba(255,255,255,0.3)!important}
-.sidebar-auth-login:hover{background:rgba(255,255,255,0.16)}
+/* Sidebar styles now live in /sidebar-nav.js (injected once, shared across
+   every page) instead of being duplicated here. */
 @media (max-width:600px){ .search-wrapper{width:100%!important;max-width:100%!important} header{padding:14px 14px 18px} }
 @media (max-width:450px){ header h1{font-size:1.15rem} .header-icon-group .icon-btn{width:36px;height:36px} }
 main{max-width:1100px;margin:0 auto}
@@ -848,7 +835,15 @@ onAuthStateChanged(auth, async user => {
     userCategories = [];
   }
   if(seq !== authCallSeq) return; // a newer auth event has already taken over
-  renderGrid();
+  // Only re-render here if there's already something loaded to reflect (e.g.
+  // like/save state changing on content fetched by an earlier auth pass).
+  // On a fresh page load ARTICLES/POSTS are still empty at this exact point
+  // — calling renderGrid() here would show the "no articles" empty state
+  // and immediately wipe out the loading skeleton, then get overwritten a
+  // moment later once the fetch below actually resolves. Skipping it just
+  // leaves the skeleton up until real content (or a real empty result)
+  // arrives, instead of flashing a false "nothing here" in between.
+  if(ARTICLES.length || POSTS.length) renderGrid();
   loadPublishedArticles();
   loadPublishedPosts();
   const p = new URLSearchParams(location.search);
@@ -1518,10 +1513,35 @@ function showSkeletons(count=4){
 // reshuffled) on pagination; spliced on delete — everything else just reads
 // from it as-is, so scroll position and card order stay put between renders.
 let mergedFeedOrder = [];
+
+function _feedItemTime(x){
+  return (x.publishedAt&&x.publishedAt.seconds) ? x.publishedAt.seconds*1000 : (x.publishedAt||0);
+}
+
+// Recency-weighted shuffle: a flat shuffleArray() over everything gives a
+// brand new post the exact same odds as something from months ago — no
+// bias at all, so a fresh post can get buried at the bottom and just stay
+// there until pure luck surfaces it on some future reshuffle. Bucketing by
+// age and shuffling WITHIN each bucket keeps the "different every refresh"
+// variety while still guaranteeing new content lands in the top tier.
+function weightedShuffleFeed(items){
+  const now = Date.now();
+  const HOUR = 3600000, DAY = 86400000;
+  const buckets = [[], [], [], []]; // <6h, <24h, <3d, older
+  items.forEach(x=>{
+    const age = now - _feedItemTime(x);
+    if(age < 6*HOUR) buckets[0].push(x);
+    else if(age < DAY) buckets[1].push(x);
+    else if(age < 3*DAY) buckets[2].push(x);
+    else buckets[3].push(x);
+  });
+  return buckets.flatMap(b=>shuffleArray(b));
+}
+
 function rebuildMergedFeedOrder(){
   if(activeFilter!=='all' || searchQuery) return; // filtered/search views don't use this
   const articles = getFiltered().map(a=>({...a, type:'article'}));
-  mergedFeedOrder = shuffleArray([...articles, ...POSTS]);
+  mergedFeedOrder = weightedShuffleFeed([...articles, ...POSTS]);
 }
 
 function getMergedFeed(){
@@ -1673,7 +1693,7 @@ function renderGrid(){
   const cardsHtml = list.map((a) => {
     if(a.type==='post') return buildPostCardHtml(a);
     return `
-    <div class="acard" onclick="goRead('${a.id}')">
+    <div class="acard" data-post-id="${a.id}" onclick="goRead('${a.id}')">
       <div class="acard-body">
         <div class="acard-author" onclick="event.stopPropagation();goAuthor('${a.authorUid||''}',${!!a.isMindshift})">
           <img class="acard-av" src="${a.avatar||'logo.jpg'}" alt="${a.author||'MindShift Books'}" onerror="this.style.background='linear-gradient(135deg,#4f46e5,#06b6d4)'">
@@ -1700,6 +1720,16 @@ function renderGrid(){
               <svg fill="currentColor" viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
             </button>
             <div class="acard-menu-drop" id="cmenu-${a.id}">
+              ${a.authorUid && currentUser && a.authorUid===currentUser.uid ? `
+              <button class="acard-menu-item" onclick="closeOpenCardMenu();location.href='/write?edit=${a.id}'">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4z"/></svg>
+                Edit
+              </button>
+              <button class="acard-menu-item" style="color:var(--red)" onclick="closeOpenCardMenu();deleteFromFeedMenu('${a.id}','article')">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                Delete
+              </button>
+              <div style="height:1px;background:var(--border);margin:4px 0"></div>` : ''}
               <button class="acard-menu-item" onclick="copyCardLink('${a.id}')">
                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path stroke-linecap="round" d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
                 Copy Link
