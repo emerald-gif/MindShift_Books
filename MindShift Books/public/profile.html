@@ -62,11 +62,16 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .avatar-row{display:flex;align-items:flex-end;justify-content:space-between;margin-top:-36px;margin-bottom:12px}
 .avatar{width:80px;height:80px;border-radius:50%;border:3px solid var(--card);
   background:var(--g);display:flex;align-items:center;justify-content:center;
-  font-size:28px;font-weight:900;color:#fff;overflow:hidden;flex-shrink:0;position:relative;cursor:pointer}
-.avatar img{width:100%;height:100%;object-fit:cover}
-.avatar-edit{position:absolute;bottom:0;right:0;width:24px;height:24px;background:var(--p);
-  border-radius:50%;border:2px solid var(--card);display:flex;align-items:center;justify-content:center;cursor:pointer}
-.avatar-edit svg{width:11px;height:11px;fill:none;stroke:#fff;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+  font-size:28px;font-weight:900;color:#fff;flex-shrink:0;position:relative;cursor:pointer}
+/* The circular clip lives on this inner wrapper (not on .avatar itself) so the
+   edit badge below can sit right on the avatar's border without being cropped
+   by the same overflow:hidden that rounds off the photo. */
+.avatar-photo-wrap{width:100%;height:100%;border-radius:50%;overflow:hidden;
+  display:flex;align-items:center;justify-content:center}
+.avatar-photo-wrap img{width:100%;height:100%;object-fit:cover}
+.avatar-edit{position:absolute;bottom:-2px;right:-2px;width:26px;height:26px;background:var(--p);
+  border-radius:50%;border:2px solid var(--card);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2}
+.avatar-edit svg{width:12px;height:12px;fill:none;stroke:#fff;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
 .profile-actions{display:flex;gap:8px;align-items:center}
 
 /* ── CTA ROW (Write / Edit Profile / Follow) ── */
@@ -397,6 +402,8 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
 
 <div id="sidebar-slot"></div>
 <script src="/sidebar-nav.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="/share-image.js"></script>
 <script>
   function toggleSidebar(){
     const sidebar = document.getElementById('sidebar');
@@ -502,15 +509,11 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
 <!-- EDIT PROFILE SCREEN (full page) -->
 <div class="edit-screen" id="editScreen">
   <header class="hdr">
-    <button class="btn-back" onclick="handleEditClose()" aria-label="Back">
-      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+    <button class="btn-close-x" onclick="handleEditClose()" aria-label="Close">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
     <span class="hdr-title">Edit Profile</span>
-    <div class="hdr-action">
-      <button class="btn-close-x" onclick="handleEditClose()" aria-label="Close">
-        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
+    <div class="hdr-action"></div>
   </header>
   <div class="sheet-body">
     <div class="field"><label>Display Name</label><input id="eName" type="text" maxlength="50" placeholder="Your full name"></div>
@@ -651,6 +654,10 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
     <button class="manage-row" onclick="copyManageLink()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
       <span>Copy link</span>
+    </button>
+    <button class="manage-row" onclick="shareManageAsImage()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+      <span>Share as Image</span>
     </button>
     <button class="manage-row manage-row-danger" onclick="confirmDeleteFromManage()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
@@ -924,11 +931,11 @@ function renderProfileHeader(){
   // avatar — custom photo first, then Google photo for owner
   const displayPhoto = profileData.photo || (isOwner && currentUser?.photoURL ? currentUser.photoURL : '');
   if(displayPhoto){
-    av.innerHTML = `<img src="${displayPhoto}" alt="">`;
+    av.innerHTML = `<div class="avatar-photo-wrap"><img src="${displayPhoto}" alt=""></div>`;
     if(isOwner) av.insertAdjacentHTML('beforeend',`<div class="avatar-edit" id="avatarEditBtn" onclick="event.stopPropagation();openEditSheet()"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>`);
   } else {
     const init = (profileData.name||'U').slice(0,1).toUpperCase();
-    av.innerHTML = `<span>${init}</span>`;
+    av.innerHTML = `<div class="avatar-photo-wrap"><span>${init}</span></div>`;
     if(isOwner) av.insertAdjacentHTML('beforeend',`<div class="avatar-edit" id="avatarEditBtn" onclick="event.stopPropagation();openEditSheet()"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>`);
   }
 
@@ -1462,6 +1469,22 @@ window.copyManageLink = function(){
   if(!_manageId) return;
   const url = `${location.origin}/${_manageType==='post'?'post-read':'article-read'}?id=${_manageId}`;
   navigator.clipboard.writeText(url).then(()=>showToast('Link copied! 🎉')).catch(()=>showToast('Copy failed'));
+};
+
+// Same "Share as Image" card used on articles.html's feed-card menu — pulls
+// from the same allSubmissions cache this page already has in memory rather
+// than re-fetching, so it works identically here.
+window.shareManageAsImage = function(){
+  if(!_manageId || typeof openShareImageCard!=='function') return;
+  const item = allSubmissions.find(a=>a.id===_manageId);
+  if(!item) return;
+  closeManageSheet();
+  openShareImageCard({
+    type: _manageType, id: _manageId,
+    author: item.author, avatar: item.avatar, publishedAt: item.publishedAt,
+    text: item.text, title: item.title, brief: item.brief,
+    image: _manageType==='post' ? (item.images && item.images[0]) : (item.img || item.coverImage)
+  });
 };
 
 window.onManageCommentsToggle = async function(checked){
