@@ -1530,6 +1530,7 @@ window.doDeletePost=async function(){
     await deleteDoc(doc(db,'articles',id));
     deleteDoc(doc(db,'articleLikes',id)).catch(()=>{});
     deleteDoc(doc(db,'articleMeta',id)).catch(()=>{});
+    deleteDoc(doc(db,'articleViews',id)).catch(()=>{});
     showToast('Deleted');
     setTimeout(()=>{ location.href='/profile'; }, 600);
   }catch(e){

@@ -1564,6 +1564,7 @@ window.doDeleteConfirmed = async function(){
     // here isn't worth blocking the delete over.
     deleteDoc(doc(db,'articleLikes',id)).catch(()=>{});
     deleteDoc(doc(db, type==='post' ? 'postMeta' : 'articleMeta', id)).catch(()=>{});
+    deleteDoc(doc(db, type==='post' ? 'postViews' : 'articleViews', id)).catch(()=>{});
     allSubmissions = allSubmissions.filter(a=>a.id!==id);
     const statEl = document.getElementById('statArticles');
     if(statEl && type==='article'){

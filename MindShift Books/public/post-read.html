@@ -1602,6 +1602,7 @@ window.doDeletePost=async function(){
     await deleteDoc(doc(db,'posts',id));
     deleteDoc(doc(db,'articleLikes',id)).catch(()=>{});
     deleteDoc(doc(db,'postMeta',id)).catch(()=>{});
+    deleteDoc(doc(db,'postViews',id)).catch(()=>{});
     showToast('Deleted');
     setTimeout(()=>{ location.href='/profile'; }, 600);
   }catch(e){
