@@ -46,15 +46,12 @@
     '.shareimg-frame{border-radius:18px;overflow:hidden;box-shadow:0 10px 30px rgba(15,23,42,.18);background:#e2e8f0}' +
     '.shareimg-card{transform-origin:top left;font-family:inherit}' +
     '.shareimg-bg{width:100%;height:100%;box-sizing:border-box;background:linear-gradient(160deg,#4338ca 0%,#4f46e5 45%,#06b6d4 100%);display:flex;flex-direction:column;position:relative}' +
-    '.shareimg-brand{display:flex;align-items:center;gap:12px;padding:56px 56px 0}' +
-    '.shareimg-brand img{width:44px;height:44px;border-radius:11px;object-fit:cover}' +
-    '.shareimg-brand span{color:#fff;font-weight:800;font-size:30px}' +
     '.shareimg-cardbody-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 56px}' +
     '.shareimg-cardbody{background:#fff;border-radius:26px;padding:44px;width:100%;box-shadow:0 30px 60px rgba(0,0,0,.25)}' +
     '.shareimg-author-row{display:flex;align-items:center;gap:16px;margin-bottom:28px}' +
     '.shareimg-author-row img{width:58px;height:58px;border-radius:50%;object-fit:cover;flex-shrink:0;background:linear-gradient(135deg,#4f46e5,#06b6d4)}' +
     '.shareimg-author-name{font-weight:800;font-size:26px;color:#0f172a;flex:1;min-width:0}' +
-    '.shareimg-flag{width:30px;height:30px;flex-shrink:0;color:#4f46e5}' +
+    '.shareimg-flag{width:30px;height:30px;flex-shrink:0;border-radius:8px;object-fit:cover}' +
     '.shareimg-img{width:100%;border-radius:18px;object-fit:cover;margin-bottom:24px;display:block}' +
     '.shareimg-title{font-weight:800;font-size:34px;color:#0f172a;line-height:1.28;margin:0 0 14px}' +
     '.shareimg-text{font-weight:600;font-size:32px;color:#0f172a;line-height:1.38;margin:0;white-space:pre-wrap;word-break:break-word}' +
@@ -154,13 +151,12 @@
 
     return (
       '<div class="shareimg-bg" style="width:' + dims.w + 'px;height:' + dims.h + 'px">' +
-        '<div class="shareimg-brand"><img src="/MINDSHIFT.jpg" alt=""><span>MindShift Books</span></div>' +
         '<div class="shareimg-cardbody-wrap">' +
           '<div class="shareimg-cardbody">' +
             '<div class="shareimg-author-row">' +
               '<img src="' + (item.avatar || '/logo.jpg') + '" alt="">' +
               '<div class="shareimg-author-name">' + esc(item.author || 'MindShift Books') + '</div>' +
-              '<svg class="shareimg-flag" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3v18l7-5 7 5V3a1 1 0 00-1-1H6a1 1 0 00-1 1z"/></svg>' +
+              '<img class="shareimg-flag" src="/MINDSHIFT.jpg" alt="">' +
             '</div>' +
             (img ? '<img class="shareimg-img" src="' + img + '" alt="" style="height:' + Math.round(dims.w * 0.42) + 'px">' : '') +
             bodyHtml +
