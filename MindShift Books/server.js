@@ -4296,6 +4296,142 @@ app.delete('/api/admin/content/:type/:id', async (req, res) => {
   }
 });
 
+// POST /api/admin/posts/upload-image — image upload for a post being
+// published as the official MindShift Books account from the admin
+// dashboard's Content tab. Mirrors /api/upload-image's validation, just
+// without requiring a Firebase user token (admin session cookie covers auth
+// here via the /api/admin requireAdminApi middleware above).
+app.post('/api/admin/posts/upload-image', async (req, res) => {
+  try {
+    const dataUrl = String((req.body && req.body.dataUrl) || '');
+    if (!/^data:image\/(jpeg|png|webp|gif);base64,/.test(dataUrl)) {
+      return res.status(400).json({ error: 'Expected a JPG, PNG, WEBP, or GIF image.' });
+    }
+    const approxBytes = dataUrl.length * 0.75;
+    if (approxBytes > 6 * 1024 * 1024) {
+      return res.status(400).json({ error: 'Image too large — please choose one under 5MB.' });
+    }
+    const result = await uploadImageToCloudinary(dataUrl, 'mindshift-posts');
+    if (!result.ok) return res.status(502).json({ error: result.error || 'Upload failed.' });
+    return res.json({ ok: true, url: result.url });
+  } catch (err) {
+    console.error('/api/admin/posts/upload-image error', err);
+    return res.status(500).json({ error: 'Could not upload image' });
+  }
+});
+
+// POST /api/admin/posts/create — publishes a post as the official MindShift
+// Books account. authorUid: 'official' is the same convention the rest of
+// the app already uses (see articles with userId/authorUid 'official') to
+// recognize the brand account, route taps to /mindshift-profile, and show
+// the verified badge — so a post created here behaves exactly like one a
+// regular user publishes from /create-post, just attributed to the brand.
+app.post('/api/admin/posts/create', async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const text = String((req.body && req.body.text) || '').trim();
+    const images = Array.isArray(req.body && req.body.images)
+      ? req.body.images.filter(u => typeof u === 'string' && u).slice(0, 5)
+      : [];
+    if (!text && !images.length) {
+      return res.status(400).json({ error: 'Write something or add a photo first.' });
+    }
+    if (text.length > 2000) {
+      return res.status(400).json({ error: 'Post text is too long (max 2000 characters).' });
+    }
+    const id = `post_official_${Date.now()}`;
+    const now = admin.firestore.Timestamp.now();
+    await db.collection('posts').doc(id).set({
+      id,
+      authorUid: 'official',
+      authorName: 'MindShift Books',
+      authorPhoto: '/MINDSHIFT.jpg',
+      authorUsername: 'official',
+      text,
+      images,
+      status: 'published',
+      likeCount: 0, commentCount: 0, saveCount: 0,
+      createdAt: now,
+      publishedAt: now
+    });
+    return res.json({ ok: true, id });
+  } catch (err) {
+    console.error('/api/admin/posts/create error', err);
+    return res.status(500).json({ error: 'Could not publish post' });
+  }
+});
+
+// POST /api/admin/articles/upload-image — used for both the cover image and
+// in-body images when publishing an article as MindShift Books from the
+// admin dashboard's Content tab (mirrors /api/upload-image's validation).
+app.post('/api/admin/articles/upload-image', async (req, res) => {
+  try {
+    const dataUrl = String((req.body && req.body.dataUrl) || '');
+    if (!/^data:image\/(jpeg|png|webp|gif);base64,/.test(dataUrl)) {
+      return res.status(400).json({ error: 'Expected a JPG, PNG, WEBP, or GIF image.' });
+    }
+    const approxBytes = dataUrl.length * 0.75;
+    if (approxBytes > 6 * 1024 * 1024) {
+      return res.status(400).json({ error: 'Image too large — please choose one under 5MB.' });
+    }
+    const result = await uploadImageToCloudinary(dataUrl, 'mindshift-articles');
+    if (!result.ok) return res.status(502).json({ error: result.error || 'Upload failed.' });
+    return res.json({ ok: true, url: result.url });
+  } catch (err) {
+    console.error('/api/admin/articles/upload-image error', err);
+    return res.status(500).json({ error: 'Could not upload image' });
+  }
+});
+
+// POST /api/admin/articles/create — publishes an article as the official
+// MindShift Books account, same schema write.html writes to the 'articles'
+// collection with a regular user's uid. authorUid: 'official' is what the
+// rest of the app already keys off of (routing to /mindshift-profile,
+// verified badge, mindshift-profile.html's own article query), so an
+// article created here shows up everywhere exactly like one published by a
+// signed-in user, just attributed to the brand.
+app.post('/api/admin/articles/create', async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const title = String((req.body && req.body.title) || '').trim();
+    const brief = String((req.body && req.body.brief) || '').trim();
+    const body = String((req.body && req.body.body) || '').trim();
+    const cover = String((req.body && req.body.cover) || '').trim();
+    const cat = String((req.body && req.body.cat) || '').trim();
+    const subCat = String((req.body && req.body.subCat) || '').trim();
+
+    if (!title) return res.status(400).json({ error: 'Please add a title' });
+    if (!cat) return res.status(400).json({ error: 'Please select a category' });
+    if (!brief) return res.status(400).json({ error: 'Please add a brief summary' });
+    // Strip tags for a plain-text length check, same 100-char minimum write.html enforces.
+    const plainLen = body.replace(/<[^>]*>/g, '').trim().length;
+    if (plainLen < 100) return res.status(400).json({ error: 'Article body is too short (min 100 chars)' });
+
+    const words = body.replace(/<[^>]*>/g, ' ').trim().split(/\s+/).filter(Boolean).length;
+    const readTime = `${Math.max(1, Math.ceil(words / 200))} min read`;
+
+    const id = `art_official_${Date.now()}`;
+    const now = admin.firestore.Timestamp.now();
+    await db.collection('articles').doc(id).set({
+      id,
+      authorUid: 'official',
+      authorName: 'MindShift Books',
+      authorPhoto: '/MINDSHIFT.jpg',
+      authorBio: '',
+      authorUsername: 'official',
+      title, brief, body, cat, subCat, cover,
+      readTime,
+      status: 'published',
+      createdAt: now,
+      publishedAt: now
+    });
+    return res.json({ ok: true, id });
+  } catch (err) {
+    console.error('/api/admin/articles/create error', err);
+    return res.status(500).json({ error: 'Could not publish article' });
+  }
+});
+
 app.get('/api/admin/payouts', async (req, res) => {
   try {
     if (!db) return res.status(500).json({ error: 'Database unavailable' });
