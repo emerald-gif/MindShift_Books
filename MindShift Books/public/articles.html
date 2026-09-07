@@ -1921,13 +1921,13 @@ window.addEventListener('scroll', ()=>{
   if(!openCardMenuId) return;
   if(Math.abs(window.scrollY - _cardMenuOpenScrollY) > 24) closeOpenCardMenu();
 }, { passive:true, capture:true });
-function closeOpenCardMenu(){
+window.closeOpenCardMenu = function(){
   if(openCardMenuId){
     const drop = document.getElementById(`cmenu-${openCardMenuId}`);
     if(drop) drop.classList.remove('open');
     openCardMenuId = null;
   }
-}
+};
 document.addEventListener('click', e=>{
   if(openCardMenuId && !e.target.closest('.acard-menu-wrap')) closeOpenCardMenu();
 });
