@@ -627,7 +627,7 @@ function renderBestArticle(items){
     <span class="best-stat-item"><svg viewBox="0 0 24 24">${ICONS.heart}</svg>${best.likes}</span>
     <span class="best-stat-item"><svg viewBox="0 0 24 24">${ICONS.comment}</svg>${best.comments}</span>
   `;
-  document.getElementById('bestSection').onclick = ()=> location.href = isPost ? `/post-read?id=${best.id}` : `/article-read?id=${best.id}`;
+  document.getElementById('bestSection').onclick = ()=> location.href = `/content-insights?id=${best.id}&type=${best.type}`;
   document.getElementById('bestSection').style.cursor='pointer';
 }
 
@@ -661,7 +661,7 @@ function renderPerfList(items){
   list.innerHTML = sorted.map((a,i)=>{
     const isPost = a.type==='post';
     const title = isPost ? (a.text ? a.text.slice(0,60) : 'Untitled post') : (a.title||'Untitled');
-    const href  = isPost ? `/post-read?id=${a.id}` : `/article-read?id=${a.id}`;
+    const href  = `/content-insights?id=${a.id}&type=${a.type}`;
     return `
     <div class="perf-row" onclick="location.href='${href}'">
       <div class="perf-rank">${i+1}</div>

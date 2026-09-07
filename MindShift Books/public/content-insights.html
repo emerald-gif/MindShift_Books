@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Insights · MindShift Books</title>
+<meta name="description" content="Views, likes and comments for this post or article."/>
+<meta name="robots" content="noindex, nofollow"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --p:#4f46e5;--p2:#06b6d4;--g:linear-gradient(90deg,#4f46e5,#06b6d4);
+  --txt:#0f172a;--sub:#6b7280;--mute:#9ca3af;
+  --bg:#f8fafc;--card:#fff;--border:#e5e7eb;--border2:#e2e8f0;
+  --green:#10b981;--red:#ef4444;--amber:#f59e0b;--radius:16px;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh}
+
+/* ── HEADER (back-button style, matches post-read.html / article-read.html) ── */
+.hdr{position:sticky;top:0;z-index:100;background:rgba(248,247,255,.92);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);padding:0 16px;height:56px;
+  display:flex;align-items:center;justify-content:space-between;gap:8px}
+.btn-back,.hdr-open{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--border);
+  background:var(--card);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt);flex-shrink:0}
+.btn-back svg,.hdr-open svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.hdr-open svg{width:16px;height:16px;stroke-width:2}
+.hdr-title{font-size:15px;font-weight:800;color:var(--txt);flex:1;text-align:center}
+
+/* ── PREVIEW CARD ── */
+.preview-card{margin:16px;border:1.5px solid var(--border);border-radius:18px;background:var(--card);
+  display:flex;gap:12px;padding:14px;cursor:pointer;align-items:flex-start}
+.preview-thumb{width:64px;height:64px;border-radius:12px;flex-shrink:0;background:#e0e7ff center/cover no-repeat;
+  display:flex;align-items:center;justify-content:center;color:var(--p);overflow:hidden}
+.preview-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.preview-thumb svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.preview-body{flex:1;min-width:0}
+.preview-title{font-weight:800;font-size:14px;color:var(--txt);line-height:1.35;margin-bottom:3px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.preview-text{font-size:13px;color:var(--sub);line-height:1.5;margin-bottom:6px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.preview-meta{font-size:11.5px;color:var(--mute);font-weight:600}
+
+/* ── SECTION / STATS GRID (matches insights.html) ── */
+.section{padding:22px 16px 0}
+.section-title{font-size:15px;font-weight:900;color:var(--txt);margin-bottom:2px}
+.section-sub{font-size:12.5px;color:var(--mute);margin-bottom:14px}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.stat-card{background:var(--card);border:1.5px solid var(--border);border-radius:16px;
+  padding:14px;display:flex;flex-direction:column;gap:10px}
+.stat-icon{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center}
+.stat-icon svg{width:18px;height:18px;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.stat-icon.views{background:#e0e7ff;color:var(--p)}
+.stat-icon.engagement{background:#fee2e2;color:#dc2626}
+.stat-value{font-size:22px;font-weight:900;color:var(--txt)}
+.stat-label{font-size:11.5px;color:var(--mute);font-weight:600}
+
+/* ── TREND CARD (matches insights.html) ── */
+.trend-card{background:var(--card);border:1.5px solid var(--border);border-radius:20px;padding:18px}
+.trend-chart-wrap{width:100%}
+.trend-chart-wrap svg{width:100%;height:auto;display:block}
+.trend-axis{display:flex;justify-content:space-between;font-size:11px;color:var(--mute);font-weight:600;margin-top:6px}
+.trend-total{font-size:12px;color:var(--mute);font-weight:600;margin-top:12px;padding-top:12px;border-top:1px solid var(--border2);text-align:center}
+
+/* ── ENGAGEMENT LIST ── */
+.metric-list{background:var(--card);border:1.5px solid var(--border);border-radius:18px;overflow:hidden}
+.metric-row{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border2)}
+.metric-row:last-child{border-bottom:none}
+.metric-icon{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.metric-icon svg{width:16px;height:16px;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.metric-icon.like{background:#fee2e2;color:#dc2626}
+.metric-icon.comment{background:#fef3c7;color:#d97706}
+.metric-label{flex:1;font-size:13.5px;font-weight:700;color:var(--txt)}
+.metric-value{font-size:15px;font-weight:900;color:var(--txt)}
+
+/* ── EMPTY STATE ── */
+.empty-state{text-align:center;padding:60px 24px}
+.empty-state svg{width:42px;height:42px;color:#d1d5db;margin:0 auto 12px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.empty-state p{font-size:13.5px;color:var(--mute);line-height:1.6}
+.empty-state strong{display:block;font-size:15px;font-weight:800;color:var(--txt);margin-bottom:6px}
+
+/* ── SKELETON ── */
+.skel{background:linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%);
+  background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:8px}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.skel-stat-val{height:22px;width:50px;border-radius:6px}
+.skel-card{height:140px;border-radius:20px}
+.skel-row{height:46px;border-radius:10px;margin-bottom:10px}
+.skel-thumb{width:64px;height:64px;border-radius:12px;flex-shrink:0}
+.skel-line{height:13px;border-radius:6px;margin-bottom:8px}
+
+.bottom-pad{height:24px}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <button class="btn-back" onclick="history.back()" aria-label="Back">
+    <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+  </button>
+  <div class="hdr-title" id="hdrType">Insights</div>
+  <button class="hdr-open" id="hdrOpen" aria-label="Open post">
+    <svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+  </button>
+</header>
+
+<div id="stateContainer" style="display:none"></div>
+
+<div id="mainContent">
+
+  <!-- CONTENT PREVIEW -->
+  <div class="preview-card" id="previewCard">
+    <div class="preview-thumb skel skel-thumb" id="previewThumb"></div>
+    <div class="preview-body" id="previewBody">
+      <div class="skel skel-line" style="width:80%"></div>
+      <div class="skel skel-line" style="width:55%"></div>
+      <div class="skel skel-line" style="width:35%;margin-bottom:0"></div>
+    </div>
+  </div>
+
+  <!-- STATS GRID -->
+  <div class="section">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon views">
+          <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </div>
+        <div class="stat-value" id="statViews"><div class="skel skel-stat-val"></div></div>
+        <div class="stat-label">Views</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon engagement">
+          <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+        </div>
+        <div class="stat-value" id="statEngagement"><div class="skel skel-stat-val"></div></div>
+        <div class="stat-label">Engagement</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEWS TREND -->
+  <div class="section">
+    <div class="section-title">Views</div>
+    <div class="section-sub">Last 14 days</div>
+    <div class="trend-card" id="trendCard">
+      <div class="skel skel-card"></div>
+    </div>
+  </div>
+
+  <!-- ENGAGEMENT BREAKDOWN -->
+  <div class="section">
+    <div class="section-title"><span id="engagementCount">0</span> Engagement</div>
+    <div class="section-sub">Likes and comments on this content</div>
+    <div class="metric-list" id="engagementList">
+      <div class="skel skel-row"></div>
+      <div class="skel skel-row"></div>
+    </div>
+  </div>
+
+  <div class="bottom-pad"></div>
+</div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
+import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
+import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
+
+const fbApp = initializeApp({
+  apiKey:"AIzaSyDTn70s1_uIiSOR6lPLY_nKh8Ff1FViFCs",
+  authDomain:"mindshiftbooks-c4451.firebaseapp.com",
+  projectId:"mindshiftbooks-c4451",
+  storageBucket:"mindshiftbooks-c4451.firebasestorage.app",
+  messagingSenderId:"388697987853",
+  appId: "1:388697987853:web:f023df9412c22285012e44",
+  measurementId: "G-CHPJDQ4W08"
+});
+const auth = getAuth(fbApp);
+const db   = getFirestore(fbApp, 'default');
+
+const TREND_DAYS = 14;
+const ICONS = {
+  eye: `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`,
+  heart: `<path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>`,
+  comment: `<path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/>`,
+  doc: `<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>`
+};
+
+// ── Which content this page is scoped to (set by whatever linked here —
+// a profile post card or a row in the main /insights list) ──
+const params = new URLSearchParams(location.search);
+const contentId   = params.get('id');
+const contentType = params.get('type') === 'article' ? 'article' : 'post';
+const isPost = contentType === 'post';
+
+document.getElementById('hdrType').textContent = isPost ? 'Post Insights' : 'Article Insights';
+
+onAuthStateChanged(auth, async user => {
+  if (!user) { window.location.href = '/login'; return; }
+  await loadContentInsights(user.uid);
+});
+
+async function loadContentInsights(uid) {
+  if (!contentId) {
+    showEmpty('Content not found', "We couldn't find this post or article.");
+    return;
+  }
+  try {
+    const contentCol = isPost ? 'posts' : 'articles';
+    const metaCol     = isPost ? 'postMeta' : 'articleMeta';
+    const viewsCol    = isPost ? 'postViews' : 'articleViews';
+
+    const contentSnap = await getDoc(doc(db, contentCol, contentId));
+    if (!contentSnap.exists()) {
+      showEmpty('Content not found', "This post or article may have been deleted.");
+      return;
+    }
+    const content = contentSnap.data();
+
+    // Insights are private to the author — same rule the profile page already
+    // uses to decide what to show an owner vs. a visitor.
+    if (content.authorUid !== uid) {
+      showEmpty('Not available', "You can only view insights for your own posts and articles.");
+      return;
+    }
+
+    const [metaSnap, likeSnap, viewsSnap] = await Promise.all([
+      getDoc(doc(db, metaCol, contentId)).catch(() => null),
+      getDoc(doc(db, 'articleLikes', contentId)).catch(() => null),
+      getDoc(doc(db, viewsCol, contentId)).catch(() => null)
+    ]);
+
+    const views    = metaSnap && metaSnap.exists() ? (metaSnap.data().viewCount || 0) : 0;
+    const comments = metaSnap && metaSnap.exists() ? (metaSnap.data().commentCount || 0) : 0;
+    const likes    = likeSnap && likeSnap.exists() ? (likeSnap.data().count || 0) : 0;
+    const dayMap   = viewsSnap && viewsSnap.exists() ? (viewsSnap.data().days || {}) : {};
+
+    renderPreview(content);
+    setNum('statViews', views);
+    setNum('statEngagement', likes + comments);
+    renderTrend(dayMap);
+    renderEngagement(likes, comments);
+
+  } catch (e) {
+    console.error('loadContentInsights failed:', e && e.code, e && e.message);
+    showEmpty('Could not load insights', 'Check your connection and try again.');
+  }
+}
+
+function renderPreview(c) {
+  const img = isPost ? (c.images && c.images[0]) : c.cover;
+  const title = isPost ? '' : (c.title || 'Untitled');
+  const body  = isPost ? (c.text || '') : (c.brief || '');
+  const when  = fmtDate(c.publishedAt || c.createdAt);
+  const readHref = isPost ? `/post-read?id=${contentId}` : `/article-read?id=${contentId}`;
+
+  document.getElementById('previewThumb').className = 'preview-thumb';
+  document.getElementById('previewThumb').innerHTML = img
+    ? `<img src="${img}" alt="">`
+    : `<svg viewBox="0 0 24 24">${ICONS.doc}</svg>`;
+
+  document.getElementById('previewBody').innerHTML = `
+    ${title ? `<div class="preview-title">${esc(title)}</div>` : ''}
+    ${body ? `<div class="preview-text">${esc(nTrunc(body, 140))}</div>` : ''}
+    <div class="preview-meta">${when}</div>
+  `;
+
+  document.getElementById('previewCard').onclick = () => location.href = readHref;
+  document.getElementById('hdrOpen').onclick = () => location.href = readHref;
+}
+
+function renderTrend(dayMap) {
+  const start = new Date(); start.setHours(0, 0, 0, 0); start.setDate(start.getDate() - (TREND_DAYS - 1));
+  const days = [];
+  for (let i = 0; i < TREND_DAYS; i++) {
+    const d = new Date(start); d.setDate(start.getDate() + i);
+    const key = `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+    days.push(dayMap[key] || 0);
+  }
+  const total = days.reduce((a, b) => a + b, 0);
+  const card = document.getElementById('trendCard');
+
+  if (total === 0) {
+    card.innerHTML = emptyStateHtml(ICONS.eye, "Not enough data yet.<br>Daily views will start building a trend here.");
+    return;
+  }
+
+  const max = Math.max(...days, 1);
+  const w = 280, h = 100, padTop = 8, padBottom = 8;
+  const innerH = h - padTop - padBottom;
+  const step = w / (TREND_DAYS - 1);
+  const path = days.map((v, i) => {
+    const x = (i * step).toFixed(1);
+    const y = (padTop + innerH - (v / max) * innerH).toFixed(1);
+    return `${i === 0 ? 'M' : 'L'}${x},${y}`;
+  }).join(' ');
+
+  const endDate = new Date();
+  const fmt = d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+  card.innerHTML = `
+    <div class="trend-chart-wrap">
+      <svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+        <line x1="0" y1="${padTop}" x2="${w}" y2="${padTop}" stroke="var(--border2)" stroke-width="1"/>
+        <line x1="0" y1="${(h / 2).toFixed(1)}" x2="${w}" y2="${(h / 2).toFixed(1)}" stroke="var(--border2)" stroke-width="1"/>
+        <line x1="0" y1="${h - padBottom}" x2="${w}" y2="${h - padBottom}" stroke="var(--border2)" stroke-width="1"/>
+        <path d="${path}" fill="none" stroke="var(--p)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div class="trend-axis"><span>${fmt(start)}</span><span>${fmt(endDate)}</span></div>
+    <div class="trend-total">${total} view${total === 1 ? '' : 's'} in the last 14 days</div>
+  `;
+}
+
+function renderEngagement(likes, comments) {
+  document.getElementById('engagementCount').textContent = (likes + comments).toLocaleString();
+  document.getElementById('engagementList').innerHTML = `
+    <div class="metric-row">
+      <div class="metric-icon like"><svg viewBox="0 0 24 24">${ICONS.heart}</svg></div>
+      <div class="metric-label">Likes</div>
+      <div class="metric-value">${likes.toLocaleString()}</div>
+    </div>
+    <div class="metric-row">
+      <div class="metric-icon comment"><svg viewBox="0 0 24 24">${ICONS.comment}</svg></div>
+      <div class="metric-label">Comments</div>
+      <div class="metric-value">${comments.toLocaleString()}</div>
+    </div>
+  `;
+}
+
+function showEmpty(title, sub) {
+  document.getElementById('mainContent').style.display = 'none';
+  const s = document.getElementById('stateContainer');
+  s.innerHTML = emptyStateHtml(ICONS.eye, `<strong>${title}</strong>${sub}`);
+  s.style.display = 'block';
+}
+
+function emptyStateHtml(iconPath, html) {
+  return `<div class="empty-state"><svg viewBox="0 0 24 24">${iconPath}</svg><p>${html}</p></div>`;
+}
+
+function setNum(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = (val || 0).toLocaleString();
+}
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function nTrunc(s, n) { return s.length > n ? s.slice(0, n) + '…' : s; }
+function fmtDate(ts) {
+  if (!ts) return '';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) +
+    ' · ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+}
+</script>
+<script src="/sidebar-nav.js"></script>
+<script src="/create-picker.js"></script>
+</body>
+</html>

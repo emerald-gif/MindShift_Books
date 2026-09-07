@@ -244,6 +244,15 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
 .acard-save svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2}
 .acard-save.saved{color:var(--p)}
 .acard-save.saved svg{fill:var(--p);stroke:var(--p)}
+/* ── VIEWS / "View insights" row — owner-only, sits above the like/comment
+   row on each of your own posts and articles, links to /content-insights ── */
+.acard-insights{display:flex;align-items:center;gap:6px;width:100%;margin-top:10px;padding:9px 11px;
+  background:#f8fafc;border:1px solid var(--border);border-radius:10px;cursor:pointer;text-align:left;
+  font-family:inherit;-webkit-tap-highlight-color:transparent;transition:background .18s,border-color .18s}
+.acard-insights:hover{background:#eef2ff;border-color:#c7d2fe}
+.acard-insights svg{width:14px;height:14px;fill:none;stroke:var(--mute);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.acard-insights span{font-size:12px;font-weight:700;color:var(--sub)}
+.acard-insights .acard-insights-cta{margin-left:auto;font-size:11.5px;font-weight:800;color:var(--p)}
 .acard-menu-wrap{position:relative;margin-left:auto}
 .acard-menu-wrap.corner{position:absolute;top:16px;right:14px;margin-left:0;z-index:5}
 .acard-menu-btn{background:none;border:none;cursor:pointer;padding:4px 6px;border-radius:8px;color:var(--mute)}
@@ -1281,6 +1290,11 @@ function renderArticles(){
           </div>
           ${s.text ? `<div class="pcard-text">${esc(s.text)}</div>` : ''}
           ${media}
+          ${isOwner ? `<button class="acard-insights" onclick="event.stopPropagation();location.href='/content-insights?id=${s.id}&type=post'">
+            <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <span id="vw-${s.id}">–</span> views
+            <span class="acard-insights-cta">View insights</span>
+          </button>` : ''}
           <div class="acard-foot">
             <button class="acard-like" id="lb-${s.id}" onclick="event.stopPropagation();handleLike('${s.id}')">
               <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
@@ -1313,6 +1327,11 @@ function renderArticles(){
         <div class="acard-meta"><span class="acard-cat">${esc(s.cat||'ARTICLE')}</span></div>
         <div class="acard-title">${esc(s.title||'Untitled')}</div>
         <div class="acard-brief">${esc(s.brief||'')}</div>
+        ${isOwner ? `<button class="acard-insights" onclick="event.stopPropagation();location.href='/content-insights?id=${s.id}&type=article'">
+          <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <span id="vw-${s.id}">–</span> views
+          <span class="acard-insights-cta">View insights</span>
+        </button>` : ''}
         <div class="acard-foot">
           <button class="acard-like" id="lb-${s.id}" onclick="event.stopPropagation();handleLike('${s.id}')">
             <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
@@ -1334,6 +1353,7 @@ function renderArticles(){
   // shown on it is mine — no per-item authorUid check needed).
   fetchLikeCounts(filtered.map(s=>({ id:s.id, hideLikeCount: !!s.hideLikeCount, isOwnerViewing: isOwner })));
   fetchPostCommentCounts(filtered.filter(s=>s.type==='post' && !s.commentsOff).map(s=>s.id));
+  fetchViewCounts(filtered.map(s=>({ id:s.id, type:s.type })));
   filtered.forEach(s=>{
     const btn = document.getElementById(`lb-${s.id}`);
     if(btn) btn.classList.toggle('liked', likedSet.has(s.id));
@@ -1609,6 +1629,24 @@ async function fetchPostCommentCounts(ids){
       commentCountCache[id] = c;
       const el = document.getElementById(`pcc-${id}`);
       if(el) el.textContent = c > 0 ? c : '';
+    });
+  }catch(e){}
+}
+
+/* ── VIEW COUNTS for the owner-only "View insights" row (postMeta/{id} or
+   articleMeta/{id}.viewCount). Guarded on isOwner since that row is never
+   rendered for a visitor — no point reading data nobody will see. ── */
+async function fetchViewCounts(items){
+  if(!isOwner || !items.length) return;
+  try{
+    const results = await Promise.all(
+      items.map(it => getDoc(doc(db, it.type==='post' ? 'postMeta' : 'articleMeta', it.id)).catch(()=>null))
+    );
+    results.forEach((snap,i)=>{
+      const id = items[i].id;
+      const v = snap&&snap.exists() ? (snap.data().viewCount||0) : 0;
+      const el = document.getElementById(`vw-${id}`);
+      if(el) el.textContent = v.toLocaleString();
     });
   }catch(e){}
 }
