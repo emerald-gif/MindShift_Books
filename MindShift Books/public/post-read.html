@@ -1185,10 +1185,11 @@ window.goAuthor = function(){
   if(!article) return;
   if(article.isMindshift || article.authorUid === 'official' || !article.authorUid){
     location.href = '/mindshift-profile';
-  } else if(article.authorUsername) {
-    location.href = `/profile/@${encodeURIComponent(article.authorUsername)}`;
   } else {
-    location.href = `/profile?uid=${article.authorUid}`;
+    // authorUid never changes; authorUsername was snapshotted at publish
+    // time and breaks if the author later renames (old @handle reservation
+    // gets deleted), so uid is the reliable route.
+    location.href = `/profile?uid=${encodeURIComponent(article.authorUid)}`;
   }
 };
 
@@ -1426,7 +1427,7 @@ window.likeComment=async function(cid,authorUid){
   }
 };
 
-window.cGo=function(uid,username){if(!uid)return;if(uid===currentUser?.uid){location.href='/profile';}else if(username){location.href=`/profile/@${encodeURIComponent(username)}`;}else{location.href=`/profile?uid=${uid}`;}};
+window.cGo=function(uid,username){if(!uid)return;if(uid===currentUser?.uid){location.href='/profile';}else{location.href=`/profile?uid=${encodeURIComponent(uid)}`;}};
 
 /* ── 3-DOT COMMENT MENU ── */
 let openMenuId=null;

@@ -197,8 +197,13 @@ export function initNotificationUI({ db, getCurrentUser, getMyProfile, fs }) {
     window.closeNotifPanel();
     switch (n.type) {
       case 'follow':
-        if (n.actorUsername) location.href = `/profile/@${encodeURIComponent(n.actorUsername)}`;
-        else location.href = `/profile?uid=${n.actorUid}`;
+        // actorUid is stable forever; actorUsername is a snapshot taken when
+        // the notification was created and goes stale the moment the actor
+        // renames (their old usernames/{handle} reservation gets deleted on
+        // rename, so the @handle route 404s with "no profile found"). uid
+        // is the reliable route — username is not used here on purpose.
+        if (n.actorUid) location.href = `/profile?uid=${encodeURIComponent(n.actorUid)}`;
+        else if (n.actorUsername) location.href = `/profile/@${encodeURIComponent(n.actorUsername)}`;
         break;
       case 'article_like': case 'new_comment': case 'comment_like': case 'comment_reply':
         if (n.targetId) location.href = `/article-read?id=${n.targetId}`; break;
