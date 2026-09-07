@@ -6,6 +6,7 @@
 <meta name="robots" content="noindex, nofollow"/>
 <title>Admin — MindShift Books</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="/article-categories.js"> </script>
 <style>
 
   :root {
@@ -302,6 +303,36 @@
   .broadcast-result { margin-top:14px; padding:12px 14px; border-radius:10px; font-size:0.84rem; display:none; }
   .broadcast-result.success { background:#dcfce7; color:#166534; display:block; }
   .broadcast-result.error { background:#fef2f2; color:#991b1b; display:block; }
+
+  /* ── MindShift article composer (mirrors write.html) ── */
+  .msb-cover-zone{width:100%;height:180px;border-radius:14px;border:2px dashed var(--border);background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;margin-bottom:16px}
+  .msb-cover-zone:hover{border-color:var(--indigo);background:var(--indigo-soft)}
+  .msb-cover-zone.has-img{border-style:solid;border-color:transparent}
+  .msb-cover-zone img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .msb-cover-overlay{position:absolute;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;color:#fff;font-size:0.8rem;font-weight:700}
+  .msb-cover-zone.has-img:hover .msb-cover-overlay{opacity:1}
+  .msb-cover-placeholder{display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--muted);font-size:0.82rem}
+  .msb-title-input{width:100%;border:1.5px solid var(--border);border-radius:10px;padding:12px;outline:none;font-size:1.1rem;font-weight:800;color:var(--primary);font-family:inherit;resize:vertical;margin-bottom:14px}
+  .msb-brief-input{width:100%;border:1.5px solid var(--border);border-radius:10px;padding:12px;outline:none;font-size:0.88rem;color:var(--primary);font-family:inherit;resize:vertical;margin-bottom:4px}
+  .msb-cat-pills{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  .msb-cat-pill{padding:6px 12px;border-radius:99px;border:1.5px solid var(--border);background:transparent;font-size:0.78rem;font-weight:600;color:var(--muted);cursor:pointer;font-family:inherit}
+  .msb-cat-pill.sel{background:var(--indigo);border-color:var(--indigo);color:#fff}
+  .msb-editor-wrap{border:1.5px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:14px}
+  .msb-toolbar{display:flex;flex-wrap:wrap;gap:2px;padding:8px 10px;border-bottom:1px solid var(--border);background:#fafafa}
+  .msb-tb-btn{width:30px;height:30px;border:none;background:none;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.78rem;font-weight:700;font-family:inherit}
+  .msb-tb-btn:hover{background:#fff;color:var(--indigo)}
+  .msb-tb-btn svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .msb-tb-sep{width:1px;height:18px;background:var(--border);margin:0 4px;align-self:center}
+  .msb-editor-body{padding:14px 16px;min-height:220px;outline:none;font-size:0.88rem;line-height:1.7;color:var(--primary)}
+  .msb-editor-body:empty::before{content:attr(data-placeholder);color:#c3c9d3;pointer-events:none}
+  .msb-editor-body h2{font-size:1.05rem;font-weight:800;margin:12px 0 6px}
+  .msb-editor-body h3{font-size:0.95rem;font-weight:700;margin:10px 0 5px}
+  .msb-editor-body p{margin-bottom:10px}
+  .msb-editor-body ul,.msb-editor-body ol{padding-left:20px;margin-bottom:10px}
+  .msb-editor-body blockquote{border-left:3px solid var(--indigo);padding-left:12px;color:var(--muted);font-style:italic;margin:10px 0}
+  .msb-editor-body img{max-width:100%;border-radius:8px;margin:10px 0;display:block}
+  .msb-editor-body code{background:var(--indigo-soft);color:#4338ca;padding:2px 5px;border-radius:5px;font-family:Consolas,monospace;font-size:0.82em}
+  .msb-word-count{padding:8px 16px;border-top:1px solid var(--border);font-size:0.72rem;color:var(--muted);display:flex;justify-content:space-between}
 </style>
 </head>
 <body>
@@ -822,6 +853,8 @@
         <button data-type="articles" id="artFilterArticles">Articles</button>
         <button data-type="posts" id="artFilterPosts">Posts</button>
       </div>
+      <button class="btn-primary" id="newMindshiftPostBtn" style="margin-left:auto;">+ New Post as MindShift Books</button>
+      <button class="btn-secondary" id="newMindshiftArticleBtn">+ New Article as MindShift Books</button>
     </div>
     <div class="panel full-panel" style="padding-bottom:16px;">
       <h2><span class="h2-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></span>Live Content</h2>
@@ -853,6 +886,115 @@
       <div style="display:flex;gap:10px;margin-top:24px;">
         <button id="apViewLiveBtn" style="flex:1;padding:10px 16px;border-radius:10px;border:1.5px solid var(--border);background:#fff;color:var(--primary);font-weight:700;font-size:0.82rem;cursor:pointer;">View live</button>
         <button id="apDeleteBtn" style="flex:1;padding:10px 16px;border-radius:10px;border:1.5px solid var(--border);background:#fff;color:#991b1b;font-weight:700;font-size:0.82rem;cursor:pointer;">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- New Post composer — publishes as the official MindShift Books account -->
+  <div id="mindshiftPostOverlay" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(15,23,42,0.55);align-items:flex-start;justify-content:center;overflow-y:auto;padding:40px 16px;">
+    <div style="background:#fff;border-radius:16px;max-width:520px;width:100%;padding:28px;margin-bottom:40px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <img src="/MINDSHIFT.jpg" alt="" style="width:38px;height:38px;border-radius:50%;object-fit:cover;background:linear-gradient(135deg,#4f46e5,#06b6d4);">
+          <div>
+            <div style="font-size:0.9rem;font-weight:800;color:var(--primary);">MindShift Books</div>
+            <div style="font-size:0.72rem;color:var(--muted);">Posting publicly · goes live immediately</div>
+          </div>
+        </div>
+        <button id="mpCloseBtn" style="flex-shrink:0;width:32px;height:32px;border-radius:50%;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-size:1.1rem;line-height:1;">&times;</button>
+      </div>
+
+      <textarea id="mpText" maxlength="2000" placeholder="What's on your mind?" style="width:100%;min-height:120px;border:1.5px solid var(--border);border-radius:10px;padding:12px;font-family:inherit;font-size:0.92rem;resize:vertical;outline:none;"></textarea>
+      <div id="mpCharCount" style="text-align:right;font-size:0.72rem;color:var(--muted);margin-top:4px;">0 / 2000</div>
+
+      <div id="mpImgGrid" style="display:none;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;"></div>
+      <button type="button" id="mpImgHint" style="display:flex;align-items:center;gap:8px;font-size:0.82rem;font-weight:700;color:var(--indigo);margin-top:12px;padding:9px 14px;border-radius:99px;background:var(--indigo-soft);border:none;cursor:pointer;">
+        + Add up to 5 photos
+      </button>
+      <input type="file" id="mpFileInput" accept="image/*" multiple style="display:none">
+
+      <div id="mpError" style="display:none;color:#991b1b;font-size:0.8rem;margin-top:10px;"></div>
+
+      <div style="display:flex;gap:10px;margin-top:22px;">
+        <button id="mpCancelBtn" style="flex:1;padding:10px 16px;border-radius:10px;border:1.5px solid var(--border);background:#fff;color:var(--primary);font-weight:700;font-size:0.85rem;cursor:pointer;">Cancel</button>
+        <button id="mpPostBtn" class="btn-primary" style="flex:1;" disabled>Post</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- New Article composer — publishes as the official MindShift Books account, mirrors write.html -->
+  <div id="mindshiftArticleOverlay" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(15,23,42,0.55);align-items:flex-start;justify-content:center;overflow-y:auto;padding:40px 16px;">
+    <div style="background:#fff;border-radius:16px;max-width:680px;width:100%;padding:28px;margin-bottom:40px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:18px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <img src="/MINDSHIFT.jpg" alt="" style="width:32px;height:32px;border-radius:50%;object-fit:cover;background:linear-gradient(135deg,#4f46e5,#06b6d4);">
+          <div style="font-size:0.95rem;font-weight:800;color:var(--primary);">Write Article — MindShift Books</div>
+        </div>
+        <button id="maCloseBtn" style="flex-shrink:0;width:32px;height:32px;border-radius:50%;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-size:1.1rem;line-height:1;">&times;</button>
+      </div>
+
+      <!-- Cover image -->
+      <div class="msb-cover-zone" id="maCoverZone">
+        <div class="msb-cover-placeholder" id="maCoverPlaceholder">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:26px;height:26px"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          <span>Add Cover Image</span>
+        </div>
+        <img id="maCoverPreview" src="" alt="" style="display:none">
+        <div class="msb-cover-overlay">Change Cover</div>
+      </div>
+      <input type="file" id="maCoverFileInput" accept="image/*" style="display:none">
+      <input type="hidden" id="maCoverUrl" value="">
+
+      <!-- Title -->
+      <div style="font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Title</div>
+      <textarea class="msb-title-input" id="maTitle" rows="2" placeholder="Write a compelling title…"></textarea>
+
+      <!-- Category -->
+      <div style="font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Category</div>
+      <div class="msb-cat-pills" id="maCatPills"></div>
+
+      <!-- Subcategory -->
+      <div id="maSubCatSection" style="display:none;">
+        <div style="font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Tag (optional)</div>
+        <div class="msb-cat-pills" id="maSubCatPills"></div>
+      </div>
+
+      <!-- Brief -->
+      <div style="font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Brief Summary <span style="text-transform:none;font-weight:400;">(shows on article card)</span></div>
+      <textarea class="msb-brief-input" id="maBrief" rows="2" maxlength="160" placeholder="One or two lines that make people want to read…"></textarea>
+      <div style="text-align:right;font-size:0.7rem;color:var(--muted);margin-bottom:14px;" id="maBriefCount">0 / 160</div>
+
+      <!-- Editor -->
+      <div class="msb-editor-wrap">
+        <div class="msb-toolbar" id="maToolbar">
+          <button type="button" class="msb-tb-btn" title="Bold" onclick="maFmt('bold')"><b>B</b></button>
+          <button type="button" class="msb-tb-btn" title="Italic" onclick="maFmt('italic')"><i>I</i></button>
+          <button type="button" class="msb-tb-btn" title="Underline" onclick="maFmt('underline')"><u>U</u></button>
+          <button type="button" class="msb-tb-btn" title="Strikethrough" onclick="maFmt('strikeThrough')"><s>S</s></button>
+          <button type="button" class="msb-tb-btn" title="Inline code" onclick="maToggleInlineCode()"><svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></button>
+          <div class="msb-tb-sep"></div>
+          <button type="button" class="msb-tb-btn" title="Heading 2" onclick="maFmt('formatBlock','h2')" style="font-size:0.68rem;font-weight:800;">H2</button>
+          <button type="button" class="msb-tb-btn" title="Heading 3" onclick="maFmt('formatBlock','h3')" style="font-size:0.68rem;font-weight:700;">H3</button>
+          <div class="msb-tb-sep"></div>
+          <button type="button" class="msb-tb-btn" title="Bullet list" onclick="maFmt('insertUnorderedList')"><svg viewBox="0 0 24 24"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1.3" fill="currentColor"/><circle cx="4" cy="12" r="1.3" fill="currentColor"/><circle cx="4" cy="18" r="1.3" fill="currentColor"/></svg></button>
+          <button type="button" class="msb-tb-btn" title="Numbered list" onclick="maFmt('insertOrderedList')"><svg viewBox="0 0 24 24"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg></button>
+          <button type="button" class="msb-tb-btn" title="Quote" onclick="maFmt('formatBlock','blockquote')"><svg viewBox="0 0 24 24"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/></svg></button>
+          <button type="button" class="msb-tb-btn" title="Divider" onclick="maFmt('insertHorizontalRule')"><svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+          <button type="button" class="msb-tb-btn" title="Insert image" onclick="maOpenBodyImagePicker()"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></button>
+          <div class="msb-tb-sep"></div>
+          <button type="button" class="msb-tb-btn" title="Link" onclick="maInsertLink()"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg></button>
+          <button type="button" class="msb-tb-btn" title="Clear formatting" onclick="maFmt('removeFormat')" style="margin-left:auto;"><svg viewBox="0 0 24 24"><path d="M17 3H7L3 21h4l3-9 3 9h4L13 9l4-6z"/><line x1="18" y1="12" x2="22" y2="16"/><line x1="22" y1="12" x2="18" y2="16"/></svg></button>
+        </div>
+        <div class="msb-editor-body" id="maEditorBody" contenteditable="true" data-placeholder="Start writing your article here…"></div>
+        <div class="msb-word-count"><span id="maWordCount">0 words</span><span id="maReadTime">~0 min read</span></div>
+      </div>
+      <input type="file" id="maBodyFileInput" accept="image/*" style="display:none">
+
+      <div id="maError" style="display:none;color:#991b1b;font-size:0.8rem;margin-bottom:10px;"></div>
+
+      <div style="display:flex;gap:10px;">
+        <button id="maCancelBtn" style="flex:1;padding:10px 16px;border-radius:10px;border:1.5px solid var(--border);background:#fff;color:var(--primary);font-weight:700;font-size:0.85rem;cursor:pointer;">Cancel</button>
+        <button id="maPublishBtn" class="btn-primary" style="flex:1;">Publish</button>
       </div>
     </div>
   </div>
@@ -1239,6 +1381,359 @@
       btn.textContent = 'Delete';
     }
   }
+
+  // ── New Post as MindShift Books ──
+  const mpOverlay   = document.getElementById('mindshiftPostOverlay');
+  const mpText      = document.getElementById('mpText');
+  const mpCharCount = document.getElementById('mpCharCount');
+  const mpImgGrid   = document.getElementById('mpImgGrid');
+  const mpImgHint   = document.getElementById('mpImgHint');
+  const mpFileInput = document.getElementById('mpFileInput');
+  const mpPostBtn   = document.getElementById('mpPostBtn');
+  const mpError     = document.getElementById('mpError');
+  const MP_MAX_IMAGES = 5;
+  let mpImages = []; // {url, uploading, preview}
+
+  function mpOpen() {
+    mpText.value = '';
+    mpImages = [];
+    mpError.style.display = 'none';
+    mpPostBtn.textContent = 'Post';
+    mpUpdateCharCount();
+    mpRenderImages();
+    mpOverlay.style.display = 'flex';
+  }
+  function mpClose() { mpOverlay.style.display = 'none'; }
+
+  document.getElementById('newMindshiftPostBtn').addEventListener('click', mpOpen);
+  document.getElementById('mpCloseBtn').addEventListener('click', mpClose);
+  document.getElementById('mpCancelBtn').addEventListener('click', mpClose);
+  mpOverlay.addEventListener('click', (e) => { if (e.target === mpOverlay) mpClose(); });
+
+  function mpUpdateCharCount() {
+    mpCharCount.textContent = `${mpText.value.length} / 2000`;
+    mpUpdatePostBtn();
+  }
+  mpText.addEventListener('input', mpUpdateCharCount);
+
+  function mpUpdatePostBtn() {
+    const stillUploading = mpImages.some(i => i.uploading);
+    mpPostBtn.disabled = (!mpText.value.trim() && !mpImages.length) || stillUploading;
+  }
+
+  function mpRenderImages() {
+    if (!mpImages.length) {
+      mpImgGrid.style.display = 'none';
+      mpImgHint.style.display = 'flex';
+      mpUpdatePostBtn();
+      return;
+    }
+    mpImgGrid.style.display = 'grid';
+    mpImgHint.style.display = mpImages.length < MP_MAX_IMAGES ? 'flex' : 'none';
+    mpImgGrid.innerHTML = mpImages.map((img, i) => `
+      <div style="position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;background:#f1f5f9;${img.uploading ? 'opacity:.55;' : ''}">
+        <img src="${img.preview || img.url || ''}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">
+        <button data-idx="${i}" class="mp-rm-btn" style="position:absolute;top:5px;right:5px;width:22px;height:22px;border-radius:50%;background:rgba(15,10,30,.65);border:none;color:#fff;cursor:pointer;font-size:12px;line-height:1;">&times;</button>
+      </div>
+    `).join('');
+    mpImgGrid.querySelectorAll('.mp-rm-btn').forEach(btn => {
+      btn.addEventListener('click', () => { mpImages.splice(Number(btn.dataset.idx), 1); mpRenderImages(); });
+    });
+    mpUpdatePostBtn();
+  }
+
+  mpImgHint.addEventListener('click', () => {
+    if (mpImages.length >= MP_MAX_IMAGES) return;
+    mpFileInput.click();
+  });
+
+  mpFileInput.addEventListener('change', async (e) => {
+    const files = Array.from(e.target.files || []).slice(0, MP_MAX_IMAGES - mpImages.length);
+    e.target.value = '';
+    for (const file of files) {
+      if (mpImages.length >= MP_MAX_IMAGES) break;
+      if (file.size > 5 * 1024 * 1024) { mpShowError('Each image must be under 5MB'); continue; }
+      const idx = mpImages.length;
+      mpImages.push({ url: '', uploading: true });
+      mpRenderImages();
+      try {
+        const dataUrl = await new Promise((resolve, reject) => {
+          const r = new FileReader();
+          r.onload = () => resolve(r.result);
+          r.onerror = reject;
+          r.readAsDataURL(file);
+        });
+        mpImages[idx].preview = dataUrl;
+        mpRenderImages();
+        const res = await fetch('/api/admin/posts/upload-image', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ dataUrl })
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || 'Upload failed');
+        mpImages[idx].url = json.url;
+        mpImages[idx].uploading = false;
+      } catch (err) {
+        mpShowError('Image upload failed — removed');
+        mpImages.splice(idx, 1);
+      }
+      mpRenderImages();
+    }
+  });
+
+  function mpShowError(msg) { mpError.textContent = msg; mpError.style.display = 'block'; }
+
+  mpPostBtn.addEventListener('click', async () => {
+    const text = mpText.value.trim();
+    const urls = mpImages.filter(i => i.url).map(i => i.url);
+    if (!text && !urls.length) { mpShowError('Write something or add a photo first'); return; }
+    mpError.style.display = 'none';
+    mpPostBtn.disabled = true;
+    mpPostBtn.textContent = 'Posting…';
+    try {
+      const res = await fetch('/api/admin/posts/create', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, images: urls })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Post failed');
+      mpClose();
+      loadContent();
+    } catch (err) {
+      mpShowError(err.message || 'Post failed — try again');
+      mpPostBtn.disabled = false;
+      mpPostBtn.textContent = 'Post';
+    }
+  });
+
+  // ── New Article as MindShift Books (mirrors write.html) ──
+  const maOverlay      = document.getElementById('mindshiftArticleOverlay');
+  const maTitle        = document.getElementById('maTitle');
+  const maBrief        = document.getElementById('maBrief');
+  const maBriefCount   = document.getElementById('maBriefCount');
+  const maEditorBody   = document.getElementById('maEditorBody');
+  const maWordCount    = document.getElementById('maWordCount');
+  const maReadTime     = document.getElementById('maReadTime');
+  const maCoverZone    = document.getElementById('maCoverZone');
+  const maCoverPreview = document.getElementById('maCoverPreview');
+  const maCoverPlaceholder = document.getElementById('maCoverPlaceholder');
+  const maCoverUrl     = document.getElementById('maCoverUrl');
+  const maCoverFileInput = document.getElementById('maCoverFileInput');
+  const maBodyFileInput  = document.getElementById('maBodyFileInput');
+  const maCatPills     = document.getElementById('maCatPills');
+  const maSubCatSection = document.getElementById('maSubCatSection');
+  const maSubCatPills  = document.getElementById('maSubCatPills');
+  const maPublishBtn   = document.getElementById('maPublishBtn');
+  const maError        = document.getElementById('maError');
+  let maSelectedCat = '', maSelectedSubCat = '';
+
+  function maRenderCatPills(){
+    if(!window.MSB_CATEGORIES) return;
+    maCatPills.innerHTML = window.MSB_CATEGORIES.map(c =>
+      `<button type="button" class="msb-cat-pill" data-cat="${c.code}">${c.emoji} ${c.label}</button>`
+    ).join('');
+    maCatPills.querySelectorAll('.msb-cat-pill').forEach(btn => {
+      btn.addEventListener('click', () => {
+        maCatPills.querySelectorAll('.msb-cat-pill').forEach(p => p.classList.remove('sel'));
+        btn.classList.add('sel');
+        maSelectedCat = btn.dataset.cat;
+        maSelectedSubCat = '';
+        maRenderSubCatPills(maSelectedCat);
+      });
+    });
+  }
+
+  function maRenderSubCatPills(catCode){
+    const catDef = window.MSB_CAT_BY_CODE && window.MSB_CAT_BY_CODE[catCode];
+    if(!catDef || !catDef.sub || !catDef.sub.length){ maSubCatSection.style.display = 'none'; return; }
+    maSubCatSection.style.display = '';
+    maSubCatPills.innerHTML = catDef.sub.map(s => `<button type="button" class="msb-cat-pill" data-subcat="${s}">${s}</button>`).join('');
+    maSubCatPills.querySelectorAll('.msb-cat-pill').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const already = btn.classList.contains('sel');
+        maSubCatPills.querySelectorAll('.msb-cat-pill').forEach(p => p.classList.remove('sel'));
+        if(!already){ btn.classList.add('sel'); maSelectedSubCat = btn.dataset.subcat; }
+        else maSelectedSubCat = '';
+      });
+    });
+  }
+
+  function maUpdateWordCount(){
+    const text = maEditorBody.innerText || '';
+    const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+    maWordCount.textContent = `${words} word${words !== 1 ? 's' : ''}`;
+    maReadTime.textContent = `~${Math.max(1, Math.ceil(words / 200))} min read`;
+    maBriefCount.textContent = `${maBrief.value.length} / 160`;
+  }
+  maEditorBody.addEventListener('input', maUpdateWordCount);
+  maBrief.addEventListener('input', maUpdateWordCount);
+  maTitle.addEventListener('input', () => { maTitle.style.height = 'auto'; maTitle.style.height = maTitle.scrollHeight + 'px'; });
+  maBrief.addEventListener('input', () => { maBrief.style.height = 'auto'; maBrief.style.height = maBrief.scrollHeight + 'px'; });
+
+  window.maFmt = function(cmd, val = null){
+    maEditorBody.focus();
+    document.execCommand(cmd, false, val);
+    maUpdateWordCount();
+  };
+
+  window.maToggleInlineCode = function(){
+    maEditorBody.focus();
+    const sel = window.getSelection();
+    if(!sel.rangeCount) return;
+    const range = sel.getRangeAt(0);
+    let node = sel.anchorNode;
+    while(node && node !== maEditorBody){
+      if(node.nodeName === 'CODE'){ const text = document.createTextNode(node.textContent); node.replaceWith(text); maUpdateWordCount(); return; }
+      node = node.parentNode;
+    }
+    if(range.collapsed) return;
+    const code = document.createElement('code');
+    code.textContent = range.toString();
+    range.deleteContents();
+    range.insertNode(code);
+    sel.removeAllRanges();
+    const after = document.createRange();
+    after.setStartAfter(code); after.collapse(true);
+    sel.addRange(after);
+    maUpdateWordCount();
+  };
+
+  window.maInsertLink = function(){
+    const sel = window.getSelection();
+    if(!sel.rangeCount || sel.getRangeAt(0).collapsed){ maShowError('Select some text first, then add a link'); return; }
+    let url = prompt('Paste the URL:');
+    if(!url) return;
+    if(!/^https?:\/\//i.test(url)) url = 'https://' + url;
+    maEditorBody.focus();
+    document.execCommand('createLink', false, url);
+    maUpdateWordCount();
+  };
+
+  // Cover image
+  function maPreviewCover(url){
+    if(url && url.trim()){
+      maCoverPreview.src = url; maCoverPreview.style.display = 'block';
+      maCoverPlaceholder.style.display = 'none';
+      maCoverZone.classList.add('has-img');
+      maCoverUrl.value = url;
+    } else {
+      maCoverPreview.style.display = 'none';
+      maCoverPlaceholder.style.display = 'flex';
+      maCoverZone.classList.remove('has-img');
+      maCoverUrl.value = '';
+    }
+  }
+  maCoverZone.addEventListener('click', () => maCoverFileInput.click());
+  maCoverFileInput.addEventListener('change', async (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if(!file) return;
+    if(file.size > 5 * 1024 * 1024){ maShowError('Cover image must be under 5MB'); return; }
+    try{
+      const dataUrl = await new Promise((resolve, reject) => {
+        const r = new FileReader(); r.onload = () => resolve(r.result); r.onerror = reject; r.readAsDataURL(file);
+      });
+      maPreviewCover(dataUrl); // instant local preview while it uploads
+      const res = await fetch('/api/admin/articles/upload-image', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dataUrl })
+      });
+      const json = await res.json();
+      if(!res.ok) throw new Error(json.error || 'Upload failed');
+      maPreviewCover(json.url);
+    }catch(err){ maShowError('Cover upload failed — try again'); maPreviewCover(''); }
+  });
+
+  // Insert image into body
+  window.maOpenBodyImagePicker = function(){
+    const sel = window.getSelection();
+    const savedRange = sel.rangeCount ? sel.getRangeAt(0).cloneRange() : null;
+    maBodyFileInput._savedRange = savedRange;
+    maBodyFileInput.click();
+  };
+  maBodyFileInput.addEventListener('change', async (e) => {
+    const file = e.target.files && e.target.files[0];
+    const savedRange = maBodyFileInput._savedRange;
+    e.target.value = '';
+    if(!file) return;
+    if(file.size > 5 * 1024 * 1024){ maShowError('Image must be under 5MB'); return; }
+    maEditorBody.focus();
+    const s = window.getSelection();
+    s.removeAllRanges();
+    if(savedRange) s.addRange(savedRange);
+    const placeholder = document.createElement('span');
+    placeholder.textContent = 'Uploading image…';
+    placeholder.style.cssText = 'display:inline-block;background:var(--bg);color:var(--muted);border:1.5px dashed var(--border);border-radius:8px;padding:8px 12px;font-size:0.8rem;margin:6px 0;';
+    if(savedRange){ savedRange.deleteContents(); savedRange.insertNode(placeholder); } else maEditorBody.appendChild(placeholder);
+    try{
+      const dataUrl = await new Promise((resolve, reject) => {
+        const r = new FileReader(); r.onload = () => resolve(r.result); r.onerror = reject; r.readAsDataURL(file);
+      });
+      const res = await fetch('/api/admin/articles/upload-image', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dataUrl })
+      });
+      const json = await res.json();
+      if(!res.ok) throw new Error(json.error || 'Upload failed');
+      const img = document.createElement('img');
+      img.src = json.url; img.alt = '';
+      placeholder.replaceWith(img);
+    }catch(err){
+      placeholder.textContent = 'Image upload failed';
+      placeholder.style.color = '#991b1b';
+      setTimeout(() => placeholder.remove(), 3000);
+    }
+    maUpdateWordCount();
+  });
+
+  function maShowError(msg){ maError.textContent = msg; maError.style.display = 'block'; }
+
+  function maReset(){
+    maTitle.value = ''; maBrief.value = ''; maEditorBody.innerHTML = '';
+    maSelectedCat = ''; maSelectedSubCat = '';
+    maCatPills.querySelectorAll('.msb-cat-pill').forEach(p => p.classList.remove('sel'));
+    maSubCatSection.style.display = 'none';
+    maPreviewCover('');
+    maError.style.display = 'none';
+    maPublishBtn.disabled = false; maPublishBtn.textContent = 'Publish';
+    maUpdateWordCount();
+  }
+
+  function maOpen(){ maRenderCatPills(); maReset(); maOverlay.style.display = 'flex'; }
+  function maClose(){ maOverlay.style.display = 'none'; }
+
+  document.getElementById('newMindshiftArticleBtn').addEventListener('click', maOpen);
+  document.getElementById('maCloseBtn').addEventListener('click', maClose);
+  document.getElementById('maCancelBtn').addEventListener('click', maClose);
+  maOverlay.addEventListener('click', (e) => { if(e.target === maOverlay) maClose(); });
+
+  maPublishBtn.addEventListener('click', async () => {
+    const title = maTitle.value.trim();
+    const brief = maBrief.value.trim();
+    const body = maEditorBody.innerHTML.trim();
+    const cover = maCoverUrl.value.trim();
+    maError.style.display = 'none';
+
+    if(!title){ maShowError('Please add a title'); return; }
+    if(!maSelectedCat){ maShowError('Please select a category'); return; }
+    if(!brief){ maShowError('Please add a brief summary'); return; }
+    if(maEditorBody.innerText.trim().length < 100){ maShowError('Article body is too short (min 100 chars)'); return; }
+
+    maPublishBtn.disabled = true;
+    maPublishBtn.textContent = 'Publishing…';
+    try{
+      const res = await fetch('/api/admin/articles/create', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, brief, body, cover, cat: maSelectedCat, subCat: maSelectedSubCat })
+      });
+      const data = await res.json().catch(() => ({}));
+      if(!res.ok) throw new Error(data.error || 'Publish failed');
+      maClose();
+      loadContent();
+    }catch(err){
+      maShowError(err.message || 'Publish failed — try again');
+      maPublishBtn.disabled = false;
+      maPublishBtn.textContent = 'Publish';
+    }
+  });
 
   // ── Creators ──
   async function loadCreatorSummary() {
