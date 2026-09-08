@@ -17,12 +17,12 @@
 
     var style = document.createElement('style');
     style.textContent = `
-#cpk-fab{position:fixed;right:18px;bottom:max(env(safe-area-inset-bottom,0px),18px);width:56px;height:56px;border-radius:50%;
+#cpk-fab{position:fixed;right:16px;bottom:max(env(safe-area-inset-bottom,0px),16px);width:44px;height:44px;border-radius:50%;
   background:linear-gradient(135deg,#4f46e5,#06b6d4);border:none;cursor:pointer;z-index:900;
-  display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(79,70,229,.4);
+  display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(79,70,229,.4);
   transition:transform .15s}
 #cpk-fab:active{transform:scale(.92)}
-#cpk-fab svg{width:26px;height:26px;stroke:#fff;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+#cpk-fab svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
 #cpk-overlay{position:fixed;inset:0;background:rgba(15,10,30,.55);z-index:9998;opacity:0;pointer-events:none;transition:opacity .25s;backdrop-filter:blur(3px)}
 #cpk-overlay.on{opacity:1;pointer-events:all}
 #cpk-sheet{position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#fff;border-radius:22px 22px 0 0;
@@ -75,13 +75,26 @@
       '<button class="cpk-cancel" onclick="window.closeCreatePicker()">Cancel</button>';
     document.body.appendChild(sheet);
 
-    var fab = document.createElement('button');
-    fab.id = 'cpk-fab';
-    fab.type = 'button';
-    fab.setAttribute('aria-label', 'Create');
-    fab.innerHTML = '<svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
-    fab.onclick = window.openCreatePicker;
-    document.body.appendChild(fab);
+    // The floating "+" is only for the main feed (For You / Following /
+    // Explore all live on this one page, articles.html, served at "/").
+    // Everywhere else that loads this script (article-read, post-read,
+    // profile, books, settings, insights, suggestions) still gets the
+    // sheet + overlay wired up — just no floating button cluttering a
+    // reading screen — and "Create" in the sidebar still works there too.
+    if (isFeedPage()) {
+      var fab = document.createElement('button');
+      fab.id = 'cpk-fab';
+      fab.type = 'button';
+      fab.setAttribute('aria-label', 'Create');
+      fab.innerHTML = '<svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+      fab.onclick = window.openCreatePicker;
+      document.body.appendChild(fab);
+    }
+  }
+
+  function isFeedPage(){
+    var path = location.pathname.replace(/\/+$/, '') || '/';
+    return path === '/' || path === '/articles' || path === '/articles.html' || path === '/index' || path === '/index.html';
   }
 
   window.openCreatePicker = function(){
