@@ -1659,31 +1659,22 @@ app.get('/api/product/:id', (req, res) => {
 const GUTENDEX_API = 'https://gutendex.com/books';
 const GUTENDEX_PAGE_SIZE = 32; // fixed by Gutendex, not configurable
 
+// Narrowed to Mindshift Books' own niche (personal development / business /
+// entrepreneurship) instead of a general-purpose library — every tab here
+// should feel like something a Mindshift Books buyer would actually want.
 const FREE_EBOOK_CATEGORIES = [
   { slug: 'all',        label: 'All',                topic: null }, // handled specially — see ALL_MIX_TOPICS below
-  { slug: 'fiction',    label: 'Fiction',             topic: 'fiction' },
   { slug: 'self-help',  label: 'Self-Help',           topic: 'conduct of life' },
   { slug: 'business',   label: 'Business & Money',    topic: 'business' },
   { slug: 'psychology', label: 'Psychology',          topic: 'psychology' },
-  { slug: 'romance',    label: 'Romance',             topic: 'love stories' },
-  { slug: 'sci-fi',     label: 'Science Fiction',     topic: 'science fiction' },
-  { slug: 'mystery',    label: 'Mystery & Thriller',  topic: 'detective' },
-  { slug: 'history',    label: 'History',             topic: 'history' },
-  { slug: 'biography',  label: 'Biography',           topic: 'biography' },
-  { slug: 'classics',   label: 'Classics',            topic: 'literature' },
-  { slug: 'poetry',     label: 'Poetry',              topic: 'poetry' }
+  { slug: 'success',    label: 'Success & Wealth',    topic: 'success' }
 ];
 
 // "All" rotates through these real topics so browsing stays a genuine mix
 // instead of one giant, ID-ordered dump. Note: Gutendex's own default
 // ordering (no topic/search) is already by popularity/download_count, so
 // this is only needed to keep genre variety on the "All" tab specifically.
-const ALL_MIX_TOPICS = [
-  'fiction', 'conduct of life', 'business',
-  'psychology', 'love stories', 'science fiction',
-  'detective', 'history', 'biography',
-  'literature', 'poetry'
-];
+const ALL_MIX_TOPICS = ['conduct of life', 'business', 'psychology', 'success'];
 
 // Simple in-memory cache, keyed per Gutendex page (32 books at a time) so
 // repeat browsing doesn't re-hit Gutendex every time. Cleared on restart.
@@ -1739,37 +1730,14 @@ function normalizeGutendexBook(item) {
 // fetchGutenbergTextDirect below) instead of round-tripping through the
 // blocked Gutendex API.
 const FALLBACK_BOOKS = [
-  { id: 1342, title: 'Pride and Prejudice', author: 'Jane Austen', topics: ['fiction', 'love stories', 'literature'] },
-  { id: 11, title: "Alice's Adventures in Wonderland", author: 'Lewis Carroll', topics: ['fiction', 'literature'] },
-  { id: 84, title: 'Frankenstein', author: 'Mary Shelley', topics: ['fiction', 'science fiction', 'literature'] },
-  { id: 76, title: 'Adventures of Huckleberry Finn', author: 'Mark Twain', topics: ['fiction', 'literature'] },
-  { id: 74, title: 'The Adventures of Tom Sawyer', author: 'Mark Twain', topics: ['fiction', 'literature'] },
-  { id: 345, title: 'Dracula', author: 'Bram Stoker', topics: ['fiction', 'literature'] },
-  { id: 1661, title: 'The Adventures of Sherlock Holmes', author: 'Arthur Conan Doyle', topics: ['fiction', 'detective', 'literature'] },
-  { id: 98, title: 'A Tale of Two Cities', author: 'Charles Dickens', topics: ['fiction', 'history', 'literature'] },
-  { id: 2701, title: 'Moby Dick', author: 'Herman Melville', topics: ['fiction', 'literature'] },
-  { id: 174, title: 'The Picture of Dorian Gray', author: 'Oscar Wilde', topics: ['fiction', 'literature'] },
-  { id: 43, title: 'Dr. Jekyll and Mr. Hyde', author: 'Robert Louis Stevenson', topics: ['fiction', 'literature'] },
-  { id: 36, title: 'The War of the Worlds', author: 'H. G. Wells', topics: ['fiction', 'science fiction', 'literature'] },
-  { id: 35, title: 'The Time Machine', author: 'H. G. Wells', topics: ['fiction', 'science fiction', 'literature'] },
-  { id: 2600, title: 'War and Peace', author: 'Leo Tolstoy', topics: ['fiction', 'history', 'literature'] },
-  { id: 2554, title: 'Crime and Punishment', author: 'Fyodor Dostoyevsky', topics: ['fiction', 'literature'] },
-  { id: 135, title: 'Les Misérables', author: 'Victor Hugo', topics: ['fiction', 'literature'] },
-  { id: 1400, title: 'Great Expectations', author: 'Charles Dickens', topics: ['fiction', 'literature'] },
-  { id: 46, title: 'A Christmas Carol', author: 'Charles Dickens', topics: ['fiction', 'literature'] },
-  { id: 158, title: 'Emma', author: 'Jane Austen', topics: ['fiction', 'love stories', 'literature'] },
-  { id: 161, title: 'Sense and Sensibility', author: 'Jane Austen', topics: ['fiction', 'love stories', 'literature'] },
-  { id: 120, title: 'Treasure Island', author: 'Robert Louis Stevenson', topics: ['fiction', 'literature'] },
-  { id: 55, title: 'The Wonderful Wizard of Oz', author: 'L. Frank Baum', topics: ['fiction', 'literature'] },
-  { id: 16, title: 'Peter Pan', author: 'J. M. Barrie', topics: ['fiction', 'literature'] },
-  { id: 2591, title: "Grimm's Fairy Tales", author: 'Jacob and Wilhelm Grimm', topics: ['fiction', 'literature'] },
-  { id: 205, title: 'Walden', author: 'Henry David Thoreau', topics: ['conduct of life', 'literature'] },
-  { id: 768, title: 'Wuthering Heights', author: 'Emily Brontë', topics: ['fiction', 'love stories', 'literature'] },
-  { id: 1260, title: 'Jane Eyre', author: 'Charlotte Brontë', topics: ['fiction', 'love stories', 'literature'] },
-  { id: 1184, title: 'The Count of Monte Cristo', author: 'Alexandre Dumas', topics: ['fiction', 'literature'] },
-  { id: 236, title: 'The Jungle Book', author: 'Rudyard Kipling', topics: ['fiction', 'literature'] },
-  { id: 514, title: 'Little Women', author: 'Louisa May Alcott', topics: ['fiction', 'literature'] },
-  { id: 64317, title: 'The Great Gatsby', author: 'F. Scott Fitzgerald', topics: ['fiction', 'literature'] }
+  { id: 4507, title: 'As a Man Thinketh', author: 'James Allen', topics: ['conduct of life', 'psychology', 'success'] },
+  { id: 59844, title: 'The Science of Getting Rich', author: 'Wallace D. Wattles', topics: ['business', 'success'] },
+  { id: 34258, title: 'Acres of Diamonds', author: 'Russell H. Conwell', topics: ['business', 'success'] },
+  { id: 132, title: 'The Art of War', author: 'Sun Tzu', topics: ['business', 'conduct of life'] },
+  { id: 1232, title: 'The Prince', author: 'Niccolò Machiavelli', topics: ['business', 'conduct of life', 'psychology'] },
+  { id: 2680, title: 'Meditations', author: 'Marcus Aurelius', topics: ['conduct of life', 'psychology'] },
+  { id: 205, title: 'Walden', author: 'Henry David Thoreau', topics: ['conduct of life'] },
+  { id: 148, title: 'The Autobiography of Benjamin Franklin', author: 'Benjamin Franklin', topics: ['business', 'success', 'conduct of life'] }
 ];
 
 // Gutendex's own cover convention (Gutenberg's generated cover images) —
