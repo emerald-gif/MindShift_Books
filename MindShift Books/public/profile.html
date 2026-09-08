@@ -306,6 +306,16 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
 .pcard-slide img{height:100%;width:auto;max-width:none;object-fit:contain;display:block;cursor:pointer}
 .pcard-count{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.55);color:#fff;font-size:11px;
   font-weight:700;padding:2px 8px;border-radius:99px}
+.pcard-video{position:relative;margin:8px auto 0;border-radius:14px;overflow:hidden;cursor:pointer;
+  background:#0f0e17;width:max-content;max-width:100%}
+.pcard-video video{display:block;max-width:100%;max-height:460px;width:auto;height:auto}
+.pcard-video-mute{position:absolute;bottom:8px;left:8px;width:30px;height:30px;border-radius:50%;
+  background:rgba(15,14,23,.55);border:none;display:flex;align-items:center;justify-content:center;
+  color:#fff;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.pcard-video-mute svg{width:15px;height:15px}
+.pcard-video-mute.unmuted{background:rgba(79,70,229,.75)}
+.pcard-video-dur{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.6);color:#fff;font-size:11px;
+  font-weight:700;padding:2px 8px;border-radius:99px}
 .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:99px;
   font-size:11px;font-weight:700}
 .badge-pending{background:#fef3c7;color:#92400e}
@@ -703,7 +713,7 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged, updateProfile } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
-import { getFirestore, doc, getDoc, setDoc, deleteDoc, updateDoc, collection, query, where, getDocs, orderBy, serverTimestamp, onSnapshot, addDoc, writeBatch, increment, limit }
+import { getFirestore, doc, getDoc, setDoc, deleteDoc, updateDoc, collection, query, where, getDocs, getCountFromServer, orderBy, serverTimestamp, onSnapshot, addDoc, writeBatch, increment, limit }
   from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
 import { initNotificationUI } from '/notifications.js';
 
@@ -1038,23 +1048,25 @@ async function loadStats(){
   // collection (the source of truth), then the cached fields on the user
   // doc are refreshed in the background. This keeps the numbers correct
   // even if a previous increment/decrement write ever failed silently.
+  // Uses getCountFromServer (an aggregation query) instead of getDocs —
+  // Firestore bills that ~1 read total no matter how many follow docs
+  // match, instead of 1 read per follower/following, which matters a lot
+  // on a page every profile view runs this on.
   try{
     const folQ = query(collection(db,'follows'), where('followingId','==',uid));
-    const folSnap = await getDocs(folQ);
-    const followerCount = folSnap.size;
+    const folCount = (await getCountFromServer(folQ)).data().count;
     const fe = document.getElementById('statFollowers');
-    if(fe) fe.textContent = followerCount;
-    if(profileData.followerCount !== followerCount){
-      try{ await setDoc(doc(db,'users',uid),{followerCount},{merge:true}); }catch{}
+    if(fe) fe.textContent = folCount;
+    if(profileData.followerCount !== folCount){
+      try{ await setDoc(doc(db,'users',uid),{followerCount:folCount},{merge:true}); }catch{}
     }
 
     const ingQ = query(collection(db,'follows'), where('followerId','==',uid));
-    const ingSnap = await getDocs(ingQ);
-    const followingCount = ingSnap.size;
+    const ingCount = (await getCountFromServer(ingQ)).data().count;
     const ie = document.getElementById('statFollowing');
-    if(ie) ie.textContent = followingCount;
-    if(profileData.followingCount !== followingCount){
-      try{ await setDoc(doc(db,'users',uid),{followingCount},{merge:true}); }catch{}
+    if(ie) ie.textContent = ingCount;
+    if(profileData.followingCount !== ingCount){
+      try{ await setDoc(doc(db,'users',uid),{followingCount:ingCount},{merge:true}); }catch{}
     }
   }catch(e){
     console.warn('loadStats counts failed:', e?.code);
@@ -1153,8 +1165,13 @@ async function loadArticles(){
       getDocs(query(collection(db,'articles'), where('authorUid','==',uid))),
       getDocs(query(collection(db,'posts'), where('authorUid','==',uid)))
     ]);
-    const arts  = artSnap.docs.map(d=>({id:d.id,type:'article',...d.data()}));
-    const posts = postSnap.docs.map(d=>({id:d.id,type:'post',...d.data()}));
+    // type is tagged AFTER the spread so it can't be clobbered by a post's
+    // own `type` field ('text'/'video', set by create-post.html to tell
+    // video posts apart from text posts) — that collision with this same
+    // field name was making every post since video upload launched fall
+    // through to the article card (badge "ARTICLE", title "Untitled").
+    const arts  = artSnap.docs.map(d=>({...d.data(), id:d.id, type:'article'}));
+    const posts = postSnap.docs.map(d=>({...d.data(), id:d.id, type:'post'}));
     allSubmissions = [...arts, ...posts].sort((a,b)=>{
       const ta = a.createdAt?.toDate?.() || new Date(a.createdAt||0);
       const tb = b.createdAt?.toDate?.() || new Date(b.createdAt||0);
@@ -1232,6 +1249,54 @@ function finalizeCarouselTrack(track){
   });
 }
 
+function fmtDuration(secs){
+  secs = Math.round(secs||0);
+  const m = Math.floor(secs/60), s = secs%60;
+  return `${m}:${String(s).padStart(2,'0')}`;
+}
+
+// Feed video tile — mirrors articles.html's buildVideoTileHtml so video
+// posts render the same way on the profile as they do in the main feed.
+function buildVideoTileHtml(p){
+  if(!p.videoUrl) return '';
+  return `<div class="pcard-video" onclick="event.stopPropagation();openArticle('${p.id}','post')">
+    <video class="pcard-video-el" data-post-id="${p.id}" src="${p.videoUrl}" poster="${p.thumbnailUrl||''}" muted loop playsinline preload="metadata"></video>
+    <button type="button" class="pcard-video-mute" onclick="event.stopPropagation();toggleFeedVideoMute('${p.id}',event)" title="Unmute">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+    </button>
+    ${p.duration ? `<span class="pcard-video-dur">${fmtDuration(p.duration)}</span>` : ''}
+  </div>`;
+}
+window.toggleFeedVideoMute = function(id, event){
+  const btn = event.currentTarget;
+  const vid = btn.closest('.pcard-video').querySelector('video');
+  if(!vid) return;
+  vid.muted = !vid.muted;
+  btn.classList.toggle('unmuted', !vid.muted);
+};
+
+// Autoplay (muted) only while a video card is actually on screen — same
+// behavior as the main feed.
+let _profileVideoObserver = null;
+function getProfileVideoObserver(){
+  if(_profileVideoObserver) return _profileVideoObserver;
+  _profileVideoObserver = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      const vid = entry.target;
+      if(entry.isIntersecting) vid.play().catch(()=>{});
+      else vid.pause();
+    });
+  }, { threshold: 0.6 });
+  return _profileVideoObserver;
+}
+function observeProfileVideos(){
+  const observer = getProfileVideoObserver();
+  document.querySelectorAll('.pcard-video-el').forEach(el=>observer.observe(el));
+}
+document.addEventListener('visibilitychange', ()=>{
+  if(document.hidden) document.querySelectorAll('.pcard-video-el').forEach(v=>v.pause());
+});
+
 window.onPostScroll = function(id){
   const track = document.getElementById(`ptrack-${id}`);
   if(!track) return;
@@ -1280,7 +1345,7 @@ function renderArticles(){
 
   const cardsHtml = filtered.map(s=>{
     if(s.type==='post'){
-      const media = buildMediaGridHtml(s.images, s.id);
+      const media = s.videoUrl ? buildVideoTileHtml(s) : buildMediaGridHtml(s.images, s.id);
       return `<div class="acard pcard" onclick="openArticle('${s.id}','post')">
         <div class="acard-body">
           <div class="acard-author">
@@ -1349,6 +1414,7 @@ function renderArticles(){
   });
 
   sec.innerHTML = `<div class="acard-list">${cardsHtml.join('')}</div>`;
+  observeProfileVideos();
 
   // hideLikeCount hides the number from everyone except the owner
   // (isOwner here already means "this is my own profile", so every item
