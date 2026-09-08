@@ -240,17 +240,18 @@ main{max-width:1100px;margin:0 auto}
 .ptf-hdr a{font-size:13px;font-weight:700;color:var(--p);text-decoration:none;cursor:pointer}
 .ptf-scroll{display:flex;gap:12px;overflow-x:auto;padding:0 16px 8px;scrollbar-width:none}
 .ptf-scroll::-webkit-scrollbar{display:none}
-.ptf-card{flex:0 0 168px;border:1.5px solid var(--border);border-radius:16px;padding:18px 14px;
+.ptf-card{flex:0 0 168px;width:168px;min-width:168px;max-width:168px;overflow:hidden;
+  border:1.5px solid var(--border);border-radius:16px;padding:18px 14px;
   display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;background:var(--card)}
 .ptf-dismiss{position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;border:none;
   background:#f1f5f9;color:var(--mute);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px}
 .ptf-av{width:76px;height:76px;border-radius:50%;background:var(--g);color:#fff;display:flex;
-  align-items:center;justify-content:center;font-size:24px;font-weight:800;overflow:hidden;margin-bottom:12px;cursor:pointer}
+  align-items:center;justify-content:center;font-size:24px;font-weight:800;overflow:hidden;margin-bottom:12px;cursor:pointer;flex-shrink:0}
 .ptf-av img{width:100%;height:100%;object-fit:cover;display:block}
-.ptf-name{font-size:14.5px;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;cursor:pointer}
-.ptf-handle{font-size:12.5px;color:var(--mute);font-weight:600;margin:3px 0 14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.ptf-name{width:100%;font-size:14.5px;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.ptf-handle{width:100%;font-size:12.5px;color:var(--mute);font-weight:600;margin:3px 0 14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ptf-follow{width:100%;padding:10px 0;background:var(--g);color:#fff;border:none;border-radius:99px;
-  font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+  font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0}
 .ptf-follow.following-btn{background:var(--card);color:var(--txt);border:1.5px solid var(--border)}
 /* See more banner (at end of following feed) */
 .see-more-banner{margin:20px 16px;background:linear-gradient(135deg,#eef2ff,#eef2ff);
@@ -1638,23 +1639,38 @@ function _feedItemTime(x){
 // Recency-weighted shuffle: a flat shuffleArray() over everything gives a
 // brand new post the exact same odds as something from months ago — no
 // bias at all, so a fresh post can get buried at the bottom and just stay
-// there until pure luck surfaces it on some future reshuffle. Bucketing by
-// age and shuffling WITHIN each bucket keeps the "different every refresh"
-// variety while still guaranteeing new content lands in the top tier.
-// A fixed time cutoff (e.g. "under 6h") sounds reasonable but backfires the
-// moment only one post actually qualifies — shuffling a 1-item bucket is a
-// no-op, so that post glues itself to slot #1 every single refresh until
-// something newer shows up. This pulls a fixed COUNT of the most recent
-// items instead (top 10, tunable below), so a new post is always shuffled
-// together with several other recent ones — it lands somewhere near the
-// top, but which exact slot moves around each refresh instead of camping
-// on one spot. Rest of the feed shuffles separately for its own variety.
-const FRESH_POOL_SIZE = 10;
+// there until pure luck surfaces it on some future reshuffle.
+//
+// A fixed top-N bucket (the old approach here) fixes that but introduces a
+// hard wall: item #11 can never outrank item #9 no matter how many
+// reshuffles happen, because the two buckets only ever shuffle within
+// themselves. That wall is exactly what read as "shuffling the top 10 and
+// dumping the rest below" — two separate shuffles glued together, with a
+// visible seam at the boundary.
+//
+// This instead does a proper weighted random permutation (the
+// Efraimidis–Spirakis algorithm): every item gets a random key of
+// random()^(1/weight), and the feed is sorted by that key descending.
+// Higher weight → key tends closer to 1 → tends to land earlier — but it's
+// a probability, not a rule, so there's no boundary anywhere. Any post can
+// in principle land in any slot; newer posts are just statistically more
+// likely to land near the top.
+//
+// Weight is rank-based (newest item = weight N, oldest = weight 1) rather
+// than raw elapsed time, which keeps the effect gentle and consistent
+// regardless of how bursty posting is — a linear rank gap is a much softer
+// bias than an exponential time-decay curve would be, so older posts still
+// get real, regular visibility instead of being crowded out.
 function weightedShuffleFeed(items){
   const byRecency = [...items].sort((a,b)=>_feedItemTime(b)-_feedItemTime(a));
-  const freshPool = byRecency.slice(0, FRESH_POOL_SIZE);
-  const rest = byRecency.slice(FRESH_POOL_SIZE);
-  return [...shuffleArray(freshPool), ...shuffleArray(rest)];
+  const n = byRecency.length;
+  const keyed = byRecency.map((item, rank) => {
+    const weight = n - rank; // newest → n, oldest → 1 (gentle linear gradient)
+    const key = Math.pow(Math.random(), 1 / weight);
+    return { item, key };
+  });
+  keyed.sort((a, b) => b.key - a.key);
+  return keyed.map(k => k.item);
 }
 
 function rebuildMergedFeedOrder(){
