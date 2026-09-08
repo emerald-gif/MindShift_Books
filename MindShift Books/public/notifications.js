@@ -111,9 +111,9 @@ function notifMessage(n) {
   const title = n.targetTitle ? ` <strong>${nEsc(nTrunc(n.targetTitle, 45))}</strong>` : '';
   switch (n.type) {
     case 'follow':       return `${name} started following you`;
-    case 'article_like': return `${name} liked your article${title}`;
+    case 'article_like': return `${name} liked your ${n.targetType==='post'?'post':'article'}${title}`;
     case 'comment_like': return `${name} liked your comment on${title}`;
-    case 'new_comment':  return `${name} commented on your article${title}`;
+    case 'new_comment':  return `${name} commented on your ${n.targetType==='post'?'post':'article'}${title}`;
     case 'comment_reply':return `${name} replied to your comment on${title}`;
     case 'admin_message':    return `<strong>${nEsc(n.title || 'Message from MindShift Books')}</strong>${n.message ? ' — ' + nEsc(n.message) : ''}`;
     case 'article_approved': return `<strong>${nEsc(n.title || 'Your article was approved!')}</strong>${n.message ? ' — ' + nEsc(n.message) : ''}`;
@@ -206,7 +206,8 @@ export function initNotificationUI({ db, getCurrentUser, getMyProfile, fs }) {
         else if (n.actorUsername) location.href = `/profile/@${encodeURIComponent(n.actorUsername)}`;
         break;
       case 'article_like': case 'new_comment': case 'comment_like': case 'comment_reply':
-        if (n.targetId) location.href = `/article-read?id=${n.targetId}`; break;
+        if (n.targetId) location.href = (n.targetType === 'post' ? '/post-read' : '/article-read') + `?id=${n.targetId}`;
+        break;
       case 'article_approved':
         if (n.articleId) location.href = `/article-read?id=${n.articleId}`; break;
       case 'article_rejected': case 'admin_message': case 'article_removed': case 'post_removed':
@@ -228,11 +229,19 @@ export function initNotificationUI({ db, getCurrentUser, getMyProfile, fs }) {
     } catch (e) {}
   };
 
-  async function notifyArticleLike(art) {
+  // `kind` tells us whether the liked item is a 'post' or an 'article', since
+  // the two live in separate Firestore collections and the notification tap
+  // handler needs to know which read-page to route to. Callers that already
+  // carry a `.type` field on the item (articles.html, profile.html feeds)
+  // don't need to pass it — it's inferred. Callers on a page dedicated to one
+  // content type only (article-read.html, post-read.html) should pass it
+  // explicitly, since the article/post object built there has no `.type`.
+  async function notifyArticleLike(art, kind) {
     const currentUser = getCurrentUser();
     if (!currentUser || !art) return;
     if (!art.authorUid || art.authorUid === currentUser.uid) return;
     if (art.isMindshift || art.authorUid === 'official') return;
+    const targetType = kind || (art.type === 'post' ? 'post' : 'article');
     try {
       const q = query(collection(db, 'notifications'), where('recipientUid', '==', art.authorUid), where('actorUid', '==', currentUser.uid), where('type', '==', 'article_like'), where('targetId', '==', art.id));
       const ex = await getDocs(q); if (!ex.empty) return;
@@ -243,7 +252,7 @@ export function initNotificationUI({ db, getCurrentUser, getMyProfile, fs }) {
       await addDoc(collection(db, 'notifications'), {
         recipientUid: art.authorUid, type: 'article_like',
         actorUid: currentUser.uid, actorName, actorPhoto, actorUsername,
-        targetId: art.id, targetTitle: art.title || '', read: false, createdAt: serverTimestamp()
+        targetId: art.id, targetTitle: art.title || '', targetType, read: false, createdAt: serverTimestamp()
       });
     } catch (e) {}
   }
@@ -274,7 +283,7 @@ export function initNotificationUI({ db, getCurrentUser, getMyProfile, fs }) {
   // is the parent comment's author, not necessarily the article's author, so
   // the caller (which already knows the comment tree) resolves that and just
   // tells this function who to notify.
-  async function notifyComment({ type, recipientUid, articleId, articleTitle, commentId }) {
+  async function notifyComment({ type, recipientUid, articleId, articleTitle, commentId, contentType }) {
     const currentUser = getCurrentUser();
     if (!currentUser || !recipientUid || recipientUid === currentUser.uid) return;
     const myProfile = getMyProfile ? getMyProfile() : null;
@@ -282,6 +291,7 @@ export function initNotificationUI({ db, getCurrentUser, getMyProfile, fs }) {
     const payload = {
       recipientUid, type, actorUid: currentUser.uid, actorName, actorPhoto, actorUsername,
       targetId: articleId || null, targetTitle: articleTitle || '', commentId: commentId || null,
+      targetType: contentType || 'article',
       read: false, createdAt: serverTimestamp()
     };
     if (type === 'comment_like' && commentId) {
