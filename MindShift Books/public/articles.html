@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<link rel="icon" href="/MINDSHIFT.jpg">
+
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
 <title>Articles | MindShift Books</title>
@@ -120,11 +122,11 @@ main{max-width:1100px;margin:0 auto}
 .acard-brief{font-size:13px;color:var(--sub);line-height:1.58;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .acard-img{width:110px;height:110px;border-radius:10px;overflow:hidden;flex-shrink:0;background:linear-gradient(135deg,#e0e7ff,#eef2ff);align-self:flex-start;margin-top:2px}
 .acard-img img{width:100%;height:100%;object-fit:cover;display:block}
-.acard-foot{display:flex;align-items:center;gap:8px;margin-top:10px}
+.acard-foot{display:flex;align-items:center;gap:12px;margin-top:12px}
 .acard-read{font-size:11px;color:var(--mute);font-weight:600;white-space:nowrap;margin-right:2px}
-.acard-like{display:flex;align-items:center;gap:4px;background:none;border:none;cursor:pointer;padding:4px 6px;font-size:12px;font-weight:700;color:var(--mute);transition:color .18s;border-radius:8px;-webkit-tap-highlight-color:transparent}
+.acard-like{display:flex;align-items:center;gap:6px;background:none;border:none;cursor:pointer;padding:6px 9px;font-size:13.5px;font-weight:700;color:var(--mute);transition:color .18s;border-radius:9px;-webkit-tap-highlight-color:transparent}
 .acard-like:hover{color:var(--red);background:#fff1f1}
-.acard-like svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;transition:all .2s;flex-shrink:0}
+.acard-like svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;transition:all .2s;flex-shrink:0}
 .acard-like.liked{color:var(--red)}
 .acard-like.liked svg{fill:var(--red);stroke:var(--red);animation:hpop .25s ease}
 /* ── POST CARD ── */
@@ -142,10 +144,10 @@ main{max-width:1100px;margin:0 auto}
 .pcard-single{margin-top:8px;display:flex;justify-content:center}
 .pcard-single img{max-width:100%;max-height:340px;width:auto;height:auto;object-fit:contain;
   border-radius:14px;display:block;cursor:pointer;background:#f1f5f9}
-.pcard-comment{display:flex;align-items:center;gap:4px;background:none;border:none;cursor:pointer;padding:4px 6px;
-  font-size:12px;font-weight:700;color:var(--mute);transition:color .18s;border-radius:8px;-webkit-tap-highlight-color:transparent}
+.pcard-comment{display:flex;align-items:center;gap:6px;background:none;border:none;cursor:pointer;padding:6px 9px;
+  font-size:13.5px;font-weight:700;color:var(--mute);transition:color .18s;border-radius:9px;-webkit-tap-highlight-color:transparent}
 .pcard-comment:hover{color:var(--p);background:#eef2ff}
-.pcard-comment svg{width:14px;height:14px;flex-shrink:0}
+.pcard-comment svg{width:18px;height:18px;flex-shrink:0}
 /* ── SKELETON ── */
 @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
 .skel{background:linear-gradient(90deg,#eef2ff 25%,#e0e7ff 50%,#eef2ff 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:8px}
@@ -156,20 +158,20 @@ main{max-width:1100px;margin:0 auto}
 .skel-img{width:88px;height:88px;border-radius:10px;flex-shrink:0}
 
 @keyframes hpop{0%{transform:scale(1)}50%{transform:scale(1.45)}100%{transform:scale(1)}}
-.acard-save{display:flex;align-items:center;gap:4px;padding:4px 6px;background:none;border:none;cursor:pointer;color:var(--mute);transition:color .18s;border-radius:8px;font-size:12px;font-weight:700;-webkit-tap-highlight-color:transparent}
+.acard-save{display:flex;align-items:center;gap:6px;padding:6px 9px;background:none;border:none;cursor:pointer;color:var(--mute);transition:color .18s;border-radius:9px;font-size:13.5px;font-weight:700;-webkit-tap-highlight-color:transparent}
 .acard-save:hover{color:var(--save);background:#eef2ff}
-.acard-save svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;transition:all .2s}
+.acard-save svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;transition:all .2s}
 .acard-save.saved{color:var(--save)}
 .acard-save.saved svg{fill:var(--save);stroke:var(--save);animation:hpop .25s ease}
-.acard-share{display:flex;align-items:center;padding:4px 6px;background:none;border:none;cursor:pointer;color:var(--mute);transition:color .18s;margin-left:auto;border-radius:8px;-webkit-tap-highlight-color:transparent}
+.acard-share{display:flex;align-items:center;padding:6px 9px;background:none;border:none;cursor:pointer;color:var(--mute);transition:color .18s;margin-left:auto;border-radius:9px;-webkit-tap-highlight-color:transparent}
 .acard-share:hover{color:var(--p);background:#eef2ff}
-.acard-share svg{width:14px;height:14px}
+.acard-share svg{width:18px;height:18px}
 
 /* ── CARD 3-DOT MENU ── */
 .acard-menu-wrap{position:relative;margin-left:auto}
-.acard-menu-btn{display:flex;align-items:center;justify-content:center;padding:4px 7px;background:none;border:none;cursor:pointer;color:var(--mute);transition:color .18s;border-radius:8px;-webkit-tap-highlight-color:transparent}
+.acard-menu-btn{display:flex;align-items:center;justify-content:center;padding:6px 9px;background:none;border:none;cursor:pointer;color:var(--mute);transition:color .18s;border-radius:9px;-webkit-tap-highlight-color:transparent}
 .acard-menu-btn:hover{color:var(--p);background:#eef2ff}
-.acard-menu-btn svg{width:16px;height:16px}
+.acard-menu-btn svg{width:19px;height:19px}
 .acard-menu-drop{position:fixed;width:178px;background:#fff;border-radius:14px;border:1.5px solid var(--border);box-shadow:0 6px 28px rgba(37,99,235,.14),0 2px 8px rgba(0,0,0,.07);padding:6px;z-index:9999;opacity:0;transform:translateY(4px) scale(.97);pointer-events:none;transition:all .18s cubic-bezier(.32,0,.15,1);transform-origin:bottom right}
 .acard-menu-drop.open{opacity:1;transform:translateY(0) scale(1);pointer-events:all}
 .acard-menu-item{display:flex;align-items:center;gap:9px;width:100%;padding:10px 12px;border-radius:9px;font-size:13px;font-weight:600;color:var(--txt);border:none;background:none;cursor:pointer;transition:background .15s,color .15s;text-align:left;font-family:'Inter',sans-serif}

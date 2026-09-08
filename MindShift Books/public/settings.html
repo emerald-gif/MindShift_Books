@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<link rel="icon" href="/MINDSHIFT.jpg">
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Settings · MindShift Books</title>
@@ -363,17 +365,6 @@ onAuthStateChanged(auth, async user => {
   } else {
     connectedEl.innerHTML = `<span class="provider-badge" style="color:var(--p)">${EMAIL_ICON} Email &amp; Password</span>`;
   }
-
-  // Deep-link support: /settings#orders or /settings#details opens straight
-  // to that sub-view (same convention account.html used). This has to run
-  // here, once auth is confirmed — loadOrders()/loadDetails() both read
-  // auth.currentUser, and calling them at top-level script scope raced
-  // Firebase's session restore, crashing with "Cannot read properties of
-  // null (reading 'getIdToken')" whenever this page was opened directly on
-  // a #orders/#details link (e.g. from the sidebar) instead of clicking
-  // into the sub-view from an already-loaded Settings page.
-  const initialHash = window.location.hash.replace('#','');
-  if(initialHash==='orders' || initialHash==='details') showSettingsView(initialHash);
 });
 
 window.doSignOut = async function(){
@@ -447,7 +438,6 @@ async function loadOrders(){
         </div>`;
     }).join('');
   }catch(err){
-    ordersLoaded = false; // this attempt didn't actually succeed — allow a retry
     status.innerHTML = '';
     results.innerHTML = `<div class="empty">Could not load your orders.<br>${escSet(err.message)}</div>`;
   }
@@ -468,7 +458,7 @@ async function loadDetails(){
         document.getElementById('detReferredName').value = data.referredByName;
       }
     }
-  }catch(e){ detailsLoaded = false; /* leave fields blank on failure, allow a retry */ }
+  }catch(e){ /* leave fields blank on failure */ }
 }
 
 document.getElementById('detSaveBtn').addEventListener('click', async ()=>{
@@ -497,8 +487,10 @@ document.getElementById('detSaveBtn').addEventListener('click', async ()=>{
   }
 });
 
-// Deep-link support for /settings#orders and /settings#details lives inside
-// onAuthStateChanged above (needs auth.currentUser to be ready first).
+// Deep-link support: /settings#orders or /settings#details opens straight
+// to that sub-view (same convention account.html used).
+const initialHash = window.location.hash.replace('#','');
+if(initialHash==='orders' || initialHash==='details') showSettingsView(initialHash);
 
 /* ── SHARE PROFILE ── */
 let toastTimer;
