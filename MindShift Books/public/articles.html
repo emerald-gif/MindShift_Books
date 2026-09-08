@@ -1531,6 +1531,21 @@ function observeFeedVideos(){
 document.addEventListener('visibilitychange', ()=>{
   if(document.hidden) document.querySelectorAll('.pcard-video-el').forEach(v=>v.pause());
 });
+// Navigating to post-read and back restores this page from the browser's
+// back-forward cache rather than re-running our scripts — the video froze
+// paused the moment you left, and since its on-screen position never
+// actually changes across that trip, the IntersectionObserver has nothing
+// new to report and never resumes it. On return, manually re-check what's
+// actually on screen right now and resume/pause to match.
+window.addEventListener('pageshow', ()=>{
+  document.querySelectorAll('.pcard-video-el').forEach(vid=>{
+    const r = vid.getBoundingClientRect();
+    if(!r.height){ vid.pause(); return; }
+    const visible = Math.max(0, Math.min(r.bottom, innerHeight) - Math.max(r.top, 0)) / r.height;
+    if(visible >= 0.6) vid.play().catch(()=>{});
+    else vid.pause();
+  });
+});
 
 /* ── INFINITE SCROLL (articles) ──
    A tiny sentinel div sits at the bottom of the rendered feed. When it
