@@ -777,7 +777,11 @@ async function toggleWishlist(productId) {
     });
     if (!res.ok) throw new Error('wishlist toggle failed');
     const data = await res.json();
-    showToast(data.inWishlist ? 'Added to your wishlist.' : 'Removed from your wishlist.', data.inWishlist ? 'success' : 'info', 2500);
+    if (data.inWishlist) {
+      openWishlistConfirmDrawer();
+    } else {
+      showToast('Removed from your wishlist.', 'info', 2500);
+    }
     return data.inWishlist;
   } catch (e) {
     setWishlistIds(wasIn ? [...wishlistIds, productId] : wishlistIds.filter(id => id !== productId)); // roll back
@@ -786,7 +790,7 @@ async function toggleWishlist(productId) {
   }
 }
 
-function openWishlist() { window.location.href = '/wishlist'; }
+function openWishlist() { window.location.href = '/library?tab=wishlist'; }
 
 // ---------------- Wishlist sign-in drawer ----------------
 // Lightweight bottom-sheet nudge shown when a signed-out visitor taps a
@@ -840,6 +844,67 @@ function openWishlistAuthDrawer() {
 
 function closeWishlistAuthDrawer() {
   const backdrop = document.getElementById('wishlistAuthBackdrop');
+  if (!backdrop) return;
+  backdrop.classList.remove('show');
+  backdrop.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+}
+
+// ---------------- Wishlist "added" confirmation drawer ----------------
+// Shown right after a book is successfully added to the wishlist (not on
+// removal — that's a quieter, no-need-to-celebrate action, still just a
+// toast). Reuses the exact same .wishlist-drawer / .wishlist-drawer-backdrop
+// CSS as the sign-in nudge above — same bottom-sheet, just a checkmark
+// instead of the heart and a link into My Library instead of sign-in
+// buttons, so the two feel like one family of drawer, not two different
+// components.
+function ensureWishlistConfirmDrawer() {
+  if (document.getElementById('wishlistConfirmBackdrop')) return;
+  const wrap = document.createElement('div');
+  wrap.innerHTML = `
+    <div class="wishlist-drawer-backdrop" id="wishlistConfirmBackdrop" aria-hidden="true">
+      <div class="wishlist-drawer" role="dialog" aria-modal="true" aria-labelledby="wishlistConfirmTitle">
+        <button type="button" class="wishlist-drawer-close" id="wishlistConfirmCloseBtn" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+        <div class="cart-auth-gate">
+          <div class="cart-auth-gate-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          </div>
+          <h3 id="wishlistConfirmTitle">Added to your Wishlist</h3>
+          <p>Find it any time in My Library, alongside your saved articles and the books you own.</p>
+          <div class="cart-auth-gate-actions">
+            <button type="button" class="btn buy-btn" id="wishlistConfirmViewBtn">View My Library</button>
+            <button type="button" class="cart-auth-secondary" id="wishlistConfirmKeepBtn">Keep Browsing</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(wrap.firstElementChild);
+
+  const backdrop = document.getElementById('wishlistConfirmBackdrop');
+  document.getElementById('wishlistConfirmCloseBtn')?.addEventListener('click', closeWishlistConfirmDrawer);
+  backdrop?.addEventListener('click', (e) => { if (e.target === backdrop) closeWishlistConfirmDrawer(); });
+  document.getElementById('wishlistConfirmKeepBtn')?.addEventListener('click', closeWishlistConfirmDrawer);
+  document.getElementById('wishlistConfirmViewBtn')?.addEventListener('click', () => {
+    window.location.href = '/library?tab=wishlist';
+  });
+}
+
+function openWishlistConfirmDrawer() {
+  ensureWishlistConfirmDrawer();
+  const backdrop = document.getElementById('wishlistConfirmBackdrop');
+  if (!backdrop) return;
+  backdrop.classList.add('show');
+  backdrop.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+  clearTimeout(window.__wishlistConfirmTimer);
+  window.__wishlistConfirmTimer = setTimeout(closeWishlistConfirmDrawer, 4000);
+}
+
+function closeWishlistConfirmDrawer() {
+  clearTimeout(window.__wishlistConfirmTimer);
+  const backdrop = document.getElementById('wishlistConfirmBackdrop');
   if (!backdrop) return;
   backdrop.classList.remove('show');
   backdrop.setAttribute('aria-hidden', 'true');

@@ -230,28 +230,6 @@ main{max-width:1100px;margin:0 auto}
   color:var(--mute);cursor:pointer;display:flex;align-items:center;justify-content:center;
   transition:all .18s;flex-shrink:0;font-size:15px}
 .sug-dismiss:hover{background:#f1f5f9;color:var(--txt)}
-/* People to follow — horizontal card row, shown near the top of both
-   For You and Following feeds. Same underlying data/logic as .sug-card
-   (real users collection, real follows collection) — just a different
-   layout so it reads well as a compact row instead of a stacked list. */
-.ptf-wrap{padding:14px 0 4px;border-bottom:8px solid var(--bg,#f8fafc)}
-.ptf-hdr{padding:0 16px 10px;display:flex;align-items:center;justify-content:space-between}
-.ptf-hdr span{font-size:14px;font-weight:800;color:var(--txt)}
-.ptf-hdr a{font-size:12.5px;font-weight:700;color:var(--p);text-decoration:none;cursor:pointer}
-.ptf-scroll{display:flex;gap:10px;overflow-x:auto;padding:0 16px 6px;scrollbar-width:none}
-.ptf-scroll::-webkit-scrollbar{display:none}
-.ptf-card{flex:0 0 132px;border:1.5px solid var(--border);border-radius:14px;padding:14px 10px;
-  display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;background:var(--card)}
-.ptf-dismiss{position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;border:none;
-  background:#f1f5f9;color:var(--mute);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px}
-.ptf-av{width:56px;height:56px;border-radius:50%;background:var(--g);color:#fff;display:flex;
-  align-items:center;justify-content:center;font-size:18px;font-weight:800;overflow:hidden;margin-bottom:8px;cursor:pointer}
-.ptf-av img{width:100%;height:100%;object-fit:cover;display:block}
-.ptf-name{font-size:12.5px;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;cursor:pointer}
-.ptf-handle{font-size:11px;color:var(--mute);font-weight:600;margin:2px 0 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
-.ptf-follow{width:100%;padding:7px 0;background:var(--g);color:#fff;border:none;border-radius:99px;
-  font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit}
-.ptf-follow.following-btn{background:var(--card);color:var(--txt);border:1.5px solid var(--border)}
 /* See more banner (at end of following feed) */
 .see-more-banner{margin:20px 16px;background:linear-gradient(135deg,#eef2ff,#eef2ff);
   border:1.5px solid var(--border2);border-radius:16px;padding:18px 16px;text-align:center}
@@ -330,6 +308,20 @@ main{max-width:1100px;margin:0 auto}
 .saved-guest-btns a{padding:11px 22px;border-radius:99px;font-size:13px;font-weight:700;text-decoration:none;transition:opacity .18s}
 .sgb-su{background:var(--g);color:#fff}
 .sgb-li{background:#fff;border:1.5px solid var(--border2);color:var(--txt)}
+
+/* ── SAVE CONFIRM DRAWER (shown right after saving, not on unsave) ── */
+.save-drawer-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:600;opacity:0;pointer-events:none;transition:opacity .25s}
+.save-drawer-backdrop.show{opacity:1;pointer-events:all}
+.save-drawer{position:fixed;left:0;right:0;bottom:0;z-index:601;background:#fff;border-radius:24px 24px 0 0;padding:22px 22px 40px;transform:translateY(100%);transition:transform .32s cubic-bezier(.32,0,.15,1);text-align:center;box-shadow:0 -8px 30px rgba(15,23,42,.12)}
+.save-drawer-backdrop.show .save-drawer{transform:translateY(0)}
+.save-drawer-close{position:absolute;top:16px;right:16px;width:30px;height:30px;border-radius:50%;border:none;background:var(--bg);color:var(--mute);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.save-drawer-icon{width:48px;height:48px;border-radius:50%;background:var(--save-bg,#eef2ff);color:var(--p);display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
+.save-drawer h3{font-size:16px;font-weight:900;color:var(--txt);margin-bottom:6px}
+.save-drawer p{font-size:13px;color:var(--sub);line-height:1.5;margin-bottom:20px}
+.save-drawer-actions{display:flex;flex-direction:column;gap:10px}
+.save-drawer-actions button{padding:13px;border-radius:12px;font-size:13.5px;font-weight:800;cursor:pointer;border:none}
+.save-drawer-view{background:var(--g);color:#fff}
+.save-drawer-keep{background:#fff;border:1.5px solid var(--border2)!important;color:var(--txt)}
 
 /* ── TOAST ── */
 .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(8px);background:#111;color:#fff;font-size:13px;font-weight:600;padding:10px 20px;border-radius:99px;z-index:500;opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap}
@@ -1103,10 +1095,6 @@ async function renderFollowingTab(fresh = false){
         <p style="font-size:16px;font-weight:800;color:#0f0e17;margin-bottom:8px">Nothing posted yet</p>
         <p style="font-size:13px;color:#6b7280;max-width:260px;margin:0 auto">People you follow haven't posted yet. Discover more writers below.</p>
       </div>`;
-      const ptfBanner = document.createElement('div');
-      ptfBanner.innerHTML = ptfRowHtml('followingEmpty');
-      feed.appendChild(ptfBanner);
-      loadPtfRow('followingEmpty', followedUids);
       const banner = document.createElement('div');
       banner.innerHTML=`<div class="suggested-section-hdr"><span>People you might like</span></div><div class="suggested-list" id="suggestedList"><div style="padding:16px;text-align:center;color:#9ca3af;font-size:13px">Loading…</div></div>`;
       feed.appendChild(banner);
@@ -1129,15 +1117,6 @@ async function renderFollowingTab(fresh = false){
     const cardsHtml = feedArts.map(a=> a.type==='post' ? buildPostCardHtml(a) : buildAcard(a));
     grid.innerHTML = withInviteCard(cardsHtml, currentUser ? currentUser.uid : null).join('');
     feed.innerHTML=''; feed.appendChild(grid);
-    // Splice the "People to follow" row after the 2nd card (skip on very short feeds).
-    if(feedArts.length > 2){
-      const anchor = grid.children[1];
-      const rowEl = document.createElement('div');
-      rowEl.innerHTML = ptfRowHtml('following');
-      if(anchor) anchor.insertAdjacentElement('afterend', rowEl.firstElementChild);
-      else grid.insertAdjacentElement('afterbegin', rowEl.firstElementChild);
-      loadPtfRow('following', followedUids);
-    }
     window.MSBAuthorLive && window.MSBAuthorLive.refresh(db, { doc, getDoc }, grid);
     feedArts.forEach(a=>{ if(currentUser){const b=document.getElementById(`lb-${a.id}`);if(b)b.classList.toggle('liked',likedSet.has(a.id));} });
     fetchLikeCounts(feedArts.map(a=>({ id:a.id, hideLikeCount:!!a.hideLikeCount, authorUid:a.authorUid })));
@@ -1203,7 +1182,7 @@ function renderSugList(users, list){
     const ini=(u.name||u.displayName||'?')[0].toUpperCase();
     const ph=u.photo||u.photoURL||'';
     const sub = u.username ? `@${esc(u.username)}` : esc(u.category||u.jobTitle||'MindShift Books member');
-    return `<div class="sug-card" data-card-uid="${u.uid}">
+    return `<div class="sug-card" id="sug-${u.uid}">
       <div class="sug-clickable" onclick="goAuthor('${u.uid}',false)">
         <div class="sug-av">${ph?`<img src="${ph}" alt="${esc(u.name||'User')}" onerror="this.style.display='none'">`:ini}</div>
         <div class="sug-info">
@@ -1211,7 +1190,7 @@ function renderSugList(users, list){
           <div class="sug-handle">${sub}</div>
         </div>
       </div>
-      <button class="sug-follow msb-follow-btn" data-follow-uid="${u.uid}" onclick="event.stopPropagation();toggleSugFollow('${u.uid}','${esc(u.name||u.displayName||'User')}')">Follow</button>
+      <button class="sug-follow" id="sf-${u.uid}" onclick="event.stopPropagation();toggleSugFollow('${u.uid}','${esc(u.name||u.displayName||'User')}')">Follow</button>
       <button class="sug-dismiss" onclick="event.stopPropagation();dismissSug('${u.uid}')" title="Remove">✕</button>
     </div>`;
   }).join('');
@@ -1219,9 +1198,9 @@ function renderSugList(users, list){
 
 window.toggleSugFollow=async function(uid,name){
   if(!currentUser){openAuth();return;}
-  const btns=document.querySelectorAll(`[data-follow-uid="${uid}"]`);
-  const wasFollowing=btns.length && btns[0].classList.contains('following-btn');
-  btns.forEach(btn=>{btn.textContent=wasFollowing?'Follow':'Following';btn.classList.toggle('following-btn',!wasFollowing);});
+  const btn=document.getElementById(`sf-${uid}`);
+  const wasFollowing=btn?.classList.contains('following-btn');
+  if(btn){btn.textContent=wasFollowing?'Follow':'Following';btn.classList.toggle('following-btn',!wasFollowing);}
   const followId = `${currentUser.uid}_${uid}`;
   try{
     if(wasFollowing){
@@ -1235,81 +1214,21 @@ window.toggleSugFollow=async function(uid,name){
       notif.notifyFollow(uid);
     }
     toast(wasFollowing?`Unfollowed ${name}`:`Following ${name} ✅`);
-    // On follow: dismiss every card for this uid (vertical list + horizontal row)
-    // so they never reappear in suggestions on re-render
+    // On follow: dismiss the card so they never reappear in suggestions on re-render
     if(!wasFollowing){
       _dismissedUids.add(uid);
-      _ptfDismissed.add(uid);
-      document.querySelectorAll(`[data-card-uid="${uid}"]`).forEach(card=>{
-        card.style.transition='all .2s';card.style.opacity='0';card.style.transform='translateX(10px)';setTimeout(()=>card.remove(),200);
-      });
+      const card=document.getElementById(`sug-${uid}`);
+      if(card){card.style.transition='all .2s';card.style.opacity='0';card.style.transform='translateX(10px)';setTimeout(()=>card.remove(),200);}
     }
   }catch(e){
-    btns.forEach(btn=>{btn.textContent=wasFollowing?'Following':'Follow';btn.classList.toggle('following-btn',wasFollowing);});
+    if(btn){btn.textContent=wasFollowing?'Following':'Follow';btn.classList.toggle('following-btn',wasFollowing);}
     toast('Could not update — try again');
   }
 };
 window.dismissSug=function(uid){
   _dismissedUids.add(uid);
-  const card=document.querySelector(`.sug-card[data-card-uid="${uid}"]`);
+  const card=document.getElementById(`sug-${uid}`);
   if(card){card.style.transition='all .2s';card.style.opacity='0';card.style.transform='translateX(10px)';setTimeout(()=>card.remove(),200);}
-};
-
-/* ── PEOPLE TO FOLLOW — horizontal row (top of both feeds) ──
-   Same real data/logic as the vertical "People you might like" list above
-   (real `users` collection, real `follows` writes) — just rendered as a
-   compact scrollable row instead of a stacked list, and shown near the
-   top of the feed instead of only at the bottom/empty state. */
-let _ptfDismissed = new Set();
-
-function ptfRowHtml(idSuffix){
-  return `<div class="ptf-wrap" id="ptfWrap-${idSuffix}">
-    <div class="ptf-hdr"><span>People to follow</span><a onclick="location.href='/suggestions'">See all</a></div>
-    <div class="ptf-scroll" id="ptfScroll-${idSuffix}"><div style="padding:20px 4px;color:var(--mute);font-size:12px">Loading…</div></div>
-  </div>`;
-}
-
-async function loadPtfRow(idSuffix, excludeUids=[]){
-  const scroll = document.getElementById(`ptfScroll-${idSuffix}`);
-  const wrap = document.getElementById(`ptfWrap-${idSuffix}`);
-  if(!scroll) return;
-  try{
-    let q; const cat=userCategories[0];
-    if(cat){ q=query(collection(db,'users'),where('categories','array-contains',cat),limit(12)); }
-    else    { q=query(collection(db,'users'),limit(12)); }
-    const snap=await getDocs(q);
-    let users=snap.docs.map(d=>({uid:d.id,...d.data()}))
-      .filter(u=>u.uid!==currentUser?.uid && !_ptfDismissed.has(u.uid) && !excludeUids.includes(u.uid));
-    if(!users.length && cat){
-      const fb=await getDocs(query(collection(db,'users'),limit(12)));
-      users=fb.docs.map(d=>({uid:d.id,...d.data()})).filter(u=>u.uid!==currentUser?.uid && !_ptfDismissed.has(u.uid) && !excludeUids.includes(u.uid));
-    }
-    if(!users.length){ if(wrap) wrap.style.display='none'; return; }
-    if(wrap) wrap.style.display='';
-    renderPtfRow(users.slice(0,10), scroll);
-  }catch(e){ if(wrap) wrap.style.display='none'; }
-}
-
-function renderPtfRow(users, scroll){
-  scroll.innerHTML = users.map(u=>{
-    const ini=(u.name||u.displayName||'?')[0].toUpperCase();
-    const ph=u.photo||u.photoURL||'';
-    const sub = u.username ? `@${esc(u.username)}` : esc(u.category||u.jobTitle||'MindShift Books member');
-    return `<div class="ptf-card" data-card-uid="${u.uid}">
-      <button class="ptf-dismiss" onclick="dismissPtf('${u.uid}')" title="Remove">✕</button>
-      <div class="ptf-av" onclick="goAuthor('${u.uid}',false)">${ph?`<img src="${ph}" alt="" onerror="this.style.display='none'">`:ini}</div>
-      <div class="ptf-name" onclick="goAuthor('${u.uid}',false)">${esc(u.name||u.displayName||'MindShift Books User')}</div>
-      <div class="ptf-handle">${sub}</div>
-      <button class="ptf-follow msb-follow-btn" data-follow-uid="${u.uid}" onclick="toggleSugFollow('${u.uid}','${esc(u.name||u.displayName||'User')}')">Follow</button>
-    </div>`;
-  }).join('');
-}
-
-window.dismissPtf = function(uid){
-  _ptfDismissed.add(uid);
-  document.querySelectorAll(`.ptf-card[data-card-uid="${uid}"]`).forEach(card=>{
-    card.style.transition='all .2s';card.style.opacity='0';setTimeout(()=>card.remove(),200);
-  });
 };
 
 // Reusable article card builder (for following feed)
@@ -1864,15 +1783,6 @@ function renderGrid(){
   });
   grid.innerHTML = withInviteCard(cardsHtml, currentUser ? currentUser.uid : null).join('')
     + '<div id="feedEndSentinel" style="height:1px"></div>';
-  // Splice the "People to follow" row after the 2nd card (skip entirely on very short feeds).
-  if(list.length > 2){
-    const anchor = grid.children[1];
-    const rowEl = document.createElement('div');
-    rowEl.innerHTML = ptfRowHtml('forYou');
-    if(anchor) anchor.insertAdjacentElement('afterend', rowEl.firstElementChild);
-    else grid.insertAdjacentElement('afterbegin', rowEl.firstElementChild);
-    loadPtfRow('forYou');
-  }
   window.MSBAuthorLive && window.MSBAuthorLive.refresh(db, { doc, getDoc }, grid);
   observeFeedPostCards();
   observeLoadMoreSentinel();
@@ -1943,7 +1853,7 @@ window.handleSave = function(id){
   updateSavesBadge();
   const btn = document.getElementById(`sv-${id}`);
   if(btn) btn.classList.toggle('saved', !wasSaved);
-  toast(!wasSaved ? 'Article saved! 🔖' : 'Removed from saves');
+  if(wasSaved){ toast('Removed from saves'); } else { openSaveConfirmDrawer(); }
 
   // Write Firestore in background — single doc, one write
   (async()=>{
@@ -1957,6 +1867,53 @@ window.handleSave = function(id){
     }
   })();
 };
+
+/* ── SAVE CONFIRM DRAWER ── */
+function ensureSaveConfirmDrawer(){
+  if(document.getElementById('saveConfirmBackdrop')) return;
+  const wrap = document.createElement('div');
+  wrap.innerHTML = `
+    <div class="save-drawer-backdrop" id="saveConfirmBackdrop" aria-hidden="true">
+      <div class="save-drawer" role="dialog" aria-modal="true" aria-labelledby="saveConfirmTitle">
+        <button type="button" class="save-drawer-close" id="saveConfirmCloseBtn" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        <div class="save-drawer-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+        </div>
+        <h3 id="saveConfirmTitle">Saved to My Library</h3>
+        <p>Find it any time under the Saved tab, alongside your wishlist and the books you own.</p>
+        <div class="save-drawer-actions">
+          <button type="button" class="save-drawer-view" id="saveConfirmViewBtn">View My Library</button>
+          <button type="button" class="save-drawer-keep" id="saveConfirmKeepBtn">Keep Reading</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(wrap.firstElementChild);
+  const backdrop = document.getElementById('saveConfirmBackdrop');
+  document.getElementById('saveConfirmCloseBtn')?.addEventListener('click', closeSaveConfirmDrawer);
+  backdrop?.addEventListener('click', (e)=>{ if(e.target===backdrop) closeSaveConfirmDrawer(); });
+  document.getElementById('saveConfirmKeepBtn')?.addEventListener('click', closeSaveConfirmDrawer);
+  document.getElementById('saveConfirmViewBtn')?.addEventListener('click', ()=>{ location.href='/library?tab=saved'; });
+}
+function openSaveConfirmDrawer(){
+  ensureSaveConfirmDrawer();
+  const backdrop = document.getElementById('saveConfirmBackdrop');
+  if(!backdrop) return;
+  backdrop.classList.add('show');
+  backdrop.setAttribute('aria-hidden','false');
+  document.body.style.overflow = 'hidden';
+  clearTimeout(window.__saveConfirmTimer);
+  window.__saveConfirmTimer = setTimeout(closeSaveConfirmDrawer, 4000);
+}
+function closeSaveConfirmDrawer(){
+  clearTimeout(window.__saveConfirmTimer);
+  const backdrop = document.getElementById('saveConfirmBackdrop');
+  if(!backdrop) return;
+  backdrop.classList.remove('show');
+  backdrop.setAttribute('aria-hidden','true');
+  document.body.style.overflow = '';
+}
 
 /* ── NAVIGATE TO READ ── */
 window.goRead = function(id){ location.href=`/article-read?id=${id}`; };

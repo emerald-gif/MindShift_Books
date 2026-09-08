@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Reading · MindShift Books</title>
+<meta name="robots" content="noindex, nofollow"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --p:#4f46e5;--p2:#06b6d4;--g:linear-gradient(90deg,#4f46e5,#06b6d4);
+  --txt:#0f172a;--sub:#6b7280;--mute:#9ca3af;
+  --bg:#f1f0f7;--card:#fff;--border:#e5e7eb;--radius:16px;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh}
+
+/* ── HEADER (matches content-insights.html's back-button header) ── */
+.hdr{position:sticky;top:0;z-index:100;background:rgba(248,247,255,.95);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);padding:0 16px;height:56px;
+  display:flex;align-items:center;justify-content:space-between;gap:8px}
+.btn-back,.hdr-open{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--border);
+  background:var(--card);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt);flex-shrink:0;text-decoration:none}
+.btn-back svg,.hdr-open svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.hdr-open svg{width:16px;height:16px;stroke-width:2}
+.hdr-title{font-size:14.5px;font-weight:800;color:var(--txt);flex:1;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 4px}
+
+.progress-bar-wrap{height:3px;background:var(--border);position:sticky;top:56px;z-index:99}
+.progress-bar-fill{height:100%;width:0%;background:var(--g);transition:width .25s}
+
+/* ── PDF VIEWER (technique matches escape-preview.html) ── */
+.pdf-viewer{max-width:700px;margin:0 auto;padding:20px 14px 40px}
+.page-wrap{margin-bottom:16px;border-radius:12px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.1);background:#fff;position:relative}
+.page-wrap canvas{display:block;width:100%;height:auto}
+/* Overlay to prevent long-press save on mobile */
+.page-wrap::after{content:'';position:absolute;inset:0;z-index:2;cursor:default}
+
+.loader-wrap{display:flex;flex-direction:column;align-items:center;gap:14px;padding:80px 20px;text-align:center}
+.spinner{width:40px;height:40px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--p);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loader-wrap p{color:var(--sub);font-size:.9rem}
+
+.page-pill{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,.88);
+  backdrop-filter:blur(8px);color:#fff;font-size:.8rem;font-weight:600;padding:7px 16px;border-radius:20px;
+  z-index:50;pointer-events:none;opacity:0;transition:opacity .3s;white-space:nowrap}
+.page-pill.visible{opacity:1}
+
+.dl-empty{text-align:center;padding:70px 24px}
+.dl-empty svg{width:40px;height:40px;margin:0 auto 12px;color:#d1d5db;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.dl-empty p{font-size:14.5px;font-weight:800;color:var(--txt);margin-bottom:4px}
+.dl-empty span{font-size:12.5px;color:var(--mute)}
+.dl-empty a{display:inline-block;margin-top:16px;padding:10px 22px;border-radius:99px;background:var(--g);color:#fff;font-size:13px;font-weight:800;text-decoration:none}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <button class="btn-back" onclick="history.back()" aria-label="Back">
+    <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+  </button>
+  <div class="hdr-title" id="hdrTitle">Reading</div>
+  <a class="hdr-open" id="hdrDownload" aria-label="Download" href="#" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+  </a>
+</header>
+<div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressFill"></div></div>
+
+<div class="pdf-viewer" id="pdfViewer">
+  <div class="loader-wrap" id="loaderWrap">
+    <div class="spinner"></div>
+    <p>Loading your book…</p>
+  </div>
+</div>
+
+<div class="page-pill" id="pagePill">Page 1</div>
+
+<div id="sidebar-slot"></div>
+<script src="/sidebar-nav.js"></script>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
+import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
+
+const fbApp = initializeApp({
+  apiKey:"AIzaSyDTn70s1_uIiSOR6lPLY_nKh8Ff1FViFCs",
+  authDomain:"mindshiftbooks-c4451.firebaseapp.com",
+  projectId:"mindshiftbooks-c4451",
+  storageBucket:"mindshiftbooks-c4451.firebasestorage.app",
+  messagingSenderId:"388697987853",
+  appId: "1:388697987853:web:f023df9412c22285012e44",
+  measurementId: "G-CHPJDQ4W08"
+});
+const auth = getAuth(fbApp);
+
+const params  = new URLSearchParams(location.search);
+const PDF_URL = params.get('src');
+const TITLE   = params.get('title') || 'Your book';
+
+document.getElementById('hdrTitle').textContent = TITLE;
+document.title = TITLE + ' · MindShift Books';
+document.getElementById('hdrDownload').href = PDF_URL || '#';
+
+onAuthStateChanged(auth, user => {
+  if (!user) { window.location.href = '/login?returnTo=' + encodeURIComponent(location.pathname + location.search); return; }
+  if (!PDF_URL) { showMissing(); return; }
+  loadPdfJs();
+});
+
+function showMissing(){
+  document.getElementById('pdfViewer').innerHTML = `
+    <div class="dl-empty">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <p>This book couldn't be found</p>
+      <span>Go back to My Library and try opening it again.</span>
+      <a href="/library?tab=books">Back to My Library</a>
+    </div>`;
+}
+
+function loadPdfJs(){
+  const s = document.createElement('script');
+  s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+  s.onload = renderPDF;
+  s.onerror = showLoadError;
+  document.body.appendChild(s);
+}
+
+// Disable right-click on this page — same content-protection basics as the
+// free-chapter preview pages use.
+document.addEventListener('contextmenu', e => e.preventDefault());
+
+function showLoadError(){
+  document.getElementById('pdfViewer').innerHTML = `
+    <div class="dl-empty">
+      <p>Couldn't load this book</p>
+      <span>Check your connection and try refreshing the page.</span>
+    </div>`;
+}
+
+async function renderPDF(){
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+  const viewer = document.getElementById('pdfViewer');
+  const loader = document.getElementById('loaderWrap');
+  const fill   = document.getElementById('progressFill');
+  const pill   = document.getElementById('pagePill');
+  let pillTimer = null;
+
+  function showPill(text){
+    pill.textContent = text;
+    pill.classList.add('visible');
+    clearTimeout(pillTimer);
+    pillTimer = setTimeout(() => pill.classList.remove('visible'), 2200);
+  }
+
+  let pdf;
+  try{
+    pdf = await window.pdfjsLib.getDocument({ url: PDF_URL, disableRange:false, disableStream:false }).promise;
+  }catch(err){
+    showLoadError();
+    return;
+  }
+
+  const pages = pdf.numPages;
+  loader.remove();
+  fill.style.width = '0%';
+
+  const canvases = [];
+  // Scale is lower than the marketing preview pages use (2.2) — those are
+  // 5-10 page teasers built for sharpness; a full book can run to hundreds
+  // of pages, so 1.5 keeps memory/render cost sane on lower-end phones
+  // while staying sharp enough to read on-screen.
+  const SCALE = 1.5;
+
+  for (let i=1; i<=pages; i++){
+    const page = await pdf.getPage(i);
+    const viewport = page.getViewport({ scale: SCALE });
+
+    const wrap = document.createElement('div');
+    wrap.className = 'page-wrap';
+    wrap.dataset.page = i;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    canvas.style.width = '100%';
+    canvas.style.height = 'auto';
+    canvas.addEventListener('dragstart', e => e.preventDefault());
+
+    wrap.appendChild(canvas);
+    viewer.appendChild(wrap);
+    canvases.push({ canvas, page, viewport });
+
+    fill.style.width = Math.round((i / pages) * 100) + '%';
+
+    if (i <= 3){
+      await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+    }
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const wrap = entry.target;
+      const pageNum = parseInt(wrap.dataset.page);
+      if (pageNum <= 3) return;
+      const { canvas, page, viewport } = canvases[pageNum - 1];
+      if (canvas.dataset.rendered) return;
+      canvas.dataset.rendered = '1';
+      page.render({ canvasContext: canvas.getContext('2d'), viewport });
+      observer.unobserve(wrap);
+    });
+  }, { rootMargin: '400px' });
+  viewer.querySelectorAll('.page-wrap').forEach(w => observer.observe(w));
+
+  const pageObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting){
+        const p = parseInt(entry.target.dataset.page);
+        fill.style.width = Math.round((p / pages) * 100) + '%';
+        showPill(`Page ${p} of ${pages}`);
+      }
+    });
+  }, { threshold: 0.3 });
+  viewer.querySelectorAll('.page-wrap').forEach(w => pageObserver.observe(w));
+}
+</script>
+</body>
+</html>

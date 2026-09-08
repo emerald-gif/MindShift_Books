@@ -50,6 +50,7 @@
     gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>',
     help: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 115.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
     shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+    receipt: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2h16v20l-3-2-2 2-2-2-2 2-2-2-2 2-3-2z"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="16" y2="11"/></svg>',
     chevron: '<svg class="sb-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>'
   };
 
@@ -85,13 +86,13 @@
         '<ul class="sb-group" id="sbAccountGroup">' +
           item('sbProfileLink', ICONS.user, 'My Profile', "window.location.href='/profile'", ' style="display:none"') +
           item('sbInsightsLink', ICONS.trending, 'My Insights', "window.location.href='/insights'", ' style="display:none"') +
-          item('sbSavedLink', ICONS.bookmark, 'Saved Articles', 'msOpenSaved()', ' style="display:none"') +
+          item('sbLibraryLink', ICONS.bookmark, 'My Library', "window.location.href='/library'", ' style="display:none"') +
+          item('sbOrdersLink', ICONS.receipt, 'My Orders', "window.location.href='/settings#orders'", ' style="display:none"') +
           item('sbLogoutLink', ICONS.logout, 'Log Out', 'msLogout()', ' class="sidebar-logout" style="display:none"') +
         '</ul>' +
 
         '<div class="sb-section-label">Discover</div>' +
         '<ul class="sb-group">' +
-          item(null, ICONS.heart, 'My Wishlist', "window.location.href='/wishlist'") +
           item(null, ICONS.gift, 'Free eBooks', "window.location.href='/free-ebooks'") +
           item(null, ICONS.share, 'Become an Affiliate', "window.location.href='/affiliate'") +
         '</ul>' +
@@ -224,7 +225,7 @@
   // until window.MSBAuth exists, then subscribe.
   function applyAuthState(user) {
     var isAuth = !!user;
-    ['sbProfileLink', 'sbInsightsLink', 'sbLogoutLink', 'sbSavedLink'].forEach(function (id) {
+    ['sbProfileLink', 'sbInsightsLink', 'sbLogoutLink', 'sbLibraryLink', 'sbOrdersLink'].forEach(function (id) {
       var el = document.getElementById(id);
       if (el) el.style.display = isAuth ? 'flex' : 'none';
     });
