@@ -131,6 +131,47 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   flex-shrink:0;background:linear-gradient(135deg,#e0e7ff,#eef2ff);align-self:flex-start}
 .acard-img img{width:100%;height:100%;object-fit:cover;display:block}
 
+/* ── POST CARD (matches profile.html's own post rendering) ── */
+.acard-author{display:flex;align-items:center;gap:7px;margin-bottom:7px;width:fit-content}
+.acard-av{width:24px;height:24px;border-radius:50%;object-fit:cover;flex-shrink:0;background:var(--g);border:1.5px solid var(--border)}
+.acard-author-name{font-size:12.5px;font-weight:700;color:var(--txt)}
+.acard-author-dot{font-size:11px;color:var(--mute)}
+.acard-author-date{font-size:11.5px;color:var(--mute)}
+.pcard-text{font-size:14.5px;color:var(--txt);line-height:1.5;white-space:pre-wrap;word-break:break-word;
+  display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden}
+.pcard-single{margin-top:8px;display:flex;justify-content:center}
+.pcard-single img{max-width:100%;max-height:340px;width:auto;height:auto;object-fit:contain;
+  border-radius:14px;display:block;cursor:pointer;background:#f1f5f9}
+.pcard-carousel{position:relative;margin-top:8px;max-width:100%;overflow:hidden}
+.pcard-track{display:flex;gap:4px;overflow-x:auto;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;
+  scrollbar-width:none;height:340px;max-height:60vh}
+.pcard-track::-webkit-scrollbar{display:none}
+.pcard-slide{flex:0 0 auto;height:100%;scroll-snap-align:start;border-radius:14px;overflow:hidden;background:#f1f5f9}
+.pcard-slide img{height:100%;width:auto;max-width:none;object-fit:contain;display:block;cursor:pointer}
+.pcard-count{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.55);color:#fff;font-size:11px;
+  font-weight:700;padding:2px 8px;border-radius:99px}
+.pcard-video{position:relative;margin:8px auto 0;border-radius:14px;overflow:hidden;cursor:pointer;
+  background:#0f0e17;width:max-content;max-width:100%}
+.pcard-video video{display:block;max-width:100%;max-height:460px;width:auto;height:auto}
+.pcard-video-mute{position:absolute;bottom:8px;left:8px;width:30px;height:30px;border-radius:50%;
+  background:rgba(15,14,23,.55);border:none;display:flex;align-items:center;justify-content:center;
+  color:#fff;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.pcard-video-mute svg{width:15px;height:15px}
+.pcard-video-mute.unmuted{background:rgba(79,70,229,.75)}
+.pcard-video-dur{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.6);color:#fff;font-size:11px;
+  font-weight:700;padding:2px 8px;border-radius:99px}
+.acard-foot{display:flex;align-items:center;gap:8px;margin-top:10px}
+.acard-like,.pcard-comment{display:flex;align-items:center;gap:4px;background:none;border:none;cursor:pointer;padding:4px 6px;font-size:12px;font-weight:700;color:var(--mute);transition:color .18s;border-radius:8px;-webkit-tap-highlight-color:transparent}
+.acard-like:hover{color:#e11d48;background:#fff1f1}
+.pcard-comment:hover{color:var(--p);background:#eef2ff}
+.acard-like svg,.pcard-comment svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;transition:all .2s;flex-shrink:0}
+.acard-like.liked{color:#e11d48}
+.acard-like.liked svg{fill:#e11d48;stroke:#e11d48}
+.acard-save{background:none;border:none;cursor:pointer;padding:4px 6px;border-radius:8px;color:var(--mute);-webkit-tap-highlight-color:transparent}
+.acard-save svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2}
+.acard-save.saved{color:var(--p)}
+.acard-save.saved svg{fill:var(--p);stroke:var(--p)}
+
 /* ── SKELETON ── */
 .skel{background:linear-gradient(90deg,#f3f4f6 25%,#e9eaec 50%,#f3f4f6 75%);
   background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:6px}
@@ -247,8 +288,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
       <div class="stat-label">Articles</div>
     </div>
     <div class="stat">
-      <div class="stat-num" id="statLikes">—</div>
-      <div class="stat-label">Total Likes</div>
+      <div class="stat-num" id="statPosts">—</div>
+      <div class="stat-label">Posts</div>
     </div>
   </div>
 </div>
@@ -279,8 +320,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
-import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection,
-  query, where, getDocs, orderBy, serverTimestamp, onSnapshot, increment, limit } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
+import { getFirestore, doc, getDoc, setDoc, deleteDoc, updateDoc, collection,
+  query, where, getDocs, getCountFromServer, orderBy, serverTimestamp, onSnapshot, increment, limit } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
 
 const fbApp = initializeApp({
   apiKey:"AIzaSyDTn70s1_uIiSOR6lPLY_nKh8Ff1FViFCs",
@@ -313,7 +354,7 @@ onAuthStateChanged(auth, async user => {
 
 /* ── LOAD ── */
 async function init(){
-  await Promise.all([loadMindshiftProfile(), loadArticles(), loadFollowerCount()]);
+  await Promise.all([loadMindshiftProfile(), loadArticles(), loadFollowerCount(), loadPosts()]);
 }
 
 // Pulls admin-edited name/avatar/cover/bio/tagline from platform/official-profile,
@@ -333,28 +374,25 @@ async function loadMindshiftProfile(){
 
 async function loadArticles(){
   try{
-    // Load from Firestore articles collection (userId = 'official')
+    // Was querying `userId`, but every article is actually written with
+    // `authorUid` (see write.html / server.js admin routes) — `userId` never
+    // matched anything, so this always fell through to a "load every
+    // published article on the platform" fallback and showed other users'
+    // articles under the official MindShift Books name. Query the real
+    // field, and if there genuinely are none yet, just show the empty state
+    // instead of borrowing everyone else's content.
     const q = query(
       collection(db,'articles'),
-      where('userId','==','official'),
+      where('authorUid','==','official'),
       where('status','==','published'),
       orderBy('publishedAt','desc'),
       limit(60)
     );
     const snap = await getDocs(q);
-
-    if(snap.empty){
-      // Fallback: load all published articles from the seed
-      const q2 = query(collection(db,'articles'), where('status','==','published'), orderBy('publishedAt','desc'), limit(60));
-      const snap2 = await getDocs(q2);
-      articles = snap2.docs.map(d=>({id:d.id,...d.data()}));
-    } else {
-      articles = snap.docs.map(d=>({id:d.id,...d.data()}));
-    }
+    articles = snap.docs.map(d=>({id:d.id,...d.data()}));
 
     document.getElementById('statArticles').textContent = articles.length;
     renderArticles();
-    loadTotalLikes();
   }catch(e){
     console.error(e);
     renderArticles();
@@ -363,27 +401,31 @@ async function loadArticles(){
 
 async function loadFollowerCount(){
   try{
-    // Reads one denormalized counter (users/official.followerCount) instead of
-    // live-scanning every follow doc for the official account. Every other
-    // follow/unfollow site in the app (articles.html, profile.html, etc.)
-    // already keeps users/{uid}.followerCount in sync on toggle — toggleFollow()
-    // below does the same for 'official', so this just reads that same field.
+    // getCountFromServer is an aggregation query — Firestore bills it as
+    // ~1 read no matter how many follow docs match, instead of 1 read per
+    // follower (which is what a plain getDocs count would cost). Run once
+    // per page load to get the true number and reconcile the cached
+    // users/official.followerCount counter if it's drifted; the live
+    // onSnapshot below then keeps the displayed number current for free
+    // after that.
+    const folQ = query(collection(db,'follows'), where('followingId','==','official'));
+    const countSnap = await getCountFromServer(folQ);
+    const followerCount = countSnap.data().count;
+    document.getElementById('statFollowers').textContent = fmtNum(followerCount);
+
+    let reconciled = false;
     onSnapshot(doc(db,'users','official'), snap=>{
-      const count = snap.exists() ? (snap.data().followerCount||0) : 0;
-      document.getElementById('statFollowers').textContent = fmtNum(count);
+      const cached = snap.exists() ? (snap.data().followerCount||0) : 0;
+      if(!reconciled){
+        reconciled = true;
+        if(cached !== followerCount){
+          setDoc(doc(db,'users','official'),{followerCount},{merge:true}).catch(()=>{});
+          return; // this write re-triggers the listener with the corrected value
+        }
+      }
+      document.getElementById('statFollowers').textContent = fmtNum(cached);
     });
   }catch{ document.getElementById('statFollowers').textContent = '0'; }
-}
-
-async function loadTotalLikes(){
-  try{
-    let total = 0;
-    await Promise.all(articles.map(async a=>{
-      const s = await getDoc(doc(db,'articleLikes',a.id));
-      if(s.exists()) total += s.data().count||0;
-    }));
-    document.getElementById('statLikes').textContent = fmtNum(total);
-  }catch{ document.getElementById('statLikes').textContent = '0'; }
 }
 
 function renderArticles(){
@@ -415,7 +457,6 @@ function renderArticles(){
 
 /* ── CONTENT TABS (Articles / Posts) ── */
 let posts = [];
-let postsLoaded = false;
 window.switchContentTab = function(tab){
   document.getElementById('ctTabArticles').style.color = tab==='articles' ? 'var(--p)' : 'var(--mute)';
   document.getElementById('ctTabArticles').style.borderBottomColor = tab==='articles' ? 'var(--p)' : 'transparent';
@@ -423,11 +464,10 @@ window.switchContentTab = function(tab){
   document.getElementById('ctTabPosts').style.borderBottomColor = tab==='posts' ? 'var(--p)' : 'transparent';
   document.getElementById('artList').style.display = tab==='articles' ? 'block' : 'none';
   document.getElementById('postList').style.display = tab==='posts' ? 'block' : 'none';
-  if(tab==='posts' && !postsLoaded) loadPosts();
+  if(tab==='posts') observeProfileVideos();
 };
 
 async function loadPosts(){
-  postsLoaded = true;
   try{
     // Single equality filter (no orderBy) — avoids needing a composite index.
     // Sorted client-side instead, which is fine at the volume the official
@@ -440,12 +480,257 @@ async function loadPosts(){
       const tb = b.publishedAt?.toMillis ? b.publishedAt.toMillis() : (b.publishedAt ? new Date(b.publishedAt).getTime() : 0);
       return tb - ta;
     });
+    document.getElementById('statPosts').textContent = fmtNum(posts.length);
     renderPosts();
+    await loadLikedSet();
+    await loadSavedSet();
+    fetchLikeCounts(posts.map(p=>p.id));
+    fetchPostCommentCounts(posts.filter(p=>!p.commentsOff).map(p=>p.id));
+    posts.forEach(p=>{
+      const btn = document.getElementById(`lb-${p.id}`);
+      if(btn) btn.classList.toggle('liked', likedSet.has(p.id));
+    });
   }catch(e){
     console.error('MindShift Books posts load error:', e);
     renderPosts();
   }
 }
+
+function esc(str){
+  return String(str==null?'':str).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function fmtRel(ts){
+  if(!ts) return '';
+  const ms = ts.seconds ? ts.seconds*1000 : ts;
+  const d = Date.now()-ms;
+  if(d<3600000) return `${Math.floor(d/60000)||1}m ago`;
+  if(d<86400000) return `${Math.floor(d/3600000)}h ago`;
+  if(d<604800000) return `${Math.floor(d/86400000)}d ago`;
+  return new Date(ms).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
+
+function buildMediaGridHtml(images, postId){
+  if(!images || !images.length) return '';
+  if(images.length===1){
+    return `<div class="pcard-single" onclick="event.stopPropagation()">
+      <img src="${images[0]}" alt="" loading="lazy" onclick="location.href='/post-read?id=${postId}'">
+    </div>`;
+  }
+  return `
+    <div class="pcard-carousel" onclick="event.stopPropagation()">
+      <div class="pcard-track" id="ptrack-${postId}" onscroll="onPostScroll('${postId}')">
+        ${images.map(url=>`<div class="pcard-slide"><img src="${url}" alt="" loading="lazy" onclick="location.href='/post-read?id=${postId}'" onload="fitCarouselSlide(this)" onerror="fitCarouselSlide(this)"></div>`).join('')}
+      </div>
+      <div class="pcard-count" id="pcount-${postId}">1/${images.length}</div>
+    </div>`;
+}
+window.fitCarouselSlide = function(img){
+  const slide = img.closest('.pcard-slide');
+  const track = img.closest('.pcard-track');
+  if(!slide || !track) return;
+  if(!track._carouselAspects) track._carouselAspects = [];
+  const aspect = (img.naturalWidth && img.naturalHeight) ? (img.naturalWidth / img.naturalHeight) : 1;
+  track._carouselAspects.push({ slide, aspect });
+  if(track._carouselAspects.length < track.children.length) return;
+  finalizeCarouselTrack(track);
+};
+function finalizeCarouselTrack(track){
+  const baseHeight = track.clientHeight;
+  const maxAllowed = track.clientWidth * 0.82;
+  let finalHeight = 0;
+  track._carouselAspects.forEach(({aspect})=>{
+    const widthAtBase = baseHeight * aspect;
+    const h = widthAtBase > maxAllowed ? (maxAllowed / aspect) : baseHeight;
+    if(h > finalHeight) finalHeight = h;
+  });
+  if(finalHeight > 0 && finalHeight < baseHeight){
+    track.style.height = finalHeight + 'px';
+  }
+  track._carouselAspects.forEach(({slide, aspect})=>{
+    const w = Math.min(finalHeight * aspect, maxAllowed);
+    slide.style.width = w + 'px';
+    slide.style.flexBasis = w + 'px';
+    slide.style.height = finalHeight + 'px';
+    slide.style.alignSelf = 'flex-start';
+    const img = slide.querySelector('img');
+    if(img){ img.style.width = '100%'; img.style.height = '100%'; }
+  });
+}
+window.onPostScroll = function(id){
+  const track = document.getElementById(`ptrack-${id}`);
+  if(!track) return;
+  let idx = 0;
+  const mid = track.scrollLeft + track.clientWidth/2;
+  Array.prototype.forEach.call(track.children, (slide,i)=>{
+    if(slide.offsetLeft <= mid) idx = i;
+  });
+  const countEl = document.getElementById(`pcount-${id}`);
+  if(countEl) countEl.textContent = `${idx+1}/${track.children.length}`;
+};
+
+function fmtDuration(secs){
+  secs = Math.round(secs||0);
+  const m = Math.floor(secs/60), s = secs%60;
+  return `${m}:${String(s).padStart(2,'0')}`;
+}
+function buildVideoTileHtml(p){
+  if(!p.videoUrl) return '';
+  return `<div class="pcard-video" onclick="event.stopPropagation();location.href='/post-read?id=${p.id}'">
+    <video class="pcard-video-el" data-post-id="${p.id}" src="${p.videoUrl}" poster="${p.thumbnailUrl||''}" muted loop playsinline preload="metadata"></video>
+    <button type="button" class="pcard-video-mute" onclick="event.stopPropagation();toggleFeedVideoMute('${p.id}',event)" title="Unmute">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+    </button>
+    ${p.duration ? `<span class="pcard-video-dur">${fmtDuration(p.duration)}</span>` : ''}
+  </div>`;
+}
+window.toggleFeedVideoMute = function(id, event){
+  const btn = event.currentTarget;
+  const vid = btn.closest('.pcard-video').querySelector('video');
+  if(!vid) return;
+  vid.muted = !vid.muted;
+  btn.classList.toggle('unmuted', !vid.muted);
+};
+let _profileVideoObserver = null;
+function getProfileVideoObserver(){
+  if(_profileVideoObserver) return _profileVideoObserver;
+  _profileVideoObserver = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      const vid = entry.target;
+      if(entry.isIntersecting) vid.play().catch(()=>{});
+      else vid.pause();
+    });
+  }, { threshold: 0.6 });
+  return _profileVideoObserver;
+}
+function observeProfileVideos(){
+  const observer = getProfileVideoObserver();
+  document.querySelectorAll('.pcard-video-el').forEach(el=>observer.observe(el));
+}
+document.addEventListener('visibilitychange', ()=>{
+  if(document.hidden) document.querySelectorAll('.pcard-video-el').forEach(v=>v.pause());
+});
+
+/* ── LIKES / SAVES (same collections + rules as profile.html) ── */
+let likedSet = new Set();
+let savedSet = new Set();
+let likeCountCache = {};
+async function loadLikedSet(){
+  if(!currentUser) return;
+  try{
+    const s = await getDoc(doc(db,'userLikes',currentUser.uid));
+    likedSet.clear();
+    if(s.exists()){
+      const data = s.data();
+      Object.keys(data).forEach(id=>{ if(data[id]) likedSet.add(id); });
+    }
+  }catch(e){}
+}
+async function loadSavedSet(){
+  if(!currentUser) return;
+  try{
+    const s = await getDoc(doc(db,'userSaves',currentUser.uid));
+    savedSet.clear();
+    if(s.exists()){
+      const data = s.data();
+      Object.keys(data).forEach(id=>{ if(data[id]) savedSet.add(id); });
+    }
+  }catch(e){}
+}
+async function fetchLikeCounts(ids){
+  if(!ids.length) return;
+  try{
+    const results = await Promise.all(ids.map(id => getDoc(doc(db,'articleLikes',id)).catch(()=>null)));
+    results.forEach((snap,i)=>{
+      const id = ids[i];
+      const c = snap&&snap.exists() ? (snap.data().count||0) : 0;
+      likeCountCache[id] = c;
+      const el = document.getElementById(`lc-${id}`);
+      if(el) el.textContent = c > 0 ? c : (likedSet.has(id) ? 1 : '');
+    });
+  }catch(e){}
+}
+let commentCountCache = {};
+async function fetchPostCommentCounts(ids){
+  if(!ids.length) return;
+  try{
+    const results = await Promise.all(ids.map(id => getDoc(doc(db,'postMeta',id)).catch(()=>null)));
+    results.forEach((snap,i)=>{
+      const id = ids[i];
+      const c = snap&&snap.exists() ? (snap.data().commentCount||0) : 0;
+      commentCountCache[id] = c;
+      const el = document.getElementById(`pcc-${id}`);
+      if(el) el.textContent = c > 0 ? c : '';
+    });
+  }catch(e){}
+}
+async function toggleLike(id, wasLiked){
+  if(!currentUser){ window.location.href='/login'; return null; }
+  const cRef = doc(db,'articleLikes',id);
+  try {
+    await setDoc(doc(db,'userLikes',currentUser.uid),{[id]:!wasLiked},{merge:true});
+    if(wasLiked){
+      try{ await updateDoc(cRef,{count:increment(-1)}); }catch{ await setDoc(cRef,{count:0},{merge:true}); }
+      return false;
+    } else {
+      try{ await updateDoc(cRef,{count:increment(1)}); }catch{ await setDoc(cRef,{count:1},{merge:true}); }
+      return true;
+    }
+  } catch(e) {
+    showToast('Could not update like — try again.');
+    return null;
+  }
+}
+window.handleLike = function(id){
+  if(!currentUser){ window.location.href='/login'; return; }
+  const btn = document.getElementById(`lb-${id}`);
+  const countEl = document.getElementById(`lc-${id}`);
+  const wasLiked = likedSet.has(id);
+  if(wasLiked){ likedSet.delete(id); } else { likedSet.add(id); }
+  if(btn) btn.classList.toggle('liked', !wasLiked);
+  if(countEl){
+    const cur = likeCountCache[id] || 0;
+    const next = Math.max(0, cur + (wasLiked ? -1 : 1));
+    likeCountCache[id] = next;
+    countEl.textContent = next > 0 ? next : '';
+  }
+  (async()=>{
+    const didLike = await toggleLike(id, wasLiked);
+    if(didLike === null){
+      if(wasLiked){ likedSet.add(id); } else { likedSet.delete(id); }
+      if(btn) btn.classList.toggle('liked', wasLiked);
+      if(countEl){
+        const cur = likeCountCache[id] || 0;
+        const rolled = Math.max(0, cur + (wasLiked ? 1 : -1));
+        likeCountCache[id] = rolled;
+        countEl.textContent = rolled > 0 ? rolled : '';
+      }
+    }
+  })();
+};
+window.handleSave = function(id){
+  if(!currentUser){ window.location.href='/login'; return; }
+  const wasSaved = savedSet.has(id);
+  if(wasSaved){ savedSet.delete(id); } else { savedSet.add(id); }
+  const btn = document.getElementById(`sv-${id}`);
+  if(btn) btn.classList.toggle('saved', !wasSaved);
+  showToast(!wasSaved ? 'Saved! 🔖' : 'Removed from saves');
+  (async()=>{
+    try{
+      await setDoc(doc(db,'userSaves',currentUser.uid),{[id]:!wasSaved},{merge:true});
+      const sRef = doc(db,'articleSaves',id);
+      if(wasSaved){
+        try{ await updateDoc(sRef,{count:increment(-1)}); }catch{ await setDoc(sRef,{count:0},{merge:true}); }
+      } else {
+        try{ await updateDoc(sRef,{count:increment(1)}); }catch{ await setDoc(sRef,{count:1},{merge:true}); }
+      }
+    }catch(e){
+      if(wasSaved){ savedSet.add(id); } else { savedSet.delete(id); }
+      if(btn) btn.classList.toggle('saved', wasSaved);
+      showToast('Could not save — try again.');
+    }
+  })();
+};
 
 function renderPosts(){
   const el = document.getElementById('postList');
@@ -458,14 +743,40 @@ function renderPosts(){
     </div>`;
     return;
   }
-  el.innerHTML = posts.map(p=>`
-    <div class="acard" onclick="location.href='/post-read?id=${p.id}'">
+  const authorName = 'MindShift Books';
+  const authorAv = document.getElementById('kvAvatarImg')?.src || 'logo.jpg';
+  el.innerHTML = posts.map(p=>{
+    const media = p.videoUrl ? buildVideoTileHtml(p) : buildMediaGridHtml(p.images, p.id);
+    return `<div class="acard pcard" onclick="location.href='/post-read?id=${p.id}'">
       <div class="acard-body">
-        <div class="acard-brief" style="-webkit-line-clamp:3;font-size:13.5px;color:var(--txt)">${(p.text||'').replace(/</g,'&lt;')}</div>
+        <div class="acard-author">
+          <img class="acard-av" src="${authorAv}" alt="${authorName}" onerror="this.style.background='linear-gradient(135deg,#4f46e5,#06b6d4)'">
+          <span class="acard-author-name">${authorName}</span>
+          <span class="acard-author-dot">·</span>
+          <span class="acard-author-date">${fmtRel(p.publishedAt||p.createdAt)}</span>
+        </div>
+        ${p.text ? `<div class="pcard-text">${esc(p.text)}</div>` : ''}
+        ${media}
+        <div class="acard-foot">
+          <button class="acard-like" id="lb-${p.id}" onclick="event.stopPropagation();handleLike('${p.id}')">
+            <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+            <span id="lc-${p.id}"></span>
+          </button>
+          <button class="acard-save ${savedSet.has(p.id)?'saved':''}" id="sv-${p.id}" onclick="event.stopPropagation();handleSave('${p.id}')" title="Save post">
+            <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+          </button>
+          ${p.commentsOff ? `
+          <span class="pcard-comment" style="opacity:.4;cursor:default" title="Comments are off" onclick="event.stopPropagation()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+          </span>` : `
+          <button class="pcard-comment" onclick="event.stopPropagation();location.href='/post-read?id=${p.id}'" title="Comment">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+            <span id="pcc-${p.id}"></span>
+          </button>`}
+        </div>
       </div>
-      ${p.images && p.images.length ? `<div class="acard-img"><img src="${p.images[0]}" alt="" loading="lazy"></div>` : ''}
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
 /* ── FOLLOW ── */
