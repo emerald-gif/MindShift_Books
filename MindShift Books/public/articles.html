@@ -1108,11 +1108,15 @@ async function renderFollowingTab(fresh = false){
         hideLikeCount: !!x.hideLikeCount
       };
     });
-    const feedArts = [...feedArtsRaw, ...feedPostsRaw].sort((x,y)=>{
+    let feedArts = [...feedArtsRaw, ...feedPostsRaw].sort((x,y)=>{
       const tx = x.publishedAt?.seconds ? x.publishedAt.seconds*1000 : (x.publishedAt||0);
       const ty = y.publishedAt?.seconds ? y.publishedAt.seconds*1000 : (y.publishedAt||0);
       return ty - tx;
     });
+    // Re-tap (pull-to-refresh-style bust) shuffles, same as For You's
+    // refreshForYou() — first load stays newest-first so the tab still
+    // reads like a normal following feed.
+    if(fresh) feedArts = shuffleArray(feedArts);
 
     if(!feedArts.length){
       feed.innerHTML=`<div style="padding:40px 20px;text-align:center">
@@ -1156,7 +1160,7 @@ async function renderFollowingTab(fresh = false){
       loadPtfRow('following', followedUids);
     }
     window.MSBAuthorLive && window.MSBAuthorLive.refresh(db, { doc, getDoc }, grid);
-    feedArts.forEach(a=>{ if(currentUser){const b=document.getElementById(`lb-${a.id}`);if(b)b.classList.toggle('liked',likedSet.has(a.id));} });
+    feedArts.forEach(a=>{ if(currentUser){document.querySelectorAll(`#lb-${a.id}`).forEach(b=>b.classList.toggle('liked',likedSet.has(a.id)));} });
     fetchLikeCounts(feedArts.map(a=>({ id:a.id, hideLikeCount:!!a.hideLikeCount, authorUid:a.authorUid })));
     const _followingPostIds = feedArts.filter(a=>a.type==='post').map(a=>a.id);
     if(_followingPostIds.length) fetchPostCommentCounts(_followingPostIds);
@@ -1546,10 +1550,15 @@ async function fetchLikeCounts(items){
       const id = ids[i];
       const c = snap&&snap.exists() ? (snap.data().count||0) : 0;
       likeCountCache[id] = c;
-      const el = document.getElementById(`lc-${id}`);
-      if(!el) return;
+      // Same article/post can be rendered in BOTH the For You and Following
+      // tabs at once (one just hidden via display:none) — they share the
+      // same element id. getElementById only ever returns the first match,
+      // silently leaving whichever copy is actually visible unset. Update
+      // every matching copy so whichever tab you're looking at is correct.
+      const els = document.querySelectorAll(`#lc-${id}`);
+      if(!els.length) return;
       const hide = typeof it==='object' && it.hideLikeCount && !(currentUser && it.authorUid===currentUser.uid);
-      el.textContent = hide ? '' : (c > 0 ? c : (likedSet.has(id) ? 1 : ''));
+      els.forEach(el=>{ el.textContent = hide ? '' : (c > 0 ? c : (likedSet.has(id) ? 1 : '')); });
     });
   }catch(e){}
 }
@@ -1563,8 +1572,8 @@ async function toggleSave(id){
   // Optimistic update
   if(isSaved){ savedSet.delete(id); } else { savedSet.add(id); }
   updateSavesBadge();
-  const btn = document.getElementById(`sv-${id}`);
-  if(btn) btn.classList.toggle('saved', !isSaved);
+  const btns = document.querySelectorAll(`#sv-${id}`);
+  btns.forEach(btn=>btn.classList.toggle('saved', !isSaved));
   toast(!isSaved ? 'Article saved! 🔖' : 'Removed from saves');
   try {
     await setDoc(doc(db,'userSaves',currentUser.uid),{[id]:!isSaved},{merge:true});
@@ -1579,7 +1588,7 @@ async function toggleSave(id){
     // revert
     if(isSaved){ savedSet.add(id); } else { savedSet.delete(id); }
     updateSavesBadge();
-    if(btn) btn.classList.toggle('saved', isSaved);
+    btns.forEach(btn=>btn.classList.toggle('saved', isSaved));
     toast('Could not save article — try again.');
   }
 }
@@ -1910,8 +1919,7 @@ function renderGrid(){
   observeLoadMoreSentinel();
   list.forEach(a=>{
     if(currentUser){
-      const btn = document.getElementById(`lb-${a.id}`);
-      if(btn) btn.classList.toggle('liked', likedSet.has(a.id));
+      document.querySelectorAll(`#lb-${a.id}`).forEach(btn=>btn.classList.toggle('liked', likedSet.has(a.id)));
     }
   });
   // One parallel batch for all like counts — no per-card listeners
@@ -1923,8 +1931,10 @@ function renderGrid(){
 /* ── LIKE ── */
 window.handleLike = function(id){
   if(!currentUser){ openAuth(); return; }
-  const btn = document.getElementById(`lb-${id}`);
-  const countEl = document.getElementById(`lc-${id}`);
+  // Same id can exist in both the For You and Following DOM at once — update
+  // every copy so the tab you're actually looking at reflects the tap.
+  const btns = document.querySelectorAll(`#lb-${id}`);
+  const countEls = document.querySelectorAll(`#lc-${id}`);
   const item = ARTICLES.find(a=>a.id===id) || POSTS.find(p=>p.id===id);
   // hideLikeCount hides the number from everyone except the item's own author
   const hideCount = !!(item && item.hideLikeCount && item.authorUid !== currentUser.uid);
@@ -1932,14 +1942,14 @@ window.handleLike = function(id){
   // Optimistic update — instant, no waiting for Firestore
   const wasLiked = likedSet.has(id);
   if(wasLiked){ likedSet.delete(id); } else { likedSet.add(id); }
-  if(btn) btn.classList.toggle('liked', !wasLiked);
+  btns.forEach(btn=>btn.classList.toggle('liked', !wasLiked));
 
   // Update count display immediately from cache
-  if(countEl && !hideCount){
+  if(countEls.length && !hideCount){
     const cur = likeCountCache[id] || 0;
     const next = Math.max(0, cur + (wasLiked ? -1 : 1));
     likeCountCache[id] = next;
-    countEl.textContent = next > 0 ? next : '';
+    countEls.forEach(countEl=>{ countEl.textContent = next > 0 ? next : ''; });
   }
 
   // Write Firestore in background
@@ -1948,12 +1958,12 @@ window.handleLike = function(id){
     if(didLike === null){
       // Roll back on error
       if(wasLiked){ likedSet.add(id); } else { likedSet.delete(id); }
-      if(btn) btn.classList.toggle('liked', wasLiked);
-      if(countEl && !hideCount){
+      btns.forEach(btn=>btn.classList.toggle('liked', wasLiked));
+      if(countEls.length && !hideCount){
         const cur = likeCountCache[id] || 0;
         const rolled = Math.max(0, cur + (wasLiked ? 1 : -1));
         likeCountCache[id] = rolled;
-        countEl.textContent = rolled > 0 ? rolled : '';
+        countEls.forEach(countEl=>{ countEl.textContent = rolled > 0 ? rolled : ''; });
       }
     } else if(didLike === true){
       if(item) notif.notifyArticleLike(item);
@@ -1973,8 +1983,9 @@ window.handleSave = function(id){
   // Optimistic update instantly
   if(wasSaved){ savedSet.delete(id); } else { savedSet.add(id); }
   updateSavesBadge();
-  const btn = document.getElementById(`sv-${id}`);
-  if(btn) btn.classList.toggle('saved', !wasSaved);
+  // Same id can exist in both feeds' DOM at once — update every copy.
+  const btns = document.querySelectorAll(`#sv-${id}`);
+  btns.forEach(btn=>btn.classList.toggle('saved', !wasSaved));
   if(wasSaved){ toast('Removed from saves'); } else { openSaveConfirmDrawer(); }
 
   // Write Firestore in background — single doc, one write
@@ -1984,7 +1995,7 @@ window.handleSave = function(id){
     }catch(e){
       if(wasSaved){ savedSet.add(id); } else { savedSet.delete(id); }
       updateSavesBadge();
-      if(btn) btn.classList.toggle('saved', wasSaved);
+      btns.forEach(btn=>btn.classList.toggle('saved', wasSaved));
       toast('Could not save article — try again.');
     }
   })();
@@ -2041,18 +2052,29 @@ function closeSaveConfirmDrawer(){
 window.goRead = function(id){ location.href=`/article-read?id=${id}`; };
 
 /* ── CARD 3-DOT MENU ── */
+// The same article/post can be rendered twice in the DOM at once (For You
+// tab + Following tab, one just hidden) and both copies share the same
+// "cmenu-<id>" element id. getElementById(id) always resolves to the FIRST
+// copy in the document — which, on the Following tab, is usually the hidden
+// For You one — so the menu that actually opened was invisible while the
+// one you tapped did nothing. Fix: always resolve the drop from the button
+// that was actually clicked (event.currentTarget's next sibling in the
+// markup), never by id. We keep the id too, just for the follow-button
+// lookup and for other card menus tracking "is a menu open right now".
 let openCardMenuId = null;
+let openCardMenuEl = null; // the actual open .acard-menu-drop element, not just its (possibly duplicated) id
 window.toggleCardMenu = function(id, event){
   event.stopPropagation();
-  const drop = document.getElementById(`cmenu-${id}`);
+  const btn = event.currentTarget || event.target.closest('.acard-menu-btn');
+  const drop = btn ? btn.nextElementSibling : null;
   if(!drop) return;
-  if(openCardMenuId && openCardMenuId !== id){
-    const prev = document.getElementById(`cmenu-${openCardMenuId}`);
-    if(prev) prev.classList.remove('open');
+  if(openCardMenuEl && openCardMenuEl !== drop){
+    openCardMenuEl.classList.remove('open');
   }
   if(drop.classList.contains('open')){
     drop.classList.remove('open');
     openCardMenuId = null;
+    openCardMenuEl = null;
   } else {
     // Position via fixed viewport coordinates computed from the "⋯"
     // button's actual on-screen rect, every time it opens. This is
@@ -2063,7 +2085,6 @@ window.toggleCardMenu = function(id, event){
     // paintable in a way that looks fine but doesn't reliably receive taps.
     // position:fixed escapes that clipping entirely and is guaranteed to
     // match what's tappable to what's visible.
-    const btn = event.currentTarget || event.target.closest('.acard-menu-btn');
     if(btn){
       const rect = btn.getBoundingClientRect();
       const dropWidth = 178;
@@ -2077,10 +2098,12 @@ window.toggleCardMenu = function(id, event){
     }
     drop.classList.add('open');
     openCardMenuId = id;
+    openCardMenuEl = drop;
     _cardMenuOpenScrollY = window.scrollY;
-    // Update follow button label based on real-time state
+    // Update follow button label based on real-time state — scoped to
+    // *this* drop, not a global id lookup, so it can't touch the hidden copy.
     const item = ARTICLES.find(a=>a.id===id) || POSTS.find(p=>p.id===id);
-    const fbtn = document.getElementById(`cfbtn-${id}`);
+    const fbtn = drop.querySelector(`#cfbtn-${id}`);
     if(fbtn && item && item.authorUid && currentUser){
       (async()=>{
         try{
@@ -2105,11 +2128,11 @@ window.addEventListener('scroll', ()=>{
   if(Math.abs(window.scrollY - _cardMenuOpenScrollY) > 24) closeOpenCardMenu();
 }, { passive:true, capture:true });
 window.closeOpenCardMenu = function(){
-  if(openCardMenuId){
-    const drop = document.getElementById(`cmenu-${openCardMenuId}`);
-    if(drop) drop.classList.remove('open');
-    openCardMenuId = null;
+  if(openCardMenuEl){
+    openCardMenuEl.classList.remove('open');
   }
+  openCardMenuId = null;
+  openCardMenuEl = null;
 };
 document.addEventListener('click', e=>{
   if(openCardMenuId && !e.target.closest('.acard-menu-wrap')) closeOpenCardMenu();
@@ -2175,8 +2198,9 @@ async function fetchPostCommentCounts(ids){
     results.forEach((snap,i)=>{
       const id = ids[i];
       const c = snap&&snap.exists() ? (snap.data().commentCount||0) : 0;
-      const el = document.getElementById(`pcc-${id}`);
-      if(el) el.textContent = c > 0 ? c : '';
+      // See the note in fetchLikeCounts — same card can exist twice in the
+      // DOM (For You + Following), so update every copy, not just the first.
+      document.querySelectorAll(`#pcc-${id}`).forEach(el=>{ el.textContent = c > 0 ? c : ''; });
     });
   }catch(e){}
 }
@@ -2200,9 +2224,11 @@ window.followFromMenu = async function(authorUid, authorName, cardId){
       notif.notifyFollow(authorUid);
     }
     toast(isFollowing ? 'Unfollowed' : `Following ${authorName||'author'} ✅`);
-    // Update the button label inside the card menu
-    const fbtn = document.getElementById(`cfbtn-${cardId}`);
-    if(fbtn) fbtn.childNodes[fbtn.childNodes.length-1].textContent = isFollowing ? ' Follow' : ' Following';
+    // Update the button label inside the card menu — every copy, since the
+    // same card can exist in both the For You and Following DOM at once.
+    document.querySelectorAll(`#cfbtn-${cardId}`).forEach(fbtn=>{
+      fbtn.childNodes[fbtn.childNodes.length-1].textContent = isFollowing ? ' Follow' : ' Following';
+    });
   }catch(e){ toast('Could not update — try again'); }
 };
 
@@ -2630,8 +2656,7 @@ function renderSavedSheet(){
 window.unsaveFromSheet = function(id){
   savedSet.delete(id);
   updateSavesBadge();
-  const btn = document.getElementById(`sv-${id}`);
-  if(btn) btn.classList.remove('saved');
+  document.querySelectorAll(`#sv-${id}`).forEach(btn=>btn.classList.remove('saved'));
   renderSavedSheet();
   toast('Removed from saves');
   setDoc(doc(db,'userSaves',currentUser.uid),{[id]:false},{merge:true}).catch(e=>console.error(e));
