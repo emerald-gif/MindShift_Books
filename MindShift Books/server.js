@@ -1730,6 +1730,108 @@ function normalizeGutendexBook(item) {
   };
 }
 
+// ---------------- Fallback catalog (used only when Gutendex itself is
+// unreachable — e.g. Cloudflare is showing it a bot-challenge page instead
+// of JSON — and we have no cache yet to fall back on). A small, hand-picked
+// set of very well known public-domain titles with verified Gutenberg IDs,
+// so the free eBooks page shows *something* real instead of an error, and
+// "Read" still works because it hits gutenberg.org directly (see
+// fetchGutenbergTextDirect below) instead of round-tripping through the
+// blocked Gutendex API.
+const FALLBACK_BOOKS = [
+  { id: 1342, title: 'Pride and Prejudice', author: 'Jane Austen', topics: ['fiction', 'love stories', 'literature'] },
+  { id: 11, title: "Alice's Adventures in Wonderland", author: 'Lewis Carroll', topics: ['fiction', 'literature'] },
+  { id: 84, title: 'Frankenstein', author: 'Mary Shelley', topics: ['fiction', 'science fiction', 'literature'] },
+  { id: 76, title: 'Adventures of Huckleberry Finn', author: 'Mark Twain', topics: ['fiction', 'literature'] },
+  { id: 74, title: 'The Adventures of Tom Sawyer', author: 'Mark Twain', topics: ['fiction', 'literature'] },
+  { id: 345, title: 'Dracula', author: 'Bram Stoker', topics: ['fiction', 'literature'] },
+  { id: 1661, title: 'The Adventures of Sherlock Holmes', author: 'Arthur Conan Doyle', topics: ['fiction', 'detective', 'literature'] },
+  { id: 98, title: 'A Tale of Two Cities', author: 'Charles Dickens', topics: ['fiction', 'history', 'literature'] },
+  { id: 2701, title: 'Moby Dick', author: 'Herman Melville', topics: ['fiction', 'literature'] },
+  { id: 174, title: 'The Picture of Dorian Gray', author: 'Oscar Wilde', topics: ['fiction', 'literature'] },
+  { id: 43, title: 'Dr. Jekyll and Mr. Hyde', author: 'Robert Louis Stevenson', topics: ['fiction', 'literature'] },
+  { id: 36, title: 'The War of the Worlds', author: 'H. G. Wells', topics: ['fiction', 'science fiction', 'literature'] },
+  { id: 35, title: 'The Time Machine', author: 'H. G. Wells', topics: ['fiction', 'science fiction', 'literature'] },
+  { id: 2600, title: 'War and Peace', author: 'Leo Tolstoy', topics: ['fiction', 'history', 'literature'] },
+  { id: 2554, title: 'Crime and Punishment', author: 'Fyodor Dostoyevsky', topics: ['fiction', 'literature'] },
+  { id: 135, title: 'Les Misérables', author: 'Victor Hugo', topics: ['fiction', 'literature'] },
+  { id: 1400, title: 'Great Expectations', author: 'Charles Dickens', topics: ['fiction', 'literature'] },
+  { id: 46, title: 'A Christmas Carol', author: 'Charles Dickens', topics: ['fiction', 'literature'] },
+  { id: 158, title: 'Emma', author: 'Jane Austen', topics: ['fiction', 'love stories', 'literature'] },
+  { id: 161, title: 'Sense and Sensibility', author: 'Jane Austen', topics: ['fiction', 'love stories', 'literature'] },
+  { id: 120, title: 'Treasure Island', author: 'Robert Louis Stevenson', topics: ['fiction', 'literature'] },
+  { id: 55, title: 'The Wonderful Wizard of Oz', author: 'L. Frank Baum', topics: ['fiction', 'literature'] },
+  { id: 16, title: 'Peter Pan', author: 'J. M. Barrie', topics: ['fiction', 'literature'] },
+  { id: 2591, title: "Grimm's Fairy Tales", author: 'Jacob and Wilhelm Grimm', topics: ['fiction', 'literature'] },
+  { id: 205, title: 'Walden', author: 'Henry David Thoreau', topics: ['conduct of life', 'literature'] },
+  { id: 768, title: 'Wuthering Heights', author: 'Emily Brontë', topics: ['fiction', 'love stories', 'literature'] },
+  { id: 1260, title: 'Jane Eyre', author: 'Charlotte Brontë', topics: ['fiction', 'love stories', 'literature'] },
+  { id: 1184, title: 'The Count of Monte Cristo', author: 'Alexandre Dumas', topics: ['fiction', 'literature'] },
+  { id: 236, title: 'The Jungle Book', author: 'Rudyard Kipling', topics: ['fiction', 'literature'] },
+  { id: 514, title: 'Little Women', author: 'Louisa May Alcott', topics: ['fiction', 'literature'] },
+  { id: 64317, title: 'The Great Gatsby', author: 'F. Scott Fitzgerald', topics: ['fiction', 'literature'] }
+];
+
+// Gutendex's own cover convention (Gutenberg's generated cover images) —
+// stable, doesn't require hitting Gutendex at all.
+function fallbackCoverUrl(id) {
+  return `https://www.gutenberg.org/cache/epub/${id}/pg${id}.cover.medium.jpg`;
+}
+
+function normalizeFallbackBook(entry) {
+  return {
+    id: entry.id,
+    title: entry.title,
+    authors: [entry.author],
+    author: entry.author,
+    description: '',
+    cover: fallbackCoverUrl(entry.id),
+    categories: entry.topics.slice(0, 3),
+    language: 'en',
+    pageCount: null,
+    publishedDate: null,
+    downloadCount: 0,
+    readLink: `/read/${entry.id}`
+  };
+}
+
+// Same shape as fetchGutendexRange's return value, but served entirely from
+// the hand-picked list above — no network call at all.
+function getFallbackRange(topicOrSearch, isSearch, startIndex, count) {
+  let matches;
+  if (isSearch) {
+    const needle = (topicOrSearch || '').toLowerCase();
+    matches = FALLBACK_BOOKS.filter(b =>
+      b.title.toLowerCase().includes(needle) || b.author.toLowerCase().includes(needle)
+    );
+  } else if (topicOrSearch) {
+    matches = FALLBACK_BOOKS.filter(b => b.topics.includes(topicOrSearch));
+  } else {
+    matches = FALLBACK_BOOKS;
+  }
+  const slice = matches.slice(startIndex, startIndex + count);
+  return { items: slice.map(normalizeFallbackBook), totalItems: matches.length };
+}
+
+// Fetches a book's plain text straight from gutenberg.org's own predictable
+// file URL (bypassing Gutendex entirely). Used both as the /read/:id
+// fallback when Gutendex's detail lookup fails, and could serve any known
+// Gutenberg id, not just the ones in FALLBACK_BOOKS.
+async function fetchGutenbergTextDirect(id) {
+  const candidates = [
+    `https://www.gutenberg.org/cache/epub/${id}/pg${id}-images.html`,
+    `https://www.gutenberg.org/cache/epub/${id}/pg${id}.txt`,
+    `https://www.gutenberg.org/files/${id}/${id}-h/${id}-h.htm`
+  ];
+  for (const url of candidates) {
+    try {
+      const resp = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; MindShiftBooks/1.0; +https://mindshiftbooks.shop)' } });
+      if (resp.ok) return { url, text: await resp.text(), isHtml: url.endsWith('.html') || url.endsWith('.htm') };
+    } catch (e) { /* try next candidate */ }
+  }
+  return null;
+}
+
 async function fetchGutendexPageOnce(topicOrSearch, isSearch, page) {
   const params = new URLSearchParams();
   if (isSearch) params.set('search', topicOrSearch);
@@ -1821,11 +1923,19 @@ async function fetchGutendexRange(topicOrSearch, isSearch, startIndex, count) {
 
   let stitched = [];
   let totalCount = 0;
-  for (let page = startPage; page <= endPage; page++) {
-    const pageData = await fetchGutendexPage(topicOrSearch, isSearch, page);
-    totalCount = pageData.count;
-    if (pageData.results.length === 0) break; // ran off the end of the catalog for this topic
-    stitched = stitched.concat(pageData.results);
+  try {
+    for (let page = startPage; page <= endPage; page++) {
+      const pageData = await fetchGutendexPage(topicOrSearch, isSearch, page);
+      totalCount = pageData.count;
+      if (pageData.results.length === 0) break; // ran off the end of the catalog for this topic
+      stitched = stitched.concat(pageData.results);
+    }
+  } catch (e) {
+    // Gutendex itself is unreachable (e.g. Cloudflare challenge) and we had
+    // no cached page to fall back on above — serve the static list instead
+    // of surfacing an error to the browse page.
+    console.warn('[free-ebooks] Gutendex unreachable, using fallback catalog:', e && e.message ? e.message : e);
+    return getFallbackRange(topicOrSearch, isSearch, startIndex, count);
   }
   const offsetInFirstPage = startIndex - (startPage - 1) * GUTENDEX_PAGE_SIZE;
   const slice = stitched.slice(offsetInFirstPage, offsetInFirstPage + count);
@@ -1877,13 +1987,26 @@ app.get('/api/free-ebooks/:id', async (req, res) => {
     const cached = freeEbooksCache.get(cacheKey);
     if (cached && cached.expires > Date.now()) return res.json(cached.data);
 
-    const resp = await fetch(`${GUTENDEX_API}/${encodeURIComponent(id)}`, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; MindShiftBooks/1.0; +https://mindshiftbooks.shop)',
-        'Accept': 'application/json'
+    let resp;
+    try {
+      resp = await fetch(`${GUTENDEX_API}/${encodeURIComponent(id)}`, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; MindShiftBooks/1.0; +https://mindshiftbooks.shop)',
+          'Accept': 'application/json'
+        }
+      });
+    } catch (e) {
+      resp = null; // Gutendex unreachable — fall through to fallback catalog below
+    }
+
+    if (!resp || !resp.ok) {
+      const fallbackEntry = FALLBACK_BOOKS.find(b => b.id === Number(id));
+      if (fallbackEntry) {
+        const data = { book: normalizeFallbackBook(fallbackEntry) };
+        return res.json(data); // not cached — real Gutendex data should win once it's back
       }
-    });
-    if (!resp.ok) return res.status(404).json({ error: 'Book not found' });
+      return res.status(404).json({ error: 'Book not found' });
+    }
     const json = await resp.json();
     const book = normalizeGutendexBook(json);
     book.description = (json.subjects || []).length
@@ -2015,32 +2138,48 @@ app.get('/read/:id', async (req, res) => {
       return fs.createReadStream(cachePath).pipe(res);
     }
 
-    const detailResp = await fetch(`${GUTENDEX_API}/${id}`, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; MindShiftBooks/1.0; +https://mindshiftbooks.shop)',
-        'Accept': 'application/json'
+    let detail = null;
+    try {
+      const detailResp = await fetch(`${GUTENDEX_API}/${id}`, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; MindShiftBooks/1.0; +https://mindshiftbooks.shop)',
+          'Accept': 'application/json'
+        }
+      });
+      if (detailResp.ok) detail = await detailResp.json();
+    } catch (e) { /* Gutendex unreachable — fall through to direct fetch below */ }
+
+    let html;
+    if (detail) {
+      const formats = detail.formats || {};
+      const htmlUrl = formats['text/html; charset=utf-8'] || formats['text/html'] || formats['text/html; charset=us-ascii'] || null;
+      const textUrl = formats['text/plain; charset=utf-8'] || formats['text/plain'] || null;
+      const sourceUrl = htmlUrl || textUrl;
+
+      if (!sourceUrl) {
+        return res.status(404).send('This title is only available as a download file, which isn\u2019t supported here yet.');
       }
-    });
-    if (!detailResp.ok) return res.status(404).send('Book not found.');
-    const detail = await detailResp.json();
-    const formats = detail.formats || {};
-    const htmlUrl = formats['text/html; charset=utf-8'] || formats['text/html'] || formats['text/html; charset=us-ascii'] || null;
-    const textUrl = formats['text/plain; charset=utf-8'] || formats['text/plain'] || null;
-    const sourceUrl = htmlUrl || textUrl;
 
-    if (!sourceUrl) {
-      return res.status(404).send('This title is only available as a download file, which isn\u2019t supported here yet.');
+      const fileResp = await fetch(sourceUrl, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; MindShiftBooks/1.0; +https://mindshiftbooks.shop)' }
+      });
+      if (!fileResp.ok) return res.status(502).send('Could not load this book right now. Please try again.');
+      const rawText = await fileResp.text();
+
+      html = htmlUrl
+        ? wrapGutenbergHtml(rawText, sourceUrl, detail.title, id)
+        : wrapPlainTextAsHtml(rawText, detail.title, id);
+    } else {
+      // Gutendex is down (Cloudflare challenge, etc.) — skip it entirely and
+      // hit gutenberg.org's own predictable file URLs directly.
+      const direct = await fetchGutenbergTextDirect(id);
+      if (!direct) return res.status(502).send('Could not load this book right now. Please try again.');
+      const fallbackEntry = FALLBACK_BOOKS.find(b => b.id === Number(id));
+      const title = fallbackEntry ? fallbackEntry.title : `Book #${id}`;
+      html = direct.isHtml
+        ? wrapGutenbergHtml(direct.text, direct.url, title, id)
+        : wrapPlainTextAsHtml(direct.text, title, id);
     }
-
-    const fileResp = await fetch(sourceUrl, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; MindShiftBooks/1.0; +https://mindshiftbooks.shop)' }
-    });
-    if (!fileResp.ok) return res.status(502).send('Could not load this book right now. Please try again.');
-    const rawText = await fileResp.text();
-
-    const html = htmlUrl
-      ? wrapGutenbergHtml(rawText, sourceUrl, detail.title, id)
-      : wrapPlainTextAsHtml(rawText, detail.title, id);
 
     ensureCacheDir();
     fs.writeFile(cachePath, html, 'utf8', (err) => {
