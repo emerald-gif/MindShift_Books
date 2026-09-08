@@ -144,12 +144,14 @@ main{max-width:1100px;margin:0 auto}
 .pcard-single{margin-top:8px;display:flex;justify-content:center}
 .pcard-single img{max-width:100%;max-height:340px;width:auto;height:auto;object-fit:contain;
   border-radius:14px;display:block;cursor:pointer;background:#f1f5f9}
-.pcard-video{position:relative;margin-top:8px;border-radius:14px;overflow:hidden;cursor:pointer;
-  background:#0f0e17;display:flex;align-items:center;justify-content:center}
-.pcard-video img{max-width:100%;max-height:300px;width:auto;height:auto;object-fit:contain;display:block}
-.pcard-video-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:52px;height:52px;
-  border-radius:50%;background:rgba(15,14,23,.55);display:flex;align-items:center;justify-content:center;color:#fff}
-.pcard-video-play svg{width:22px;height:22px;margin-left:3px}
+.pcard-video{position:relative;margin:8px auto 0;border-radius:14px;overflow:hidden;cursor:pointer;
+  background:#0f0e17;width:max-content;max-width:100%}
+.pcard-video video{display:block;max-width:100%;max-height:460px;width:auto;height:auto}
+.pcard-video-mute{position:absolute;bottom:8px;left:8px;width:30px;height:30px;border-radius:50%;
+  background:rgba(15,14,23,.55);border:none;display:flex;align-items:center;justify-content:center;
+  color:#fff;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.pcard-video-mute svg{width:15px;height:15px}
+.pcard-video-mute.unmuted{background:rgba(79,70,229,.75)}
 .pcard-video-dur{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.6);color:#fff;font-size:11px;
   font-weight:700;padding:2px 8px;border-radius:99px}
 .pcard-comment{display:flex;align-items:center;gap:6px;background:none;border:none;cursor:pointer;padding:6px 9px;
@@ -1178,6 +1180,7 @@ async function renderFollowingTab(fresh = false){
     // Wire up the same 1.75s-in-viewport dwell tracker the "For You" grid
     // uses, so posts scrolled past in Following register a view too.
     observeFeedPostCards();
+    observeFeedVideos();
 
     // "See more" banner at end
     const banner=document.createElement('div'); banner.className='see-more-banner';
@@ -1503,6 +1506,32 @@ function observeFeedPostCards(){
   document.querySelectorAll('.pcard[data-post-id]').forEach(el=>observer.observe(el));
 }
 
+/* ── FEED VIDEO AUTOPLAY ──
+   Each feed video plays (muted, so autoplay is allowed) only while it's
+   actually visible — the moment it scrolls mostly out of view it's paused,
+   so nothing keeps running silently in the background as the feed scrolls. */
+let _feedVideoObserver = null;
+function getFeedVideoObserver(){
+  if(_feedVideoObserver) return _feedVideoObserver;
+  _feedVideoObserver = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      const vid = entry.target;
+      if(entry.isIntersecting) vid.play().catch(()=>{});
+      else vid.pause();
+    });
+  }, { threshold: 0.6 });
+  return _feedVideoObserver;
+}
+function observeFeedVideos(){
+  const observer = getFeedVideoObserver();
+  document.querySelectorAll('.pcard-video-el').forEach(el=>observer.observe(el));
+}
+// Belt-and-braces: if the tab/app goes to background, pause every feed
+// video immediately rather than waiting on the observer to catch up.
+document.addEventListener('visibilitychange', ()=>{
+  if(document.hidden) document.querySelectorAll('.pcard-video-el').forEach(v=>v.pause());
+});
+
 /* ── INFINITE SCROLL (articles) ──
    A tiny sentinel div sits at the bottom of the rendered feed. When it
    scrolls into view, pull the next page of articles — same endless-feed
@@ -1729,18 +1758,29 @@ function fmtDuration(secs){
   const m = Math.floor(secs/60), s = secs%60;
   return `${m}:${String(s).padStart(2,'0')}`;
 }
-// Feed video tile — thumbnail + play affordance, tap opens post-read where
-// it actually plays. No autoplay/inline playback in the feed: the spec
-// lists autoplay/muted feed video under "Future Scaling — Later", so V1
-// keeps it simple and doesn't burn data on videos scrolling past unseen.
+// Feed video tile — an actual <video>, muted + looping, that autoplays only
+// while it's actually on screen (see the IntersectionObserver in
+// observeFeedVideos below) so nothing plays silently in the background off
+// screen. The wrapper hugs the video's own rendered size (width:max-content)
+// instead of stretching full-card-width — a portrait clip narrower than the
+// card no longer sits inside a big painted black box either side of it.
 function buildVideoTileHtml(p){
   if(!p.videoUrl) return '';
   return `<div class="pcard-video" onclick="event.stopPropagation();goPostRead('${p.id}')">
-    <img src="${p.thumbnailUrl||''}" alt="" loading="lazy" onerror="this.style.background='linear-gradient(135deg,#0f0e17,#4f46e5)'">
-    <div class="pcard-video-play"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg></div>
+    <video class="pcard-video-el" data-post-id="${p.id}" src="${p.videoUrl}" poster="${p.thumbnailUrl||''}" muted loop playsinline preload="metadata"></video>
+    <button type="button" class="pcard-video-mute" onclick="event.stopPropagation();toggleFeedVideoMute('${p.id}',event)" title="Unmute">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+    </button>
     ${p.duration ? `<span class="pcard-video-dur">${fmtDuration(p.duration)}</span>` : ''}
   </div>`;
 }
+window.toggleFeedVideoMute = function(id, event){
+  const btn = event.currentTarget;
+  const vid = btn.closest('.pcard-video').querySelector('video');
+  if(!vid) return;
+  vid.muted = !vid.muted;
+  btn.classList.toggle('unmuted', !vid.muted);
+};
 function buildPostCardHtml(p){
   const carousel = p.videoUrl ? buildVideoTileHtml(p) : buildMediaGridHtml(p.images, p.id);
   return `<div class="acard pcard" data-post-id="${p.id}" onclick="goPostRead('${p.id}')">
@@ -1944,6 +1984,7 @@ function renderGrid(){
   }
   window.MSBAuthorLive && window.MSBAuthorLive.refresh(db, { doc, getDoc }, grid);
   observeFeedPostCards();
+  observeFeedVideos();
   observeLoadMoreSentinel();
   list.forEach(a=>{
     if(currentUser){
