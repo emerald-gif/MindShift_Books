@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex, nofollow"/>
 <title>Admin — MindShift Books</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="/article-categories.js"> </script>
+<script src="/article-categories.js"></script>
 <style>
 
   :root {
@@ -883,8 +883,26 @@
       <div id="apBrief" style="font-size:0.92rem;color:var(--muted);font-style:italic;margin-bottom:16px;border-left:3px solid var(--border);padding-left:12px;"></div>
       <div id="apBody" style="font-size:0.92rem;line-height:1.7;color:var(--primary);"></div>
       <div id="apImages" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;"></div>
-      <div style="display:flex;gap:10px;margin-top:24px;">
+
+      <!-- Insights (views / likes / comments) — loaded via firebase-admin, no ownership check needed here -->
+      <div id="apInsights" style="display:flex;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+        <div style="flex:1;text-align:center;">
+          <div id="apViews" style="font-size:1.1rem;font-weight:800;color:var(--primary);">—</div>
+          <div style="font-size:0.7rem;color:var(--muted);font-weight:600;">Views</div>
+        </div>
+        <div style="flex:1;text-align:center;">
+          <div id="apLikes" style="font-size:1.1rem;font-weight:800;color:var(--primary);">—</div>
+          <div style="font-size:0.7rem;color:var(--muted);font-weight:600;">Likes</div>
+        </div>
+        <div style="flex:1;text-align:center;">
+          <div id="apComments" style="font-size:1.1rem;font-weight:800;color:var(--primary);">—</div>
+          <div style="font-size:0.7rem;color:var(--muted);font-weight:600;">Comments</div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:20px;">
         <button id="apViewLiveBtn" style="flex:1;padding:10px 16px;border-radius:10px;border:1.5px solid var(--border);background:#fff;color:var(--primary);font-weight:700;font-size:0.82rem;cursor:pointer;">View live</button>
+        <button id="apEditBtn" style="flex:1;padding:10px 16px;border-radius:10px;border:1.5px solid var(--border);background:#fff;color:var(--indigo);font-weight:700;font-size:0.82rem;cursor:pointer;">Edit</button>
         <button id="apDeleteBtn" style="flex:1;padding:10px 16px;border-radius:10px;border:1.5px solid var(--border);background:#fff;color:#991b1b;font-weight:700;font-size:0.82rem;cursor:pointer;">Delete</button>
       </div>
     </div>
@@ -898,7 +916,7 @@
           <img src="/MINDSHIFT.jpg" alt="" style="width:38px;height:38px;border-radius:50%;object-fit:cover;background:linear-gradient(135deg,#4f46e5,#06b6d4);">
           <div>
             <div style="font-size:0.9rem;font-weight:800;color:var(--primary);">MindShift Books</div>
-            <div style="font-size:0.72rem;color:var(--muted);">Posting publicly · goes live immediately</div>
+            <div style="font-size:0.72rem;color:var(--muted);" id="mpSubtitle">Posting publicly · goes live immediately</div>
           </div>
         </div>
         <button id="mpCloseBtn" style="flex-shrink:0;width:32px;height:32px;border-radius:50%;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-size:1.1rem;line-height:1;">&times;</button>
@@ -928,7 +946,7 @@
       <div style="display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:18px;">
         <div style="display:flex;align-items:center;gap:10px;">
           <img src="/MINDSHIFT.jpg" alt="" style="width:32px;height:32px;border-radius:50%;object-fit:cover;background:linear-gradient(135deg,#4f46e5,#06b6d4);">
-          <div style="font-size:0.95rem;font-weight:800;color:var(--primary);">Write Article — MindShift Books</div>
+          <div style="font-size:0.95rem;font-weight:800;color:var(--primary);" id="maHeaderTitle">Write Article — MindShift Books</div>
         </div>
         <button id="maCloseBtn" style="flex-shrink:0;width:32px;height:32px;border-radius:50%;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-size:1.1rem;line-height:1;">&times;</button>
       </div>
@@ -1350,11 +1368,36 @@
     }
     const viewLiveBtn = document.getElementById('apViewLiveBtn');
     viewLiveBtn.onclick = () => window.open(isArticle ? `/article-read?id=${encodeURIComponent(s.id)}` : `/post-read?id=${encodeURIComponent(s.id)}`, '_blank');
+    const editBtn = document.getElementById('apEditBtn');
+    editBtn.onclick = () => {
+      document.getElementById('articlePreviewOverlay').style.display = 'none';
+      if (isArticle) maOpenForEdit(s); else mpOpenForEdit(s);
+    };
     const deleteBtn = document.getElementById('apDeleteBtn');
     deleteBtn.disabled = false;
     deleteBtn.textContent = 'Delete';
     deleteBtn.onclick = () => deleteContentItem(s.id, s.type);
     document.getElementById('articlePreviewOverlay').style.display = 'flex';
+    loadInsights(s.id, s.type);
+  }
+
+  async function loadInsights(id, type) {
+    const collectionName = type === 'article' ? 'articles' : 'posts';
+    document.getElementById('apViews').textContent = '—';
+    document.getElementById('apLikes').textContent = '—';
+    document.getElementById('apComments').textContent = '—';
+    try {
+      const res = await fetch(`/api/admin/content/${collectionName}/${encodeURIComponent(id)}/insights`);
+      if (!res.ok) throw new Error('failed');
+      const data = await res.json();
+      document.getElementById('apViews').textContent = (data.views || 0).toLocaleString();
+      document.getElementById('apLikes').textContent = (data.likes || 0).toLocaleString();
+      document.getElementById('apComments').textContent = (data.comments || 0).toLocaleString();
+    } catch {
+      document.getElementById('apViews').textContent = '0';
+      document.getElementById('apLikes').textContent = '0';
+      document.getElementById('apComments').textContent = '0';
+    }
   }
   document.getElementById('apCloseBtn').addEventListener('click', () => {
     document.getElementById('articlePreviewOverlay').style.display = 'none';
@@ -1393,12 +1436,26 @@
   const mpError     = document.getElementById('mpError');
   const MP_MAX_IMAGES = 5;
   let mpImages = []; // {url, uploading, preview}
+  let mpEditId = null;
 
   function mpOpen() {
+    mpEditId = null;
+    document.getElementById('mpSubtitle').textContent = 'Posting publicly · goes live immediately';
     mpText.value = '';
     mpImages = [];
     mpError.style.display = 'none';
     mpPostBtn.textContent = 'Post';
+    mpUpdateCharCount();
+    mpRenderImages();
+    mpOverlay.style.display = 'flex';
+  }
+  function mpOpenForEdit(s) {
+    mpEditId = s.id;
+    document.getElementById('mpSubtitle').textContent = 'Editing this post';
+    mpText.value = s.text || '';
+    mpImages = Array.isArray(s.images) ? s.images.map(url => ({ url, uploading: false })) : [];
+    mpError.style.display = 'none';
+    mpPostBtn.textContent = 'Save';
     mpUpdateCharCount();
     mpRenderImages();
     mpOverlay.style.display = 'flex';
@@ -1489,20 +1546,21 @@
     if (!text && !urls.length) { mpShowError('Write something or add a photo first'); return; }
     mpError.style.display = 'none';
     mpPostBtn.disabled = true;
-    mpPostBtn.textContent = 'Posting…';
+    mpPostBtn.textContent = mpEditId ? 'Saving…' : 'Posting…';
     try {
-      const res = await fetch('/api/admin/posts/create', {
+      const url = mpEditId ? `/api/admin/content/posts/${encodeURIComponent(mpEditId)}/update` : '/api/admin/posts/create';
+      const res = await fetch(url, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text, images: urls })
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'Post failed');
+      if (!res.ok) throw new Error(data.error || (mpEditId ? 'Save failed' : 'Post failed'));
       mpClose();
       loadContent();
     } catch (err) {
-      mpShowError(err.message || 'Post failed — try again');
+      mpShowError(err.message || (mpEditId ? 'Save failed — try again' : 'Post failed — try again'));
       mpPostBtn.disabled = false;
-      mpPostBtn.textContent = 'Post';
+      mpPostBtn.textContent = mpEditId ? 'Save' : 'Post';
     }
   });
 
@@ -1525,12 +1583,12 @@
   const maSubCatPills  = document.getElementById('maSubCatPills');
   const maPublishBtn   = document.getElementById('maPublishBtn');
   const maError        = document.getElementById('maError');
-  let maSelectedCat = '', maSelectedSubCat = '';
+  let maSelectedCat = '', maSelectedSubCat = '', maEditId = null;
 
-  function maRenderCatPills(){
+  function maRenderCatPills(preselectCat){
     if(!window.MSB_CATEGORIES) return;
     maCatPills.innerHTML = window.MSB_CATEGORIES.map(c =>
-      `<button type="button" class="msb-cat-pill" data-cat="${c.code}">${c.emoji} ${c.label}</button>`
+      `<button type="button" class="msb-cat-pill${c.code === preselectCat ? ' sel' : ''}" data-cat="${c.code}">${c.emoji} ${c.label}</button>`
     ).join('');
     maCatPills.querySelectorAll('.msb-cat-pill').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -1543,11 +1601,12 @@
     });
   }
 
-  function maRenderSubCatPills(catCode){
+  function maRenderSubCatPills(catCode, preselect){
     const catDef = window.MSB_CAT_BY_CODE && window.MSB_CAT_BY_CODE[catCode];
     if(!catDef || !catDef.sub || !catDef.sub.length){ maSubCatSection.style.display = 'none'; return; }
     maSubCatSection.style.display = '';
-    maSubCatPills.innerHTML = catDef.sub.map(s => `<button type="button" class="msb-cat-pill" data-subcat="${s}">${s}</button>`).join('');
+    maSubCatPills.innerHTML = catDef.sub.map(s => `<button type="button" class="msb-cat-pill${s === preselect ? ' sel' : ''}" data-subcat="${s}">${s}</button>`).join('');
+    if(preselect) maSelectedSubCat = preselect;
     maSubCatPills.querySelectorAll('.msb-cat-pill').forEach(btn => {
       btn.addEventListener('click', () => {
         const already = btn.classList.contains('sel');
@@ -1687,6 +1746,7 @@
   function maShowError(msg){ maError.textContent = msg; maError.style.display = 'block'; }
 
   function maReset(){
+    maEditId = null;
     maTitle.value = ''; maBrief.value = ''; maEditorBody.innerHTML = '';
     maSelectedCat = ''; maSelectedSubCat = '';
     maCatPills.querySelectorAll('.msb-cat-pill').forEach(p => p.classList.remove('sel'));
@@ -1697,8 +1757,26 @@
     maUpdateWordCount();
   }
 
-  function maOpen(){ maRenderCatPills(); maReset(); maOverlay.style.display = 'flex'; }
+  function maOpen(){ maRenderCatPills(); maReset(); document.getElementById('maHeaderTitle').textContent = 'Write Article — MindShift Books'; maOverlay.style.display = 'flex'; }
   function maClose(){ maOverlay.style.display = 'none'; }
+
+  function maOpenForEdit(s){
+    maEditId = s.id;
+    document.getElementById('maHeaderTitle').textContent = 'Edit Article';
+    maError.style.display = 'none';
+    maTitle.value = s.title || '';
+    maTitle.style.height = 'auto'; maTitle.style.height = maTitle.scrollHeight + 'px';
+    maBrief.value = s.brief || '';
+    maBrief.style.height = 'auto'; maBrief.style.height = maBrief.scrollHeight + 'px';
+    maEditorBody.innerHTML = s.body || '';
+    maPreviewCover(s.cover || '');
+    maSelectedCat = s.cat || ''; maSelectedSubCat = s.subCat || '';
+    maRenderCatPills(maSelectedCat);
+    if (maSelectedCat) maRenderSubCatPills(maSelectedCat, maSelectedSubCat);
+    maPublishBtn.disabled = false; maPublishBtn.textContent = 'Save changes';
+    maUpdateWordCount();
+    maOverlay.style.display = 'flex';
+  }
 
   document.getElementById('newMindshiftArticleBtn').addEventListener('click', maOpen);
   document.getElementById('maCloseBtn').addEventListener('click', maClose);
@@ -1718,20 +1796,21 @@
     if(maEditorBody.innerText.trim().length < 100){ maShowError('Article body is too short (min 100 chars)'); return; }
 
     maPublishBtn.disabled = true;
-    maPublishBtn.textContent = 'Publishing…';
+    maPublishBtn.textContent = maEditId ? 'Saving…' : 'Publishing…';
     try{
-      const res = await fetch('/api/admin/articles/create', {
+      const url = maEditId ? `/api/admin/content/articles/${encodeURIComponent(maEditId)}/update` : '/api/admin/articles/create';
+      const res = await fetch(url, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title, brief, body, cover, cat: maSelectedCat, subCat: maSelectedSubCat })
       });
       const data = await res.json().catch(() => ({}));
-      if(!res.ok) throw new Error(data.error || 'Publish failed');
+      if(!res.ok) throw new Error(data.error || (maEditId ? 'Save failed' : 'Publish failed'));
       maClose();
       loadContent();
     }catch(err){
-      maShowError(err.message || 'Publish failed — try again');
+      maShowError(err.message || (maEditId ? 'Save failed — try again' : 'Publish failed — try again'));
       maPublishBtn.disabled = false;
-      maPublishBtn.textContent = 'Publish';
+      maPublishBtn.textContent = maEditId ? 'Save changes' : 'Publish';
     }
   });
 
