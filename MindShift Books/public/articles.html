@@ -144,6 +144,14 @@ main{max-width:1100px;margin:0 auto}
 .pcard-single{margin-top:8px;display:flex;justify-content:center}
 .pcard-single img{max-width:100%;max-height:340px;width:auto;height:auto;object-fit:contain;
   border-radius:14px;display:block;cursor:pointer;background:#f1f5f9}
+.pcard-video{position:relative;margin-top:8px;border-radius:14px;overflow:hidden;cursor:pointer;
+  background:#0f0e17;max-height:420px;display:flex;align-items:center;justify-content:center}
+.pcard-video img{width:100%;max-height:420px;object-fit:cover;display:block}
+.pcard-video-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:56px;height:56px;
+  border-radius:50%;background:rgba(15,14,23,.55);display:flex;align-items:center;justify-content:center;color:#fff}
+.pcard-video-play svg{width:24px;height:24px;margin-left:3px}
+.pcard-video-dur{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.6);color:#fff;font-size:11px;
+  font-weight:700;padding:2px 8px;border-radius:99px}
 .pcard-comment{display:flex;align-items:center;gap:6px;background:none;border:none;cursor:pointer;padding:6px 9px;
   font-size:13.5px;font-weight:700;color:var(--mute);transition:color .18s;border-radius:9px;-webkit-tap-highlight-color:transparent}
 .pcard-comment:hover{color:var(--p);background:#eef2ff}
@@ -1099,6 +1107,9 @@ async function renderFollowingTab(fresh = false){
         type: 'post',
         text: x.text||'',
         images: Array.isArray(x.images) ? x.images.slice(0,5) : [],
+        videoUrl: x.videoUrl||'',
+        thumbnailUrl: x.thumbnailUrl||'',
+        duration: x.duration||0,
         publishedAt: x.publishedAt||x.createdAt||null,
         author: x.authorName||'MindShift Books User',
         avatar: x.authorPhoto||'logo.jpg',
@@ -1713,8 +1724,25 @@ function buildMediaGridHtml(images, postId){
     </div>`;
 }
 
+function fmtDuration(secs){
+  secs = Math.round(secs||0);
+  const m = Math.floor(secs/60), s = secs%60;
+  return `${m}:${String(s).padStart(2,'0')}`;
+}
+// Feed video tile — thumbnail + play affordance, tap opens post-read where
+// it actually plays. No autoplay/inline playback in the feed: the spec
+// lists autoplay/muted feed video under "Future Scaling — Later", so V1
+// keeps it simple and doesn't burn data on videos scrolling past unseen.
+function buildVideoTileHtml(p){
+  if(!p.videoUrl) return '';
+  return `<div class="pcard-video" onclick="event.stopPropagation();goPostRead('${p.id}')">
+    <img src="${p.thumbnailUrl||''}" alt="" loading="lazy" onerror="this.style.background='linear-gradient(135deg,#0f0e17,#4f46e5)'">
+    <div class="pcard-video-play"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg></div>
+    ${p.duration ? `<span class="pcard-video-dur">${fmtDuration(p.duration)}</span>` : ''}
+  </div>`;
+}
 function buildPostCardHtml(p){
-  const carousel = buildMediaGridHtml(p.images, p.id);
+  const carousel = p.videoUrl ? buildVideoTileHtml(p) : buildMediaGridHtml(p.images, p.id);
   return `<div class="acard pcard" data-post-id="${p.id}" onclick="goPostRead('${p.id}')">
     <div class="acard-body">
       <div class="acard-author" data-author-uid="${p.authorUid||''}" onclick="event.stopPropagation();goAuthor('${p.authorUid||''}',${!!p.isMindshift})">
@@ -2365,6 +2393,9 @@ async function loadPublishedPosts(){
         type: 'post',
         text: x.text||'',
         images: Array.isArray(x.images) ? x.images.slice(0,5) : [],
+        videoUrl: x.videoUrl||'',
+        thumbnailUrl: x.thumbnailUrl||'',
+        duration: x.duration||0,
         publishedAt: x.publishedAt||x.createdAt||null,
         author: x.authorName||'MindShift Books User',
         avatar: x.authorPhoto||'logo.jpg',

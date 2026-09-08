@@ -117,14 +117,35 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
     <div class="char-count" id="charCount">0 / 2000</div>
 
     <div class="img-grid" id="imgGrid" style="display:none"></div>
-    <button type="button" class="img-hint" id="imgHint" onclick="openImagePicker()">
-      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-      Add up to 5 photos
-    </button>
+    <div class="video-tile" id="videoTile" style="display:none"></div>
+    <div class="composer-media-hints" id="composerMediaHints">
+      <button type="button" class="img-hint" id="imgHint" onclick="openImagePicker()">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        Add up to 5 photos
+      </button>
+      <button type="button" class="img-hint" id="videoHint" onclick="openVideoPicker()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+        Add a video
+      </button>
+    </div>
 
     <input type="file" id="fileInput" accept="image/*" multiple style="display:none">
+    <input type="file" id="videoInput" accept="video/mp4,video/quicktime" style="display:none">
   </div>
 </main>
+
+<style>
+  .composer-media-hints{display:flex;gap:10px}
+  .composer-media-hints .img-hint{flex:1}
+  .video-tile{position:relative;border-radius:14px;overflow:hidden;background:#0f0e17;margin-top:10px}
+  .video-tile img,.video-tile video{width:100%;display:block;max-height:420px;object-fit:cover}
+  .video-tile .rm-btn{position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:50%;background:rgba(15,14,23,.65);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .video-tile .rm-btn svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2}
+  .video-tile .vt-progress-wrap{position:absolute;left:0;right:0;bottom:0;background:rgba(15,14,23,.55);padding:10px 12px;display:flex;align-items:center;gap:10px}
+  .video-tile .vt-progress-bar{flex:1;height:5px;border-radius:99px;background:rgba(255,255,255,.25);overflow:hidden}
+  .video-tile .vt-progress-fill{height:100%;background:linear-gradient(135deg,#4f46e5,#06b6d4);width:0%;transition:width .15s}
+  .video-tile .vt-progress-txt{color:#fff;font-size:12px;font-weight:700;min-width:34px;text-align:right}
+</style>
 
 <!-- SUCCESS OVERLAY -->
 <div class="success-overlay" id="successOverlay">
@@ -167,6 +188,14 @@ let userProfile = {};
 let images = [];
 const MAX_IMAGES = 5;
 
+/* ── VIDEO ──
+   Per the video architecture spec: the file goes straight from this device
+   to Cloudinary. Render only ever sees a small signing request — never the
+   video bytes — so this never touches /api/upload-image's base64 pattern. */
+let video = null; // {url, thumbnailUrl, duration, publicId, uploading, progress} | null
+const VIDEO_MAX_BYTES = 200 * 1024 * 1024;   // 200MB — spec section 9
+const VIDEO_MAX_DURATION = 5 * 60;           // 5 minutes — spec section 9
+
 /* ── EDIT MODE ── /create-post?edit=<postId> loads the existing post instead
    of a blank composer, and submitPost() below updates that doc in place. */
 const editId = new URLSearchParams(location.search).get('edit');
@@ -195,8 +224,12 @@ async function loadPostForEdit(id){
     document.getElementById('postBtn').textContent = 'Save';
     document.getElementById('postText').value = p.text||'';
     images = (p.images||[]).map(url=>({ url, uploading:false }));
+    if(p.videoUrl){
+      video = { url: p.videoUrl, thumbnailUrl: p.thumbnailUrl||'', duration: p.duration||0, publicId: p.cloudinaryPublicId||'', uploading:false };
+    }
     onTextInput();
     renderImages();
+    renderVideoTile();
   }catch(e){
     console.error('loadPostForEdit failed:', e);
     showToast("Couldn't load post — try again");
@@ -214,8 +247,8 @@ window.onTextInput = function(){
 
 function updatePostBtn(){
   const val = document.getElementById('postText').value.trim();
-  const stillUploading = images.some(i => i.uploading);
-  document.getElementById('postBtn').disabled = (!val && !images.length) || stillUploading;
+  const stillUploading = images.some(i => i.uploading) || (video && video.uploading);
+  document.getElementById('postBtn').disabled = (!val && !images.length && !video) || stillUploading;
 }
 
 /* ── IMAGES ── */
@@ -257,6 +290,7 @@ document.getElementById('fileInput').addEventListener('change', async (e) => {
 });
 
 window.openImagePicker = function(){
+  if(video){ showToast('Remove the video first — one video or up to 5 photos, not both'); return; }
   if(images.length >= MAX_IMAGES){ showToast(`Max ${MAX_IMAGES} photos per post`); return; }
   document.getElementById('fileInput').click();
 };
@@ -269,9 +303,11 @@ window.removeImage = function(idx){
 function renderImages(){
   const grid = document.getElementById('imgGrid');
   const hint = document.getElementById('imgHint');
-  if(!images.length){ grid.style.display='none'; hint.style.display='block'; updatePostBtn(); return; }
+  const videoHint = document.getElementById('videoHint');
+  if(!images.length){ grid.style.display='none'; grid.innerHTML=''; videoHint.style.display = video ? 'none' : ''; hint.style.display = video ? 'none' : 'flex'; updatePostBtn(); return; }
   grid.style.display = 'grid';
   hint.style.display = 'none';
+  videoHint.style.display = 'none'; // one video OR photos, not both
   let html = images.map((img,i)=>`
     <div class="img-tile${img.uploading?' uploading':''}">
       <img src="${img.preview||img.url||''}" alt="">
@@ -292,23 +328,149 @@ function renderImages(){
 // Show the "Add" tile from the start so a bare textarea isn't the only entry point.
 renderImages();
 
+/* ── VIDEO ── */
+window.openVideoPicker = function(){
+  if(images.length){ showToast('Remove your photos first — one video or up to 5 photos, not both'); return; }
+  document.getElementById('videoInput').click();
+};
+
+window.removeVideo = function(){
+  if(video && video.xhr) video.xhr.abort();
+  video = null;
+  renderVideoTile();
+};
+
+function renderVideoTile(){
+  const tile = document.getElementById('videoTile');
+  const imgHint = document.getElementById('imgHint');
+  const videoHint = document.getElementById('videoHint');
+  if(!video){ tile.style.display='none'; tile.innerHTML=''; imgHint.style.display = images.length?'none':'flex'; videoHint.style.display='flex'; updatePostBtn(); return; }
+  imgHint.style.display='none';
+  videoHint.style.display='none';
+  tile.style.display='block';
+  const pct = Math.round(video.progress||0);
+  tile.innerHTML = `
+    ${video.uploading
+      ? `<img src="${video.preview||''}" alt="">`
+      : `<video src="${video.url}" poster="${video.thumbnailUrl||''}" muted playsinline controls></video>`}
+    <button type="button" class="rm-btn" onclick="removeVideo()">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    ${video.uploading ? `
+    <div class="vt-progress-wrap">
+      <div class="vt-progress-bar"><div class="vt-progress-fill" style="width:${pct}%"></div></div>
+      <div class="vt-progress-txt">${pct}%</div>
+    </div>` : ''}
+  `;
+  updatePostBtn();
+}
+
+document.getElementById('videoInput').addEventListener('change', async (e) => {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = '';
+  if(!file) return;
+  if(!/^video\/(mp4|quicktime)$/.test(file.type)){ showToast('Please choose an MP4 (or MOV) video'); return; }
+  if(file.size > VIDEO_MAX_BYTES){ showToast('Video must be under 200MB'); return; }
+
+  // Read duration client-side before uploading anything — cheaper to reject
+  // a too-long clip locally than after spending the upload.
+  let duration = 0;
+  try{
+    duration = await new Promise((resolve, reject) => {
+      const v = document.createElement('video');
+      v.preload = 'metadata';
+      v.onloadedmetadata = () => resolve(v.duration);
+      v.onerror = () => reject(new Error('Could not read video'));
+      v.src = URL.createObjectURL(file);
+    });
+  }catch{ showToast('Could not read that video file'); return; }
+  if(duration > VIDEO_MAX_DURATION){ showToast('Video must be 5 minutes or under'); return; }
+
+  video = { url:'', thumbnailUrl:'', duration: Math.round(duration), publicId:'', uploading:true, progress:0, preview: URL.createObjectURL(file) };
+  renderVideoTile();
+
+  try{
+    const token = await currentUser.getIdToken();
+    const sigRes = await fetch('/api/video/upload-signature', {
+      method:'POST',
+      headers:{'Authorization':'Bearer '+token}
+    });
+    const sig = await sigRes.json();
+    if(!sigRes.ok || !sig.ok) throw new Error(sig.error || 'Could not start video upload');
+
+    const form = new FormData();
+    form.append('file', file);
+    form.append('api_key', sig.apiKey);
+    form.append('timestamp', sig.timestamp);
+    form.append('folder', sig.folder);
+    form.append('eager', sig.eager);
+    form.append('signature', sig.signature);
+
+    const result = await new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      video.xhr = xhr;
+      xhr.upload.onprogress = (evt) => {
+        if(!evt.lengthComputable || !video) return;
+        video.progress = (evt.loaded / evt.total) * 100;
+        renderVideoTile();
+      };
+      xhr.onload = () => {
+        if(xhr.status >= 200 && xhr.status < 300) resolve(JSON.parse(xhr.responseText));
+        else reject(new Error('Cloudinary upload failed'));
+      };
+      xhr.onerror = () => reject(new Error('Network error during upload'));
+      xhr.onabort = () => reject(new Error('aborted'));
+      xhr.open('POST', `https://api.cloudinary.com/v1_1/${sig.cloudName}/video/upload`);
+      xhr.send(form);
+    });
+
+    if(!video) return; // removed mid-upload
+    video.url = result.secure_url;
+    video.publicId = result.public_id;
+    video.duration = Math.round(result.duration || duration);
+    // eager[0] is the f_jpg,so_0 poster frame requested in the signature.
+    video.thumbnailUrl = (result.eager && result.eager[0] && result.eager[0].secure_url)
+      || result.secure_url.replace(/\.(mp4|mov)$/i, '.jpg');
+    video.uploading = false;
+    delete video.xhr;
+    renderVideoTile();
+  }catch(err){
+    if(err.message !== 'aborted'){
+      showToast('Video upload failed — try again');
+      video = null;
+      renderVideoTile();
+    }
+  }
+});
+
 /* ── SUBMIT ── */
 window.submitPost = async function(){
   if(!currentUser) return;
   const text = document.getElementById('postText').value.trim();
   const urls = images.filter(i=>i.url).map(i=>i.url);
-  if(!text && !urls.length){ showToast('Write something or add a photo first'); return; }
+  const hasVideo = !!(video && video.url && !video.uploading);
+  if(!text && !urls.length && !hasVideo){ showToast('Write something, add a photo, or add a video first'); return; }
 
   const btn = document.getElementById('postBtn');
   btn.disabled = true;
   btn.textContent = editId ? 'Saving…' : 'Posting…';
+
+  // videoFields per the Firebase/Firestore data model in the video spec —
+  // Firebase stores the reference (URL/duration/publicId), never the binary.
+  const videoFields = hasVideo ? {
+    type: 'video',
+    videoUrl: video.url,
+    thumbnailUrl: video.thumbnailUrl,
+    duration: video.duration,
+    cloudinaryPublicId: video.publicId
+  } : { type: 'text', videoUrl: '', thumbnailUrl: '', duration: 0, cloudinaryPublicId: '' };
 
   try{
     if(editId){
       // Editing an existing post — update in place, keep id/author/dates and
       // any commentsOff/hideLikeCount settings untouched.
       await setDoc(doc(db,'posts',editId),{
-        text, images: urls,
+        text, images: urls, ...videoFields,
         updatedAt: serverTimestamp()
       }, { merge: true });
       showToast('Post updated');
@@ -321,7 +483,7 @@ window.submitPost = async function(){
       authorName: userProfile.name || currentUser.displayName || (currentUser.email||'').split('@')[0] || 'MindShift Books User',
       authorPhoto: userProfile.photo || currentUser.photoURL || '',
       authorUsername: userProfile.username || '',
-      text, images: urls,
+      text, images: urls, ...videoFields,
       status: 'published',
       likeCount: 0, commentCount: 0, saveCount: 0,
       createdAt: serverTimestamp(),
