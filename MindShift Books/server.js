@@ -4248,6 +4248,7 @@ app.get('/api/admin/content', async (req, res) => {
           text: s.text || '',
           images: Array.isArray(s.images) ? s.images : [],
           cat: s.cat || '',
+          subCat: s.subCat || '',
           cover: s.cover || '',
           status: s.status || '',
           createdAt: s.createdAt ? (s.createdAt.toDate ? s.createdAt.toDate().toISOString() : s.createdAt) : null
@@ -4429,6 +4430,95 @@ app.post('/api/admin/articles/create', async (req, res) => {
   } catch (err) {
     console.error('/api/admin/articles/create error', err);
     return res.status(500).json({ error: 'Could not publish article' });
+  }
+});
+
+// GET /api/admin/content/:type/:id/insights — views/likes/comments for any
+// live post or article, read straight off Firestore with firebase-admin so
+// it works regardless of who authored the content (the client-side
+// /content-insights page only lets an author view their own stats; this is
+// the admin equivalent with no ownership check).
+app.get('/api/admin/content/:type/:id/insights', async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const { type, id } = req.params;
+    if (type !== 'articles' && type !== 'posts') {
+      return res.status(400).json({ error: 'type must be articles or posts' });
+    }
+    const isPost = type === 'posts';
+    const metaCol = isPost ? 'postMeta' : 'articleMeta';
+    const viewsCol = isPost ? 'postViews' : 'articleViews';
+
+    const [metaSnap, likeSnap, viewsSnap] = await Promise.all([
+      db.collection(metaCol).doc(id).get().catch(() => null),
+      db.collection('articleLikes').doc(id).get().catch(() => null),
+      db.collection(viewsCol).doc(id).get().catch(() => null)
+    ]);
+
+    const views = metaSnap && metaSnap.exists ? (metaSnap.data().viewCount || 0) : 0;
+    const comments = metaSnap && metaSnap.exists ? (metaSnap.data().commentCount || 0) : 0;
+    const likes = likeSnap && likeSnap.exists ? (likeSnap.data().count || 0) : 0;
+    const days = viewsSnap && viewsSnap.exists ? (viewsSnap.data().days || {}) : {};
+
+    return res.json({ views, likes, comments, days });
+  } catch (err) {
+    console.error('/api/admin/content/:type/:id/insights error', err);
+    return res.status(500).json({ error: 'Could not load insights' });
+  }
+});
+
+// POST /api/admin/content/:type/:id/update — edits an existing live post or
+// article from the admin dashboard. Author fields (authorUid/authorName/
+// authorPhoto/authorUsername) are left untouched — same behavior as a
+// regular user editing their own post/article via /create-post or /write —
+// only the content itself changes.
+app.post('/api/admin/content/:type/:id/update', async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const { type, id } = req.params;
+    if (type !== 'articles' && type !== 'posts') {
+      return res.status(400).json({ error: 'type must be articles or posts' });
+    }
+    const ref = db.collection(type).doc(id);
+    const snap = await ref.get();
+    if (!snap.exists) return res.status(404).json({ error: 'Not found' });
+
+    const now = admin.firestore.Timestamp.now();
+    if (type === 'posts') {
+      const text = String((req.body && req.body.text) || '').trim();
+      const images = Array.isArray(req.body && req.body.images)
+        ? req.body.images.filter(u => typeof u === 'string' && u).slice(0, 5)
+        : [];
+      if (!text && !images.length) {
+        return res.status(400).json({ error: 'Write something or add a photo first.' });
+      }
+      if (text.length > 2000) {
+        return res.status(400).json({ error: 'Post text is too long (max 2000 characters).' });
+      }
+      await ref.set({ text, images, updatedAt: now }, { merge: true });
+    } else {
+      const title = String((req.body && req.body.title) || '').trim();
+      const brief = String((req.body && req.body.brief) || '').trim();
+      const body = String((req.body && req.body.body) || '').trim();
+      const cover = String((req.body && req.body.cover) || '').trim();
+      const cat = String((req.body && req.body.cat) || '').trim();
+      const subCat = String((req.body && req.body.subCat) || '').trim();
+
+      if (!title) return res.status(400).json({ error: 'Please add a title' });
+      if (!cat) return res.status(400).json({ error: 'Please select a category' });
+      if (!brief) return res.status(400).json({ error: 'Please add a brief summary' });
+      const plainLen = body.replace(/<[^>]*>/g, '').trim().length;
+      if (plainLen < 100) return res.status(400).json({ error: 'Article body is too short (min 100 chars)' });
+
+      const words = body.replace(/<[^>]*>/g, ' ').trim().split(/\s+/).filter(Boolean).length;
+      const readTime = `${Math.max(1, Math.ceil(words / 200))} min read`;
+
+      await ref.set({ title, brief, body, cat, subCat, cover, readTime, updatedAt: now }, { merge: true });
+    }
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('/api/admin/content/:type/:id/update error', err);
+    return res.status(500).json({ error: 'Could not save changes' });
   }
 });
 
