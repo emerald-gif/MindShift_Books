@@ -341,6 +341,50 @@ async function uploadImageToCloudinary(dataUrl, folder = 'affiliate-broadcasts')
 // calls it by this name, no need to touch working code just to rename it.
 const uploadBannerImageToCloudinary = uploadImageToCloudinary;
 
+// ---------------- Video posts: direct-to-Cloudinary upload ----------------
+// Per MindShift_Books_Video_Architecture_Specification: video bytes must
+// never pass through Render. This endpoint hands the already-authenticated
+// browser a short-lived signed-upload payload (timestamp + signature) so it
+// can POST the video file straight to Cloudinary's own upload API. Render
+// only ever sees this tiny signing request — never the video itself.
+const CLOUDINARY_VIDEO_FOLDER = 'mindshift-posts-video';
+function signCloudinaryParams(params) {
+  // Cloudinary signature = sha1 of every param sorted by key, `key=value`
+  // joined by `&`, with the API secret appended — same recipe as the image
+  // uploader above, just generalized to an arbitrary param set since video
+  // uploads need eager/resource_type params the image path doesn't use.
+  const sorted = Object.keys(params).sort();
+  const payload = sorted.map(k => `${k}=${params[k]}`).join('&') + CLOUDINARY_API_SECRET;
+  return crypto.createHash('sha1').update(payload).digest('hex');
+}
+
+app.post('/api/video/upload-signature', requireUser, async (req, res) => {
+  try {
+    if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_API_KEY || !CLOUDINARY_API_SECRET) {
+      return res.status(500).json({ error: 'Video hosting is not configured (missing Cloudinary credentials).' });
+    }
+    const timestamp = Math.round(Date.now() / 1000);
+    // eager: generate a jpg poster frame at upload time so the feed has a
+    // thumbnail the moment processing finishes, instead of deriving one
+    // client-side later.
+    const eager = 'f_jpg,so_0';
+    const paramsToSign = { eager, folder: CLOUDINARY_VIDEO_FOLDER, timestamp };
+    const signature = signCloudinaryParams(paramsToSign);
+    return res.json({
+      ok: true,
+      cloudName: CLOUDINARY_CLOUD_NAME,
+      apiKey: CLOUDINARY_API_KEY,
+      timestamp,
+      folder: CLOUDINARY_VIDEO_FOLDER,
+      eager,
+      signature
+    });
+  } catch (err) {
+    console.error('/api/video/upload-signature error', err);
+    return res.status(500).json({ error: 'Could not prepare video upload' });
+  }
+});
+
 // Fires once, right after a brand-new account doc is created (see
 // /api/account/init). Fire-and-forget — a failed welcome email should never
 // block or fail account creation, so this always resolves quietly.
