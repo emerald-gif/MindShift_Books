@@ -4,6 +4,9 @@
    Replaces the old direct "/write" link: tapping "Create" now opens a
    small bottom sheet letting the user choose Post or Article, instead of
    jumping straight into the article editor.
+   Also injects a floating "+" button (bottom-right, like Substack's) that
+   opens the exact same sheet — just a faster-to-reach shortcut to the
+   sidebar's existing "Create" item, not a second/different flow.
    Plain script (not a module) so it works on every page unchanged. Builds
    its own markup + styles on load so no per-page HTML edits are needed
    beyond swapping the sidebar item / buttons to call openCreatePicker().
@@ -14,6 +17,12 @@
 
     var style = document.createElement('style');
     style.textContent = `
+#cpk-fab{position:fixed;right:18px;bottom:max(env(safe-area-inset-bottom,0px),18px);width:56px;height:56px;border-radius:50%;
+  background:linear-gradient(135deg,#4f46e5,#06b6d4);border:none;cursor:pointer;z-index:900;
+  display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(79,70,229,.4);
+  transition:transform .15s}
+#cpk-fab:active{transform:scale(.92)}
+#cpk-fab svg{width:26px;height:26px;stroke:#fff;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
 #cpk-overlay{position:fixed;inset:0;background:rgba(15,10,30,.55);z-index:9998;opacity:0;pointer-events:none;transition:opacity .25s;backdrop-filter:blur(3px)}
 #cpk-overlay.on{opacity:1;pointer-events:all}
 #cpk-sheet{position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#fff;border-radius:22px 22px 0 0;
@@ -65,6 +74,14 @@
       '</div>' +
       '<button class="cpk-cancel" onclick="window.closeCreatePicker()">Cancel</button>';
     document.body.appendChild(sheet);
+
+    var fab = document.createElement('button');
+    fab.id = 'cpk-fab';
+    fab.type = 'button';
+    fab.setAttribute('aria-label', 'Create');
+    fab.innerHTML = '<svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+    fab.onclick = window.openCreatePicker;
+    document.body.appendChild(fab);
   }
 
   window.openCreatePicker = function(){
@@ -83,4 +100,10 @@
     if(overlay) overlay.classList.remove('on');
     document.body.style.overflow = '';
   };
+
+  // Inject immediately (not just on first openCreatePicker() call) so the
+  // floating "+" button is visible on page load, not only after someone
+  // taps "Create" in the sidebar once.
+  if (document.body) inject();
+  else document.addEventListener('DOMContentLoaded', inject);
 })();

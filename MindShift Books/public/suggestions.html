@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Suggestions · MindShift Books</title>
+<meta name="description" content="Real people to follow on MindShift Books."/>
+<link rel="icon" href="/MINDSHIFT.jpg">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --p:#4f46e5;--p2:#06b6d4;--g:linear-gradient(90deg,#4f46e5,#06b6d4);
+  --txt:#0f172a;--sub:#6b7280;--mute:#9ca3af;
+  --bg:#f8fafc;--card:#fff;--border:#e5e7eb;--border2:#e2e8f0;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;padding-bottom:40px}
+
+.hdr{position:sticky;top:0;z-index:100;background:rgba(248,247,255,.92);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);padding:0 16px;height:56px;
+  display:flex;align-items:center;gap:12px}
+.btn-back{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--border);
+  background:var(--card);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt);flex-shrink:0}
+.btn-back svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.hdr-title{font-size:17px;font-weight:900;color:var(--txt)}
+
+.cat-scroll{display:flex;gap:8px;overflow-x:auto;padding:12px 16px;scrollbar-width:none;border-bottom:1px solid var(--border)}
+.cat-scroll::-webkit-scrollbar{display:none}
+.cat-pill{flex-shrink:0;padding:7px 14px;border-radius:99px;border:1.5px solid var(--border);background:var(--card);
+  font-size:12.5px;font-weight:700;color:var(--sub);cursor:pointer;font-family:inherit;white-space:nowrap}
+.cat-pill.sel{background:var(--g);border-color:transparent;color:#fff}
+
+.list{padding:4px 16px}
+.sg-row{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--border2)}
+.sg-clickable{display:flex;align-items:center;gap:12px;flex:1;min-width:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.sg-av{width:46px;height:46px;border-radius:50%;background:var(--g);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;
+  flex-shrink:0;overflow:hidden}
+.sg-av img{width:100%;height:100%;object-fit:cover;display:block}
+.sg-info{flex:1;min-width:0}
+.sg-name{font-size:14.5px;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sg-handle{font-size:12px;color:var(--mute);font-weight:600;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sg-follow{padding:8px 16px;background:var(--g);color:#fff;border:none;border-radius:99px;
+  font-size:12.5px;font-weight:700;cursor:pointer;transition:all .18s;font-family:inherit;flex-shrink:0}
+.sg-follow.following-btn{background:var(--card);color:var(--txt);border:1.5px solid var(--border)}
+.sg-dismiss{width:30px;height:30px;border-radius:50%;border:none;background:none;
+  color:var(--mute);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sg-dismiss:hover{background:#f1f5f9;color:var(--txt)}
+
+.load-more{display:block;width:calc(100% - 32px);margin:18px 16px;padding:13px;border:1.5px solid var(--border);
+  border-radius:14px;background:var(--card);color:var(--p);font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit}
+.load-more:disabled{opacity:.55;cursor:default}
+
+.skel{background:linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%);
+  background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:8px}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.skel-row{display:flex;align-items:center;gap:12px;padding:14px 0}
+.skel-av{width:46px;height:46px;border-radius:50%;flex-shrink:0}
+.skel-lines{flex:1}
+.skel-line{height:12px;border-radius:6px;margin-bottom:8px}
+
+.empty-state{text-align:center;padding:60px 24px}
+.empty-state svg{width:42px;height:42px;color:#d1d5db;margin:0 auto 12px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.empty-state p{font-size:13.5px;color:var(--mute);line-height:1.6}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <button class="btn-back" onclick="history.length>1?history.back():location.href='/'" aria-label="Back">
+    <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+  </button>
+  <div class="hdr-title">Suggestions</div>
+</header>
+
+<div class="cat-scroll" id="catScroll"></div>
+<div class="list" id="list">
+  <div class="skel-row"><div class="skel skel-av"></div><div class="skel-lines"><div class="skel skel-line" style="width:60%"></div><div class="skel skel-line" style="width:40%;margin-bottom:0"></div></div></div>
+  <div class="skel-row"><div class="skel skel-av"></div><div class="skel-lines"><div class="skel skel-line" style="width:55%"></div><div class="skel skel-line" style="width:35%;margin-bottom:0"></div></div></div>
+  <div class="skel-row"><div class="skel skel-av"></div><div class="skel-lines"><div class="skel skel-line" style="width:65%"></div><div class="skel skel-line" style="width:38%;margin-bottom:0"></div></div></div>
+  <div class="skel-row"><div class="skel skel-av"></div><div class="skel-lines"><div class="skel skel-line" style="width:50%"></div><div class="skel skel-line" style="width:42%;margin-bottom:0"></div></div></div>
+</div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
+import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
+import {
+  getFirestore, collection, query, where, limit, startAfter,
+  getDocs, doc, setDoc, deleteDoc, updateDoc, increment, serverTimestamp
+} from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
+
+const fbApp = initializeApp({
+  apiKey:"AIzaSyDTn70s1_uIiSOR6lPLY_nKh8Ff1FViFCs",
+  authDomain:"mindshiftbooks-c4451.firebaseapp.com",
+  projectId:"mindshiftbooks-c4451",
+  storageBucket:"mindshiftbooks-c4451.firebasestorage.app",
+  messagingSenderId:"388697987853",
+  appId: "1:388697987853:web:f023df9412c22285012e44",
+  measurementId: "G-CHPJDQ4W08"
+});
+const auth = getAuth(fbApp);
+const db   = getFirestore(fbApp, 'default');
+
+const PAGE_SIZE = 20;
+let currentUser = null;
+let followingUids = new Set();   // who the viewer already follows — excluded from results
+let dismissedUids = new Set();
+let activeCat = '';               // '' = All
+let lastDoc = null;
+let exhausted = false;
+let loadingMore = false;
+
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── Category filter chips (reuses the site's single source of truth) ──
+function renderCatChips(){
+  const scroll = document.getElementById('catScroll');
+  const cats = window.MSB_CATEGORIES || [];
+  scroll.innerHTML = [`<button class="cat-pill sel" data-cat="">All</button>`]
+    .concat(cats.map(c => `<button class="cat-pill" data-cat="${c.code}">${c.emoji} ${c.label}</button>`))
+    .join('');
+  scroll.querySelectorAll('.cat-pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if(btn.classList.contains('sel')) return;
+      scroll.querySelectorAll('.cat-pill').forEach(p=>p.classList.remove('sel'));
+      btn.classList.add('sel');
+      activeCat = btn.dataset.cat;
+      resetAndLoad();
+    });
+  });
+}
+
+async function loadFollowing(uid){
+  followingUids = new Set();
+  try{
+    const snap = await getDocs(query(collection(db,'follows'), where('followerId','==',uid)));
+    snap.docs.forEach(d => followingUids.add(d.data().followingId));
+  }catch(e){ /* non-fatal — worst case a followed user briefly shows up */ }
+}
+
+function resetAndLoad(){
+  lastDoc = null; exhausted = false;
+  document.getElementById('list').innerHTML = '';
+  loadMore();
+}
+
+async function loadMore(){
+  if(loadingMore || exhausted) return;
+  loadingMore = true;
+  const list = document.getElementById('list');
+  const btn = document.getElementById('loadMoreBtn');
+  if(btn){ btn.disabled = true; btn.textContent = 'Loading…'; }
+
+  try{
+    let q = activeCat
+      ? query(collection(db,'users'), where('categories','array-contains',activeCat), limit(PAGE_SIZE))
+      : query(collection(db,'users'), limit(PAGE_SIZE));
+    if(lastDoc) q = activeCat
+      ? query(collection(db,'users'), where('categories','array-contains',activeCat), startAfter(lastDoc), limit(PAGE_SIZE))
+      : query(collection(db,'users'), startAfter(lastDoc), limit(PAGE_SIZE));
+
+    const snap = await getDocs(q);
+    if(snap.docs.length < PAGE_SIZE) exhausted = true;
+    lastDoc = snap.docs[snap.docs.length - 1] || lastDoc;
+
+    const users = snap.docs
+      .map(d => ({ uid:d.id, ...d.data() }))
+      .filter(u => u.uid !== currentUser?.uid && !followingUids.has(u.uid) && !dismissedUids.has(u.uid));
+
+    if(btn) btn.remove();
+
+    if(!users.length && !list.children.length && exhausted){
+      list.innerHTML = `<div class="empty-state">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+        <p>No suggestions here yet — check back soon!</p>
+      </div>`;
+    } else {
+      users.forEach(u => list.appendChild(buildRow(u)));
+    }
+
+    if(!exhausted){
+      const more = document.createElement('button');
+      more.className = 'load-more';
+      more.id = 'loadMoreBtn';
+      more.textContent = 'Load more';
+      more.onclick = loadMore;
+      list.after(more);
+    }
+  }catch(e){
+    console.error('suggestions load error:', e);
+    if(!list.children.length){
+      list.innerHTML = `<div class="empty-state"><p>Couldn't load suggestions — check your connection and try again.</p></div>`;
+    }
+  }
+  loadingMore = false;
+}
+
+function buildRow(u){
+  const row = document.createElement('div');
+  row.className = 'sg-row';
+  row.dataset.cardUid = u.uid;
+  const ini = (u.name || u.displayName || '?')[0].toUpperCase();
+  const ph = u.photo || u.photoURL || '';
+  const sub = u.username ? `@${esc(u.username)}` : esc(u.category || u.jobTitle || 'MindShift Books member');
+  row.innerHTML = `
+    <div class="sg-clickable">
+      <div class="sg-av">${ph ? `<img src="${ph}" alt="" onerror="this.style.display='none'">` : ini}</div>
+      <div class="sg-info">
+        <div class="sg-name">${esc(u.name || u.displayName || 'MindShift Books User')}</div>
+        <div class="sg-handle">${sub}</div>
+      </div>
+    </div>
+    <button class="sg-follow" data-follow-uid="${u.uid}">Follow</button>
+    <button class="sg-dismiss" title="Remove">✕</button>
+  `;
+  row.querySelector('.sg-clickable').addEventListener('click', () => goAuthor(u.uid));
+  row.querySelector('.sg-follow').addEventListener('click', (e) => { e.stopPropagation(); toggleFollow(u.uid, u.name || u.displayName || 'User'); });
+  row.querySelector('.sg-dismiss').addEventListener('click', (e) => { e.stopPropagation(); dismiss(u.uid); });
+  return row;
+}
+
+function goAuthor(uid){
+  if(uid === 'official'){ location.href = '/mindshift-profile'; return; }
+  location.href = `/profile?uid=${uid}`;
+}
+
+function dismiss(uid){
+  dismissedUids.add(uid);
+  const row = document.querySelector(`[data-card-uid="${uid}"]`);
+  if(row){ row.style.transition='all .2s'; row.style.opacity='0'; setTimeout(()=>row.remove(), 200); }
+}
+
+async function toggleFollow(uid, name){
+  if(!currentUser){ location.href = '/login'; return; }
+  const btn = document.querySelector(`[data-follow-uid="${uid}"]`);
+  const wasFollowing = btn && btn.classList.contains('following-btn');
+  if(btn){ btn.textContent = wasFollowing ? 'Follow' : 'Following'; btn.classList.toggle('following-btn', !wasFollowing); }
+  const followId = `${currentUser.uid}_${uid}`;
+  try{
+    if(wasFollowing){
+      await deleteDoc(doc(db,'follows',followId));
+      updateDoc(doc(db,'users',uid), { followerCount: increment(-1) }).catch(()=>{});
+      updateDoc(doc(db,'users',currentUser.uid), { followingCount: increment(-1) }).catch(()=>{});
+      followingUids.delete(uid);
+    }else{
+      await setDoc(doc(db,'follows',followId), { followerId: currentUser.uid, followingId: uid, createdAt: serverTimestamp() });
+      updateDoc(doc(db,'users',uid), { followerCount: increment(1) }).catch(()=>{});
+      updateDoc(doc(db,'users',currentUser.uid), { followingCount: increment(1) }).catch(()=>{});
+      followingUids.add(uid);
+    }
+  }catch(e){
+    if(btn){ btn.textContent = wasFollowing ? 'Following' : 'Follow'; btn.classList.toggle('following-btn', wasFollowing); }
+  }
+}
+
+onAuthStateChanged(auth, async (user) => {
+  currentUser = user;
+  if(user) await loadFollowing(user.uid);
+  renderCatChips();
+  resetAndLoad();
+});
+</script>
+<script src="/article-categories.js"></script>
+<script src="/create-picker.js"></script>
+</body>
+</html>
