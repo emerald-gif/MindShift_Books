@@ -7,6 +7,7 @@
 <title>Admin — MindShift Books</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="/article-categories.js"></script>
+<script src="/image-compress.js"></script>
 <style>
 
   :root {
@@ -1509,17 +1510,13 @@
     e.target.value = '';
     for (const file of files) {
       if (mpImages.length >= MP_MAX_IMAGES) break;
-      if (file.size > 5 * 1024 * 1024) { mpShowError('Each image must be under 5MB'); continue; }
       const idx = mpImages.length;
       mpImages.push({ url: '', uploading: true });
       mpRenderImages();
       try {
-        const dataUrl = await new Promise((resolve, reject) => {
-          const r = new FileReader();
-          r.onload = () => resolve(r.result);
-          r.onerror = reject;
-          r.readAsDataURL(file);
-        });
+        // Resize/re-encode client-side (see image-compress.js) instead of a
+        // hard 5MB reject — also normalizes odd source MIME types.
+        const dataUrl = await window.MindshiftImage.compress(file);
         mpImages[idx].preview = dataUrl;
         mpRenderImages();
         const res = await fetch('/api/admin/posts/upload-image', {
@@ -1687,11 +1684,10 @@
     const file = e.target.files && e.target.files[0];
     e.target.value = '';
     if(!file) return;
-    if(file.size > 5 * 1024 * 1024){ maShowError('Cover image must be under 5MB'); return; }
     try{
-      const dataUrl = await new Promise((resolve, reject) => {
-        const r = new FileReader(); r.onload = () => resolve(r.result); r.onerror = reject; r.readAsDataURL(file);
-      });
+      // Resize/re-encode client-side (see image-compress.js) instead of a
+      // hard 5MB reject — also normalizes odd source MIME types.
+      const dataUrl = await window.MindshiftImage.compress(file);
       maPreviewCover(dataUrl); // instant local preview while it uploads
       const res = await fetch('/api/admin/articles/upload-image', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dataUrl })
@@ -1714,19 +1710,19 @@
     const savedRange = maBodyFileInput._savedRange;
     e.target.value = '';
     if(!file) return;
-    if(file.size > 5 * 1024 * 1024){ maShowError('Image must be under 5MB'); return; }
     maEditorBody.focus();
     const s = window.getSelection();
     s.removeAllRanges();
     if(savedRange) s.addRange(savedRange);
     const placeholder = document.createElement('span');
-    placeholder.textContent = 'Uploading image…';
+    placeholder.textContent = 'Compressing image…';
     placeholder.style.cssText = 'display:inline-block;background:var(--bg);color:var(--muted);border:1.5px dashed var(--border);border-radius:8px;padding:8px 12px;font-size:0.8rem;margin:6px 0;';
     if(savedRange){ savedRange.deleteContents(); savedRange.insertNode(placeholder); } else maEditorBody.appendChild(placeholder);
     try{
-      const dataUrl = await new Promise((resolve, reject) => {
-        const r = new FileReader(); r.onload = () => resolve(r.result); r.onerror = reject; r.readAsDataURL(file);
-      });
+      // Resize/re-encode client-side (see image-compress.js) instead of a
+      // hard 5MB reject — also normalizes odd source MIME types.
+      const dataUrl = await window.MindshiftImage.compress(file);
+      placeholder.textContent = 'Uploading image…';
       const res = await fetch('/api/admin/articles/upload-image', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dataUrl })
       });
@@ -2349,41 +2345,37 @@
       }
     }
 
-    function handleFile(file) {
+    async function handleFile(file) {
       if (!file) return;
-      if (!/^image\/(jpeg|png|webp|gif)$/.test(file.type)) {
-        setStatus('Only JPG, PNG, WEBP, or GIF images are allowed.', 'error');
-        return;
-      }
-      if (file.size > MAX_BYTES) {
-        setStatus(`That image is ${Math.round(file.size / 1024)}KB — keep it under ${Math.round(MAX_BYTES / 1024)}KB so Gmail doesn't clip the email. Try compressing it (tinypng.com works well) or use a smaller image.`, 'error');
-        return;
-      }
       urlInput.value = ''; // cleared until the upload actually succeeds
-      const reader = new FileReader();
-      reader.onload = async () => {
-        showPreview(reader.result); // local preview shows instantly, before the upload finishes
+      setStatus('Compressing…', '');
+      try {
+        // Compress/re-encode to a clean image/jpeg, targeting MAX_BYTES so
+        // Gmail doesn't clip the email — this replaces the old hard reject
+        // on file.type/file.size, which also had the side effect of
+        // bouncing perfectly valid images whose source MIME type wasn't
+        // one of the exact strings the old regex expected. A tighter
+        // maxDim than the general uploader since this is an email banner,
+        // not a full-size photo.
+        const dataUrl = await window.MindshiftImage.compress(file, { maxDim: 1200, targetBytes: MAX_BYTES });
+        showPreview(dataUrl); // local preview shows instantly, before the upload finishes
         setStatus('Uploading…', '');
-        try {
-          const res = await fetch('/api/admin/affiliate-broadcast/upload-image', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ imageDataUrl: reader.result })
-          });
-          const json = await res.json().catch(() => null);
-          if (!res.ok || !json || !json.url) {
-            setStatus((json && json.error) || 'Upload failed — try again.', 'error');
-            return;
-          }
-          urlInput.value = json.url; // hosted https:// link — this is what goes to Brevo
-          setStatus('Image uploaded ✓', 'success');
-          renderBroadcastPreview();
-        } catch (e) {
-          setStatus('Upload failed — check your connection and try again.', 'error');
+        const res = await fetch('/api/admin/affiliate-broadcast/upload-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageDataUrl: dataUrl })
+        });
+        const json = await res.json().catch(() => null);
+        if (!res.ok || !json || !json.url) {
+          setStatus((json && json.error) || 'Upload failed — try again.', 'error');
+          return;
         }
-      };
-      reader.onerror = () => setStatus('Could not read that file — try again.', 'error');
-      reader.readAsDataURL(file);
+        urlInput.value = json.url; // hosted https:// link — this is what goes to Brevo
+        setStatus('Image uploaded ✓', 'success');
+        renderBroadcastPreview();
+      } catch (e) {
+        setStatus(e.message || 'Could not process that image — try again.', 'error');
+      }
     }
 
     drop.addEventListener('click', () => fileInput.click());
