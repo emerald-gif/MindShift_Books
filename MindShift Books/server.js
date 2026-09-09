@@ -125,13 +125,31 @@ const apiLimiter = rateLimit({
 });
 app.use('/api/', apiLimiter);
 
-// 400kb (not 100kb) because the affiliate broadcast composer's image-upload
-// endpoint (/api/admin/affiliate-broadcast/upload-image) receives the banner
-// image as a base64 data URI in the JSON body before forwarding it to
-// Cloudinary. 180KB source image -> ~240KB base64 -> ~400kb gives headroom.
-// Once uploaded, only the resulting short Cloudinary https:// link travels
-// through the rest of the flow (preview, send), so every other endpoint —
-// including the actual broadcast-send ones — still just sends small JSON.
+// Image-upload endpoints all receive their image as a base64 data URI in
+// the JSON body, which needs far more than 400kb of headroom. body-parser
+// sets req._body once a request's body has been parsed, and every later
+// bodyParser.json() call in the chain for that same request just checks
+// that flag and no-ops — so a bigger limit declared only at the route
+// (further down this file, after the global one below) never actually
+// takes effect once the global parser has already run and either parsed
+// the body under its own limit or rejected it with a 413. To actually give
+// these routes more room, the larger-limit parser has to run *first*, for
+// exactly these paths, before the global 400kb one gets a chance to.
+const IMAGE_UPLOAD_PATHS = new Set([
+  '/api/upload-image',
+  '/api/admin/posts/upload-image',
+  '/api/admin/articles/upload-image',
+  '/api/admin/affiliate-broadcast/upload-image'
+]);
+app.use((req, res, next) => {
+  if (IMAGE_UPLOAD_PATHS.has(req.path)) {
+    return bodyParser.json({ limit: '8mb' })(req, res, next);
+  }
+  next();
+});
+
+// 400kb for everything else — plenty for ordinary JSON payloads once image
+// uploads (above) are carved out to their own higher limit.
 app.use(bodyParser.json({ limit: '400kb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '400kb' }));
 
@@ -295,6 +313,32 @@ const X_BEARER_TOKEN = process.env.X_BEARER_TOKEN || null;
 const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || null;
 const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY || null;
 const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET || null;
+
+// Validates that a data URI is really an image, without trusting the MIME
+// label in its `data:image/xyz;base64,` prefix. Client-side compression
+// (image-compress.js) now normalizes uploads from the app's own pickers to
+// a clean image/jpeg, but this stays as a backstop for any caller that
+// bypasses that — e.g. a direct API call — and for images whose source
+// carried an odd or missing MIME type despite being perfectly valid (the
+// original bug reports that led to the client-side fix). Sniffs the actual
+// magic bytes of the decoded payload instead of the label, so a
+// mislabeled-but-real PNG/JPEG/GIF/WEBP still passes, while genuinely
+// non-image data still gets rejected.
+function extractImageBuffer(dataUrl) {
+  const match = /^data:([^;]*);base64,(.+)$/s.exec(String(dataUrl || ''));
+  if (!match) return null;
+  let buf;
+  try { buf = Buffer.from(match[2], 'base64'); } catch (e) { return null; }
+  if (!buf.length) return null;
+
+  const isPng  = buf.length >= 8 && buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4E && buf[3] === 0x47;
+  const isJpeg = buf.length >= 3 && buf[0] === 0xFF && buf[1] === 0xD8 && buf[2] === 0xFF;
+  const isGif  = buf.length >= 6 && buf.toString('ascii', 0, 6).match(/^GIF8[79]a$/);
+  const isWebp = buf.length >= 12 && buf.toString('ascii', 0, 4) === 'RIFF' && buf.toString('ascii', 8, 12) === 'WEBP';
+  if (!isPng && !isJpeg && !isGif && !isWebp) return null;
+
+  return buf;
+}
 
 // Uploads a data:image/...;base64,... string to Cloudinary and returns its
 // hosted https:// URL. Cloudinary's upload API accepts a base64 data URI
@@ -4455,7 +4499,7 @@ app.delete('/api/admin/content/:type/:id', async (req, res) => {
 app.post('/api/admin/posts/upload-image', async (req, res) => {
   try {
     const dataUrl = String((req.body && req.body.dataUrl) || '');
-    if (!/^data:image\/(jpeg|png|webp|gif);base64,/.test(dataUrl)) {
+    if (!extractImageBuffer(dataUrl)) {
       return res.status(400).json({ error: 'Expected a JPG, PNG, WEBP, or GIF image.' });
     }
     const approxBytes = dataUrl.length * 0.75;
@@ -4518,7 +4562,7 @@ app.post('/api/admin/posts/create', async (req, res) => {
 app.post('/api/admin/articles/upload-image', async (req, res) => {
   try {
     const dataUrl = String((req.body && req.body.dataUrl) || '');
-    if (!/^data:image\/(jpeg|png|webp|gif);base64,/.test(dataUrl)) {
+    if (!extractImageBuffer(dataUrl)) {
       return res.status(400).json({ error: 'Expected a JPG, PNG, WEBP, or GIF image.' });
     }
     const approxBytes = dataUrl.length * 0.75;
@@ -4661,18 +4705,15 @@ app.post('/api/admin/payouts/:id/mark-paid', async (req, res) => {
 // affiliate-broadcast uploader above, just under an "article-ecosystem"
 // folder and gated behind requireUser instead of admin-only, since any
 // signed-in reader can publish an article or set their own avatar.
-//
-// Needs its own body-size limit: the global bodyParser.json() below is
-// capped at 400kb (deliberately tight everywhere else), but a base64-
-// encoded 5MB source image is ~6.7MB of JSON — this route alone gets more
-// headroom rather than loosening the limit for the whole app.
+// Its larger body-size allowance is granted by IMAGE_UPLOAD_PATHS above,
+// not here (see the comment there for why a route-level override alone
+// wouldn't work).
 app.post('/api/upload-image',
-  bodyParser.json({ limit: '8mb' }),
   requireUser,
   async (req, res) => {
     try {
       const dataUrl = String((req.body && req.body.dataUrl) || '');
-      if (!/^data:image\/(jpeg|jpg|png|webp|gif);base64,/.test(dataUrl)) {
+      if (!extractImageBuffer(dataUrl)) {
         return res.status(400).json({ error: 'Expected a JPG, PNG, WEBP, or GIF image.' });
       }
       // Rough size check on the base64 payload itself (base64 runs ~33%
@@ -4701,7 +4742,7 @@ app.post('/api/upload-image',
 app.post('/api/admin/affiliate-broadcast/upload-image', async (req, res) => {
   try {
     const dataUrl = String((req.body && req.body.imageDataUrl) || '');
-    if (!/^data:image\/(jpeg|png|webp|gif);base64,/.test(dataUrl)) {
+    if (!extractImageBuffer(dataUrl)) {
       return res.status(400).json({ error: 'Expected a JPG, PNG, WEBP, or GIF image.' });
     }
     const result = await uploadBannerImageToCloudinary(dataUrl);
