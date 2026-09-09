@@ -281,21 +281,36 @@
   // captures the card at its true 1080-wide resolution, not shrunk), runs
   // the capture, then restores the preview transform. Same node throughout
   // — no separate off-screen duplicate to keep in sync.
+  // Builds and captures the card at full resolution off-screen, rather
+  // than temporarily un-scaling the visible preview card in place. The
+  // old approach removed the preview's scale-down transform on the same
+  // node sitting inside its small clipped frame — for a moment the card
+  // was full-size inside a tiny clipping window, so all that showed was
+  // a corner crop of the background (reported: preview flashes to a
+  // plain color block on Download, then "snaps back" after). Rendering
+  // an off-screen clone means the on-screen preview is never touched, so
+  // there's nothing to flash.
   async function exportCanvas() {
     var dims = SHAPES[currentShape];
-    var scale = PREVIEW_TARGET_W / dims.w;
-    var card = document.getElementById('shareimgCard');
-    card.style.transform = 'none';
-    // Let layout settle at full resolution before html2canvas measures it.
+    var clone = document.createElement('div');
+    clone.style.position = 'fixed';
+    clone.style.left = '-99999px';
+    clone.style.top = '0';
+    clone.style.width = dims.w + 'px';
+    clone.style.height = dims.h + 'px';
+    clone.className = 'shareimg-card';
+    clone.innerHTML = buildCardInnerHtml(currentItem, currentShape);
+    document.body.appendChild(clone);
+    // Let images/layout settle before html2canvas measures it.
     await new Promise(function (r) { requestAnimationFrame(function () { requestAnimationFrame(r); }); });
     try {
       // scale:1 — the card is already built at its true 1080/1920px target
       // resolution (see SHAPES above), so a 2x multiplier on top of that
       // was rendering/encoding a 2160x3840 canvas for no visual benefit at
       // typical share sizes, and was a big chunk of the wait on mobile.
-      return await html2canvas(card, { scale: 1, backgroundColor: null, useCORS: true, allowTaint: true, width: dims.w, height: dims.h });
+      return await html2canvas(clone, { scale: 1, backgroundColor: null, useCORS: true, allowTaint: true, width: dims.w, height: dims.h });
     } finally {
-      card.style.transform = 'scale(' + scale + ')';
+      clone.remove();
     }
   }
 
