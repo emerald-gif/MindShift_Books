@@ -856,6 +856,7 @@
       </div>
       <button class="btn-primary" id="newMindshiftPostBtn" style="margin-left:auto;">+ New Post as MindShift Books</button>
       <button class="btn-secondary" id="newMindshiftArticleBtn">+ New Article as MindShift Books</button>
+      <button class="btn-secondary" id="viewMindshiftInsightsBtn">MindShift Content &amp; Insights</button>
     </div>
     <div class="panel full-panel" style="padding-bottom:16px;">
       <h2><span class="h2-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></span>Live Content</h2>
@@ -865,6 +866,41 @@
       <table>
         <thead><tr><th>Title / Text</th><th>Author</th><th>Type</th><th>Published</th><th class="num">Action</th></tr></thead>
         <tbody id="articlesBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- MindShift Books' own content, entered via the button in the Content
+       page header above — everything authorUid:'official', kept out of the
+       general (every-author) content list, with totals + a ranked list. -->
+  <div id="mindshiftContentPage" style="display:none;">
+    <div class="payouts-header">
+      <button class="btn-secondary" id="miBackBtn">&larr; Back to Content</button>
+    </div>
+    <div class="panel full-panel" style="padding-bottom:16px;">
+      <h2><span class="h2-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></span>MindShift Books — Content &amp; Insights</h2>
+      <div style="display:flex;gap:12px;margin:16px 0 22px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:110px;text-align:center;padding:14px 8px;border-radius:12px;background:var(--indigo-soft);">
+          <div id="miTotalCount" style="font-size:1.35rem;font-weight:800;color:var(--primary);">—</div>
+          <div style="font-size:0.7rem;color:var(--muted);font-weight:600;">Published</div>
+        </div>
+        <div style="flex:1;min-width:110px;text-align:center;padding:14px 8px;border-radius:12px;background:var(--indigo-soft);">
+          <div id="miTotalViews" style="font-size:1.35rem;font-weight:800;color:var(--primary);">—</div>
+          <div style="font-size:0.7rem;color:var(--muted);font-weight:600;">Total Views</div>
+        </div>
+        <div style="flex:1;min-width:110px;text-align:center;padding:14px 8px;border-radius:12px;background:var(--indigo-soft);">
+          <div id="miTotalLikes" style="font-size:1.35rem;font-weight:800;color:var(--primary);">—</div>
+          <div style="font-size:0.7rem;color:var(--muted);font-weight:600;">Total Likes</div>
+        </div>
+        <div style="flex:1;min-width:110px;text-align:center;padding:14px 8px;border-radius:12px;background:var(--indigo-soft);">
+          <div id="miTotalComments" style="font-size:1.35rem;font-weight:800;color:var(--primary);">—</div>
+          <div style="font-size:0.7rem;color:var(--muted);font-weight:600;">Total Comments</div>
+        </div>
+      </div>
+      <p class="empty" style="padding-top:0;margin-top:-8px;margin-bottom:14px;">Ranked by engagement (views + 3× likes + 3× comments) — best performing first. Click a title to preview, edit, or delete it.</p>
+      <table>
+        <thead><tr><th>Title / Text</th><th>Type</th><th class="num">Views</th><th class="num">Likes</th><th class="num">Comments</th><th>Published</th></tr></thead>
+        <tbody id="miBody"></tbody>
       </table>
     </div>
   </div>
@@ -881,6 +917,7 @@
         <button id="apCloseBtn" style="flex-shrink:0;width:32px;height:32px;border-radius:50%;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-size:1.1rem;line-height:1;">&times;</button>
       </div>
       <img id="apCover" src="" alt="" style="width:100%;border-radius:10px;margin-bottom:16px;display:none;object-fit:cover;max-height:280px;">
+      <video id="apVideo" src="" poster="" controls playsinline style="width:100%;border-radius:10px;margin-bottom:16px;display:none;max-height:360px;background:#000;"></video>
       <div id="apBrief" style="font-size:0.92rem;color:var(--muted);font-style:italic;margin-bottom:16px;border-left:3px solid var(--border);padding-left:12px;"></div>
       <div id="apBody" style="font-size:0.92rem;line-height:1.7;color:var(--primary);"></div>
       <div id="apImages" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;"></div>
@@ -931,6 +968,12 @@
         + Add up to 5 photos
       </button>
       <input type="file" id="mpFileInput" accept="image/*" multiple style="display:none">
+
+      <div id="mpVideoTile" style="display:none;position:relative;margin-top:12px;border-radius:12px;overflow:hidden;background:#000;"></div>
+      <button type="button" id="mpVideoHint" style="display:flex;align-items:center;gap:8px;font-size:0.82rem;font-weight:700;color:var(--indigo);margin-top:12px;padding:9px 14px;border-radius:99px;background:var(--indigo-soft);border:none;cursor:pointer;">
+        + Add a video
+      </button>
+      <input type="file" id="mpVideoInput" accept="video/mp4,video/quicktime" style="display:none">
 
       <div id="mpError" style="display:none;color:#991b1b;font-size:0.8rem;margin-top:10px;"></div>
 
@@ -1235,6 +1278,7 @@
     broadcastPage.style.display = 'none';
     creatorsPage.style.display = 'none';
     articlesPage.style.display = 'none';
+    document.getElementById('mindshiftContentPage').style.display = 'none';
   }
 
   tabOverview.addEventListener('click', () => {
@@ -1348,6 +1392,68 @@
     });
   }
 
+  // ── MindShift Books' own content & insights (separate from the general,
+  // every-author content list above) ──
+  document.getElementById('viewMindshiftInsightsBtn').addEventListener('click', () => {
+    hideAllPages();
+    document.getElementById('mindshiftContentPage').style.display = 'block';
+    loadMindshiftInsights();
+  });
+  document.getElementById('miBackBtn').addEventListener('click', () => {
+    hideAllPages();
+    articlesPage.style.display = 'block';
+  });
+
+  async function loadMindshiftInsights() {
+    const tbody = document.getElementById('miBody');
+    ['miTotalCount', 'miTotalViews', 'miTotalLikes', 'miTotalComments'].forEach(id => {
+      document.getElementById(id).textContent = '—';
+    });
+    tbody.innerHTML = '<tr><td colspan="6" class="empty">Loading…</td></tr>';
+    try {
+      const res = await fetch('/api/admin/content/mindshift-insights');
+      if (res.status === 401) { window.location.href = '/admin/login'; return; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Request failed');
+
+      document.getElementById('miTotalCount').textContent = data.totals.count.toLocaleString();
+      document.getElementById('miTotalViews').textContent = data.totals.views.toLocaleString();
+      document.getElementById('miTotalLikes').textContent = data.totals.likes.toLocaleString();
+      document.getElementById('miTotalComments').textContent = data.totals.comments.toLocaleString();
+
+      // Merge into contentItems so openArticlePreview/mpOpenForEdit/
+      // maOpenForEdit can find these by id+type even if the main Content
+      // list hasn't loaded them under whatever filter it's currently on.
+      data.items.forEach(it => {
+        const idx = contentItems.findIndex(c => c.id === it.id && c.type === it.type);
+        if (idx >= 0) contentItems[idx] = it; else contentItems.push(it);
+      });
+
+      if (!data.items.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty">Nothing published yet as MindShift Books.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = data.items.map(it => `
+        <tr>
+          <td><a href="#" class="mi-title-link" data-id="${esc(it.id)}" data-type="${it.type}">${esc(it.title || (it.text || '').slice(0, 60) || 'Untitled')}</a></td>
+          <td>${it.type === 'article' ? 'Article' : 'Post'}</td>
+          <td class="num">${it.views.toLocaleString()}</td>
+          <td class="num">${it.likes.toLocaleString()}</td>
+          <td class="num">${it.comments.toLocaleString()}</td>
+          <td>${fmtDateTime(it.createdAt)}</td>
+        </tr>
+      `).join('');
+      tbody.querySelectorAll('.mi-title-link').forEach(el => {
+        el.addEventListener('click', (e) => {
+          e.preventDefault();
+          openArticlePreview(el.dataset.id, el.dataset.type);
+        });
+      });
+    } catch (err) {
+      tbody.innerHTML = `<tr><td colspan="6" class="empty">Could not load — ${esc(err.message || 'try again')}</td></tr>`;
+    }
+  }
+
   function openArticlePreview(id, type) {
     const s = contentItems.find(x => x.id === id && x.type === type);
     if (!s) return;
@@ -1357,10 +1463,21 @@
     document.getElementById('apMeta').textContent = `${s.authorName || 'Unknown'}${s.authorUsername ? ' · @' + s.authorUsername : ''} · ${fmtDateTime(s.createdAt)}`;
     const cover = document.getElementById('apCover');
     if (isArticle && s.cover) { cover.src = s.cover; cover.style.display = 'block'; } else { cover.style.display = 'none'; }
+    const videoEl = document.getElementById('apVideo');
+    if (!isArticle && s.videoUrl) {
+      videoEl.src = s.videoUrl;
+      videoEl.poster = s.thumbnailUrl || '';
+      videoEl.style.display = 'block';
+    } else {
+      videoEl.pause();
+      videoEl.removeAttribute('src');
+      videoEl.load();
+      videoEl.style.display = 'none';
+    }
     document.getElementById('apBrief').textContent = isArticle ? (s.brief || '') : '';
     document.getElementById('apBody').innerHTML = isArticle ? (s.body || '') : esc(s.text || '');
     const imagesEl = document.getElementById('apImages');
-    if (!isArticle && Array.isArray(s.images) && s.images.length) {
+    if (!isArticle && !s.videoUrl && Array.isArray(s.images) && s.images.length) {
       imagesEl.style.display = 'flex';
       imagesEl.innerHTML = s.images.map(u => `<img src="${esc(u)}" alt="" style="width:100px;height:100px;object-fit:cover;border-radius:8px;">`).join('');
     } else {
@@ -1402,9 +1519,15 @@
   }
   document.getElementById('apCloseBtn').addEventListener('click', () => {
     document.getElementById('articlePreviewOverlay').style.display = 'none';
+    const videoEl = document.getElementById('apVideo');
+    videoEl.pause(); videoEl.removeAttribute('src'); videoEl.load();
   });
   document.getElementById('articlePreviewOverlay').addEventListener('click', (e) => {
-    if (e.target.id === 'articlePreviewOverlay') e.target.style.display = 'none';
+    if (e.target.id === 'articlePreviewOverlay') {
+      e.target.style.display = 'none';
+      const videoEl = document.getElementById('apVideo');
+      videoEl.pause(); videoEl.removeAttribute('src'); videoEl.load();
+    }
   });
 
   async function deleteContentItem(id, type) {
@@ -1436,18 +1559,26 @@
   const mpPostBtn   = document.getElementById('mpPostBtn');
   const mpError     = document.getElementById('mpError');
   const MP_MAX_IMAGES = 5;
+  const MP_VIDEO_MAX_BYTES = 200 * 1024 * 1024;   // 200MB, mirrors create-post.html
+  const MP_VIDEO_MAX_DURATION = 5 * 60;           // 5 minutes, mirrors create-post.html
   let mpImages = []; // {url, uploading, preview}
+  let mpVideo = null; // {url, thumbnailUrl, duration, publicId, uploading, progress, preview, xhr} | null
   let mpEditId = null;
+  const mpVideoTile = document.getElementById('mpVideoTile');
+  const mpVideoHint = document.getElementById('mpVideoHint');
+  const mpVideoInput = document.getElementById('mpVideoInput');
 
   function mpOpen() {
     mpEditId = null;
     document.getElementById('mpSubtitle').textContent = 'Posting publicly · goes live immediately';
     mpText.value = '';
     mpImages = [];
+    mpVideo = null;
     mpError.style.display = 'none';
     mpPostBtn.textContent = 'Post';
     mpUpdateCharCount();
     mpRenderImages();
+    mpRenderVideo();
     mpOverlay.style.display = 'flex';
   }
   function mpOpenForEdit(s) {
@@ -1455,10 +1586,12 @@
     document.getElementById('mpSubtitle').textContent = 'Editing this post';
     mpText.value = s.text || '';
     mpImages = Array.isArray(s.images) ? s.images.map(url => ({ url, uploading: false })) : [];
+    mpVideo = s.videoUrl ? { url: s.videoUrl, thumbnailUrl: s.thumbnailUrl || '', duration: s.duration || 0, publicId: s.cloudinaryPublicId || '', uploading: false } : null;
     mpError.style.display = 'none';
     mpPostBtn.textContent = 'Save';
     mpUpdateCharCount();
     mpRenderImages();
+    mpRenderVideo();
     mpOverlay.style.display = 'flex';
   }
   function mpClose() { mpOverlay.style.display = 'none'; }
@@ -1475,14 +1608,16 @@
   mpText.addEventListener('input', mpUpdateCharCount);
 
   function mpUpdatePostBtn() {
-    const stillUploading = mpImages.some(i => i.uploading);
-    mpPostBtn.disabled = (!mpText.value.trim() && !mpImages.length) || stillUploading;
+    const stillUploading = mpImages.some(i => i.uploading) || (mpVideo && mpVideo.uploading);
+    mpPostBtn.disabled = (!mpText.value.trim() && !mpImages.length && !mpVideo) || stillUploading;
   }
 
   function mpRenderImages() {
     if (!mpImages.length) {
       mpImgGrid.style.display = 'none';
-      mpImgHint.style.display = 'flex';
+      // one video OR up to 5 photos, not both — hide the "add photo" hint
+      // while a video is attached, mirroring create-post.html.
+      mpImgHint.style.display = mpVideo ? 'none' : 'flex';
       mpUpdatePostBtn();
       return;
     }
@@ -1501,6 +1636,7 @@
   }
 
   mpImgHint.addEventListener('click', () => {
+    if (mpVideo) { mpShowError('Remove the video first — one video or up to 5 photos, not both'); return; }
     if (mpImages.length >= MP_MAX_IMAGES) return;
     mpFileInput.click();
   });
@@ -1537,18 +1673,135 @@
 
   function mpShowError(msg) { mpError.textContent = msg; mpError.style.display = 'block'; }
 
+  // ── Video (mirrors create-post.html's video flow) ──
+  // The file goes straight from this browser to Cloudinary via a signed
+  // upload URL — Render only ever sees the small signing request from
+  // /api/admin/video/upload-signature, never the video bytes.
+  function mpRenderVideo() {
+    if (!mpVideo) {
+      mpVideoTile.style.display = 'none';
+      mpVideoTile.innerHTML = '';
+      mpVideoHint.style.display = mpImages.length ? 'none' : 'flex';
+      mpUpdatePostBtn();
+      return;
+    }
+    mpVideoHint.style.display = 'none';
+    mpVideoTile.style.display = 'block';
+    const pct = Math.round(mpVideo.progress || 0);
+    mpVideoTile.innerHTML = `
+      ${mpVideo.uploading
+        ? `<img src="${mpVideo.preview || ''}" alt="" style="width:100%;display:block;max-height:280px;object-fit:cover;">`
+        : `<video src="${mpVideo.url}" poster="${mpVideo.thumbnailUrl || ''}" muted playsinline controls style="width:100%;display:block;max-height:280px;background:#000;"></video>`}
+      <button type="button" id="mpVideoRmBtn" style="position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;background:rgba(15,10,30,.65);border:none;color:#fff;cursor:pointer;font-size:14px;line-height:1;">&times;</button>
+      ${mpVideo.uploading ? `
+      <div style="position:absolute;left:8px;right:8px;bottom:8px;display:flex;align-items:center;gap:8px;">
+        <div style="flex:1;height:4px;background:rgba(255,255,255,.35);border-radius:2px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:#4f46e5;"></div></div>
+        <div style="font-size:0.68rem;color:#fff;font-weight:700;">${pct}%</div>
+      </div>` : ''}
+    `;
+    document.getElementById('mpVideoRmBtn').addEventListener('click', () => {
+      if (mpVideo && mpVideo.xhr) mpVideo.xhr.abort();
+      mpVideo = null;
+      mpRenderVideo();
+    });
+    mpUpdatePostBtn();
+  }
+
+  mpVideoHint.addEventListener('click', () => {
+    if (mpImages.length) { mpShowError('Remove your photos first — one video or up to 5 photos, not both'); return; }
+    mpVideoInput.click();
+  });
+
+  mpVideoInput.addEventListener('change', async (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!/^video\/(mp4|quicktime)$/.test(file.type)) { mpShowError('Please choose an MP4 (or MOV) video'); return; }
+    if (file.size > MP_VIDEO_MAX_BYTES) { mpShowError('Video must be under 200MB'); return; }
+
+    // Read duration client-side before uploading anything — cheaper to
+    // reject a too-long clip locally than after spending the upload.
+    let duration = 0;
+    try {
+      duration = await new Promise((resolve, reject) => {
+        const v = document.createElement('video');
+        v.preload = 'metadata';
+        v.onloadedmetadata = () => resolve(v.duration);
+        v.onerror = () => reject(new Error('Could not read video'));
+        v.src = URL.createObjectURL(file);
+      });
+    } catch { mpShowError('Could not read that video file'); return; }
+    if (duration > MP_VIDEO_MAX_DURATION) { mpShowError('Video must be 5 minutes or under'); return; }
+
+    mpError.style.display = 'none';
+    mpVideo = { url: '', thumbnailUrl: '', duration: Math.round(duration), publicId: '', uploading: true, progress: 0, preview: URL.createObjectURL(file) };
+    mpRenderVideo();
+
+    try {
+      const sigRes = await fetch('/api/admin/video/upload-signature', { method: 'POST' });
+      const sig = await sigRes.json();
+      if (!sigRes.ok || !sig.ok) throw new Error(sig.error || 'Could not start video upload');
+
+      const form = new FormData();
+      form.append('file', file);
+      form.append('api_key', sig.apiKey);
+      form.append('timestamp', sig.timestamp);
+      form.append('folder', sig.folder);
+      form.append('eager', sig.eager);
+      form.append('signature', sig.signature);
+
+      const result = await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        mpVideo.xhr = xhr;
+        xhr.upload.onprogress = (evt) => {
+          if (!evt.lengthComputable || !mpVideo) return;
+          mpVideo.progress = (evt.loaded / evt.total) * 100;
+          mpRenderVideo();
+        };
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) resolve(JSON.parse(xhr.responseText));
+          else reject(new Error('Cloudinary upload failed'));
+        };
+        xhr.onerror = () => reject(new Error('Network error during upload'));
+        xhr.onabort = () => reject(new Error('aborted'));
+        xhr.open('POST', `https://api.cloudinary.com/v1_1/${sig.cloudName}/video/upload`);
+        xhr.send(form);
+      });
+
+      if (!mpVideo) return; // removed mid-upload
+      mpVideo.url = result.secure_url;
+      mpVideo.publicId = result.public_id;
+      mpVideo.duration = Math.round(result.duration || duration);
+      mpVideo.thumbnailUrl = (result.eager && result.eager[0] && result.eager[0].secure_url)
+        || result.secure_url.replace(/\.(mp4|mov)$/i, '.jpg');
+      mpVideo.uploading = false;
+      delete mpVideo.xhr;
+      mpRenderVideo();
+    } catch (err) {
+      if (err.message !== 'aborted') {
+        mpShowError('Video upload failed — try again');
+        mpVideo = null;
+        mpRenderVideo();
+      }
+    }
+  });
+
   mpPostBtn.addEventListener('click', async () => {
     const text = mpText.value.trim();
     const urls = mpImages.filter(i => i.url).map(i => i.url);
-    if (!text && !urls.length) { mpShowError('Write something or add a photo first'); return; }
+    const hasVideo = !!(mpVideo && mpVideo.url && !mpVideo.uploading);
+    if (!text && !urls.length && !hasVideo) { mpShowError('Write something, add a photo, or add a video first'); return; }
     mpError.style.display = 'none';
     mpPostBtn.disabled = true;
     mpPostBtn.textContent = mpEditId ? 'Saving…' : 'Posting…';
+    const videoFields = hasVideo ? {
+      videoUrl: mpVideo.url, thumbnailUrl: mpVideo.thumbnailUrl, duration: mpVideo.duration, cloudinaryPublicId: mpVideo.publicId
+    } : { videoUrl: '', thumbnailUrl: '', duration: 0, cloudinaryPublicId: '' };
     try {
       const url = mpEditId ? `/api/admin/content/posts/${encodeURIComponent(mpEditId)}/update` : '/api/admin/posts/create';
       const res = await fetch(url, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, images: urls })
+        body: JSON.stringify({ text, images: urls, ...videoFields })
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || (mpEditId ? 'Save failed' : 'Post failed'));
