@@ -164,6 +164,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
+<script src="/image-compress.js"></script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
@@ -257,17 +258,14 @@ document.getElementById('fileInput').addEventListener('change', async (e) => {
   e.target.value = '';
   for(const file of files){
     if(images.length >= MAX_IMAGES) break;
-    if(file.size > 5*1024*1024){ showToast('Each image must be under 5MB'); continue; }
     const idx = images.length;
     images.push({ url:'', uploading:true });
     renderImages();
     try{
-      const dataUrl = await new Promise((resolve, reject) => {
-        const r = new FileReader();
-        r.onload = () => resolve(r.result);
-        r.onerror = reject;
-        r.readAsDataURL(file);
-      });
+      // Resize/re-encode client-side (see image-compress.js) instead of a
+      // hard 5MB reject — also normalizes odd source MIME types (e.g.
+      // images saved out of ChatGPT) into a clean image/jpeg.
+      const dataUrl = await window.MindshiftImage.compress(file);
       // show local preview immediately while the real upload happens
       images[idx].preview = dataUrl;
       renderImages();

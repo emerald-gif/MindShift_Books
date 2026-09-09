@@ -1133,7 +1133,7 @@ window.doLike = function(){
         try{await updateDoc(cRef,{count:increment(-1)});}catch{await setDoc(cRef,{count:0},{merge:true});}
       } else {
         try{await updateDoc(cRef,{count:increment(1)});}catch{await setDoc(cRef,{count:1},{merge:true});}
-        notif.notifyArticleLike(article); // notify article author
+        notif.notifyArticleLike(article, 'post'); // notify post author
       }
     } catch(e) {
       // revert heart on failure
@@ -1330,7 +1330,7 @@ window.submitComment=async function(){
     const le=document.getElementById('commentsList');
     if(le){const em=le.querySelector('.comments-list-empty');if(em)le.innerHTML='';le.insertAdjacentHTML('beforeend',buildCHTML(nc,false));}
     cancelCI();
-    if(article&&article.authorUid&&article.authorUid!==currentUser.uid&&!article.isMindshift)notif.notifyComment({type:'new_comment',recipientUid:article.authorUid,articleId:artId,articleTitle:(article.text||'').slice(0,60)});
+    if(article&&article.authorUid&&article.authorUid!==currentUser.uid&&!article.isMindshift)notif.notifyComment({type:'new_comment',recipientUid:article.authorUid,articleId:artId,articleTitle:(article.text||'').slice(0,60),contentType:'post'});
   }catch(e){console.error('submitComment:',e);}
   finally{if(btn){btn.disabled=false;btn.textContent='Post';}}
 };
@@ -1367,9 +1367,9 @@ window.submitReply=async function(parentId){
     const pc=cList.find(c=>c.id===parentId);
     if(pc){pc.replyCount=(pc.replyCount||0)+1;updVRB(parentId,pc.replyCount);}
     hideRI(parentId);
-    if(pc&&pc.authorUid&&pc.authorUid!==currentUser.uid)notif.notifyComment({type:'comment_reply',recipientUid:pc.authorUid,articleId:artId,articleTitle:article?(article.text||'').slice(0,60):'',commentId:parentId});
+    if(pc&&pc.authorUid&&pc.authorUid!==currentUser.uid)notif.notifyComment({type:'comment_reply',recipientUid:pc.authorUid,articleId:artId,articleTitle:article?(article.text||'').slice(0,60):'',commentId:parentId,contentType:'post'});
     if(article&&article.authorUid&&article.authorUid!==currentUser.uid&&!article.isMindshift){
-      if(!pc||pc.authorUid!==article.authorUid)notif.notifyComment({type:'new_comment',recipientUid:article.authorUid,articleId:artId,articleTitle:(article.text||'').slice(0,60)});
+      if(!pc||pc.authorUid!==article.authorUid)notif.notifyComment({type:'new_comment',recipientUid:article.authorUid,articleId:artId,articleTitle:(article.text||'').slice(0,60),contentType:'post'});
     }
   }catch(e){console.error('submitReply:',e);}
   finally{if(btn){btn.disabled=false;btn.textContent='Post';}}
@@ -1425,7 +1425,7 @@ window.likeComment=async function(cid,authorUid){
         [`likedBy.${currentUser.uid}`]: true,
         likeCount: increment(1)
       });
-      if(authorUid&&authorUid!==currentUser.uid) notif.notifyComment({type:'comment_like',recipientUid:authorUid,articleId:artId,articleTitle:article?(article.text||'').slice(0,60):'',commentId:cid});
+      if(authorUid&&authorUid!==currentUser.uid) notif.notifyComment({type:'comment_like',recipientUid:authorUid,articleId:artId,articleTitle:article?(article.text||'').slice(0,60):'',commentId:cid,contentType:'post'});
     }
   }catch(e){
     if(wasLiked){cLikedSet.add(cid);if(btn)btn.classList.add('liked');}
