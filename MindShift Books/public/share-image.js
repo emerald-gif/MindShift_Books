@@ -42,6 +42,13 @@
     '.shareimg-toggle button{border:none;background:none;padding:8px 18px;border-radius:9px;font-weight:700;font-size:13.5px;color:#64748b;cursor:pointer;display:flex;align-items:center;gap:6px;-webkit-tap-highlight-color:transparent}' +
     '.shareimg-toggle button.active{background:#0f172a;color:#fff}' +
     '.shareimg-toggle svg{width:15px;height:15px}' +
+    '.shareimg-bg-label{font-size:11.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#9ca3af;text-align:center;margin-bottom:10px}' +
+    '.shareimg-bg-row{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;margin:0 auto 18px;max-width:280px}' +
+    '.shareimg-bg-swatch{width:34px;height:34px;border-radius:10px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0;box-shadow:inset 0 0 0 1.5px rgba(15,23,42,.1);-webkit-tap-highlight-color:transparent;transition:transform .12s}' +
+    '.shareimg-bg-swatch:active{transform:scale(.92)}' +
+    '.shareimg-bg-swatch.active{box-shadow:0 0 0 2px #fff,0 0 0 4px #0f172a}' +
+    '.shareimg-bg-swatch svg{width:15px;height:15px;color:#fff;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4));display:none}' +
+    '.shareimg-bg-swatch.active svg{display:block}' +
     '.shareimg-preview-wrap{display:flex;justify-content:center;margin-bottom:18px}' +
     '.shareimg-frame{border-radius:18px;overflow:hidden;box-shadow:0 10px 30px rgba(15,23,42,.18);background:#e2e8f0}' +
     '.shareimg-card{transform-origin:top left;font-family:inherit}' +
@@ -88,6 +95,8 @@
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="2.5"/></svg> Stories' +
         '</button>' +
       '</div>' +
+      '<div class="shareimg-bg-label">Background</div>' +
+      '<div class="shareimg-bg-row" id="shareimgBgRow"></div>' +
       '<div class="shareimg-preview-wrap">' +
         '<div class="shareimg-frame" id="shareimgFrame">' +
           '<div class="shareimg-card" id="shareimgCard"></div>' +
@@ -114,9 +123,50 @@
     grid:    { w: 1080, h: 1080 },
     stories: { w: 1080, h: 1920 }
   };
+  // Background choices for the card frame — a swatch row like every other
+  // "pick a style" picker in the app (see sidebar-nav.js's icon items for
+  // the same "one array, rendered" pattern). Brand gradient stays first
+  // and selected by default; the rest are flat colors so they read fine
+  // behind either Grid or Stories shape without their own gradient angle
+  // fighting the card's.
+  var BG_OPTIONS = [
+    { id: 'brand',   css: 'linear-gradient(160deg,#4338ca 0%,#4f46e5 45%,#06b6d4 100%)' },
+    { id: 'charcoal', css: '#18181b' },
+    { id: 'mist',     css: '#e2e8f0' },
+    { id: 'cream',    css: '#f5f1e8' },
+    { id: 'sand',     css: '#d8b48c' },
+    { id: 'forest',   css: '#065f46' },
+    { id: 'mauve',    css: '#a68a82' }
+  ];
   var currentShape = 'stories';
+  var currentBg = BG_OPTIONS[0].id;
   var currentItem = null;
   var PREVIEW_TARGET_W = 280; // on-screen preview width in CSS px, height follows shape ratio
+
+  function bgCssById(id) {
+    for (var i = 0; i < BG_OPTIONS.length; i++) {
+      if (BG_OPTIONS[i].id === id) return BG_OPTIONS[i].css;
+    }
+    return BG_OPTIONS[0].css;
+  }
+
+  function renderBgSwatches() {
+    var row = document.getElementById('shareimgBgRow');
+    if (!row) return;
+    row.innerHTML = BG_OPTIONS.map(function (o) {
+      var active = o.id === currentBg;
+      return '<button type="button" class="shareimg-bg-swatch' + (active ? ' active' : '') + '" ' +
+        'style="background:' + o.css + '" onclick="setShareImageBg(\'' + o.id + '\')" aria-label="' + o.id + ' background">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+        '</button>';
+    }).join('');
+  }
+
+  window.setShareImageBg = function (id) {
+    currentBg = id;
+    renderBgSwatches();
+    renderPreview();
+  };
 
   function truncate(str, max) {
     if (!str) return '';
@@ -135,6 +185,26 @@
     });
   }
 
+  // Cloudinary URLs come straight from upload (full original resolution —
+  // often several MB). The card only ever displays these at a few hundred
+  // px wide, so ask Cloudinary to serve an already-downsized, compressed
+  // copy by inserting an f_auto,q_auto,w_###,c_limit transform right after
+  // "/upload/". This is what actually cuts the "Preparing…" wait down —
+  // html2canvas has to fully download every <img> in the card before it
+  // can capture it, and a multi-MB original over a phone connection was
+  // the bulk of the delay, not the canvas render itself. Non-Cloudinary
+  // URLs (or ones that already carry a transform) pass through untouched.
+  function cldResize(url, width) {
+    if (!url || typeof url !== 'string') return url;
+    if (url.indexOf('res.cloudinary.com') === -1) return url;
+    var marker = '/upload/';
+    var i = url.indexOf(marker);
+    if (i === -1) return url;
+    var after = url.slice(i + marker.length, i + marker.length + 12);
+    if (/^[a-z]_/.test(after)) return url; // already has a transform
+    return url.slice(0, i + marker.length) + 'f_auto,q_auto,w_' + width + ',c_limit/' + url.slice(i + marker.length);
+  }
+
   // Builds the inner HTML for the card at its TRUE pixel resolution
   // (1080-wide). The same markup is used for the live on-screen preview
   // (shrunk via a CSS transform: scale() on the wrapper) and for the real
@@ -143,18 +213,19 @@
   function buildCardInnerHtml(item, shape) {
     var dims = SHAPES[shape];
     var isArticle = item.type === 'article';
-    var img = item.image || '';
+    var img = cldResize(item.image || '', 900);
+    var avatar = cldResize(item.avatar || '/logo.jpg', 120);
     var bodyHtml = isArticle
       ? '<div class="shareimg-title">' + esc(truncate(item.title, 90)) + '</div>' +
         (item.brief ? '<div class="shareimg-brief">' + esc(truncate(item.brief, 160)) + '</div>' : '')
       : '<div class="shareimg-text">' + esc(truncate(item.text, 220)) + '</div>';
 
     return (
-      '<div class="shareimg-bg" style="width:' + dims.w + 'px;height:' + dims.h + 'px">' +
+      '<div class="shareimg-bg" style="width:' + dims.w + 'px;height:' + dims.h + 'px;background:' + bgCssById(currentBg) + '">' +
         '<div class="shareimg-cardbody-wrap">' +
           '<div class="shareimg-cardbody">' +
             '<div class="shareimg-author-row">' +
-              '<img src="' + (item.avatar || '/logo.jpg') + '" alt="">' +
+              '<img src="' + avatar + '" alt="">' +
               '<div class="shareimg-author-name">' + esc(item.author || 'MindShift Books') + '</div>' +
               '<img class="shareimg-flag" src="/MINDSHIFT.jpg" alt="">' +
             '</div>' +
@@ -191,9 +262,11 @@
   window.openShareImageCard = function (item) {
     currentItem = item;
     currentShape = 'stories';
+    currentBg = BG_OPTIONS[0].id;
     document.getElementById('shareimgOverlay').classList.add('on');
     document.getElementById('shareimgSheet').classList.add('on');
     document.body.style.overflow = 'hidden';
+    renderBgSwatches();
     renderPreview();
   };
 
@@ -215,7 +288,11 @@
     // Let layout settle at full resolution before html2canvas measures it.
     await new Promise(function (r) { requestAnimationFrame(function () { requestAnimationFrame(r); }); });
     try {
-      return await html2canvas(card, { scale: 2, backgroundColor: null, useCORS: true, allowTaint: true, width: dims.w, height: dims.h });
+      // scale:1 — the card is already built at its true 1080/1920px target
+      // resolution (see SHAPES above), so a 2x multiplier on top of that
+      // was rendering/encoding a 2160x3840 canvas for no visual benefit at
+      // typical share sizes, and was a big chunk of the wait on mobile.
+      return await html2canvas(card, { scale: 1, backgroundColor: null, useCORS: true, allowTaint: true, width: dims.w, height: dims.h });
     } finally {
       card.style.transform = 'scale(' + scale + ')';
     }
