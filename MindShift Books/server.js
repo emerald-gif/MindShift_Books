@@ -429,6 +429,37 @@ app.post('/api/video/upload-signature', requireUser, async (req, res) => {
   }
 });
 
+// Admin-dashboard twin of the above. The admin panel authenticates with its
+// own password-based session cookie (requireAdminApi / hasValidAdminSession)
+// rather than a Firebase customer account, so it has no ID token to satisfy
+// requireUser with — this exists so posting a video as the official
+// MindShift Books account works the same way (signed direct-to-Cloudinary
+// upload, Render never touches the video bytes) without needing to fake a
+// Firebase login for the admin session.
+app.post('/api/admin/video/upload-signature', requireAdminApi, async (req, res) => {
+  try {
+    if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_API_KEY || !CLOUDINARY_API_SECRET) {
+      return res.status(500).json({ error: 'Video hosting is not configured (missing Cloudinary credentials).' });
+    }
+    const timestamp = Math.round(Date.now() / 1000);
+    const eager = 'f_jpg,so_0';
+    const paramsToSign = { eager, folder: CLOUDINARY_VIDEO_FOLDER, timestamp };
+    const signature = signCloudinaryParams(paramsToSign);
+    return res.json({
+      ok: true,
+      cloudName: CLOUDINARY_CLOUD_NAME,
+      apiKey: CLOUDINARY_API_KEY,
+      timestamp,
+      folder: CLOUDINARY_VIDEO_FOLDER,
+      eager,
+      signature
+    });
+  } catch (err) {
+    console.error('/api/admin/video/upload-signature error', err);
+    return res.status(500).json({ error: 'Could not prepare video upload' });
+  }
+});
+
 // Fires once, right after a brand-new account doc is created (see
 // /api/account/init). Fire-and-forget — a failed welcome email should never
 // block or fail account creation, so this always resolves quietly.
@@ -4414,6 +4445,34 @@ app.get('/api/admin/affiliates', async (req, res) => {
 // that's already public, with a single Delete action for taking down
 // something that shouldn't be up (the old submissions collection is no
 // longer written to by anything and is left alone in firestore.rules).
+// Maps one articles/posts Firestore doc into the flat shape both
+// /api/admin/content and /api/admin/content/mindshift-insights return —
+// pulled into one place so the two stay in sync instead of drifting apart.
+function mapContentDoc(d, kind) {
+  const s = d.data();
+  return {
+    id: d.id,
+    type: kind === 'articles' ? 'article' : 'post',
+    authorUid: s.authorUid || null,
+    authorName: s.authorName || '',
+    authorPhoto: s.authorPhoto || '',
+    authorUsername: s.authorUsername || '',
+    title: s.title || '',
+    brief: s.brief || '',
+    body: s.body || '',
+    text: s.text || '',
+    images: Array.isArray(s.images) ? s.images : [],
+    videoUrl: s.videoUrl || '',
+    thumbnailUrl: s.thumbnailUrl || '',
+    duration: s.duration || 0,
+    cloudinaryPublicId: s.cloudinaryPublicId || '',
+    cat: s.cat || '',
+    cover: s.cover || '',
+    status: s.status || '',
+    createdAt: s.createdAt ? (s.createdAt.toDate ? s.createdAt.toDate().toISOString() : s.createdAt) : null
+  };
+}
+
 app.get('/api/admin/content', async (req, res) => {
   try {
     if (!db) return res.status(500).json({ error: 'Database unavailable' });
@@ -4428,32 +4487,93 @@ app.get('/api/admin/content', async (req, res) => {
     const items = [];
     snaps.forEach((snap, i) => {
       const kind = collections[i]; // 'articles' | 'posts'
-      snap.docs.forEach(d => {
-        const s = d.data();
-        items.push({
-          id: d.id,
-          type: kind === 'articles' ? 'article' : 'post',
-          authorUid: s.authorUid || null,
-          authorName: s.authorName || '',
-          authorPhoto: s.authorPhoto || '',
-          authorUsername: s.authorUsername || '',
-          title: s.title || '',
-          brief: s.brief || '',
-          body: s.body || '',
-          text: s.text || '',
-          images: Array.isArray(s.images) ? s.images : [],
-          cat: s.cat || '',
-          cover: s.cover || '',
-          status: s.status || '',
-          createdAt: s.createdAt ? (s.createdAt.toDate ? s.createdAt.toDate().toISOString() : s.createdAt) : null
-        });
-      });
+      snap.docs.forEach(d => items.push(mapContentDoc(d, kind)));
     });
     items.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
     return res.json({ items: items.slice(0, 300) });
   } catch (err) {
     console.error('/api/admin/content error', err);
     return res.status(500).json({ error: 'Could not load content' });
+  }
+});
+
+// GET /api/admin/content/mindshift-insights — everything published under
+// the official MindShift Books account (authorUid: 'official'), in one
+// dedicated place instead of mixed into the general content list, with
+// totals and a per-item view/like/comment breakdown ranked by engagement.
+// Reuses mapContentDoc so each returned item has the exact same shape
+// /api/admin/content already produces — the admin dashboard's existing
+// preview/edit overlay (openArticlePreview, mpOpenForEdit, maOpenForEdit)
+// works on these items unmodified.
+app.get('/api/admin/content/mindshift-insights', requireAdminApi, async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const [articlesSnap, postsSnap] = await Promise.all([
+      db.collection('articles').where('authorUid', '==', 'official').limit(300).get(),
+      db.collection('posts').where('authorUid', '==', 'official').limit(300).get()
+    ]);
+    const items = [
+      ...articlesSnap.docs.map(d => mapContentDoc(d, 'articles')),
+      ...postsSnap.docs.map(d => mapContentDoc(d, 'posts'))
+    ];
+    if (!items.length) {
+      return res.json({ totals: { views: 0, likes: 0, comments: 0, count: 0 }, items: [] });
+    }
+    const metaRefs = items.map(it => db.collection(it.type === 'post' ? 'postMeta' : 'articleMeta').doc(it.id));
+    const likeRefs = items.map(it => db.collection('articleLikes').doc(it.id));
+    const [metaSnaps, likeSnaps] = await Promise.all([db.getAll(...metaRefs), db.getAll(...likeRefs)]);
+
+    let totalViews = 0, totalLikes = 0, totalComments = 0;
+    const ranked = items.map((it, i) => {
+      const meta = metaSnaps[i].exists ? metaSnaps[i].data() : {};
+      const like = likeSnaps[i].exists ? likeSnaps[i].data() : {};
+      const views = meta.viewCount || 0;
+      const comments = meta.commentCount || 0;
+      const likes = like.count || 0;
+      totalViews += views; totalLikes += likes; totalComments += comments;
+      // Likes/comments are active engagement, so they're weighted heavier
+      // than a passive view when ranking "best performing."
+      return { ...it, views, likes, comments, engagement: views + likes * 3 + comments * 3 };
+    });
+    ranked.sort((a, b) => b.engagement - a.engagement);
+
+    return res.json({
+      totals: { views: totalViews, likes: totalLikes, comments: totalComments, count: items.length },
+      items: ranked
+    });
+  } catch (err) {
+    console.error('/api/admin/content/mindshift-insights error', err);
+    return res.status(500).json({ error: 'Could not load MindShift insights' });
+  }
+});
+
+// GET /api/admin/content/:type/:id/insights — views/likes/comments for one
+// article or post, shown in the admin preview overlay (apInsights). The
+// dashboard has been calling this since it was built, but the route never
+// existed server-side, so it silently always showed 0. Mirrors the exact
+// collections public/content-insights.html already reads client-side for an
+// author's own view of the same numbers: {article,post}Meta/{id} for
+// views/comments, and articleLikes/{id} for likes (shared collection name
+// for both content types — legacy naming, not a typo).
+app.get('/api/admin/content/:type/:id/insights', requireAdminApi, async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const { type, id } = req.params;
+    if (type !== 'articles' && type !== 'posts') {
+      return res.status(400).json({ error: 'type must be articles or posts' });
+    }
+    const metaCol = type === 'posts' ? 'postMeta' : 'articleMeta';
+    const [metaSnap, likeSnap] = await Promise.all([
+      db.collection(metaCol).doc(id).get(),
+      db.collection('articleLikes').doc(id).get()
+    ]);
+    const views = metaSnap.exists ? (metaSnap.data().viewCount || 0) : 0;
+    const comments = metaSnap.exists ? (metaSnap.data().commentCount || 0) : 0;
+    const likes = likeSnap.exists ? (likeSnap.data().count || 0) : 0;
+    return res.json({ views, likes, comments });
+  } catch (err) {
+    console.error('/api/admin/content/:type/:id/insights error', err);
+    return res.status(500).json({ error: 'Could not load insights' });
   }
 });
 
@@ -4528,8 +4648,18 @@ app.post('/api/admin/posts/create', async (req, res) => {
     const images = Array.isArray(req.body && req.body.images)
       ? req.body.images.filter(u => typeof u === 'string' && u).slice(0, 5)
       : [];
-    if (!text && !images.length) {
-      return res.status(400).json({ error: 'Write something or add a photo first.' });
+    // Video fields mirror create-post.html's data model (see that file's
+    // submitPost) — the admin composer uploads straight to Cloudinary via
+    // /api/admin/video/upload-signature and only sends the resulting
+    // reference here, same as a regular user's post.
+    const videoUrl = String((req.body && req.body.videoUrl) || '').trim();
+    const thumbnailUrl = String((req.body && req.body.thumbnailUrl) || '').trim();
+    const duration = Number((req.body && req.body.duration) || 0) || 0;
+    const cloudinaryPublicId = String((req.body && req.body.cloudinaryPublicId) || '').trim();
+    const hasVideo = !!videoUrl;
+
+    if (!text && !images.length && !hasVideo) {
+      return res.status(400).json({ error: 'Write something, add a photo, or add a video first.' });
     }
     if (text.length > 2000) {
       return res.status(400).json({ error: 'Post text is too long (max 2000 characters).' });
@@ -4544,6 +4674,8 @@ app.post('/api/admin/posts/create', async (req, res) => {
       authorUsername: 'official',
       text,
       images,
+      type: hasVideo ? 'video' : 'text',
+      videoUrl, thumbnailUrl, duration, cloudinaryPublicId,
       status: 'published',
       likeCount: 0, commentCount: 0, saveCount: 0,
       createdAt: now,
@@ -4553,6 +4685,70 @@ app.post('/api/admin/posts/create', async (req, res) => {
   } catch (err) {
     console.error('/api/admin/posts/create error', err);
     return res.status(500).json({ error: 'Could not publish post' });
+  }
+});
+
+// POST /api/admin/content/:type/:id/update — edits an existing official
+// article or post. Both admin/dashboard.html composers (maPublishBtn and
+// mpPostBtn) already call this exact path when editing (see maEditId /
+// mpEditId branches) — this endpoint just never existed server-side, so
+// every "Save changes" on an existing article or post was silently 404ing.
+// Added now rather than left alongside the video work above, since both
+// composers post through this same edit path.
+app.post('/api/admin/content/:type/:id/update', requireAdminApi, async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const { type, id } = req.params;
+    if (type !== 'articles' && type !== 'posts') {
+      return res.status(400).json({ error: 'type must be articles or posts' });
+    }
+    const ref = db.collection(type).doc(id);
+    const snap = await ref.get();
+    if (!snap.exists) return res.status(404).json({ error: 'Not found' });
+
+    const now = admin.firestore.Timestamp.now();
+
+    if (type === 'articles') {
+      const title = String((req.body && req.body.title) || '').trim();
+      const brief = String((req.body && req.body.brief) || '').trim();
+      const body = String((req.body && req.body.body) || '').trim();
+      const cover = String((req.body && req.body.cover) || '').trim();
+      const cat = String((req.body && req.body.cat) || '').trim();
+      const subCat = String((req.body && req.body.subCat) || '').trim();
+      if (!title) return res.status(400).json({ error: 'Please add a title' });
+      if (!cat) return res.status(400).json({ error: 'Please select a category' });
+      if (!brief) return res.status(400).json({ error: 'Please add a brief summary' });
+      const plainLen = body.replace(/<[^>]*>/g, '').trim().length;
+      if (plainLen < 100) return res.status(400).json({ error: 'Article body is too short (min 100 chars)' });
+      const words = body.replace(/<[^>]*>/g, ' ').trim().split(/\s+/).filter(Boolean).length;
+      const readTime = `${Math.max(1, Math.ceil(words / 200))} min read`;
+      await ref.update({ title, brief, body, cover, cat, subCat, readTime, updatedAt: now });
+    } else {
+      const text = String((req.body && req.body.text) || '').trim();
+      const images = Array.isArray(req.body && req.body.images)
+        ? req.body.images.filter(u => typeof u === 'string' && u).slice(0, 5)
+        : [];
+      const videoUrl = String((req.body && req.body.videoUrl) || '').trim();
+      const thumbnailUrl = String((req.body && req.body.thumbnailUrl) || '').trim();
+      const duration = Number((req.body && req.body.duration) || 0) || 0;
+      const cloudinaryPublicId = String((req.body && req.body.cloudinaryPublicId) || '').trim();
+      const hasVideo = !!videoUrl;
+      if (!text && !images.length && !hasVideo) {
+        return res.status(400).json({ error: 'Write something, add a photo, or add a video first.' });
+      }
+      if (text.length > 2000) {
+        return res.status(400).json({ error: 'Post text is too long (max 2000 characters).' });
+      }
+      await ref.update({
+        text, images, type: hasVideo ? 'video' : 'text',
+        videoUrl, thumbnailUrl, duration, cloudinaryPublicId,
+        updatedAt: now
+      });
+    }
+    return res.json({ ok: true, id });
+  } catch (err) {
+    console.error('/api/admin/content/:type/:id/update error', err);
+    return res.status(500).json({ error: 'Could not save changes' });
   }
 });
 
