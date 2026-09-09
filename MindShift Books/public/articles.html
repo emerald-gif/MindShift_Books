@@ -551,6 +551,29 @@ main{max-width:1100px;margin:0 auto}
     <a href="/signup" class="gbs">Sign up</a>
   </div>
 </div>
+<script>
+  /* Same fix as the hero banner above, same reason: hide this BEFORE the
+     rest of the page loads if we already know (from last time) that the
+     visitor is logged in — synchronously, right here, not inside the
+     type="module" script further down. Without this, the bar has no
+     default `display:none`, so it's visible in the very first paint for
+     every returning logged-in user and only gets hidden a beat later once
+     Firebase confirms the session — that's the flash the module-script
+     version runs too late to prevent. mindshift_hero_last_uid already
+     tracks the last known uid (or 'guest') from the hero fix; reuse it
+     here rather than adding a second cache. The module script below still
+     re-checks the real auth state and corrects this if it's wrong (e.g. a
+     different account logged in since, or the cache is stale). */
+  (function(){
+    try{
+      var lastUid = localStorage.getItem('mindshift_hero_last_uid');
+      if(lastUid !== null && lastUid !== 'guest'){
+        var bar = document.getElementById('guestBar');
+        if(bar) bar.style.display = 'none';
+      }
+    }catch(e){}
+  })();
+</script>
 
 <!-- FEED TABS: For You | Following | Explore -->
 <div class="feed-tabs" id="feedTabs">
@@ -682,7 +705,7 @@ main{max-width:1100px;margin:0 auto}
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
-import { getFirestore, doc, getDoc, setDoc, deleteDoc, updateDoc, increment, onSnapshot, collection, query, where, getDocs, orderBy, addDoc, serverTimestamp, writeBatch, limit, startAfter } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
+import { getFirestore, doc, getDoc, setDoc, deleteDoc, updateDoc, increment, onSnapshot, collection, query, where, getDocs, orderBy, addDoc, serverTimestamp, writeBatch, limit, startAfter, enableNetwork, disableNetwork } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
 import { initNotificationUI } from '/notifications.js';
 
 const fbApp = initializeApp({
@@ -924,33 +947,62 @@ onAuthStateChanged(auth, async user => {
   if(p.get('id')) location.href = `/article-read?id=${p.get('id')}`;
 });
 
-// Safety net: if the feed is still showing its skeleton after 8s (dropped
-// connection, slow Firestore, etc.), stop spinning forever and offer a retry.
-setTimeout(()=>{
-  const grid = document.getElementById('grid');
-  if(grid && grid.querySelector('.skel-card')){
-    grid.innerHTML = `<div class="no-res" style="display:flex">
-      <svg width="44" height="44" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="m21 21-4.35-4.35"/></svg>
-      <p>Could not load the feed.<br>Check your connection and try again.</p>
-      <button onclick="retryLoadFeed()" style="margin-top:12px;background:var(--p);color:#fff;border:none;padding:10px 20px;border-radius:99px;font-size:13px;font-weight:700;cursor:pointer">Retry</button>
-    </div>`;
-  }
-}, 8000);
-
-window.retryLoadFeed = function(){
-  showSkeletons(4);
-  loadPublishedArticles();
-  loadPublishedPosts();
-  setTimeout(()=>{
+// ── FEED LOAD RESILIENCE ─────────────────────────────────────────────────
+// The old version of this gave up after one flat 8s timer and showed an
+// error card — which fires far too easily on a cold start with a weak
+// connection (e.g. the tab got discarded for memory and reloads from
+// scratch right as you switch back to it, or mobile data is slow to wake
+// up). None of that means the feed actually failed, just that it needs a
+// bit more patience and a nudge. This retries quietly a few times, with a
+// growing timeout each round, and only shows the user-facing error after
+// genuinely exhausting those attempts — and it's shared by the initial
+// load, the manual Retry button, and the automatic recovery on tab-return
+// below, instead of three copies of the same logic.
+let _feedWatchdogRunning = false;
+async function ensureFeedLoaded(){
+  if(_feedWatchdogRunning) return;
+  _feedWatchdogRunning = true;
+  try{
+    const attempts = [8000, 10000, 14000];
+    for(let i=0;i<attempts.length;i++){
+      const grid = document.getElementById('grid');
+      if(!grid || !(grid.querySelector('.skel-card') || grid.querySelector('.no-res'))) return; // already loaded fine
+      if(i>0){
+        // Reconnect Firestore's stream before trying again — after a long
+        // background spell this is often the actual reason a query just
+        // hangs instead of resolving or erroring.
+        try{ await disableNetwork(db); await enableNetwork(db); }catch(e){}
+      }
+      const ok = await Promise.race([
+        Promise.all([loadPublishedArticles(), loadPublishedPosts()]).then(r=>r.every(Boolean)),
+        new Promise(res=>setTimeout(()=>res(false), attempts[i]))
+      ]);
+      if(ok || ARTICLES.length || POSTS.length) return; // renderGrid() already ran inside the loaders
+      await new Promise(r=>setTimeout(r, 800));
+    }
     const grid = document.getElementById('grid');
-    if(grid && grid.querySelector('.skel-card')){
+    if(grid && (grid.querySelector('.skel-card') || grid.querySelector('.no-res'))){
       grid.innerHTML = `<div class="no-res" style="display:flex">
         <svg width="44" height="44" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="m21 21-4.35-4.35"/></svg>
-        <p>Still having trouble loading.<br>Check your connection and try again.</p>
+        <p>Could not load the feed.<br>Check your connection and try again.</p>
         <button onclick="retryLoadFeed()" style="margin-top:12px;background:var(--p);color:#fff;border:none;padding:10px 20px;border-radius:99px;font-size:13px;font-weight:700;cursor:pointer">Retry</button>
       </div>`;
     }
-  }, 8000);
+  } finally { _feedWatchdogRunning = false; }
+}
+setTimeout(ensureFeedLoaded, 8000);
+
+// Coming back to this tab — whether it's a real bfcache restore or Chrome
+// discarded and reloaded it from scratch — is exactly when a stale
+// Firestore connection or a stuck skeleton is most likely. Check as soon
+// as the page is visible/restored again, rather than waiting for the user
+// to notice the feed never came in.
+window.addEventListener('pageshow', ensureFeedLoaded);
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) ensureFeedLoaded(); });
+
+window.retryLoadFeed = function(){
+  showSkeletons(4);
+  ensureFeedLoaded();
 };
 
 /* ── FEED TAB SWITCHING ── */
@@ -2398,7 +2450,7 @@ async function loadPublishedArticles(){
       limit(ARTICLES_PAGE_SIZE)
     );
     const snap = await getDocs(q);
-    if(snap.empty) return; // nothing published yet — empty state from initial renderGrid() stays up
+    if(snap.empty) return true; // nothing published yet — empty state from initial renderGrid() stays up; a real, successful "nothing" is not a failure
     // Fully replace with Firestore data — what admin approves is what shows
     ARTICLES = snap.docs.map(mapArticleDoc);
     _articlesLastDoc = snap.docs[snap.docs.length-1];
@@ -2406,7 +2458,8 @@ async function loadPublishedArticles(){
     rebuildMergedFeedOrder();
     renderGrid();
     _xDiscoverBuilt = false;
-  }catch(e){ console.error('Firestore articles error:',e); }
+    return true;
+  }catch(e){ console.error('Firestore articles error:',e); return false; }
 }
 
 // Pulls the next page and appends it — used by infinite scroll, and by the
@@ -2487,7 +2540,8 @@ async function loadPublishedPosts(){
     });
     rebuildMergedFeedOrder();
     renderGrid();
-  }catch(e){ console.error('Firestore posts error:',e); }
+    return true;
+  }catch(e){ console.error('Firestore posts error:',e); return false; }
 }
 
 /* ── FULLSCREEN SEARCH / EXPLORE ── */
