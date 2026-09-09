@@ -42,9 +42,9 @@
     '.shareimg-toggle button{border:none;background:none;padding:8px 18px;border-radius:9px;font-weight:700;font-size:13.5px;color:#64748b;cursor:pointer;display:flex;align-items:center;gap:6px;-webkit-tap-highlight-color:transparent}' +
     '.shareimg-toggle button.active{background:#0f172a;color:#fff}' +
     '.shareimg-toggle svg{width:15px;height:15px}' +
-    '.shareimg-bg-label{font-size:11.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#9ca3af;text-align:center;margin-bottom:10px}' +
-    '.shareimg-bg-row{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;margin:0 auto 18px;max-width:280px}' +
-    '.shareimg-bg-swatch{width:34px;height:34px;border-radius:10px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0;box-shadow:inset 0 0 0 1.5px rgba(15,23,42,.1);-webkit-tap-highlight-color:transparent;transition:transform .12s}' +
+    '.shareimg-bg-label{font-size:11.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#9ca3af;text-align:center;margin:2px 0 10px}' +
+    '.shareimg-bg-row{display:flex;gap:8px;justify-content:center;flex-wrap:nowrap;margin:0 auto 18px}' +
+    '.shareimg-bg-swatch{width:32px;height:32px;border-radius:9px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0;box-shadow:inset 0 0 0 1.5px rgba(15,23,42,.1);-webkit-tap-highlight-color:transparent;transition:transform .12s}' +
     '.shareimg-bg-swatch:active{transform:scale(.92)}' +
     '.shareimg-bg-swatch.active{box-shadow:0 0 0 2px #fff,0 0 0 4px #0f172a}' +
     '.shareimg-bg-swatch svg{width:15px;height:15px;color:#fff;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4));display:none}' +
@@ -95,13 +95,13 @@
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="2.5"/></svg> Stories' +
         '</button>' +
       '</div>' +
-      '<div class="shareimg-bg-label">Background</div>' +
-      '<div class="shareimg-bg-row" id="shareimgBgRow"></div>' +
       '<div class="shareimg-preview-wrap">' +
         '<div class="shareimg-frame" id="shareimgFrame">' +
           '<div class="shareimg-card" id="shareimgCard"></div>' +
         '</div>' +
       '</div>' +
+      '<div class="shareimg-bg-label">Background</div>' +
+      '<div class="shareimg-bg-row" id="shareimgBgRow"></div>' +
       '<div class="shareimg-actions">' +
         '<button class="shareimg-act-download" id="shareimgDownloadBtn" onclick="downloadShareImageCard()">' +
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>' +
@@ -126,19 +126,20 @@
   // Background choices for the card frame — a swatch row like every other
   // "pick a style" picker in the app (see sidebar-nav.js's icon items for
   // the same "one array, rendered" pattern). Brand gradient stays first
-  // and selected by default; the rest are flat colors so they read fine
-  // behind either Grid or Stories shape without their own gradient angle
-  // fighting the card's.
+  // and selected by default. The rest lean on gradients (matching the
+  // app's own indigo->cyan visual language) rather than flat pastel
+  // swatches, so a shared card still reads as "MindShift Books" even in
+  // a different colorway. Six options keeps the row on one line at
+  // typical phone widths.
   var BG_OPTIONS = [
-    { id: 'brand',   css: 'linear-gradient(160deg,#4338ca 0%,#4f46e5 45%,#06b6d4 100%)' },
-    { id: 'charcoal', css: '#18181b' },
-    { id: 'mist',     css: '#e2e8f0' },
-    { id: 'cream',    css: '#f5f1e8' },
-    { id: 'sand',     css: '#d8b48c' },
-    { id: 'forest',   css: '#065f46' },
-    { id: 'mauve',    css: '#a68a82' }
+    { id: 'brand',    css: 'linear-gradient(160deg,#4338ca 0%,#4f46e5 45%,#06b6d4 100%)' },
+    { id: 'midnight', css: '#0f172a' },
+    { id: 'sunrise',  css: 'linear-gradient(160deg,#fb923c 0%,#ec4899 100%)' },
+    { id: 'emerald',  css: 'linear-gradient(160deg,#059669 0%,#34d399 100%)' },
+    { id: 'lavender', css: 'linear-gradient(160deg,#a78bfa 0%,#f0abfc 100%)' },
+    { id: 'sand',     css: '#d8b48c' }
   ];
-  var currentShape = 'stories';
+  var currentShape = 'grid';
   var currentBg = BG_OPTIONS[0].id;
   var currentItem = null;
   var PREVIEW_TARGET_W = 280; // on-screen preview width in CSS px, height follows shape ratio
@@ -261,7 +262,7 @@
 
   window.openShareImageCard = function (item) {
     currentItem = item;
-    currentShape = 'stories';
+    currentShape = 'grid';
     currentBg = BG_OPTIONS[0].id;
     document.getElementById('shareimgOverlay').classList.add('on');
     document.getElementById('shareimgSheet').classList.add('on');
