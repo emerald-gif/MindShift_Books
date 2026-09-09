@@ -38,7 +38,7 @@ app.use(helmet({
   crossOriginOpenerPolicy: false
 }));
 
-// ── CORS — only allow our own domain ──────────────────────────────────────
+// ── CORS — only allows our own domain ──────────────────────────────────────
 const ALLOWED_ORIGINS = [
   'https://mindshiftbooks.shop',
   'https://www.mindshiftbooks.shop',
@@ -3239,6 +3239,54 @@ app.patch('/api/account', requireUser, async (req, res) => {
   } catch (err) {
     console.error('PATCH /api/account error', err);
     return res.status(500).json({ error: 'Could not update your details.' });
+  }
+});
+
+// Propagates a profile edit (name/photo/username) to every piece of content
+// this user has already published. Posts, articles, and comments each store
+// their own snapshot of authorName/authorPhoto/authorUsername taken at the
+// moment they were created — a deliberate denormalization so read-heavy
+// pages (article feed, post feed, comment threads) never need a join back
+// to `users` on every render. The cost is that editing your profile doesn't
+// change what already exists unless something goes back and rewrites those
+// snapshots — which is exactly what this does. Called from profile.html
+// right after the `users/{uid}` doc itself is saved.
+app.post('/api/account/sync-author', requireUser, async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const userDoc = await db.collection('users').doc(req.uid).get();
+    if (!userDoc.exists) return res.status(404).json({ error: 'Profile not found' });
+    const u = userDoc.data() || {};
+
+    const authorFields = {
+      authorName: u.name || req.userName || 'MindShift Books User',
+      authorPhoto: u.photo || '',
+      authorUsername: u.username || ''
+    };
+
+    const BATCH_LIMIT = 400; // Firestore batch write cap is 500
+    let updated = 0;
+
+    async function patchCollection(collectionName, extraFields) {
+      const snap = await db.collection(collectionName).where('authorUid', '==', req.uid).get();
+      const fields = { ...authorFields, ...(extraFields || {}) };
+      for (let i = 0; i < snap.docs.length; i += BATCH_LIMIT) {
+        const chunk = snap.docs.slice(i, i + BATCH_LIMIT);
+        const batch = db.batch();
+        chunk.forEach(doc => batch.update(doc.ref, fields));
+        await batch.commit();
+        updated += chunk.length;
+      }
+    }
+
+    await patchCollection('posts');
+    await patchCollection('articles', { authorBio: u.bio || '' });
+    await patchCollection('comments');
+
+    return res.json({ ok: true, updated });
+  } catch (err) {
+    console.error('/api/account/sync-author error', err);
+    return res.status(500).json({ error: 'Could not sync your profile to existing content.' });
   }
 });
 
