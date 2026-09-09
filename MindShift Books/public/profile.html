@@ -2029,6 +2029,22 @@ window.saveProfile = async function(){
       catch(e){ console.warn('Auth displayName sync failed:',e.message); }
     }
 
+    // ── 4. Propagate the new name/photo/username to every post, article, and
+    // comment already published under this account. Those each keep their
+    // own snapshot of the author's info from when they were created, so
+    // without this they'd keep showing the old name/photo forever. Fired
+    // without waiting on it — it can touch a lot of documents, and the
+    // profile page itself is already up to date either way.
+    (async () => {
+      try{
+        const token = await currentUser.getIdToken();
+        await fetch('/api/account/sync-author', {
+          method:'POST',
+          headers:{'Authorization':'Bearer '+token}
+        });
+      }catch(e){ console.warn('sync-author failed:', e.message); }
+    })();
+
     Object.assign(profileData, data);
     closeEditSheet();
     renderProfileHeader();

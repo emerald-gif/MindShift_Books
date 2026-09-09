@@ -2495,6 +2495,8 @@ let xQuery = '';
 let _xActiveTab = 'articles';
 let _xDiscoverBuilt = false;
 let _allUsersCache = null;
+let _allUsersCacheAt = 0;
+const ALL_USERS_CACHE_TTL = 30000; // ms — re-fetch periodically so a profile edited elsewhere (or in another tab) shows up in search without needing a full page reload
 
 function shuffleArr(arr){
   const a = [...arr];
@@ -2568,11 +2570,12 @@ window.clearXSearch = function(){
 const OFFICIAL_ALIASES = ['official','mindshift','mindshift books'];
 async function searchAccountsList(q){
   const isOfficialMatch = OFFICIAL_ALIASES.some(alias => alias.includes(q) || q.includes(alias));
-  if(!_allUsersCache){
+  if(!_allUsersCache || (Date.now() - _allUsersCacheAt) > ALL_USERS_CACHE_TTL){
     try{
       const snap = await getDocs(query(collection(db,'users'), limit(200)));
       _allUsersCache = snap.docs.map(d=>({uid:d.id,...d.data()}));
-    }catch(e){ _allUsersCache = []; }
+      _allUsersCacheAt = Date.now();
+    }catch(e){ _allUsersCache = _allUsersCache || []; }
   }
   const matches = _allUsersCache.filter(u=>{
     if(u.uid==='official') return false; // canonical entry added below — avoid a duplicate
