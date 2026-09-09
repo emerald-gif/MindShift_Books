@@ -1571,7 +1571,9 @@ window.shareManageAsImage = function(){
     type: _manageType, id: _manageId,
     author: item.author, avatar: item.avatar, publishedAt: item.publishedAt,
     text: item.text, title: item.title, brief: item.brief,
-    image: _manageType==='post' ? (item.images && item.images[0]) : (item.img || item.coverImage)
+    // Video posts have no `images` array — use the video's thumbnail
+    // instead, since a share card is a static image and can't play video.
+    image: _manageType==='post' ? (item.videoUrl ? item.thumbnailUrl : (item.images && item.images[0])) : (item.img || item.coverImage)
   });
 };
 

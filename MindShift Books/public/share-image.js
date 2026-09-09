@@ -54,7 +54,7 @@
     '.shareimg-card{transform-origin:top left;font-family:inherit}' +
     '.shareimg-bg{width:100%;height:100%;box-sizing:border-box;background:linear-gradient(160deg,#4338ca 0%,#4f46e5 45%,#06b6d4 100%);display:flex;flex-direction:column;position:relative}' +
     '.shareimg-cardbody-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 56px}' +
-    '.shareimg-cardbody{background:#fff;border-radius:26px;padding:44px;width:100%;box-shadow:0 30px 60px rgba(0,0,0,.25)}' +
+    '.shareimg-cardbody{background:#fff;border-radius:26px;padding:44px;width:100%;box-shadow:0 14px 28px rgba(0,0,0,.18)}' +
     '.shareimg-author-row{display:flex;align-items:center;gap:16px;margin-bottom:28px}' +
     '.shareimg-author-row img{width:58px;height:58px;border-radius:50%;object-fit:cover;flex-shrink:0;background:linear-gradient(135deg,#4f46e5,#06b6d4)}' +
     '.shareimg-author-name{font-weight:800;font-size:26px;color:#0f172a;flex:1;min-width:0}' +
@@ -214,7 +214,10 @@
   function buildCardInnerHtml(item, shape) {
     var dims = SHAPES[shape];
     var isArticle = item.type === 'article';
-    var img = cldResize(item.image || '', 900);
+    // 700px source is still comfortably above the ~650px the image ever
+    // actually renders at now that export happens at scale:0.6 — kept
+    // slightly above rather than exact so it isn't visibly soft.
+    var img = cldResize(item.image || '', 700);
     var avatar = cldResize(item.avatar || '/logo.jpg', 120);
     var bodyHtml = isArticle
       ? '<div class="shareimg-title">' + esc(truncate(item.title, 90)) + '</div>' +
@@ -304,11 +307,15 @@
     // Let images/layout settle before html2canvas measures it.
     await new Promise(function (r) { requestAnimationFrame(function () { requestAnimationFrame(r); }); });
     try {
-      // scale:1 — the card is already built at its true 1080/1920px target
-      // resolution (see SHAPES above), so a 2x multiplier on top of that
-      // was rendering/encoding a 2160x3840 canvas for no visual benefit at
-      // typical share sizes, and was a big chunk of the wait on mobile.
-      return await html2canvas(clone, { scale: 1, backgroundColor: null, useCORS: true, allowTaint: true, width: dims.w, height: dims.h });
+      // scale:0.6 — the card layout is still designed at true 1080/1920px
+      // (see SHAPES above, and dims.w/dims.h below), so this only shrinks
+      // the final rasterized/encoded pixel count, not the text sizing or
+      // padding math. html2canvas's paint + shadow-blur + PNG-encode time
+      // scales with pixel count, and that (not the DOM walk) was most of
+      // the "Preparing…" wait — 0.6 cuts it to ~36% of the pixels at
+      // scale:1 while still landing well above typical feed/story preview
+      // sizes, so it doesn't look soft when shared.
+      return await html2canvas(clone, { scale: 0.6, backgroundColor: null, useCORS: true, allowTaint: true, width: dims.w, height: dims.h });
     } finally {
       clone.remove();
     }

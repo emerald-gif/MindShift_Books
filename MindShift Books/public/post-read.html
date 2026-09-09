@@ -1549,7 +1549,9 @@ window.openShareAsImageFromArticle=function(){
     type: 'post', id: article.id,
     author: article.author, avatar: article.avatar, publishedAt: article.publishedAt,
     text: article.text,
-    image: article.images && article.images[0]
+    // Video posts have no `images` array — use the video's thumbnail
+    // instead, since a share card is a static image and can't play video.
+    image: article.videoUrl ? article.thumbnailUrl : (article.images && article.images[0])
   });
 };
 

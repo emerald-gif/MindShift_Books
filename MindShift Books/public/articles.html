@@ -2262,7 +2262,9 @@ window.shareAsImage = function(id, type){
     type, id,
     author: item.author, avatar: item.avatar, publishedAt: item.publishedAt,
     text: item.text, title: item.title, brief: item.brief,
-    image: type==='post' ? (item.images && item.images[0]) : (item.img || item.coverImage)
+    // Video posts have no `images` array — use the video's thumbnail
+    // instead, since a share card is a static image and can't play video.
+    image: type==='post' ? (item.videoUrl ? item.thumbnailUrl : (item.images && item.images[0])) : (item.img || item.coverImage)
   });
 };
 
