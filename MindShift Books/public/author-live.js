@@ -62,6 +62,12 @@
           if (live.photo) {
             const photoEl = wrap.querySelector('[data-author-photo]');
             if (photoEl) { photoEl.src = live.photo; photoEl.style.display = ''; }
+            // Some avatars (comments) show initials instead of an <img> when
+            // no snapshot photo was ever saved. If the author has since set
+            // a live photo, hide that initials fallback so it doesn't sit
+            // behind/alongside the now-visible image.
+            const fallbackEl = wrap.querySelector('[data-author-photo-fallback]');
+            if (fallbackEl) fallbackEl.style.display = 'none';
           }
         });
       })
