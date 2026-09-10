@@ -707,6 +707,7 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/fireba
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
 import { getFirestore, doc, getDoc, setDoc, deleteDoc, updateDoc, increment, onSnapshot, collection, query, where, getDocs, orderBy, addDoc, serverTimestamp, writeBatch, limit, startAfter, enableNetwork, disableNetwork } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
 import { initNotificationUI } from '/notifications.js';
+import { initRepost } from '/repost.js';
 
 const fbApp = initializeApp({
   apiKey:"AIzaSyDTn70s1_uIiSOR6lPLY_nKh8Ff1FViFCs",
@@ -722,6 +723,12 @@ const db   = getFirestore(fbApp, 'default');
 const notif = initNotificationUI({
   db, getCurrentUser: () => currentUser, getMyProfile: () => myProfile,
   fs: { collection, query, where, onSnapshot, getDocs, orderBy, limit, addDoc, writeBatch, serverTimestamp, doc, getDoc, setDoc, increment }
+});
+const repost = initRepost({
+  db, getCurrentUser: () => currentUser, getMyProfile: () => myProfile, notif,
+  openAuth: () => window.openAuth && window.openAuth(),
+  showToast: (m) => window.toast && window.toast(m),
+  fs: { doc, getDoc, setDoc, deleteDoc, addDoc, collection, updateDoc, increment, serverTimestamp }
 });
 
 /* ── HERO BANNER DISMISS (per-account, persists across reloads) ── */
@@ -828,6 +835,10 @@ window.handleInviteFriends = async function(){
 let ARTICLES = [];
 // Posts — the lighter-weight text+photos content type, merged into the main feed
 let POSTS = [];
+// Plain reposts only — quote reposts already live in POSTS (they're real
+// posts docs with a quotedFrom pointer), so merging this in too would show
+// them twice.
+let REPOSTS = [];
 
 /* ── ARTICLE PAGINATION ──
    loadPublishedArticles() used to fetch every published article with no
@@ -943,6 +954,7 @@ onAuthStateChanged(auth, async user => {
   if(ARTICLES.length || POSTS.length) renderGrid();
   loadPublishedArticles();
   loadPublishedPosts();
+  loadRecentReposts();
   const p = new URLSearchParams(location.search);
   if(p.get('id')) location.href = `/article-read?id=${p.get('id')}`;
 });
@@ -974,7 +986,7 @@ async function ensureFeedLoaded(){
         try{ await disableNetwork(db); await enableNetwork(db); }catch(e){}
       }
       const ok = await Promise.race([
-        Promise.all([loadPublishedArticles(), loadPublishedPosts()]).then(r=>r.every(Boolean)),
+        Promise.all([loadPublishedArticles(), loadPublishedPosts(), loadRecentReposts()]).then(r=>r.every(Boolean)),
         new Promise(res=>setTimeout(()=>res(false), attempts[i]))
       ]);
       if(ok || ARTICLES.length || POSTS.length) return; // renderGrid() already ran inside the loaders
@@ -1816,7 +1828,7 @@ function weightedShuffleFeed(items){
 function rebuildMergedFeedOrder(){
   if(activeFilter!=='all' || searchQuery) return; // filtered/search views don't use this
   const articles = getFiltered().map(a=>({...a, type:'article'}));
-  mergedFeedOrder = weightedShuffleFeed([...articles, ...POSTS]);
+  mergedFeedOrder = weightedShuffleFeed([...articles, ...POSTS, ...REPOSTS]);
 }
 
 function getMergedFeed(){
@@ -1872,6 +1884,7 @@ window.toggleFeedVideoMute = function(id, event){
 };
 function buildPostCardHtml(p){
   const carousel = p.videoUrl ? buildVideoTileHtml(p) : buildMediaGridHtml(p.images, p.id);
+  const embed = p.quotedFrom ? repost.buildEmbedCardHtml(p.quotedSnapshot) : '';
   return `<div class="acard pcard" data-post-id="${p.id}" onclick="goPostRead('${p.id}')">
     <div class="acard-body">
       <div class="acard-author" data-author-uid="${p.authorUid||''}" onclick="event.stopPropagation();goAuthor('${p.authorUid||''}',${!!p.isMindshift})">
@@ -1882,7 +1895,7 @@ function buildPostCardHtml(p){
         <span class="acard-author-date">${fmtRel(p.publishedAt)}</span>
       </div>
       ${p.text ? `<div class="pcard-text">${esc(p.text)}</div>` : ''}
-      ${carousel}
+      ${embed || carousel}
       <div class="acard-foot">
         <button class="acard-like" id="lb-${p.id}" onclick="event.stopPropagation();handleLike('${p.id}')">
           <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
@@ -1930,6 +1943,23 @@ function buildPostCardHtml(p){
           </div>
         </div>
       </div>
+    </div>
+  </div>`;
+}
+
+// A plain repost mirrors the target's own card exactly — it's not new
+// content, just a "X reposted this" label above whatever the target
+// already looks like. Tapping anywhere opens the original directly (per
+// the spec: no separate "repost view" exists for a plain repost).
+function buildRepostCardHtml(r){
+  const openFn = r.targetType === 'article' ? `goRead('${r.targetId}')` : `goPostRead('${r.targetId}')`;
+  return `<div class="acard pcard" data-repost-id="${r.id}" onclick="${openFn}">
+    <div class="acard-body">
+      <div class="rp-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+        ${esc(r.reposterName||'Someone')} reposted
+      </div>
+      ${repost.buildEmbedCardHtml(r.targetSnapshot)}
     </div>
   </div>`;
 }
@@ -1999,6 +2029,7 @@ function renderGrid(){
   noRes.style.display='none';
   const cardsHtml = list.map((a) => {
     if(a.type==='post') return buildPostCardHtml(a);
+    if(a.type==='repost') return buildRepostCardHtml(a);
     return `
     <div class="acard" data-post-id="${a.id}" onclick="goRead('${a.id}')">
       <div class="acard-body">
@@ -2081,7 +2112,7 @@ function renderGrid(){
     }
   });
   // One parallel batch for all like counts — no per-card listeners
-  fetchLikeCounts(list.map(a=>({ id:a.id, hideLikeCount:!!a.hideLikeCount, authorUid:a.authorUid })));
+  fetchLikeCounts(list.filter(a=>a.type!=='repost').map(a=>({ id:a.id, hideLikeCount:!!a.hideLikeCount, authorUid:a.authorUid })));
   const postIds = list.filter(a=>a.type==='post').map(a=>a.id);
   if(postIds.length) fetchPostCommentCounts(postIds);
 }
@@ -2535,13 +2566,47 @@ async function loadPublishedPosts(){
         authorUid: x.authorUid||null,
         isMindshift: x.authorUid==='official',
         commentsOff: !!x.commentsOff,
-        hideLikeCount: !!x.hideLikeCount
+        hideLikeCount: !!x.hideLikeCount,
+        quotedFrom: x.quotedFrom||null,
+        quotedSnapshot: x.quotedSnapshot||null
       };
     });
     rebuildMergedFeedOrder();
     renderGrid();
     return true;
   }catch(e){ console.error('Firestore posts error:',e); return false; }
+}
+
+// Plain reposts only (see REPOSTS comment above) — merged into the main
+// feed as their own card type. Quote reposts need no separate query: they
+// already came in through loadPublishedPosts() as normal posts.
+async function loadRecentReposts(){
+  try{
+    const q = query(
+      collection(db,'reposts'),
+      where('kind','==','plain'),
+      orderBy('createdAt','desc'),
+      limit(40)
+    );
+    const snap = await getDocs(q);
+    REPOSTS = snap.docs.map(d=>{
+      const x = d.data();
+      return {
+        id: d.id,
+        type: 'repost',
+        reposterUid: x.reposterUid||null,
+        reposterName: x.reposterName||'Someone',
+        reposterPhoto: x.reposterPhoto||'logo.jpg',
+        targetType: x.targetType||'post',
+        targetId: x.targetId||'',
+        targetSnapshot: x.targetSnapshot||null,
+        publishedAt: x.createdAt||null
+      };
+    });
+    rebuildMergedFeedOrder();
+    renderGrid();
+    return true;
+  }catch(e){ console.error('Firestore reposts error:',e); return false; }
 }
 
 /* ── FULLSCREEN SEARCH / EXPLORE ── */

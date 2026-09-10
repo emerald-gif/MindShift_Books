@@ -645,6 +645,7 @@ import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/
 import { getFirestore, doc, getDoc, setDoc, deleteDoc, updateDoc, increment, onSnapshot,
          collection, query, where, orderBy, limit, addDoc, serverTimestamp, getDocs, writeBatch } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
 import { initNotificationUI } from '/notifications.js';
+import { initRepost } from '/repost.js';
 
 const fbApp = initializeApp({
   apiKey:"AIzaSyDTn70s1_uIiSOR6lPLY_nKh8Ff1FViFCs",
@@ -660,6 +661,12 @@ const db   = getFirestore(fbApp, 'default');
 const notif = initNotificationUI({
   db, getCurrentUser: () => currentUser, getMyProfile: () => myProfile,
   fs: { collection, query, where, onSnapshot, getDocs, orderBy, limit, addDoc, writeBatch, serverTimestamp, doc, getDoc, setDoc, increment }
+});
+const repost = initRepost({
+  db, getCurrentUser: () => currentUser, getMyProfile: () => myProfile, notif,
+  openAuth: () => window.openAuth && window.openAuth(),
+  showToast: (m) => window.showToast && window.showToast(m),
+  fs: { doc, getDoc, setDoc, deleteDoc, addDoc, collection, updateDoc, increment, serverTimestamp }
 });
 
 /* ── ARTICLE DATA ── */
@@ -677,6 +684,8 @@ let isSaved = false;
 let isFollowing = false;
 let likeUnsub = null;
 let downloadCount = 0;
+let repostCount = 0;
+let isReposted = false;
 let hasDownloaded = false;
 let downloadUnsub = null;
 
@@ -886,6 +895,8 @@ async function renderArticle(){
   isSaved       = await fetchUserSaved();
   isFollowing   = await fetchUserFollowing();
   hasDownloaded = await fetchUserDownloaded();
+  repostCount   = await repost.getRepostCount(article.id);
+  isReposted    = await repost.isReposted('article', article.id);
   subLives();
   subDownloads();
 
@@ -921,6 +932,10 @@ async function renderArticle(){
         <button class="act-btn" id="actComment" onclick="openCommentDrawer()" style="gap:5px${article.commentsOff?';opacity:.45':''}" ${article.commentsOff?'title="Comments are off"':''}>
           <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
           <span id="actCommentTxt">0</span>
+        </button>
+        <button class="act-btn act-repost ${isReposted?'reposted':''}" id="actRepost" onclick="doRepost()" aria-label="Repost">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+          <span id="actRepostTxt">${repostCount||0}</span>
         </button>
         <button class="act-btn" onclick="openShare()" aria-label="Share">
           <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
@@ -1037,6 +1052,31 @@ function syncDownloadUI(){
 
 /* ── LIKE ── */
 /* ── LIKE ── */
+/* ── REPOST ── */
+window.doRepost = function(){
+  if(!currentUser){ openAuth(); return; }
+  if(!article) return;
+  const snapshot = {
+    type: 'article', id: article.id, title: article.title, author: article.author,
+    avatar: article.avatar, authorUid: article.authorUid, img: article.img
+  };
+  repost.open({
+    targetType: 'article', targetId: article.id, snapshot, recipientUid: article.authorUid,
+    onSuccess: ({ kind, reposted }) => {
+      if(kind==='plain'){
+        isReposted = reposted;
+        repostCount = Math.max(0, repostCount + (reposted ? 1 : -1));
+      } else if(kind==='quote'){
+        repostCount = repostCount + 1;
+      }
+      const btn = document.getElementById('actRepost');
+      if(btn) btn.classList.toggle('reposted', isReposted);
+      const txt = document.getElementById('actRepostTxt');
+      if(txt) txt.textContent = repostCount;
+    }
+  });
+};
+
 window.doLike = function(){
   if(!currentUser){ openAuth(); return; }
 

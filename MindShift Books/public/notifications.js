@@ -115,6 +115,8 @@ function notifMessage(n) {
     case 'comment_like': return `${name} liked your comment on${title}`;
     case 'new_comment':  return `${name} commented on your ${n.targetType==='post'?'post':'article'}${title}`;
     case 'comment_reply':return `${name} replied to your comment on${title}`;
+    case 'repost':       return `${name} reposted your ${n.targetType==='post'?'post':'article'}${title}`;
+    case 'repost_quote': return `${name} reposted your ${n.targetType==='post'?'post':'article'} with a caption${title}`;
     case 'admin_message':    return `<strong>${nEsc(n.title || 'Message from MindShift Books')}</strong>${n.message ? ' — ' + nEsc(n.message) : ''}`;
     case 'article_approved': return `<strong>${nEsc(n.title || 'Your article was approved!')}</strong>${n.message ? ' — ' + nEsc(n.message) : ''}`;
     case 'article_rejected': return `<strong>${nEsc(n.title || 'Article update')}</strong>${n.message ? ' — ' + nEsc(n.message) : ''}`;
@@ -205,7 +207,7 @@ export function initNotificationUI({ db, getCurrentUser, getMyProfile, fs }) {
         if (n.actorUid) location.href = `/profile?uid=${encodeURIComponent(n.actorUid)}`;
         else if (n.actorUsername) location.href = `/profile/@${encodeURIComponent(n.actorUsername)}`;
         break;
-      case 'article_like': case 'new_comment': case 'comment_like': case 'comment_reply':
+      case 'article_like': case 'new_comment': case 'comment_like': case 'comment_reply': case 'repost': case 'repost_quote':
         if (n.targetId) location.href = (n.targetType === 'post' ? '/post-read' : '/article-read') + `?id=${n.targetId}`;
         break;
       case 'article_approved':
@@ -309,6 +311,26 @@ export function initNotificationUI({ db, getCurrentUser, getMyProfile, fs }) {
     try { await addDoc(collection(db, 'notifications'), payload); } catch (e) {}
   }
 
+  // Covers both repost kinds — the recipient is always whoever's content
+  // got directly reposted (the target passed in), matching the "point at
+  // what you directly reposted, not the root" rule: reposting a repost
+  // notifies the reposter, not the original author further back.
+  async function notifyRepost({ recipientUid, targetId, targetTitle, targetType, kind }) {
+    const currentUser = getCurrentUser();
+    if (!currentUser || !recipientUid || recipientUid === currentUser.uid) return;
+    if (recipientUid === 'official') return;
+    const myProfile = getMyProfile ? getMyProfile() : null;
+    const actorName = myProfile?.name || 'Someone', actorPhoto = myProfile?.photo || '', actorUsername = myProfile?.username || '';
+    try {
+      await addDoc(collection(db, 'notifications'), {
+        recipientUid, type: kind === 'quote' ? 'repost_quote' : 'repost',
+        actorUid: currentUser.uid, actorName, actorPhoto, actorUsername,
+        targetId: targetId || null, targetTitle: targetTitle || '', targetType: targetType || 'post',
+        read: false, createdAt: serverTimestamp()
+      });
+    } catch (e) {}
+  }
+
   // Profile views are analytics, not an actionable alert — nobody needs a
   // bell notification every time someone looks at their profile, but an
   // author does want to know their view count on Insights. Tracked here
@@ -332,5 +354,5 @@ export function initNotificationUI({ db, getCurrentUser, getMyProfile, fs }) {
     } catch (e) {}
   }
 
-  return { initNotifications, clearNotifications, notifyArticleLike, notifyFollow, notifyComment, trackProfileView };
+  return { initNotifications, clearNotifications, notifyArticleLike, notifyFollow, notifyComment, notifyRepost, trackProfileView };
 }
