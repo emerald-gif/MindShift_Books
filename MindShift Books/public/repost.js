@@ -72,17 +72,23 @@ function injectStylesOnce() {
   cssInjected = true;
   const style = document.createElement('style');
   style.textContent = `
+.rp-overlay{position:fixed;inset:0;z-index:301;background:rgba(15,23,42,.5);opacity:0;pointer-events:none;transition:opacity .25s}
+.rp-overlay.on{opacity:1;pointer-events:auto}
 .rp-sheet{position:fixed;left:0;right:0;bottom:0;z-index:302;background:#fff;border-radius:24px 24px 0 0;padding:10px 20px 34px;transform:translateY(100%);transition:transform .3s cubic-bezier(.32,0,.15,1);max-height:82vh;overflow-y:auto;box-sizing:border-box}
 .rp-sheet.on{transform:none}
 .rp-sheet .sheet-bar{width:36px;height:4px;border-radius:99px;background:#e5e7eb;margin:0 auto 14px}
+.rp-close{position:absolute;top:14px;right:16px;width:30px;height:30px;border-radius:50%;border:none;background:#f4f4f6;color:#6b7280;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+.rp-close svg{width:15px;height:15px}
 .rp-sheet h4{font-size:15px;font-weight:800;text-align:center;margin:0 0 16px;color:#0f172a}
 .rp-opt{display:flex;align-items:center;gap:12px;width:100%;padding:13px 12px;border:none;background:none;text-align:left;cursor:pointer;border-radius:14px;transition:background .15s;font-family:inherit}
 .rp-opt:active{background:#f4f4f6}
-.rp-opt-ico{font-size:20px;width:38px;height:38px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:#eef2ff;border-radius:50%}
+.rp-opt-ico{width:38px;height:38px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:50%}
+.rp-opt-ico svg{width:18px;height:18px}
+.rp-opt-ico-plain{background:#fff1e0;color:#ea8a1f}
+.rp-opt-ico-quote{background:#eef2ff;color:#4f46e5}
 .rp-opt-txt{display:flex;flex-direction:column;gap:2px}
 .rp-opt-txt b{font-size:14px;font-weight:700;color:#0f172a}
 .rp-opt-txt small{font-size:12px;color:#9ca3af;font-weight:500}
-.rp-cancel{display:block;text-align:center;margin-top:8px;padding:12px;font-size:13px;color:#9ca3af;cursor:pointer;font-weight:600}
 .rp-caption{width:100%;min-height:90px;border:1.5px solid #e5e7eb;border-radius:14px;padding:12px 14px;font-size:14px;font-family:inherit;resize:none;margin-bottom:12px;box-sizing:border-box;color:#0f172a}
 .rp-caption:focus{outline:none;border-color:#4f46e5}
 .rp-submit{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;border-radius:14px;border:none;background:linear-gradient(135deg,#4f46e5,#06b6d4);color:#fff;font-size:14.5px;font-weight:800;cursor:pointer;font-family:inherit}
@@ -110,19 +116,26 @@ function injectSheetOnce() {
   sheetInjected = true;
   const wrap = document.createElement('div');
   wrap.innerHTML = `
+<div class="rp-overlay" id="rpOverlay"></div>
 <div class="rp-sheet" id="rpSheet">
   <div class="sheet-bar"></div>
+  <button type="button" class="rp-close" id="rpCloseBtn" aria-label="Close">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+  </button>
   <div id="rpChoiceView">
     <h4>Repost</h4>
     <button type="button" class="rp-opt" id="rpPlainBtn">
-      <span class="rp-opt-ico">🔁</span>
+      <span class="rp-opt-ico rp-opt-ico-plain">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+      </span>
       <span class="rp-opt-txt"><b id="rpPlainLabel">Repost</b><small id="rpPlainSub">Instantly share to your followers</small></span>
     </button>
     <button type="button" class="rp-opt" id="rpQuoteBtn">
-      <span class="rp-opt-ico">✍️</span>
+      <span class="rp-opt-ico rp-opt-ico-quote">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      </span>
       <span class="rp-opt-txt"><b>Repost with caption</b><small>Add your own thoughts first</small></span>
     </button>
-    <div class="rp-cancel" id="rpCancelBtn">Cancel</div>
   </div>
   <div id="rpQuoteView" style="display:none">
     <h4>Add a caption</h4>
@@ -132,7 +145,9 @@ function injectSheetOnce() {
     <div class="rp-back" id="rpBackBtn">Back</div>
   </div>
 </div>`;
-  document.body.appendChild(wrap.firstElementChild);
+  // Two top-level siblings now (overlay + sheet) — append everything wrap
+  // holds, not just the first child.
+  while (wrap.firstChild) document.body.appendChild(wrap.firstChild);
 }
 
 export function initRepost({ db, fs, getCurrentUser, getMyProfile, notif, openAuth, showToast }) {
@@ -146,14 +161,12 @@ export function initRepost({ db, fs, getCurrentUser, getMyProfile, notif, openAu
   function plainId(uid, targetType, targetId) { return `plain_${uid}_${targetType}_${targetId}`; }
 
   function openOverlay() {
-    const ov = document.getElementById('authOverlay');
-    if (ov) ov.classList.add('on');
+    document.getElementById('rpOverlay').classList.add('on');
     document.getElementById('rpSheet').classList.add('on');
     document.body.style.overflow = 'hidden';
   }
   function closeSheet() {
-    const ov = document.getElementById('authOverlay');
-    if (ov) ov.classList.remove('on');
+    document.getElementById('rpOverlay').classList.remove('on');
     document.getElementById('rpSheet').classList.remove('on');
     document.body.style.overflow = '';
     showChoiceView();
@@ -264,7 +277,8 @@ export function initRepost({ db, fs, getCurrentUser, getMyProfile, notif, openAu
 
   document.getElementById('rpPlainBtn').addEventListener('click', submitPlain);
   document.getElementById('rpQuoteBtn').addEventListener('click', showQuoteView);
-  document.getElementById('rpCancelBtn').addEventListener('click', closeSheet);
+  document.getElementById('rpOverlay').addEventListener('click', closeSheet);
+  document.getElementById('rpCloseBtn').addEventListener('click', closeSheet);
   document.getElementById('rpBackBtn').addEventListener('click', showChoiceView);
   document.getElementById('rpQuoteSubmitBtn').addEventListener('click', submitQuote);
 
