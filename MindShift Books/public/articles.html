@@ -1082,7 +1082,10 @@ async function refreshForYou(){
       where('status','==','published'),
       orderBy('publishedAt','desc')
     );
-    const snap = await getDocs(q);
+    // No `kind` filter here either — same reasoning as loadRecentReposts:
+    // filtering client-side avoids needing a composite index.
+    const repostQ = query(collection(db,'reposts'), orderBy('createdAt','desc'), limit(60));
+    const [snap, repostSnap] = await Promise.all([getDocs(q), getDocs(repostQ)]);
     if(!snap.empty){
       const fresh = snap.docs.map(d=>{
         const x = d.data();
@@ -1107,10 +1110,27 @@ async function refreshForYou(){
       // No new data — just shuffle what we already have
       ARTICLES = shuffleArray(ARTICLES);
     }
+    const freshReposts = repostSnap.docs
+      .map(d=>({ id:d.id, ...d.data() }))
+      .filter(x=>x.kind==='plain')
+      .slice(0,40)
+      .map(x=>({
+        id: x.id,
+        type: 'repost',
+        reposterUid: x.reposterUid||null,
+        reposterName: x.reposterName||'Someone',
+        reposterPhoto: x.reposterPhoto||'logo.jpg',
+        targetType: x.targetType||'post',
+        targetId: x.targetId||'',
+        targetSnapshot: x.targetSnapshot||null,
+        publishedAt: x.createdAt||null
+      }));
+    REPOSTS = shuffleArray(freshReposts.length ? freshReposts : REPOSTS);
   }catch(e){
-    // Firestore failed — still shuffle current articles so re-tap feels responsive
+    // Firestore failed — still shuffle current articles/reposts so re-tap feels responsive
     console.warn('refreshForYou fetch failed, shuffling in-memory:', e);
     ARTICLES = shuffleArray(ARTICLES);
+    REPOSTS = shuffleArray(REPOSTS);
   }
   rebuildMergedFeedOrder();
   renderGrid();
@@ -1169,7 +1189,17 @@ async function renderFollowingTab(fresh = false){
       orderBy('publishedAt','desc'),
       limit(40)
     );
-    const [artSnap, postSnap] = await Promise.all([getDocs(artQ), getDocs(postQ)]);
+    // No kind filter here either, same reasoning as loadRecentReposts —
+    // 'in' + orderBy already needs its own composite index (reposterUid +
+    // createdAt); adding a third field (kind) to that would need yet
+    // another one. Filtering kind==='plain' client-side avoids it.
+    const repostQ = query(
+      collection(db,'reposts'),
+      where('reposterUid','in', followedUids),
+      orderBy('createdAt','desc'),
+      limit(40)
+    );
+    const [artSnap, postSnap, repostSnap] = await Promise.all([getDocs(artQ), getDocs(postQ), getDocs(repostQ)]);
 
     // Normalize the same way refreshForYou() does — raw Firestore field
     // names (e.g. `cover`) don't match what buildAcard/buildPostCardHtml
@@ -1217,6 +1247,25 @@ async function renderFollowingTab(fresh = false){
       const ty = y.publishedAt?.seconds ? y.publishedAt.seconds*1000 : (y.publishedAt||0);
       return ty - tx;
     });
+    const feedRepostsRaw = repostSnap.docs
+      .map(d=>({ id:d.id, ...d.data() }))
+      .filter(x=>x.kind==='plain')
+      .map(x=>({
+        id: x.id,
+        type: 'repost',
+        reposterUid: x.reposterUid||null,
+        reposterName: x.reposterName||'Someone',
+        reposterPhoto: x.reposterPhoto||'logo.jpg',
+        targetType: x.targetType||'post',
+        targetId: x.targetId||'',
+        targetSnapshot: x.targetSnapshot||null,
+        publishedAt: x.createdAt||null
+      }));
+    feedArts = [...feedArts, ...feedRepostsRaw].sort((x,y)=>{
+      const tx = x.publishedAt?.seconds ? x.publishedAt.seconds*1000 : (x.publishedAt||0);
+      const ty = y.publishedAt?.seconds ? y.publishedAt.seconds*1000 : (y.publishedAt||0);
+      return ty - tx;
+    });
     // Re-tap (pull-to-refresh-style bust) shuffles, same as For You's
     // refreshForYou() — first load stays newest-first so the tab still
     // reads like a normal following feed.
@@ -1251,7 +1300,7 @@ async function renderFollowingTab(fresh = false){
 
     // Render articles + posts
     const grid=document.createElement('div'); grid.className='grid';
-    const cardsHtml = feedArts.map(a=> a.type==='post' ? buildPostCardHtml(a) : buildAcard(a));
+    const cardsHtml = feedArts.map(a=> a.type==='post' ? buildPostCardHtml(a) : a.type==='repost' ? buildRepostCardHtml(a) : buildAcard(a));
     grid.innerHTML = withInviteCard(cardsHtml, currentUser ? currentUser.uid : null).join('');
     feed.innerHTML=''; feed.appendChild(grid);
     // Splice the "People to follow" row after the 2nd card (skip on very short feeds).
@@ -1265,8 +1314,8 @@ async function renderFollowingTab(fresh = false){
     }
     window.MSBAuthorLive && window.MSBAuthorLive.refresh(db, { doc, getDoc }, grid);
     feedArts.forEach(a=>{ if(currentUser){document.querySelectorAll(`#lb-${a.id}`).forEach(b=>b.classList.toggle('liked',likedSet.has(a.id)));} });
-    fetchLikeCounts(feedArts.map(a=>({ id:a.id, hideLikeCount:!!a.hideLikeCount, authorUid:a.authorUid })));
-    fetchRepostCounts(feedArts);
+    fetchLikeCounts(feedArts.filter(a=>a.type!=='repost').map(a=>({ id:a.id, hideLikeCount:!!a.hideLikeCount, authorUid:a.authorUid })));
+    fetchRepostCounts(feedArts.filter(a=>a.type!=='repost'));
     const _followingPostIds = feedArts.filter(a=>a.type==='post').map(a=>a.id);
     if(_followingPostIds.length) fetchPostCommentCounts(_followingPostIds);
     // Wire up the same 1.75s-in-viewport dwell tracker the "For You" grid
@@ -2640,19 +2689,24 @@ async function loadPublishedPosts(){
 // Plain reposts only (see REPOSTS comment above) — merged into the main
 // feed as their own card type. Quote reposts need no separate query: they
 // already came in through loadPublishedPosts() as normal posts.
+// No `where('kind',...)` filter here on purpose — combined with the
+// orderBy it would need a composite index (kind + createdAt) to exist
+// before this ever works; a lone orderBy never does. Filtering kind
+// client-side instead keeps this query index-free out of the box.
 async function loadRecentReposts(){
   try{
     const q = query(
       collection(db,'reposts'),
-      where('kind','==','plain'),
       orderBy('createdAt','desc'),
-      limit(40)
+      limit(60)
     );
     const snap = await getDocs(q);
-    REPOSTS = snap.docs.map(d=>{
-      const x = d.data();
-      return {
-        id: d.id,
+    REPOSTS = snap.docs
+      .map(d=>({ id:d.id, ...d.data() }))
+      .filter(x=>x.kind==='plain')
+      .slice(0,40)
+      .map(x=>({
+        id: x.id,
         type: 'repost',
         reposterUid: x.reposterUid||null,
         reposterName: x.reposterName||'Someone',
@@ -2661,8 +2715,7 @@ async function loadRecentReposts(){
         targetId: x.targetId||'',
         targetSnapshot: x.targetSnapshot||null,
         publishedAt: x.createdAt||null
-      };
-    });
+      }));
     rebuildMergedFeedOrder();
     renderGrid();
     return true;

@@ -485,6 +485,7 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
   <div class="tab active" id="tabAll" onclick="switchTab('all')">All</div>
   <div class="tab" id="tabArticle" onclick="switchTab('article')">Articles</div>
   <div class="tab" id="tabPost" onclick="switchTab('post')">Posts</div>
+  <div class="tab" id="tabRepost" onclick="switchTab('repost')">Reposts</div>
 </div>
 
 <!-- ARTICLES -->
@@ -716,6 +717,7 @@ import { getAuth, onAuthStateChanged, updateProfile } from 'https://www.gstatic.
 import { getFirestore, doc, getDoc, setDoc, deleteDoc, updateDoc, collection, query, where, getDocs, getCountFromServer, orderBy, serverTimestamp, onSnapshot, addDoc, writeBatch, increment, limit }
   from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
 import { initNotificationUI } from '/notifications.js';
+import { initRepost } from '/repost.js';
 
 const fbApp = initializeApp({
   apiKey:"AIzaSyDTn70s1_uIiSOR6lPLY_nKh8Ff1FViFCs",
@@ -732,6 +734,15 @@ const notif = initNotificationUI({
   db, getCurrentUser: () => currentUser, getMyProfile: () => myProfile,
   fs: { collection, query, where, onSnapshot, getDocs, orderBy, limit, addDoc, writeBatch, serverTimestamp, doc, getDoc, setDoc, increment }
 });
+// Only buildEmbedCardHtml is actually used on this page (rendering what a
+// repost points at) — the drawer/open() is never invoked here, so
+// openAuth/showToast just need to exist, not do anything page-specific.
+const repost = initRepost({
+  db, getCurrentUser: () => currentUser, getMyProfile: () => myProfile, notif,
+  openAuth: () => { location.href = '/login'; },
+  showToast: (m) => window.showToast && window.showToast(m),
+  fs: { doc, getDoc, setDoc, deleteDoc, addDoc, collection, updateDoc, increment, serverTimestamp }
+});
 
 const params     = new URLSearchParams(location.search);
 const profileUid = params.get('uid');      // legacy / direct uid link
@@ -745,6 +756,7 @@ let profileData = {};
 let activeTab = 'all';
 let isFollowing = false;
 let allSubmissions = [];
+let allReposts = [];
 let likedSet = new Set();
 let savedSet = new Set();
 let likeCountCache = {};
@@ -927,6 +939,7 @@ async function loadProfile(uid){
   // loadArticles first so allSubmissions is populated for loadStats article count
   await Promise.all([loadLikedSet(), loadSavedSet()]);
   await loadArticles();
+  loadReposts(); // not awaited — Reposts tab renders once this resolves, doesn't block the rest
   await Promise.all([loadStats(), loadFollowState()]);
   // write profile_view notification (once per session)
   if(currentUser && !isOwner) notif.trackProfileView(profileData.uid);
@@ -1185,6 +1198,37 @@ async function loadArticles(){
   }
 }
 
+/* ── LOAD REPOSTS ── */
+// Single-field where(), no orderBy — same reasoning as loadArticles just
+// above: sort client-side instead of requiring a composite index.
+async function loadReposts(){
+  const uid = profileData.uid;
+  try{
+    const snap = await getDocs(query(collection(db,'reposts'), where('reposterUid','==',uid)));
+    const raw = snap.docs.map(d=>({...d.data(), id:d.id}));
+    const quoteIds = raw.filter(r=>r.kind==='quote' && r.quotePostId).map(r=>r.quotePostId);
+    const quotePosts = {};
+    if(quoteIds.length){
+      const results = await Promise.all(quoteIds.map(pid => getDoc(doc(db,'posts',pid)).catch(()=>null)));
+      results.forEach((s,i)=>{ if(s && s.exists()) quotePosts[quoteIds[i]] = { ...s.data(), id: s.id }; });
+    }
+    allReposts = raw
+      .map(r => r.kind==='quote'
+        ? { type:'repost', kind:'quote', id:r.id, createdAt:r.createdAt, post: quotePosts[r.quotePostId] || null }
+        : { type:'repost', kind:'plain', id:r.id, createdAt:r.createdAt, targetType:r.targetType, targetId:r.targetId, targetSnapshot:r.targetSnapshot })
+      .filter(r => r.kind==='plain' || r.post) // drop quote reposts whose post has since been deleted
+      .sort((a,b)=>{
+        const ta = a.createdAt?.toDate?.() || new Date(a.createdAt||0);
+        const tb = b.createdAt?.toDate?.() || new Date(b.createdAt||0);
+        return tb - ta;
+      });
+  }catch(e){
+    console.error('loadReposts failed:', e?.code, e?.message);
+    allReposts = [];
+  }
+  if(activeTab==='repost') renderArticles(); // in case the tab was clicked before this resolved
+}
+
 /* ── SWITCH TAB (content-type filter: all / article / post) ── */
 window.switchTab = function(tab){
   activeTab = tab;
@@ -1309,8 +1353,53 @@ window.onPostScroll = function(id){
   if(countEl) countEl.textContent = `${idx+1}/${track.children.length}`;
 };
 
+// A plain repost mirrors the target's own card exactly (see repost.js
+// buildEmbedCardHtml docs) — just a "Reposted" label + the embed. A quote
+// repost is a real post of the reposter's own, so it renders like any
+// other post card, with the quoted content embedded under the caption.
+function renderRepostsSection(sec){
+  if(!allReposts.length){
+    sec.innerHTML = `<div class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+      <p>Nothing reposted yet.</p>
+    </div>`;
+    return;
+  }
+  const cardsHtml = allReposts.map(r=>{
+    if(r.kind==='plain'){
+      const openFn = r.targetType==='article' ? `openArticle('${r.targetId}','article')` : `openArticle('${r.targetId}','post')`;
+      return `<div class="acard pcard" onclick="${openFn}">
+        <div class="acard-body">
+          <div class="rp-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+            Reposted
+          </div>
+          ${repost.buildEmbedCardHtml(r.targetSnapshot)}
+        </div>
+      </div>`;
+    }
+    const p = r.post;
+    const media = p.videoUrl ? buildVideoTileHtml(p) : buildMediaGridHtml(p.images, p.id);
+    const embed = p.quotedFrom ? repost.buildEmbedCardHtml(p.quotedSnapshot) : '';
+    return `<div class="acard pcard" onclick="openArticle('${p.id}','post')">
+      <div class="acard-body">
+        <div class="acard-author">
+          <img class="acard-av" src="${p.authorPhoto||profileData.photo||'logo.jpg'}" alt="" onerror="this.style.background='linear-gradient(135deg,#4f46e5,#06b6d4)'">
+          <span class="acard-author-name">${esc(p.authorName||profileData.name||'You')}</span>
+          <span class="acard-author-dot">·</span>
+          <span class="acard-author-date">${fmtRel(p.publishedAt||p.createdAt)}</span>
+        </div>
+        ${p.text ? `<div class="pcard-text">${esc(p.text)}</div>` : ''}
+        ${embed || media}
+      </div>
+    </div>`;
+  }).join('');
+  sec.innerHTML = cardsHtml;
+}
+
 function renderArticles(){
   const sec = document.getElementById('articlesSection');
+  if(activeTab==='repost'){ renderRepostsSection(sec); return; }
   const filtered = activeTab==='all' ? allSubmissions : allSubmissions.filter(s=>s.type===activeTab);
 
   if(!filtered.length){
