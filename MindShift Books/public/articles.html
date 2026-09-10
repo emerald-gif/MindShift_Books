@@ -1314,8 +1314,14 @@ async function renderFollowingTab(fresh = false){
     }
     window.MSBAuthorLive && window.MSBAuthorLive.refresh(db, { doc, getDoc }, grid);
     feedArts.forEach(a=>{ if(currentUser){document.querySelectorAll(`#lb-${a.id}`).forEach(b=>b.classList.toggle('liked',likedSet.has(a.id)));} });
-    fetchLikeCounts(feedArts.filter(a=>a.type!=='repost').map(a=>({ id:a.id, hideLikeCount:!!a.hideLikeCount, authorUid:a.authorUid })));
-    fetchRepostCounts(feedArts.filter(a=>a.type!=='repost'));
+    // Repost cards show the TARGET's own counts (per spec, a plain repost
+    // has no reactions of its own) — map each repost item to its target id
+    // rather than excluding it, so those counts get fetched too.
+    const engagementRefs = feedArts.map(a => a.type==='repost'
+      ? { id:a.targetId, hideLikeCount:false, authorUid:a.targetSnapshot?.authorUid||null }
+      : { id:a.id, hideLikeCount:!!a.hideLikeCount, authorUid:a.authorUid });
+    fetchLikeCounts(engagementRefs);
+    fetchRepostCounts(engagementRefs);
     const _followingPostIds = feedArts.filter(a=>a.type==='post').map(a=>a.id);
     if(_followingPostIds.length) fetchPostCommentCounts(_followingPostIds);
     // Wire up the same 1.75s-in-viewport dwell tracker the "For You" grid
@@ -2030,17 +2036,71 @@ function buildPostCardHtml(p){
 
 // A plain repost mirrors the target's own card exactly — it's not new
 // content, just a "X reposted this" label above whatever the target
-// already looks like. Tapping anywhere opens the original directly (per
-// the spec: no separate "repost view" exists for a plain repost).
+// already looks like, footer and all (per spec: reactions on a plain
+// repost apply to the original's existing counts, so every action here is
+// bound to targetId, not to the repost record itself). Tapping the embed
+// itself opens the original directly (no separate "repost view" exists
+// for a plain repost) — same as before, unchanged.
 function buildRepostCardHtml(r){
-  const openFn = r.targetType === 'article' ? `goRead('${r.targetId}')` : `goPostRead('${r.targetId}')`;
+  const tid = r.targetId, ttype = r.targetType;
+  const openFn = ttype === 'article' ? `goRead('${tid}')` : `goPostRead('${tid}')`;
+  const ownerUid = r.targetSnapshot?.authorUid || '';
+  const isOwnerViewing = ownerUid && currentUser && ownerUid === currentUser.uid;
+  const commentBtn = ttype === 'post'
+    ? `<button class="pcard-comment" onclick="event.stopPropagation();goPostRead('${tid}')" title="Comment">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+        <span id="pcc-${tid}"></span>
+      </button>`
+    : '';
+  const editDelete = isOwnerViewing ? `
+    <button class="acard-menu-item" onclick="closeOpenCardMenu();location.href='/${ttype==='article'?'write':'create-post'}?edit=${tid}'">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4z"/></svg>
+      Edit
+    </button>
+    <button class="acard-menu-item" style="color:var(--red)" onclick="closeOpenCardMenu();deleteFromFeedMenu('${tid}','${ttype}')">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+      Delete
+    </button>
+    <div style="height:1px;background:var(--border);margin:4px 0"></div>` : '';
   return `<div class="acard pcard" data-repost-id="${r.id}" onclick="${openFn}">
     <div class="acard-body">
-      <div class="rp-label">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
-        ${esc(r.reposterName||'Someone')} reposted
+      <div class="acard-author" data-author-uid="${r.reposterUid||''}" onclick="event.stopPropagation();goAuthor('${r.reposterUid||''}',false)">
+        <img class="acard-av" data-author-photo src="${r.reposterPhoto||'logo.jpg'}" alt="${esc(r.reposterName||'Someone')}" onerror="this.style.background='linear-gradient(135deg,#4f46e5,#06b6d4)'">
+        <span class="acard-author-name" data-author-name>${esc(r.reposterName||'Someone')}</span>
+        <span class="acard-author-dot">·</span>
+        <span class="acard-author-date">${fmtRel(r.publishedAt)}</span>
       </div>
       ${repost.buildEmbedCardHtml(r.targetSnapshot)}
+      <div class="acard-foot">
+        <button class="acard-like ${likedSet.has(tid)?'liked':''}" id="lb-${tid}" onclick="event.stopPropagation();handleLike('${tid}')">
+          <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+          <span id="lc-${tid}"></span>
+        </button>
+        <button class="acard-save ${savedSet.has(tid)?'saved':''}" id="sv-${tid}" onclick="event.stopPropagation();handleSave('${tid}')" title="Save">
+          <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+        </button>
+        <button class="acard-repost" id="rb-${tid}" onclick="event.stopPropagation();doRepostCard('${ttype}','${tid}')" title="Repost">
+          <svg viewBox="0 0 24 24"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+          <span id="rc-${tid}"></span>
+        </button>
+        ${commentBtn}
+        <div class="acard-menu-wrap" onclick="event.stopPropagation()">
+          <button class="acard-menu-btn" onclick="toggleCardMenu('${tid}',event)" title="More options">
+            <svg fill="currentColor" viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+          </button>
+          <div class="acard-menu-drop" id="cmenu-${tid}">
+            ${editDelete}
+            <button class="acard-menu-item" onclick="copyCardLink('${tid}')">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path stroke-linecap="round" d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+              Copy Link
+            </button>
+            <button class="acard-menu-item" onclick="closeOpenCardMenu();shareAsImage('${tid}','${ttype}')">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+              Share as Image
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>`;
 }
@@ -2197,8 +2257,11 @@ function renderGrid(){
     }
   });
   // One parallel batch for all like counts — no per-card listeners
-  fetchLikeCounts(list.filter(a=>a.type!=='repost').map(a=>({ id:a.id, hideLikeCount:!!a.hideLikeCount, authorUid:a.authorUid })));
-  fetchRepostCounts(list.filter(a=>a.type!=='repost'));
+  const engagementRefs2 = list.map(a => a.type==='repost'
+    ? { id:a.targetId, hideLikeCount:false, authorUid:a.targetSnapshot?.authorUid||null }
+    : { id:a.id, hideLikeCount:!!a.hideLikeCount, authorUid:a.authorUid });
+  fetchLikeCounts(engagementRefs2);
+  fetchRepostCounts(engagementRefs2);
   const postIds = list.filter(a=>a.type==='post').map(a=>a.id);
   if(postIds.length) fetchPostCommentCounts(postIds);
 }
