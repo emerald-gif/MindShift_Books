@@ -1247,6 +1247,13 @@ async function renderFollowingTab(fresh = false){
       const ty = y.publishedAt?.seconds ? y.publishedAt.seconds*1000 : (y.publishedAt||0);
       return ty - tx;
     });
+    // doRepostCard() (and handleLike/handleSave) look items up from the
+    // global ARTICLES/POSTS caches, not from this tab's local feedArtsRaw/
+    // feedPostsRaw — without this merge, tapping Repost on a Following-tab
+    // card whose content never happened to load into the For You feed
+    // would silently do nothing (the `if(!item) return` in doRepostCard).
+    feedArtsRaw.forEach(a=>{ if(!ARTICLES.some(x=>x.id===a.id)) ARTICLES.push(a); });
+    feedPostsRaw.forEach(p=>{ if(!POSTS.some(x=>x.id===p.id)) POSTS.push(p); });
     const feedRepostsRaw = repostSnap.docs
       .map(d=>({ id:d.id, ...d.data() }))
       .filter(x=>x.kind==='plain')
@@ -2042,7 +2049,25 @@ function buildPostCardHtml(p){
 // itself opens the original directly (no separate "repost view" exists
 // for a plain repost) — same as before, unchanged.
 function buildRepostCardHtml(r){
-  const tid = r.targetId, ttype = r.targetType;
+  // Fall back to the snapshot's own id if the repost doc's top-level
+  // targetId is somehow missing — belt-and-suspenders, since a truly
+  // empty id here means every action on this card (open, like, repost)
+  // silently points at nothing.
+  const tid = r.targetId || r.targetSnapshot?.id || '';
+  const ttype = r.targetType || r.targetSnapshot?.type || 'post';
+  if(!tid){
+    return `<div class="acard pcard" data-repost-id="${r.id}">
+      <div class="acard-body">
+        <div class="acard-author">
+          <img class="acard-av" src="${r.reposterPhoto||'logo.jpg'}" alt="" onerror="this.style.background='linear-gradient(135deg,#4f46e5,#06b6d4)'">
+          <span class="acard-author-name">${esc(r.reposterName||'Someone')}</span>
+          <span class="acard-author-dot">·</span>
+          <span class="acard-author-date">${fmtRel(r.publishedAt)}</span>
+        </div>
+        <div class="rp-embed" style="padding:14px;color:#9ca3af;font-size:12.5px">This repost's original content is no longer available.</div>
+      </div>
+    </div>`;
+  }
   const openFn = ttype === 'article' ? `goRead('${tid}')` : `goPostRead('${tid}')`;
   const ownerUid = r.targetSnapshot?.authorUid || '';
   const isOwnerViewing = ownerUid && currentUser && ownerUid === currentUser.uid;

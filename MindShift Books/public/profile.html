@@ -1372,7 +1372,21 @@ function renderRepostsSection(sec){
   }
   const cardsHtml = allReposts.map(r=>{
     if(r.kind==='plain'){
-      const tid = r.targetId, ttype = r.targetType;
+      const tid = r.targetId || r.targetSnapshot?.id || '';
+      const ttype = r.targetType || r.targetSnapshot?.type || 'post';
+      if(!tid){
+        return `<div class="acard pcard">
+          <div class="acard-body">
+            <div class="acard-author">
+              <img class="acard-av" src="${profileData.photo||'logo.jpg'}" alt="" onerror="this.style.background='linear-gradient(135deg,#4f46e5,#06b6d4)'">
+              <span class="acard-author-name">${esc(profileData.name||'You')}</span>
+              <span class="acard-author-dot">·</span>
+              <span class="acard-author-date">${fmtRel(r.createdAt)}</span>
+            </div>
+            <div class="rp-embed" style="padding:14px;color:#9ca3af;font-size:12.5px">This repost's original content is no longer available.</div>
+          </div>
+        </div>`;
+      }
       const openFn = ttype==='article' ? `openArticle('${tid}','article')` : `openArticle('${tid}','post')`;
       return `<div class="acard pcard" onclick="${openFn}">
         <div class="acard-body">
