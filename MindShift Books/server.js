@@ -1517,6 +1517,68 @@ Sometimes, you need to stop undervaluing the value you already create.
 Know Your Worth. Charge Your Worth. Keep Your Worth.`
   },
 
+  'broke-confused-and-trying': {
+    id: 'broke-confused-and-trying',
+    title: 'Broke, Confused & Trying',
+    priceUSD: null,
+    priceNGN: 1000,
+    originalPriceNGN: 2000,
+    coverPath: 'bct.jpg',
+    pdfPath: 'public/files/Broke_Confused_Trying.pdf',
+    previewUrl: '/bct-preview',
+    reviewImages: [], // no reviews yet, add later
+    category: 'ours',
+    author: 'MindShift Books',
+    genre: 'Personal Development',
+    language: 'English',
+    pages: 24,
+    description: `Broke, Confused & Trying
+
+A Practical Guide to Turning Your Goals Into Reality
+
+Most people have goals. Very few know how to turn them into reality.
+
+Broke, Confused & Trying takes one simple formula — goal + deadline + plan + action — and applies it to real situations Nigerian students and young adults actually face.
+
+This isn't another book telling you to "believe in yourself" harder. It's a practical guide built around real situations, examples and actions you can actually take.
+
+What's Inside
+
+10 chapters. 10 situations. One formula.
+
+The Fantasy Trap — Why "one day" is not a plan.
+Senior Man Syndrome — Moving beyond waiting for the "right" answer.
+JAMB Brain vs Life Brain — Why passing exams isn't the same as building a life.
+The NYSC Question Mark — What comes after the certificate?
+Situationship vs Ambition — When "just vibing" becomes a delay tactic.
+Japa or Stay? — Applying the same formula to a major life decision.
+Broke But Building — Turning limited resources into a starting point.
+Parental Pressure vs Personal Dream — Understanding the difference between inherited goals and goals that are truly yours.
+The Social Media Comparison Trap — Stop measuring your beginning against someone else's highlight reel.
+From Fantasy to Fulfillment — Bringing the entire formula together and deciding what you'll do next.
+
+What You'll Take Away
+
+How to turn vague dreams into clear objectives.
+How deadlines change the way you approach goals.
+How to create an actionable plan.
+How to take the smallest useful first step.
+How to approach major life decisions more intentionally.
+How to stop letting comparison define your timeline.
+How to distinguish your own goals from expectations placed on you.
+How to move from simply wishing for change to actually taking action.
+
+The Core Idea
+
+Fantasy → Objective → Intention → Success → Fulfillment
+
+The book repeatedly brings you back to the same foundation:
+
+Goal + Deadline + Plan + Action
+
+And when the goal is genuinely yours, it adds one more thing: Meaning.`
+  },
+
   // ---------------- FEATURED BOOKS BY OTHER AUTHORS ----------------
   'mindshift-101': {
     id: 'mindshift-101',
@@ -3756,6 +3818,10 @@ app.get('/mmg-preview', (req, res) => {
 
 app.get('/tda-preview', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'tda-preview.html'));
+});
+
+app.get('/bct-preview', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'bct-preview.html'));
 });
 
 app.get('/challenge', (req, res) => {
