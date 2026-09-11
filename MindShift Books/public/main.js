@@ -522,19 +522,22 @@ document.addEventListener('DOMContentLoaded', loadFreeEbooksSwiper);
 })();
 
 // Render product grids from PRODUCTS (from server), split into "Our Books" and "Featured" sections
-// Fixed swiper order for the "New Release" row on the homepage. The Money
-// Mindset Gap is deliberately left out of this list — it's pulled out below
-// into its own standalone spotlight card instead of riding in the swiper.
+// Fixed swiper order for the "New Release" row on the homepage. The current
+// spotlight book (SPOTLIGHT_ID below) is deliberately left out of this list —
+// it's pulled out below into its own standalone spotlight card instead of
+// riding in the swiper. To rotate which book gets the spotlight treatment,
+// move its id between this array and SPOTLIGHT_ID.
 const OUR_BOOKS_SWIPER_ORDER = [
   'the-discipline-advantage',
   'getting-clients-without-ads',
-  'escape-your-environment-or-become-it'
+  'escape-your-environment-or-become-it',
+  'the-money-mindset-gap'
 ];
-const MMG_SPOTLIGHT_ID = 'the-money-mindset-gap';
+const SPOTLIGHT_ID = 'broke-confused-and-trying';
 
 function renderProducts() {
   const ourGrid = document.getElementById('ourBooksGrid');
-  const mmgSpotlight = document.getElementById('mmgSpotlight');
+  const spotlightEl = document.getElementById('spotlightBook');
   const featuredGrids = [
     document.getElementById('featuredGrid1'),
     document.getElementById('featuredGrid2'),
@@ -554,7 +557,7 @@ function renderProducts() {
   PRODUCTS.filter(p => p.category === 'ours').forEach(p => { ourBooksById[p.id] = p; });
 
   const ourSwiperBooks = OUR_BOOKS_SWIPER_ORDER.map(id => ourBooksById[id]).filter(Boolean);
-  const mmgBook = ourBooksById[MMG_SPOTLIGHT_ID] || null;
+  const spotlightBook = ourBooksById[SPOTLIGHT_ID] || null;
 
   const featuredBooks = PRODUCTS.filter(p => p.category !== 'ours');
 
@@ -566,16 +569,16 @@ function renderProducts() {
     groups.push(featuredBooks.slice(i * groupSize, (i + 1) * groupSize));
   }
 
-  if (ourSection) ourSection.style.display = (ourSwiperBooks.length || mmgBook) ? '' : 'none';
+  if (ourSection) ourSection.style.display = (ourSwiperBooks.length || spotlightBook) ? '' : 'none';
   renderGrid(ourGrid, ourSwiperBooks, 'No books yet — check back soon.');
 
-  if (mmgSpotlight) {
-    mmgSpotlight.innerHTML = '';
-    if (mmgBook) {
+  if (spotlightEl) {
+    spotlightEl.innerHTML = '';
+    if (spotlightBook) {
       const card = document.createElement('div');
       card.className = 'our-book-item our-standout';
-      card.innerHTML = productCardInner(mmgBook);
-      mmgSpotlight.appendChild(card);
+      card.innerHTML = productCardInner(spotlightBook);
+      spotlightEl.appendChild(card);
     }
   }
 

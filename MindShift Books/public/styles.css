@@ -960,8 +960,9 @@ header {
   .swiper-track .our-book-item { flex-basis: calc((100% - 4*18px) / 4.4); }
 }
 
-/* Money Mindset Gap standalone spotlight wrapper on the homepage */
-.mmg-spotlight-wrap {
+/* Standalone spotlight wrapper on the homepage — whichever book is currently
+   set as SPOTLIGHT_ID in main.js (currently Broke, Confused & Trying) */
+.spotlight-wrap {
   margin-top: 22px;
 }
 
@@ -1028,7 +1029,7 @@ header {
   font-size: 0.7rem; font-weight: 800; color: #dc2626;
 }
 
-/* Standalone spotlight card (currently used for The Money Mindset Gap) —
+/* Standalone spotlight card (currently used for Broke, Confused & Trying) —
    big cover panel on top, info below, similar to a "featured pick" hero
    card. Driven purely by the .our-standout class (set in JS), not by list
    position — the swiper books must never pick this styling up on their own. */
