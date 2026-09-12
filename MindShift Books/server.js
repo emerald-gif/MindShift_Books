@@ -1517,68 +1517,6 @@ Sometimes, you need to stop undervaluing the value you already create.
 Know Your Worth. Charge Your Worth. Keep Your Worth.`
   },
 
-  'broke-confused-and-trying': {
-    id: 'broke-confused-and-trying',
-    title: 'Broke, Confused & Trying',
-    priceUSD: null,
-    priceNGN: 1000,
-    originalPriceNGN: 2000,
-    coverPath: 'bct.jpg',
-    pdfPath: 'public/files/Broke_Confused_Trying.pdf',
-    previewUrl: '/bct-preview',
-    reviewImages: [], // no reviews yet, add later
-    category: 'ours',
-    author: 'MindShift Books',
-    genre: 'Personal Development',
-    language: 'English',
-    pages: 24,
-    description: `Broke, Confused & Trying
-
-A Practical Guide to Turning Your Goals Into Reality
-
-Most people have goals. Very few know how to turn them into reality.
-
-Broke, Confused & Trying takes one simple formula — goal + deadline + plan + action — and applies it to real situations Nigerian students and young adults actually face.
-
-This isn't another book telling you to "believe in yourself" harder. It's a practical guide built around real situations, examples and actions you can actually take.
-
-What's Inside
-
-10 chapters. 10 situations. One formula.
-
-The Fantasy Trap — Why "one day" is not a plan.
-Senior Man Syndrome — Moving beyond waiting for the "right" answer.
-JAMB Brain vs Life Brain — Why passing exams isn't the same as building a life.
-The NYSC Question Mark — What comes after the certificate?
-Situationship vs Ambition — When "just vibing" becomes a delay tactic.
-Japa or Stay? — Applying the same formula to a major life decision.
-Broke But Building — Turning limited resources into a starting point.
-Parental Pressure vs Personal Dream — Understanding the difference between inherited goals and goals that are truly yours.
-The Social Media Comparison Trap — Stop measuring your beginning against someone else's highlight reel.
-From Fantasy to Fulfillment — Bringing the entire formula together and deciding what you'll do next.
-
-What You'll Take Away
-
-How to turn vague dreams into clear objectives.
-How deadlines change the way you approach goals.
-How to create an actionable plan.
-How to take the smallest useful first step.
-How to approach major life decisions more intentionally.
-How to stop letting comparison define your timeline.
-How to distinguish your own goals from expectations placed on you.
-How to move from simply wishing for change to actually taking action.
-
-The Core Idea
-
-Fantasy → Objective → Intention → Success → Fulfillment
-
-The book repeatedly brings you back to the same foundation:
-
-Goal + Deadline + Plan + Action
-
-And when the goal is genuinely yours, it adds one more thing: Meaning.`
-  },
-
   // ---------------- FEATURED BOOKS BY OTHER AUTHORS ----------------
   'mindshift-101': {
     id: 'mindshift-101',
@@ -3820,10 +3758,6 @@ app.get('/tda-preview', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'tda-preview.html'));
 });
 
-app.get('/bct-preview', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'bct-preview.html'));
-});
-
 app.get('/challenge', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'challenge.html'));
 });
@@ -4631,28 +4565,32 @@ app.get('/api/admin/content/mindshift-insights', requireAdminApi, async (req, re
       ...postsSnap.docs.map(d => mapContentDoc(d, 'posts'))
     ];
     if (!items.length) {
-      return res.json({ totals: { views: 0, likes: 0, comments: 0, count: 0 }, items: [] });
+      return res.json({ totals: { views: 0, likes: 0, comments: 0, reposts: 0, count: 0 }, items: [] });
     }
     const metaRefs = items.map(it => db.collection(it.type === 'post' ? 'postMeta' : 'articleMeta').doc(it.id));
     const likeRefs = items.map(it => db.collection('articleLikes').doc(it.id));
-    const [metaSnaps, likeSnaps] = await Promise.all([db.getAll(...metaRefs), db.getAll(...likeRefs)]);
+    const repostRefs = items.map(it => db.collection('repostCounts').doc(it.id));
+    const [metaSnaps, likeSnaps, repostSnaps] = await Promise.all([db.getAll(...metaRefs), db.getAll(...likeRefs), db.getAll(...repostRefs)]);
 
-    let totalViews = 0, totalLikes = 0, totalComments = 0;
+    let totalViews = 0, totalLikes = 0, totalComments = 0, totalReposts = 0;
     const ranked = items.map((it, i) => {
       const meta = metaSnaps[i].exists ? metaSnaps[i].data() : {};
       const like = likeSnaps[i].exists ? likeSnaps[i].data() : {};
+      const repost = repostSnaps[i].exists ? repostSnaps[i].data() : {};
       const views = meta.viewCount || 0;
       const comments = meta.commentCount || 0;
       const likes = like.count || 0;
-      totalViews += views; totalLikes += likes; totalComments += comments;
-      // Likes/comments are active engagement, so they're weighted heavier
-      // than a passive view when ranking "best performing."
-      return { ...it, views, likes, comments, engagement: views + likes * 3 + comments * 3 };
+      const reposts = repost.count || 0;
+      totalViews += views; totalLikes += likes; totalComments += comments; totalReposts += reposts;
+      // Likes/comments/reposts are active engagement, so they're weighted
+      // heavier than a passive view when ranking "best performing." A
+      // repost is worth the most — it's a like/comment PLUS distribution.
+      return { ...it, views, likes, comments, reposts, engagement: views + likes * 3 + comments * 3 + reposts * 4 };
     });
     ranked.sort((a, b) => b.engagement - a.engagement);
 
     return res.json({
-      totals: { views: totalViews, likes: totalLikes, comments: totalComments, count: items.length },
+      totals: { views: totalViews, likes: totalLikes, comments: totalComments, reposts: totalReposts, count: items.length },
       items: ranked
     });
   } catch (err) {
@@ -4661,7 +4599,60 @@ app.get('/api/admin/content/mindshift-insights', requireAdminApi, async (req, re
   }
 });
 
-// GET /api/admin/content/:type/:id/insights — views/likes/comments for one
+// GET /api/admin/notifications — activity on everything published as the
+// official MindShift Books account (likes, follows, comments, reposts) —
+// the same notification docs a normal user's bell reads, just queried
+// server-side since 'official' has no client-side Firebase Auth login of
+// its own to open a bell with. ?unreadOnly=1 + ?limit=N support the
+// lightweight badge-count poll (refreshNotifBadge) without pulling the
+// full list every time.
+app.get('/api/admin/notifications', requireAdminApi, async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const limit = Math.min(parseInt(req.query.limit, 10) || 50, 200);
+    let q = db.collection('notifications').where('recipientUid', '==', 'official');
+    if (req.query.unreadOnly) q = q.where('read', '==', false);
+    const snap = await q.orderBy('createdAt', 'desc').limit(limit).get();
+    const items = snap.docs.map(d => {
+      const x = d.data();
+      return {
+        id: d.id, type: x.type || '', actorName: x.actorName || 'Someone',
+        actorPhoto: x.actorPhoto || '', targetId: x.targetId || null,
+        targetTitle: x.targetTitle || '', targetType: x.targetType || '',
+        read: !!x.read, createdAt: x.createdAt ? x.createdAt.toMillis() : null
+      };
+    });
+    // unreadCount always reflects the true total, not just this page's
+    // items, so the badge stays right even when the list itself is capped.
+    const unreadSnap = await db.collection('notifications')
+      .where('recipientUid', '==', 'official').where('read', '==', false).limit(500).get();
+    return res.json({ items, unreadCount: unreadSnap.size });
+  } catch (err) {
+    console.error('/api/admin/notifications error', err);
+    return res.status(500).json({ error: 'Could not load notifications' });
+  }
+});
+
+// POST /api/admin/notifications/read-all — marks every unread notification
+// on the official account as read, same as opening the bell panel does for
+// a normal user.
+app.post('/api/admin/notifications/read-all', requireAdminApi, async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const snap = await db.collection('notifications')
+      .where('recipientUid', '==', 'official').where('read', '==', false).limit(500).get();
+    if (snap.empty) return res.json({ updated: 0 });
+    const batch = db.batch();
+    snap.docs.forEach(d => batch.update(d.ref, { read: true }));
+    await batch.commit();
+    return res.json({ updated: snap.size });
+  } catch (err) {
+    console.error('/api/admin/notifications/read-all error', err);
+    return res.status(500).json({ error: 'Could not update notifications' });
+  }
+});
+
+
 // article or post, shown in the admin preview overlay (apInsights). The
 // dashboard has been calling this since it was built, but the route never
 // existed server-side, so it silently always showed 0. Mirrors the exact
@@ -4677,14 +4668,16 @@ app.get('/api/admin/content/:type/:id/insights', requireAdminApi, async (req, re
       return res.status(400).json({ error: 'type must be articles or posts' });
     }
     const metaCol = type === 'posts' ? 'postMeta' : 'articleMeta';
-    const [metaSnap, likeSnap] = await Promise.all([
+    const [metaSnap, likeSnap, repostSnap] = await Promise.all([
       db.collection(metaCol).doc(id).get(),
-      db.collection('articleLikes').doc(id).get()
+      db.collection('articleLikes').doc(id).get(),
+      db.collection('repostCounts').doc(id).get()
     ]);
     const views = metaSnap.exists ? (metaSnap.data().viewCount || 0) : 0;
     const comments = metaSnap.exists ? (metaSnap.data().commentCount || 0) : 0;
     const likes = likeSnap.exists ? (likeSnap.data().count || 0) : 0;
-    return res.json({ views, likes, comments });
+    const reposts = repostSnap.exists ? (repostSnap.data().count || 0) : 0;
+    return res.json({ views, likes, comments, reposts });
   } catch (err) {
     console.error('/api/admin/content/:type/:id/insights error', err);
     return res.status(500).json({ error: 'Could not load insights' });
