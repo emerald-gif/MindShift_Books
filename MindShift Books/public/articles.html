@@ -709,7 +709,7 @@ main{max-width:1100px;margin:0 auto}
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
-import { getFirestore, doc, getDoc, setDoc, deleteDoc, updateDoc, increment, onSnapshot, collection, query, where, getDocs, orderBy, addDoc, serverTimestamp, writeBatch, limit, startAfter, enableNetwork, disableNetwork } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
+import { getFirestore, doc, getDoc, setDoc, deleteDoc, updateDoc, increment, onSnapshot, collection, query, where, getDocs, orderBy, addDoc, serverTimestamp, writeBatch, limit, startAfter, enableNetwork, disableNetwork, runTransaction } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
 import { initNotificationUI } from '/notifications.js';
 import { initRepost } from '/repost.js';
 
@@ -843,6 +843,16 @@ let POSTS = [];
 // posts docs with a quotedFrom pointer), so merging this in too would show
 // them twice.
 let REPOSTS = [];
+// When true, the three loaders below skip their own rebuildMergedFeedOrder
+// + renderGrid call. Without this, firing loadPublishedArticles/Posts/
+// Reposts together (as the initial load and the stall-recovery watchdog
+// both do) reshuffles and re-renders the WHOLE feed once per loader as
+// each one resolves at its own pace — since the shuffle is random each
+// time, that's not just three renders, it's three DIFFERENT orderings
+// flashing by in quick succession, cards visibly swapping out for
+// unrelated ones. loadFeedBatch() below sets this while all three are in
+// flight and does the single real render itself once they've all settled.
+let _suppressAutoRender = false;
 
 /* ── ARTICLE PAGINATION ──
    loadPublishedArticles() used to fetch every published article with no
@@ -957,9 +967,7 @@ onAuthStateChanged(auth, async user => {
   // leaves the skeleton up until real content (or a real empty result)
   // arrives, instead of flashing a false "nothing here" in between.
   if(ARTICLES.length || POSTS.length) renderGrid();
-  loadPublishedArticles();
-  loadPublishedPosts();
-  loadRecentReposts();
+  loadFeedBatch([loadPublishedArticles, loadPublishedPosts, loadRecentReposts]);
   const p = new URLSearchParams(location.search);
   if(p.get('id')) location.href = `/article-read?id=${p.get('id')}`;
 });
@@ -991,7 +999,7 @@ async function ensureFeedLoaded(){
         try{ await disableNetwork(db); await enableNetwork(db); }catch(e){}
       }
       const ok = await Promise.race([
-        Promise.all([loadPublishedArticles(), loadPublishedPosts(), loadRecentReposts()]).then(r=>r.every(Boolean)),
+        loadFeedBatch([loadPublishedArticles, loadPublishedPosts, loadRecentReposts]).then(r=>r.every(Boolean)),
         new Promise(res=>setTimeout(()=>res(false), attempts[i]))
       ]);
       if(ok || ARTICLES.length || POSTS.length) return; // renderGrid() already ran inside the loaders
@@ -1729,18 +1737,32 @@ function observeLoadMoreSentinel(){
 async function userLiked(id){
   return likedSet.has(id);
 }
-async function toggleLike(id, wasLiked){
+// The double-like bug: this used to trust whatever `wasLiked` the caller
+// believed was true (from a local cache that can be stale — e.g. you liked
+// it on the feed, the write hadn't landed yet, then opened the read page,
+// which asked Firestore fresh and got the OLD answer, so tapping like
+// there wrote a second increment on top of the first). A transaction reads
+// the CURRENT server state and decides the direction itself at the moment
+// it commits, so two near-simultaneous toggles from different pages/tabs
+// can never both increment — the second one sees the first's result and
+// correctly flips it back off instead. `wasLikedHint` is no longer used to
+// decide anything; the caller reconciles its own UI against the real
+// returned state instead of trusting its guess.
+async function toggleLike(id, wasLikedHint){
   if(!currentUser){ openAuth(); return null; }
-  const cRef = doc(db,'articleLikes',id);
-  try {
-    await setDoc(doc(db,'userLikes',currentUser.uid),{[id]:!wasLiked},{merge:true});
-    if(wasLiked){
-      try{ await updateDoc(cRef,{count:increment(-1)}); }catch{ await setDoc(cRef,{count:0},{merge:true}); }
-      return false;
-    } else {
-      try{ await updateDoc(cRef,{count:increment(1)}); }catch{ await setDoc(cRef,{count:1},{merge:true}); }
-      return true;
-    }
+  const userRef = doc(db,'userLikes',currentUser.uid);
+  const countRef = doc(db,'articleLikes',id);
+  try{
+    return await runTransaction(db, async (tx)=>{
+      const userSnap = await tx.get(userRef);
+      const alreadyLiked = !!(userSnap.exists() && userSnap.data()[id]);
+      const countSnap = await tx.get(countRef);
+      const curCount = countSnap.exists() ? (countSnap.data().count||0) : 0;
+      const nextLiked = !alreadyLiked;
+      tx.set(userRef, {[id]: nextLiked}, {merge:true});
+      tx.set(countRef, {count: Math.max(0, curCount + (nextLiked?1:-1))}, {merge:true});
+      return nextLiked;
+    });
   } catch(e) {
     console.error('Like error:', e.code, e.message);
     toast('Could not update like — try again.');
@@ -2328,12 +2350,23 @@ window.handleLike = function(id){
         likeCountCache[id] = rolled;
         countEls.forEach(countEl=>{ countEl.textContent = rolled > 0 ? rolled : ''; });
       }
-    } else if(didLike === true){
-      if(item) notif.notifyArticleLike(item);
-      // A like is at least as strong a signal as a glance — count it as a
-      // view too (only on liking, not unliking), sharing the same
-      // day-dedup key as feed dwell / opening the read page.
-      recordViewOnce(id, (item && item.type==='post') ? 'postMeta' : 'articleMeta');
+    } else {
+      if(didLike !== !wasLiked){
+        // Our optimistic guess didn't match what the transaction actually
+        // found true on the server (a race with another tab/page/device) —
+        // resync the UI to the real outcome instead of leaving it wrong,
+        // and re-pull the authoritative count rather than guessing further.
+        if(didLike){ likedSet.add(id); } else { likedSet.delete(id); }
+        btns.forEach(btn=>btn.classList.toggle('liked', didLike));
+        if(!hideCount) fetchLikeCounts([{ id, hideLikeCount: item?.hideLikeCount, authorUid: item?.authorUid }]);
+      }
+      if(didLike === true){
+        if(item) notif.notifyArticleLike(item);
+        // A like is at least as strong a signal as a glance — count it as a
+        // view too (only on liking, not unliking), sharing the same
+        // day-dedup key as feed dwell / opening the read page.
+        recordViewOnce(id, (item && item.type==='post') ? 'postMeta' : 'articleMeta');
+      }
     }
   })();
 };
@@ -2683,8 +2716,7 @@ async function loadPublishedArticles(){
     ARTICLES = snap.docs.map(mapArticleDoc);
     _articlesLastDoc = snap.docs[snap.docs.length-1];
     _articlesExhausted = snap.docs.length < ARTICLES_PAGE_SIZE;
-    rebuildMergedFeedOrder();
-    renderGrid();
+    if(!_suppressAutoRender){ rebuildMergedFeedOrder(); renderGrid(); }
     _xDiscoverBuilt = false;
     return true;
   }catch(e){ console.error('Firestore articles error:',e); return false; }
@@ -2768,8 +2800,7 @@ async function loadPublishedPosts(){
         quotedSnapshot: x.quotedSnapshot||null
       };
     });
-    rebuildMergedFeedOrder();
-    renderGrid();
+    if(!_suppressAutoRender){ rebuildMergedFeedOrder(); renderGrid(); }
     return true;
   }catch(e){ console.error('Firestore posts error:',e); return false; }
 }
@@ -2804,10 +2835,27 @@ async function loadRecentReposts(){
         targetSnapshot: x.targetSnapshot||null,
         publishedAt: x.createdAt||null
       }));
-    rebuildMergedFeedOrder();
-    renderGrid();
+    if(!_suppressAutoRender){ rebuildMergedFeedOrder(); renderGrid(); }
     return true;
   }catch(e){ console.error('Firestore reposts error:',e); return false; }
+}
+
+// Fires several of the loaders above together and renders exactly once,
+// after they've all settled — see the _suppressAutoRender comment for why
+// firing them without this causes the feed to visibly reshuffle 2-3 times
+// in a row on load (each loader resolves at its own pace, and a plain
+// re-render reshuffles the whole feed randomly every time it's called).
+async function loadFeedBatch(loaders){
+  _suppressAutoRender = true;
+  let results;
+  try{
+    results = await Promise.allSettled(loaders.map(fn=>fn()));
+  } finally {
+    _suppressAutoRender = false;
+  }
+  rebuildMergedFeedOrder();
+  renderGrid();
+  return results.map(r => r.status==='fulfilled' ? r.value : false);
 }
 
 /* ── FULLSCREEN SEARCH / EXPLORE ── */

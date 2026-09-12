@@ -718,7 +718,7 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged, updateProfile } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
-import { getFirestore, doc, getDoc, setDoc, deleteDoc, updateDoc, collection, query, where, getDocs, getCountFromServer, orderBy, serverTimestamp, onSnapshot, addDoc, writeBatch, increment, limit }
+import { getFirestore, doc, getDoc, setDoc, deleteDoc, updateDoc, collection, query, where, getDocs, getCountFromServer, orderBy, serverTimestamp, onSnapshot, addDoc, writeBatch, increment, limit, runTransaction }
   from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
 import { initNotificationUI } from '/notifications.js';
 import { initRepost } from '/repost.js';
@@ -1670,18 +1670,25 @@ window.doRepostCardProfile = function(s){
   });
 };
 
-async function toggleLike(id, wasLiked){
+async function toggleLike(id, wasLikedHint){
   if(!currentUser){ window.location.href='/login'; return null; }
+  const userRef = doc(db,'userLikes',currentUser.uid);
   const cRef = doc(db,'articleLikes',id);
   try {
-    await setDoc(doc(db,'userLikes',currentUser.uid),{[id]:!wasLiked},{merge:true});
-    if(wasLiked){
-      try{ await updateDoc(cRef,{count:increment(-1)}); }catch{ await setDoc(cRef,{count:0},{merge:true}); }
-      return false;
-    } else {
-      try{ await updateDoc(cRef,{count:increment(1)}); }catch{ await setDoc(cRef,{count:1},{merge:true}); }
-      return true;
-    }
+    // Same fix as articles.html: read the real current state inside a
+    // transaction instead of trusting a locally-cached guess, so a like
+    // made elsewhere (feed, read page) a moment before this one can't
+    // result in a double-counted increment.
+    return await runTransaction(db, async (tx)=>{
+      const userSnap = await tx.get(userRef);
+      const alreadyLiked = !!(userSnap.exists() && userSnap.data()[id]);
+      const countSnap = await tx.get(cRef);
+      const curCount = countSnap.exists() ? (countSnap.data().count||0) : 0;
+      const nextLiked = !alreadyLiked;
+      tx.set(userRef, {[id]: nextLiked}, {merge:true});
+      tx.set(cRef, {count: Math.max(0, curCount + (nextLiked?1:-1))}, {merge:true});
+      return nextLiked;
+    });
   } catch(e) {
     toast('Could not update like — try again.');
     return null;
@@ -1717,8 +1724,15 @@ window.handleLike = function(id){
         likeCountCache[id] = rolled;
         countEl.textContent = rolled > 0 ? rolled : '';
       }
-    } else if(didLike === true){
-      if(item) notif.notifyArticleLike(item);
+    } else {
+      if(didLike !== !wasLiked){
+        // Optimistic guess didn't match the transaction's real outcome —
+        // resync UI to reality instead of trusting what we assumed.
+        if(didLike){ likedSet.add(id); } else { likedSet.delete(id); }
+        if(btn) btn.classList.toggle('liked', didLike);
+        if(!hideCount) fetchLikeCounts([{ id, hideLikeCount: item?.hideLikeCount, isOwnerViewing: isOwner }]);
+      }
+      if(didLike === true && item) notif.notifyArticleLike(item);
     }
   })();
 };

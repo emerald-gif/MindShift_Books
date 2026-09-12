@@ -643,7 +643,7 @@ header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
 import { getFirestore, doc, getDoc, setDoc, deleteDoc, updateDoc, increment, onSnapshot,
-         collection, query, where, orderBy, limit, addDoc, serverTimestamp, getDocs, writeBatch } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
+         collection, query, where, orderBy, limit, addDoc, serverTimestamp, getDocs, writeBatch, runTransaction } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
 import { initNotificationUI } from '/notifications.js';
 import { initRepost } from '/repost.js';
 
@@ -1087,14 +1087,31 @@ window.doLike = function(){
 
   (async () => {
     try {
-      await setDoc(doc(db,'userLikes',currentUser.uid),{[artId]:!wasLiked},{merge:true});
+      // Same fix as articles.html's toggleLike: a transaction reads the
+      // CURRENT server state and decides the direction itself, instead of
+      // trusting `wasLiked` (which can be stale if you liked this from the
+      // feed a moment ago and that write hadn't landed yet when this page
+      // loaded) — that staleness is exactly what caused double-likes.
+      const userRef = doc(db,'userLikes',currentUser.uid);
       const cRef = doc(db,'articleLikes',artId);
-      if(wasLiked){
-        try{await updateDoc(cRef,{count:increment(-1)});}catch{await setDoc(cRef,{count:0},{merge:true});}
-      } else {
-        try{await updateDoc(cRef,{count:increment(1)});}catch{await setDoc(cRef,{count:1},{merge:true});}
-        notif.notifyArticleLike(article, 'article'); // notify article author
+      const nowLiked = await runTransaction(db, async (tx)=>{
+        const userSnap = await tx.get(userRef);
+        const alreadyLiked = !!(userSnap.exists() && userSnap.data()[artId]);
+        const countSnap = await tx.get(cRef);
+        const curCount = countSnap.exists() ? (countSnap.data().count||0) : 0;
+        const nextLiked = !alreadyLiked;
+        tx.set(userRef, {[artId]: nextLiked}, {merge:true});
+        tx.set(cRef, {count: Math.max(0, curCount + (nextLiked?1:-1))}, {merge:true});
+        return nextLiked;
+      });
+      if(nowLiked !== isLiked){
+        // Our optimistic guess didn't match reality (a race with another
+        // tab/page) — resync to what actually happened instead of leaving
+        // the heart showing the wrong thing.
+        isLiked = nowLiked;
+        syncLikeUI();
       }
+      if(nowLiked) notif.notifyArticleLike(article, 'article'); // notify article author
     } catch(e) {
       // revert heart on failure
       isLiked = wasLiked;

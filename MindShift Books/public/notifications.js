@@ -242,7 +242,6 @@ export function initNotificationUI({ db, getCurrentUser, getMyProfile, fs }) {
     const currentUser = getCurrentUser();
     if (!currentUser || !art) return;
     if (!art.authorUid || art.authorUid === currentUser.uid) return;
-    if (art.isMindshift || art.authorUid === 'official') return;
     const targetType = kind || (art.type === 'post' ? 'post' : 'article');
     try {
       const q = query(collection(db, 'notifications'), where('recipientUid', '==', art.authorUid), where('actorUid', '==', currentUser.uid), where('type', '==', 'article_like'), where('targetId', '==', art.id));
@@ -262,7 +261,6 @@ export function initNotificationUI({ db, getCurrentUser, getMyProfile, fs }) {
   async function notifyFollow(targetUid) {
     const currentUser = getCurrentUser();
     if (!currentUser || !targetUid || targetUid === currentUser.uid) return;
-    if (targetUid === 'official') return;
     try {
       const q = query(collection(db, 'notifications'), where('recipientUid', '==', targetUid), where('actorUid', '==', currentUser.uid), where('type', '==', 'follow'));
       const ex = await getDocs(q); if (!ex.empty) return;
@@ -318,7 +316,6 @@ export function initNotificationUI({ db, getCurrentUser, getMyProfile, fs }) {
   async function notifyRepost({ recipientUid, targetId, targetTitle, targetType, kind }) {
     const currentUser = getCurrentUser();
     if (!currentUser || !recipientUid || recipientUid === currentUser.uid) return;
-    if (recipientUid === 'official') return;
     const myProfile = getMyProfile ? getMyProfile() : null;
     const actorName = myProfile?.name || 'Someone', actorPhoto = myProfile?.photo || '', actorUsername = myProfile?.username || '';
     try {
