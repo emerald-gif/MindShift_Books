@@ -357,6 +357,7 @@
     <button class="nav-item" id="tabBroadcast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.3v3.4a1.3 1.3 0 001.3 1.3h1.2l4.8 3.9V5.1l-4.8 3.9H4.3A1.3 1.3 0 003 10.3z"/><path d="M14.5 9a3.5 3.5 0 010 6"/></svg>Updates</button>
     <button class="nav-item" id="tabCreators"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="8" r="3.3"/><path d="M1.8 20a6.7 6.7 0 0113.4 0"/><path d="M18 7v6"/><path d="M15 10h6"/></svg>Creators</button>
     <button class="nav-item" id="tabArticles"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/><line x1="9" y1="7" x2="15" y2="7"/><line x1="9" y1="11" x2="15" y2="11"/></svg>Content</button>
+    <button class="nav-item" id="tabNotifications"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>Notifications<span class="nav-badge" id="notifBadge" style="display:none;">0</span></button>
   </nav>
 
   <div class="sidebar-controls">
@@ -870,6 +871,24 @@
     </div>
   </div>
 
+  <!-- Notifications on the official MindShift Books account's own content:
+       likes, follows, comments, and reposts, the same events a normal user
+       would get a bell notification for — just surfaced here since
+       'official' has no client-side login of its own to see a bell in the
+       consumer app. -->
+  <div id="notificationsPage" style="display:none;">
+    <div class="payouts-header">
+      <button class="btn-secondary" id="notifMarkAllBtn">Mark all as read</button>
+    </div>
+    <div class="panel full-panel" style="padding-bottom:16px;">
+      <h2><span class="h2-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg></span>Notifications</h2>
+      <p class="empty" style="padding-top:0;margin-top:-8px;margin-bottom:14px;">
+        Activity on everything published as MindShift Books — likes, follows, comments, and reposts — same as what a regular user sees in their own bell.
+      </p>
+      <div id="notifList"><p class="empty">Loading…</p></div>
+    </div>
+  </div>
+
   <!-- MindShift Books' own content, entered via the button in the Content
        page header above — everything authorUid:'official', kept out of the
        general (every-author) content list, with totals + a ranked list. -->
@@ -896,10 +915,14 @@
           <div id="miTotalComments" style="font-size:1.35rem;font-weight:800;color:var(--primary);">—</div>
           <div style="font-size:0.7rem;color:var(--muted);font-weight:600;">Total Comments</div>
         </div>
+        <div style="flex:1;min-width:110px;text-align:center;padding:14px 8px;border-radius:12px;background:var(--indigo-soft);">
+          <div id="miTotalReposts" style="font-size:1.35rem;font-weight:800;color:var(--primary);">—</div>
+          <div style="font-size:0.7rem;color:var(--muted);font-weight:600;">Total Reposts</div>
+        </div>
       </div>
-      <p class="empty" style="padding-top:0;margin-top:-8px;margin-bottom:14px;">Ranked by engagement (views + 3× likes + 3× comments) — best performing first. Click a title to preview, edit, or delete it.</p>
+      <p class="empty" style="padding-top:0;margin-top:-8px;margin-bottom:14px;">Ranked by engagement (views + 3× likes + 3× comments + 4× reposts) — best performing first. Click a title to preview, edit, or delete it.</p>
       <table>
-        <thead><tr><th>Title / Text</th><th>Type</th><th class="num">Views</th><th class="num">Likes</th><th class="num">Comments</th><th>Published</th></tr></thead>
+        <thead><tr><th>Title / Text</th><th>Type</th><th class="num">Views</th><th class="num">Likes</th><th class="num">Comments</th><th class="num">Reposts</th><th>Published</th></tr></thead>
         <tbody id="miBody"></tbody>
       </table>
     </div>
@@ -935,6 +958,10 @@
         <div style="flex:1;text-align:center;">
           <div id="apComments" style="font-size:1.1rem;font-weight:800;color:var(--primary);">—</div>
           <div style="font-size:0.7rem;color:var(--muted);font-weight:600;">Comments</div>
+        </div>
+        <div style="flex:1;text-align:center;">
+          <div id="apReposts" style="font-size:1.1rem;font-weight:800;color:var(--primary);">—</div>
+          <div style="font-size:0.7rem;color:var(--muted);font-weight:600;">Reposts</div>
         </div>
       </div>
 
@@ -1243,10 +1270,12 @@
   const tabBroadcast = document.getElementById('tabBroadcast');
   const tabCreators = document.getElementById('tabCreators');
   const tabArticles = document.getElementById('tabArticles');
+  const tabNotifications = document.getElementById('tabNotifications');
   const payoutsPage = document.getElementById('payoutsPage');
   const broadcastPage = document.getElementById('broadcastPage');
   const creatorsPage = document.getElementById('creatorsPage');
   const articlesPage = document.getElementById('articlesPage');
+  const notificationsPage = document.getElementById('notificationsPage');
   let overviewLoadedOnce = true; // loadStats() already ran once above on page load
 
   // Generic accordion toggle, shared by all four discovery/import panels —
@@ -1267,7 +1296,7 @@
   });
 
   function setActiveTab(active) {
-    [tabOverview, tabPayouts, tabBroadcast, tabCreators, tabArticles].forEach(b => b.classList.toggle('active', b === active));
+    [tabOverview, tabPayouts, tabBroadcast, tabCreators, tabArticles, tabNotifications].forEach(b => b.classList.toggle('active', b === active));
     // Auto-close the mobile dropdown menu whenever a tab is picked — no
     // reason to make the admin close it manually every time.
     document.getElementById('sidebarNav').classList.remove('open');
@@ -1278,6 +1307,7 @@
     broadcastPage.style.display = 'none';
     creatorsPage.style.display = 'none';
     articlesPage.style.display = 'none';
+    notificationsPage.style.display = 'none';
     document.getElementById('mindshiftContentPage').style.display = 'none';
   }
 
@@ -1330,6 +1360,73 @@
     articlesPage.style.display = 'block';
     loadContent();
   });
+  tabNotifications.addEventListener('click', () => {
+    setActiveTab(tabNotifications);
+    rangeSelect.style.display = 'none';
+    loadingWrap.style.display = 'none';
+    content.style.display = 'none';
+    hideAllPages();
+    notificationsPage.style.display = 'block';
+    loadAdminNotifications();
+  });
+
+  // ── Notifications on the official MindShift Books account ──
+  const typeLabel = { article_like: 'liked', follow: 'started following you', new_comment: 'commented on', comment_like: 'liked your comment on', comment_reply: 'replied to your comment on', repost: 'reposted', repost_quote: 'reposted with a caption' };
+  function notifText(n) {
+    const name = esc(n.actorName || 'Someone');
+    const title = n.targetTitle ? ` "${esc(n.targetTitle.slice(0, 60))}"` : '';
+    if (n.type === 'follow') return `${name} started following MindShift Books`;
+    const verb = typeLabel[n.type] || 'interacted with';
+    return `${name} ${verb}${title}`;
+  }
+  async function refreshNotifBadge() {
+    try {
+      const res = await fetch('/api/admin/notifications?unreadOnly=1&limit=1');
+      if (!res.ok) return;
+      const data = await res.json();
+      const badge = document.getElementById('notifBadge');
+      if (data.unreadCount > 0) {
+        badge.textContent = data.unreadCount > 99 ? '99+' : String(data.unreadCount);
+        badge.style.display = '';
+      } else {
+        badge.style.display = 'none';
+      }
+    } catch (e) {}
+  }
+  async function loadAdminNotifications() {
+    const list = document.getElementById('notifList');
+    list.innerHTML = '<p class="empty">Loading…</p>';
+    try {
+      const res = await fetch('/api/admin/notifications');
+      if (res.status === 401) { window.location.href = '/admin/login'; return; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Request failed');
+      if (!data.items.length) {
+        list.innerHTML = '<p class="empty">No activity yet on MindShift Books\' content.</p>';
+        return;
+      }
+      list.innerHTML = data.items.map(n => `
+        <div style="display:flex;gap:12px;align-items:flex-start;padding:12px 4px;border-bottom:1px solid var(--border);${n.read ? '' : 'background:var(--indigo-soft);border-radius:10px;'}">
+          <img src="${esc(n.actorPhoto || '/logo.jpg')}" alt="" style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;background:#e2e8f0;" onerror="this.src='/logo.jpg'">
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:0.86rem;color:var(--primary);">${notifText(n)}</div>
+            <div style="font-size:0.72rem;color:var(--muted);margin-top:2px;">${fmtDateTime(n.createdAt)}</div>
+          </div>
+          ${!n.read ? '<span style="width:8px;height:8px;border-radius:50%;background:#ef4444;flex-shrink:0;margin-top:6px;"></span>' : ''}
+        </div>
+      `).join('');
+      refreshNotifBadge();
+    } catch (err) {
+      list.innerHTML = `<p class="empty">Could not load — ${esc(err.message || 'try again')}</p>`;
+    }
+  }
+  document.getElementById('notifMarkAllBtn').addEventListener('click', async () => {
+    try {
+      await fetch('/api/admin/notifications/read-all', { method: 'POST' });
+      loadAdminNotifications();
+    } catch (e) {}
+  });
+  refreshNotifBadge();
 
   // ── Live Content (articles + posts) ──
   let currentContentType = 'all';
@@ -1406,10 +1503,10 @@
 
   async function loadMindshiftInsights() {
     const tbody = document.getElementById('miBody');
-    ['miTotalCount', 'miTotalViews', 'miTotalLikes', 'miTotalComments'].forEach(id => {
+    ['miTotalCount', 'miTotalViews', 'miTotalLikes', 'miTotalComments', 'miTotalReposts'].forEach(id => {
       document.getElementById(id).textContent = '—';
     });
-    tbody.innerHTML = '<tr><td colspan="6" class="empty">Loading…</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="empty">Loading…</td></tr>';
     try {
       const res = await fetch('/api/admin/content/mindshift-insights');
       if (res.status === 401) { window.location.href = '/admin/login'; return; }
@@ -1420,6 +1517,7 @@
       document.getElementById('miTotalViews').textContent = data.totals.views.toLocaleString();
       document.getElementById('miTotalLikes').textContent = data.totals.likes.toLocaleString();
       document.getElementById('miTotalComments').textContent = data.totals.comments.toLocaleString();
+      document.getElementById('miTotalReposts').textContent = (data.totals.reposts || 0).toLocaleString();
 
       // Merge into contentItems so openArticlePreview/mpOpenForEdit/
       // maOpenForEdit can find these by id+type even if the main Content
@@ -1430,7 +1528,7 @@
       });
 
       if (!data.items.length) {
-        tbody.innerHTML = '<tr><td colspan="6" class="empty">Nothing published yet as MindShift Books.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="empty">Nothing published yet as MindShift Books.</td></tr>';
         return;
       }
       tbody.innerHTML = data.items.map(it => `
@@ -1440,6 +1538,7 @@
           <td class="num">${it.views.toLocaleString()}</td>
           <td class="num">${it.likes.toLocaleString()}</td>
           <td class="num">${it.comments.toLocaleString()}</td>
+          <td class="num">${(it.reposts || 0).toLocaleString()}</td>
           <td>${fmtDateTime(it.createdAt)}</td>
         </tr>
       `).join('');
@@ -1504,6 +1603,7 @@
     document.getElementById('apViews').textContent = '—';
     document.getElementById('apLikes').textContent = '—';
     document.getElementById('apComments').textContent = '—';
+    document.getElementById('apReposts').textContent = '—';
     try {
       const res = await fetch(`/api/admin/content/${collectionName}/${encodeURIComponent(id)}/insights`);
       if (!res.ok) throw new Error('failed');
@@ -1511,10 +1611,12 @@
       document.getElementById('apViews').textContent = (data.views || 0).toLocaleString();
       document.getElementById('apLikes').textContent = (data.likes || 0).toLocaleString();
       document.getElementById('apComments').textContent = (data.comments || 0).toLocaleString();
+      document.getElementById('apReposts').textContent = (data.reposts || 0).toLocaleString();
     } catch {
       document.getElementById('apViews').textContent = '0';
       document.getElementById('apLikes').textContent = '0';
       document.getElementById('apComments').textContent = '0';
+      document.getElementById('apReposts').textContent = '0';
     }
   }
   document.getElementById('apCloseBtn').addEventListener('click', () => {
