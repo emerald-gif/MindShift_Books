@@ -465,6 +465,7 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
     <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
     <span id="profileLocationText"></span>
   </div>
+  <div id="profileContact" class="profile-location" style="display:none;gap:14px"></div>
   <div id="profileSocialLinks" class="social-links-row" style="display:none"></div>
   <!-- CTA buttons row — populated by JS -->
   <div class="profile-cta-row" id="profileCta"></div>
@@ -566,6 +567,20 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
       <div class="char-count" id="bioCharCount">0 / 160</div>
     </div>
     <div class="field"><label>Location</label><input id="eLocation" type="text" maxlength="60" placeholder="e.g. Lagos, Nigeria"></div>
+    <div class="field">
+      <label>Contact Info</label>
+      <input id="eContactEmail" type="email" maxlength="100" placeholder="Contact email (optional)" style="margin-bottom:10px">
+      <input id="eContactPhone" type="tel" maxlength="20" placeholder="Phone number (optional)">
+      <div class="field-hint">Gives people another way to reach you beyond in-app messages — e.g. for business inquiries.</div>
+      <div class="manage-toggle-row" style="display:flex;align-items:center;gap:10px;margin-top:10px;padding:10px 12px;background:var(--bg);border-radius:10px">
+        <span style="flex:1;font-size:13px;color:var(--txt)">Show contact info on my public profile</span>
+        <label class="manage-switch">
+          <input type="checkbox" id="eContactVisible">
+          <span class="manage-switch-track"></span>
+        </label>
+      </div>
+      <div class="field-hint">Off by default. When off, only you can see what you've entered here — it still saves, it just isn't shown to visitors.</div>
+    </div>
     <div class="field">
       <label>Profile Photo</label>
       <div class="upload-picker" id="photoPickerZone" onclick="window._kvOpenProfilePhoto()" style="display:flex;align-items:center;gap:12px;padding:10px 14px;border:1.5px dashed var(--border);border-radius:10px;cursor:pointer;background:var(--bg);transition:border-color .2s">
@@ -996,6 +1011,22 @@ function renderProfileHeader(){
   if(profileData.location){
     document.getElementById('profileLocationText').textContent = profileData.location;
     document.getElementById('profileLocation').style.display='flex';
+  }
+  // contact info — shown to visitors only if the owner opted in; the owner
+  // always sees their own (with a note), so they know it saved even when
+  // it's not public yet
+  const contactWrap = document.getElementById('profileContact');
+  const hasContact = !!(profileData.contactEmail || profileData.contactPhone);
+  if(hasContact && (profileData.contactVisible || isOwner)){
+    const parts = [];
+    if(profileData.contactEmail) parts.push(`<a href="mailto:${esc(profileData.contactEmail)}" style="display:flex;align-items:center;gap:5px;color:inherit;text-decoration:none">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z" opacity="0"/><path d="M4 6h16v12H4z"/><path d="M4 7l8 6 8-6"/></svg>
+      ${esc(profileData.contactEmail)}</a>`);
+    if(profileData.contactPhone) parts.push(`<a href="tel:${esc(profileData.contactPhone)}" style="display:flex;align-items:center;gap:5px;color:inherit;text-decoration:none">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.362 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+      ${esc(profileData.contactPhone)}</a>`);
+    contactWrap.innerHTML = parts.join('') + (isOwner && !profileData.contactVisible ? `<span style="color:var(--mute);font-size:12px;font-style:italic">(only visible to you)</span>` : '');
+    contactWrap.style.display='flex';
   }
   // social links
   const socialWrap = document.getElementById('profileSocialLinks');
@@ -2065,6 +2096,9 @@ window.openEditSheet = function(){
   document.getElementById('eBio').value = profileData.bio||'';
   updateBioCount();
   document.getElementById('eLocation').value = profileData.location||'';
+  document.getElementById('eContactEmail').value = profileData.contactEmail || currentUser?.email || '';
+  document.getElementById('eContactPhone').value = profileData.contactPhone || '';
+  document.getElementById('eContactVisible').checked = !!profileData.contactVisible;
   document.getElementById('ePhoto').value = profileData.photo||'';
   document.getElementById('eCover').value = profileData.cover||'';
 
@@ -2207,11 +2241,23 @@ window.saveProfile = async function(){
     categories: newCategories,
     bio:       document.getElementById('eBio').value.trim(),
     location:  document.getElementById('eLocation').value.trim(),
+    contactEmail:   document.getElementById('eContactEmail').value.trim(),
+    contactPhone:   document.getElementById('eContactPhone').value.trim(),
+    contactVisible: document.getElementById('eContactVisible').checked,
     photo:     document.getElementById('ePhoto').value.trim(),
     cover:     document.getElementById('eCover').value.trim(),
     socialLinks,
     updatedAt: serverTimestamp()
   };
+
+  // Light validation — don't block saving the rest of the form over a
+  // typo'd contact field, just refuse to save something obviously wrong.
+  if(data.contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.contactEmail)){
+    showToast('That doesn\'t look like a valid email — check it and try again'); return;
+  }
+  if(data.contactPhone && !/^[+()\d][\d\s().-]{5,19}$/.test(data.contactPhone)){
+    showToast('That doesn\'t look like a valid phone number — check it and try again'); return;
+  }
 
   try{
     // ── 1. Claim new username via server if changed (Admin SDK bypasses rules) ──
