@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Complete Your Profile - MindShift Books</title>
+<title>Complete Your Profile · MindShift Books</title>
 <meta name="robots" content="noindex, nofollow"/>
 <link rel="icon" href="/MINDSHIFT.jpg">
 <style>
@@ -27,6 +27,19 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .top{padding:22px 20px 6px;text-align:center}
 .top h1{font-size:19px;font-weight:900;color:var(--txt);margin-bottom:6px}
 .top p{font-size:13px;color:var(--sub);line-height:1.5;max-width:320px;margin:0 auto}
+
+.reward-teaser{display:flex;align-items:center;gap:12px;margin:16px 16px 0;padding:14px 16px;position:relative;
+  border-radius:var(--radius);background:linear-gradient(135deg,#fff7ed,#fdf2f8);border:1.5px dashed #fbbf24;
+  box-shadow:0 2px 10px rgba(251,191,36,.14);overflow:visible}
+.reward-teaser::before,.reward-teaser::after{content:'';position:absolute;top:50%;transform:translateY(-50%);
+  width:14px;height:14px;border-radius:50%;background:var(--bg);z-index:1}
+.reward-teaser::before{left:-8px}
+.reward-teaser::after{right:-8px}
+.reward-teaser.hide{display:none}
+.reward-teaser-emoji{font-size:28px;flex-shrink:0;animation:teaserGiftBounce 2.2s ease-in-out infinite}
+@keyframes teaserGiftBounce{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-3px) rotate(-8deg)}}
+.reward-teaser-title{font-size:14.5px;font-weight:900;color:#9a3412}
+.reward-teaser-sub{font-size:11.5px;color:#c2410c;margin-top:2px;opacity:.85}
 
 .progress-wrap{padding:18px 20px 4px}
 .progress-bar{height:8px;border-radius:99px;background:var(--border);overflow:hidden}
@@ -52,12 +65,19 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .step.done .step-cta{display:none}
 .step-done-label{flex-shrink:0;font-size:12px;font-weight:700;color:var(--green)}
 
-.finish-banner{margin:22px 16px 0;padding:22px 18px;border-radius:var(--radius);text-align:center;
-  background:var(--g);color:#fff;display:none}
-.finish-banner.show{display:block}
-.finish-banner .emoji{font-size:30px;margin-bottom:6px}
-.finish-banner h3{font-size:16px;font-weight:900;margin-bottom:4px}
-.finish-banner p{font-size:12.5px;opacity:.92}
+.finish-banner{margin:22px 16px 0;padding:26px 18px;border-radius:var(--radius);text-align:center;position:relative;
+  background:linear-gradient(135deg,#f59e0b,#f472b6 55%,#a855f7);color:#fff;display:none;overflow:hidden;
+  box-shadow:0 8px 24px rgba(244,114,182,.35)}
+.finish-banner.show{display:block;animation:finishPopIn .45s cubic-bezier(.34,1.56,.64,1)}
+@keyframes finishPopIn{0%{transform:scale(.85);opacity:0}100%{transform:scale(1);opacity:1}}
+.finish-banner::before{content:'✨ 🎊 ✨ 🎊 ✨ 🎊 ✨ 🎊 ✨ 🎊';position:absolute;top:8px;left:0;right:0;
+  font-size:13px;opacity:.35;white-space:nowrap;letter-spacing:6px;pointer-events:none}
+.finish-banner .emoji{font-size:36px;margin-bottom:6px;margin-top:10px;display:inline-block;animation:finishGiftPop .6s ease .2s both}
+@keyframes finishGiftPop{0%{transform:scale(0) rotate(-20deg)}60%{transform:scale(1.2) rotate(8deg)}100%{transform:scale(1) rotate(0deg)}}
+.finish-banner h3{font-size:17px;font-weight:900;margin-bottom:4px}
+.finish-banner p{font-size:12.5px;opacity:.95;line-height:1.4}
+.finish-cta{margin-top:16px;padding:11px 22px;border-radius:99px;border:none;background:#fff;color:#c026d3;
+  font-size:13.5px;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 4px 12px rgba(0,0,0,.15)}
 
 .skel{background:linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%);
   background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:8px}
@@ -78,6 +98,14 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   <p>A few quick things to help people find you, follow you, and see your work.</p>
 </div>
 
+<div class="reward-teaser" id="rewardTeaser">
+  <div class="reward-teaser-emoji">🎁</div>
+  <div>
+    <div class="reward-teaser-title">Get ₦1,000 free</div>
+    <div class="reward-teaser-sub">Finish the checklist below to unlock it</div>
+  </div>
+</div>
+
 <div class="progress-wrap">
   <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
   <div class="progress-label"><span id="progressText">Loading…</span><span id="progressPct"></span></div>
@@ -95,9 +123,10 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 </div>
 
 <div class="finish-banner" id="finishBanner">
-  <div class="emoji">🎉</div>
-  <h3>You're all set!</h3>
-  <p>Your profile is complete and ready for the community.</p>
+  <div class="emoji" id="finishEmoji">🎉</div>
+  <h3 id="finishTitle">You're all set!</h3>
+  <p id="finishSub">Your profile is complete and ready for the community.</p>
+  <button class="finish-cta" id="finishCta" style="display:none">Go to Bookstore</button>
 </div>
 
 <script type="module">
@@ -201,14 +230,50 @@ function render(setup){
   document.getElementById('progressText').textContent = `${doneCount} of 4 complete`;
   document.getElementById('progressPct').textContent = `${Math.round((doneCount/4)*100)}%`;
 
-  if(doneCount === 4) document.getElementById('finishBanner').classList.add('show');
+  return doneCount;
+}
+
+// Fires once all 4 steps are done. Re-checks eligibility server-side (the
+// endpoint itself is idempotent — safe to call again on every future visit,
+// it just reports back the voucher already claimed) and reveals what the
+// ₦1,000 actually is: an ebook voucher, ready to use in the Bookstore.
+async function claimVoucherAndReveal(user){
+  document.getElementById('rewardTeaser').classList.add('hide');
+  const banner = document.getElementById('finishBanner');
+  const cta = document.getElementById('finishCta');
+  banner.classList.add('show');
+
+  try{
+    const idToken = await user.getIdToken();
+    const resp = await fetch('/api/rewards/claim-profile-voucher', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` }
+    });
+    const data = await resp.json();
+    if(resp.ok && data.ok && data.voucher){
+      document.getElementById('finishTitle').textContent = 'You\u2019ve got \u20a61,000 free! \ud83c\udf89';
+      document.getElementById('finishSub').textContent = 'It\u2019s a voucher for your next ebook \u2014 already applied, ready whenever you check out.';
+      cta.style.display = 'inline-block';
+      cta.onclick = () => location.href = '/books';
+    } else {
+      // All 4 steps genuinely done but the server disagreed (e.g. a stale
+      // client-side read) — still a nice moment, just without the reveal.
+      document.getElementById('finishTitle').textContent = 'You\u2019re all set!';
+      document.getElementById('finishSub').textContent = 'Your profile is complete and ready for the community.';
+    }
+  }catch(e){
+    console.error('claim voucher error:', e);
+    document.getElementById('finishTitle').textContent = 'You\u2019re all set!';
+    document.getElementById('finishSub').textContent = 'Your profile is complete and ready for the community.';
+  }
 }
 
 onAuthStateChanged(auth, async (user) => {
   if(!user){ location.href = '/login'; return; }
   try{
     const setup = await computeSetup(user.uid, user.photoURL || '');
-    render(setup);
+    const doneCount = render(setup);
+    if(doneCount === 4) claimVoucherAndReveal(user);
   }catch(e){
     console.error('complete-profile load error:', e);
     document.getElementById('stepList').innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--sub);font-size:13.5px">Couldn't load your progress — check your connection and try again.</div>`;

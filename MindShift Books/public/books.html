@@ -83,6 +83,13 @@
     <span id="warmingMsg">Server warming up…</span>
   </div>
 
+  <!-- Profile-completion voucher reminder — shown by main.js while the
+       signed-in user has an unused ebookVoucher on their account. -->
+  <div id="voucherBanner" class="voucher-page-banner" style="display:none">
+    <span class="vpb-emoji">🎁</span>
+    <span id="voucherBannerText">You have a ₦1,000 voucher — it'll be applied automatically at checkout.</span>
+  </div>
+
   <section class="hero" id="ourBooksSection" aria-labelledby="our-books-h">
     <div class="section-head">
       <div class="section-label-row">
@@ -572,6 +579,15 @@
     <div id="cartItemsList" class="cart-items-list"></div>
 
     <div class="cart-summary" id="cartSummary">
+      <!-- Shown only when the signed-in user has an unused voucher -->
+      <div class="cart-voucher-row" id="cartVoucherRow" style="display:none">
+        <label for="cartVoucherToggle">
+          <input type="checkbox" id="cartVoucherToggle" checked>
+          🎁 Apply ₦1,000 voucher
+        </label>
+        <span class="cvr-amount" id="cartVoucherAmount">−₦1,000</span>
+      </div>
+
       <div class="cart-total-row">
         <span>Total</span>
         <span id="cartTotalPrice">$0.00</span>

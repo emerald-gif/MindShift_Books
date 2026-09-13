@@ -914,8 +914,52 @@ function closeWishlistConfirmDrawer() {
   document.body.style.overflow = '';
 }
 
+// ── Profile-completion voucher (v2 reward) ──────────────────────────────────
+// A one-time ₦1,000 credit users unlock by finishing their profile checklist
+// (see /complete-profile). Fetched from the server (never trust a
+// client-writable field for anything with cash value) and re-fetched on
+// every auth change, same pattern as the wishlist below.
+let userVoucher = null;   // { amount, claimed, used, ... } or null if none/used
+let applyVoucherFlag = true; // the cart toggle's current state, defaults on
+
+async function fetchVoucherStatus() {
+  const user = window.MSBAuth && window.MSBAuth.getUser();
+  if (!user) { userVoucher = null; updateVoucherBanner(); return; }
+  try {
+    const idToken = await window.MSBAuth.getIdToken();
+    const res = await fetch('/api/rewards/voucher-status', {
+      headers: { Authorization: `Bearer ${idToken}` }
+    });
+    const data = await res.json();
+    userVoucher = (data && data.voucher && data.voucher.claimed && !data.voucher.used) ? data.voucher : null;
+  } catch (e) {
+    console.warn('fetchVoucherStatus failed (non-fatal):', e);
+    userVoucher = null;
+  }
+  updateVoucherBanner();
+  // If the cart's already open, refresh it so the voucher row appears without needing a reopen
+  const overlay = document.getElementById('cartOverlay');
+  if (overlay && overlay.classList.contains('show')) renderCartOverlay();
+}
+
+function updateVoucherBanner() {
+  const el = document.getElementById('voucherBanner');
+  if (!el) return; // only present on books.html
+  el.style.display = userVoucher ? 'flex' : 'none';
+}
+
+window.addEventListener('msb-auth-changed', fetchVoucherStatus);
+(function wireVoucherAuthFallback() {
+  if (window.MSBAuth && typeof window.MSBAuth.onAuthReady === 'function') {
+    window.MSBAuth.onAuthReady(fetchVoucherStatus);
+  } else {
+    setTimeout(wireVoucherAuthFallback, 50);
+  }
+})();
+
 // Fetch (or clear) the wishlist every time sign-in state changes.
 window.addEventListener('msb-auth-changed', fetchWishlist);
+
 // Belt-and-suspenders (same pattern used on wishlist.html/account.html):
 // Firebase's first onAuthStateChanged resolution can fire before this
 // listener is attached, in which case the event above already fired and
@@ -971,6 +1015,8 @@ function renderCartOverlay() {
   if (!items.length) {
     if (summary) summary.style.display = 'none';
     if (countEl) countEl.textContent = '';
+    const voucherRow = document.getElementById('cartVoucherRow');
+    if (voucherRow) voucherRow.style.display = 'none';
 
     if (cartIds.length && !PRODUCTS.length) {
       list.innerHTML = `<div class="muted" style="padding:40px 10px;text-align:center;">Loading your cart…</div>`;
@@ -1007,6 +1053,24 @@ function renderCartOverlay() {
 
   const total = items.reduce((sum, p) => sum + Number(p.priceNGN || p.priceUSD || 0), 0);
   const hasNGN = items.some(p => p.priceNGN);
+
+  // Voucher toggle row — only rendered at all when there's something to
+  // apply. discount is always recomputed from the live cart total, never
+  // stored, so adding/removing a book updates it automatically.
+  const voucherRow = document.getElementById('cartVoucherRow');
+  if (voucherRow) {
+    if (userVoucher && hasNGN) {
+      voucherRow.style.display = 'flex';
+      const toggle = document.getElementById('cartVoucherToggle');
+      if (toggle && toggle.checked !== applyVoucherFlag) toggle.checked = applyVoucherFlag;
+      const discount = applyVoucherFlag ? Math.min(Number(userVoucher.amount) || 0, total) : 0;
+      document.getElementById('cartVoucherAmount').textContent = `−₦${discount.toLocaleString()}`;
+      totalEl.textContent = `₦${Math.max(0, total - discount).toLocaleString()}`;
+      return;
+    }
+    voucherRow.style.display = 'none';
+  }
+
   totalEl.textContent = hasNGN ? `₦${total.toLocaleString()}` : `$${total.toFixed(2)}`;
 }
 
@@ -1110,11 +1174,23 @@ async function proceedCartToPayment() {
     const resp = await fetch('/api/pay', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
-      body: JSON.stringify({ email, name, productIds: cartIds })
+      body: JSON.stringify({ email, name, productIds: cartIds, applyVoucher: !!(userVoucher && applyVoucherFlag) })
     });
 
     const data = await resp.json();
     if (!resp.ok) throw new Error(data.error || 'Payment initialization failed');
+
+    // Voucher covered the whole order — nothing to charge, so there's no
+    // Paystack step at all. The order's already been fulfilled server-side
+    // by the time this response comes back.
+    if (data.free) {
+      saveCart([]);
+      closeCartOverlay();
+      showToast('Your voucher covered it all! 🎉 Your book will be emailed to you shortly.', 'success', 6000);
+      fetchVoucherStatus(); // it's used now — refreshes the banner/toggle for next time
+      window.location.href = '/';
+      return;
+    }
 
     const { reference, amount } = data;
 
@@ -1182,6 +1258,7 @@ async function verifyCartPayment(reference, purchaserEmail) {
       saveCart([]); // clear cart now that the order went through
       closeCartOverlay();
       showToast('Payment successful! 🎉 Your book will be emailed to you shortly.', 'success', 6000);
+      fetchVoucherStatus(); // refreshes the banner/toggle in case this order used the voucher
       window.location.href = '/';
     } else {
       console.warn('verify failed', data);
@@ -1211,6 +1288,10 @@ function _wireCartButtons() {
   document.getElementById('cartSignUpBtn')?.addEventListener('click', () => goToCartAuth('/signup'));
   document.getElementById('cartSwitchAccountBtn')?.addEventListener('click', () => {
     window.MSBAuth && window.MSBAuth.signOut();
+  });
+  document.getElementById('cartVoucherToggle')?.addEventListener('change', (e) => {
+    applyVoucherFlag = e.target.checked;
+    renderCartOverlay(); // recompute the displayed total — the real charge is always decided server-side at /api/pay
   });
   updateCartBadge();
 }

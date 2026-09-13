@@ -49,7 +49,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   color:var(--p);font-size:9.5px;font-weight:800;padding:2px 7px;
   border-radius:99px;margin-left:5px;vertical-align:middle;letter-spacing:.2px}
 
-/* ── COVER BANNER  ── */
+/* ── COVER BANNER ── */
 .cover-banner{width:100%;height:160px;background:var(--g);position:relative;overflow:hidden;cursor:pointer}
 .cover-banner img{width:100%;height:100%;object-fit:cover}
 .cover-banner-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(15,10,30,.4))}
@@ -161,22 +161,34 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
 .profile-title{font-size:13px;color:var(--p);font-weight:600;margin-bottom:6px}
 .profile-bio{font-size:14px;color:var(--sub);line-height:1.6;margin-bottom:12px}
 
-/* ── PROFILE SETUP BANNER (owner-only, hidden once all 4 steps are done) ── */
-.setup-banner{display:flex;align-items:center;gap:12px;width:100%;text-align:left;
-  background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);
-  padding:12px 14px;margin-bottom:14px;cursor:pointer;font-family:inherit;
-  box-shadow:0 1px 4px rgba(15,23,42,.04)}
-.setup-banner-ring{position:relative;width:40px;height:40px;flex-shrink:0}
+/* ── PROFILE SETUP BANNER (owner-only, hidden once all 4 steps are done) ──
+   Styled like a gift ticket/voucher — warm gold-pink gradient, dashed
+   border, punched notches on each edge — so it reads as "there's a reward
+   here" rather than a plain progress widget. */
+.setup-banner{display:flex;align-items:center;gap:12px;width:100%;text-align:left;position:relative;
+  background:linear-gradient(135deg,#fff7ed,#fdf2f8);border:1.5px dashed #fbbf24;border-radius:var(--radius);
+  padding:12px 14px;margin-bottom:14px;cursor:pointer;font-family:inherit;overflow:visible;
+  box-shadow:0 2px 10px rgba(251,191,36,.14)}
+.setup-banner::before,.setup-banner::after{content:'';position:absolute;top:50%;transform:translateY(-50%);
+  width:14px;height:14px;border-radius:50%;background:var(--card);z-index:1}
+.setup-banner::before{left:-8px}
+.setup-banner::after{right:-8px}
+.setup-banner-ring{position:relative;width:40px;height:40px;flex-shrink:0;
+  filter:drop-shadow(0 2px 4px rgba(244,114,182,.25))}
 .setup-banner-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
 .setup-banner-ring circle{fill:none;stroke-width:3.5}
-.setup-banner-ring .track{stroke:var(--border)}
+.setup-banner-ring .track{stroke:#fde8cc}
 .setup-banner-ring .fill{stroke:url(#setupRingGrad);stroke-linecap:round;transition:stroke-dashoffset .3s ease}
 .setup-banner-ring span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-  font-size:11px;font-weight:800;color:var(--p)}
+  font-size:11px;font-weight:800;color:#c2410c}
+.setup-banner-giftbadge{position:absolute;bottom:-4px;right:-4px;width:18px;height:18px;border-radius:50%;
+  background:var(--card);display:flex;align-items:center;justify-content:center;font-size:11px;
+  box-shadow:0 1px 3px rgba(0,0,0,.15);animation:setupGiftBounce 2.2s ease-in-out infinite}
+@keyframes setupGiftBounce{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-2px) rotate(-8deg)}}
 .setup-banner-txt{flex:1;min-width:0}
-.setup-banner-title{font-size:13.5px;font-weight:800;color:var(--txt)}
-.setup-banner-sub{font-size:11.5px;color:var(--sub);margin-top:2px}
-.setup-banner-arrow{color:var(--mute);flex-shrink:0}
+.setup-banner-title{font-size:13.5px;font-weight:800;color:#9a3412}
+.setup-banner-sub{font-size:11.5px;color:#c2410c;margin-top:2px;opacity:.85}
+.setup-banner-arrow{color:#fb923c;flex-shrink:0}
 .setup-banner-arrow svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
 .profile-location{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--mute);margin-bottom:14px}
 .profile-location svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
@@ -492,15 +504,16 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
   <button type="button" class="setup-banner" id="setupBanner" style="display:none" onclick="location.href='/complete-profile'">
     <div class="setup-banner-ring">
       <svg viewBox="0 0 40 40">
-        <defs><linearGradient id="setupRingGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#4f46e5"/><stop offset="100%" stop-color="#06b6d4"/></linearGradient></defs>
+        <defs><linearGradient id="setupRingGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#f472b6"/></linearGradient></defs>
         <circle class="track" cx="20" cy="20" r="16.5"></circle>
         <circle class="fill" id="setupRingFill" cx="20" cy="20" r="16.5" stroke-dasharray="103.7" stroke-dashoffset="103.7"></circle>
       </svg>
       <span id="setupRingLabel">0/4</span>
+      <div class="setup-banner-giftbadge">🎁</div>
     </div>
     <div class="setup-banner-txt">
       <div class="setup-banner-title">Finish setting up your profile</div>
-      <div class="setup-banner-sub" id="setupBannerSub">A complete profile helps people find and trust you</div>
+      <div class="setup-banner-sub" id="setupBannerSub">Complete these steps to get ₦1,000 free</div>
     </div>
     <div class="setup-banner-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
   </button>
@@ -1055,7 +1068,7 @@ function renderSetupBanner(){
   const labels = ['your photo, cover, bio & interests','following 10 creators','your first post or article','liking 10 posts/articles'];
   const remaining = labels.filter((_,i)=>!steps[i]);
   document.getElementById('setupBannerSub').textContent =
-    remaining.length === 1 ? `Just ${remaining[0]} left` : `${4 - doneCount} steps left to go`;
+    remaining.length === 1 ? `Just ${remaining[0]} left to get ₦1,000 free` : `${4 - doneCount} steps left to get ₦1,000 free`;
 }
 
 /* ── RENDER HEADER ── */
