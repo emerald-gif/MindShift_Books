@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Complete Your Profile - MindShift Books</title>
+<meta name="robots" content="noindex, nofollow"/>
+<link rel="icon" href="/MINDSHIFT.jpg">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --p:#4f46e5;--p2:#06b6d4;--g:linear-gradient(90deg,#4f46e5,#06b6d4);
+  --txt:#0f172a;--sub:#6b7280;--mute:#9ca3af;
+  --bg:#f8fafc;--card:#fff;--border:#e5e7eb;--border2:#e2e8f0;
+  --green:#10b981;--radius:16px;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;padding-bottom:40px}
+
+.hdr{position:sticky;top:0;z-index:100;background:rgba(248,247,255,.92);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);padding:0 16px;height:56px;
+  display:flex;align-items:center;gap:12px}
+.btn-back{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--border);
+  background:var(--card);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt);flex-shrink:0}
+.btn-back svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.hdr-title{font-size:17px;font-weight:900;color:var(--txt)}
+
+.top{padding:22px 20px 6px;text-align:center}
+.top h1{font-size:19px;font-weight:900;color:var(--txt);margin-bottom:6px}
+.top p{font-size:13px;color:var(--sub);line-height:1.5;max-width:320px;margin:0 auto}
+
+.progress-wrap{padding:18px 20px 4px}
+.progress-bar{height:8px;border-radius:99px;background:var(--border);overflow:hidden}
+.progress-fill{height:100%;border-radius:99px;background:var(--g);transition:width .4s ease;width:0%}
+.progress-label{display:flex;justify-content:space-between;margin-top:6px;font-size:11.5px;font-weight:700;color:var(--sub)}
+
+.list{padding:10px 16px 0;display:flex;flex-direction:column;gap:10px}
+.step{display:flex;align-items:center;gap:13px;background:var(--card);border:1.5px solid var(--border);
+  border-radius:var(--radius);padding:14px;transition:opacity .2s}
+.step.done{opacity:.65}
+.step-check{width:34px;height:34px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  border:2px solid var(--border)}
+.step.done .step-check{background:var(--green);border-color:var(--green);color:#fff}
+.step-check svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;display:none}
+.step.done .step-check svg{display:block}
+.step-num{font-size:13px;font-weight:800;color:var(--mute)}
+.step-info{flex:1;min-width:0}
+.step-title{font-size:14px;font-weight:800;color:var(--txt)}
+.step-sub{font-size:12px;color:var(--sub);margin-top:2px;line-height:1.4}
+.step-sub b{color:var(--txt)}
+.step-cta{flex-shrink:0;padding:9px 15px;border-radius:99px;border:none;background:var(--g);color:#fff;
+  font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap}
+.step.done .step-cta{display:none}
+.step-done-label{flex-shrink:0;font-size:12px;font-weight:700;color:var(--green)}
+
+.finish-banner{margin:22px 16px 0;padding:22px 18px;border-radius:var(--radius);text-align:center;
+  background:var(--g);color:#fff;display:none}
+.finish-banner.show{display:block}
+.finish-banner .emoji{font-size:30px;margin-bottom:6px}
+.finish-banner h3{font-size:16px;font-weight:900;margin-bottom:4px}
+.finish-banner p{font-size:12.5px;opacity:.92}
+
+.skel{background:linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%);
+  background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:8px}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <button class="btn-back" onclick="history.length>1?history.back():location.href='/profile'" aria-label="Back">
+    <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+  </button>
+  <div class="hdr-title">Complete Your Profile</div>
+</header>
+
+<div class="top">
+  <h1>Let's get you set up</h1>
+  <p>A few quick things to help people find you, follow you, and see your work.</p>
+</div>
+
+<div class="progress-wrap">
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="progress-label"><span id="progressText">Loading…</span><span id="progressPct"></span></div>
+</div>
+
+<div class="list" id="stepList">
+  <div class="step"><div class="skel" style="width:34px;height:34px;border-radius:50%"></div>
+    <div style="flex:1"><div class="skel" style="height:13px;width:60%;margin-bottom:6px"></div><div class="skel" style="height:11px;width:80%"></div></div></div>
+  <div class="step"><div class="skel" style="width:34px;height:34px;border-radius:50%"></div>
+    <div style="flex:1"><div class="skel" style="height:13px;width:55%;margin-bottom:6px"></div><div class="skel" style="height:11px;width:75%"></div></div></div>
+  <div class="step"><div class="skel" style="width:34px;height:34px;border-radius:50%"></div>
+    <div style="flex:1"><div class="skel" style="height:13px;width:65%;margin-bottom:6px"></div><div class="skel" style="height:11px;width:70%"></div></div></div>
+  <div class="step"><div class="skel" style="width:34px;height:34px;border-radius:50%"></div>
+    <div style="flex:1"><div class="skel" style="height:13px;width:50%;margin-bottom:6px"></div><div class="skel" style="height:11px;width:78%"></div></div></div>
+</div>
+
+<div class="finish-banner" id="finishBanner">
+  <div class="emoji">🎉</div>
+  <h3>You're all set!</h3>
+  <p>Your profile is complete and ready for the community.</p>
+</div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
+import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
+import {
+  getFirestore, doc, getDoc, collection, query, where, getCountFromServer
+} from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
+
+const fbApp = initializeApp({
+  apiKey:"AIzaSyDTn70s1_uIiSOR6lPLY_nKh8Ff1FViFCs",
+  authDomain:"mindshiftbooks-c4451.firebaseapp.com",
+  projectId:"mindshiftbooks-c4451",
+  storageBucket:"mindshiftbooks-c4451.firebasestorage.app",
+  messagingSenderId:"388697987853",
+  appId: "1:388697987853:web:f023df9412c22285012e44",
+  measurementId: "G-CHPJDQ4W08"
+});
+const auth = getAuth(fbApp);
+const db   = getFirestore(fbApp, 'default');
+
+// Every check below reads live data — nothing here is a stored "completed
+// step X" flag. A user who already had 10+ follows or 15 likes before this
+// checklist existed sees those rows checked off the first time they open it.
+async function computeSetup(uid, photoURLFallback){
+  const userSnap = await getDoc(doc(db,'users',uid));
+  const u = userSnap.exists() ? userSnap.data() : {};
+
+  const hasPhoto = !!(u.photo || photoURLFallback);
+  const hasCover = !!u.cover;
+  const hasBio = !!(u.bio && u.bio.trim());
+  const hasCategories = Array.isArray(u.categories) && u.categories.length > 0;
+  const profileDone = hasPhoto && hasCover && hasBio && hasCategories;
+  const profileMissing = [];
+  if(!hasPhoto) profileMissing.push('profile picture');
+  if(!hasCover) profileMissing.push('cover image');
+  if(!hasBio) profileMissing.push('bio');
+  if(!hasCategories) profileMissing.push('interests');
+
+  const [followCountSnap, articleCountSnap, postCountSnap] = await Promise.all([
+    getCountFromServer(query(collection(db,'follows'), where('followerId','==',uid))),
+    getCountFromServer(query(collection(db,'articles'), where('authorUid','==',uid))),
+    getCountFromServer(query(collection(db,'posts'), where('authorUid','==',uid)))
+  ]);
+  const followCount = followCountSnap.data().count;
+  const contentCount = articleCountSnap.data().count + postCountSnap.data().count;
+
+  let likeCount = 0;
+  try{
+    const likesSnap = await getDoc(doc(db,'userLikes',uid));
+    if(likesSnap.exists()){
+      likeCount = Object.values(likesSnap.data()).filter(Boolean).length;
+    }
+  }catch(e){ /* non-fatal — treat as 0 */ }
+
+  return {
+    profile: { done: profileDone, missing: profileMissing },
+    follow:  { done: followCount >= 10, count: followCount, target: 10 },
+    content: { done: contentCount >= 1, count: contentCount, target: 1 },
+    engage:  { done: likeCount >= 10, count: likeCount, target: 10 }
+  };
+}
+
+function stepRow(num, title, sub, ctaLabel, onCta, done){
+  const el = document.createElement('div');
+  el.className = 'step' + (done ? ' done' : '');
+  el.innerHTML = `
+    <div class="step-check">${done ? '' : `<span class="step-num">${num}</span>`}<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+    <div class="step-info">
+      <div class="step-title">${title}</div>
+      <div class="step-sub">${sub}</div>
+    </div>
+    ${done ? `<div class="step-done-label">Done</div>` : `<button class="step-cta">${ctaLabel}</button>`}
+  `;
+  if(!done) el.querySelector('.step-cta').addEventListener('click', onCta);
+  return el;
+}
+
+function render(setup){
+  const list = document.getElementById('stepList');
+  list.innerHTML = '';
+
+  const rows = [
+    stepRow(1, 'Complete your profile',
+      setup.profile.done ? 'Photo, cover, bio & interests all set' : `Still need: <b>${setup.profile.missing.join(', ')}</b>`,
+      'Edit Profile', () => location.href = '/profile?openEdit=1', setup.profile.done),
+    stepRow(2, 'Follow 10 creators',
+      setup.follow.done ? `Following ${setup.follow.count} creators` : `<b>${setup.follow.count}/${setup.follow.target}</b> so far — find people worth following`,
+      'Find Creators', () => location.href = '/suggestions', setup.follow.done),
+    stepRow(3, 'Create your first content',
+      setup.content.done ? 'You\u2019ve published something \u2014 nice work' : 'Share one post or write one article',
+      'Create', () => { if(window.openCreatePicker) window.openCreatePicker(); else location.href = '/write'; }, setup.content.done),
+    stepRow(4, 'Engage with the community',
+      setup.engage.done ? `Liked ${setup.engage.count} posts/articles` : `<b>${setup.engage.count}/${setup.engage.target}</b> likes so far`,
+      'Explore Feed', () => location.href = '/articles', setup.engage.done)
+  ];
+  rows.forEach(r => list.appendChild(r));
+
+  const doneCount = [setup.profile.done, setup.follow.done, setup.content.done, setup.engage.done].filter(Boolean).length;
+  document.getElementById('progressFill').style.width = `${(doneCount/4)*100}%`;
+  document.getElementById('progressText').textContent = `${doneCount} of 4 complete`;
+  document.getElementById('progressPct').textContent = `${Math.round((doneCount/4)*100)}%`;
+
+  if(doneCount === 4) document.getElementById('finishBanner').classList.add('show');
+}
+
+onAuthStateChanged(auth, async (user) => {
+  if(!user){ location.href = '/login'; return; }
+  try{
+    const setup = await computeSetup(user.uid, user.photoURL || '');
+    render(setup);
+  }catch(e){
+    console.error('complete-profile load error:', e);
+    document.getElementById('stepList').innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--sub);font-size:13.5px">Couldn't load your progress — check your connection and try again.</div>`;
+  }
+});
+</script>
+<script src="/create-picker.js"></script>
+</body>
+</html>
