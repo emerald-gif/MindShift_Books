@@ -1372,8 +1372,20 @@
 
   // ── Notifications on the official MindShift Books account ──
   const typeLabel = { article_like: 'liked', follow: 'started following you', new_comment: 'commented on', comment_like: 'liked your comment on', comment_reply: 'replied to your comment on', repost: 'reposted', repost_quote: 'reposted with a caption' };
+  // Likes/follows/reposts arrive pre-grouped by the same 3-hour-window
+  // logic as the regular user bell (see notifications.js) — actorNames +
+  // totalCount cover "Alice", "Alice and Bob", or "Alice, Bob and 6 others".
+  // Comments never carry these fields, so this falls back to actorName alone.
+  function notifActorText(n) {
+    const names = Array.isArray(n.actorNames) && n.actorNames.length ? n.actorNames : [n.actorName || 'Someone'];
+    const total = n.totalCount || names.length;
+    if (total <= 1) return esc(names[0] || 'Someone');
+    if (total === 2) return `${esc(names[0])} and ${esc(names[1] || names[0])}`;
+    const others = total - 2;
+    return `${esc(names[0])}, ${esc(names[1] || names[0])} and ${others} other${others === 1 ? '' : 's'}`;
+  }
   function notifText(n) {
-    const name = esc(n.actorName || 'Someone');
+    const name = notifActorText(n);
     const title = n.targetTitle ? ` "${esc(n.targetTitle.slice(0, 60))}"` : '';
     if (n.type === 'follow') return `${name} started following MindShift Books`;
     const verb = typeLabel[n.type] || 'interacted with';
