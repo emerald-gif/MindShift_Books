@@ -1022,7 +1022,19 @@ setTimeout(ensureFeedLoaded, 8000);
 // Firestore connection or a stuck skeleton is most likely. Check as soon
 // as the page is visible/restored again, rather than waiting for the user
 // to notice the feed never came in.
-window.addEventListener('pageshow', ensureFeedLoaded);
+//
+// pageshow fires on EVERY load, not just bfcache restores — event.persisted
+// is what tells the two apart. On a genuine restore, onAuthStateChanged
+// never re-fires (the script doesn't re-run), so this watchdog is the ONLY
+// thing that will ever check the feed again — it has to run unconditionally
+// there. On a fresh/full reload, though, onAuthStateChanged and the normal
+// loadFeedBatch call are ABOUT to run right after this fires — calling
+// ensureFeedLoaded immediately here too used to race with that (see
+// loadFeedBatch's own comment for how two overlapping calls broke things).
+// loadFeedBatch now safely coalesces overlapping calls into one either way,
+// but there's no reason to invite that race in the first place when the
+// normal load path is about to handle it on its own.
+window.addEventListener('pageshow', (e)=>{ if(e.persisted) ensureFeedLoaded(); });
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) ensureFeedLoaded(); });
 
 window.retryLoadFeed = function(){
@@ -2845,17 +2857,39 @@ async function loadRecentReposts(){
 // firing them without this causes the feed to visibly reshuffle 2-3 times
 // in a row on load (each loader resolves at its own pace, and a plain
 // re-render reshuffles the whole feed randomly every time it's called).
+//
+// Also guards against a SEPARATE race: the initial onAuthStateChanged load
+// and the pageshow/visibility watchdog can both end up calling this within
+// moments of each other (e.g. the tab becomes visible again right as the
+// normal initial load is still in flight). Two overlapping calls both
+// flip the shared _suppressAutoRender flag — whichever one's loaders
+// finish FIRST flips it back to false in its own `finally`, while the
+// slower one is still mid-fetch. Its loaders then resolve into a flag
+// that's now off, each firing its own render, which is exactly the
+// multi-shuffle-flicker bug this function exists to prevent — just
+// re-introduced through a side door. Tracking the in-flight promise and
+// having a second caller simply await the first instead of starting a
+// parallel run closes that door.
+let _feedBatchPromise = null;
 async function loadFeedBatch(loaders){
-  _suppressAutoRender = true;
-  let results;
+  if(_feedBatchPromise) return _feedBatchPromise;
+  _feedBatchPromise = (async () => {
+    _suppressAutoRender = true;
+    let results;
+    try{
+      results = await Promise.allSettled(loaders.map(fn=>fn()));
+    } finally {
+      _suppressAutoRender = false;
+    }
+    rebuildMergedFeedOrder();
+    renderGrid();
+    return results.map(r => r.status==='fulfilled' ? r.value : false);
+  })();
   try{
-    results = await Promise.allSettled(loaders.map(fn=>fn()));
+    return await _feedBatchPromise;
   } finally {
-    _suppressAutoRender = false;
+    _feedBatchPromise = null;
   }
-  rebuildMergedFeedOrder();
-  renderGrid();
-  return results.map(r => r.status==='fulfilled' ? r.value : false);
 }
 
 /* ── FULLSCREEN SEARCH / EXPLORE ── */
