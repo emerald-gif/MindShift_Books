@@ -190,6 +190,25 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
 .setup-banner-sub{font-size:11.5px;color:#c2410c;margin-top:2px;opacity:.85}
 .setup-banner-arrow{color:#fb923c;flex-shrink:0}
 .setup-banner-arrow svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+
+/* ── PROFILE-SETUP CELEBRATION (one-time, fires the moment 4/4 is hit) ── */
+.celebrate-overlay{position:fixed;inset:0;z-index:2000;background:rgba(15,23,42,.55);backdrop-filter:blur(2px);
+  display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .25s ease}
+.celebrate-overlay.show{opacity:1;pointer-events:auto}
+.celebrate-card{position:relative;width:100%;max-width:340px;border-radius:20px;padding:30px 24px 26px;text-align:center;
+  background:linear-gradient(135deg,#f59e0b,#f472b6 55%,#a855f7);color:#fff;overflow:hidden;
+  box-shadow:0 20px 50px rgba(0,0,0,.3);transform:scale(.85);opacity:0;transition:transform .35s cubic-bezier(.34,1.56,.64,1),opacity .35s ease}
+.celebrate-overlay.show .celebrate-card{transform:scale(1);opacity:1}
+.celebrate-close{position:absolute;top:12px;right:12px;width:28px;height:28px;border-radius:50%;border:none;
+  background:rgba(255,255,255,.2);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.celebrate-close svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round}
+.celebrate-confetti{position:absolute;top:10px;left:0;right:0;font-size:13px;opacity:.35;white-space:nowrap;letter-spacing:6px;pointer-events:none}
+.celebrate-emoji{font-size:44px;margin-top:14px;margin-bottom:8px;display:inline-block;animation:celebrateGiftPop .6s ease .15s both}
+@keyframes celebrateGiftPop{0%{transform:scale(0) rotate(-20deg)}60%{transform:scale(1.2) rotate(8deg)}100%{transform:scale(1) rotate(0deg)}}
+.celebrate-card h3{font-size:19px;font-weight:900;margin-bottom:8px}
+.celebrate-card p{font-size:13.5px;line-height:1.5;opacity:.95}
+.celebrate-cta{margin-top:18px;padding:12px 26px;border-radius:99px;border:none;background:#fff;color:#c026d3;
+  font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 4px 12px rgba(0,0,0,.15)}
 .profile-location{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--mute);margin-bottom:14px}
 .profile-location svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 
@@ -1058,7 +1077,11 @@ function renderSetupBanner(){
   if(!banner) return;
   const { steps, doneCount } = computeProfileSetup();
 
-  if(doneCount === 4){ banner.style.display = 'none'; return; }
+  if(doneCount === 4){
+    banner.style.display = 'none';
+    maybeCelebrateProfileSetup();
+    return;
+  }
 
   banner.style.display = 'flex';
   const CIRC = 103.7; // 2 * pi * r(16.5) — matches the ring's circle radius
@@ -1070,6 +1093,43 @@ function renderSetupBanner(){
   document.getElementById('setupBannerSub').textContent =
     remaining.length === 1 ? `Just ${remaining[0]} left to get ₦1,000 free` : `${4 - doneCount} steps left to get ₦1,000 free`;
 }
+
+// Fires the first time this account reaches 4/4 — on whichever page notices
+// it first (here, or /complete-profile). Claims the voucher server-side
+// (idempotent — safe even if /complete-profile already claimed it) so the
+// reward is real regardless of which page the user happened to finish on,
+// then shows the celebration exactly once, remembered via a plain UI flag
+// on the user doc (not the voucher itself, which stays server-only).
+let celebrationHandled = false;
+async function maybeCelebrateProfileSetup(){
+  if(celebrationHandled || !currentUser) return;
+  if(profileData.profileVoucherCelebrationSeen) return;
+  celebrationHandled = true;
+
+  try{
+    const idToken = await currentUser.getIdToken();
+    await fetch('/api/rewards/claim-profile-voucher', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` }
+    });
+  }catch(e){ console.warn('claim-profile-voucher failed (celebration still shows):', e); }
+
+  showCelebration();
+  profileData.profileVoucherCelebrationSeen = true;
+  try{ await setDoc(doc(db,'users',currentUser.uid),{profileVoucherCelebrationSeen:true},{merge:true}); }catch{}
+}
+
+function showCelebration(){
+  document.getElementById('celebrateOverlay')?.classList.add('show');
+}
+function hideCelebration(){
+  document.getElementById('celebrateOverlay')?.classList.remove('show');
+}
+document.getElementById('celebrateClose')?.addEventListener('click', hideCelebration);
+document.getElementById('celebrateOverlay')?.addEventListener('click', (e) => {
+  if(e.target.id === 'celebrateOverlay') hideCelebration();
+});
+document.getElementById('celebrateCta')?.addEventListener('click', () => { location.href = '/books'; });
 
 /* ── RENDER HEADER ── */
 function renderProfileHeader(){
@@ -2576,6 +2636,23 @@ window.showToast = function(msg){
 <script src="/image-compress.js"></script>
 <script src="/uploader.js"></script>
 
+
+<!-- Profile-setup celebration — shown once, the moment all 4 checklist
+     steps are actually complete (fires from here as well as from
+     /complete-profile, whichever the user hits first). Dismissing it marks
+     profileVoucherCelebrationSeen so it never shows again. -->
+<div class="celebrate-overlay" id="celebrateOverlay" aria-hidden="true">
+  <div class="celebrate-card">
+    <button type="button" class="celebrate-close" id="celebrateClose" aria-label="Close">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <div class="celebrate-confetti">✨ 🎊 ✨ 🎊 ✨ 🎊 ✨ 🎊 ✨</div>
+    <div class="celebrate-emoji">🎁</div>
+    <h3>You completed it!</h3>
+    <p>Your profile is all set — and you've got <b>₦1,000 free</b> for your next ebook.</p>
+    <button type="button" class="celebrate-cta" id="celebrateCta">Visit Bookstore</button>
+  </div>
+</div>
 
 <!-- Shared MindShift account nav (renders the acct-nav-slot in the header) -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
