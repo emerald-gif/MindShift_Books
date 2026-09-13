@@ -4657,6 +4657,41 @@ app.post('/api/admin/notifications/read-all', requireAdminApi, async (req, res) 
   }
 });
 
+// ONE-TIME MIGRATION — run this once after deploying grouped notifications,
+// then it's done forever. Notification docs created before this feature
+// only have createdAt, not lastAt — and the notification list now sorts by
+// lastAt, which makes Firestore silently EXCLUDE any doc missing that
+// field from the results (not an error, just invisible). This backfills
+// lastAt = createdAt on every existing doc that's missing it, so the old
+// backlog reappears. Safe to call more than once — docs that already have
+// lastAt are skipped. Admin-session-gated like everything else here; hit
+// it once from a browser tab logged into /admin, or via curl with the
+// admin session cookie.
+app.post('/api/admin/notifications/backfill-lastat', requireAdminApi, async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const snap = await db.collection('notifications').limit(2000).get();
+    const missing = snap.docs.filter(d => !d.data().lastAt);
+    if (!missing.length) return res.json({ updated: 0, scanned: snap.size, done: snap.size < 2000 });
+    // Firestore batches cap at 500 writes each.
+    let updated = 0;
+    for (let i = 0; i < missing.length; i += 500) {
+      const chunk = missing.slice(i, i + 500);
+      const batch = db.batch();
+      chunk.forEach(d => batch.update(d.ref, { lastAt: d.data().createdAt || admin.firestore.Timestamp.now() }));
+      await batch.commit();
+      updated += chunk.length;
+    }
+    // done:false means there may be more than 2000 total notification docs
+    // and this only got the first page — rerun the same request again to
+    // keep going (each run picks up wherever docs are still missing lastAt).
+    return res.json({ updated, scanned: snap.size, done: snap.size < 2000 });
+  } catch (err) {
+    console.error('/api/admin/notifications/backfill-lastat error', err);
+    return res.status(500).json({ error: 'Migration failed' });
+  }
+});
+
 
 // article or post, shown in the admin preview overlay (apInsights). The
 // dashboard has been calling this since it was built, but the route never
