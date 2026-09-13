@@ -4612,14 +4612,19 @@ app.get('/api/admin/notifications', requireAdminApi, async (req, res) => {
     const limit = Math.min(parseInt(req.query.limit, 10) || 50, 200);
     let q = db.collection('notifications').where('recipientUid', '==', 'official');
     if (req.query.unreadOnly) q = q.where('read', '==', false);
-    const snap = await q.orderBy('createdAt', 'desc').limit(limit).get();
+    const snap = await q.orderBy('lastAt', 'desc').limit(limit).get();
     const items = snap.docs.map(d => {
       const x = d.data();
       return {
         id: d.id, type: x.type || '', actorName: x.actorName || 'Someone',
         actorPhoto: x.actorPhoto || '', targetId: x.targetId || null,
         targetTitle: x.targetTitle || '', targetType: x.targetType || '',
-        read: !!x.read, createdAt: x.createdAt ? x.createdAt.toMillis() : null
+        // Grouped types (like/follow/repost) carry these; ungrouped types
+        // (comments, admin-sent notices) just won't have them, and the
+        // dashboard's rendering already falls back to actorName alone.
+        actorNames: Array.isArray(x.actorNames) ? x.actorNames : null,
+        totalCount: x.totalCount || null,
+        read: !!x.read, createdAt: (x.lastAt || x.createdAt) ? (x.lastAt || x.createdAt).toMillis() : null
       };
     });
     // unreadCount always reflects the true total, not just this page's
@@ -4708,7 +4713,8 @@ app.delete('/api/admin/content/:type/:id', async (req, res) => {
         title: type === 'articles' ? 'Your article was removed' : 'Your post was removed',
         message: s.title || (s.text || '').slice(0, 120) || '',
         read: false,
-        createdAt: admin.firestore.Timestamp.now()
+        createdAt: admin.firestore.Timestamp.now(),
+        lastAt: admin.firestore.Timestamp.now()
       }).catch(() => {});
     }
     return res.json({ ok: true });
