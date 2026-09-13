@@ -3609,6 +3609,32 @@ app.post('/api/verify', payLimiter, async (req, res) => {
       paidAt: admin.firestore ? admin.firestore.Timestamp.now() : new Date()
     };
 
+    // Idempotency guard — a successful Paystack reference can legitimately
+    // reach this endpoint more than once (the inline popup callback AND the
+    // mobile-redirect fallback both call /api/verify; a refresh, retry, or
+    // anyone replaying a known reference would too). Claim the reference
+    // with an atomic create-if-absent write — same "only one caller can ever
+    // win" pattern already used for new-account creation in
+    // /api/account/init above. Everything below that creates records,
+    // credits commission, or sends email is skipped on every call after the
+    // first, so a repeat or replayed verify can never duplicate an order or
+    // over-credit an affiliate.
+    let alreadyProcessed = false;
+    if (db) {
+      try {
+        await db.collection('processedPayments').doc(tx.reference).create({
+          reference: tx.reference,
+          claimedAt: admin.firestore.Timestamp.now()
+        });
+      } catch (claimErr) {
+        if (claimErr.code === 6 /* ALREADY_EXISTS */ || /already exists/i.test(claimErr.message || '')) {
+          alreadyProcessed = true;
+        } else {
+          throw claimErr;
+        }
+      }
+    }
+
     // Affiliate commission — 15% of the actual NGN price paid, and only on
     // "ours" books (Amazon-linked "featured" books never reach this
     // endpoint at all, since that sale happens off-site). Uses
@@ -3619,7 +3645,7 @@ app.post('/api/verify', payLimiter, async (req, res) => {
     // anything the buyer could tamper with at checkout time.
     let affiliateCode = null;
     let commissionAmount = 0;
-    if (db && metadata.uid) {
+    if (db && metadata.uid && !alreadyProcessed) {
       try {
         const buyerDoc = await db.collection('users').doc(metadata.uid).get();
         const code = buyerDoc.exists ? buyerDoc.data().referredByCode : null;
@@ -3641,13 +3667,13 @@ app.post('/api/verify', payLimiter, async (req, res) => {
       record.affiliateCommission = commissionAmount;
     }
 
-    if (db) {
+    if (db && !alreadyProcessed) {
       await db.collection('my_order').add(record).catch(() => null);
       if (affiliateCode && commissionAmount > 0) {
         db.collection('affiliates').doc(affiliateCode).update({
           sales: admin.firestore.FieldValue.increment(1),
           earned: admin.firestore.FieldValue.increment(commissionAmount)
-        }).catch(() => null);
+        }).catch(err => console.error('[verify] FAILED to credit affiliate commission', { affiliateCode, commissionAmount, reference: tx.reference }, err));
       }
       await db.collection('transactions').doc(tx.reference).set({
         reference: tx.reference, email: userEmail, amount: ngnAmountPaid,
@@ -3655,7 +3681,7 @@ app.post('/api/verify', payLimiter, async (req, res) => {
       }, { merge: true }).catch(() => null);
     }
 
-    if (BREVO_API_KEY && userEmail && items.length) {
+    if (BREVO_API_KEY && userEmail && items.length && !alreadyProcessed) {
       try {
         const bookNames = items.map(it => it.title).filter(Boolean).join(', ');
         // If your Brevo template only has one {{ params.download_link }} merge
