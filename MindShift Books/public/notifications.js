@@ -61,6 +61,11 @@ function injectStylesOnce() {
 .notif-unread-dot.invisible{visibility:hidden}
 .notif-av{width:44px;height:44px;border-radius:50%;background:var(--g,linear-gradient(90deg,#4f46e5,#06b6d4));display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#fff;flex-shrink:0;overflow:hidden;border:2px solid var(--border,#e5e7eb)}
 .notif-av img{width:100%;height:100%;object-fit:cover;display:block}
+.notif-av-stack{display:flex;flex-shrink:0;width:60px;height:44px;position:relative}
+.notif-av-stack .notif-av-stacked{position:absolute;top:6px;width:34px;height:34px;border:2px solid #fff}
+.notif-av-stack .notif-av-stacked:nth-child(1){left:26px;z-index:3}
+.notif-av-stack .notif-av-stacked:nth-child(2){left:13px;z-index:2}
+.notif-av-stack .notif-av-stacked:nth-child(3){left:0;z-index:1}
 .notif-body{flex:1;min-width:0;padding-top:2px}
 .notif-msg{font-size:13.5px;color:var(--txt,#0f172a);line-height:1.46}
 .notif-msg strong{font-weight:800}
@@ -106,8 +111,25 @@ function nTimeAgo(ts) {
   if (sec < 604800) return Math.floor(sec / 86400) + 'd ago';
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
+// Likes/follows/reposts pile up fast when something takes off — nobody
+// wants 15 separate "X liked your post" rows. Grouped types render as
+// "Alice liked your post" for one person, "Alice and Bob liked your post"
+// for two, "Alice, Bob and 6 others liked your post" beyond that — using
+// however many actor names the bucket actually has on hand (capped at 5,
+// see upsertGrouped) plus the real total count for the "N others" part.
+// Comments deliberately never go through this — a comment has real
+// content worth seeing on its own line, collapsing it into a headcount
+// would just hide the thing you'd actually want to read.
+function actorListText(n) {
+  const names = (Array.isArray(n.actorNames) && n.actorNames.length) ? n.actorNames : [n.actorName || 'Someone'];
+  const total = n.totalCount || names.length;
+  if (total <= 1) return `<strong>${nEsc(names[0] || 'Someone')}</strong>`;
+  if (total === 2) return `<strong>${nEsc(names[0])}</strong> and <strong>${nEsc(names[1] || names[0])}</strong>`;
+  const others = total - 2;
+  return `<strong>${nEsc(names[0])}</strong>, <strong>${nEsc(names[1] || names[0])}</strong> and ${others} other${others === 1 ? '' : 's'}`;
+}
 function notifMessage(n) {
-  const name = `<strong>${nEsc(n.actorName || 'Someone')}</strong>`;
+  const name = actorListText(n);
   const title = n.targetTitle ? ` <strong>${nEsc(nTrunc(n.targetTitle, 45))}</strong>` : '';
   switch (n.type) {
     case 'follow':       return `${name} started following you`;
@@ -125,19 +147,77 @@ function notifMessage(n) {
   }
 }
 function buildNotifItem(id, n) {
-  const unread = !n.read, msg = notifMessage(n), time = nTimeAgo(n.createdAt);
-  const init = (n.actorName || '?').charAt(0).toUpperCase();
-  const avInner = n.actorPhoto ? `<img src="${nEsc(n.actorPhoto)}" alt="" onerror="this.style.display='none'">` : init;
-  return `<div class="notif-item ${unread ? 'unread' : ''}" onclick="handleNotifTap('${nEsc(id)}')"><span class="notif-unread-dot ${unread ? '' : 'invisible'}"></span><div class="notif-av">${avInner}</div><div class="notif-body"><div class="notif-msg">${msg}</div><div class="notif-time">${time}</div></div></div>`;
+  const unread = !n.read, msg = notifMessage(n), time = nTimeAgo(n.lastAt || n.createdAt);
+  const photos = Array.isArray(n.actorPhotos) ? n.actorPhotos.filter(Boolean) : [];
+  let avHtml;
+  if (photos.length > 1) {
+    // Stacked avatars for a grouped bucket — most recent actor on top,
+    // capped at 3 shown regardless of how many are actually in the bucket.
+    const shown = photos.slice(-3).reverse();
+    avHtml = `<div class="notif-av-stack">${shown.map(p => `<div class="notif-av notif-av-stacked"><img src="${nEsc(p)}" alt="" onerror="this.style.display='none'"></div>`).join('')}</div>`;
+  } else {
+    const init = (n.actorName || '?').charAt(0).toUpperCase();
+    const avInner = n.actorPhoto ? `<img src="${nEsc(n.actorPhoto)}" alt="" onerror="this.style.display='none'">` : init;
+    avHtml = `<div class="notif-av">${avInner}</div>`;
+  }
+  return `<div class="notif-item ${unread ? 'unread' : ''}" onclick="handleNotifTap('${nEsc(id)}')"><span class="notif-unread-dot ${unread ? '' : 'invisible'}"></span>${avHtml}<div class="notif-body"><div class="notif-msg">${msg}</div><div class="notif-time">${time}</div></div></div>`;
 }
 
 export function initNotificationUI({ db, getCurrentUser, getMyProfile, fs }) {
   injectStylesOnce();
   injectPanelOnce();
 
-  const { collection, query, where, onSnapshot, getDocs, orderBy, limit, addDoc, writeBatch, serverTimestamp, doc, getDoc, setDoc } = fs;
+  const { collection, query, where, onSnapshot, getDocs, orderBy, limit, addDoc, writeBatch, serverTimestamp, doc, getDoc, setDoc, runTransaction } = fs;
   const notifCache = new Map();
   let unreadUnsub = null;
+
+  // Likes, follows, and reposts land in a shared 3-hour bucket per
+  // (type, target-or-recipient) instead of one doc per event — see the
+  // module-level notes above for the full reasoning. The window number is
+  // just current-time-divided-by-3-hours, so two people acting near each
+  // other compute the SAME bucket id independently, with no lookup query
+  // needed to find "the open one".
+  const GROUP_WINDOW_MS = 3 * 60 * 60 * 1000;
+  function groupWindowIndex() { return Math.floor(Date.now() / GROUP_WINDOW_MS); }
+
+  // Reads the bucket and decides, in one transaction, whether this actor is
+  // starting it, joining it, or (if they already acted in this window)
+  // being ignored — a like→unlike→like within the same window shouldn't
+  // duplicate them in the list or re-open something they already caused.
+  // Joining an existing bucket always sets read:false, even if the
+  // recipient had already seen the earlier version — a new person showing
+  // up is new information and deserves to resurface, not stay buried under
+  // a dot they already dismissed.
+  async function upsertGrouped(bucketId, info) {
+    const ref = doc(db, 'notifications', bucketId);
+    try {
+      await runTransaction(db, async (tx) => {
+        const snap = await tx.get(ref);
+        if (!snap.exists()) {
+          tx.set(ref, {
+            recipientUid: info.recipientUid, type: info.type,
+            targetId: info.targetId || null, targetTitle: info.targetTitle || '', targetType: info.targetType || 'post',
+            actorUid: info.actorUid, actorName: info.actorName, actorPhoto: info.actorPhoto, actorUsername: info.actorUsername || '',
+            actorUids: [info.actorUid], actorNames: [info.actorName], actorPhotos: [info.actorPhoto],
+            totalCount: 1, grouped: true,
+            read: false, createdAt: serverTimestamp(), lastAt: serverTimestamp()
+          });
+          return;
+        }
+        const data = snap.data();
+        const actorUids = Array.isArray(data.actorUids) ? data.actorUids : (data.actorUid ? [data.actorUid] : []);
+        if (actorUids.includes(info.actorUid)) return; // already counted this person in this window
+        tx.update(ref, {
+          actorUids: [...actorUids, info.actorUid].slice(-5),
+          actorNames: [...(data.actorNames || [data.actorName]).filter(Boolean), info.actorName].slice(-5),
+          actorPhotos: [...(data.actorPhotos || [data.actorPhoto]).filter(Boolean), info.actorPhoto].slice(-5),
+          actorUid: info.actorUid, actorName: info.actorName, actorPhoto: info.actorPhoto, actorUsername: info.actorUsername || '',
+          totalCount: (data.totalCount || actorUids.length || 1) + 1,
+          read: false, lastAt: serverTimestamp()
+        });
+      });
+    } catch (e) {}
+  }
 
   function initNotifications(uid) {
     if (unreadUnsub) unreadUnsub();
@@ -167,7 +247,7 @@ export function initNotificationUI({ db, getCurrentUser, getMyProfile, fs }) {
     const listEl = document.getElementById('notifList');
     listEl.innerHTML = '<div class="notif-spinner-wrap"><div class="notif-spinner"></div>Loading…</div>';
     try {
-      const q = query(collection(db, 'notifications'), where('recipientUid', '==', currentUser.uid), orderBy('createdAt', 'desc'), limit(40));
+      const q = query(collection(db, 'notifications'), where('recipientUid', '==', currentUser.uid), orderBy('lastAt', 'desc'), limit(40));
       const snap = await getDocs(q);
       notifCache.clear();
       snap.docs.forEach(d => notifCache.set(d.id, d.data()));
@@ -243,37 +323,25 @@ export function initNotificationUI({ db, getCurrentUser, getMyProfile, fs }) {
     if (!currentUser || !art) return;
     if (!art.authorUid || art.authorUid === currentUser.uid) return;
     const targetType = kind || (art.type === 'post' ? 'post' : 'article');
-    try {
-      const q = query(collection(db, 'notifications'), where('recipientUid', '==', art.authorUid), where('actorUid', '==', currentUser.uid), where('type', '==', 'article_like'), where('targetId', '==', art.id));
-      const ex = await getDocs(q); if (!ex.empty) return;
-    } catch (e) { /* index missing — skip dedup, still write */ }
     const myProfile = getMyProfile ? getMyProfile() : null;
     const actorName = myProfile?.name || 'Someone', actorPhoto = myProfile?.photo || '', actorUsername = myProfile?.username || '';
-    try {
-      await addDoc(collection(db, 'notifications'), {
-        recipientUid: art.authorUid, type: 'article_like',
-        actorUid: currentUser.uid, actorName, actorPhoto, actorUsername,
-        targetId: art.id, targetTitle: art.title || '', targetType, read: false, createdAt: serverTimestamp()
-      });
-    } catch (e) {}
+    const bucketId = `like_${art.id}_${groupWindowIndex()}`;
+    await upsertGrouped(bucketId, {
+      recipientUid: art.authorUid, type: 'article_like', targetId: art.id, targetTitle: art.title || '', targetType,
+      actorUid: currentUser.uid, actorName, actorPhoto, actorUsername
+    });
   }
 
   async function notifyFollow(targetUid) {
     const currentUser = getCurrentUser();
     if (!currentUser || !targetUid || targetUid === currentUser.uid) return;
-    try {
-      const q = query(collection(db, 'notifications'), where('recipientUid', '==', targetUid), where('actorUid', '==', currentUser.uid), where('type', '==', 'follow'));
-      const ex = await getDocs(q); if (!ex.empty) return;
-    } catch (e) {}
     const myProfile = getMyProfile ? getMyProfile() : null;
     const actorName = myProfile?.name || 'Someone', actorPhoto = myProfile?.photo || '', actorUsername = myProfile?.username || '';
-    try {
-      await addDoc(collection(db, 'notifications'), {
-        recipientUid: targetUid, type: 'follow',
-        actorUid: currentUser.uid, actorName, actorPhoto, actorUsername,
-        read: false, createdAt: serverTimestamp()
-      });
-    } catch (e) {}
+    const bucketId = `follow_${targetUid}_${groupWindowIndex()}`;
+    await upsertGrouped(bucketId, {
+      recipientUid: targetUid, type: 'follow', targetId: null, targetTitle: '', targetType: '',
+      actorUid: currentUser.uid, actorName, actorPhoto, actorUsername
+    });
   }
 
   // Covers all three comment-related notification types in one place — new
@@ -292,7 +360,7 @@ export function initNotificationUI({ db, getCurrentUser, getMyProfile, fs }) {
       recipientUid, type, actorUid: currentUser.uid, actorName, actorPhoto, actorUsername,
       targetId: articleId || null, targetTitle: articleTitle || '', commentId: commentId || null,
       targetType: contentType || 'article',
-      read: false, createdAt: serverTimestamp()
+      read: false, createdAt: serverTimestamp(), lastAt: serverTimestamp()
     };
     if (type === 'comment_like' && commentId) {
       // Deterministic doc ID: liking/unliking the same comment repeatedly
@@ -318,14 +386,12 @@ export function initNotificationUI({ db, getCurrentUser, getMyProfile, fs }) {
     if (!currentUser || !recipientUid || recipientUid === currentUser.uid) return;
     const myProfile = getMyProfile ? getMyProfile() : null;
     const actorName = myProfile?.name || 'Someone', actorPhoto = myProfile?.photo || '', actorUsername = myProfile?.username || '';
-    try {
-      await addDoc(collection(db, 'notifications'), {
-        recipientUid, type: kind === 'quote' ? 'repost_quote' : 'repost',
-        actorUid: currentUser.uid, actorName, actorPhoto, actorUsername,
-        targetId: targetId || null, targetTitle: targetTitle || '', targetType: targetType || 'post',
-        read: false, createdAt: serverTimestamp()
-      });
-    } catch (e) {}
+    const type = kind === 'quote' ? 'repost_quote' : 'repost';
+    const bucketId = `${type}_${targetId}_${groupWindowIndex()}`;
+    await upsertGrouped(bucketId, {
+      recipientUid, type, targetId: targetId || null, targetTitle: targetTitle || '', targetType: targetType || 'post',
+      actorUid: currentUser.uid, actorName, actorPhoto, actorUsername
+    });
   }
 
   // Profile views are analytics, not an actionable alert — nobody needs a

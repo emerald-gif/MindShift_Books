@@ -660,7 +660,7 @@ const auth = getAuth(fbApp);
 const db   = getFirestore(fbApp, 'default');
 const notif = initNotificationUI({
   db, getCurrentUser: () => currentUser, getMyProfile: () => myProfile,
-  fs: { collection, query, where, onSnapshot, getDocs, orderBy, limit, addDoc, writeBatch, serverTimestamp, doc, getDoc, setDoc, increment }
+  fs: { collection, query, where, onSnapshot, getDocs, orderBy, limit, addDoc, writeBatch, serverTimestamp, doc, getDoc, setDoc, increment, runTransaction }
 });
 const repost = initRepost({
   db, getCurrentUser: () => currentUser, getMyProfile: () => myProfile, notif,

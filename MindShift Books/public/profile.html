@@ -358,9 +358,18 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
   background-repeat:no-repeat;background-position:right 12px center;background-size:16px;padding-right:38px}
 .field-hint{font-size:11px;color:var(--sub);margin-top:5px;line-height:1.5}
-.cat-pills{display:flex;flex-wrap:wrap;gap:8px}
-.cat-pill{padding:8px 13px;border-radius:99px;border:1.5px solid var(--border);background:var(--card);font-size:12.5px;font-weight:600;color:var(--txt);cursor:pointer;transition:all .15s;font-family:inherit}
-.cat-pill.sel{background:var(--g);color:#fff;border-color:transparent}
+.cat-pills{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:380px){ .cat-pills{grid-template-columns:1fr} }
+.interest-card{display:flex;align-items:center;gap:10px;padding:12px;border-radius:14px;border:1.5px solid var(--border);background:var(--card);cursor:pointer;transition:border-color .15s,background .15s;font-family:inherit;text-align:left;position:relative}
+.interest-card:active{transform:scale(.98)}
+.interest-ico{width:36px;height:36px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--bg);color:var(--mute);transition:background .15s,color .15s}
+.interest-ico svg{width:19px;height:19px}
+.interest-label{font-size:12.5px;font-weight:700;color:var(--txt);line-height:1.3}
+.interest-check{position:absolute;top:8px;right:8px;width:16px;height:16px;border-radius:50%;background:var(--g);display:flex;align-items:center;justify-content:center;opacity:0;transform:scale(.5);transition:all .15s}
+.interest-check svg{width:10px;height:10px;stroke:#fff;stroke-width:3}
+.interest-card.sel{border-color:transparent;background:var(--indigo-soft,rgba(79,70,229,.08))}
+.interest-card.sel .interest-ico{background:var(--g);color:#fff}
+.interest-card.sel .interest-check{opacity:1;transform:scale(1)}
 .char-count{font-size:11px;color:var(--mute);text-align:right;margin-top:5px;font-weight:600}
 .char-count.warn{color:#f59e0b}
 .char-count.max{color:var(--red)}
@@ -751,7 +760,7 @@ const auth = getAuth(fbApp);
 const db   = getFirestore(fbApp, 'default');
 const notif = initNotificationUI({
   db, getCurrentUser: () => currentUser, getMyProfile: () => myProfile,
-  fs: { collection, query, where, onSnapshot, getDocs, orderBy, limit, addDoc, writeBatch, serverTimestamp, doc, getDoc, setDoc, increment }
+  fs: { collection, query, where, onSnapshot, getDocs, orderBy, limit, addDoc, writeBatch, serverTimestamp, doc, getDoc, setDoc, increment, runTransaction }
 });
 // Only buildEmbedCardHtml is actually used on this page (rendering what a
 // repost points at) — the drawer/open() is never invoked here, so
@@ -2071,13 +2080,33 @@ function initPickerHandlers() {
 }
 
 let selectedCategories = [];
+// Line-art icons standing in for each category's emoji, just for this
+// picker — matches the stroke-icon language used everywhere else in the
+// app instead of relying on emoji rendering differently across devices.
+const INTEREST_ICONS = {
+  MINDSET: '<path d="M9.5 2a4.5 4.5 0 00-4.2 6.1A4 4 0 003 11.5 4 4 0 006 15.3v1.2a4 4 0 004 4h.5a2 2 0 002-2V6.5A4.5 4.5 0 009.5 2z"/><path d="M14.5 2a4.5 4.5 0 014.2 6.1A4 4 0 0121 11.5a4 4 0 01-3 3.8v1.2a4 4 0 01-4 4h-.5a2 2 0 01-2-2V6.5A4.5 4.5 0 0114.5 2z"/>',
+  MONEY: '<rect x="2.5" y="6" width="19" height="12" rx="2.2"/><circle cx="12" cy="12" r="2.6"/><path d="M6 6V5a3 3 0 013-3h6a3 3 0 013 3v1"/>',
+  PRODUCTIVITY: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+  RELATIONSHIPS: '<path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>',
+  HEALTH: '<path d="M2 20c4-8 8-3 10-8 2 5 6 0 10 8"/><path d="M12 2v10"/>',
+  CAREER: '<path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 00-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 018-8c2 0 3.5 1.5 3.5 3.5a22 22 0 01-8 8z"/><path d="M9 12H4s1.5-2.5 2-3 3.5-2 3.5-2"/><path d="M12 15v5s2.5-1.5 3-2 2-3.5 2-3.5"/>',
+  EDUCATION: '<path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1.5 3 3 6 3s6-1.5 6-3v-5"/>',
+  PURPOSE: '<circle cx="12" cy="12" r="9"/><path d="M3.6 9h16.8M3.6 15h16.8"/><path d="M12 3a13 13 0 010 18M12 3a13 13 0 000 18"/>',
+  REFLECTIVE: '<path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>',
+  FICTION: '<path d="M2 4.5A2.5 2.5 0 014.5 2H11v18H4.5A2.5 2.5 0 012 17.5z"/><path d="M22 4.5A2.5 2.5 0 0019.5 2H13v18h6.5a2.5 2.5 0 002.5-2.5z"/>'
+};
 function renderECategoryPills(preselected){
   selectedCategories = Array.isArray(preselected) ? [...preselected] : [];
   const wrap = document.getElementById('eCategoryPills');
   if(!wrap || !window.MSB_CATEGORIES) return;
-  wrap.innerHTML = window.MSB_CATEGORIES.map(c =>
-    `<button type="button" class="cat-pill${selectedCategories.includes(c.code)?' sel':''}" data-cat="${c.code}" onclick="toggleECategory(this)">${c.emoji} ${c.label}</button>`
-  ).join('');
+  wrap.innerHTML = window.MSB_CATEGORIES.map(c => {
+    const sel = selectedCategories.includes(c.code);
+    return `<button type="button" class="interest-card${sel?' sel':''}" data-cat="${c.code}" onclick="toggleECategory(this)">
+      <span class="interest-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${INTEREST_ICONS[c.code]||''}</svg></span>
+      <span class="interest-label">${c.label}</span>
+      <span class="interest-check"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+    </button>`;
+  }).join('');
 }
 window.toggleECategory = function(el){
   const code = el.dataset.cat;
