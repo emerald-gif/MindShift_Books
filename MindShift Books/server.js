@@ -3211,6 +3211,67 @@ app.post('/api/account/categories', requireUser, async (req, res) => {
   }
 });
 
+// Re-checks the same 4 completion steps server-side (Admin SDK, so it can't
+// be spoofed the way a client-writable field could) and — only the first
+// time all 4 actually pass — grants a one-time ₦1,000 ebook voucher. Safe
+// to call repeatedly: once claimed, it just returns the existing state.
+const PROFILE_VOUCHER_AMOUNT = 1000;
+app.post('/api/rewards/claim-profile-voucher', requireUser, async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const uid = req.uid;
+    const userRef = db.collection('users').doc(uid);
+    const userSnap = await userRef.get();
+    const u = userSnap.exists ? userSnap.data() : {};
+
+    // Already claimed — idempotent, just report back what they already have.
+    if (u.ebookVoucher && u.ebookVoucher.claimed) {
+      return res.json({ ok: true, alreadyClaimed: true, voucher: u.ebookVoucher });
+    }
+
+    let hasPhoto = !!u.photo;
+    if (!hasPhoto) {
+      // photo can come from Google sign-in and never get copied onto the
+      // users/ doc if they've never opened the profile editor — check auth
+      // directly so someone with a Google avatar isn't stuck at "incomplete".
+      try {
+        const authUser = await admin.auth().getUser(uid);
+        hasPhoto = !!authUser.photoURL;
+      } catch (e) { /* non-fatal — treat as no photo */ }
+    }
+    const hasCover = !!u.cover;
+    const hasBio = !!(u.bio && String(u.bio).trim());
+    const hasCategories = Array.isArray(u.categories) && u.categories.length > 0;
+    const profileDone = hasPhoto && hasCover && hasBio && hasCategories;
+
+    const [followSnap, articleSnap, postSnap] = await Promise.all([
+      db.collection('follows').where('followerId', '==', uid).get(),
+      db.collection('articles').where('authorUid', '==', uid).get(),
+      db.collection('posts').where('authorUid', '==', uid).get()
+    ]);
+    const followDone = followSnap.size >= 10;
+    const contentDone = (articleSnap.size + postSnap.size) >= 1;
+
+    let likeCount = 0;
+    try {
+      const likesSnap = await db.collection('userLikes').doc(uid).get();
+      if (likesSnap.exists) likeCount = Object.values(likesSnap.data()).filter(Boolean).length;
+    } catch (e) { /* treat as 0 */ }
+    const engageDone = likeCount >= 10;
+
+    if (!(profileDone && followDone && contentDone && engageDone)) {
+      return res.json({ ok: true, alreadyClaimed: false, eligible: false });
+    }
+
+    const voucher = { amount: PROFILE_VOUCHER_AMOUNT, claimed: true, claimedAt: admin.firestore.Timestamp.now(), used: false, usedAt: null, orderId: null };
+    await userRef.set({ ebookVoucher: voucher }, { merge: true });
+    return res.json({ ok: true, alreadyClaimed: false, eligible: true, voucher });
+  } catch (err) {
+    console.error('/api/rewards/claim-profile-voucher error', err);
+    return res.status(500).json({ error: 'Could not check your voucher eligibility. Please try again.' });
+  }
+});
+
 app.get('/api/account', requireUser, async (req, res) => {
   try {
     if (!db) return res.status(500).json({ error: 'Database unavailable' });
@@ -3225,6 +3286,18 @@ app.get('/api/account', requireUser, async (req, res) => {
   } catch (err) {
     console.error('/api/account error', err);
     return res.status(500).json({ error: 'Could not load your details.' });
+  }
+});
+
+app.get('/api/rewards/voucher-status', requireUser, async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const doc = await db.collection('users').doc(req.uid).get();
+    const voucher = (doc.exists && doc.data().ebookVoucher) || null;
+    return res.json({ voucher });
+  } catch (err) {
+    console.error('/api/rewards/voucher-status error', err);
+    return res.status(500).json({ error: 'Could not load voucher status.' });
   }
 });
 
@@ -3468,11 +3541,12 @@ app.post('/api/challenge/reflection', requireUser, async (req, res) => {
 // Requires a signed-in account (browsing/preview stays public — only paying does not).
 app.post('/api/pay', requireUser, payLimiter, async (req, res) => {
   try {
-    const { email, name, productId, productIds } = req.body;
+    const { email, name, productId, productIds, applyVoucher } = req.body;
     if (!email) return res.status(400).json({ error: 'Email required' });
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'Invalid email address' });
     if (!name || !String(name).trim()) return res.status(400).json({ error: 'Name required' });
     if (String(name).trim().length > 120) return res.status(400).json({ error: 'Name too long' });
+    const buyerName = String(name).trim();
 
     // Accept either a single productId (legacy) or an array productIds (cart)
     let ids = Array.isArray(productIds) ? productIds : (productId ? [productId] : []);
@@ -3494,23 +3568,64 @@ app.post('/api/pay', requireUser, payLimiter, async (req, res) => {
     const usdTotal = products.reduce((sum, p) => sum + Number(p.priceUSD || 0), 0);
     const ngnAmount = items.reduce((sum, it) => sum + it.ngn, 0);
 
-    console.log(`[PAY] products=${ids.join(',')} usdTotal=${usdTotal} fxRate=${fxRate} => ngnAmount=${ngnAmount}`);
+    // Profile-completion voucher — re-checked here, server-side, against the
+    // buyer's own account. Never trust a client-supplied voucher amount;
+    // the only thing the client controls is the on/off toggle.
+    let voucherAmount = 0;
+    if (applyVoucher && db && req.uid) {
+      try {
+        const userDoc = await db.collection('users').doc(req.uid).get();
+        const voucher = userDoc.exists ? userDoc.data().ebookVoucher : null;
+        if (voucher && voucher.claimed && !voucher.used && Number(voucher.amount) > 0) {
+          voucherAmount = Math.min(Number(voucher.amount), ngnAmount);
+        }
+      } catch (e) { console.warn('[PAY] voucher lookup failed (continuing without it):', e.message || e); }
+    }
+    const finalAmount = Math.max(0, ngnAmount - voucherAmount);
+
+    console.log(`[PAY] products=${ids.join(',')} usdTotal=${usdTotal} fxRate=${fxRate} => ngnAmount=${ngnAmount} voucherAmount=${voucherAmount} finalAmount=${finalAmount}`);
 
     // buyer_name travels inside Paystack's own metadata (set at initialize time)
     // rather than the inline-popup metadata, since that's the copy that's
     // actually still attached to the transaction when we verify it later.
-    const metadata = { productIds: ids, items, usd_total: usdTotal, fx_rate: fxRate, ngn_charged: ngnAmount, buyer_name: String(name).trim(), uid: req.uid };
+    const metadata = { productIds: ids, items, usd_total: usdTotal, fx_rate: fxRate, ngn_charged: finalAmount, buyer_name: buyerName, uid: req.uid, voucherApplied: voucherAmount > 0, voucherAmount };
+
+    // The voucher fully covers this order — nothing for Paystack to charge,
+    // and Paystack can't process a ₦0 transaction anyway. Skip it entirely
+    // and fulfill the order immediately: same download tokens, same order
+    // record, same delivery email as a paid purchase, just ₦0 charged.
+    if (voucherAmount > 0 && finalAmount === 0) {
+      const publicBase = process.env.PUBLIC_URL ? process.env.PUBLIC_URL.replace(/\/$/, '') : derivePublicUrl(req);
+      const freeRef = `FREE-${req.uid}-${Date.now()}`;
+      const { record } = await fulfillOrder({
+        reference: freeRef,
+        email,
+        buyerName,
+        uid: req.uid,
+        productIds: ids,
+        ngnAmountPaid: 0,
+        usdTotal,
+        fxRate,
+        metadataItems: items,
+        publicBase,
+        paymentMethodDisplay: 'Free (Profile Voucher)',
+        paidAtDate: Date.now(),
+        voucherApplied: true,
+        voucherAmount
+      });
+      return res.json({ free: true, status: 'success', reference: freeRef, amount: 0, voucherAmount, data: { reference: record.reference, buyerName: record.buyerName, items: record.items } });
+    }
 
     if (!PAYSTACK_SECRET_KEY) {
       const fakeRef = `TEST_REF_${Date.now()}`;
       if (db) {
         await db.collection('transactions').doc(fakeRef).set({
-          reference: fakeRef, email, amount: ngnAmount, status: 'initialized',
+          reference: fakeRef, email, amount: finalAmount, status: 'initialized',
           metadata,
           createdAt: admin.firestore.Timestamp.now()
         }).catch(()=>null);
       }
-      return res.json({ authorization_url: null, reference: fakeRef, amount: ngnAmount });
+      return res.json({ authorization_url: null, reference: fakeRef, amount: finalAmount, voucherAmount });
     }
 
     const initResp = await fetch(`${PAYSTACK_BASE}/transaction/initialize`, {
@@ -3518,7 +3633,7 @@ app.post('/api/pay', requireUser, payLimiter, async (req, res) => {
       headers: { Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email,
-        amount: toKobo(ngnAmount),
+        amount: toKobo(finalAmount),
         currency: 'NGN',
         metadata
       })
@@ -3528,10 +3643,10 @@ app.post('/api/pay', requireUser, payLimiter, async (req, res) => {
 
     if (db) {
       await db.collection('transactions').doc(initJson.data.reference).set({
-        reference: initJson.data.reference, email, amount: ngnAmount, status: 'initialized', metadata: initJson.data.metadata||metadata, createdAt: admin.firestore.Timestamp.now()
+        reference: initJson.data.reference, email, amount: finalAmount, status: 'initialized', metadata: initJson.data.metadata||metadata, createdAt: admin.firestore.Timestamp.now()
       }).catch(()=>null);
     }
-    return res.json({ authorization_url: initJson.data.authorization_url, reference: initJson.data.reference, amount: ngnAmount });
+    return res.json({ authorization_url: initJson.data.authorization_url, reference: initJson.data.reference, amount: finalAmount, voucherAmount });
   } catch (err) {
     console.error('/api/pay error', err);
     return res.status(500).json({ error: 'Payment initialization failed. Please try again.' });
@@ -3539,6 +3654,201 @@ app.post('/api/pay', requireUser, payLimiter, async (req, res) => {
 });
 
 // /api/verify - verify payment and record + email download link(s)
+// ── Shared order fulfillment ──
+// Used by /api/verify (after a real Paystack payment succeeds) AND by the
+// free-checkout branch in /api/pay (when a profile-completion voucher covers
+// the whole order, so there's nothing for Paystack to charge). Both paths
+// need the exact same outcome — download tokens minted, the order recorded,
+// affiliate commission credited, and the delivery email sent — so this is
+// one function instead of two copies that could quietly drift apart.
+async function fulfillOrder({ reference, email, buyerName, uid, productIds, ngnAmountPaid, usdTotal, fxRate, metadataItems, publicBase, paymentMethodDisplay, paidAtDate, voucherApplied, voucherAmount }) {
+  const items = productIds.map(id => {
+    const product = PRODUCTS[id];
+    if (!product) return null;
+    const token = mintDownloadToken(product.id);
+    return {
+      productId: product.id,
+      title: product.title,
+      token,
+      pdfUrl: `${publicBase}/dl/${token}`,
+      coverUrl: product.coverPath ? `${publicBase}/${product.coverPath.replace(/^\/+/, '')}` : null,
+      priceUSD: product.priceUSD
+    };
+  }).filter(Boolean);
+
+  const record = {
+    reference,
+    email,
+    buyerName,
+    uid: uid || null,
+    status: 'success',
+    usd_total: usdTotal || 0,
+    ngn_amount: ngnAmountPaid,
+    fx_rate: fxRate || null,
+    items: items.map(it => ({ productId: it.productId, title: it.title, pdfUrl: it.pdfUrl, coverUrl: it.coverUrl })),
+    paidAt: admin.firestore ? admin.firestore.Timestamp.now() : new Date()
+  };
+  if (voucherApplied) {
+    record.voucherApplied = true;
+    record.voucherAmount = voucherAmount || 0;
+  }
+
+  // Idempotency guard — a reference (Paystack or our own synthetic "FREE-"
+  // one) can legitimately reach fulfillment more than once (inline popup
+  // callback AND mobile-redirect fallback both call /api/verify; a refresh,
+  // retry, or replay would too). Claim it with an atomic create-if-absent
+  // write — same pattern already used for new-account creation. Everything
+  // below that creates records, credits commission, marks the voucher used,
+  // or sends email is skipped on every call after the first.
+  let alreadyProcessed = false;
+  if (db) {
+    try {
+      await db.collection('processedPayments').doc(reference).create({
+        reference, claimedAt: admin.firestore.Timestamp.now()
+      });
+    } catch (claimErr) {
+      if (claimErr.code === 6 /* ALREADY_EXISTS */ || /already exists/i.test(claimErr.message || '')) {
+        alreadyProcessed = true;
+      } else {
+        throw claimErr;
+      }
+    }
+  }
+
+  // Affiliate commission — 15% of the actual NGN price paid, and only on
+  // "ours" books (Amazon-linked "featured" books never reach this flow at
+  // all, since that sale happens off-site). Uses metadataItems, which
+  // carries the exact per-item ngn amount charged at checkout — so a
+  // 50%-off book credits 15% of the discounted price, never the original
+  // sticker price. Looked up from the buyer's own account (set once,
+  // first-touch, back when they signed up) — not from anything the buyer
+  // could tamper with at checkout time.
+  let affiliateCode = null;
+  let commissionAmount = 0;
+  if (db && uid && !alreadyProcessed) {
+    try {
+      const buyerDoc = await db.collection('users').doc(uid).get();
+      const code = buyerDoc.exists ? buyerDoc.data().referredByCode : null;
+      if (code) {
+        const metaItems = Array.isArray(metadataItems) ? metadataItems : [];
+        let eligibleNgn = metaItems.reduce((sum, it) => {
+          const product = PRODUCTS[it.id];
+          return (product && product.category === 'ours') ? sum + Number(it.ngn || 0) : sum;
+        }, 0);
+        // A voucher lowers what actually landed in the account, so the
+        // affiliate's cut is based on that — never on the pre-discount total.
+        if (voucherApplied) eligibleNgn = Math.max(0, eligibleNgn - (voucherAmount || 0));
+        if (eligibleNgn > 0) {
+          affiliateCode = code;
+          commissionAmount = Math.round(eligibleNgn * AFFILIATE_COMMISSION_RATE);
+        }
+      }
+    } catch (e) { /* commission lookup is best-effort — never block the order */ }
+  }
+  if (affiliateCode) {
+    record.affiliateCode = affiliateCode;
+    record.affiliateCommission = commissionAmount;
+  }
+
+  if (db && !alreadyProcessed) {
+    await db.collection('my_order').add(record).catch(() => null);
+    if (affiliateCode && commissionAmount > 0) {
+      db.collection('affiliates').doc(affiliateCode).update({
+        sales: admin.firestore.FieldValue.increment(1),
+        earned: admin.firestore.FieldValue.increment(commissionAmount)
+      }).catch(err => console.error('[fulfillOrder] FAILED to credit affiliate commission', { affiliateCode, commissionAmount, reference }, err));
+    }
+    await db.collection('transactions').doc(reference).set({
+      reference, email, amount: ngnAmountPaid,
+      status: 'success', paidAt: admin.firestore.Timestamp.now()
+    }, { merge: true }).catch(() => null);
+
+    // Consume the voucher only once fulfillment has actually gone through —
+    // guarded by the same alreadyProcessed check, so a repeated/replayed
+    // call can never mark it used twice.
+    if (voucherApplied && uid) {
+      await db.collection('users').doc(uid).set({
+        ebookVoucher: { amount: voucherAmount || 0, claimed: true, used: true, usedAt: admin.firestore.Timestamp.now(), orderId: reference }
+      }, { merge: true }).catch(err => console.error('[fulfillOrder] FAILED to mark voucher used', { uid, reference }, err));
+    }
+  }
+
+  if (BREVO_API_KEY && email && items.length && !alreadyProcessed) {
+    try {
+      const bookNames = items.map(it => it.title).filter(Boolean).join(', ');
+      // If your Brevo template only has one {{ params.download_link }} merge
+      // tag, this concatenates "Title: url" pairs on separate lines so nothing
+      // gets lost for multi-book orders. {{ params.items_html }} is the one the
+      // new email template actually uses — a styled row per book with its own
+      // download button, so it looks right whether it's 1 book or several.
+      const downloadLinks = items.length === 1
+        ? items[0].pdfUrl
+        : items.map(it => `${it.title}: ${it.pdfUrl}`).join('\n');
+
+      const paidAtDisplay = new Date(paidAtDate || Date.now())
+        .toLocaleString('en-NG', { day: '2-digit', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+
+      const itemsHtml = items.map((it, idx) => `
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0;">
+          <tr>
+            <td style="padding:14px 0;${idx > 0 ? 'border-top:1px solid #eef2f7;' : ''}">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  ${it.coverUrl ? `
+                  <td style="width:44px;padding-right:12px;vertical-align:middle;">
+                    <img src="${it.coverUrl}" width="44" alt="${it.title}" style="display:block;width:44px;border-radius:6px;border:1px solid #eef2f7;">
+                  </td>` : ''}
+                  <td style="vertical-align:middle;">
+                    <div style="font-family:'Inter',Arial,sans-serif;font-weight:700;font-size:14.5px;color:#0f172a;">${it.title}</div>
+                    <div style="font-family:'Inter',Arial,sans-serif;font-size:12px;color:#94a3b8;padding-top:2px;">PDF &middot; eBook</div>
+                  </td>
+                  <td align="right" style="white-space:nowrap;vertical-align:middle;">
+                    <a href="${it.pdfUrl}" style="background-color:#4f46e5;background-image:linear-gradient(90deg,#4f46e5,#06b6d4);color:#ffffff;text-decoration:none;font-family:'Inter',Arial,sans-serif;font-weight:700;font-size:12.5px;padding:9px 16px;border-radius:999px;display:inline-block;">Download</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      `).join('');
+
+      const amountPaidDisplay = voucherApplied && ngnAmountPaid === 0
+        ? 'Free (₦1,000 voucher)'
+        : `₦${Number(ngnAmountPaid).toLocaleString()}`;
+
+      const emailPayload = {
+        sender: { name: BREVO_SENDER_NAME, email: BREVO_SENDER_EMAIL },
+        to: [{ email, name: buyerName || undefined }],
+        templateId: BREVO_TEMPLATE_ID,
+        params: {
+          buyer_name: buyerName || 'there',
+          book_name: bookNames || 'Mindshift Books purchase',
+          download_link: downloadLinks,
+          items_html: itemsHtml,
+          amount_paid: amountPaidDisplay,
+          payment_method: paymentMethodDisplay || 'Online payment',
+          paid_at: paidAtDisplay,
+          reference
+        }
+      };
+
+      const emailRes = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          accept: 'application/json',
+          'api-key': BREVO_API_KEY,
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify(emailPayload)
+      });
+      const txt = await emailRes.text().catch(()=>null);
+      if (!emailRes.ok) console.error('Brevo email error', emailRes.status, txt);
+    } catch (e) { console.warn('Brevo email send failed', e.message || e); }
+  }
+
+  return { items, record, alreadyProcessed };
+}
+
 app.post('/api/verify', payLimiter, async (req, res) => {
   try {
     const { reference, purchaserEmail } = req.body;
@@ -3582,183 +3892,27 @@ app.post('/api/verify', payLimiter, async (req, res) => {
     const ngnAmountPaid = (tx.amount || 0) / 100;
     const usdTotal = metadata.usd_total || metadata.usd_price || 0;
 
-    const items = productIds.map(id => {
-      const product = PRODUCTS[id];
-      if (!product) return null;
-      const token = mintDownloadToken(product.id);
-      return {
-        productId: product.id,
-        title: product.title,
-        token,
-        pdfUrl: `${publicBase}/dl/${token}`,
-        coverUrl: product.coverPath ? `${publicBase}/${product.coverPath.replace(/^\/+/, '')}` : null,
-        priceUSD: product.priceUSD
-      };
-    }).filter(Boolean);
+    const channelLabels = {
+      card: 'Card', bank: 'Bank Account', bank_transfer: 'Bank Transfer',
+      ussd: 'USSD', qr: 'QR', mobile_money: 'Mobile Money', eft: 'EFT'
+    };
 
-    const record = {
+    const { record, alreadyProcessed } = await fulfillOrder({
       reference: tx.reference,
       email: userEmail,
       buyerName,
       uid: metadata.uid || null,
-      status: 'success',
-      usd_total: usdTotal,
-      ngn_amount: ngnAmountPaid,
-      fx_rate: metadata.fx_rate || null,
-      items: items.map(it => ({ productId: it.productId, title: it.title, pdfUrl: it.pdfUrl, coverUrl: it.coverUrl })),
-      paidAt: admin.firestore ? admin.firestore.Timestamp.now() : new Date()
-    };
-
-    // Idempotency guard — a successful Paystack reference can legitimately
-    // reach this endpoint more than once (the inline popup callback AND the
-    // mobile-redirect fallback both call /api/verify; a refresh, retry, or
-    // anyone replaying a known reference would too). Claim the reference
-    // with an atomic create-if-absent write — same "only one caller can ever
-    // win" pattern already used for new-account creation in
-    // /api/account/init above. Everything below that creates records,
-    // credits commission, or sends email is skipped on every call after the
-    // first, so a repeat or replayed verify can never duplicate an order or
-    // over-credit an affiliate.
-    let alreadyProcessed = false;
-    if (db) {
-      try {
-        await db.collection('processedPayments').doc(tx.reference).create({
-          reference: tx.reference,
-          claimedAt: admin.firestore.Timestamp.now()
-        });
-      } catch (claimErr) {
-        if (claimErr.code === 6 /* ALREADY_EXISTS */ || /already exists/i.test(claimErr.message || '')) {
-          alreadyProcessed = true;
-        } else {
-          throw claimErr;
-        }
-      }
-    }
-
-    // Affiliate commission — 15% of the actual NGN price paid, and only on
-    // "ours" books (Amazon-linked "featured" books never reach this
-    // endpoint at all, since that sale happens off-site). Uses
-    // metadata.items, which carries the exact per-item ngn amount charged
-    // at checkout — so a 50%-off book credits 15% of the discounted price,
-    // never the original sticker price. Looked up from the buyer's own
-    // account (set once, first-touch, back when they signed up) — not from
-    // anything the buyer could tamper with at checkout time.
-    let affiliateCode = null;
-    let commissionAmount = 0;
-    if (db && metadata.uid && !alreadyProcessed) {
-      try {
-        const buyerDoc = await db.collection('users').doc(metadata.uid).get();
-        const code = buyerDoc.exists ? buyerDoc.data().referredByCode : null;
-        if (code) {
-          const metaItems = Array.isArray(metadata.items) ? metadata.items : [];
-          const eligibleNgn = metaItems.reduce((sum, it) => {
-            const product = PRODUCTS[it.id];
-            return (product && product.category === 'ours') ? sum + Number(it.ngn || 0) : sum;
-          }, 0);
-          if (eligibleNgn > 0) {
-            affiliateCode = code;
-            commissionAmount = Math.round(eligibleNgn * AFFILIATE_COMMISSION_RATE);
-          }
-        }
-      } catch (e) { /* commission lookup is best-effort — never block the order */ }
-    }
-    if (affiliateCode) {
-      record.affiliateCode = affiliateCode;
-      record.affiliateCommission = commissionAmount;
-    }
-
-    if (db && !alreadyProcessed) {
-      await db.collection('my_order').add(record).catch(() => null);
-      if (affiliateCode && commissionAmount > 0) {
-        db.collection('affiliates').doc(affiliateCode).update({
-          sales: admin.firestore.FieldValue.increment(1),
-          earned: admin.firestore.FieldValue.increment(commissionAmount)
-        }).catch(err => console.error('[verify] FAILED to credit affiliate commission', { affiliateCode, commissionAmount, reference: tx.reference }, err));
-      }
-      await db.collection('transactions').doc(tx.reference).set({
-        reference: tx.reference, email: userEmail, amount: ngnAmountPaid,
-        status: 'success', paidAt: admin.firestore.Timestamp.now()
-      }, { merge: true }).catch(() => null);
-    }
-
-    if (BREVO_API_KEY && userEmail && items.length && !alreadyProcessed) {
-      try {
-        const bookNames = items.map(it => it.title).filter(Boolean).join(', ');
-        // If your Brevo template only has one {{ params.download_link }} merge
-        // tag, this concatenates "Title: url" pairs on separate lines so nothing
-        // gets lost for multi-book orders. {{ params.items_html }} is the one the
-        // new email template actually uses — a styled row per book with its own
-        // download button, so it looks right whether it's 1 book or several.
-        const downloadLinks = items.length === 1
-          ? items[0].pdfUrl
-          : items.map(it => `${it.title}: ${it.pdfUrl}`).join('\n');
-
-        // Paystack's verify-transaction response includes `channel` and `paid_at`
-        // when a real key is configured; the dev-mode fallback above doesn't set
-        // these, so we degrade gracefully instead of asserting a method we don't know.
-        const channelLabels = {
-          card: 'Card', bank: 'Bank Account', bank_transfer: 'Bank Transfer',
-          ussd: 'USSD', qr: 'QR', mobile_money: 'Mobile Money', eft: 'EFT'
-        };
-        const paymentMethodDisplay = channelLabels[tx.channel] || 'Online payment';
-        const paidAtDisplay = new Date(tx.paid_at || tx.paidAt || Date.now())
-          .toLocaleString('en-NG', { day: '2-digit', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' });
-
-        const itemsHtml = items.map((it, idx) => `
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0;">
-            <tr>
-              <td style="padding:14px 0;${idx > 0 ? 'border-top:1px solid #eef2f7;' : ''}">
-                <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-                  <tr>
-                    ${it.coverUrl ? `
-                    <td style="width:44px;padding-right:12px;vertical-align:middle;">
-                      <img src="${it.coverUrl}" width="44" alt="${it.title}" style="display:block;width:44px;border-radius:6px;border:1px solid #eef2f7;">
-                    </td>` : ''}
-                    <td style="vertical-align:middle;">
-                      <div style="font-family:'Inter',Arial,sans-serif;font-weight:700;font-size:14.5px;color:#0f172a;">${it.title}</div>
-                      <div style="font-family:'Inter',Arial,sans-serif;font-size:12px;color:#94a3b8;padding-top:2px;">PDF &middot; eBook</div>
-                    </td>
-                    <td align="right" style="white-space:nowrap;vertical-align:middle;">
-                      <a href="${it.pdfUrl}" style="background-color:#4f46e5;background-image:linear-gradient(90deg,#4f46e5,#06b6d4);color:#ffffff;text-decoration:none;font-family:'Inter',Arial,sans-serif;font-weight:700;font-size:12.5px;padding:9px 16px;border-radius:999px;display:inline-block;">Download</a>
-                    </td>
-                  </tr>
-                </table>
-              </td>
-            </tr>
-          </table>
-        `).join('');
-
-        const amountPaidDisplay = `₦${Number(ngnAmountPaid).toLocaleString()}`;
-
-        const emailPayload = {
-          sender: { name: BREVO_SENDER_NAME, email: BREVO_SENDER_EMAIL },
-          to: [{ email: userEmail, name: buyerName || undefined }],
-          templateId: BREVO_TEMPLATE_ID,
-          params: {
-            buyer_name: buyerName || 'there',
-            book_name: bookNames || 'Mindshift Books purchase',
-            download_link: downloadLinks,
-            items_html: itemsHtml,
-            amount_paid: amountPaidDisplay,
-            payment_method: paymentMethodDisplay,
-            paid_at: paidAtDisplay,
-            reference: tx.reference
-          }
-        };
-
-        const emailRes = await fetch('https://api.brevo.com/v3/smtp/email', {
-          method: 'POST',
-          headers: {
-            accept: 'application/json',
-            'api-key': BREVO_API_KEY,
-            'content-type': 'application/json'
-          },
-          body: JSON.stringify(emailPayload)
-        });
-        const txt = await emailRes.text().catch(()=>null);
-        if (!emailRes.ok) console.error('Brevo email error', emailRes.status, txt);
-      } catch (e) { console.warn('Brevo email send failed', e.message || e); }
-    }
+      productIds,
+      ngnAmountPaid,
+      usdTotal,
+      fxRate: metadata.fx_rate || null,
+      metadataItems: metadata.items,
+      publicBase,
+      paymentMethodDisplay: channelLabels[tx.channel] || 'Online payment',
+      paidAtDate: tx.paid_at || tx.paidAt || Date.now(),
+      voucherApplied: !!metadata.voucherApplied,
+      voucherAmount: metadata.voucherAmount || 0
+    });
 
     return res.json({ status: 'success', data: { reference: record.reference, buyerName: record.buyerName, items: record.items } });
   } catch (err) {
