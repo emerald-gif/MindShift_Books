@@ -1517,6 +1517,46 @@ Sometimes, you need to stop undervaluing the value you already create.
 Know Your Worth. Charge Your Worth. Keep Your Worth.`
   },
 
+  'broke-confused-and-trying': {
+    id: 'broke-confused-and-trying',
+    title: 'Broke, Confused & Trying',
+    priceUSD: null,
+    priceNGN: 1000,
+    originalPriceNGN: 2000,
+    coverPath: 'bct.jpg',
+    pdfPath: 'public/files/Broke_Confused_Trying.pdf',
+    previewUrl: '/bct-preview',
+    reviewImages: [],
+    category: 'ours',
+    author: 'MindShift Books',
+    genre: 'Personal Development',
+    language: 'English',
+    pages: 60,
+    description: `BROKE, CONFUSED & TRYING
+
+10 Real Situations Where You Have No Idea What To Do Next — And a Simple Formula to Get Moving Anyway
+
+You're not lazy. You're not lost. You're just standing in one of those moments where the next step isn't obvious, and everyone around you seems to have theirs figured out.
+
+JAMB Brain vs Life Brain. Japa or Stay. Broke But Building. The exam that decides nothing and everything. The relationship you can't tell if you should leave. The job offer that pays less than your worth but teaches you more than your pride can admit.
+
+Broke, Confused & Trying takes ten of the most common situations young Nigerians actually get stuck in, and applies one simple formula to each: Goal. Deadline. Plan. Action.
+
+No vague motivation. No "just believe in yourself." Just a repeatable way to turn "I have no idea what to do" into a next step you can actually take today.
+
+Inside, you'll work through:
+
+The goal + deadline + plan + action formula, explained once and then applied ten times so it actually sticks
+JAMB Brain vs Life Brain — why the thinking that got you through school breaks down the moment school ends
+Japa or Stay — how to make the decision without pretending it's simple
+Broke But Building — what to actually do with ambition when the money isn't there yet
+Seven more real situations pulled straight from what young people are genuinely stuck on right now
+
+This isn't a book about becoming a different person. It's about getting unstuck in the specific situation you're in right now — with a plan you can start on before you finish reading.
+
+BROKE. CONFUSED. STILL TRYING. THAT'S ENOUGH TO START.`
+  },
+
   // ---------------- FEATURED BOOKS BY OTHER AUTHORS ----------------
   'mindshift-101': {
     id: 'mindshift-101',
