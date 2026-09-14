@@ -377,6 +377,17 @@
 
   <div id="content" style="display:none;">
 
+    <div id="quotaWidget" style="display:none;margin-bottom:18px;padding:14px 16px;border-radius:12px;border:1px solid var(--border);background:#fff;">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
+        <span style="font-size:0.76rem;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;color:var(--muted);">Firestore Reads Today</span>
+        <span id="quotaText" style="font-size:0.85rem;font-weight:700;">–</span>
+      </div>
+      <div style="height:8px;border-radius:5px;background:#eef0f3;overflow:hidden;">
+        <div id="quotaBar" style="height:100%;width:0%;border-radius:5px;background:#22c55e;transition:width .3s,background .3s;"></div>
+      </div>
+      <div id="quotaSub" style="font-size:0.72rem;color:var(--muted);margin-top:6px;"></div>
+    </div>
+
     <div class="group-title"><span class="h2-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.8"/></svg></span>Store Overview</div>
     <div class="totals">
       <div class="stat-card"><span class="icon-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"/><path d="M4.5 20a7.5 7.5 0 0115 0"/></svg></span><div class="label">Registered Users</div><div class="value" id="totalUsersCount">0</div></div>
@@ -1185,6 +1196,36 @@
 
   rangeSelect.addEventListener('change', loadStats);
   loadStats();
+
+  // ── Firestore free-tier quota widget — independent of the date-range
+  // selector, checks Cloud Monitoring (not Firestore itself) so viewing
+  // it never costs a Firestore read. Re-checks every 5 min while the
+  // dashboard tab stays open, matching the server-side cache TTL.
+  async function loadQuotaStatus() {
+    const widget = document.getElementById('quotaWidget');
+    try {
+      const res = await fetch('/api/admin/quota-status');
+      if (!res.ok) { widget.style.display = 'none'; return; }
+      const data = await res.json();
+      widget.style.display = 'block';
+      const pct = Math.min(100, data.percent);
+      document.getElementById('quotaText').textContent =
+        `${data.reads.toLocaleString()} / ${data.limit.toLocaleString()} (${data.percent}%)`;
+      const bar = document.getElementById('quotaBar');
+      bar.style.width = pct + '%';
+      bar.style.background = pct >= 90 ? '#ef4444' : pct >= 70 ? '#f59e0b' : '#22c55e';
+      const sub = document.getElementById('quotaSub');
+      sub.textContent = pct >= 90
+        ? 'Close to the daily limit — reads may start failing soon. Resets at midnight Pacific time.'
+        : pct >= 70
+        ? 'Getting close to the daily free-tier limit. Resets at midnight Pacific time.'
+        : 'Resets daily at midnight Pacific time.';
+    } catch {
+      widget.style.display = 'none'; // quota check itself failing shouldn't block the rest of the dashboard
+    }
+  }
+  loadQuotaStatus();
+  setInterval(loadQuotaStatus, 5 * 60 * 1000);
 
   // ── Affiliates panel — independent of the date-range selector above,
   // since payout status is a running lifetime balance, not a per-period stat.
