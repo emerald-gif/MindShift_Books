@@ -2938,12 +2938,23 @@ const DIGEST_TYPE_GROUPS = {
 };
 
 // "Sarah" / "Sarah and David" / "Sarah, David and 4 others"
-function formatActorList(names) {
+// `total` is the real headcount behind `names`. For grouped types
+// (follows/likes/reposts) a bucket doc only keeps the last few actor
+// names (see upsertGrouped's .slice(-5) in notifications.js), so "and N
+// others" has to be computed off the true totalCount, not off however
+// many names happened to survive that cap — otherwise "220 new
+// followers: Chidi and 3 others" undercounts everyone past the cap.
+function formatActorList(names, total) {
   const uniq = [...new Set(names.filter(Boolean))];
   if (!uniq.length) return 'Someone';
-  if (uniq.length === 1) return uniq[0];
-  if (uniq.length === 2) return `${uniq[0]} and ${uniq[1]}`;
-  const rest = uniq.length - 2;
+  const count = total || uniq.length;
+  if (uniq.length === 1) {
+    if (count <= 1) return uniq[0];
+    const rest = count - 1;
+    return `${uniq[0]} and ${rest} other${rest > 1 ? 's' : ''}`;
+  }
+  if (count <= 2) return `${uniq[0]} and ${uniq[1]}`;
+  const rest = Math.max(count - 2, 1);
   return `${uniq[0]}, ${uniq[1]} and ${rest} other${rest > 1 ? 's' : ''}`;
 }
 
@@ -2987,10 +2998,10 @@ async function sendDigestEmail(user, groups, viewDelta) {
   // whatever happened to be first. A new follower beats a like; a
   // view-count bump only leads when there's genuinely nothing else.
   let primaryType = null, primaryName = null;
-  if (follows.count) { primaryType = 'follow'; primaryName = formatActorList(follows.names); }
-  else if (comments.count) { primaryType = 'comment'; primaryName = formatActorList(comments.names); }
-  else if (reposts.count) { primaryType = 'repost'; primaryName = formatActorList(reposts.names); }
-  else if (likes.count) { primaryType = 'like'; primaryName = formatActorList(likes.names); }
+  if (follows.count) { primaryType = 'follow'; primaryName = formatActorList(follows.names, follows.count); }
+  else if (comments.count) { primaryType = 'comment'; primaryName = formatActorList(comments.names, comments.count); }
+  else if (reposts.count) { primaryType = 'repost'; primaryName = formatActorList(reposts.names, reposts.count); }
+  else if (likes.count) { primaryType = 'like'; primaryName = formatActorList(likes.names, likes.count); }
   else if (viewDelta > 0) { primaryType = 'views'; }
   else return { ok: false, skipped: true };
 
@@ -3005,10 +3016,10 @@ async function sendDigestEmail(user, groups, viewDelta) {
   const subject = pick(DIGEST_SUBJECT_POOLS[primaryType](primaryName, firstName));
 
   const lines = [];
-  if (follows.count) lines.push({ type: 'follow', emoji: '👤', text: `${follows.count} new follower${follows.count > 1 ? 's' : ''}: ${formatActorList(follows.names)}` });
-  if (likes.count) lines.push({ type: 'like', emoji: '❤️', text: `${likes.count} like${likes.count > 1 ? 's' : ''} from ${formatActorList(likes.names)}` });
-  if (comments.count) lines.push({ type: 'comment', emoji: '💬', text: `${comments.count} comment${comments.count > 1 ? 's' : ''} from ${formatActorList(comments.names)}` });
-  if (reposts.count) lines.push({ type: 'repost', emoji: '🔁', text: `${reposts.count} repost${reposts.count > 1 ? 's' : ''} from ${formatActorList(reposts.names)}` });
+  if (follows.count) lines.push({ type: 'follow', emoji: '👤', text: `${follows.count} new follower${follows.count > 1 ? 's' : ''}: ${formatActorList(follows.names, follows.count)}` });
+  if (likes.count) lines.push({ type: 'like', emoji: '❤️', text: `${likes.count} like${likes.count > 1 ? 's' : ''} from ${formatActorList(likes.names, likes.count)}` });
+  if (comments.count) lines.push({ type: 'comment', emoji: '💬', text: `${comments.count} comment${comments.count > 1 ? 's' : ''} from ${formatActorList(comments.names, comments.count)}` });
+  if (reposts.count) lines.push({ type: 'repost', emoji: '🔁', text: `${reposts.count} repost${reposts.count > 1 ? 's' : ''} from ${formatActorList(reposts.names, reposts.count)}` });
   if (viewDelta > 0) lines.push({ type: 'views', emoji: '👀', text: `${viewDelta} new view${viewDelta > 1 ? 's' : ''} on your content` });
 
   // Preview/preheader text teases whatever's NOT already in the subject
@@ -3051,15 +3062,18 @@ async function runProfileDigestCycle(windowStartMs) {
   const windowStart = admin.firestore.Timestamp.fromMillis(windowStartMs);
 
   const notifSnap = await db.collection('notifications')
-    .where('createdAt', '>=', windowStart)
+    .where('lastAt', '>=', windowStart)
     .get();
 
-  // Capped per recipient per category — a viral post's 1,000+ comments
-  // still produce exactly one line in the email ("comments from Alice, Bob
-  // and 998 others"), and only the first ~10 raw names are ever kept in
-  // memory to get there (formatActorList only needs 2 for display; the
-  // buffer just gives dedup a little room). `count` stays perfectly
-  // accurate regardless — only the name list is capped, never the number.
+  // Follows/likes/reposts are grouped client-side into 3-hour bucket docs
+  // (notifications.js: upsertGrouped) — a single Firestore doc can carry
+  // totalCount: 220 and actorNames: [last 5] representing 220 separate
+  // people. Comments are never grouped (one doc per comment), so they
+  // naturally fall back to the single actorName form. `count` sums
+  // totalCount (falling back to 1 for ungrouped docs) so it always reflects
+  // real people, never Firestore document count. Only the name list is
+  // capped, never the number — formatActorList uses the real `count`
+  // above to say "and N others" correctly even past that cap.
   const NAME_CAP = 10;
   const byRecipient = new Map();
   notifSnap.docs.forEach(d => {
@@ -3073,8 +3087,10 @@ async function runProfileDigestCycle(windowStartMs) {
       });
     }
     const bucket = byRecipient.get(n.recipientUid)[group];
-    bucket.count++;
-    if (bucket.names.length < NAME_CAP) bucket.names.push(n.actorName || 'Someone');
+    const docCount = n.totalCount || 1;
+    const docNames = (Array.isArray(n.actorNames) && n.actorNames.length) ? n.actorNames : [n.actorName || 'Someone'];
+    bucket.count += docCount;
+    docNames.forEach(name => { if (bucket.names.length < NAME_CAP) bucket.names.push(name); });
   });
 
   let emailsSent = 0;
