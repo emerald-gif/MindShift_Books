@@ -264,6 +264,7 @@ const PUBLIC_PDF_URL = process.env.PUBLIC_PDF_URL || null;
 // Brevo (formerly Sendinblue) transactional email config
 const BREVO_API_KEY = process.env.BREVO_API_KEY || null; // set this in your environment
 const BREVO_TEMPLATE_ID = Number(process.env.BREVO_TEMPLATE_ID || 1); // order receipt / delivery email
+const BREVO_DIGEST_TEMPLATE_ID = Number(process.env.BREVO_DIGEST_TEMPLATE_ID || 9); // twice-daily activity digest
 const BREVO_WELCOME_TEMPLATE_ID = Number(process.env.BREVO_WELCOME_TEMPLATE_ID || 2); // new-account welcome email
 const BREVO_BANK_OTP_TEMPLATE_ID = Number(process.env.BREVO_BANK_OTP_TEMPLATE_ID || 3); // bank-details-change verification code
 const BREVO_AFFILIATE_WELCOME_TEMPLATE_ID = Number(process.env.BREVO_AFFILIATE_WELCOME_TEMPLATE_ID || 4); // successful affiliate onboarding
@@ -2912,6 +2913,201 @@ async function maybeRunDailyCreatorOutreach() {
 if (db) {
   maybeRunDailyCreatorOutreach();
   setInterval(maybeRunDailyCreatorOutreach, 60 * 60 * 1000);
+}
+
+// ── Activity digest (retention email) ───────────────────────────────────────
+// Twice a day — 12:00 PM and 7:00 PM, Lagos time — everyone with new
+// likes/comments/follows/reposts (or a real jump in post views) since the
+// last run gets ONE email covering all of it. This exists specifically so
+// we're not also firing an email per individual event on top of the
+// in-app notification center that already does that in real time.
+//
+// The "smart" part lives here, not in the Brevo template: real names
+// (pulled straight off the notification docs — no separate lookup),
+// pluralized/prioritized into a single most-relevant headline per person,
+// so "Sarah just followed you!" beats a flat "You have 1 new notification"
+// even though the template itself is a static layout.
+const DIGEST_TYPE_GROUPS = {
+  follow: 'follows',
+  article_like: 'likes',
+  new_comment: 'comments',
+  comment_reply: 'comments',
+  comment_like: 'comments',
+  repost: 'reposts',
+  repost_quote: 'reposts'
+};
+
+// "Sarah" / "Sarah and David" / "Sarah, David and 4 others"
+function formatActorList(names) {
+  const uniq = [...new Set(names.filter(Boolean))];
+  if (!uniq.length) return 'Someone';
+  if (uniq.length === 1) return uniq[0];
+  if (uniq.length === 2) return `${uniq[0]} and ${uniq[1]}`;
+  const rest = uniq.length - 2;
+  return `${uniq[0]}, ${uniq[1]} and ${rest} other${rest > 1 ? 's' : ''}`;
+}
+
+// Sums current viewCount across everything a user has authored, so a
+// digest can report "47 new views" as a delta against last time — the
+// viewCount fields themselves (articleMeta/postMeta) are lifetime totals,
+// there's no time-windowed view log to query directly.
+async function currentTotalViews(uid) {
+  const [articleSnap, postSnap] = await Promise.all([
+    db.collection('articles').where('authorUid', '==', uid).get(),
+    db.collection('posts').where('authorUid', '==', uid).get()
+  ]);
+  const metaRefs = [
+    ...articleSnap.docs.map(d => db.collection('articleMeta').doc(d.id)),
+    ...postSnap.docs.map(d => db.collection('postMeta').doc(d.id))
+  ];
+  if (!metaRefs.length) return 0;
+  const metaSnaps = await Promise.all(metaRefs.map(r => r.get().catch(() => null)));
+  return metaSnaps.reduce((sum, s) => sum + ((s && s.exists && s.data().viewCount) || 0), 0);
+}
+
+async function sendDigestEmail(user, groups, viewDelta) {
+  const { follows, likes, comments, reposts } = groups;
+  const firstName = (user.name || 'there').split(' ')[0];
+
+  // Priority order for the headline — the single most exciting thing,
+  // not just whatever happened to be first. A new follower beats a like;
+  // a view-count bump only leads when there's genuinely nothing else.
+  let headline;
+  if (follows.count) headline = `${formatActorList(follows.names)} just followed you! 🎉`;
+  else if (comments.count) headline = `${formatActorList(comments.names)} commented on your content 💬`;
+  else if (reposts.count) headline = `${formatActorList(reposts.names)} reposted your content 🔁`;
+  else if (likes.count) headline = `${formatActorList(likes.names)} liked your content ❤️`;
+  else if (viewDelta > 0) headline = `People are discovering your content more 👀`;
+  else return { ok: false, skipped: true };
+
+  const lines = [];
+  if (follows.count) lines.push({ emoji: '👤', text: `${follows.count} new follower${follows.count > 1 ? 's' : ''}: ${formatActorList(follows.names)}` });
+  if (likes.count) lines.push({ emoji: '❤️', text: `${likes.count} like${likes.count > 1 ? 's' : ''} from ${formatActorList(likes.names)}` });
+  if (comments.count) lines.push({ emoji: '💬', text: `${comments.count} comment${comments.count > 1 ? 's' : ''} from ${formatActorList(comments.names)}` });
+  if (reposts.count) lines.push({ emoji: '🔁', text: `${reposts.count} repost${reposts.count > 1 ? 's' : ''} from ${formatActorList(reposts.names)}` });
+  if (viewDelta > 0) lines.push({ emoji: '👀', text: `${viewDelta} new view${viewDelta > 1 ? 's' : ''} on your content` });
+
+  const summaryHtml = lines.map(l => `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 10px;">
+      <tr>
+        <td style="width:28px;vertical-align:top;font-size:16px;">${l.emoji}</td>
+        <td style="font-family:'Inter',Arial,sans-serif;font-size:14px;color:#0f172a;line-height:1.5;">${l.text}</td>
+      </tr>
+    </table>`).join('');
+
+  if (!BREVO_API_KEY || !user.email) return { ok: false, error: 'missing key/email' };
+  try {
+    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: { accept: 'application/json', 'api-key': BREVO_API_KEY, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        sender: { name: BREVO_SENDER_NAME, email: BREVO_SENDER_EMAIL },
+        to: [{ email: user.email, name: user.name || undefined }],
+        templateId: BREVO_DIGEST_TEMPLATE_ID,
+        params: { first_name: firstName, headline, summary_html: summaryHtml }
+      })
+    });
+    if (!res.ok) { const txt = await res.text().catch(() => null); return { ok: false, error: txt }; }
+    return { ok: true };
+  } catch (err) { return { ok: false, error: err.message }; }
+}
+
+async function runProfileDigestCycle(windowStartMs) {
+  if (!db) return { emailsSent: 0, recipientsChecked: 0 };
+  const windowStart = admin.firestore.Timestamp.fromMillis(windowStartMs);
+
+  const notifSnap = await db.collection('notifications')
+    .where('createdAt', '>=', windowStart)
+    .get();
+
+  // Capped per recipient per category — a viral post's 1,000+ comments
+  // still produce exactly one line in the email ("comments from Alice, Bob
+  // and 998 others"), and only the first ~10 raw names are ever kept in
+  // memory to get there (formatActorList only needs 2 for display; the
+  // buffer just gives dedup a little room). `count` stays perfectly
+  // accurate regardless — only the name list is capped, never the number.
+  const NAME_CAP = 10;
+  const byRecipient = new Map();
+  notifSnap.docs.forEach(d => {
+    const n = d.data();
+    const group = DIGEST_TYPE_GROUPS[n.type];
+    if (!group || !n.recipientUid) return;
+    if (!byRecipient.has(n.recipientUid)) {
+      byRecipient.set(n.recipientUid, {
+        follows: { names: [], count: 0 }, likes: { names: [], count: 0 },
+        comments: { names: [], count: 0 }, reposts: { names: [], count: 0 }
+      });
+    }
+    const bucket = byRecipient.get(n.recipientUid)[group];
+    bucket.count++;
+    if (bucket.names.length < NAME_CAP) bucket.names.push(n.actorName || 'Someone');
+  });
+
+  let emailsSent = 0;
+  for (const [uid, groups] of byRecipient.entries()) {
+    try {
+      const userSnap = await db.collection('users').doc(uid).get();
+      if (!userSnap.exists) continue;
+      const user = userSnap.data();
+      if (!user.email) continue;
+
+      const currentViews = await currentTotalViews(uid);
+      const viewDelta = Math.max(0, currentViews - (user.lastDigestViewTotal || 0));
+
+      const result = await sendDigestEmail(user, groups, viewDelta);
+      if (result.ok) emailsSent++;
+
+      // Snapshot regardless of send outcome — an email-send failure shouldn't
+      // cause the same view-delta to be reported twice next cycle.
+      await db.collection('users').doc(uid).set({ lastDigestViewTotal: currentViews }, { merge: true }).catch(() => null);
+      await new Promise(r => setTimeout(r, 250)); // small pause between sends, same courtesy as the outreach cron
+    } catch (err) {
+      console.error('[digest] failed for recipient', uid, err);
+    }
+  }
+
+  return { emailsSent, recipientsChecked: byRecipient.size };
+}
+
+// Hourly check, same guard pattern as the other scheduled jobs — a
+// Firestore doc tracks the last slot ("YYYY-MM-DD-AM" / "-PM") that
+// actually ran, so a restart can never trigger a duplicate send for a slot
+// already sent, and a slot that was missed (server was down right at
+// noon) still fires on the very next hourly tick instead of being skipped
+// for the whole day.
+async function maybeRunProfileDigest() {
+  if (!db) return;
+  try {
+    const now = lagosNow();
+    const hour = now.getUTCHours(); // Lagos-shifted clock, same convention as lagosNow() everywhere else
+    let slot = null;
+    if (hour >= 19) slot = 'PM';
+    else if (hour >= 12) slot = 'AM';
+    if (!slot) return;
+
+    const dayKey = now.toISOString().slice(0, 10);
+    const slotKey = `${dayKey}-${slot}`;
+    const stateRef = db.collection('meta').doc('profileDigestSchedule');
+    const stateDoc = await stateRef.get();
+    const prev = stateDoc.exists ? stateDoc.data() : null;
+    if (prev && prev.lastRunSlot === slotKey) return;
+
+    // Window = since the last successful run, defaulting to 12h back for the
+    // very first run ever (so day one doesn't email people about their
+    // entire notification history at once).
+    const windowStartMs = (prev && prev.lastRunAt) ? prev.lastRunAt.toMillis() : (Date.now() - 12 * 60 * 60 * 1000);
+    const result = await runProfileDigestCycle(windowStartMs);
+
+    await stateRef.set({ lastRunSlot: slotKey, lastRunAt: admin.firestore.Timestamp.now(), lastRunResult: result }, { merge: true });
+    console.log('[digest] slot run:', slotKey, result);
+  } catch (err) {
+    console.error('[digest] run failed', err);
+  }
+}
+
+if (db) {
+  maybeRunProfileDigest();
+  setInterval(maybeRunProfileDigest, 60 * 60 * 1000);
 }
 
 app.post('/api/track', (req, res) => {
