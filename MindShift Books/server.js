@@ -23,6 +23,31 @@ const PORT = process.env.PORT || 3000;
 // hop (Render's own proxy) — correct for a single reverse proxy in front.
 app.set('trust proxy', 1);
 
+// ── MAINTENANCE MODE ─────────────────────────────────────────────────────────
+// Full-site lockdown while we're over the Firebase read quota. Every request
+// gets a static maintenance page — no Firestore, no other route logic runs —
+// EXCEPT /admin (the dashboard + its login/logout) and /api/admin/* (the
+// dashboard's own AJAX calls), so the admin panel keeps working normally.
+// Plain static files (css/js/images) are also let through since the admin
+// dashboard needs a couple of them (/MINDSHIFT.jpg, /article-categories.js,
+// /image-compress.js) and serving them costs nothing Firebase-related anyway.
+//
+// Toggle: set MAINTENANCE_MODE=false as a Render env var (and restart) to
+// bring the public site back. Defaults to ON — flip this default to 'false'
+// once you're ready, or just set the env var.
+const MAINTENANCE_MODE = (process.env.MAINTENANCE_MODE || 'true').toLowerCase() !== 'false';
+if (MAINTENANCE_MODE) {
+  console.warn('[maintenance] MAINTENANCE_MODE is ON — only /admin and /api/admin/* are reachable. Set MAINTENANCE_MODE=false to restore the public site.');
+}
+app.use((req, res, next) => {
+  if (!MAINTENANCE_MODE) return next();
+  const p = req.path || '';
+  if (p === '/admin' || p.startsWith('/admin/')) return next();      // dashboard, login, logout
+  if (p.startsWith('/api/admin')) return next();                     // dashboard's own API calls
+  if (/\.(css|js|mjs|jpg|jpeg|png|gif|svg|webp|ico|woff2?|ttf)$/i.test(p)) return next(); // static assets, no Firebase cost
+  res.status(503).set('Retry-After', '3600').sendFile(path.join(__dirname, 'public', 'maintenance.html'));
+});
+
 // ── Security headers (helmet) ──────────────────────────────────────────────
 // crossOriginOpenerPolicy is explicitly disabled here: helmet's default
 // ("same-origin") severs window.opener between this site and any popup it
