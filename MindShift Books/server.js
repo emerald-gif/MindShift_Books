@@ -6,6 +6,7 @@ const fetch = require('node-fetch');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const admin = require('firebase-admin');
+const { MetricServiceClient } = require('@google-cloud/monitoring');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const crypto = require('crypto');
@@ -987,6 +988,7 @@ app.post('/api/affiliate/apply', requireUser, async (req, res) => {
       createdAt: admin.firestore.Timestamp.now()
     };
     await db.collection('affiliates').doc(code).set(record);
+    _adminReadCache.delete('affiliates:all'); // new affiliate — don't make admin wait out the cache to see it
     sendAffiliateWelcomeEmail(req.userEmail, record.name, code);
     return res.json({ code, ...record });
   } catch (err) {
@@ -3478,7 +3480,7 @@ app.post('/api/account/init', requireUser, async (req, res) => {
     if (isNewAccount && referralFields.referredByCode) {
       db.collection('affiliates').doc(referralFields.referredByCode).update({
         signups: admin.firestore.FieldValue.increment(1)
-      }).catch(() => null);
+      }).then(() => _adminReadCache.delete('affiliates:all')).catch(() => null);
     }
 
     // Claim legacy orders: any past `my_order` doc with a matching email but
@@ -4067,7 +4069,8 @@ async function fulfillOrder({ reference, email, buyerName, uid, productIds, ngnA
       db.collection('affiliates').doc(affiliateCode).update({
         sales: admin.firestore.FieldValue.increment(1),
         earned: admin.firestore.FieldValue.increment(commissionAmount)
-      }).catch(err => console.error('[fulfillOrder] FAILED to credit affiliate commission', { affiliateCode, commissionAmount, reference }, err));
+      }).then(() => _adminReadCache.delete('affiliates:all')) // new sale/earnings — surface it right away, not after the TTL
+        .catch(err => console.error('[fulfillOrder] FAILED to credit affiliate commission', { affiliateCode, commissionAmount, reference }, err));
     }
     await db.collection('transactions').doc(reference).set({
       reference, email, amount: ngnAmountPaid,
@@ -4857,6 +4860,82 @@ async function cachedAdminRead(key, ttlMs, fetcher) {
   }
 }
 
+// ---- Firestore free-tier quota watch (Cloud Monitoring, NOT Firestore) ----
+// Pulling this number from Firestore itself would burn Firestore reads to
+// find out how many Firestore reads you've burned — circular. Cloud
+// Monitoring is a separate GCP service that watches Firestore from the
+// outside, so checking it costs zero Firestore reads.
+// Needs a service account JSON (Monitoring Viewer role) in the
+// GCP_MONITORING_KEY_JSON env var — see setup notes.
+let _monitoringClient = null;
+let _monitoringProjectId = null;
+function getMonitoringClient() {
+  if (_monitoringClient) return _monitoringClient;
+  const raw = process.env.GCP_MONITORING_KEY_JSON;
+  if (!raw) return null;
+  const credentials = JSON.parse(raw);
+  _monitoringProjectId = credentials.project_id;
+  _monitoringClient = new MetricServiceClient({ credentials, projectId: credentials.project_id });
+  return _monitoringClient;
+}
+
+// Firestore's free-tier quota resets at midnight PACIFIC time, not local
+// time — so "today" for quota purposes means since midnight in
+// America/Los_Angeles, wherever the server itself is actually running.
+function pacificMidnightUTC(now = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Los_Angeles', hour12: false,
+    hour: '2-digit', minute: '2-digit', second: '2-digit'
+  }).formatToParts(now).reduce((acc, p) => { acc[p.type] = p.value; return acc; }, {});
+  const elapsedMs = (Number(parts.hour) % 24) * 3600000 + Number(parts.minute) * 60000 + Number(parts.second) * 1000;
+  return new Date(now.getTime() - elapsedMs);
+}
+
+async function fetchTodayFirestoreReads() {
+  const client = getMonitoringClient();
+  if (!client) throw new Error('Monitoring not configured — set GCP_MONITORING_KEY_JSON');
+  const now = new Date();
+  const start = pacificMidnightUTC(now);
+  const alignmentSeconds = Math.max(60, Math.floor((now.getTime() - start.getTime()) / 1000));
+
+  const [timeSeries] = await client.listTimeSeries({
+    name: client.projectPath(_monitoringProjectId),
+    filter: 'metric.type="firestore.googleapis.com/document/read_count" AND resource.type="firestore_instance"',
+    interval: {
+      startTime: { seconds: Math.floor(start.getTime() / 1000) },
+      endTime: { seconds: Math.floor(now.getTime() / 1000) }
+    },
+    aggregation: {
+      alignmentPeriod: { seconds: alignmentSeconds },
+      perSeriesAligner: 'ALIGN_SUM',
+      crossSeriesReducer: 'REDUCE_SUM'
+    }
+  });
+
+  let total = 0;
+  for (const series of timeSeries) {
+    for (const point of series.points || []) {
+      total += Number(point.value.int64Value || point.value.doubleValue || 0);
+    }
+  }
+  return total;
+}
+
+// GET /api/admin/quota-status — today's Firestore read count vs the 50k/day
+// free-tier limit, for the dashboard warning widget. Cached 5 min: this
+// hits Cloud Monitoring, not Firestore, but no reason to hammer it on every
+// dashboard render either.
+app.get('/api/admin/quota-status', async (req, res) => {
+  try {
+    const reads = await cachedAdminRead('quota:reads', 5 * 60 * 1000, fetchTodayFirestoreReads);
+    const limit = 50000;
+    return res.json({ reads, limit, percent: Math.round((reads / limit) * 1000) / 10 });
+  } catch (err) {
+    console.error('/api/admin/quota-status error', err.message || err);
+    return res.status(500).json({ error: 'Could not load quota status', detail: err.message });
+  }
+});
+
 app.get('/api/admin/summary', async (req, res) => {
   try {
     if (!db) return res.status(500).json({ error: 'Database unavailable' });
@@ -5564,6 +5643,7 @@ app.post('/api/admin/payouts/:id/mark-paid', async (req, res) => {
       paidOut: admin.firestore.FieldValue.increment(p.amount || 0),
       pendingPayout: admin.firestore.FieldValue.increment(-(p.amount || 0))
     });
+    _adminReadCache.delete('affiliates:all'); // admin just paid someone — next Affiliates tab load should show the real balance
     return res.json({ ok: true, paidAt: paidAt.toDate().toISOString(), processedBy: ADMIN_USER });
   } catch (err) {
     console.error('/api/admin/payouts/:id/mark-paid error', err);
