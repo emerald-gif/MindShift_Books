@@ -216,6 +216,36 @@ main{max-width:1100px;margin:0 auto}
 
 /* ── GUEST BAR ── */
 .guest-bar{background:linear-gradient(135deg,rgba(37,99,235,.08),rgba(59,130,246,.05));border:1px solid rgba(37,99,235,.15);border-radius:14px;padding:13px 14px;margin:0 16px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+
+/* ── FEED PROFILE-SETUP BANNER — same gold-ticket look as the profile
+   page's version, mounted here too so it's seen on the highest-traffic
+   surface, not just for people who visit their own profile. ── */
+.feed-setup-banner{display:flex;align-items:center;gap:12px;margin:0 16px 16px;padding:12px 14px;position:relative;
+  background:linear-gradient(135deg,#fff7ed,#fdf2f8);border:1.5px dashed #fbbf24;border-radius:16px;
+  cursor:pointer;box-shadow:0 2px 10px rgba(251,191,36,.14);overflow:visible}
+.feed-setup-banner::before,.feed-setup-banner::after{content:'';position:absolute;top:50%;transform:translateY(-50%);
+  width:14px;height:14px;border-radius:50%;background:#f8fafc;z-index:1}
+.feed-setup-banner::before{left:-8px}
+.feed-setup-banner::after{right:-8px}
+.fsb-close{position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;border:1.5px solid #fbbf24;
+  background:#fff;color:#c2410c;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2;
+  box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.fsb-close svg{width:11px;height:11px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round}
+.fsb-ring{position:relative;width:40px;height:40px;flex-shrink:0;filter:drop-shadow(0 2px 4px rgba(244,114,182,.25))}
+.fsb-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.fsb-ring circle{fill:none;stroke-width:3.5}
+.fsb-track{stroke:#fde8cc}
+.fsb-fill{stroke:url(#fsbRingGrad);stroke-linecap:round;transition:stroke-dashoffset .3s ease}
+.fsb-ring span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#c2410c}
+.fsb-giftbadge{position:absolute;bottom:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:11px;box-shadow:0 1px 3px rgba(0,0,0,.15);
+  animation:fsbGiftBounce 2.2s ease-in-out infinite}
+@keyframes fsbGiftBounce{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-2px) rotate(-8deg)}}
+.fsb-txt{flex:1;min-width:0}
+.fsb-title{font-size:13.5px;font-weight:800;color:#9a3412}
+.fsb-sub{font-size:11.5px;color:#c2410c;margin-top:2px;opacity:.85}
+.fsb-arrow{color:#fb923c;flex-shrink:0}
+.fsb-arrow svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
 .guest-bar-txt{font-size:12px;font-weight:700;color:var(--p)}
 .guest-bar-sub{font-size:10.5px;color:var(--sub);margin-top:1px}
 .guest-bar-btns{display:flex;gap:7px;flex-shrink:0}
@@ -579,6 +609,33 @@ main{max-width:1100px;margin:0 auto}
   })();
 </script>
 
+<!-- PROFILE-SETUP FEED BANNER — signed-in, incomplete-profile users only.
+     Same gold-ticket look as the profile page's own banner, just a second
+     mount point so people who never visit their own profile still see it.
+     Dismissible per session (see dismissFeedSetupBanner() below); hides
+     for good, automatically, once all 4 steps are actually done. -->
+<div class="feed-setup-banner" id="feedSetupBanner" style="display:none" onclick="location.href='/complete-profile'">
+  <button type="button" class="fsb-close" id="fsbClose" aria-label="Dismiss">
+    <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+  </button>
+  <div class="fsb-ring">
+    <svg viewBox="0 0 40 40">
+      <defs><linearGradient id="fsbRingGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#f472b6"/></linearGradient></defs>
+      <circle class="fsb-track" cx="20" cy="20" r="16.5"></circle>
+      <circle class="fsb-fill" id="fsbRingFill" cx="20" cy="20" r="16.5" stroke-dasharray="103.7" stroke-dashoffset="103.7"></circle>
+    </svg>
+    <span id="fsbRingLabel">0/4</span>
+    <div class="fsb-giftbadge">🎁</div>
+  </div>
+  <div class="fsb-txt">
+    <div class="fsb-title">Finish setting up your profile</div>
+    <div class="fsb-sub" id="fsbSub">Complete these steps to get ₦1,000 free</div>
+  </div>
+  <div class="fsb-arrow">
+    <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+  </div>
+</div>
+
 <!-- FEED TABS: For You | Following | Explore -->
 <div class="feed-tabs" id="feedTabs">
   <button class="feed-tab active" data-tab="for-you" onclick="switchFeedTab('for-you')">For You</button>
@@ -904,6 +961,73 @@ async function loadMyProfile(){
   }catch{ myProfile = { name: fallbackName, photo: fallbackPhoto }; }
 }
 
+/* ── PROFILE-SETUP FEED BANNER ──
+   Same 4 live checks as /complete-profile and the profile-page banner —
+   nothing stored, so this always reflects reality even for accounts that
+   were already following 10+ people or had 20+ likes before this existed.
+   Dismissible per session (sessionStorage) rather than a permanent flag,
+   so it comes back next time they open the app if they're still incomplete
+   — visibility matters more here than on the profile page, since this is
+   what most users actually see day to day. */
+const FSB_DISMISS_KEY = 'msb_fsb_dismissed_session';
+let fsbWired = false;
+function wireFeedSetupBannerOnce(){
+  if(fsbWired) return; fsbWired = true;
+  document.getElementById('fsbClose')?.addEventListener('click', (e) => {
+    e.stopPropagation(); // don't also trigger the banner's own navigate-on-click
+    try{ sessionStorage.setItem(FSB_DISMISS_KEY, '1'); }catch{}
+    const el = document.getElementById('feedSetupBanner');
+    if(el) el.style.display = 'none';
+  });
+}
+
+async function checkFeedProfileSetup(user){
+  const banner = document.getElementById('feedSetupBanner');
+  if(!banner || !user) return;
+  wireFeedSetupBannerOnce();
+
+  let dismissed = false;
+  try{ dismissed = sessionStorage.getItem(FSB_DISMISS_KEY) === '1'; }catch{}
+  if(dismissed){ banner.style.display = 'none'; return; }
+
+  try{
+    const uid = user.uid;
+    const [userSnap, followSnap, articleSnap, postSnap] = await Promise.all([
+      getDoc(doc(db,'users',uid)),
+      getDocs(query(collection(db,'follows'), where('followerId','==',uid))),
+      getDocs(query(collection(db,'articles'), where('authorUid','==',uid))),
+      getDocs(query(collection(db,'posts'), where('authorUid','==',uid)))
+    ]);
+    const u = userSnap.exists() ? userSnap.data() : {};
+    const profileDone = !!(u.photo || user.photoURL) && !!u.cover && !!(u.bio && u.bio.trim()) && Array.isArray(u.categories) && u.categories.length > 0;
+    const followDone = followSnap.size >= 10;
+    const contentDone = (articleSnap.size + postSnap.size) >= 1;
+    const engageDone = likedSet.size >= 10; // already loaded above by loadLikedSet()
+    const steps = [profileDone, followDone, contentDone, engageDone];
+    const doneCount = steps.filter(Boolean).length;
+
+    if(doneCount === 4){
+      banner.style.display = 'none';
+      // Ensure the voucher actually exists server-side even if this is the
+      // first page to notice completion — idempotent, no UI needed here;
+      // the reveal/celebration already lives on /profile and /complete-profile.
+      try{
+        const idToken = await user.getIdToken();
+        fetch('/api/rewards/claim-profile-voucher', { method:'POST', headers:{'Content-Type':'application/json', Authorization:`Bearer ${idToken}`} });
+      }catch(e){}
+      return;
+    }
+
+    banner.style.display = 'flex';
+    const CIRC = 103.7;
+    document.getElementById('fsbRingFill').style.strokeDashoffset = CIRC - (CIRC * doneCount / 4);
+    document.getElementById('fsbRingLabel').textContent = `${doneCount}/4`;
+    document.getElementById('fsbSub').textContent = `${4 - doneCount} step${4-doneCount===1?'':'s'} left to get \u20a61,000 free`;
+  }catch(e){
+    console.warn('checkFeedProfileSetup failed (non-fatal):', e);
+  }
+}
+
 let authCallSeq = 0;
 onAuthStateChanged(auth, async user => {
   const seq = ++authCallSeq; // ignore stale work if a newer auth event supersedes this one
@@ -928,6 +1052,7 @@ onAuthStateChanged(auth, async user => {
     if(gBar) gBar.style.display='none';
     if(nw) nw.style.display='block';
     await Promise.all([loadSavedSet(), loadLikedSet(), loadMyProfile()]);
+    checkFeedProfileSetup(user); // not awaited — nice-to-have, shouldn't block the feed rendering below
     notif.initNotifications(user.uid);
     // Load user's onboarding categories — array of MSB_CATEGORIES codes, used for "For You" + Following.
     // Falls back to a legacy singular `category` string (pre-taxonomy accounts) wrapped in an array.
@@ -956,6 +1081,8 @@ onAuthStateChanged(auth, async user => {
     savedSet.clear(); likedSet.clear();
     notif.clearNotifications();
     userCategories = [];
+    const fsb = document.getElementById('feedSetupBanner');
+    if(fsb) fsb.style.display = 'none';
   }
   if(seq !== authCallSeq) return; // a newer auth event has already taken over
   // Only re-render here if there's already something loaded to reflect (e.g.
