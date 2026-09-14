@@ -4830,10 +4830,47 @@ const WHOAMI_ARCHETYPE_LABELS = {
   perfectionist: 'The Perfectionist', comfortseeker: 'The Comfort Seeker'
 };
 
+// Simple in-memory cache for expensive admin read endpoints. These scan
+// growing collections (raw analytics events, full affiliate list) on every
+// call with no natural cap, which is what blew through the Firestore
+// free-tier 50k reads/day quota (the whole /events collection was being
+// re-scanned from scratch on every dashboard load/days-filter change).
+// Caching here doesn't change what the query does, it just stops repeat
+// admin page loads within the TTL window from re-paying for it. On a
+// Firestore error (including a future quota exhaustion), serve the last
+// good cached value if there is one instead of a blank/broken dashboard.
+const _adminReadCache = new Map(); // key -> { data, expiresAt }
+async function cachedAdminRead(key, ttlMs, fetcher) {
+  const hit = _adminReadCache.get(key);
+  const now = Date.now();
+  if (hit && hit.expiresAt > now) return hit.data;
+  try {
+    const data = await fetcher();
+    _adminReadCache.set(key, { data, expiresAt: now + ttlMs });
+    return data;
+  } catch (err) {
+    if (hit) {
+      console.error(`cachedAdminRead(${key}) failed, serving stale cache:`, err.message || err);
+      return hit.data;
+    }
+    throw err;
+  }
+}
+
 app.get('/api/admin/summary', async (req, res) => {
   try {
     if (!db) return res.status(500).json({ error: 'Database unavailable' });
     const days = Math.min(Math.max(parseInt(req.query.days, 10) || 30, 1), 365);
+
+    const payload = await cachedAdminRead(`summary:${days}`, 10 * 60 * 1000, () => buildAdminSummary(days));
+    return res.json(payload);
+  } catch (err) {
+    console.error('/api/admin/summary error', err);
+    return res.status(500).json({ error: 'Could not load stats' });
+  }
+});
+
+async function buildAdminSummary(days) {
     const since = admin.firestore.Timestamp.fromDate(new Date(Date.now() - days * 24 * 60 * 60 * 1000));
 
     const eventsSnap = await db.collection('events').where('createdAt', '>=', since).get();
@@ -4912,7 +4949,7 @@ app.get('/api/admin/summary', async (req, res) => {
       .map(([id, count]) => ({ productId: id, title: (PRODUCTS[id] && PRODUCTS[id].title) || id, count }))
       .sort((a, b) => b.count - a.count);
 
-    res.json({
+    return {
       rangeDays: days,
       totals: {
         pageviews: totalPageviews, downloads: totalDownloads, orders: totalOrders, revenueNgn: totalRevenueNgn,
@@ -4932,34 +4969,36 @@ app.get('/api/admin/summary', async (req, res) => {
           .map(([key, count]) => ({ title: WHOAMI_ARCHETYPE_LABELS[key] || key, count }))
           .sort((a, b) => b.count - a.count)
       }
-    });
-  } catch (err) {
-    console.error('/api/admin/summary error', err);
-    res.status(500).json({ error: 'Could not load stats' });
-  }
-});
+    };
+}
 
 // GET /api/admin/affiliates — every affiliate, most-earned first, for the
 // admin dashboard's Affiliates tab.
 app.get('/api/admin/affiliates', async (req, res) => {
   try {
     if (!db) return res.status(500).json({ error: 'Database unavailable' });
-    const snap = await db.collection('affiliates').get();
-    const affiliates = snap.docs.map(d => {
-      const a = d.data();
-      const pendingPayout = a.pendingPayout || 0;
-      return {
-        code: d.id,
-        name: a.name, email: a.email, phone: a.phone, platform: a.platform, handle: a.handle,
-        status: a.status || 'active', broadcastOptOut: !!a.broadcastOptOut,
-        bank: a.bank || null,
-        clicks: a.clicks || 0, signups: a.signups || 0, sales: a.sales || 0,
-        earned: a.earned || 0, paidOut: a.paidOut || 0, pendingPayout,
-        outstanding: Math.max(0, (a.earned || 0) - (a.paidOut || 0)),
-        availableBalance: Math.max(0, (a.earned || 0) - (a.paidOut || 0) - pendingPayout),
-        createdAt: a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().toISOString() : a.createdAt) : null
-      };
-    }).sort((a, b) => b.outstanding - a.outstanding);
+    // Full-collection read, growing toward 1,000+ affiliates — cache it
+    // (short TTL since clicks/sales/payouts change during the day) instead
+    // of re-reading every single affiliate doc on every dashboard/payout
+    // page load.
+    const affiliates = await cachedAdminRead('affiliates:all', 3 * 60 * 1000, async () => {
+      const snap = await db.collection('affiliates').get();
+      return snap.docs.map(d => {
+        const a = d.data();
+        const pendingPayout = a.pendingPayout || 0;
+        return {
+          code: d.id,
+          name: a.name, email: a.email, phone: a.phone, platform: a.platform, handle: a.handle,
+          status: a.status || 'active', broadcastOptOut: !!a.broadcastOptOut,
+          bank: a.bank || null,
+          clicks: a.clicks || 0, signups: a.signups || 0, sales: a.sales || 0,
+          earned: a.earned || 0, paidOut: a.paidOut || 0, pendingPayout,
+          outstanding: Math.max(0, (a.earned || 0) - (a.paidOut || 0)),
+          availableBalance: Math.max(0, (a.earned || 0) - (a.paidOut || 0) - pendingPayout),
+          createdAt: a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().toISOString() : a.createdAt) : null
+        };
+      }).sort((a, b) => b.outstanding - a.outstanding);
+    });
     return res.json({ affiliates });
   } catch (err) {
     console.error('/api/admin/affiliates error', err);
