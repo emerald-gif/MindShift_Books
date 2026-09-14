@@ -22,6 +22,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   background:var(--card);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt);flex-shrink:0}
 .btn-back svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
 .hdr-title{font-size:17px;font-weight:900;color:var(--txt)}
+.hdr-sub{font-size:11px;font-weight:700;color:var(--p);margin-top:1px}
 
 .cat-scroll{display:flex;gap:8px;overflow-x:auto;padding:12px 16px;scrollbar-width:none;border-bottom:1px solid var(--border)}
 .cat-scroll::-webkit-scrollbar{display:none}
@@ -69,7 +70,10 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   <button class="btn-back" onclick="history.length>1?history.back():location.href='/'" aria-label="Back">
     <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
   </button>
-  <div class="hdr-title">Suggestions</div>
+  <div>
+    <div class="hdr-title">Suggestions</div>
+    <div class="hdr-sub" id="hdrSub" style="display:none">Great, complete profiles to start with</div>
+  </div>
 </header>
 
 <div class="cat-scroll" id="catScroll"></div>
@@ -101,6 +105,14 @@ const auth = getAuth(fbApp);
 const db   = getFirestore(fbApp, 'default');
 
 const PAGE_SIZE = 20;
+// Linked from /complete-profile's "Find Creators" CTA as /suggestions?quality=1
+// — everywhere else this page is reached, quality mode is off and nothing
+// below changes behavior. Fetches a bigger raw batch per page since a chunk
+// gets filtered out; per your call, if fewer than 10 qualify, we just show
+// what qualifies rather than backfilling with incomplete profiles.
+const params = new URLSearchParams(location.search);
+const qualityMode = params.get('quality') === '1';
+const RAW_FETCH_SIZE = qualityMode ? 40 : PAGE_SIZE;
 let currentUser = null;
 let followingUids = new Set();   // who the viewer already follows — excluded from results
 let dismissedUids = new Set();
@@ -110,6 +122,18 @@ let exhausted = false;
 let loadingMore = false;
 
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// Same 4 fields the profile-completion checklist checks — photo, cover,
+// bio, categories — each worth 25%. 70%+ means at least 3 of the 4 are
+// filled in. Nothing stored; computed straight off whatever's already on
+// the candidate's own users/ doc.
+function profileCompleteness(u){
+  const hasPhoto = !!(u.photo || u.photoURL);
+  const hasCover = !!u.cover;
+  const hasBio = !!(u.bio && u.bio.trim());
+  const hasCategories = Array.isArray(u.categories) && u.categories.length > 0;
+  return [hasPhoto, hasCover, hasBio, hasCategories].filter(Boolean).length / 4;
+}
 
 // ── Category filter chips (reuses the site's single source of truth) ──
 function renderCatChips(){
@@ -152,26 +176,34 @@ async function loadMore(){
 
   try{
     let q = activeCat
-      ? query(collection(db,'users'), where('categories','array-contains',activeCat), limit(PAGE_SIZE))
-      : query(collection(db,'users'), limit(PAGE_SIZE));
+      ? query(collection(db,'users'), where('categories','array-contains',activeCat), limit(RAW_FETCH_SIZE))
+      : query(collection(db,'users'), limit(RAW_FETCH_SIZE));
     if(lastDoc) q = activeCat
-      ? query(collection(db,'users'), where('categories','array-contains',activeCat), startAfter(lastDoc), limit(PAGE_SIZE))
-      : query(collection(db,'users'), startAfter(lastDoc), limit(PAGE_SIZE));
+      ? query(collection(db,'users'), where('categories','array-contains',activeCat), startAfter(lastDoc), limit(RAW_FETCH_SIZE))
+      : query(collection(db,'users'), startAfter(lastDoc), limit(RAW_FETCH_SIZE));
 
     const snap = await getDocs(q);
-    if(snap.docs.length < PAGE_SIZE) exhausted = true;
+    if(snap.docs.length < RAW_FETCH_SIZE) exhausted = true;
     lastDoc = snap.docs[snap.docs.length - 1] || lastDoc;
 
-    const users = snap.docs
+    let users = snap.docs
       .map(d => ({ uid:d.id, ...d.data() }))
       .filter(u => u.uid !== currentUser?.uid && !followingUids.has(u.uid) && !dismissedUids.has(u.uid));
+
+    // Quality mode filters down to well-set-up profiles only — per design,
+    // it does NOT backfill with incomplete ones if that leaves fewer than
+    // a full page. Worth noting: this can legitimately mean 0 results on
+    // an early page even when exhausted is still false (more raw docs
+    // exist, just none qualified yet) — the "Load more" button below
+    // still appears in that case so the next raw batch gets a chance.
+    if(qualityMode) users = users.filter(u => profileCompleteness(u) >= 0.70);
 
     if(btn) btn.remove();
 
     if(!users.length && !list.children.length && exhausted){
       list.innerHTML = `<div class="empty-state">
         <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
-        <p>No suggestions here yet — check back soon!</p>
+        <p>${qualityMode ? 'No fully-set-up creators to suggest yet — check back soon!' : 'No suggestions here yet — check back soon!'}</p>
       </div>`;
     } else {
       users.forEach(u => list.appendChild(buildRow(u)));
@@ -255,6 +287,7 @@ async function toggleFollow(uid, name){
 onAuthStateChanged(auth, async (user) => {
   currentUser = user;
   if(user) await loadFollowing(user.uid);
+  if(qualityMode) document.getElementById('hdrSub').style.display = 'block';
   renderCatChips();
   resetAndLoad();
 });

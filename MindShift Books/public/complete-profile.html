@@ -215,7 +215,7 @@ function render(setup){
       'Edit Profile', () => location.href = '/profile?openEdit=1', setup.profile.done),
     stepRow(2, 'Follow 10 creators',
       setup.follow.done ? `Following ${setup.follow.count} creators` : `<b>${setup.follow.count}/${setup.follow.target}</b> so far — find people worth following`,
-      'Find Creators', () => location.href = '/suggestions', setup.follow.done),
+      'Find Creators', () => location.href = '/suggestions?quality=1', setup.follow.done),
     stepRow(3, 'Create your first content',
       setup.content.done ? 'You\u2019ve published something \u2014 nice work' : 'Share one post or write one article',
       'Create', () => { if(window.openCreatePicker) window.openCreatePicker(); else location.href = '/write'; }, setup.content.done),
