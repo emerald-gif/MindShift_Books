@@ -2965,27 +2965,60 @@ async function currentTotalViews(uid) {
   return metaSnaps.reduce((sum, s) => sum + ((s && s.exists && s.data().viewCount) || 0), 0);
 }
 
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+// A few variants per scenario, picked randomly each send, so the subject
+// doesn't read as the exact same robotic line every single time — nothing
+// is tracked about which variant went out, so repeats are fine.
+const DIGEST_SUBJECT_POOLS = {
+  follow: (name) => [`🎉 ${name} just followed you!`, `👋 New follower alert: ${name}`, `🚀 ${name} is now following you`],
+  comment: (name, first) => [`💬 ${name} just commented on your content`, `🔥 People are talking about your post, ${first}`, `👀 ${name} left you a comment`],
+  repost: (name, first) => [`🔁 ${name} just reposted your content`, `📣 Your content is spreading, ${first}`],
+  like: (name) => [`❤️ ${name} liked your content`, `🔥 ${name} is loving what you posted`, `💛 Your content just got some love from ${name}`],
+  views: (_, first) => [`👀 Your content is getting noticed, ${first}`, `📈 More eyes on your content today`, `🚀 ${first}, people are discovering your content`]
+};
+const DIGEST_PREVIEW_FALLBACKS = [`Tap to see everything that happened today 👇`, `Open up for the full update`, `Here's everything since your last check-in`];
+
 async function sendDigestEmail(user, groups, viewDelta) {
   const { follows, likes, comments, reposts } = groups;
   const firstName = (user.name || 'there').split(' ')[0];
 
-  // Priority order for the headline — the single most exciting thing,
-  // not just whatever happened to be first. A new follower beats a like;
-  // a view-count bump only leads when there's genuinely nothing else.
-  let headline;
-  if (follows.count) headline = `${formatActorList(follows.names)} just followed you! 🎉`;
-  else if (comments.count) headline = `${formatActorList(comments.names)} commented on your content 💬`;
-  else if (reposts.count) headline = `${formatActorList(reposts.names)} reposted your content 🔁`;
-  else if (likes.count) headline = `${formatActorList(likes.names)} liked your content ❤️`;
-  else if (viewDelta > 0) headline = `People are discovering your content more 👀`;
+  // Priority order — the single most exciting thing leads, not just
+  // whatever happened to be first. A new follower beats a like; a
+  // view-count bump only leads when there's genuinely nothing else.
+  let primaryType = null, primaryName = null;
+  if (follows.count) { primaryType = 'follow'; primaryName = formatActorList(follows.names); }
+  else if (comments.count) { primaryType = 'comment'; primaryName = formatActorList(comments.names); }
+  else if (reposts.count) { primaryType = 'repost'; primaryName = formatActorList(reposts.names); }
+  else if (likes.count) { primaryType = 'like'; primaryName = formatActorList(likes.names); }
+  else if (viewDelta > 0) { primaryType = 'views'; }
   else return { ok: false, skipped: true };
 
+  const headlineByType = {
+    follow: `${primaryName} just followed you! 🎉`,
+    comment: `${primaryName} commented on your content 💬`,
+    repost: `${primaryName} reposted your content 🔁`,
+    like: `${primaryName} liked your content ❤️`,
+    views: `People are discovering your content more 👀`
+  };
+  const headline = headlineByType[primaryType];
+  const subject = pick(DIGEST_SUBJECT_POOLS[primaryType](primaryName, firstName));
+
   const lines = [];
-  if (follows.count) lines.push({ emoji: '👤', text: `${follows.count} new follower${follows.count > 1 ? 's' : ''}: ${formatActorList(follows.names)}` });
-  if (likes.count) lines.push({ emoji: '❤️', text: `${likes.count} like${likes.count > 1 ? 's' : ''} from ${formatActorList(likes.names)}` });
-  if (comments.count) lines.push({ emoji: '💬', text: `${comments.count} comment${comments.count > 1 ? 's' : ''} from ${formatActorList(comments.names)}` });
-  if (reposts.count) lines.push({ emoji: '🔁', text: `${reposts.count} repost${reposts.count > 1 ? 's' : ''} from ${formatActorList(reposts.names)}` });
-  if (viewDelta > 0) lines.push({ emoji: '👀', text: `${viewDelta} new view${viewDelta > 1 ? 's' : ''} on your content` });
+  if (follows.count) lines.push({ type: 'follow', emoji: '👤', text: `${follows.count} new follower${follows.count > 1 ? 's' : ''}: ${formatActorList(follows.names)}` });
+  if (likes.count) lines.push({ type: 'like', emoji: '❤️', text: `${likes.count} like${likes.count > 1 ? 's' : ''} from ${formatActorList(likes.names)}` });
+  if (comments.count) lines.push({ type: 'comment', emoji: '💬', text: `${comments.count} comment${comments.count > 1 ? 's' : ''} from ${formatActorList(comments.names)}` });
+  if (reposts.count) lines.push({ type: 'repost', emoji: '🔁', text: `${reposts.count} repost${reposts.count > 1 ? 's' : ''} from ${formatActorList(reposts.names)}` });
+  if (viewDelta > 0) lines.push({ type: 'views', emoji: '👀', text: `${viewDelta} new view${viewDelta > 1 ? 's' : ''} on your content` });
+
+  // Preview/preheader text teases whatever's NOT already in the subject
+  // line, so opening the email feels worth it instead of just repeating
+  // what they already read in the inbox list. Falls back to a generic
+  // curiosity line when the subject already covered the only thing that happened.
+  const otherLines = lines.filter(l => l.type !== primaryType);
+  const previewText = otherLines.length
+    ? `Plus ${otherLines.map(l => l.text.split(' from ')[0].split(': ')[0]).join(' and ')} waiting for you 👇`
+    : pick(DIGEST_PREVIEW_FALLBACKS);
 
   const summaryHtml = lines.map(l => `
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 10px;">
@@ -3003,8 +3036,9 @@ async function sendDigestEmail(user, groups, viewDelta) {
       body: JSON.stringify({
         sender: { name: BREVO_SENDER_NAME, email: BREVO_SENDER_EMAIL },
         to: [{ email: user.email, name: user.name || undefined }],
+        subject,
         templateId: BREVO_DIGEST_TEMPLATE_ID,
-        params: { first_name: firstName, headline, summary_html: summaryHtml }
+        params: { first_name: firstName, headline, summary_html: summaryHtml, cta_link: 'https://mindshiftbooks.shop/articles', preview_text: previewText }
       })
     });
     if (!res.ok) { const txt = await res.text().catch(() => null); return { ok: false, error: txt }; }
