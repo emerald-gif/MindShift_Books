@@ -1133,13 +1133,28 @@ header {
 .faq-item summary { transition: color 0.2s ease; }
 .faq-item summary:hover { color: var(--accent); }
 
-/* ── Profile-completion voucher (added for v2 rewards) ── */
-.voucher-page-banner{display:flex;align-items:center;gap:10px;max-width:1100px;margin:14px auto 0;padding:12px 16px;
-  border-radius:14px;background:linear-gradient(135deg,#eef2ff,#ecfeff);border:1.5px solid #c7d2fe;
-  font-size:13.5px;font-weight:700;color:#1e1b4b;}
-.voucher-page-banner .vpb-emoji{font-size:18px;flex-shrink:0;}
-.cart-voucher-row{display:flex;align-items:center;justify-content:space-between;gap:10px;
-  padding:10px 12px;margin-bottom:14px;border-radius:10px;background:#f5f7ff;border:1px solid #e0e7ff;}
-.cart-voucher-row label{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:#1e1b4b;cursor:pointer;}
-.cart-voucher-row input[type="checkbox"]{width:17px;height:17px;accent-color:#4f46e5;cursor:pointer;margin:0;}
+/* ── Profile-completion voucher (v2 rewards) — styled to match the warm
+   gold/pink "gift ticket" look used on the profile-setup banner and
+   complete-profile page, instead of the flat blue info-box it started as. ── */
+.voucher-page-banner{display:flex;align-items:center;gap:12px;max-width:1100px;margin:14px auto 0;padding:13px 18px;
+  position:relative;border-radius:14px;background:linear-gradient(135deg,#fff7ed,#fdf2f8);
+  border:1.5px dashed #fbbf24;box-shadow:0 2px 10px rgba(251,191,36,.14);
+  font-size:13.5px;font-weight:700;color:#9a3412;overflow:visible;}
+.voucher-page-banner::before,.voucher-page-banner::after{content:'';position:absolute;top:50%;transform:translateY(-50%);
+  width:14px;height:14px;border-radius:50%;background:var(--bg,#f8fafc);z-index:1;}
+.voucher-page-banner::before{left:-8px}
+.voucher-page-banner::after{right:-8px}
+.voucher-page-banner .vpb-emoji{font-size:20px;flex-shrink:0;animation:vpbGiftBounce 2.2s ease-in-out infinite;}
+@keyframes vpbGiftBounce{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-2px) rotate(-8deg)}}
+
+.cart-voucher-row{display:flex;align-items:center;justify-content:space-between;gap:10px;position:relative;
+  padding:11px 14px;margin-bottom:14px;border-radius:12px;
+  background:linear-gradient(135deg,#fff7ed,#fdf2f8);border:1.5px dashed #fbbf24;overflow:visible;}
+.cart-voucher-row::before,.cart-voucher-row::after{content:'';position:absolute;top:50%;transform:translateY(-50%);
+  width:12px;height:12px;border-radius:50%;background:#fff;z-index:1;}
+.cart-voucher-row::before{left:-7px}
+.cart-voucher-row::after{right:-7px}
+.cart-voucher-row label{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:#9a3412;cursor:pointer;}
+.cart-voucher-row label .cvr-gift{font-size:16px;display:inline-block;animation:vpbGiftBounce 2.2s ease-in-out infinite;}
+.cart-voucher-row input[type="checkbox"]{width:18px;height:18px;accent-color:#f59e0b;cursor:pointer;margin:0;}
 .cart-voucher-row .cvr-amount{font-size:13px;font-weight:800;color:#059669;white-space:nowrap;}
