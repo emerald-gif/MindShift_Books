@@ -653,7 +653,7 @@ body{padding-bottom:64px} /* room for the fixed comment bar on post-read */
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
 import { getFirestore, doc, getDoc, setDoc, deleteDoc, updateDoc, increment, onSnapshot,
-         collection, query, where, orderBy, limit, addDoc, serverTimestamp, getDocs, writeBatch, runTransaction } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
+         collection, query, where, orderBy, limit, addDoc, serverTimestamp, getDocs, getCountFromServer, writeBatch, runTransaction } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
 import { initNotificationUI } from '/notifications.js';
 import { initRepost } from '/repost.js';
 
@@ -670,7 +670,7 @@ const auth = getAuth(fbApp);
 const db   = getFirestore(fbApp, 'default');
 const notif = initNotificationUI({
   db, getCurrentUser: () => currentUser, getMyProfile: () => myProfile,
-  fs: { collection, query, where, onSnapshot, getDocs, orderBy, limit, addDoc, writeBatch, serverTimestamp, doc, getDoc, setDoc, increment, runTransaction }
+  fs: { collection, query, where, onSnapshot, getDocs, getCountFromServer, orderBy, limit, addDoc, writeBatch, serverTimestamp, doc, getDoc, setDoc, increment, runTransaction }
 });
 const repost = initRepost({
   db, getCurrentUser: () => currentUser, getMyProfile: () => myProfile, notif,

@@ -18,7 +18,7 @@
 //     db,
 //     getCurrentUser: () => currentUser,
 //     getMyProfile:   () => myProfile,
-//     fs: { collection, query, where, onSnapshot, getDocs, orderBy, limit, addDoc, writeBatch, serverTimestamp }
+//     fs: { collection, query, where, onSnapshot, getDocs, getCountFromServer, orderBy, limit, addDoc, writeBatch, serverTimestamp }
 //   });
 //
 //   onAuthStateChanged(auth, user => {
@@ -167,9 +167,8 @@ export function initNotificationUI({ db, getCurrentUser, getMyProfile, fs }) {
   injectStylesOnce();
   injectPanelOnce();
 
-  const { collection, query, where, onSnapshot, getDocs, orderBy, limit, addDoc, writeBatch, serverTimestamp, doc, getDoc, setDoc, runTransaction } = fs;
+  const { collection, query, where, onSnapshot, getDocs, getCountFromServer, orderBy, limit, addDoc, writeBatch, serverTimestamp, doc, getDoc, setDoc, runTransaction } = fs;
   const notifCache = new Map();
-  let unreadUnsub = null;
 
   // Likes, follows, and reposts land in a shared 3-hour bucket per
   // (type, target-or-recipient) instead of one doc per event — see the
@@ -219,22 +218,29 @@ export function initNotificationUI({ db, getCurrentUser, getMyProfile, fs }) {
     } catch (e) {}
   }
 
+  function updateBadge(count) {
+    const badge = document.getElementById('notifBadge');
+    const wrap = document.getElementById('notifWrap');
+    if (wrap) wrap.style.display = 'block';
+    if (!badge) return;
+    if (count > 0) { badge.textContent = count > 9 ? '9+' : String(count); badge.style.display = 'flex'; }
+    else badge.style.display = 'none';
+  }
+
+  // Was a live onSnapshot query listener, re-attached from scratch on every
+  // single page load (this is a multi-page site, not an SPA — the whole
+  // module re-runs on every navigation). Firestore bills a fresh read for
+  // every matching unread doc on that first snapshot, with an unbounded
+  // query and zero benefit from "live" updates since the page unloads on
+  // the next click anyway. Swapped for a single getCountFromServer() call:
+  // one aggregation read per page load instead of one read per unread
+  // notification, and no lingering listener to unsubscribe.
   function initNotifications(uid) {
-    if (unreadUnsub) unreadUnsub();
     const q = query(collection(db, 'notifications'), where('recipientUid', '==', uid), where('read', '==', false));
-    unreadUnsub = onSnapshot(q, snap => {
-      const badge = document.getElementById('notifBadge');
-      const wrap = document.getElementById('notifWrap');
-      if (wrap) wrap.style.display = 'block';
-      if (!badge) return;
-      const count = snap.size;
-      if (count > 0) { badge.textContent = count > 9 ? '9+' : String(count); badge.style.display = 'flex'; }
-      else badge.style.display = 'none';
-    }, () => {});
+    getCountFromServer(q).then(snap => updateBadge(snap.data().count)).catch(() => {});
   }
 
   function clearNotifications() {
-    if (unreadUnsub) { unreadUnsub(); unreadUnsub = null; }
     const badge = document.getElementById('notifBadge');
     if (badge) badge.style.display = 'none';
     const wrap = document.getElementById('notifWrap');
@@ -308,6 +314,9 @@ export function initNotificationUI({ db, getCurrentUser, getMyProfile, fs }) {
       await batch.commit();
       const btn = document.getElementById('notifMarkAllBtn');
       if (btn) btn.style.display = 'none';
+      // Free client-side update — we already know everything just got
+      // marked read, no need to pay for another getCountFromServer read.
+      updateBadge(0);
     } catch (e) {}
   };
 

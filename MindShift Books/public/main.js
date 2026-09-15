@@ -282,7 +282,7 @@ function renderGrid(grid, list, emptyMessage) {
     grid.innerHTML = `<div class="center" style="grid-column:1/-1;padding:24px;"><div class="muted">${emptyMessage || 'No books available.'}</div></div>`;
     return;
   }
-  const isOurBooks = grid.id === 'ourBooksGrid';
+  const isOurBooks = grid.id === 'ourBooksGrid' || grid.id === 'ourBooksGrid2';
   const isSwiper = grid.classList.contains('swiper-track');
   list.forEach(p => {
     const card = document.createElement('div');
@@ -531,14 +531,25 @@ const OUR_BOOKS_SWIPER_ORDER = [
   'escape-your-environment-or-become-it'
 ];
 
+// Second "Our Books" row ("More From Us"), directly below the first —
+// holds whichever 'ours' titles aren't in the curated row above, so
+// nothing drops out of the storefront just because it's not in the top 3.
+const OUR_BOOKS_SWIPER_ORDER_2 = [
+  'the-discipline-advantage',
+  'getting-clients-without-ads',
+  'the-money-mindset-gap'
+];
+
 function renderProducts() {
   const ourGrid = document.getElementById('ourBooksGrid');
+  const ourGrid2 = document.getElementById('ourBooksGrid2');
   const featuredGrids = [
     document.getElementById('featuredGrid1'),
     document.getElementById('featuredGrid2'),
     document.getElementById('featuredGrid3')
   ];
   const ourSection = document.getElementById('ourBooksSection');
+  const ourSection2 = document.getElementById('ourBooksSection2');
   const featuredSections = [
     document.getElementById('featuredSection'),
     document.getElementById('featuredSection2'),
@@ -552,6 +563,7 @@ function renderProducts() {
   PRODUCTS.filter(p => p.category === 'ours').forEach(p => { ourBooksById[p.id] = p; });
 
   const ourSwiperBooks = OUR_BOOKS_SWIPER_ORDER.map(id => ourBooksById[id]).filter(Boolean);
+  const ourSwiperBooks2 = OUR_BOOKS_SWIPER_ORDER_2.map(id => ourBooksById[id]).filter(Boolean);
 
   const featuredBooks = PRODUCTS.filter(p => p.category !== 'ours');
 
@@ -565,6 +577,9 @@ function renderProducts() {
 
   if (ourSection) ourSection.style.display = ourSwiperBooks.length ? '' : 'none';
   renderGrid(ourGrid, ourSwiperBooks, 'No books yet — check back soon.');
+
+  if (ourSection2) ourSection2.style.display = ourSwiperBooks2.length ? '' : 'none';
+  renderGrid(ourGrid2, ourSwiperBooks2, 'No books yet — check back soon.');
 
   featuredSections.forEach((section, i) => {
     if (!section) return;

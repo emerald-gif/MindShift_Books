@@ -828,7 +828,7 @@ const auth = getAuth(fbApp);
 const db   = getFirestore(fbApp, 'default');
 const notif = initNotificationUI({
   db, getCurrentUser: () => currentUser, getMyProfile: () => myProfile,
-  fs: { collection, query, where, onSnapshot, getDocs, orderBy, limit, addDoc, writeBatch, serverTimestamp, doc, getDoc, setDoc, increment, runTransaction }
+  fs: { collection, query, where, onSnapshot, getDocs, getCountFromServer, orderBy, limit, addDoc, writeBatch, serverTimestamp, doc, getDoc, setDoc, increment, runTransaction }
 });
 // Only buildEmbedCardHtml is actually used on this page (rendering what a
 // repost points at) — the drawer/open() is never invoked here, so
@@ -1869,6 +1869,27 @@ window.doRepostCardProfile = function(s){
   });
 };
 
+/* ── SHARED VIEW RECORDER (once per device per calendar day per item) ──
+   Same dedup key (viewed_{id}_{date}) that articles.html / article-read.html /
+   post-read.html use, so whichever moment claims the day's view first wins
+   and nothing double-counts. A like on a profile card is at least as strong
+   a signal as a glance, so it counts as a view too — matching articles.html's
+   feed like handler, which is why liking from the feed already bumped the
+   count but liking from a profile card didn't. */
+function recordViewOnce(id, metaCollection){
+  if(!id) return false;
+  const now = new Date();
+  const today = `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`;
+  const key = `viewed_${id}_${today}`;
+  try{
+    if(localStorage.getItem(key)) return false;
+    localStorage.setItem(key,'1');
+  }catch(e){ /* storage blocked (private mode etc.) — fall through, count once */ }
+  updateDoc(doc(db,metaCollection,id),{viewCount:increment(1)})
+    .catch(()=>setDoc(doc(db,metaCollection,id),{viewCount:1},{merge:true}).catch(()=>{}));
+  return true;
+}
+
 async function toggleLike(id, wasLikedHint){
   if(!currentUser){ window.location.href='/login'; return null; }
   const userRef = doc(db,'userLikes',currentUser.uid);
@@ -1931,7 +1952,13 @@ window.handleLike = function(id){
         if(btn) btn.classList.toggle('liked', didLike);
         if(!hideCount) fetchLikeCounts([{ id, hideLikeCount: item?.hideLikeCount, isOwnerViewing: isOwner }]);
       }
-      if(didLike === true && item) notif.notifyArticleLike(item);
+      if(didLike === true && item){
+        notif.notifyArticleLike(item);
+        // A like is at least as strong a signal as a glance — count it as a
+        // view too (only on liking, not unliking), same day-dedup key as
+        // the feed / read-page trackers use.
+        recordViewOnce(id, item.type==='post' ? 'postMeta' : 'articleMeta');
+      }
     }
   })();
 };
