@@ -522,22 +522,17 @@ document.addEventListener('DOMContentLoaded', loadFreeEbooksSwiper);
 })();
 
 // Render product grids from PRODUCTS (from server), split into "Our Books" and "Featured" sections
-// Fixed swiper order for the "New Release" row on the homepage. The current
-// spotlight book (SPOTLIGHT_ID below) is deliberately left out of this list —
-// it's pulled out below into its own standalone spotlight card instead of
-// riding in the swiper. To rotate which book gets the spotlight treatment,
-// move its id between this array and SPOTLIGHT_ID.
+// Fixed swiper order for the "New Release" row on the homepage. Kept to a
+// curated 3 books rather than every "ours" title — to rotate the lineup,
+// just edit this list (any id from the 'ours' PRODUCTS entries works).
 const OUR_BOOKS_SWIPER_ORDER = [
-  'the-discipline-advantage',
-  'getting-clients-without-ads',
-  'escape-your-environment-or-become-it',
-  'the-money-mindset-gap'
+  'broke-confused-and-trying',
+  'when-god-feels-silent',
+  'escape-your-environment-or-become-it'
 ];
-const SPOTLIGHT_ID = 'broke-confused-and-trying';
 
 function renderProducts() {
   const ourGrid = document.getElementById('ourBooksGrid');
-  const spotlightEl = document.getElementById('spotlightBook');
   const featuredGrids = [
     document.getElementById('featuredGrid1'),
     document.getElementById('featuredGrid2'),
@@ -557,7 +552,6 @@ function renderProducts() {
   PRODUCTS.filter(p => p.category === 'ours').forEach(p => { ourBooksById[p.id] = p; });
 
   const ourSwiperBooks = OUR_BOOKS_SWIPER_ORDER.map(id => ourBooksById[id]).filter(Boolean);
-  const spotlightBook = ourBooksById[SPOTLIGHT_ID] || null;
 
   const featuredBooks = PRODUCTS.filter(p => p.category !== 'ours');
 
@@ -569,18 +563,8 @@ function renderProducts() {
     groups.push(featuredBooks.slice(i * groupSize, (i + 1) * groupSize));
   }
 
-  if (ourSection) ourSection.style.display = (ourSwiperBooks.length || spotlightBook) ? '' : 'none';
+  if (ourSection) ourSection.style.display = ourSwiperBooks.length ? '' : 'none';
   renderGrid(ourGrid, ourSwiperBooks, 'No books yet — check back soon.');
-
-  if (spotlightEl) {
-    spotlightEl.innerHTML = '';
-    if (spotlightBook) {
-      const card = document.createElement('div');
-      card.className = 'our-book-item our-standout';
-      card.innerHTML = productCardInner(spotlightBook);
-      spotlightEl.appendChild(card);
-    }
-  }
 
   featuredSections.forEach((section, i) => {
     if (!section) return;
