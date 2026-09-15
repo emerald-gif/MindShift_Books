@@ -4843,6 +4843,10 @@ const WHOAMI_ARCHETYPE_LABELS = {
 // Firestore error (including a future quota exhaustion), serve the last
 // good cached value if there is one instead of a blank/broken dashboard.
 const _adminReadCache = new Map(); // key -> { data, expiresAt }
+// Summary is the expensive one (full events + my_order scan) — cached for
+// 5h so normal dashboard reloads all day cost nothing. Force Refresh
+// bypasses this on purpose when someone genuinely needs current numbers.
+const SUMMARY_CACHE_TTL_MS = 5 * 60 * 60 * 1000;
 async function cachedAdminRead(key, ttlMs, fetcher) {
   const hit = _adminReadCache.get(key);
   const now = Date.now();
@@ -4940,9 +4944,29 @@ app.get('/api/admin/summary', async (req, res) => {
   try {
     if (!db) return res.status(500).json({ error: 'Database unavailable' });
     const days = Math.min(Math.max(parseInt(req.query.days, 10) || 30, 1), 365);
+    const cacheKey = `summary:${days}`;
 
-    const payload = await cachedAdminRead(`summary:${days}`, 10 * 60 * 1000, () => buildAdminSummary(days));
-    return res.json(payload);
+    // ?force=1 — the dashboard's "Force Refresh" button. Bypasses the 5h
+    // cache on purpose. Guarded server-side (not just by the client's own
+    // 30s button cooldown) so a bypassed/duplicated client can't force a
+    // real Firestore scan more than once every 30s for the same range —
+    // multiple tabs or a direct API call included.
+    if (req.query.force === '1') {
+      const hit = _adminReadCache.get(cacheKey);
+      const lastFetchedAt = hit ? hit.expiresAt - SUMMARY_CACHE_TTL_MS : 0;
+      if (Date.now() - lastFetchedAt > 30 * 1000) {
+        _adminReadCache.delete(cacheKey);
+      }
+    }
+
+    const payload = await cachedAdminRead(cacheKey, SUMMARY_CACHE_TTL_MS, () => buildAdminSummary(days));
+    // So the dashboard's countdown reflects the REAL age of the data (not
+    // just "when did I get a response") — matters when a force-refresh
+    // click gets silently declined by the 30s guard above and the client
+    // is actually still looking at slightly-older cached numbers.
+    const cacheEntry = _adminReadCache.get(cacheKey);
+    const cachedAt = cacheEntry ? cacheEntry.expiresAt - SUMMARY_CACHE_TTL_MS : Date.now();
+    return res.json({ ...payload, _meta: { cachedAt, ttlMs: SUMMARY_CACHE_TTL_MS } });
   } catch (err) {
     console.error('/api/admin/summary error', err);
     return res.status(500).json({ error: 'Could not load stats' });
