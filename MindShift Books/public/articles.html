@@ -1513,19 +1513,41 @@ async function renderSuggestedAccounts(container){
 }
 
 let _dismissedUids = new Set();
+
+// Cached set of uids the signed-in user already follows, used as a safety
+// net by BOTH suggestion lists ("People you might like" and "People to
+// follow") so an already-followed person can't resurface just because a
+// caller forgot to pass excludeUids — which is exactly what was happening
+// on the For You tab's row (loadPtfRow('forYou') was called with none).
+// Tapping Follow on someone you already follow was then hitting Firestore
+// rules that only allow *creating* a follows/{id} doc, not overwriting an
+// existing one — surfacing as the generic "Could not update — try again"
+// toast. Filtering them out here removes the button entirely, so that
+// path can't be hit from this row again.
+let _myFollowingCache = null; // Set|null — null means "not fetched yet"
+async function getMyFollowingUids(){
+  if(!currentUser) return new Set();
+  if(_myFollowingCache) return _myFollowingCache;
+  try{
+    const snap = await getDocs(query(collection(db,'follows'), where('followerId','==',currentUser.uid)));
+    _myFollowingCache = new Set(snap.docs.map(d=>d.data().followingId).filter(Boolean));
+  }catch(e){ _myFollowingCache = new Set(); }
+  return _myFollowingCache;
+}
 async function loadSugList(excludeUids=[]){
   const list=document.getElementById('suggestedList');
   if(!list) return;
   try{
+    const myFollowing = await getMyFollowingUids();
     let q; const cat=userCategories[0];
     if(cat){ q=query(collection(db,'users'),where('categories','array-contains',cat),limit(10)); }
     else    { q=query(collection(db,'users'),limit(10)); }
     const snap=await getDocs(q);
     let users=snap.docs.map(d=>({uid:d.id,...d.data()}))
-      .filter(u=>u.uid!==currentUser?.uid && !_dismissedUids.has(u.uid) && !excludeUids.includes(u.uid));
+      .filter(u=>u.uid!==currentUser?.uid && !_dismissedUids.has(u.uid) && !excludeUids.includes(u.uid) && !myFollowing.has(u.uid));
     if(!users.length && cat){
       const fb=await getDocs(query(collection(db,'users'),limit(10)));
-      users=fb.docs.map(d=>({uid:d.id,...d.data()})).filter(u=>u.uid!==currentUser?.uid && !_dismissedUids.has(u.uid));
+      users=fb.docs.map(d=>({uid:d.id,...d.data()})).filter(u=>u.uid!==currentUser?.uid && !_dismissedUids.has(u.uid) && !myFollowing.has(u.uid));
     }
     renderSugList(users, list);
   }catch(e){ if(list) list.innerHTML=`<div style="padding:16px;text-align:center;color:#9ca3af;font-size:13px">Couldn't load suggestions right now.</div>`; }
@@ -1571,6 +1593,11 @@ window.toggleSugFollow=async function(uid,name){
       notif.notifyFollow(uid);
     }
     toast(wasFollowing?`Unfollowed ${name}`:`Following ${name} ✅`);
+    // Keep the cached follow set in sync so this uid can't resurface in
+    // either suggestion list later in the same session without a refetch.
+    if(_myFollowingCache){
+      if(wasFollowing) _myFollowingCache.delete(uid); else _myFollowingCache.add(uid);
+    }
     // On follow: dismiss every card for this uid (vertical list + horizontal row)
     // so they never reappear in suggestions on re-render
     if(!wasFollowing){
@@ -1610,15 +1637,16 @@ async function loadPtfRow(idSuffix, excludeUids=[]){
   const wrap = document.getElementById(`ptfWrap-${idSuffix}`);
   if(!scroll) return;
   try{
+    const myFollowing = await getMyFollowingUids();
     let q; const cat=userCategories[0];
     if(cat){ q=query(collection(db,'users'),where('categories','array-contains',cat),limit(12)); }
     else    { q=query(collection(db,'users'),limit(12)); }
     const snap=await getDocs(q);
     let users=snap.docs.map(d=>({uid:d.id,...d.data()}))
-      .filter(u=>u.uid!==currentUser?.uid && !_ptfDismissed.has(u.uid) && !excludeUids.includes(u.uid));
+      .filter(u=>u.uid!==currentUser?.uid && !_ptfDismissed.has(u.uid) && !excludeUids.includes(u.uid) && !myFollowing.has(u.uid));
     if(!users.length && cat){
       const fb=await getDocs(query(collection(db,'users'),limit(12)));
-      users=fb.docs.map(d=>({uid:d.id,...d.data()})).filter(u=>u.uid!==currentUser?.uid && !_ptfDismissed.has(u.uid) && !excludeUids.includes(u.uid));
+      users=fb.docs.map(d=>({uid:d.id,...d.data()})).filter(u=>u.uid!==currentUser?.uid && !_ptfDismissed.has(u.uid) && !excludeUids.includes(u.uid) && !myFollowing.has(u.uid));
     }
     if(!users.length){ if(wrap) wrap.style.display='none'; return; }
     if(wrap) wrap.style.display='';
