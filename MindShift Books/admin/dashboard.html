@@ -388,7 +388,10 @@
       <div id="quotaSub" style="font-size:0.72rem;color:var(--muted);margin-top:6px;"></div>
     </div>
 
-    <div class="group-title"><span class="h2-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.8"/></svg></span>Store Overview</div>
+    <div class="group-title" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+      <span><span class="h2-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.8"/></svg></span>Store Overview</span>
+      <span id="summaryFreshness" style="font-size:0.72rem;font-weight:600;color:var(--muted);display:flex;align-items:center;gap:8px;"></span>
+    </div>
     <div class="totals">
       <div class="stat-card"><span class="icon-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"/><path d="M4.5 20a7.5 7.5 0 0115 0"/></svg></span><div class="label">Registered Users</div><div class="value" id="totalUsersCount">0</div></div>
       <div class="stat-card"><span class="icon-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.7"/></svg></span><div class="label">Page Views</div><div class="value" id="totalPageviews">0</div></div>
@@ -1148,13 +1151,17 @@
     tbody.innerHTML = rows.map(r => `<tr><td>${esc(r[labelKey])}</td><td class="num">${r[valueKey]}</td></tr>`).join('');
   }
 
-  async function loadStats() {
+  async function loadStats(force) {
+    // A plain reload/range-change always serves the 5h cache when it's
+    // still fresh (costs nothing). force=true is only ever sent by the
+    // "Force Refresh" button click below.
     loadingWrap.style.display = 'block';
     loadingWrap.textContent = 'Loading stats…';
     content.style.display = 'none';
     try {
       const days = rangeSelect.value;
-      const res = await fetch(`/api/admin/summary?days=${days}`);
+      const url = `/api/admin/summary?days=${days}` + (force ? '&force=1' : '');
+      const res = await fetch(url);
       if (res.status === 401) { window.location.href = '/admin/login'; return; }
       if (!res.ok) throw new Error('Request failed: ' + res.status);
       const data = await res.json();
@@ -1189,13 +1196,62 @@
       loadingWrap.style.display = 'none';
       content.style.display = 'block';
       content.dataset.loaded = 'true';
+      // Server tells us the REAL age of this data (data._meta.cachedAt) —
+      // not just "when did this response arrive" — so the countdown stays
+      // accurate even when a Force Refresh click got declined server-side
+      // by the 30s cooldown guard and we're actually still on older data.
+      if (data._meta) {
+        lastSummaryLoadedAt = data._meta.cachedAt;
+        summaryTtlMs = data._meta.ttlMs;
+      }
     } catch (err) {
       loadingWrap.innerHTML = `<div class="error-box">Could not load stats.<br>${esc(err && err.message)}</div>`;
     }
   }
 
-  rangeSelect.addEventListener('change', loadStats);
-  loadStats();
+  // ── Overview freshness countdown + Force Refresh ─────────────────────
+  // Passive: reloading/switching ranges any number of times within the
+  // cache window costs nothing — server just serves the same cached
+  // answer. After the countdown hits zero, the NEXT load auto-refreshes
+  // on its own (normal cache expiry, no click needed). The Force Refresh
+  // button is there for whenever you want truly current numbers before
+  // that — it costs one real read and restarts the countdown. It has a
+  // 30s cooldown (client AND server-enforced) purely to stop an
+  // accidental double-click from firing two reads back to back.
+  let lastSummaryLoadedAt = null;
+  let summaryTtlMs = 5 * 60 * 60 * 1000; // fallback; real value comes from the server each load
+  let forceRefreshCooldownUntil = 0;
+  function tickSummaryFreshness() {
+    const el = document.getElementById('summaryFreshness');
+    if (!el || lastSummaryLoadedAt === null) return;
+    const remainingMs = summaryTtlMs - (Date.now() - lastSummaryLoadedAt);
+    const h = Math.max(0, Math.floor(remainingMs / 3600000));
+    const m = Math.max(0, Math.floor((remainingMs % 3600000) / 60000));
+    const label = remainingMs > 0
+      ? (h > 0 ? `Next auto-refresh in ${h}h ${m}m` : `Next auto-refresh in ${m}m`)
+      : `Refreshing…`;
+    const onCooldown = Date.now() < forceRefreshCooldownUntil;
+    const cooldownSecs = Math.ceil((forceRefreshCooldownUntil - Date.now()) / 1000);
+    el.innerHTML = `${label} &nbsp;·&nbsp; ` +
+      (onCooldown
+        ? `<span style="color:#94a3b8;">Force refresh (${cooldownSecs}s)</span>`
+        : `<a href="#" id="summaryForceRefresh" style="color:var(--indigo);font-weight:700;">Force refresh</a>`);
+    if (!onCooldown) {
+      const link = document.getElementById('summaryForceRefresh');
+      if (link) link.onclick = (e) => {
+        e.preventDefault();
+        forceRefreshCooldownUntil = Date.now() + 30 * 1000;
+        loadStats(true);
+      };
+    }
+    // If the countdown reached zero, the cache has naturally expired —
+    // the very next normal loadStats() call (this reload, or the next
+    // page open) already gets fresh data for free, no force needed.
+  }
+  setInterval(tickSummaryFreshness, 1000);
+
+  rangeSelect.addEventListener('change', () => loadStats(false));
+  loadStats(false);
 
   // ── Firestore free-tier quota widget — independent of the date-range
   // selector, checks Cloud Monitoring (not Firestore itself) so viewing
