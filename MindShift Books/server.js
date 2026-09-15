@@ -1585,6 +1585,56 @@ This isn't a book about becoming a different person. It's about getting unstuck 
 BROKE. CONFUSED. STILL TRYING. THAT'S ENOUGH TO START.`
   },
 
+  'when-god-feels-silent': {
+    id: 'when-god-feels-silent',
+    title: 'When God Feels Silent',
+    priceUSD: null,
+    priceNGN: 1500,
+    originalPriceNGN: 2000,
+    coverPath: 'wgfs.jpg',
+    pdfPath: 'public/files/When_God_Feels_Silent.pdf',
+    previewUrl: '/wgfs-preview',
+    reviewImages: [], // no reviews yet, add later
+    category: 'ours',
+    author: 'MindShift Books',
+    genre: 'Faith & Spirituality',
+    language: 'English',
+    pages: 24,
+    description: `WHEN GOD FEELS SILENT
+
+A Companion For The Seasons When Prayer Hits The Ceiling And Heaven Feels Far
+
+There is a specific kind of pain that doesn't come from what God has said, but from what He hasn't. You prayed. You waited. And then — nothing. No verse that leapt off the page. No word from a friend that felt like it was meant for you. Just the quiet.
+
+When God Feels Silent will not try to explain your particular silence away. It isn't a formula, and this ache doesn't resolve in five steps. What it offers instead is company — Scripture's own record of people who waited, grieved, doubted, and stayed anyway — and a handful of small, honest practices for staying close to God in a season that doesn't come with a finish line.
+
+Each chapter follows the same shape: a real ache named plainly, a table clearing away common misunderstandings, a story from Scripture worth sitting with, a short reflection, and a small close — one verse, one prayer — for today specifically, not for the whole season at once.
+
+Inside, you'll sit with:
+
+When Heaven Feels Quiet — the difference between God's absence and God's silence
+The Grief That Doesn't Explain Itself — why not every loss resolves into a tidy lesson
+The Prayer That Never Got An Answer — what to do with a prayer that's been open for years
+When Doubt Feels Like Betrayal — the difference between doubt and unbelief
+The Company Of The Waiting — David, Hannah, and Joseph's long, undocumented seasons of waiting
+Comparing Your Silence To Someone Else's Noise — what a public testimony usually leaves out
+What Silence Is Not — clearing away punishment, abandonment, and disqualification
+Learning To Stay — four small, repeatable practices for a season with no end date
+
+Plus a one-page appendix of verses for hard days, so you always have somewhere to turn without hunting through chapters.
+
+This Book Is For You If...
+
+You're in a season where prayer feels like it's hitting a ceiling.
+Grief hasn't resolved into anything tidy.
+Doubt has started to feel like betrayal.
+God — who used to feel close — has started to feel quiet.
+
+This isn't a book about making the silence make sense today. You are not asked to resolve it. You are only asked to stay while it lasts.
+
+YOU ARE NOT ALONE IN THE QUIET.`
+  },
+
   // ---------------- FEATURED BOOKS BY OTHER AUTHORS ----------------
   'mindshift-101': {
     id: 'mindshift-101',
@@ -4250,6 +4300,10 @@ app.get('/mmg-preview', (req, res) => {
 
 app.get('/tda-preview', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'tda-preview.html'));
+});
+
+app.get('/wgfs-preview', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'wgfs-preview.html'));
 });
 
 app.get('/challenge', (req, res) => {
