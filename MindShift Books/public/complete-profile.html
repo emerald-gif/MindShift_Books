@@ -101,8 +101,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 <div class="reward-teaser" id="rewardTeaser">
   <div class="reward-teaser-emoji">🎁</div>
   <div>
-    <div class="reward-teaser-title">Get ₦1,000 free</div>
-    <div class="reward-teaser-sub">Finish the checklist below to unlock it</div>
+    <div class="reward-teaser-title">Get ₦2,000 free + Founding Creator badge</div>
+    <div class="reward-teaser-sub">Finish the checklist below to unlock both</div>
   </div>
 </div>
 
@@ -127,6 +127,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   <h3 id="finishTitle">You're all set!</h3>
   <p id="finishSub">Your profile is complete and ready for the community.</p>
   <button class="finish-cta" id="finishCta" style="display:none">Go to Bookstore</button>
+  <div id="finishBadgeLink" style="display:none;margin-top:10px">
+    <a href="/founding-creator" style="color:#fff;font-size:12.5px;font-weight:700;text-decoration:underline">View your Founding Creator badge →</a>
+  </div>
 </div>
 
 <script type="module">
@@ -251,10 +254,11 @@ async function claimVoucherAndReveal(user){
     });
     const data = await resp.json();
     if(resp.ok && data.ok && data.voucher){
-      document.getElementById('finishTitle').textContent = 'You\u2019ve got \u20a61,000 free! \ud83c\udf89';
-      document.getElementById('finishSub').textContent = 'It\u2019s a voucher for your next ebook \u2014 already applied, ready whenever you check out.';
+      document.getElementById('finishTitle').textContent = 'You\u2019ve got \u20a62,000 free + a badge! \ud83c\udf89';
+      document.getElementById('finishSub').textContent = 'A voucher for your next ebook (already applied) plus your Founding Creator badge \u2014 both are live on your profile now.';
       cta.style.display = 'inline-block';
       cta.onclick = () => location.href = '/books';
+      document.getElementById('finishBadgeLink').style.display = 'block';
     } else {
       // All 4 steps genuinely done but the server disagreed (e.g. a stale
       // client-side read) — still a nice moment, just without the reveal.

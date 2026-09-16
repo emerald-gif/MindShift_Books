@@ -273,6 +273,38 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
   width:16px;height:16px;border-radius:50%;background:var(--g);flex-shrink:0;
   box-shadow:0 1px 6px rgba(37,99,235,.35)}
 .vbadge svg{width:9px;height:9px;fill:none;stroke:#fff;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+
+/* Founding Creator badge chip + drawer */
+.founder-badge-wrap{margin:2px 0 4px}
+.founder-badge-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px 6px 8px;border-radius:99px;
+  background:linear-gradient(90deg,#1d4ed8,#3b82f6);border:none;cursor:pointer;font-family:inherit;
+  -webkit-tap-highlight-color:transparent}
+.founder-badge-chip .fb-icon{width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,.18);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
+.founder-badge-chip .fb-icon img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.founder-badge-chip .fb-label{font-size:12.5px;font-weight:800;color:#fff;white-space:nowrap}
+.founder-badge-chip.faded{background:#e5e7eb;opacity:.6;filter:grayscale(1)}
+.founder-badge-chip.faded .fb-label{color:#374151}
+.founder-badge-chip.faded .fb-icon{background:rgba(0,0,0,.08)}
+.founder-badge-chip.faded .fb-icon svg{stroke:#374151}
+
+.fb-drawer-overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:400;display:none;
+  align-items:flex-end;justify-content:center}
+.fb-drawer-overlay.show{display:flex}
+.fb-drawer{width:100%;max-width:480px;background:#fff;border-radius:20px 20px 0 0;padding:10px 20px 26px;
+  animation:fbDrawerUp .25s cubic-bezier(.34,1.56,.64,1)}
+@keyframes fbDrawerUp{0%{transform:translateY(24px);opacity:0}100%{transform:translateY(0);opacity:1}}
+.fb-drawer-handle{width:36px;height:4px;border-radius:99px;background:var(--border,#e5e7eb);margin:6px auto 16px}
+.fb-drawer-head{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.fb-drawer-icon{width:42px;height:42px;border-radius:50%;background:linear-gradient(90deg,#1d4ed8,#3b82f6);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
+.fb-drawer-icon.faded{background:#e5e7eb;filter:grayscale(1)}
+.fb-drawer-icon img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.fb-drawer-title{font-size:16px;font-weight:900;color:#0f172a}
+.fb-drawer-sub{font-size:12.5px;color:#6b7280;margin-top:2px;line-height:1.4}
+.fb-drawer-manage{width:100%;margin-top:16px;padding:13px;border-radius:12px;border:none;
+  background:linear-gradient(90deg,#4f46e5,#06b6d4);color:#fff;font-size:14px;font-weight:800;
+  font-family:inherit;cursor:pointer}
 .acard-author{display:flex;align-items:center;gap:7px;margin-bottom:7px;width:fit-content;border-radius:6px;padding:2px 0}
 .acard-av{width:24px;height:24px;border-radius:50%;object-fit:cover;flex-shrink:0;background:var(--g);border:1.5px solid var(--border)}
 .acard-author-name{font-size:12.5px;font-weight:700;color:var(--txt)}
@@ -532,7 +564,7 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
     </div>
     <div class="setup-banner-txt">
       <div class="setup-banner-title">Finish setting up your profile</div>
-      <div class="setup-banner-sub" id="setupBannerSub">Complete these steps to get ₦1,000 free</div>
+      <div class="setup-banner-sub" id="setupBannerSub">Complete these steps to get ₦2,000 free + a badge</div>
     </div>
     <div class="setup-banner-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
   </button>
@@ -543,6 +575,7 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
     <span id="profileLocationText"></span>
   </div>
   <div id="profileContact" class="profile-location" style="display:none;gap:14px"></div>
+  <div id="founderBadgeWrap" class="founder-badge-wrap" style="display:none"></div>
   <div id="profileSocialLinks" class="social-links-row" style="display:none"></div>
   <!-- CTA buttons row — populated by JS -->
   <div class="profile-cta-row" id="profileCta"></div>
@@ -1091,7 +1124,40 @@ function renderSetupBanner(){
   const labels = ['your photo, cover, bio & interests','following 10 creators','your first post or article','liking 10 posts/articles'];
   const remaining = labels.filter((_,i)=>!steps[i]);
   document.getElementById('setupBannerSub').textContent =
-    remaining.length === 1 ? `Just ${remaining[0]} left to get ₦1,000 free` : `${4 - doneCount} steps left to get ₦1,000 free`;
+    remaining.length === 1 ? `Just ${remaining[0]} left to get ₦2,000 free + a badge` : `${4 - doneCount} steps left to get ₦2,000 free + a badge`;
+}
+
+// Founding Creator badge chip — full color and visible to everyone once
+// active. Once faded (missed a week), it's hidden from visitors entirely
+// and only the owner sees it, faded, as a nudge to hit this week's target.
+// A permanently 'lost' badge (or no badge at all) renders nothing.
+function renderFounderBadge(){
+  const wrap = document.getElementById('founderBadgeWrap');
+  if(!wrap) return;
+  const fc = profileData.foundingCreator;
+  if(!fc || !fc.status || fc.status === 'lost' || (fc.status === 'faded' && !isOwner)){
+    wrap.style.display = 'none';
+    wrap.innerHTML = '';
+    return;
+  }
+  const faded = fc.status === 'faded';
+  wrap.style.display = 'block';
+  wrap.innerHTML = `
+    <button type="button" class="founder-badge-chip${faded ? ' faded' : ''}" onclick="openFounderDrawer()">
+      <span class="fb-icon"><img src="/fcbadge.jpg" alt="Founding Creator badge"></span>
+      <span class="fb-label">Founding Creator</span>
+    </button>`;
+}
+function openFounderDrawer(){
+  const fc = profileData.foundingCreator;
+  if(!fc) return;
+  const faded = fc.status === 'faded';
+  document.getElementById('fbDrawerIcon').classList.toggle('faded', faded);
+  document.getElementById('fbDrawerSub').textContent = faded
+    ? (isOwner ? "You missed last week's target — hit this week's to keep it." : 'Founding Creator')
+    : 'Earned for completing profile setup and staying active weekly.';
+  document.getElementById('fbDrawerManageBtn').style.display = isOwner ? 'block' : 'none';
+  document.getElementById('fbDrawerOverlay').classList.add('show');
 }
 
 // Fires the first time this account reaches 4/4 — on whichever page notices
@@ -1130,6 +1196,7 @@ document.getElementById('celebrateOverlay')?.addEventListener('click', (e) => {
   if(e.target.id === 'celebrateOverlay') hideCelebration();
 });
 document.getElementById('celebrateCta')?.addEventListener('click', () => { location.href = '/books'; });
+document.getElementById('celebrateBadgeCta')?.addEventListener('click', () => { location.href = '/founding-creator'; });
 
 /* ── RENDER HEADER ── */
 function renderProfileHeader(){
@@ -1194,6 +1261,7 @@ function renderProfileHeader(){
     contactWrap.innerHTML = parts.join('') + (isOwner && !profileData.contactVisible ? `<span style="color:var(--mute);font-size:12px;font-style:italic">(only visible to you)</span>` : '');
     contactWrap.style.display='flex';
   }
+  renderFounderBadge();
   // social links
   const socialWrap = document.getElementById('profileSocialLinks');
   const savedSocials = profileData.socialLinks || {};
@@ -2676,10 +2744,34 @@ window.showToast = function(msg){
     <div class="celebrate-confetti">✨ 🎊 ✨ 🎊 ✨ 🎊 ✨ 🎊 ✨</div>
     <div class="celebrate-emoji">🎁</div>
     <h3>You completed it!</h3>
-    <p>Your profile is all set — and you've got <b>₦1,000 free</b> for your next ebook.</p>
+    <p>Your profile is all set — you've got <b>₦2,000 free</b> for your next ebook, plus your <b>Founding Creator badge</b> is live on your profile.</p>
     <button type="button" class="celebrate-cta" id="celebrateCta">Visit Bookstore</button>
+    <button type="button" class="celebrate-cta" id="celebrateBadgeCta" style="background:transparent;color:#fff;text-decoration:underline;box-shadow:none;margin-top:4px">View my badge</button>
   </div>
 </div>
+
+<!-- Founding Creator badge drawer — tap the badge chip to open, "Manage"
+     takes the owner to /founding-creator for the full requirements/progress/tips screen. -->
+<div class="fb-drawer-overlay" id="fbDrawerOverlay" aria-hidden="true">
+  <div class="fb-drawer">
+    <div class="fb-drawer-handle"></div>
+    <div class="fb-drawer-head">
+      <div class="fb-drawer-icon" id="fbDrawerIcon">
+        <img src="/fcbadge.jpg" alt="Founding Creator badge">
+      </div>
+      <div>
+        <div class="fb-drawer-title" id="fbDrawerTitle">Founding Creator</div>
+        <div class="fb-drawer-sub" id="fbDrawerSub">Earned for completing your profile setup.</div>
+      </div>
+    </div>
+    <button type="button" class="fb-drawer-manage" id="fbDrawerManageBtn" onclick="location.href='/founding-creator'">Manage</button>
+  </div>
+</div>
+<script>
+document.getElementById('fbDrawerOverlay')?.addEventListener('click', (e) => {
+  if(e.target.id === 'fbDrawerOverlay') e.currentTarget.classList.remove('show');
+});
+</script>
 
 <!-- Shared MindShift account nav (renders the acct-nav-slot in the header) -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
