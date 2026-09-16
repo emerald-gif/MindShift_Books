@@ -5,7 +5,8 @@ const path = require('path');
 const fetch = require('node-fetch');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const admin = require('firebase-admin');
+// firebase-admin itself is required once, inside ./server/shared.js — every
+// file (including this one) gets the already-initialized `admin` from there.
 const { MetricServiceClient } = require('@google-cloud/monitoring');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
@@ -253,33 +254,19 @@ app.use(express.static(path.join(__dirname, 'public'), {
   }
 }));
 
-// Firebase admin init (SERVICE_ACCOUNT_JSON or ADC)
-try {
-  if (process.env.SERVICE_ACCOUNT_JSON) {
-    const serviceAccount = JSON.parse(process.env.SERVICE_ACCOUNT_JSON);
-    admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
-    console.log('firebase-admin initialized from SERVICE_ACCOUNT_JSON, project_id =', serviceAccount.project_id);
-  } else {
-    admin.initializeApp();
-    console.log('firebase-admin initialized from ADC/default credentials');
-  }
-} catch (e) {
-  console.error('firebase-admin init FAILED:', e.message || e);
-  console.error('Check that SERVICE_ACCOUNT_JSON is valid JSON with real newlines in private_key, and matches the mindshiftbooks-c4451 project.');
-}
-
-// Optionally target a non-default Firestore database (e.g. a Standard-edition
-// database created alongside an Enterprise-edition "(default)" one). Leave
-// FIRESTORE_DATABASE_ID unset to use whatever Firestore considers "(default)".
-const FIRESTORE_DATABASE_ID = process.env.FIRESTORE_DATABASE_ID || null;
-const db = admin.apps.length
-  ? (FIRESTORE_DATABASE_ID
-      ? require('firebase-admin/firestore').getFirestore(admin.app(), FIRESTORE_DATABASE_ID)
-      : admin.firestore())
-  : null;
-if (FIRESTORE_DATABASE_ID) {
-  console.log('Firestore targeting non-default database:', FIRESTORE_DATABASE_ID);
-}
+// Firebase admin, Firestore db, and the rest of the shared core now live in
+// ./server/shared.js — everything below just pulls what it needs from
+// there. Affiliate domain routes have moved to ./server/affiliate.js.
+const shared = require('./server/shared');
+const {
+  admin, db,
+  BREVO_API_KEY, BREVO_SENDER_NAME, BREVO_SENDER_EMAIL, PUBLIC_SITE_URL,
+  CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET,
+  extractImageBuffer, uploadImageToCloudinary, uploadBannerImageToCloudinary,
+  requireUser,
+  lagosNow, nextMondayISO, AFFILIATE_MIN_PAYOUT,
+  _adminReadCache
+} = shared;
 
 // Paystack / email config
 const PAYSTACK_BASE = 'https://api.paystack.co';
@@ -287,20 +274,19 @@ const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || null;
 const PAYSTACK_PUBLIC_KEY = process.env.PAYSTACK_PUBLIC_KEY || null;
 const PUBLIC_PDF_URL = process.env.PUBLIC_PDF_URL || null;
 
-// Brevo (formerly Sendinblue) transactional email config
-const BREVO_API_KEY = process.env.BREVO_API_KEY || null; // set this in your environment
+// Brevo (formerly Sendinblue) transactional email config — BREVO_API_KEY,
+// BREVO_SENDER_NAME, BREVO_SENDER_EMAIL, and PUBLIC_SITE_URL now come from
+// ./server/shared.js (destructured above). Only the per-template IDs still
+// used directly in this file stay here; BREVO_BANK_OTP_TEMPLATE_ID and
+// BREVO_AFFILIATE_WELCOME_TEMPLATE_ID moved to ./server/affiliate.js with
+// the routes that use them.
 const BREVO_TEMPLATE_ID = Number(process.env.BREVO_TEMPLATE_ID || 1); // order receipt / delivery email
 const BREVO_DIGEST_TEMPLATE_ID = Number(process.env.BREVO_DIGEST_TEMPLATE_ID || 9); // twice-daily activity digest
 const BREVO_WELCOME_TEMPLATE_ID = Number(process.env.BREVO_WELCOME_TEMPLATE_ID || 2); // new-account welcome email
-const BREVO_BANK_OTP_TEMPLATE_ID = Number(process.env.BREVO_BANK_OTP_TEMPLATE_ID || 3); // bank-details-change verification code
-const BREVO_AFFILIATE_WELCOME_TEMPLATE_ID = Number(process.env.BREVO_AFFILIATE_WELCOME_TEMPLATE_ID || 4); // successful affiliate onboarding
 const BREVO_AFFILIATE_BROADCAST_TEMPLATE_ID = Number(process.env.BREVO_AFFILIATE_BROADCAST_TEMPLATE_ID || 5); // one template for every affiliate announcement — which blocks render depends on which content fields are sent, not on which template
 const BREVO_PROMO_KIT_TEMPLATE_ID = 6; // fixed-content "Wave 1" style promo kit email (slides + copy angles) — see promo-kit-template-6.html — matches Brevo template #6
 const BREVO_CUSTOMER_DISCOUNT_TEMPLATE_ID = 7; // fixed-content "books are discounted right now" announcement to every registered customer — content lives entirely in Brevo template #7, this just triggers the send
 const BREVO_CREATOR_OUTREACH_TEMPLATE_ID = 8; // one template covers every creator-outreach stage (initial ask + 2 follow-ups) — same "one template, which blocks render depends on which params are sent" pattern as templates 5-7. Build the template with conditional blocks keyed on isInitial / isFollowUp1 / isFollowUp2.
-const BREVO_SENDER_NAME = process.env.BREVO_SENDER_NAME || 'Mindshift Books';
-const BREVO_SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'contact@mindshiftbooks.shop';
-const PUBLIC_SITE_URL = process.env.PUBLIC_URL || 'https://mindshiftbooks.shop'; // reused below to build each affiliate's own ?ref= link
 // (AFFILIATE_HOST / AFFILIATE_SITE_URL / AFFILIATE_ECOSYSTEM_PATHS are declared
 // near the top of the file, before the static file server — see the comment there.)
 
@@ -332,85 +318,9 @@ const CREATOR_OUTREACH_BANNER_URL = process.env.CREATOR_OUTREACH_BANNER_URL || '
 // X_BEARER_TOKEN is the App-Only Bearer Token from the X Developer Portal.
 const X_BEARER_TOKEN = process.env.X_BEARER_TOKEN || null;
 
-// Cloudinary — hosts the affiliate broadcast's banner image so the email
-// carries a real https:// link instead of an embedded base64 data URI
-// (Gmail and most other clients strip data: URIs from HTML email, which is
-// why the banner was showing as a broken image). Signed upload: no upload
-// preset needed, just these three values from the Cloudinary dashboard.
-const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || null;
-const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY || null;
-const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET || null;
-
-// Validates that a data URI is really an image, without trusting the MIME
-// label in its `data:image/xyz;base64,` prefix. Client-side compression
-// (image-compress.js) now normalizes uploads from the app's own pickers to
-// a clean image/jpeg, but this stays as a backstop for any caller that
-// bypasses that — e.g. a direct API call — and for images whose source
-// carried an odd or missing MIME type despite being perfectly valid (the
-// original bug reports that led to the client-side fix). Sniffs the actual
-// magic bytes of the decoded payload instead of the label, so a
-// mislabeled-but-real PNG/JPEG/GIF/WEBP still passes, while genuinely
-// non-image data still gets rejected.
-function extractImageBuffer(dataUrl) {
-  const match = /^data:([^;]*);base64,(.+)$/s.exec(String(dataUrl || ''));
-  if (!match) return null;
-  let buf;
-  try { buf = Buffer.from(match[2], 'base64'); } catch (e) { return null; }
-  if (!buf.length) return null;
-
-  const isPng  = buf.length >= 8 && buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4E && buf[3] === 0x47;
-  const isJpeg = buf.length >= 3 && buf[0] === 0xFF && buf[1] === 0xD8 && buf[2] === 0xFF;
-  const isGif  = buf.length >= 6 && buf.toString('ascii', 0, 6).match(/^GIF8[79]a$/);
-  const isWebp = buf.length >= 12 && buf.toString('ascii', 0, 4) === 'RIFF' && buf.toString('ascii', 8, 12) === 'WEBP';
-  if (!isPng && !isJpeg && !isGif && !isWebp) return null;
-
-  return buf;
-}
-
-// Uploads a data:image/...;base64,... string to Cloudinary and returns its
-// hosted https:// URL. Cloudinary's upload API accepts a base64 data URI
-// directly as the `file` param over a plain form POST — no multipart
-// encoding or extra dependency required. The signature is a sha1 of every
-// non-file param (sorted, `key=value` joined by `&`) with the API secret
-// appended, per Cloudinary's signed-upload spec.
-// `folder` defaults to the affiliate-broadcast one this was originally
-// built for — callers uploading for a different feature (article covers,
-// avatars) should pass their own so images land somewhere sensible in the
-// Cloudinary media library instead of all piling into one folder.
-async function uploadImageToCloudinary(dataUrl, folder = 'affiliate-broadcasts') {
-  if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_API_KEY || !CLOUDINARY_API_SECRET) {
-    return { ok: false, error: 'Image hosting is not configured (missing Cloudinary credentials).' };
-  }
-  const timestamp = Math.round(Date.now() / 1000);
-  const signaturePayload = `folder=${folder}&timestamp=${timestamp}${CLOUDINARY_API_SECRET}`;
-  const signature = crypto.createHash('sha1').update(signaturePayload).digest('hex');
-
-  const form = new URLSearchParams();
-  form.set('file', dataUrl);
-  form.set('api_key', CLOUDINARY_API_KEY);
-  form.set('timestamp', String(timestamp));
-  form.set('folder', folder);
-  form.set('signature', signature);
-
-  try {
-    const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/x-www-form-urlencoded' },
-      body: form.toString()
-    });
-    const json = await uploadRes.json().catch(() => null);
-    if (!uploadRes.ok || !json || !json.secure_url) {
-      const msg = (json && json.error && json.error.message) || `Cloudinary ${uploadRes.status}`;
-      return { ok: false, error: msg };
-    }
-    return { ok: true, url: json.secure_url };
-  } catch (e) {
-    return { ok: false, error: (e.message || String(e)).slice(0, 160) };
-  }
-}
-// Old name kept as an alias — the affiliate-broadcast route below still
-// calls it by this name, no need to touch working code just to rename it.
-const uploadBannerImageToCloudinary = uploadImageToCloudinary;
+// Cloudinary config + extractImageBuffer/uploadImageToCloudinary/
+// uploadBannerImageToCloudinary all now come from ./server/shared.js
+// (destructured near the top of this file).
 
 // ---------------- Video posts: direct-to-Cloudinary upload ----------------
 // Per MindShift_Books_Video_Architecture_Specification: video bytes must
@@ -516,69 +426,9 @@ async function sendWelcomeEmail(email, name) {
   }
 }
 
-// Sends the 6-digit bank-details verification code. Not fire-and-forget —
-// the caller needs to know whether it actually went out before telling the
-// affiliate "check your email".
-async function sendBankOtpEmail(email, name, code) {
-  if (!BREVO_API_KEY || !email) return { ok: false, error: 'Email delivery is not configured.' };
-  try {
-    const emailRes = await fetch('https://api.brevo.com/v3/smtp/email', {
-      method: 'POST',
-      headers: {
-        accept: 'application/json',
-        'api-key': BREVO_API_KEY,
-        'content-type': 'application/json'
-      },
-      body: JSON.stringify({
-        sender: { name: BREVO_SENDER_NAME, email: BREVO_SENDER_EMAIL },
-        to: [{ email, name: name || undefined }],
-        templateId: BREVO_BANK_OTP_TEMPLATE_ID,
-        params: { name: name || 'there', code }
-      })
-    });
-    if (!emailRes.ok) {
-      const txt = await emailRes.text().catch(() => null);
-      console.error('Brevo bank-otp email error', emailRes.status, txt);
-      return { ok: false, error: 'Could not send the verification code. Please try again.' };
-    }
-    return { ok: true };
-  } catch (e) {
-    console.warn('Brevo bank-otp email send failed', e.message || e);
-    return { ok: false, error: 'Could not send the verification code. Please try again.' };
-  }
-}
-
-// Fires once, right after a brand-new affiliate record is created (see
-// /api/affiliate/apply). Fire-and-forget, same as the account welcome
-// email — a failed send here shouldn't fail the application itself, since
-// the affiliate record is already live either way.
-async function sendAffiliateWelcomeEmail(email, name, code) {
-  if (!BREVO_API_KEY || !email) return;
-  try {
-    const emailRes = await fetch('https://api.brevo.com/v3/smtp/email', {
-      method: 'POST',
-      headers: {
-        accept: 'application/json',
-        'api-key': BREVO_API_KEY,
-        'content-type': 'application/json'
-      },
-      body: JSON.stringify({
-        sender: { name: BREVO_SENDER_NAME, email: BREVO_SENDER_EMAIL },
-        to: [{ email, name: name || undefined }],
-        templateId: BREVO_AFFILIATE_WELCOME_TEMPLATE_ID,
-        params: { name: name || 'there', code }
-      })
-    });
-    if (!emailRes.ok) {
-      const txt = await emailRes.text().catch(() => null);
-      console.error('Brevo affiliate-welcome email error', emailRes.status, txt);
-    }
-  } catch (e) {
-    console.warn('Brevo affiliate-welcome email send failed', e.message || e);
-  }
-}
-
-// ---------------- Affiliate broadcast (announcements, launches, tips) ----------------
+// requireUser (customer account auth middleware) now lives in
+// ./server/shared.js. sendBankOtpEmail and sendAffiliateWelcomeEmail moved
+// to ./server/affiliate.js with the routes that call them.
 // One Brevo template handles every send. The admin dashboard composes
 // `content` (headline + whichever optional blocks apply) and that's the
 // only thing that changes — no new template, ever, per announcement.
@@ -805,25 +655,8 @@ function requireAdminApi(req, res, next) {
 
 function toKobo(ngn) { return Math.round(Number(ngn) * 100); }
 
-// ── Customer account auth (Firebase ID tokens) ──────────────────────────────
-// The client signs in with Firebase Auth (email/password) and sends the
-// resulting ID token on requests that need to be tied to an account —
-// checkout and anything under /api/my-* or /api/account. Browsing, previews,
-// and reviews stay fully public and never touch this.
-async function requireUser(req, res, next) {
-  try {
-    const header = req.headers.authorization || '';
-    const [scheme, token] = header.split(' ');
-    if (scheme !== 'Bearer' || !token) return res.status(401).json({ error: 'Please sign in to continue.' });
-    const decoded = await admin.auth().verifyIdToken(token);
-    req.uid = decoded.uid;
-    req.userEmail = (decoded.email || '').toLowerCase();
-    req.userName = decoded.name || null;
-    next();
-  } catch (err) {
-    return res.status(401).json({ error: 'Your session has expired. Please sign in again.' });
-  }
-}
+// requireUser (customer account auth middleware, Firebase ID tokens) now
+// lives in ./server/shared.js — destructured near the top of this file.
 
 // ── Cross-subdomain session relay (mindshiftbooks.shop <-> affiliate.mindshiftbooks.shop) ──
 // Firebase Auth persists the signed-in session in this origin's own storage
@@ -913,333 +746,11 @@ app.post('/api/session/clear', requireUser, async (req, res) => {
 });
 
 // ---------------- Affiliate program ----------------
-// One doc per affiliate, keyed by their own referral CODE (not their uid) —
-// that makes "look up an affiliate by the code in a link" a single get()
-// instead of a query, both for click tracking and for signup attribution.
-function makeAffiliateCode(name) {
-  const base = (name || 'FRIEND').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 8) || 'FRIEND';
-  const suffix = crypto.randomInt(100, 999);
-  return `${base}${suffix}`;
-}
-
-async function generateUniqueAffiliateCode(name) {
-  for (let i = 0; i < 8; i++) {
-    const code = makeAffiliateCode(name);
-    const existing = await db.collection('affiliates').doc(code).get();
-    if (!existing.exists) return code;
-  }
-  // Extremely unlikely fallback — fully random code.
-  return `AFF${crypto.randomInt(100000, 999999)}`;
-}
-
-// GET /api/affiliate/code-info/:code — public, no auth. Used only to show
-// "Referred by [Name]" on the signup page — deliberately returns just the
-// display name, nothing else about the affiliate.
-app.get('/api/affiliate/code-info/:code', async (req, res) => {
-  try {
-    if (!db) return res.json({ name: null });
-    const code = String(req.params.code || '').toUpperCase().slice(0, 40);
-    const doc = await db.collection('affiliates').doc(code).get();
-    return res.json({ name: doc.exists ? (doc.data().name || null) : null });
-  } catch (err) {
-    return res.json({ name: null });
-  }
-});
-
-app.post('/api/affiliate/apply', requireUser, async (req, res) => {
-  try {
-    if (!db) return res.status(500).json({ error: 'Database unavailable' });
-    const { phone, bankName, accountNumber, accountName, platform, handle } = req.body || {};
-    if (!phone || !String(phone).trim()) return res.status(400).json({ error: 'Phone number is required.' });
-    if (!bankName || !String(bankName).trim()) return res.status(400).json({ error: 'Bank name is required.' });
-    if (!accountNumber || !String(accountNumber).trim()) return res.status(400).json({ error: 'Account number is required.' });
-    if (!accountName || !String(accountName).trim()) return res.status(400).json({ error: 'Account name is required.' });
-
-    // Already an affiliate? Return their existing profile instead of making
-    // a second one — this endpoint is safe to call more than once.
-    const existingQuery = await db.collection('affiliates').where('uid', '==', req.uid).limit(1).get();
-    if (!existingQuery.empty) {
-      const doc = existingQuery.docs[0];
-      return res.json({ code: doc.id, ...doc.data() });
-    }
-
-    const userDoc = await db.collection('users').doc(req.uid).get();
-    const name = (userDoc.exists && userDoc.data().name) || req.userName || (req.userEmail || '').split('@')[0];
-    const code = await generateUniqueAffiliateCode(name);
-
-    const record = {
-      uid: req.uid,
-      name: name || 'Affiliate',
-      email: req.userEmail,
-      phone: String(phone).trim().slice(0, 30),
-      bank: {
-        bankName: String(bankName).trim().slice(0, 80),
-        accountNumber: String(accountNumber).trim().slice(0, 20),
-        accountName: String(accountName).trim().slice(0, 120)
-      },
-      platform: (platform && String(platform).trim().slice(0, 40)) || 'Other',
-      handle: (handle && String(handle).trim().slice(0, 200)) || null,
-      status: 'active',
-      clicks: 0,
-      signups: 0,
-      sales: 0,
-      earned: 0,
-      paidOut: 0,
-      createdAt: admin.firestore.Timestamp.now()
-    };
-    await db.collection('affiliates').doc(code).set(record);
-    _adminReadCache.delete('affiliates:all'); // new affiliate — don't make admin wait out the cache to see it
-    sendAffiliateWelcomeEmail(req.userEmail, record.name, code);
-    return res.json({ code, ...record });
-  } catch (err) {
-    console.error('/api/affiliate/apply error', err);
-    return res.status(500).json({ error: 'Could not set up your affiliate account. Please try again.' });
-  }
-});
-
-app.get('/api/affiliate/me', requireUser, async (req, res) => {  try {
-    if (!db) return res.status(500).json({ error: 'Database unavailable' });
-    const q = await db.collection('affiliates').where('uid', '==', req.uid).limit(1).get();
-    if (q.empty) return res.json({ affiliate: null });
-    const doc = q.docs[0];
-    const data = doc.data();
-
-    // Recent people this affiliate referred, most recent first.
-    const referredQuery = await db.collection('users').where('referredByCode', '==', doc.id).orderBy('createdAt', 'desc').limit(50).get().catch(() => null);
-    const referred = referredQuery ? referredQuery.docs.map(d => ({
-      name: d.data().name || null,
-      email: d.data().email || null,
-      joinedAt: d.data().createdAt || null
-    })) : [];
-
-    const earned = data.earned || 0;
-    const paidOut = data.paidOut || 0;
-    const pendingPayout = data.pendingPayout || 0;
-    // Available = earned minus anything already paid, minus anything already
-    // queued in an unresolved Monday payout (so it isn't queued twice).
-    const availableBalance = Math.max(0, earned - paidOut - pendingPayout);
-
-    return res.json({
-      affiliate: {
-        code: doc.id,
-        name: data.name, platform: data.platform, handle: data.handle,
-        phone: data.phone || null,
-        bank: data.bank || null,
-        clicks: data.clicks || 0, signups: data.signups || 0, sales: data.sales || 0,
-        earned, paidOut, pendingPayout,
-        outstanding: Math.max(0, earned - paidOut),
-        availableBalance,
-        minPayout: AFFILIATE_MIN_PAYOUT,
-        nextPayoutDate: nextMondayISO(),
-        createdAt: data.createdAt
-      },
-      referred
-    });
-  } catch (err) {
-    console.error('/api/affiliate/me error', err);
-    return res.status(500).json({ error: 'Could not load your affiliate dashboard. Please try again.' });
-  }
-});
-
-// POST /api/affiliate/bank/otp — sends a 6-digit code to the affiliate's own
-// account email, required before /api/affiliate/bank/otp/verify will let
-// them in. Same lock as the update itself: no point sending a code if they
-// can't actually use it yet.
-const BANK_OTP_TTL_MS = 10 * 60 * 1000; // 10 minutes
-const BANK_OTP_RESEND_COOLDOWN_MS = 60 * 1000; // 60 seconds between sends
-const BANK_VERIFIED_TTL_MS = 5 * 60 * 1000; // window to actually save after verifying
-
-function maskEmail(email) {
-  const [user, domain] = String(email || '').split('@');
-  if (!user || !domain) return email || '';
-  const visible = user.slice(0, Math.min(2, user.length));
-  return `${visible}${'*'.repeat(Math.max(1, user.length - visible.length))}@${domain}`;
-}
-
-app.post('/api/affiliate/bank/otp', requireUser, async (req, res) => {
-  try {
-    if (!db) return res.status(500).json({ error: 'Database unavailable' });
-    const q = await db.collection('affiliates').where('uid', '==', req.uid).limit(1).get();
-    if (q.empty) return res.status(404).json({ error: 'You are not registered as an affiliate.' });
-    const doc = q.docs[0];
-    const data = doc.data();
-
-    if ((data.pendingPayout || 0) > 0) {
-      return res.status(409).json({ error: 'You have a payout queued for this Monday, so your bank details are locked until it\'s paid out. You can update them right after.' });
-    }
-
-    const email = data.email || req.userEmail;
-    if (!email) return res.status(400).json({ error: 'No email is on file for this account.' });
-
-    const existingOtp = data.bankOtp;
-    if (existingOtp && existingOtp.requestedAt) {
-      const requestedMs = existingOtp.requestedAt.toMillis ? existingOtp.requestedAt.toMillis() : 0;
-      const waitLeft = BANK_OTP_RESEND_COOLDOWN_MS - (Date.now() - requestedMs);
-      if (waitLeft > 0) {
-        return res.status(429).json({ error: `Please wait ${Math.ceil(waitLeft / 1000)}s before requesting another code.` });
-      }
-    }
-
-    const code = String(crypto.randomInt(100000, 999999));
-    const hash = crypto.createHash('sha256').update(code).digest('hex');
-    const now = admin.firestore.Timestamp.now();
-
-    const sent = await sendBankOtpEmail(email, data.name, code);
-    if (!sent.ok) return res.status(502).json({ error: sent.error });
-
-    // A fresh code request invalidates any previously-granted verified
-    // session too — starting the flow over shouldn't leave an old session
-    // still able to save.
-    await doc.ref.update({
-      bankOtp: {
-        hash,
-        expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + BANK_OTP_TTL_MS),
-        requestedAt: now,
-        attempts: 0
-      },
-      bankVerified: admin.firestore.FieldValue.delete()
-    });
-
-    return res.json({ ok: true, sentTo: maskEmail(email) });
-  } catch (err) {
-    console.error('/api/affiliate/bank/otp error', err);
-    return res.status(500).json({ error: 'Could not send a verification code. Please try again.' });
-  }
-});
-
-// POST /api/affiliate/bank/otp/verify — checks the emailed code. On success
-// it does NOT save anything by itself; it opens a short (5-minute),
-// server-side-only "verified" window during which /api/affiliate/bank will
-// accept a save. This is deliberately a separate step from the save call so
-// the dashboard can show "verify" and "edit details" as two distinct
-// screens — but the security boundary is this endpoint, not the UI: the
-// save endpoint below trusts nothing from the client except that this
-// window is currently open, so there's no client-side path that skips it.
-app.post('/api/affiliate/bank/otp/verify', requireUser, async (req, res) => {
-  try {
-    if (!db) return res.status(500).json({ error: 'Database unavailable' });
-    const { otp } = req.body || {};
-    if (!otp || !String(otp).trim()) return res.status(400).json({ error: 'Enter the verification code sent to your email.' });
-
-    const q = await db.collection('affiliates').where('uid', '==', req.uid).limit(1).get();
-    if (q.empty) return res.status(404).json({ error: 'You are not registered as an affiliate.' });
-    const doc = q.docs[0];
-    const data = doc.data();
-
-    if ((data.pendingPayout || 0) > 0) {
-      return res.status(409).json({ error: 'You have a payout queued for this Monday, so your bank details are locked until it\'s paid out. You can update them right after.' });
-    }
-
-    const bankOtp = data.bankOtp;
-    if (!bankOtp || !bankOtp.hash) {
-      return res.status(400).json({ error: 'Request a verification code first.' });
-    }
-    const expiresMs = bankOtp.expiresAt && bankOtp.expiresAt.toMillis ? bankOtp.expiresAt.toMillis() : 0;
-    if (Date.now() > expiresMs) {
-      return res.status(400).json({ error: 'That code has expired. Please request a new one.' });
-    }
-    if ((bankOtp.attempts || 0) >= 5) {
-      return res.status(429).json({ error: 'Too many incorrect attempts. Please request a new code.' });
-    }
-    const suppliedHash = crypto.createHash('sha256').update(String(otp).trim()).digest('hex');
-    if (suppliedHash !== bankOtp.hash) {
-      await doc.ref.update({ 'bankOtp.attempts': admin.firestore.FieldValue.increment(1) });
-      return res.status(400).json({ error: 'That code is incorrect. Please try again.' });
-    }
-
-    const until = admin.firestore.Timestamp.fromMillis(Date.now() + BANK_VERIFIED_TTL_MS);
-    await doc.ref.update({
-      bankVerified: { until },
-      bankOtp: admin.firestore.FieldValue.delete()
-    });
-
-    return res.json({ ok: true, expiresInSeconds: Math.round(BANK_VERIFIED_TTL_MS / 1000) });
-  } catch (err) {
-    console.error('/api/affiliate/bank/otp/verify error', err);
-    return res.status(500).json({ error: 'Could not verify that code. Please try again.' });
-  }
-});
-
-// PUT /api/affiliate/bank — affiliate updates their own bank account details
-// (used to receive Monday payouts). Does not touch balances.
-// Locked while a payout is queued for them (pendingPayout > 0) — the amount
-// owed was already snapshotted with the old bank details when Monday's
-// batch ran, so editing now would silently desync from what the admin is
-// about to send it to. They can edit again once that payout is marked paid.
-// Also requires an active, server-granted "verified" window from
-// /api/affiliate/bank/otp/verify above — this is checked purely off the
-// affiliate's own doc, never off anything the client sends, so there's no
-// request anyone can craft that skips the emailed code.
-app.put('/api/affiliate/bank', requireUser, async (req, res) => {
-  try {
-    if (!db) return res.status(500).json({ error: 'Database unavailable' });
-    const { bankName, accountName, accountNumber } = req.body || {};
-    if (!bankName || !String(bankName).trim()) return res.status(400).json({ error: 'Bank name is required.' });
-    if (!accountName || !String(accountName).trim()) return res.status(400).json({ error: 'Account name is required.' });
-    if (!accountNumber || !String(accountNumber).trim()) return res.status(400).json({ error: 'Account number is required.' });
-
-    const q = await db.collection('affiliates').where('uid', '==', req.uid).limit(1).get();
-    if (q.empty) return res.status(404).json({ error: 'You are not registered as an affiliate.' });
-    const doc = q.docs[0];
-    const data = doc.data();
-
-    if ((data.pendingPayout || 0) > 0) {
-      return res.status(409).json({ error: 'You have a payout queued for this Monday, so your bank details are locked until it\'s paid out. You can update them right after.' });
-    }
-
-    const verifiedUntilMs = data.bankVerified && data.bankVerified.until && data.bankVerified.until.toMillis
-      ? data.bankVerified.until.toMillis() : 0;
-    if (Date.now() > verifiedUntilMs) {
-      return res.status(401).json({ error: 'Please verify with the code sent to your email first.', needsVerification: true });
-    }
-
-    const bank = {
-      bankName: String(bankName).trim().slice(0, 80),
-      accountName: String(accountName).trim().slice(0, 120),
-      accountNumber: String(accountNumber).trim().slice(0, 20)
-    };
-    // Single-use: the verified window is consumed the moment it's spent on
-    // an actual save, so a second save attempt needs a fresh code again.
-    await doc.ref.update({ bank, bankVerified: admin.firestore.FieldValue.delete() });
-    return res.json({ ok: true, bank });
-  } catch (err) {
-    console.error('/api/affiliate/bank error', err);
-    return res.status(500).json({ error: 'Could not update your bank details. Please try again.' });
-  }
-});
-
-
-
-
-// GET /api/affiliate/payouts — this affiliate's own payout history
-// (every Monday batch they were included in), most recent first.
-app.get('/api/affiliate/payouts', requireUser, async (req, res) => {
-  try {
-    if (!db) return res.status(500).json({ error: 'Database unavailable' });
-    const q = await db.collection('affiliates').where('uid', '==', req.uid).limit(1).get();
-    if (q.empty) return res.json({ payouts: [] });
-    const code = q.docs[0].id;
-    // Filtered + sorted in JS rather than where()+orderBy() on different
-    // fields, so this never needs a manually-created Firestore composite
-    // index — fine at this scale (a handful of payouts per affiliate).
-    const snap = await db.collection('payouts').where('affiliateCode', '==', code).limit(200).get().catch(() => null);
-    const payouts = snap ? snap.docs.map(d => {
-      const p = d.data();
-      return {
-        id: d.id,
-        amount: p.amount || 0,
-        status: p.status || 'pending',
-        createdAt: p.createdAt ? (p.createdAt.toDate ? p.createdAt.toDate().toISOString() : p.createdAt) : null,
-        paidAt: p.paidAt ? (p.paidAt.toDate ? p.paidAt.toDate().toISOString() : p.paidAt) : null,
-        _sort: p.createdAt ? (p.createdAt.toMillis ? p.createdAt.toMillis() : 0) : 0
-      };
-    }).sort((a, b) => b._sort - a._sort).map(({ _sort, ...rest }) => rest) : [];
-    return res.json({ payouts });
-  } catch (err) {
-    console.error('/api/affiliate/payouts error', err);
-    return res.status(500).json({ error: 'Could not load your payout history. Please try again.' });
-  }
-});
+// User-facing affiliate routes (apply, dashboard data, bank-details OTP
+// flow, payout history) now live in ./server/affiliate.js as an Express
+// Router, mounted here. Admin-side affiliate logic (payout generation,
+// the Affiliates tab) stays below for now.
+app.use(require('./server/affiliate'));
 
 /**
  * Get USD -> NGN exchange rate
@@ -2412,26 +1923,10 @@ const TRACK_TYPES = new Set(['home', 'review', 'preview', 'page', 'affiliate_cli
 const AFFILIATE_COMMISSION_RATE = 0.15; // 15% of the actual NGN price paid, "ours" books only
 
 // ---------------- Affiliate payouts (weekly, Monday, manual bank transfer) ----------------
-const AFFILIATE_MIN_PAYOUT = 5000; // ₦5,000 minimum balance to be queued for a Monday payout
+// AFFILIATE_MIN_PAYOUT, lagosNow, and nextMondayISO now come from
+// ./server/shared.js (destructured near the top of this file) — also used
+// by ./server/affiliate.js's dashboard route.
 const PAYOUT_TIMEZONE = 'Africa/Lagos';
-
-// Lagos is UTC+1 year-round (no DST), so this is a fixed offset — no need
-// for a timezone library just to answer "what's 'today' in Lagos right now".
-function lagosNow() {
-  return new Date(Date.now() + 60 * 60 * 1000);
-}
-
-// "Next Monday" label shown on the affiliate dashboard. If it's currently
-// Monday in Lagos, this still points at *next* Monday, since this week's
-// batch (if any) has already been generated by the time anyone reads it.
-function nextMondayISO() {
-  const now = lagosNow();
-  const day = now.getUTCDay(); // 0=Sun..6=Sat, computed against the shifted "Lagos" clock
-  let daysAhead = (8 - day) % 7;
-  if (daysAhead === 0) daysAhead = 7;
-  const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + daysAhead));
-  return next.toISOString().slice(0, 10);
-}
 
 // ISO week key (e.g. "2026-W08") used to make sure the Monday batch job
 // only ever runs once per week, even if the server restarts multiple times
@@ -4896,7 +4391,8 @@ const WHOAMI_ARCHETYPE_LABELS = {
 // admin page loads within the TTL window from re-paying for it. On a
 // Firestore error (including a future quota exhaustion), serve the last
 // good cached value if there is one instead of a blank/broken dashboard.
-const _adminReadCache = new Map(); // key -> { data, expiresAt }
+// _adminReadCache (the Map itself) now comes from ./server/shared.js, so
+// ./server/affiliate.js can invalidate keys too — same object, one source.
 // Summary is the expensive one (full events + my_order scan) — cached for
 // 5h so normal dashboard reloads all day cost nothing. Force Refresh
 // bypasses this on purpose when someone genuinely needs current numbers.
