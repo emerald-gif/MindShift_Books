@@ -2732,6 +2732,142 @@ if (db) {
   setInterval(maybeRunProfileDigest, 60 * 60 * 1000);
 }
 
+// ── Founding Creator weekly evaluation ──────────────────────────────────────
+// No external cron / Render cron service needed — same self-scheduling
+// pattern as the digest above: an hourly tick inside this already-running
+// process checks whether a new tracked week has started (guarded by a
+// Firestore doc so a restart can never double-run, and a missed hour just
+// catches up on the next tick) and, only then, walks every active/faded
+// badge and decides who stays, who fades, and who loses it for good.
+async function runFoundingCreatorWeeklyCycle() {
+  if (!db) return { checked: 0, active: 0, faded: 0, lost: 0 };
+  const now = lagosNow();
+  const thisWeekKey = weekMondayKey(now);
+  const snap = await db.collection('users').where('foundingCreator.status', 'in', ['active', 'faded']).get();
+
+  let checked = 0, active = 0, faded = 0, lost = 0;
+  for (const doc of snap.docs) {
+    const u = doc.data();
+    const fc = u.foundingCreator;
+    checked++;
+    // Someone who earned the badge THIS week (e.g. mid-week, via
+    // claim-profile-voucher) already has lastCheckedWeek === thisWeekKey —
+    // their first tracked week isn't over yet, so leave them alone.
+    if (fc.lastCheckedWeek === thisWeekKey) {
+      if (fc.status === 'active') active++; else faded++;
+      continue;
+    }
+    try {
+      const totals = await currentContentTotals(doc.id);
+      const s = fc.snapshot || { content: 0, views: 0, engagement: 0 };
+      const gained = {
+        content: Math.max(0, totals.content - s.content),
+        views: Math.max(0, totals.views - s.views),
+        engagement: Math.max(0, totals.engagement - s.engagement)
+      };
+      const met = gained.content >= FOUNDING_CREATOR_TARGET.content &&
+                  gained.views >= FOUNDING_CREATOR_TARGET.views &&
+                  gained.engagement >= FOUNDING_CREATOR_TARGET.engagement;
+
+      let newStatus, missedAt;
+      if (fc.status === 'active') {
+        // First miss → one grace week, faded and hidden from other users.
+        newStatus = met ? 'active' : 'faded';
+        missedAt = met ? null : thisWeekKey;
+      } else {
+        // Already faded — meeting the target this week restores it;
+        // missing it a second week running loses it for good.
+        newStatus = met ? 'active' : 'lost';
+        missedAt = met ? null : fc.missedAt;
+      }
+
+      const update = {
+        'foundingCreator.status': newStatus,
+        'foundingCreator.lastCheckedWeek': thisWeekKey,
+        'foundingCreator.missedAt': missedAt
+      };
+      // A lost badge stops being tracked — no reason to keep rolling its
+      // snapshot forward every week after it's gone for good.
+      if (newStatus !== 'lost') {
+        update['foundingCreator.snapshot'] = totals;
+        update['foundingCreator.weekStart'] = admin.firestore.Timestamp.fromDate(now);
+      }
+      await doc.ref.update(update);
+      if (newStatus === 'active') active++; else if (newStatus === 'faded') faded++; else lost++;
+    } catch (err) {
+      console.error('[founding-creator] eval failed for', doc.id, err);
+    }
+  }
+  return { checked, active, faded, lost };
+}
+
+async function maybeRunFoundingCreatorCheck() {
+  if (!db) return;
+  try {
+    const now = lagosNow();
+    const thisWeekKey = weekMondayKey(now);
+    const stateRef = db.collection('meta').doc('foundingCreatorSchedule');
+    const stateDoc = await stateRef.get();
+    const prev = stateDoc.exists ? stateDoc.data() : null;
+    if (prev && prev.lastRunWeek === thisWeekKey) return;
+
+    const result = await runFoundingCreatorWeeklyCycle();
+    await stateRef.set({ lastRunWeek: thisWeekKey, lastRunAt: admin.firestore.Timestamp.now(), lastRunResult: result }, { merge: true });
+    console.log('[founding-creator] weekly run:', thisWeekKey, result);
+  } catch (err) {
+    console.error('[founding-creator] weekly run failed', err);
+  }
+}
+
+if (db) {
+  maybeRunFoundingCreatorCheck();
+  setInterval(maybeRunFoundingCreatorCheck, 60 * 60 * 1000);
+}
+
+// One-time backfill, guarded so it only ever runs once across every deploy/
+// restart: (1) any UNUSED already-claimed voucher still at the old ₦1,000
+// gets bumped to ₦2,000 — a voucher already spent is left alone since it
+// already redeemed its old value; (2) anyone who already meets all 4
+// checklist steps but has no foundingCreator record yet gets the badge
+// granted immediately, starting in Active status, no re-claim needed.
+async function runFoundingCreatorMigration() {
+  if (!db) return;
+  try {
+    const flagRef = db.collection('meta').doc('foundingCreatorMigration');
+    const flagDoc = await flagRef.get();
+    if (flagDoc.exists && flagDoc.data().done) return;
+
+    const snap = await db.collection('users').where('ebookVoucher.claimed', '==', true).get();
+    let voucherBumped = 0, badgesGranted = 0;
+    for (const doc of snap.docs) {
+      const u = doc.data();
+      const updates = {};
+      if (u.ebookVoucher && !u.ebookVoucher.used && u.ebookVoucher.amount === 1000) {
+        updates['ebookVoucher.amount'] = PROFILE_VOUCHER_AMOUNT;
+        voucherBumped++;
+      }
+      if (!u.foundingCreator || !u.foundingCreator.status) {
+        const totals = await currentContentTotals(doc.id);
+        updates.foundingCreator = {
+          status: 'active',
+          earnedAt: admin.firestore.Timestamp.now(),
+          weekStart: admin.firestore.Timestamp.now(),
+          snapshot: totals,
+          lastCheckedWeek: weekMondayKey(lagosNow()),
+          missedAt: null
+        };
+        badgesGranted++;
+      }
+      if (Object.keys(updates).length) await doc.ref.update(updates).catch(err => console.error('[founding-creator] migration write failed for', doc.id, err));
+    }
+    await flagRef.set({ done: true, ranAt: admin.firestore.Timestamp.now(), voucherBumped, badgesGranted }, { merge: true });
+    console.log('[founding-creator] one-time migration complete:', { voucherBumped, badgesGranted });
+  } catch (err) {
+    console.error('[founding-creator] migration failed', err);
+  }
+}
+if (db) runFoundingCreatorMigration();
+
 app.post('/api/track', (req, res) => {
   // Always respond fast; analytics must never slow down or break the page.
   res.status(204).end();
@@ -3071,9 +3207,90 @@ app.post('/api/account/categories', requireUser, async (req, res) => {
 
 // Re-checks the same 4 completion steps server-side (Admin SDK, so it can't
 // be spoofed the way a client-writable field could) and — only the first
-// time all 4 actually pass — grants a one-time ₦1,000 ebook voucher. Safe
-// to call repeatedly: once claimed, it just returns the existing state.
-const PROFILE_VOUCHER_AMOUNT = 1000;
+// time all 4 actually pass — grants a one-time ₦2,000 ebook voucher plus
+// the Founding Creator badge. Safe to call repeatedly: once claimed, it
+// just returns the existing state.
+const PROFILE_VOUCHER_AMOUNT = 2000;
+
+// ── Founding Creator badge ──────────────────────────────────────────────────
+// Earned once, alongside the profile-setup voucher. Kept alive week to week
+// by hitting an activity target; falls out of full color for one grace week
+// if missed, and is permanently lost if that grace week is missed too.
+//
+// Lifecycle on users/{uid}.foundingCreator:
+//   status: 'active' | 'faded' | 'lost'
+//   earnedAt: Timestamp (first time it was granted)
+//   weekStart: Timestamp (Monday 00:00 Lagos time of the week currently being tracked)
+//   snapshot: { content, views, engagement } — lifetime totals as of weekStart
+//   lastCheckedWeek: 'YYYY-MM-DD' (Monday key of the last week actually evaluated)
+//   missedAt: 'YYYY-MM-DD' | null (Monday key of the week that first triggered "faded" — cleared on recovery)
+const FOUNDING_CREATOR_TARGET = { content: 5, views: 50, engagement: 20 };
+
+// Monday-anchored week key (Lagos time), e.g. "2026-09-14" for the week of
+// Mon Sep 14. Same convention as nextMondayISO() in server/shared.js.
+function weekMondayKey(date) {
+  const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  const day = d.getUTCDay(); // 0=Sun..6=Sat
+  const diffToMonday = day === 0 ? -6 : 1 - day;
+  d.setUTCDate(d.getUTCDate() + diffToMonday);
+  return d.toISOString().slice(0, 10);
+}
+
+// Lifetime content/views/engagement across everything a user has authored.
+// Engagement is a flat sum — 1 like = 1 comment = 1 repost = 1 point — so a
+// like-only creator can still hit the weekly target on volume alone, no
+// comment/repost required. Mirrors the field sources already used by
+// /api/admin/content/mindshift-insights (viewCount, commentCount,
+// articleLikes.count, repostCounts.count) so it stays consistent with what
+// creators already see on their own content-insights page.
+async function currentContentTotals(uid) {
+  const [articleSnap, postSnap] = await Promise.all([
+    db.collection('articles').where('authorUid', '==', uid).get(),
+    db.collection('posts').where('authorUid', '==', uid).get()
+  ]);
+  const items = [
+    ...articleSnap.docs.map(d => ({ id: d.id, metaCol: 'articleMeta' })),
+    ...postSnap.docs.map(d => ({ id: d.id, metaCol: 'postMeta' }))
+  ];
+  const content = items.length;
+  if (!content) return { content: 0, views: 0, engagement: 0 };
+
+  const metaRefs = items.map(it => db.collection(it.metaCol).doc(it.id));
+  const likeRefs = items.map(it => db.collection('articleLikes').doc(it.id));
+  const repostRefs = items.map(it => db.collection('repostCounts').doc(it.id));
+  const [metaSnaps, likeSnaps, repostSnaps] = await Promise.all([
+    db.getAll(...metaRefs), db.getAll(...likeRefs), db.getAll(...repostRefs)
+  ]);
+
+  let views = 0, engagement = 0;
+  metaSnaps.forEach((s, i) => {
+    const meta = s.exists ? s.data() : {};
+    const like = likeSnaps[i].exists ? likeSnaps[i].data() : {};
+    const repost = repostSnaps[i].exists ? repostSnaps[i].data() : {};
+    views += meta.viewCount || 0;
+    engagement += (like.count || 0) + (meta.commentCount || 0) + (repost.count || 0);
+  });
+  return { content, views, engagement };
+}
+
+// Grants the badge the first time it's earned (called from
+// claim-profile-voucher, right alongside the voucher itself). No-op if
+// already granted — never resets an existing active/faded/lost state.
+async function grantFoundingCreatorIfNeeded(uid, userRef, userData) {
+  if (userData.foundingCreator && userData.foundingCreator.status) return userData.foundingCreator;
+  const now = lagosNow();
+  const totals = await currentContentTotals(uid);
+  const foundingCreator = {
+    status: 'active',
+    earnedAt: admin.firestore.Timestamp.now(),
+    weekStart: admin.firestore.Timestamp.fromDate(now),
+    snapshot: totals,
+    lastCheckedWeek: weekMondayKey(now),
+    missedAt: null
+  };
+  await userRef.set({ foundingCreator }, { merge: true });
+  return foundingCreator;
+}
 app.post('/api/rewards/claim-profile-voucher', requireUser, async (req, res) => {
   try {
     if (!db) return res.status(500).json({ error: 'Database unavailable' });
@@ -3083,8 +3300,12 @@ app.post('/api/rewards/claim-profile-voucher', requireUser, async (req, res) => 
     const u = userSnap.exists ? userSnap.data() : {};
 
     // Already claimed — idempotent, just report back what they already have.
+    // Still passes through the badge grant below (harmless no-op if already
+    // granted) so an account that claimed the voucher before this badge
+    // existed picks it up the next time this endpoint runs.
     if (u.ebookVoucher && u.ebookVoucher.claimed) {
-      return res.json({ ok: true, alreadyClaimed: true, voucher: u.ebookVoucher });
+      const foundingCreator = await grantFoundingCreatorIfNeeded(uid, userRef, u);
+      return res.json({ ok: true, alreadyClaimed: true, voucher: u.ebookVoucher, foundingCreator });
     }
 
     let hasPhoto = !!u.photo;
@@ -3123,7 +3344,8 @@ app.post('/api/rewards/claim-profile-voucher', requireUser, async (req, res) => 
 
     const voucher = { amount: PROFILE_VOUCHER_AMOUNT, claimed: true, claimedAt: admin.firestore.Timestamp.now(), used: false, usedAt: null, orderId: null };
     await userRef.set({ ebookVoucher: voucher }, { merge: true });
-    return res.json({ ok: true, alreadyClaimed: false, eligible: true, voucher });
+    const foundingCreator = await grantFoundingCreatorIfNeeded(uid, userRef, u);
+    return res.json({ ok: true, alreadyClaimed: false, eligible: true, voucher, foundingCreator });
   } catch (err) {
     console.error('/api/rewards/claim-profile-voucher error', err);
     return res.status(500).json({ error: 'Could not check your voucher eligibility. Please try again.' });
@@ -3156,6 +3378,47 @@ app.get('/api/rewards/voucher-status', requireUser, async (req, res) => {
   } catch (err) {
     console.error('/api/rewards/voucher-status error', err);
     return res.status(500).json({ error: 'Could not load voucher status.' });
+  }
+});
+
+// GET /api/founding-creator/status — powers the /founding-creator detail
+// screen: requirement numbers, this week's live progress (current lifetime
+// totals minus the snapshot taken at the start of the tracked week), and
+// enough state (status/missedAt/weekEnds) for the UI to explain exactly
+// where the user stands. Progress here is computed live on every call —
+// only the weekly cycle below actually advances/resets the snapshot.
+app.get('/api/founding-creator/status', requireUser, async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const uid = req.uid;
+    const snap = await db.collection('users').doc(uid).get();
+    const u = snap.exists ? snap.data() : {};
+    const fc = u.foundingCreator || null;
+    if (!fc || !fc.status) {
+      return res.json({ earned: false, target: FOUNDING_CREATOR_TARGET });
+    }
+
+    const totals = await currentContentTotals(uid);
+    const snapshot = fc.snapshot || { content: 0, views: 0, engagement: 0 };
+    const progress = {
+      content: Math.max(0, totals.content - snapshot.content),
+      views: Math.max(0, totals.views - snapshot.views),
+      engagement: Math.max(0, totals.engagement - snapshot.engagement)
+    };
+    const weekStartMs = fc.weekStart && fc.weekStart.toMillis ? fc.weekStart.toMillis() : Date.now();
+    const weekEndsAt = new Date(weekStartMs + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+    return res.json({
+      earned: true,
+      status: fc.status, // 'active' | 'faded' | 'lost'
+      missedAt: fc.missedAt || null,
+      target: FOUNDING_CREATOR_TARGET,
+      progress,
+      weekEndsAt
+    });
+  } catch (err) {
+    console.error('/api/founding-creator/status error', err);
+    return res.status(500).json({ error: 'Could not load your badge status.' });
   }
 });
 
@@ -3672,7 +3935,7 @@ async function fulfillOrder({ reference, email, buyerName, uid, productIds, ngnA
       `).join('');
 
       const amountPaidDisplay = voucherApplied && ngnAmountPaid === 0
-        ? 'Free (₦1,000 voucher)'
+        ? `Free (₦${Number(voucherAmount || 0).toLocaleString()} voucher)`
         : `₦${Number(ngnAmountPaid).toLocaleString()}`;
 
       const emailPayload = {
