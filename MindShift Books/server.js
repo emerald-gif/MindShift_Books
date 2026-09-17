@@ -2903,6 +2903,55 @@ async function runFoundingCreatorMigration() {
 }
 if (db) runFoundingCreatorMigration();
 
+// One-time only, and separately guarded from the migration above: anyone
+// who already had a Founding Creator badge BEFORE this grace-period logic
+// existed was still judged on the old, unfair mid-week clock — a short
+// first week, or a "faded" status earned while that clock was broken.
+// This folds them into the exact same grace reset new/migrated badges
+// get: back to Active, parked pending, real tracking starting fresh next
+// Monday, same as everyone else. Only runs if the grace window hasn't
+// already closed by the time this deploy goes live; already-'lost'
+// badges are left alone as a separate, permanent state.
+async function realignExistingFoundingCreatorsToGrace() {
+  if (!db) return;
+  try {
+    const flagRef = db.collection('meta').doc('foundingCreatorGraceRealign');
+    const flagDoc = await flagRef.get();
+    if (flagDoc.exists && flagDoc.data().done) return;
+
+    const graceUntilMs = await foundingCreatorGraceUntil();
+    if (!graceUntilMs || lagosNow().getTime() >= graceUntilMs) {
+      // Grace window already closed before this could run — nothing to
+      // realign against. Mark done so this doesn't keep checking forever.
+      await flagRef.set({ done: true, skipped: true, ranAt: admin.firestore.Timestamp.now() }, { merge: true });
+      return;
+    }
+
+    const snap = await db.collection('users').where('foundingCreator.status', 'in', ['active', 'faded']).get();
+    let realigned = 0;
+    for (const doc of snap.docs) {
+      const fc = doc.data().foundingCreator;
+      if (fc.pendingStart) continue; // already on the new grace flow (granted after this deploy)
+      try {
+        await doc.ref.update({
+          'foundingCreator.status': 'active',
+          'foundingCreator.pendingStart': true,
+          'foundingCreator.weekStart': admin.firestore.Timestamp.fromMillis(graceUntilMs),
+          'foundingCreator.snapshot': null,
+          'foundingCreator.lastCheckedWeek': null,
+          'foundingCreator.missedAt': null
+        });
+        realigned++;
+      } catch (err) { console.error('[founding-creator] realign failed for', doc.id, err); }
+    }
+    await flagRef.set({ done: true, ranAt: admin.firestore.Timestamp.now(), realigned }, { merge: true });
+    console.log('[founding-creator] realigned', realigned, 'existing badges into the launch grace period');
+  } catch (err) {
+    console.error('[founding-creator] realign run failed', err);
+  }
+}
+if (db) realignExistingFoundingCreatorsToGrace();
+
 app.post('/api/track', (req, res) => {
   // Always respond fast; analytics must never slow down or break the page.
   res.status(204).end();
