@@ -1,5 +1,5 @@
 // server.js
-// MindShift Books -  Single source of truth for products + Paystack endpoints
+// MindShift Books - Single source of truth for products + Paystack endpoints
 const express = require('express');
 const path = require('path');
 const fetch = require('node-fetch');
@@ -2750,6 +2750,9 @@ async function runFoundingCreatorWeeklyCycle() {
     const u = doc.data();
     const fc = u.foundingCreator;
     checked++;
+    // Still waiting on the launch grace period (see
+    // maybeActivatePendingFoundingCreators) — nothing to evaluate yet.
+    if (fc.pendingStart) { active++; continue; }
     // Someone who earned the badge THIS week (e.g. mid-week, via
     // claim-profile-voucher) already has lastCheckedWeek === thisWeekKey —
     // their first tracked week isn't over yet, so leave them alone.
@@ -2790,7 +2793,7 @@ async function runFoundingCreatorWeeklyCycle() {
       // snapshot forward every week after it's gone for good.
       if (newStatus !== 'lost') {
         update['foundingCreator.snapshot'] = totals;
-        update['foundingCreator.weekStart'] = admin.firestore.Timestamp.fromDate(now);
+        update['foundingCreator.weekStart'] = admin.firestore.Timestamp.fromDate(mondayStartOfWeek(now));
       }
       await doc.ref.update(update);
       if (newStatus === 'active') active++; else if (newStatus === 'faded') faded++; else lost++;
@@ -2819,9 +2822,49 @@ async function maybeRunFoundingCreatorCheck() {
   }
 }
 
+// Runs exactly once, ever: the moment the launch grace period's cutoff
+// Monday actually arrives, every badge still sitting in "pendingStart"
+// gets its real snapshot taken (as of right now, i.e. the actual start of
+// their first tracked week — none of the pre-launch days factor in) and
+// starts counting for real. Guarded by a Firestore flag, same as the
+// migration, so a restart can't re-run it and re-snapshot everyone.
+async function maybeActivatePendingFoundingCreators() {
+  if (!db) return;
+  try {
+    const graceUntilMs = await foundingCreatorGraceUntil();
+    if (!graceUntilMs) return;
+    const now = lagosNow();
+    if (now.getTime() < graceUntilMs) return; // grace period still open
+
+    const graceRef = db.collection('meta').doc('foundingCreatorGrace');
+    const graceDoc = await graceRef.get();
+    if (graceDoc.exists && graceDoc.data().activated) return;
+
+    const snap = await db.collection('users').where('foundingCreator.pendingStart', '==', true).get();
+    let activated = 0;
+    for (const doc of snap.docs) {
+      try {
+        const totals = await currentContentTotals(doc.id);
+        await doc.ref.update({
+          'foundingCreator.pendingStart': false,
+          'foundingCreator.snapshot': totals,
+          'foundingCreator.weekStart': admin.firestore.Timestamp.fromDate(mondayStartOfWeek(now)),
+          'foundingCreator.lastCheckedWeek': weekMondayKey(now)
+        });
+        activated++;
+      } catch (err) { console.error('[founding-creator] activate-pending failed for', doc.id, err); }
+    }
+    await graceRef.set({ activated: true, activatedAt: admin.firestore.Timestamp.now(), activatedCount: activated }, { merge: true });
+    console.log('[founding-creator] launch grace period ended — activated', activated, 'pending badges');
+  } catch (err) {
+    console.error('[founding-creator] activate-pending run failed', err);
+  }
+}
+
 if (db) {
   maybeRunFoundingCreatorCheck();
-  setInterval(maybeRunFoundingCreatorCheck, 60 * 60 * 1000);
+  maybeActivatePendingFoundingCreators();
+  setInterval(() => { maybeRunFoundingCreatorCheck(); maybeActivatePendingFoundingCreators(); }, 60 * 60 * 1000);
 }
 
 // One-time backfill, guarded so it only ever runs once across every deploy/
@@ -2847,15 +2890,7 @@ async function runFoundingCreatorMigration() {
         voucherBumped++;
       }
       if (!u.foundingCreator || !u.foundingCreator.status) {
-        const totals = await currentContentTotals(doc.id);
-        updates.foundingCreator = {
-          status: 'active',
-          earnedAt: admin.firestore.Timestamp.now(),
-          weekStart: admin.firestore.Timestamp.now(),
-          snapshot: totals,
-          lastCheckedWeek: weekMondayKey(lagosNow()),
-          missedAt: null
-        };
+        updates.foundingCreator = await buildFoundingCreatorRecord(doc.id, lagosNow());
         badgesGranted++;
       }
       if (Object.keys(updates).length) await doc.ref.update(updates).catch(err => console.error('[founding-creator] migration write failed for', doc.id, err));
@@ -3226,14 +3261,77 @@ const PROFILE_VOUCHER_AMOUNT = 2000;
 //   missedAt: 'YYYY-MM-DD' | null (Monday key of the week that first triggered "faded" — cleared on recovery)
 const FOUNDING_CREATOR_TARGET = { content: 5, views: 50, engagement: 20 };
 
-// Monday-anchored week key (Lagos time), e.g. "2026-09-14" for the week of
-// Mon Sep 14. Same convention as nextMondayISO() in server/shared.js.
-function weekMondayKey(date) {
+// Monday 00:00 (Lagos time) of the week containing `date` — a real Date,
+// not just the key. Everyone's tracked week snaps to this same Mon–Sun
+// boundary regardless of when they earned the badge, so someone who joins
+// on a Thursday gets a short first week ending that Sunday, same as
+// everyone else, instead of a rolling 7 days counted from signup.
+function mondayStartOfWeek(date) {
   const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
   const day = d.getUTCDay(); // 0=Sun..6=Sat
   const diffToMonday = day === 0 ? -6 : 1 - day;
   d.setUTCDate(d.getUTCDate() + diffToMonday);
-  return d.toISOString().slice(0, 10);
+  return d;
+}
+// Same Monday, as the "YYYY-MM-DD" key used to dedupe weekly runs. Same
+// convention as nextMondayISO() in server/shared.js.
+function weekMondayKey(date) {
+  return mondayStartOfWeek(date).toISOString().slice(0, 10);
+}
+
+// ── Launch grace period ─────────────────────────────────────────────────────
+// One-time only: this feature is launching mid-week, so the days already
+// gone this week shouldn't count against anyone. Every badge granted before
+// the very next Monday — via the migration below or a fresh checklist
+// completion — gets parked in a "pendingStart" state instead of starting
+// its tracked week immediately. Real tracking (the actual snapshot) only
+// gets taken once that Monday actually arrives (see
+// maybeActivatePendingFoundingCreators below). Cached in memory after the
+// first read/write so repeat calls don't hit Firestore every time; the
+// value itself is set once, ever, the first time this code runs.
+let foundingCreatorGraceUntilMs = null;
+async function foundingCreatorGraceUntil() {
+  if (foundingCreatorGraceUntilMs !== null) return foundingCreatorGraceUntilMs;
+  if (!db) return 0;
+  const ref = db.collection('meta').doc('foundingCreatorGrace');
+  const doc = await ref.get();
+  if (doc.exists && doc.data().graceUntil) {
+    foundingCreatorGraceUntilMs = doc.data().graceUntil.toMillis();
+  } else {
+    const graceUntil = new Date(mondayStartOfWeek(lagosNow()).getTime() + 7 * 24 * 60 * 60 * 1000);
+    await ref.set({ graceUntil: admin.firestore.Timestamp.fromDate(graceUntil), setAt: admin.firestore.Timestamp.now() }, { merge: true });
+    foundingCreatorGraceUntilMs = graceUntil.getTime();
+  }
+  return foundingCreatorGraceUntilMs;
+}
+
+// Shared by the live grant (claim-profile-voucher) and the one-time
+// migration below — builds the record to write, choosing between an
+// immediate real week (normal case) and a pending/deferred week (only
+// while the launch grace period above is still open).
+async function buildFoundingCreatorRecord(uid, now) {
+  const graceUntilMs = await foundingCreatorGraceUntil();
+  if (graceUntilMs && now.getTime() < graceUntilMs) {
+    return {
+      status: 'active',
+      earnedAt: admin.firestore.Timestamp.now(),
+      weekStart: admin.firestore.Timestamp.fromMillis(graceUntilMs),
+      snapshot: null,
+      pendingStart: true,
+      lastCheckedWeek: null,
+      missedAt: null
+    };
+  }
+  const totals = await currentContentTotals(uid);
+  return {
+    status: 'active',
+    earnedAt: admin.firestore.Timestamp.now(),
+    weekStart: admin.firestore.Timestamp.fromDate(mondayStartOfWeek(now)),
+    snapshot: totals,
+    pendingStart: false,
+    lastCheckedWeek: weekMondayKey(now),
+    missedAt: null
+  };
 }
 
 // Lifetime content/views/engagement across everything a user has authored.
@@ -3278,16 +3376,7 @@ async function currentContentTotals(uid) {
 // already granted — never resets an existing active/faded/lost state.
 async function grantFoundingCreatorIfNeeded(uid, userRef, userData) {
   if (userData.foundingCreator && userData.foundingCreator.status) return userData.foundingCreator;
-  const now = lagosNow();
-  const totals = await currentContentTotals(uid);
-  const foundingCreator = {
-    status: 'active',
-    earnedAt: admin.firestore.Timestamp.now(),
-    weekStart: admin.firestore.Timestamp.fromDate(now),
-    snapshot: totals,
-    lastCheckedWeek: weekMondayKey(now),
-    missedAt: null
-  };
+  const foundingCreator = await buildFoundingCreatorRecord(uid, lagosNow());
   await userRef.set({ foundingCreator }, { merge: true });
   return foundingCreator;
 }
@@ -3398,6 +3487,18 @@ app.get('/api/founding-creator/status', requireUser, async (req, res) => {
       return res.json({ earned: false, target: FOUNDING_CREATOR_TARGET });
     }
 
+    // Launch grace period — real tracking hasn't started yet. weekStart
+    // here holds the grace cutoff (the Monday it'll actually begin), not a
+    // week already in progress.
+    if (fc.pendingStart) {
+      return res.json({
+        earned: true,
+        status: 'pending',
+        target: FOUNDING_CREATOR_TARGET,
+        trackingStartsAt: fc.weekStart && fc.weekStart.toDate ? fc.weekStart.toDate().toISOString() : null
+      });
+    }
+
     const totals = await currentContentTotals(uid);
     const snapshot = fc.snapshot || { content: 0, views: 0, engagement: 0 };
     const progress = {
@@ -3405,8 +3506,13 @@ app.get('/api/founding-creator/status', requireUser, async (req, res) => {
       views: Math.max(0, totals.views - snapshot.views),
       engagement: Math.max(0, totals.engagement - snapshot.engagement)
     };
-    const weekStartMs = fc.weekStart && fc.weekStart.toMillis ? fc.weekStart.toMillis() : Date.now();
-    const weekEndsAt = new Date(weekStartMs + 7 * 24 * 60 * 60 * 1000).toISOString();
+    // weekEndsAt is derived from the real, current calendar week — not the
+    // stored fc.weekStart — so it always shows "days left until the actual
+    // upcoming Sunday," never a rolling 7 days from whenever the badge
+    // happened to be granted. (The stored weekStart is only used internally
+    // by the weekly evaluator to reset the snapshot; it's not the source of
+    // truth for what the user sees here.)
+    const weekEndsAt = new Date(mondayStartOfWeek(lagosNow()).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
     return res.json({
       earned: true,
