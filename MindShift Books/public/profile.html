@@ -1084,7 +1084,8 @@ async function loadProfile(uid){
   loadReposts(); // not awaited — Reposts tab renders once this resolves, doesn't block the rest
   await Promise.all([loadStats(), loadFollowState()]);
   if(isOwner) renderSetupBanner();
-  // write profile_view notification (once per session)
+  // Track this as a profile view for Insights — analytics only, never a
+  // bell notification to the profile owner.
   if(currentUser && !isOwner) notif.trackProfileView(profileData.uid);
 }
 

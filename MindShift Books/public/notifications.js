@@ -405,25 +405,41 @@ export function initNotificationUI({ db, getCurrentUser, getMyProfile, fs }) {
 
   // Profile views are analytics, not an actionable alert — nobody needs a
   // bell notification every time someone looks at their profile, but an
-  // author does want to know their view count on Insights. Tracked here
-  // (same module, so there's still one place this logic lives) as a
-  // deterministic-ID dedup — one view per viewer per profile — incrementing
-  // a denormalized counter on the profile owner's user doc so Insights can
-  // read it with a single getDoc instead of counting a subcollection.
+  // author does want to know their view count on Insights.
+  //
+  // This used to write straight to Firestore from the client — a direct
+  // increment of profileViewCount on the PROFILE OWNER's user doc, from
+  // whoever happened to be viewing it. That's very likely why the counter
+  // was stuck at 0: most Firestore rule setups only let a user write their
+  // own users/{uid} doc, so a viewer incrementing someone else's counter
+  // was probably being rejected every time — and the old code caught and
+  // silently dropped that error, so the failure never surfaced anywhere.
+  // Now it just calls the server, which does the write with the Admin SDK
+  // (always bypasses security rules) and actually logs failures.
   async function trackProfileView(targetUid) {
     const currentUser = getCurrentUser();
     if (!currentUser || !targetUid || targetUid === currentUser.uid) return;
-    const viewId = `${currentUser.uid}_${targetUid}`;
+    // Cheap client-side skip: once this browser tab has already sent a view
+    // for this profile, don't call the server again for the rest of the
+    // session — cuts most of the repeat-request cost from someone
+    // re-visiting or refreshing the same profile several times in one
+    // sitting. This is purely a cost optimization, not the real dedup — the
+    // server is still the source of truth (one count per viewer per
+    // calendar day), so it's fine that this resets on a new tab or session.
+    const skipKey = `msb_pv_${targetUid}`;
+    try { if (sessionStorage.getItem(skipKey)) return; } catch (e) {}
     try {
-      const ref = doc(db, 'profileViews', viewId);
-      const existing = await getDoc(ref);
-      if (existing.exists()) return; // already counted this viewer once
-      await setDoc(ref, { viewerUid: currentUser.uid, profileUid: targetUid, createdAt: serverTimestamp() });
-      const { increment } = fs;
-      if (increment) {
-        await setDoc(doc(db, 'users', targetUid), { profileViewCount: increment(1) }, { merge: true });
-      }
-    } catch (e) {}
+      const idToken = await currentUser.getIdToken();
+      const resp = await fetch('/api/profile/track-view', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+        body: JSON.stringify({ targetUid })
+      });
+      if (!resp.ok) { console.error('trackProfileView: server rejected the view', resp.status, await resp.text().catch(()=>'')); return; }
+      try { sessionStorage.setItem(skipKey, '1'); } catch (e) {}
+    } catch (e) {
+      console.error('trackProfileView failed:', e);
+    }
   }
 
   return { initNotifications, clearNotifications, notifyArticleLike, notifyFollow, notifyComment, notifyRepost, trackProfileView };
