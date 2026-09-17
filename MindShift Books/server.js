@@ -1,5 +1,5 @@
 // server.js
-// MindShift Books - Single source of truth for products + Paystack endpoints
+// MindShift Books -  Single source of truth for products + Paystack endpoints
 const express = require('express');
 const path = require('path');
 const fetch = require('node-fetch');
@@ -3692,12 +3692,18 @@ app.post('/api/pay', requireUser, payLimiter, async (req, res) => {
     // Profile-completion voucher — re-checked here, server-side, against the
     // buyer's own account. Never trust a client-supplied voucher amount;
     // the only thing the client controls is the on/off toggle.
+    //
+    // Minimum-purchase gate: the voucher only applies once the cart total is
+    // at least as much as the voucher itself is worth. Without this, someone
+    // could burn a ₦2,000 voucher on a ₦500 book — the voucher gets marked
+    // used on ANY order it's applied to, so the unspent ₦1,500 would just be
+    // lost rather than saved for later.
     let voucherAmount = 0;
     if (applyVoucher && db && req.uid) {
       try {
         const userDoc = await db.collection('users').doc(req.uid).get();
         const voucher = userDoc.exists ? userDoc.data().ebookVoucher : null;
-        if (voucher && voucher.claimed && !voucher.used && Number(voucher.amount) > 0) {
+        if (voucher && voucher.claimed && !voucher.used && Number(voucher.amount) > 0 && ngnAmount >= Number(voucher.amount)) {
           voucherAmount = Math.min(Number(voucher.amount), ngnAmount);
         }
       } catch (e) { console.warn('[PAY] voucher lookup failed (continuing without it):', e.message || e); }
