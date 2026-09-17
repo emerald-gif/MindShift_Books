@@ -3328,6 +3328,14 @@ function weekMondayKey(date) {
   return mondayStartOfWeek(date).toISOString().slice(0, 10);
 }
 
+// Calendar-day key (Lagos time), e.g. "2026-09-18" — used to dedupe
+// profile views per viewer per DAY (not per viewer forever), so someone
+// revisiting a profile tomorrow counts as a new view, same as LinkedIn's
+// "who viewed your profile."
+function lagosDateKey(date) {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())).toISOString().slice(0, 10);
+}
+
 // ── Launch grace period ─────────────────────────────────────────────────────
 // One-time only: this feature is launching mid-week, so the days already
 // gone this week shouldn't count against anyone. Every badge granted before
@@ -3574,6 +3582,48 @@ app.get('/api/founding-creator/status', requireUser, async (req, res) => {
   } catch (err) {
     console.error('/api/founding-creator/status error', err);
     return res.status(500).json({ error: 'Could not load your badge status.' });
+  }
+});
+
+// POST /api/profile/track-view — records a profile view server-side via
+// the Admin SDK, which always bypasses Firestore security rules. The
+// previous version of this lived entirely client-side (a direct Firestore
+// write to profileViewCount on someone ELSE's user doc) and silently
+// swallowed every error — the leading suspect for why the counter stayed
+// stuck at 0: most Firestore rule setups only let a user write their own
+// users/{uid} doc, so that increment was very likely being rejected on
+// every single view, with nothing surfacing the failure anywhere.
+app.post('/api/profile/track-view', requireUser, async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const viewerUid = req.uid;
+    const targetUid = String(req.body?.targetUid || '').trim();
+    if (!targetUid || targetUid === viewerUid) return res.json({ ok: true, counted: false });
+
+    // Dedup with .create() instead of a get-then-set — one atomic write
+    // instead of two round trips, and it throws (code 'already-exists') if
+    // this viewer has already been counted for this profile TODAY. The key
+    // is scoped per calendar day (not lifetime) so a returning viewer counts
+    // again tomorrow — matching how LinkedIn's profile-view counter works,
+    // and keeping the 14-day trend graph on Insights meaningful long after
+    // launch instead of trailing off as regular visitors get "used up."
+    const dateKey = lagosDateKey(lagosNow());
+    const viewRef = db.collection('profileViews').doc(`${viewerUid}_${targetUid}_${dateKey}`);
+    try {
+      await viewRef.create({ viewerUid, profileUid: targetUid, createdAt: admin.firestore.Timestamp.now() });
+    } catch (err) {
+      if (err.code === 6 || err.code === 'already-exists') return res.json({ ok: true, counted: false }); // already counted this viewer today
+      throw err;
+    }
+
+    await db.collection('users').doc(targetUid).set(
+      { profileViewCount: admin.firestore.FieldValue.increment(1) },
+      { merge: true }
+    );
+    return res.json({ ok: true, counted: true });
+  } catch (err) {
+    console.error('/api/profile/track-view error', err);
+    return res.status(500).json({ error: 'Could not record profile view.' });
   }
 });
 
