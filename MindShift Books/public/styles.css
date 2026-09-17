@@ -1158,3 +1158,7 @@ header {
 .cart-voucher-row label .cvr-gift{font-size:16px;display:inline-block;animation:vpbGiftBounce 2.2s ease-in-out infinite;}
 .cart-voucher-row input[type="checkbox"]{width:18px;height:18px;accent-color:#f59e0b;cursor:pointer;margin:0;}
 .cart-voucher-row .cvr-amount{font-size:13px;font-weight:800;color:#059669;white-space:nowrap;}
+
+.cart-voucher-hint{display:flex;align-items:center;gap:8px;padding:10px 14px;margin-bottom:14px;
+  border-radius:12px;background:#f8fafc;border:1.5px dashed #cbd5e1;font-size:12.5px;font-weight:600;color:#64748b;}
+.cart-voucher-hint .cvh-emoji{font-size:15px;flex-shrink:0;}

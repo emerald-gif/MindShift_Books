@@ -275,18 +275,23 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
 .vbadge svg{width:9px;height:9px;fill:none;stroke:#fff;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
 
 /* Founding Creator badge chip + drawer */
-.founder-badge-wrap{margin:2px 0 4px}
-.founder-badge-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px 6px 8px;border-radius:99px;
-  background:linear-gradient(90deg,#1d4ed8,#3b82f6);border:none;cursor:pointer;font-family:inherit;
-  -webkit-tap-highlight-color:transparent}
-.founder-badge-chip .fb-icon{width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,.18);
-  display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
-.founder-badge-chip .fb-icon img{width:100%;height:100%;object-fit:cover;border-radius:50%}
-.founder-badge-chip .fb-label{font-size:12.5px;font-weight:800;color:#fff;white-space:nowrap}
-.founder-badge-chip.faded{background:#e5e7eb;opacity:.6;filter:grayscale(1)}
-.founder-badge-chip.faded .fb-label{color:#374151}
-.founder-badge-chip.faded .fb-icon{background:rgba(0,0,0,.08)}
-.founder-badge-chip.faded .fb-icon svg{stroke:#374151}
+.founder-badge-wrap{margin:14px 0 4px}
+.badges-section{background:var(--card,#fff);border:1.5px solid var(--border,#e5e7eb);border-radius:14px;padding:14px 16px}
+.badges-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.badges-title{font-size:15px;font-weight:800;color:var(--txt,#0f172a)}
+.badges-manage-btn{width:30px;height:30px;border-radius:8px;border:none;background:transparent;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;color:#6b7280}
+.badges-manage-btn:active{background:#f1f5f9}
+.badges-manage-btn svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.badge-row{display:flex;align-items:center;gap:12px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.badge-row-icon{width:44px;height:44px;border-radius:50%;flex-shrink:0;overflow:hidden;
+  background:linear-gradient(135deg,#f472b6,#f59e0b);display:flex;align-items:center;justify-content:center}
+.badge-row-icon img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.badge-row-icon.faded{filter:grayscale(1);opacity:.55}
+.badge-row-text{display:flex;flex-direction:column;gap:2px}
+.badge-row-label{font-size:14px;font-weight:700;color:var(--txt,#0f172a)}
+.badge-row-sub{font-size:12px;color:#f59e0b;font-weight:700}
+.badge-row-sub.ok{color:#10b981}
 
 .fb-drawer-overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:400;display:none;
   align-items:flex-end;justify-content:center}
@@ -1127,10 +1132,13 @@ function renderSetupBanner(){
     remaining.length === 1 ? `Just ${remaining[0]} left to get ₦2,000 free + a badge` : `${4 - doneCount} steps left to get ₦2,000 free + a badge`;
 }
 
-// Founding Creator badge chip — full color and visible to everyone once
-// active. Once faded (missed a week), it's hidden from visitors entirely
-// and only the owner sees it, faded, as a nudge to hit this week's target.
-// A permanently 'lost' badge (or no badge at all) renders nothing.
+// Founding Creator badge — a Facebook-style "Badges" card: header row with
+// a manage (pencil) shortcut for the owner, and the badge itself below as
+// a tappable row (icon + label) that opens the details drawer. Full color
+// and visible to everyone once active. Once faded (missed a week), it's
+// hidden from visitors entirely and only the owner sees it, faded, as a
+// nudge to hit this week's target. A permanently 'lost' badge (or no
+// badge at all) renders nothing.
 function renderFounderBadge(){
   const wrap = document.getElementById('founderBadgeWrap');
   if(!wrap) return;
@@ -1143,21 +1151,48 @@ function renderFounderBadge(){
   const faded = fc.status === 'faded';
   wrap.style.display = 'block';
   wrap.innerHTML = `
-    <button type="button" class="founder-badge-chip${faded ? ' faded' : ''}" onclick="openFounderDrawer()">
-      <span class="fb-icon"><img src="/fcbadge.jpg" alt="Founding Creator badge"></span>
-      <span class="fb-label">Founding Creator</span>
-    </button>`;
+    <div class="badges-section">
+      <div class="badges-head">
+        <span class="badges-title">Badges</span>
+        ${isOwner ? `
+        <button type="button" class="badges-manage-btn" id="badgesManageBtn" aria-label="Manage badges">
+          <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>` : ''}
+      </div>
+      <div class="badge-row" id="badgeRowBtn">
+        <div class="badge-row-icon${faded ? ' faded' : ''}"><img src="/fcbadge.jpg" alt="Founding Creator badge"></div>
+        <div class="badge-row-text">
+          <span class="badge-row-label">Founding Creator</span>
+          ${isOwner ? `<span class="badge-row-sub${faded ? '' : ' ok'}">${faded ? 'At risk — tap to see why' : 'Active this week'}</span>` : ''}
+        </div>
+      </div>
+    </div>`;
+  // addEventListener instead of inline onclick — avoids the drawer silently
+  // no-oping if this HTML was ever cached/served without the inline handler
+  // reaching a live function (and makes click failures show up in devtools
+  // console instead of just doing nothing).
+  document.getElementById('badgeRowBtn')?.addEventListener('click', openFounderDrawer);
+  document.getElementById('badgesManageBtn')?.addEventListener('click', (e) => { e.stopPropagation(); location.href = '/founding-creator'; });
 }
 function openFounderDrawer(){
-  const fc = profileData.foundingCreator;
-  if(!fc) return;
-  const faded = fc.status === 'faded';
-  document.getElementById('fbDrawerIcon').classList.toggle('faded', faded);
-  document.getElementById('fbDrawerSub').textContent = faded
-    ? (isOwner ? "You missed last week's target — hit this week's to keep it." : 'Founding Creator')
-    : 'Earned for completing profile setup and staying active weekly.';
-  document.getElementById('fbDrawerManageBtn').style.display = isOwner ? 'block' : 'none';
-  document.getElementById('fbDrawerOverlay').classList.add('show');
+  try{
+    const fc = profileData.foundingCreator;
+    if(!fc) return;
+    const overlay = document.getElementById('fbDrawerOverlay');
+    if(!overlay){ location.href = '/founding-creator'; return; } // drawer markup missing (stale cache) — fall back to the full page instead of silently doing nothing
+    const faded = fc.status === 'faded';
+    document.getElementById('fbDrawerIcon')?.classList.toggle('faded', faded);
+    const sub = document.getElementById('fbDrawerSub');
+    if(sub) sub.textContent = faded
+      ? (isOwner ? "You missed last week's target — hit this week's to keep it." : 'Founding Creator')
+      : 'Earned for completing profile setup and staying active weekly.';
+    const manageBtn = document.getElementById('fbDrawerManageBtn');
+    if(manageBtn) manageBtn.style.display = isOwner ? 'block' : 'none';
+    overlay.classList.add('show');
+  }catch(err){
+    console.error('openFounderDrawer failed:', err);
+    location.href = '/founding-creator'; // never leave a tap doing nothing
+  }
 }
 
 // Fires the first time this account reaches 4/4 — on whichever page notices

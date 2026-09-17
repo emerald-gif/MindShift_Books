@@ -44,20 +44,23 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .section-sub{font-size:12.5px;color:var(--sub);margin-bottom:14px;line-height:1.5}
 
 .req-list{display:flex;flex-direction:column;gap:12px}
-.req-card{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:16px}
-.req-top{display:flex;align-items:center;justify-content:between;gap:10px;margin-bottom:8px}
-.req-label{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:800;color:var(--txt);flex:1}
-.req-label .emoji{font-size:16px}
-.req-nums{font-size:13px;font-weight:800;color:var(--sub)}
+.req-card{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px 16px}
+.req-top{display:flex;align-items:center;gap:12px}
+.req-icon{width:38px;height:38px;border-radius:11px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.req-icon svg{width:19px;height:19px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.req-label-col{flex:1;min-width:0}
+.req-label{font-size:13px;font-weight:700;color:var(--txt);margin-bottom:6px}
+.req-nums{font-size:13px;font-weight:800;color:var(--sub);flex-shrink:0}
 .req-nums.met{color:var(--green)}
-.req-bar{height:8px;border-radius:99px;background:var(--border);overflow:hidden}
+.req-bar{height:7px;border-radius:99px;background:var(--border);overflow:hidden}
 .req-bar-fill{height:100%;border-radius:99px;background:var(--fg);transition:width .4s ease}
 .req-bar-fill.met{background:var(--green)}
 
 .tips-list{display:flex;flex-direction:column;gap:10px}
-.tip{display:flex;gap:12px;background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px}
-.tip-emoji{font-size:18px;flex-shrink:0}
-.tip-txt{font-size:13px;color:var(--txt);line-height:1.5}
+.tip{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px}
+.tip-icon{width:34px;height:34px;border-radius:10px;background:#eef2ff;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.tip-icon svg{width:17px;height:17px;fill:none;stroke:var(--p);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tip-txt{font-size:13px;color:var(--txt);line-height:1.5;padding-top:2px}
 .tip-txt b{display:block;font-size:13.5px;margin-bottom:2px}
 
 .empty{margin:60px 20px;text-align:center;color:var(--sub);font-size:13.5px;line-height:1.6}
@@ -102,27 +105,37 @@ const auth = getAuth(fbApp);
 const BADGE_ICON = `<img src="/fcbadge.jpg" alt="Founding Creator badge">`;
 
 const TIPS = [
-  { emoji: '📝', title: 'Post on a rhythm', body: "Five pieces a week is easiest spread out — aim for daily rather than saving it all for one day." },
-  { emoji: '🔁', title: 'Engage to earn engagement', body: 'Liking and commenting on others\u2019 posts puts your name in front of people who follow back and engage on yours.' },
-  { emoji: '🖼️', title: 'Lead with a strong cover or hook', body: 'The first line or image is what earns the view — make it worth stopping for.' },
-  { emoji: '⏰', title: "Don't wait for Sunday", body: "Check your progress mid-week so you're not scrambling to hit the target on the last day." }
+  { icon: '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>', title: 'Post on a rhythm', body: "Five pieces a week is easiest spread out — aim for daily rather than saving it all for one day." },
+  { icon: '<svg viewBox="0 0 24 24"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>', title: 'Engage to earn engagement', body: 'Liking and commenting on others\u2019 posts puts your name in front of people who follow back and engage on yours.' },
+  { icon: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>', title: 'Lead with a strong cover or hook', body: 'The first line or image is what earns the view — make it worth stopping for.' },
+  { icon: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>', title: "Don't wait for Sunday", body: "Check your progress mid-week so you're not scrambling to hit the target on the last day." }
 ];
+
+const REQ_ICONS = {
+  content: { svg: '<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>', bg: 'linear-gradient(135deg,#818cf8,#4f46e5)' },
+  views: { svg: '<svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>', bg: 'linear-gradient(135deg,#38bdf8,#0284c7)' },
+  engagement: { svg: '<svg viewBox="0 0 24 24" style="fill:#fff;stroke:none"><path d="M12 22c4.418 0 8-3.134 8-7 0-3-2-5-3-7-.5 2-2 3-2 3 .5-3-1-6-3-8-1 3 0 5-2 7-2 2-3 3-3 5 0 3.582 2.239 7 5 7z"/></svg>', bg: 'linear-gradient(135deg,#fb923c,#ea580c)' }
+};
 
 function daysLeft(weekEndsAt){
   const ms = new Date(weekEndsAt).getTime() - Date.now();
   return Math.max(0, Math.ceil(ms / (24*60*60*1000)));
 }
 
-function reqCard(emoji, label, have, target, unit){
+function reqCard(kind, label, have, target, unit){
   const met = have >= target;
   const pct = Math.min(100, Math.round((have/target)*100));
+  const icon = REQ_ICONS[kind];
   return `
     <div class="req-card">
       <div class="req-top">
-        <div class="req-label"><span class="emoji">${emoji}</span>${label}</div>
+        <div class="req-icon" style="background:${icon.bg}">${icon.svg}</div>
+        <div class="req-label-col">
+          <div class="req-label">${label}</div>
+          <div class="req-bar"><div class="req-bar-fill${met?' met':''}" style="width:${pct}%"></div></div>
+        </div>
         <div class="req-nums${met?' met':''}">${Math.min(have,target)}/${target}${unit?` ${unit}`:''}</div>
       </div>
-      <div class="req-bar"><div class="req-bar-fill${met?' met':''}" style="width:${pct}%"></div></div>
     </div>`;
 }
 
@@ -131,7 +144,7 @@ function tipsHtml(){
     <div class="section">
       <div class="section-title">Tips to hit your target</div>
       <div class="tips-list">
-        ${TIPS.map(t => `<div class="tip"><span class="tip-emoji">${t.emoji}</span><div class="tip-txt"><b>${t.title}</b>${t.body}</div></div>`).join('')}
+        ${TIPS.map(t => `<div class="tip"><span class="tip-icon">${t.icon}</span><div class="tip-txt"><b>${t.title}</b>${t.body}</div></div>`).join('')}
       </div>
     </div>`;
 }
@@ -177,9 +190,9 @@ function render(data){
       <div class="section-title">This week's target</div>
       <div class="section-sub">All three need to be met by the end of the week to keep your badge active.</div>
       <div class="req-list">
-        ${reqCard('📝', 'Content posted', progress.content, target.content, '')}
-        ${reqCard('👀', 'Views', progress.views, target.views, '')}
-        ${reqCard('🔥', 'Engagement (likes + comments + reposts)', progress.engagement, target.engagement, 'pts')}
+        ${reqCard('content', 'Content posted', progress.content, target.content, '')}
+        ${reqCard('views', 'Views', progress.views, target.views, '')}
+        ${reqCard('engagement', 'Engagement (likes + comments + reposts)', progress.engagement, target.engagement, 'pts')}
       </div>
     </div>` : ''}
     ${tipsHtml()}

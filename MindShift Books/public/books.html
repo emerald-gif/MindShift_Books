@@ -87,7 +87,7 @@
        signed-in user has an unused ebookVoucher on their account. -->
   <div id="voucherBanner" class="voucher-page-banner" style="display:none">
     <span class="vpb-emoji">🎁</span>
-    <span id="voucherBannerText">You have a ₦1,000 voucher — it'll be applied automatically at checkout.</span>
+    <span id="voucherBannerText">You have a ₦2,000 voucher — it'll be applied automatically at checkout.</span>
   </div>
 
   <section class="hero" id="ourBooksSection" aria-labelledby="our-books-h">
@@ -605,9 +605,15 @@
       <div class="cart-voucher-row" id="cartVoucherRow" style="display:none">
         <label for="cartVoucherToggle">
           <input type="checkbox" id="cartVoucherToggle" checked>
-          <span class="cvr-gift">🎁</span> Apply ₦1,000 voucher
+          <span class="cvr-gift">🎁</span> <span id="cartVoucherLabel">Apply ₦2,000 voucher</span>
         </label>
-        <span class="cvr-amount" id="cartVoucherAmount">−₦1,000</span>
+        <span class="cvr-amount" id="cartVoucherAmount">−₦2,000</span>
+      </div>
+      <!-- Shown instead of the row above when the cart total is below the
+           voucher's value — the voucher only applies once you're spending
+           at least what it's worth, so it doesn't get burned on a cheap item. -->
+      <div class="cart-voucher-hint" id="cartVoucherHint" style="display:none">
+        <span class="cvh-emoji">🎁</span> <span id="cartVoucherHintText"></span>
       </div>
 
       <div class="cart-total-row">

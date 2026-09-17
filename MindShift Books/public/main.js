@@ -945,6 +945,10 @@ function updateVoucherBanner() {
   const el = document.getElementById('voucherBanner');
   if (!el) return; // only present on books.html
   el.style.display = userVoucher ? 'flex' : 'none';
+  const textEl = document.getElementById('voucherBannerText');
+  if (textEl && userVoucher) {
+    textEl.textContent = `You have a ₦${(Number(userVoucher.amount) || 0).toLocaleString()} voucher — it'll be applied automatically at checkout.`;
+  }
 }
 
 window.addEventListener('msb-auth-changed', fetchVoucherStatus);
@@ -1054,20 +1058,37 @@ function renderCartOverlay() {
   const hasNGN = items.some(p => p.priceNGN);
 
   // Voucher toggle row — only rendered at all when there's something to
-  // apply. discount is always recomputed from the live cart total, never
-  // stored, so adding/removing a book updates it automatically.
+  // apply, AND the cart total is at least the voucher's own value (mirrors
+  // the same minimum-purchase gate server.js enforces at checkout — the
+  // voucher gets marked "used" on whatever order it's applied to, so
+  // letting it apply below its own value would burn the unspent balance
+  // for nothing). Below that threshold, a hint row explains how much more
+  // is needed instead of showing a toggle that checkout would reject.
   const voucherRow = document.getElementById('cartVoucherRow');
+  const voucherHint = document.getElementById('cartVoucherHint');
   if (voucherRow) {
-    if (userVoucher && hasNGN) {
+    const voucherAmt = Number(userVoucher?.amount) || 0;
+    if (userVoucher && hasNGN && total >= voucherAmt) {
       voucherRow.style.display = 'flex';
+      if (voucherHint) voucherHint.style.display = 'none';
+      document.getElementById('cartVoucherLabel').textContent = `Apply ₦${voucherAmt.toLocaleString()} voucher`;
       const toggle = document.getElementById('cartVoucherToggle');
       if (toggle && toggle.checked !== applyVoucherFlag) toggle.checked = applyVoucherFlag;
-      const discount = applyVoucherFlag ? Math.min(Number(userVoucher.amount) || 0, total) : 0;
+      const discount = applyVoucherFlag ? Math.min(voucherAmt, total) : 0;
       document.getElementById('cartVoucherAmount').textContent = `−₦${discount.toLocaleString()}`;
       totalEl.textContent = `₦${Math.max(0, total - discount).toLocaleString()}`;
       return;
     }
     voucherRow.style.display = 'none';
+    if (voucherHint) {
+      if (userVoucher && hasNGN && total < voucherAmt) {
+        voucherHint.style.display = 'flex';
+        document.getElementById('cartVoucherHintText').textContent =
+          `Add ₦${(voucherAmt - total).toLocaleString()} more to your cart to use your ₦${voucherAmt.toLocaleString()} voucher`;
+      } else {
+        voucherHint.style.display = 'none';
+      }
+    }
   }
 
   totalEl.textContent = hasNGN ? `₦${total.toLocaleString()}` : `$${total.toFixed(2)}`;
