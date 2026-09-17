@@ -629,7 +629,7 @@ main{max-width:1100px;margin:0 auto}
   </div>
   <div class="fsb-txt">
     <div class="fsb-title">Finish setting up your profile</div>
-    <div class="fsb-sub" id="fsbSub">Complete these steps to get ₦1,000 free</div>
+    <div class="fsb-sub" id="fsbSub">Complete these steps to get ₦2,000 free</div>
   </div>
   <div class="fsb-arrow">
     <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
@@ -1022,7 +1022,7 @@ async function checkFeedProfileSetup(user){
     const CIRC = 103.7;
     document.getElementById('fsbRingFill').style.strokeDashoffset = CIRC - (CIRC * doneCount / 4);
     document.getElementById('fsbRingLabel').textContent = `${doneCount}/4`;
-    document.getElementById('fsbSub').textContent = `${4 - doneCount} step${4-doneCount===1?'':'s'} left to get \u20a61,000 free`;
+    document.getElementById('fsbSub').textContent = `${4 - doneCount} step${4-doneCount===1?'':'s'} left to get \u20a62,000 free`;
   }catch(e){
     console.warn('checkFeedProfileSetup failed (non-fatal):', e);
   }

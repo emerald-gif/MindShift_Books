@@ -239,7 +239,7 @@ function render(setup){
 // Fires once all 4 steps are done. Re-checks eligibility server-side (the
 // endpoint itself is idempotent — safe to call again on every future visit,
 // it just reports back the voucher already claimed) and reveals what the
-// ₦1,000 actually is: an ebook voucher, ready to use in the Bookstore.
+// ₦2,000 actually is: an ebook voucher, ready to use in the Bookstore.
 async function claimVoucherAndReveal(user){
   document.getElementById('rewardTeaser').classList.add('hide');
   const banner = document.getElementById('finishBanner');

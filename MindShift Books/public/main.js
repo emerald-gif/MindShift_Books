@@ -914,7 +914,7 @@ function closeWishlistConfirmDrawer() {
 }
 
 // ── Profile-completion voucher (v2 reward) ──────────────────────────────────
-// A one-time ₦1,000 credit users unlock by finishing their profile checklist
+// A one-time ₦2,000 credit users unlock by finishing their profile checklist
 // (see /complete-profile). Fetched from the server (never trust a
 // client-writable field for anything with cash value) and re-fetched on
 // every auth change, same pattern as the wishlist below.
