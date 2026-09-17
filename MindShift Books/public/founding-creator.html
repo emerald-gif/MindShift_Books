@@ -25,19 +25,18 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .btn-back svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
 .hdr-title{font-size:17px;font-weight:900;color:var(--txt)}
 
-.hero{margin:20px 16px 0;padding:26px 18px;border-radius:var(--radius);text-align:center;
-  background:var(--fg);color:#fff;position:relative;overflow:hidden;box-shadow:0 8px 24px rgba(59,130,246,.28)}
-.hero.faded{background:#94a3b8}
-.hero.faded .hero-icon img{filter:grayscale(1)}
-.hero.lost{background:#94a3b8;opacity:.75}
-.hero.lost .hero-icon img{filter:grayscale(1)}
-.hero-icon{width:54px;height:54px;border-radius:50%;background:rgba(255,255,255,.2);
-  display:flex;align-items:center;justify-content:center;margin:0 auto 10px;overflow:hidden}
-.hero-icon img{width:100%;height:100%;object-fit:cover;border-radius:50%}
-.hero h1{font-size:18px;font-weight:900}
-.hero p{font-size:13px;opacity:.95;line-height:1.5;margin-top:6px;max-width:320px;margin-left:auto;margin-right:auto}
-.hero .days-left{display:inline-block;margin-top:12px;padding:5px 14px;border-radius:99px;
-  background:rgba(255,255,255,.2);font-size:12px;font-weight:800}
+.fc-card{margin:20px 16px 0;padding:16px;border-radius:var(--radius);background:var(--card);
+  border:1.5px solid var(--border)}
+.fc-row{display:flex;align-items:center;gap:12px}
+.fc-badge-img{width:52px;height:52px;border-radius:50%;object-fit:cover;flex-shrink:0}
+.fc-badge-img.faded{filter:grayscale(1);opacity:.55}
+.fc-info{flex:1;min-width:0}
+.fc-name{font-size:15.5px;font-weight:900;color:var(--txt)}
+.fc-meta{font-size:12.5px;font-weight:700;margin-top:2px}
+.fc-meta.ok{color:var(--green)}
+.fc-meta.warn{color:var(--amber)}
+.fc-meta.muted{color:var(--sub)}
+.fc-msg{font-size:12.5px;color:var(--sub);line-height:1.5;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
 
 .section{padding:22px 20px 0}
 .section-title{font-size:14.5px;font-weight:900;color:var(--txt);margin-bottom:4px}
@@ -81,9 +80,11 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 </header>
 
 <div id="content">
-  <div class="hero">
-    <div class="hero-icon"><div class="skel" style="width:28px;height:28px;border-radius:50%"></div></div>
-    <div class="skel" style="height:14px;width:60%;margin:0 auto"></div>
+  <div class="fc-card">
+    <div class="fc-row">
+      <div class="skel" style="width:52px;height:52px;border-radius:50%"></div>
+      <div style="flex:1"><div class="skel" style="height:14px;width:60%"></div></div>
+    </div>
   </div>
 </div>
 
@@ -102,8 +103,6 @@ const fbApp = initializeApp({
 });
 const auth = getAuth(fbApp);
 
-const BADGE_ICON = `<img src="/fcbadge.jpg" alt="Founding Creator badge">`;
-
 const TIPS = [
   { icon: '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>', title: 'Post on a rhythm', body: "Five pieces a week is easiest spread out — aim for daily rather than saving it all for one day." },
   { icon: '<svg viewBox="0 0 24 24"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>', title: 'Engage to earn engagement', body: 'Liking and commenting on others\u2019 posts puts your name in front of people who follow back and engage on yours.' },
@@ -120,6 +119,19 @@ const REQ_ICONS = {
 function daysLeft(weekEndsAt){
   const ms = new Date(weekEndsAt).getTime() - Date.now();
   return Math.max(0, Math.ceil(ms / (24*60*60*1000)));
+}
+
+function fmtDate(iso){
+  return new Date(iso).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+}
+
+function completionPct(progress, target){
+  const ratios = [
+    Math.min(1, progress.content / target.content),
+    Math.min(1, progress.views / target.views),
+    Math.min(1, progress.engagement / target.engagement)
+  ];
+  return Math.round((ratios.reduce((a,b) => a+b, 0) / ratios.length) * 100);
 }
 
 function reqCard(kind, label, have, target, unit){
@@ -159,31 +171,65 @@ function render(data){
     return;
   }
 
-  const { status, target, progress, weekEndsAt, missedAt } = data;
-  const left = daysLeft(weekEndsAt);
+  // Launch grace period — real tracking hasn't started yet, nothing to
+  // show progress on. Just explain when it kicks in.
+  if(data.status === 'pending'){
+    const startDate = data.trackingStartsAt ? fmtDate(data.trackingStartsAt) : 'next week';
+    el.innerHTML = `
+      <div class="fc-card">
+        <div class="fc-row">
+          <img class="fc-badge-img" src="/fcbadge.jpg" alt="Founding Creator badge">
+          <div class="fc-info">
+            <div class="fc-name">Founding Creator</div>
+            <div class="fc-meta muted">Tracking starts ${startDate}</div>
+          </div>
+        </div>
+        <div class="fc-msg">This badge just launched, so the days already gone this week won't count against you. Your first real week starts fresh on ${startDate} — this week's target list is below so you know what's coming.</div>
+      </div>
+      <div class="section">
+        <div class="section-title">What you'll need each week</div>
+        <div class="req-list">
+          ${reqCard('content', 'Content posted', 0, data.target.content, '')}
+          ${reqCard('views', 'Views', 0, data.target.views, '')}
+          ${reqCard('engagement', 'Engagement (likes + comments + reposts)', 0, data.target.engagement, 'pts')}
+        </div>
+      </div>
+      ${tipsHtml()}
+    `;
+    return;
+  }
 
-  let heroClass = '', heroTitle = '', heroSub = '', daysHtml = '';
+  const { status, target, progress, weekEndsAt } = data;
+  const left = daysLeft(weekEndsAt);
+  const pct = completionPct(progress, target);
+
+  let metaClass = '', metaText = '', msg = '', badgeClass = '';
   if(status === 'active'){
-    heroTitle = "You're Active 🎉";
-    heroSub = 'Hit this week\u2019s target to keep your badge in full color next week.';
-    daysHtml = `<div class="days-left">${left} day${left===1?'':'s'} left this week</div>`;
+    metaClass = 'ok';
+    metaText = `${pct}% complete · ${left} day${left===1?'':'s'} left`;
+    msg = 'Hit this week\u2019s target to keep your badge in full color next week.';
   } else if(status === 'faded'){
-    heroClass = 'faded';
-    heroTitle = 'Your badge is faded';
-    heroSub = "You missed last week's target. Hit this week's target and it's back to full color — miss it again and the badge is lost for good.";
-    daysHtml = `<div class="days-left">${left} day${left===1?'':'s'} left to recover it</div>`;
+    badgeClass = 'faded';
+    metaClass = 'warn';
+    metaText = `${pct}% complete · ${left} day${left===1?'':'s'} left to recover`;
+    msg = "You missed last week's target, so your badge faded and is hidden from other visitors. Hit this week's target and it's back to full color — miss it again and it's lost for good.";
   } else {
-    heroClass = 'lost';
-    heroTitle = 'Badge lost';
-    heroSub = 'You missed two weeks in a row, so the Founding Creator badge was removed. It isn\u2019t re-earnable through this checklist again — reach out to us if you think this is a mistake.';
+    badgeClass = 'faded';
+    metaClass = 'muted';
+    metaText = 'Badge lost';
+    msg = 'You missed two weeks in a row, so the Founding Creator badge was removed. It isn\u2019t re-earnable through this checklist again — reach out to us if you think this is a mistake.';
   }
 
   el.innerHTML = `
-    <div class="hero ${heroClass}">
-      <div class="hero-icon">${BADGE_ICON}</div>
-      <h1>${heroTitle}</h1>
-      <p>${heroSub}</p>
-      ${daysHtml}
+    <div class="fc-card">
+      <div class="fc-row">
+        <img class="fc-badge-img ${badgeClass}" src="/fcbadge.jpg" alt="Founding Creator badge">
+        <div class="fc-info">
+          <div class="fc-name">Founding Creator</div>
+          <div class="fc-meta ${metaClass}">${metaText}</div>
+        </div>
+      </div>
+      <div class="fc-msg">${msg}</div>
     </div>
     ${status !== 'lost' ? `
     <div class="section">
