@@ -103,16 +103,18 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .btn-write svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 
 /* ── PROFILE INSIGHT BAR (owner-only, full width — spans edge-to-edge of
-   the Create/Edit Profile row above it, same idea as FB's "Professional
-   dashboard" bar) ── */
-.btn-insights-full{display:flex;align-items:center;justify-content:center;gap:10px;
-  width:100%;padding:12px;margin-top:-6px;margin-bottom:16px;border-radius:99px;
-  background:var(--g);color:#fff;font-size:14px;font-weight:800;text-decoration:none;
-  box-shadow:0 6px 18px -6px rgba(79,70,229,.45);transition:transform .15s}
+   the Create/Edit Profile row above it). Same 14px card radius as the
+   Badges card and everything else on this page — not a full pill, so it
+   reads as one consistent rounded-rectangle card language instead of an
+   odd stretched stadium shape next to squarer cards. ── */
+.btn-insights-full{display:flex;align-items:center;justify-content:center;gap:9px;
+  width:100%;padding:11px;margin-top:-6px;margin-bottom:16px;border-radius:14px;
+  background:var(--g);color:#fff;font-size:13.5px;font-weight:800;text-decoration:none;
+  box-shadow:0 4px 14px -6px rgba(79,70,229,.4);transition:transform .15s}
 .btn-insights-full:active{transform:scale(.985)}
-.btn-insights-full .bi-icon{width:24px;height:24px;border-radius:7px;background:#fff;
+.btn-insights-full .bi-icon{width:22px;height:22px;border-radius:7px;background:#fff;
   display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.btn-insights-full .bi-icon svg{width:13px;height:13px;fill:var(--p);stroke:none}
+.btn-insights-full .bi-icon svg{width:12px;height:12px;fill:var(--p);stroke:none}
 
 .btn-share{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--border);
   background:var(--card);display:flex;align-items:center;justify-content:center;
