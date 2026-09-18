@@ -11,18 +11,27 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --p:#4f46e5;--p2:#06b6d4;--g:linear-gradient(90deg,#4f46e5,#06b6d4);
-  --txt:#0f172a;--sub:#6b7280;--mute:#9ca3af;
-  --bg:#f8fafc;--card:#fff;--border:#e5e7eb;--border2:#e2e8f0;
-  --green:#10b981;--red:#ef4444;--amber:#f59e0b;--radius:16px;
+  --p:#6366f1;--p2:#06b6d4;--p3:#8b5cf6;
+  --g:linear-gradient(135deg,#6366f1 0%,#8b5cf6 55%,#06b6d4 100%);
+  --txt:#0f172a;--sub:#64748b;--mute:#94a3b8;
+  --bg:#f4f4fb;--card:#fff;--border2:#edeef5;
+  --green:#10b981;--red:#ef4444;--amber:#f59e0b;--radius:20px;
+  --shadow:0 1px 2px rgba(15,23,42,.04),0 10px 28px -12px rgba(76,60,190,.16);
+  --shadow-sm:0 1px 2px rgba(15,23,42,.04),0 4px 14px -6px rgba(15,23,42,.08);
 }
-body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh}
+body{font-family:'Segoe UI',system-ui,sans-serif;color:var(--txt);min-height:100vh;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(99,102,241,.10), transparent 42%),
+    radial-gradient(circle at 88% 6%, rgba(6,182,212,.08), transparent 46%),
+    radial-gradient(circle at 50% 100%, rgba(139,92,246,.06), transparent 50%),
+    var(--bg);
+  background-attachment:fixed}
 
 /* ── HEADER ── */
 .hdr{position:sticky;top:0;z-index:100;background:rgba(248,247,255,.92);backdrop-filter:blur(12px);
-  border-bottom:1px solid var(--border);padding:0 16px;height:56px;
+  border-bottom:1px solid var(--border2);padding:0 16px;height:56px;
   display:flex;align-items:center;justify-content:space-between}
-.btn-back{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--border);
+.btn-back{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--border2);
   background:var(--card);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt)}
 .btn-back svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
 .hdr-title{font-size:15px;font-weight:800;color:var(--txt);flex:1;text-align:center}
@@ -44,43 +53,64 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 /* ── /SHARED HEADER ── */
 
 /* ── HERO CARD ── */
-.hero{margin:16px;border-radius:22px;background:var(--g);padding:22px 20px;color:#fff;
-  position:relative;overflow:hidden;box-shadow:0 10px 30px rgba(37,99,235,.25)}
-.hero-deco{position:absolute;top:-22px;right:-18px;width:120px;height:120px;opacity:.16}
+.hero{margin:16px;border-radius:24px;background:var(--g);padding:24px 20px;color:#fff;
+  position:relative;overflow:hidden;box-shadow:0 16px 36px -12px rgba(99,102,241,.45)}
+.hero::before{content:'';position:absolute;inset:0;background:
+    radial-gradient(circle at 100% 0%, rgba(255,255,255,.22), transparent 55%),
+    radial-gradient(circle at 0% 100%, rgba(255,255,255,.12), transparent 50%);
+  pointer-events:none}
+.hero-deco{position:absolute;top:-22px;right:-18px;width:120px;height:120px;opacity:.14}
 .hero-deco svg{width:100%;height:100%;fill:none;stroke:#fff;stroke-width:1.4}
-.hero-label{font-size:11.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;opacity:.85;
-  display:flex;align-items:center;gap:6px}
+.hero-label{font-size:11.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;opacity:.9;
+  display:flex;align-items:center;gap:6px;position:relative}
 .hero-label svg{width:14px;height:14px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.hero-value{font-size:40px;font-weight:900;margin:8px 0 4px;line-height:1}
-.hero-sub{font-size:13px;opacity:.88;line-height:1.5;max-width:78%}
-.hero-delta{display:inline-flex;align-items:center;gap:4px;margin-top:10px;
-  background:rgba(255,255,255,.18);padding:5px 11px;border-radius:99px;font-size:12px;font-weight:800}
+.hero-value{font-size:42px;font-weight:900;margin:8px 0 4px;line-height:1;position:relative;
+  text-shadow:0 2px 16px rgba(0,0,0,.12)}
+.hero-sub{font-size:13px;opacity:.9;line-height:1.5;max-width:78%;position:relative}
+.hero-delta{display:inline-flex;align-items:center;gap:4px;margin-top:10px;position:relative;
+  background:rgba(255,255,255,.2);backdrop-filter:blur(6px);padding:5px 11px;border-radius:99px;font-size:12px;font-weight:800}
 .hero-delta svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+
+/* ── FOUNDING CREATOR CARD ── */
+.fc-mini{margin:0 16px 0;padding:15px 16px;border-radius:var(--radius);background:var(--card);
+  box-shadow:var(--shadow-sm);display:flex;align-items:center;gap:13px;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;transition:transform .15s}
+.fc-mini:active{transform:scale(.985)}
+.fc-mini-icon{width:46px;height:46px;border-radius:50%;flex-shrink:0;overflow:hidden;
+  background:linear-gradient(135deg,#c7d2fe,#a5f3fc);display:flex;align-items:center;justify-content:center}
+.fc-mini-icon img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.fc-mini-icon.faded img{filter:grayscale(1);opacity:.55}
+.fc-mini-body{flex:1;min-width:0}
+.fc-mini-name{font-size:13.5px;font-weight:800;color:var(--txt)}
+.fc-mini-sub{font-size:12px;font-weight:700;margin-top:2px}
+.fc-mini-sub.ok{color:var(--green)}
+.fc-mini-sub.warn{color:var(--amber)}
+.fc-mini-sub.muted{color:var(--mute)}
+.fc-mini-chev{color:var(--mute);flex-shrink:0}
+.fc-mini-chev svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 
 /* ── TREND CARD ── */
 .section{padding:22px 16px 0}
 .section-title{font-size:15px;font-weight:900;color:var(--txt);margin-bottom:2px}
 .section-sub{font-size:12.5px;color:var(--mute);margin-bottom:14px}
-.trend-card{background:var(--card);border:1.5px solid var(--border);border-radius:20px;padding:18px}
+.trend-card{background:var(--card);border-radius:var(--radius);padding:20px 18px 18px;box-shadow:var(--shadow)}
 .trend-chart-wrap{width:100%}
-.trend-chart-wrap svg{width:100%;height:auto;display:block}
-.trend-axis{display:flex;justify-content:space-between;font-size:11px;color:var(--mute);font-weight:600;margin-top:6px}
-.trend-legend{display:flex;gap:18px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border2)}
-.trend-legend-item{display:flex;align-items:center;gap:7px}
-.trend-legend-line{width:16px;height:3px;border-radius:2px}
+.trend-chart-wrap svg{width:100%;height:auto;display:block;overflow:visible}
+.trend-axis{display:flex;justify-content:space-between;font-size:10.5px;color:var(--mute);font-weight:700;margin-top:8px}
+.trend-legend{display:flex;gap:18px;margin-top:16px;padding-top:16px;border-top:1px solid var(--border2)}
+.trend-legend-item{display:flex;align-items:center;gap:8px}
+.trend-legend-line{width:14px;height:14px;border-radius:5px;flex-shrink:0}
 .trend-legend-text{font-size:12px;font-weight:700;color:var(--txt)}
 .trend-legend-sub{font-size:11px;color:var(--mute);font-weight:600}
 
 /* ── STATS GRID ── */
 .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:4px 16px 0}
-.stat-card{background:var(--card);border:1.5px solid var(--border);border-radius:16px;
-  padding:14px;display:flex;flex-direction:column;gap:10px;position:relative}
-.stat-icon{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center}
-.stat-icon svg{width:18px;height:18px;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.stat-icon.followers{background:#e0e7ff;color:#4f46e5}
-.stat-icon.articles{background:#d1fae5;color:#059669}
-.stat-icon.views{background:#e0e7ff;color:var(--p)}
-.stat-icon.engagement{background:#fee2e2;color:#dc2626}
+.stat-card{background:var(--card);border-radius:18px;box-shadow:var(--shadow-sm);
+  padding:15px;display:flex;flex-direction:column;gap:10px;position:relative}
+.stat-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+  background:transparent;border:1.5px solid var(--border2)}
+.stat-icon svg{width:19px;height:19px;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.stat-icon.followers,.stat-icon.articles,.stat-icon.views,.stat-icon.engagement{color:#1e293b}
 .stat-value-row{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
 .stat-value{font-size:22px;font-weight:900;color:var(--txt)}
 .stat-label{font-size:11.5px;color:var(--mute);font-weight:600}
@@ -92,13 +122,13 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .stat-pill.flat{background:var(--border2);color:var(--mute)}
 
 /* ── BEST ARTICLE CARD ── */
-.best-card{position:relative;border-radius:20px;overflow:hidden;border:1.5px solid var(--border);
-  background:var(--card);display:flex;align-items:center;gap:14px;padding:14px}
+.best-card{position:relative;border-radius:var(--radius);overflow:hidden;
+  background:var(--card);box-shadow:var(--shadow);display:flex;align-items:center;gap:14px;padding:15px}
 .best-badge{position:absolute;top:10px;left:10px;background:var(--g);color:#fff;font-size:10.5px;
   font-weight:800;padding:4px 10px;border-radius:99px;display:flex;align-items:center;gap:5px;
   text-transform:uppercase;letter-spacing:.4px;z-index:1}
 .best-badge svg{width:11px;height:11px;fill:none;stroke:#fff;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
-.best-thumb{width:84px;height:84px;border-radius:14px;flex-shrink:0;background:#e0e7ff center/cover no-repeat;
+.best-thumb{width:84px;height:84px;border-radius:16px;flex-shrink:0;background:#e0e7ff center/cover no-repeat;
   display:flex;align-items:center;justify-content:center;color:var(--p)}
 .best-thumb svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .best-info{flex:1;min-width:0;padding-left:2px}
@@ -109,7 +139,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .best-stat-item svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 
 /* ── BREAKDOWN CARD ── */
-.breakdown-card{background:var(--card);border:1.5px solid var(--border);border-radius:20px;
+.breakdown-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
   padding:20px;display:flex;align-items:center;gap:22px}
 .donut-wrap{position:relative;width:104px;height:104px;flex-shrink:0}
 .donut-wrap svg{width:100%;height:100%;transform:rotate(-90deg)}
@@ -125,9 +155,10 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .legend-val{font-size:15px;font-weight:900;color:var(--txt)}
 
 /* ── TOP ARTICLES ── */
-.perf-row{display:flex;align-items:center;gap:12px;padding:13px;border:1.5px solid var(--border);
-  border-radius:14px;margin-bottom:10px;background:var(--card);cursor:pointer}
-.perf-rank{width:30px;height:30px;border-radius:50%;background:var(--border2);
+.perf-row{display:flex;align-items:center;gap:12px;padding:14px;border-radius:16px;margin-bottom:10px;
+  background:var(--card);box-shadow:var(--shadow-sm);cursor:pointer;transition:transform .15s}
+.perf-row:active{transform:scale(.985)}
+.perf-rank{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#e0e7ff,#ddd6fe);
   display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12.5px;
   color:var(--p);flex-shrink:0}
 .perf-info{flex:1;min-width:0}
@@ -155,19 +186,20 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .empty-state{text-align:center;padding:40px 24px}
 .empty-state svg{width:42px;height:42px;color:#d1d5db;margin:0 auto 12px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
 .empty-state p{font-size:13.5px;color:var(--mute);line-height:1.6;margin-bottom:4px}
-.card-empty{background:var(--card);border:1.5px solid var(--border);border-radius:18px}
+.card-empty{background:var(--card);border-radius:18px;box-shadow:var(--shadow-sm)}
 
 /* ── SKELETON ── */
 .skel{background:linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%);
   background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:8px}
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 .skel-stat-val{height:22px;width:50px;border-radius:6px}
-.skel-perf{height:62px;border-radius:14px;margin-bottom:10px}
+.skel-perf{height:62px;border-radius:16px;margin-bottom:10px}
 .skel-card{height:140px;border-radius:20px}
 .skel-row{height:46px;border-radius:10px;margin-bottom:10px}
 
 .bottom-pad{height:24px}
 </style>
+
 </head>
 <body>
 
@@ -210,6 +242,16 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   <div class="hero-value" id="statViews"><div class="skel" style="height:36px;width:90px;border-radius:8px;background:rgba(255,255,255,.25)"></div></div>
   <div class="hero-sub">Total times people have viewed your profile</div>
   <div id="viewsDelta"></div>
+</div>
+
+<!-- FOUNDING CREATOR STATUS -->
+<div class="fc-mini" id="fcMini" style="display:none" onclick="location.href='/founding-creator'">
+  <div class="fc-mini-icon" id="fcMiniIcon"><img src="/fcbadge.jpg" alt="Founding Creator badge"></div>
+  <div class="fc-mini-body">
+    <div class="fc-mini-name">Founding Creator</div>
+    <div class="fc-mini-sub" id="fcMiniSub">Loading…</div>
+  </div>
+  <div class="fc-mini-chev"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
 </div>
 
 <!-- TREND CHART -->
@@ -426,12 +468,19 @@ async function loadInsights(uid){
     // accurate, no composite index needed (this replaces the old getCountFromServer
     // call against notifications/type=='profile_view', which needed one). ──
     let totalViews = viewDocs.length;
+    let userDocData = null;
     try{
       const userSnap = await getDoc(doc(db,'users',uid));
-      if(userSnap.exists() && typeof userSnap.data().profileViewCount === 'number'){
-        totalViews = userSnap.data().profileViewCount;
+      if(userSnap.exists()){
+        userDocData = userSnap.data();
+        if(typeof userDocData.profileViewCount === 'number') totalViews = userDocData.profileViewCount;
       }
     }catch{ /* falls back to the filtered viewDocs.length above */ }
+
+    // ── Founding Creator status card — same userSnap read above, no extra
+    // request. Links straight into /founding-creator for the full
+    // requirements/progress screen. ──
+    renderFoundingCreatorMini(userDocData?.foundingCreator || null);
 
     // ── Total followers: getCountFromServer with single-field where (uses auto-index) ──
     let totalFollowers = followDocs.length;
@@ -512,6 +561,8 @@ async function loadInsights(uid){
       emptyState(`<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>`, `Trend data unavailable.`);
     document.getElementById('activityCard').innerHTML =
       emptyState(ICONS.eye, `Activity unavailable.`);
+    const fcMiniEl = document.getElementById('fcMini');
+    if(fcMiniEl) fcMiniEl.style.display = 'none';
   }
 }
 
@@ -560,23 +611,49 @@ function bucketByDay(docs, days){
   return buckets;
 }
 
+function smoothLine(pts){
+  if(pts.length<2) return `M${pts[0].x},${pts[0].y}`;
+  let d = `M${pts[0].x},${pts[0].y}`;
+  for(let i=0;i<pts.length-1;i++){
+    const p0 = pts[i-1] || pts[i];
+    const p1 = pts[i];
+    const p2 = pts[i+1];
+    const p3 = pts[i+2] || p2;
+    const cp1x = p1.x + (p2.x - p0.x)/6;
+    const cp1y = p1.y + (p2.y - p0.y)/6;
+    const cp2x = p2.x - (p3.x - p1.x)/6;
+    const cp2y = p2.y - (p3.y - p1.y)/6;
+    d += ` C${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2.x.toFixed(1)},${p2.y.toFixed(1)}`;
+  }
+  return d;
+}
+
 function renderTrend(viewDocs, followDocs){
   const views = bucketByDay(viewDocs, TREND_DAYS);
   const followers = bucketByDay(followDocs, TREND_DAYS);
   const max = Math.max(...views, ...followers, 1);
 
-  const w=280, h=100, padTop=8, padBottom=8;
+  const w=280, h=112, padTop=10, padBottom=10;
   const innerH = h-padTop-padBottom;
   const step = w/(TREND_DAYS-1);
-  const toPath = arr => arr.map((v,i)=>{
-    const x=(i*step).toFixed(1);
-    const y=(padTop + innerH - (v/max)*innerH).toFixed(1);
-    return `${i===0?'M':'L'}${x},${y}`;
-  }).join(' ');
+  const toPoints = arr => arr.map((v,i)=>({ x:+(i*step).toFixed(1), y:+(padTop + innerH - (v/max)*innerH).toFixed(1) }));
 
-  const startDate = new Date(); startDate.setDate(startDate.getDate()-(TREND_DAYS-1));
-  const endDate = new Date();
+  const viewPts = toPoints(views);
+  const followPts = toPoints(followers);
+  const viewLinePath = smoothLine(viewPts);
+  const baseline = h - padBottom;
+  const viewAreaPath = `${viewLinePath} L${viewPts[viewPts.length-1].x},${baseline} L${viewPts[0].x},${baseline} Z`;
+  const followLinePath = smoothLine(followPts);
+
+  // Four evenly-spaced date labels instead of just start/end — easier to
+  // read at a glance, still just one row, nothing scattered across the card.
+  const startDate = new Date(); startDate.setHours(0,0,0,0); startDate.setDate(startDate.getDate()-(TREND_DAYS-1));
   const fmt = d => d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  const labelIdx = [0, Math.round((TREND_DAYS-1)/3), Math.round(2*(TREND_DAYS-1)/3), TREND_DAYS-1];
+  const labelsHtml = labelIdx.map(i=>{
+    const d = new Date(startDate); d.setDate(d.getDate()+i);
+    return `<span>${fmt(d)}</span>`;
+  }).join('');
 
   const totalViews = views.reduce((a,b)=>a+b,0);
   const totalFollowers = followers.reduce((a,b)=>a+b,0);
@@ -584,14 +661,19 @@ function renderTrend(viewDocs, followDocs){
   document.getElementById('trendCard').innerHTML = `
     <div class="trend-chart-wrap">
       <svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
-        <line x1="0" y1="${padTop}" x2="${w}" y2="${padTop}" stroke="var(--border2)" stroke-width="1"/>
-        <line x1="0" y1="${(h/2).toFixed(1)}" x2="${w}" y2="${(h/2).toFixed(1)}" stroke="var(--border2)" stroke-width="1"/>
-        <line x1="0" y1="${h-padBottom}" x2="${w}" y2="${h-padBottom}" stroke="var(--border2)" stroke-width="1"/>
-        <path d="${toPath(views)}" fill="none" stroke="var(--p)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="${toPath(followers)}" fill="none" stroke="var(--amber)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <defs>
+          <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="var(--p)" stop-opacity="0.34"/>
+            <stop offset="100%" stop-color="var(--p)" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <line x1="0" y1="${(h/2).toFixed(1)}" x2="${w}" y2="${(h/2).toFixed(1)}" stroke="var(--border2)" stroke-width="1" stroke-dasharray="3 4"/>
+        <path d="${viewAreaPath}" fill="url(#trendFill)" stroke="none"/>
+        <path d="${viewLinePath}" fill="none" stroke="var(--p)" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="${followLinePath}" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1 5"/>
       </svg>
     </div>
-    <div class="trend-axis"><span>${fmt(startDate)}</span><span>${fmt(endDate)}</span></div>
+    <div class="trend-axis">${labelsHtml}</div>
     <div class="trend-legend">
       <div class="trend-legend-item">
         <div class="trend-legend-line" style="background:var(--p)"></div>
@@ -603,6 +685,28 @@ function renderTrend(viewDocs, followDocs){
       </div>
     </div>
   `;
+}
+
+/* ── FOUNDING CREATOR MINI CARD ── */
+function renderFoundingCreatorMini(fc){
+  const el = document.getElementById('fcMini');
+  if(!fc || !fc.status || fc.status === 'lost'){ el.style.display='none'; return; }
+  el.style.display='flex';
+  const icon = document.getElementById('fcMiniIcon');
+  const sub = document.getElementById('fcMiniSub');
+  if(fc.status === 'pending'){
+    icon.classList.remove('faded');
+    sub.className = 'fc-mini-sub muted';
+    sub.textContent = 'Tracking starts soon — tap to view';
+  } else if(fc.status === 'faded'){
+    icon.classList.add('faded');
+    sub.className = 'fc-mini-sub warn';
+    sub.textContent = 'At risk — tap to see why';
+  } else {
+    icon.classList.remove('faded');
+    sub.className = 'fc-mini-sub ok';
+    sub.textContent = 'Active this week — tap to view progress';
+  }
 }
 
 /* ── BEST CONTENT (article or post) ── */

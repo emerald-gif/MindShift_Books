@@ -102,6 +102,18 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .btn-write:hover{background:var(--p);color:#fff}
 .btn-write svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 
+/* ── PROFILE INSIGHT BAR (owner-only, full width — spans edge-to-edge of
+   the Create/Edit Profile row above it, same idea as FB's "Professional
+   dashboard" bar) ── */
+.btn-insights-full{display:flex;align-items:center;justify-content:center;gap:10px;
+  width:100%;padding:12px;margin-top:-6px;margin-bottom:16px;border-radius:99px;
+  background:var(--g);color:#fff;font-size:14px;font-weight:800;text-decoration:none;
+  box-shadow:0 6px 18px -6px rgba(79,70,229,.45);transition:transform .15s}
+.btn-insights-full:active{transform:scale(.985)}
+.btn-insights-full .bi-icon{width:24px;height:24px;border-radius:7px;background:#fff;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.btn-insights-full .bi-icon svg{width:13px;height:13px;fill:var(--p);stroke:none}
+
 .btn-share{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--border);
   background:var(--card);display:flex;align-items:center;justify-content:center;
   cursor:pointer;color:var(--txt);transition:all .2s;flex-shrink:0}
@@ -584,6 +596,11 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
   <div id="profileSocialLinks" class="social-links-row" style="display:none"></div>
   <!-- CTA buttons row — populated by JS -->
   <div class="profile-cta-row" id="profileCta"></div>
+  <!-- Owner-only: full-width bar spanning the CTA row above, straight into Insights -->
+  <a href="/insights" class="btn-insights-full" id="profileInsightBtn" style="display:none">
+    <span class="bi-icon"><svg viewBox="0 0 24 24"><rect x="3" y="10" width="4.5" height="10" rx="1.2"/><rect x="9.75" y="5" width="4.5" height="15" rx="1.2"/><rect x="16.5" y="13" width="4.5" height="7" rx="1.2"/></svg></span>
+    Profile Insight
+  </a>
   <div class="stats-row">
     <div class="stat" onclick="document.getElementById('articlesSection').scrollIntoView({behavior:'smooth'})">
       <div class="stat-num" id="statArticles"><div class="skel skel-stat" id="statArticlesSkel"></div></div>
@@ -1334,10 +1351,14 @@ function renderProfileHeader(){
         <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
         Edit Profile
       </button>`;
+    const insightBtn = document.getElementById('profileInsightBtn');
+    if(insightBtn) insightBtn.style.display = 'flex';
   } else {
     // Visitor: share icon in avatar row, Follow button in cta row
     actions.innerHTML = `${shareBtn}`;
     if(cta && currentUser) cta.innerHTML = `<button class="btn-follow" id="followBtn" onclick="toggleFollow()" style="flex:1">${isFollowing?'Following':'Follow'}</button>`;
+    const insightBtn = document.getElementById('profileInsightBtn');
+    if(insightBtn) insightBtn.style.display = 'none';
   }
 }
 
