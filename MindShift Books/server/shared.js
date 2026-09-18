@@ -13,6 +13,16 @@
 const admin = require('firebase-admin');
 const fetch = require('node-fetch');
 const crypto = require('crypto');
+const path = require('path');
+
+// Every file under server/ (this one included) lives one folder below the
+// project root — path.join(__dirname, '..') from HERE always resolves to
+// the actual project root, regardless of which file uses it. Any route
+// module that touches a file on disk (PDFs, public/, the reader cache)
+// must build its path off PROJECT_ROOT, never off its own __dirname —
+// __dirname inside server/whatever.js points at the server/ folder itself,
+// not the project root, and silently resolves to the wrong place.
+const PROJECT_ROOT = path.join(__dirname, '..');
 
 // Firebase admin init (SERVICE_ACCOUNT_JSON or ADC)
 try {
@@ -47,6 +57,23 @@ const BREVO_API_KEY = process.env.BREVO_API_KEY || null;
 const BREVO_SENDER_NAME = process.env.BREVO_SENDER_NAME || 'Mindshift Books';
 const BREVO_SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'contact@mindshiftbooks.shop';
 const PUBLIC_SITE_URL = process.env.PUBLIC_URL || 'https://mindshiftbooks.shop';
+
+// Paystack — checkout + verification. Used by /api/pay and /api/verify
+// (still in server.js) and by the bookstore's public /config endpoint.
+const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || null;
+const PAYSTACK_PUBLIC_KEY = process.env.PAYSTACK_PUBLIC_KEY || null;
+const PUBLIC_PDF_URL = process.env.PUBLIC_PDF_URL || null;
+
+// Builds an absolute base URL for the current request — prefers the fixed
+// PUBLIC_URL env var when set, otherwise derives it from the request's own
+// forwarded-proto/host headers. Used anywhere a receipt/order/link needs a
+// real https://... URL rather than a relative path.
+function derivePublicUrl(req) {
+  if (process.env.PUBLIC_URL && process.env.PUBLIC_URL.trim()) return process.env.PUBLIC_URL.replace(/\/$/, '');
+  const proto = req.headers['x-forwarded-proto'] || req.protocol || 'http';
+  const host = req.get('host');
+  return `${proto}://${host}`;
+}
 
 // Cloudinary — signed upload, no upload preset needed.
 const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || null;
@@ -155,7 +182,9 @@ const _adminReadCache = new Map(); // key -> { data, expiresAt }
 
 module.exports = {
   admin, db,
+  PROJECT_ROOT,
   BREVO_API_KEY, BREVO_SENDER_NAME, BREVO_SENDER_EMAIL, PUBLIC_SITE_URL,
+  PAYSTACK_SECRET_KEY, PAYSTACK_PUBLIC_KEY, PUBLIC_PDF_URL, derivePublicUrl,
   CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET,
   extractImageBuffer, uploadImageToCloudinary, uploadBannerImageToCloudinary,
   requireUser,
