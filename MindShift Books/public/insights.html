@@ -52,42 +52,40 @@ body{font-family:'Segoe UI',system-ui,sans-serif;color:var(--txt);min-height:100
    every page) instead of being duplicated here. */
 /* ── /SHARED HEADER ── */
 
-/* ── HERO CARD ── */
-.hero{margin:16px;border-radius:24px;background:var(--g);padding:24px 20px;color:#fff;
-  position:relative;overflow:hidden;box-shadow:0 16px 36px -12px rgba(99,102,241,.45)}
-.hero::before{content:'';position:absolute;inset:0;background:
-    radial-gradient(circle at 100% 0%, rgba(255,255,255,.22), transparent 55%),
-    radial-gradient(circle at 0% 100%, rgba(255,255,255,.12), transparent 50%);
-  pointer-events:none}
-.hero-deco{position:absolute;top:-22px;right:-18px;width:120px;height:120px;opacity:.14}
-.hero-deco svg{width:100%;height:100%;fill:none;stroke:#fff;stroke-width:1.4}
-.hero-label{font-size:11.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;opacity:.9;
-  display:flex;align-items:center;gap:6px;position:relative}
-.hero-label svg{width:14px;height:14px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.hero-value{font-size:42px;font-weight:900;margin:8px 0 4px;line-height:1;position:relative;
-  text-shadow:0 2px 16px rgba(0,0,0,.12)}
-.hero-sub{font-size:13px;opacity:.9;line-height:1.5;max-width:78%;position:relative}
-.hero-delta{display:inline-flex;align-items:center;gap:4px;margin-top:10px;position:relative;
-  background:rgba(255,255,255,.2);backdrop-filter:blur(6px);padding:5px 11px;border-radius:99px;font-size:12px;font-weight:800}
-.hero-delta svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+/* ── PROFILE ROW (avatar + name + followers) ── */
+.profile-row{display:flex;align-items:center;gap:12px;padding:16px 16px 4px}
+.pr-avatar{width:44px;height:44px;border-radius:50%;object-fit:cover;background:#e0e7ff;flex-shrink:0}
+.pr-info{flex:1;min-width:0}
+.pr-name{font-size:15px;font-weight:900;color:var(--txt)}
+.pr-followers{font-size:12.5px;color:var(--mute);font-weight:600;margin-top:1px}
 
-/* ── FOUNDING CREATOR CARD ── */
-.fc-mini{margin:0 16px 0;padding:15px 16px;border-radius:var(--radius);background:var(--card);
-  box-shadow:var(--shadow-sm);display:flex;align-items:center;gap:13px;cursor:pointer;
-  -webkit-tap-highlight-color:transparent;transition:transform .15s}
-.fc-mini:active{transform:scale(.985)}
-.fc-mini-icon{width:46px;height:46px;border-radius:50%;flex-shrink:0;overflow:hidden;
-  background:linear-gradient(135deg,#c7d2fe,#a5f3fc);display:flex;align-items:center;justify-content:center}
-.fc-mini-icon img{width:100%;height:100%;object-fit:cover;border-radius:50%}
-.fc-mini-icon.faded img{filter:grayscale(1);opacity:.55}
-.fc-mini-body{flex:1;min-width:0}
-.fc-mini-name{font-size:13.5px;font-weight:800;color:var(--txt)}
-.fc-mini-sub{font-size:12px;font-weight:700;margin-top:2px}
-.fc-mini-sub.ok{color:var(--green)}
-.fc-mini-sub.warn{color:var(--amber)}
-.fc-mini-sub.muted{color:var(--mute)}
-.fc-mini-chev{color:var(--mute);flex-shrink:0}
-.fc-mini-chev svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+/* ── FOUNDING CREATOR RINGS ── */
+.rings-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
+  padding:18px 10px;display:flex;justify-content:space-around;cursor:pointer;transition:transform .15s;
+  -webkit-tap-highlight-color:transparent}
+.rings-card:active{transform:scale(.985)}
+.rings-card.prompt{display:block;text-align:center;color:var(--sub);font-size:13px;font-weight:600;
+  line-height:1.5;padding:20px}
+.ring-item{display:flex;flex-direction:column;align-items:center;gap:8px}
+.ring-wrap{position:relative;width:68px;height:68px}
+.ring-wrap svg{width:100%;height:100%}
+.ring-center{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:11.5px;font-weight:900;color:var(--txt)}
+.ring-label{font-size:11px;font-weight:700;color:var(--sub)}
+
+/* ── ANALYTICS: day-range tabs + period boxes ── */
+.day-pills{display:flex;gap:8px;margin-bottom:14px}
+.day-pill{padding:7px 15px;border-radius:99px;border:1.5px solid var(--border2);background:var(--card);
+  font-size:12.5px;font-weight:700;color:var(--sub);cursor:pointer;font-family:inherit;transition:all .15s}
+.day-pill.active{background:var(--txt);color:#fff;border-color:var(--txt)}
+.analytics-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.analytics-box{background:var(--card);border-radius:14px;box-shadow:var(--shadow-sm);padding:12px 10px}
+.ab-label{font-size:10.5px;color:var(--mute);font-weight:700;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ab-value{font-size:17px;font-weight:900;color:var(--txt)}
+.ab-delta{font-size:10.5px;font-weight:800;margin-top:4px;display:flex;align-items:center;gap:2px}
+.ab-delta.up{color:var(--green)}
+.ab-delta.down{color:var(--red)}
+.ab-delta.flat{color:var(--mute)}
 
 /* ── TREND CARD ── */
 .section{padding:22px 16px 0}
@@ -109,7 +107,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;color:var(--txt);min-height:100
   padding:15px;display:flex;flex-direction:column;gap:10px;position:relative}
 .stat-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;
   background:transparent;border:1.5px solid var(--border2)}
-.stat-icon svg{width:19px;height:19px;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.stat-icon svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .stat-icon.followers,.stat-icon.articles,.stat-icon.views,.stat-icon.engagement{color:#1e293b}
 .stat-value-row{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
 .stat-value{font-size:22px;font-weight:900;color:var(--txt)}
@@ -172,7 +170,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;color:var(--txt);min-height:100
 .activity-row{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--border2)}
 .activity-row:last-child{border-bottom:none}
 .activity-icon{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.activity-icon svg{width:15px;height:15px;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.activity-icon svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .activity-icon.like{background:#fee2e2;color:#dc2626}
 .activity-icon.comment{background:#fef3c7;color:#d97706}
 .activity-icon.follow{background:#e0e7ff;color:#4f46e5}
@@ -230,44 +228,56 @@ body{font-family:'Segoe UI',system-ui,sans-serif;color:var(--txt);min-height:100
 </script>
 <!-- ══ /SHARED HEADER + SIDEBAR ══ -->
 
-<!-- HERO: PROFILE VIEWS -->
-<div class="hero">
-  <div class="hero-deco">
-    <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+<!-- PROFILE ROW (avatar + name + followers, FB dashboard style) -->
+<div class="profile-row" id="profileRow">
+  <img class="pr-avatar" id="prAvatar" src="/MINDSHIFT.jpg" alt="">
+  <div class="pr-info">
+    <div class="pr-name" id="prName"><div class="skel" style="height:15px;width:120px"></div></div>
+    <div class="pr-followers" id="prFollowers">—</div>
   </div>
-  <div class="hero-label">
-    <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-    Profile Views
-  </div>
-  <div class="hero-value" id="statViews"><div class="skel" style="height:36px;width:90px;border-radius:8px;background:rgba(255,255,255,.25)"></div></div>
-  <div class="hero-sub">Total times people have viewed your profile</div>
-  <div id="viewsDelta"></div>
 </div>
 
-<!-- FOUNDING CREATOR STATUS -->
-<div class="fc-mini" id="fcMini" style="display:none" onclick="location.href='/founding-creator'">
-  <div class="fc-mini-icon" id="fcMiniIcon"><img src="/fcbadge.jpg" alt="Founding Creator badge"></div>
-  <div class="fc-mini-body">
-    <div class="fc-mini-name">Founding Creator</div>
-    <div class="fc-mini-sub" id="fcMiniSub">Loading…</div>
-  </div>
-  <div class="fc-mini-chev"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+<!-- FOUNDING CREATOR — weekly progress rings (Facebook-dashboard style) -->
+<div class="section" id="fcSection" style="display:none">
+  <div class="section-title">Founding Creator</div>
+  <div class="section-sub" id="fcSectionSub">This week's progress</div>
+  <div class="rings-card" id="fcRingsCard" onclick="location.href='/founding-creator'"></div>
 </div>
 
-<!-- TREND CHART -->
+<!-- ANALYTICS: day-range tabs + period boxes + trend chart -->
 <div class="section">
-  <div class="section-title">14-Day Trend</div>
-  <div class="section-sub">Profile views &amp; new followers over time</div>
+  <div class="section-title">Analytics</div>
+  <div class="section-sub">Your activity over time</div>
+  <div class="day-pills">
+    <button class="day-pill" data-days="7" onclick="setTrendDays(7)">7 days</button>
+    <button class="day-pill active" data-days="14" onclick="setTrendDays(14)">14 days</button>
+    <button class="day-pill" data-days="28" onclick="setTrendDays(28)">28 days</button>
+  </div>
+  <div class="analytics-grid" id="analyticsGrid">
+    <div class="analytics-box"><div class="skel" style="height:34px"></div></div>
+    <div class="analytics-box"><div class="skel" style="height:34px"></div></div>
+    <div class="analytics-box"><div class="skel" style="height:34px"></div></div>
+  </div>
   <div class="trend-card" id="trendCard">
     <div class="skel skel-card"></div>
   </div>
 </div>
 
-<!-- STATS GRID -->
+<!-- STATS GRID (lifetime totals) -->
 <div class="section">
   <div class="section-title">Overview</div>
-  <div class="section-sub">Your activity at a glance</div>
+  <div class="section-sub">All-time totals</div>
   <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon views">
+        <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </div>
+      <div class="stat-value-row">
+        <div class="stat-value" id="statViews"><div class="skel skel-stat-val"></div></div>
+      </div>
+      <div id="viewsDelta"></div>
+      <div class="stat-label">Profile Views</div>
+    </div>
     <div class="stat-card">
       <div class="stat-icon followers">
         <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
@@ -303,7 +313,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;color:var(--txt);min-height:100
       <div class="stat-value-row">
         <div class="stat-value" id="statArticleViews"><div class="skel skel-stat-val"></div></div>
       </div>
-      <div class="stat-label">Total Views</div>
+      <div class="stat-label">Content Views</div>
     </div>
     <div class="stat-card">
       <div class="stat-icon engagement">
@@ -416,7 +426,8 @@ const auth = getAuth(fbApp);
 const db   = getFirestore(fbApp, 'default');
 
 const CIRC = 2 * Math.PI * 40; // donut circumference
-const TREND_DAYS = 14;
+let currentTrendDays = 14;
+let _viewDocs = [], _followDocs = [], _content = [];
 
 const ICONS = {
   eye: `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`,
@@ -428,6 +439,7 @@ const ICONS = {
 onAuthStateChanged(auth, async user => {
   if(!user){ window.location.href='/login'; return; }
   await loadInsights(user.uid);
+  loadFoundingCreatorRings(); // independent of the main load — its own small request, never blocks the rest of the page
 });
 
 async function loadInsights(uid){
@@ -477,10 +489,13 @@ async function loadInsights(uid){
       }
     }catch{ /* falls back to the filtered viewDocs.length above */ }
 
-    // ── Founding Creator status card — same userSnap read above, no extra
-    // request. Links straight into /founding-creator for the full
-    // requirements/progress screen. ──
-    renderFoundingCreatorMini(userDocData?.foundingCreator || null);
+    // ── Founding Creator status now rendered by its own rings widget
+    // (loadFoundingCreatorRings, fired alongside this from onAuthStateChanged) —
+    // no longer needed here.
+
+    // ── Profile row: avatar + name + followers, cheap reuse of the same
+    // userSnap fetched above — no extra request. ──
+    renderProfileRow(userDocData);
 
     // ── Total followers: getCountFromServer with single-field where (uses auto-index) ──
     let totalFollowers = followDocs.length;
@@ -489,17 +504,28 @@ async function loadInsights(uid){
         query(collection(db,'follows'), where('followingId','==',uid)));
       totalFollowers = fc.data().count;
     }catch{}
+    document.getElementById('prFollowers').textContent = `${totalFollowers.toLocaleString()} follower${totalFollowers===1?'':'s'}`;
 
-    // ── Profile views hero + delta ──
+    // ── Profile views total + delta ──
     setNum('statViews', totalViews);
-    renderDelta('viewsDelta', weekDelta(viewDocs), true);
+    renderDelta('viewsDelta', weekDelta(viewDocs), false);
 
     // ── Followers + delta ──
     setNum('statFollowers', totalFollowers);
     renderDelta('followersDelta', weekDelta(followDocs), false);
 
-    // ── Trend chart ──
-    renderTrend(viewDocs, followDocs);
+    // ── Cache for the day-range toggle (7/14/28) so switching ranges never
+    // needs to re-query Firestore — everything it needs is already here. ──
+    _viewDocs = viewDocs;
+    _followDocs = followDocs;
+    _content = [
+      ...articlesSnap.map(a=>({...a, type:'article'})),
+      ...postsSnap.map(p=>({...p, type:'post'}))
+    ];
+
+    // ── Trend chart + period boxes (Analytics section) ──
+    renderTrend(viewDocs, followDocs, currentTrendDays);
+    renderAnalyticsBoxes(currentTrendDays);
 
     // ── Recent activity (reuses recentNotifs — no extra query needed) ──
     renderActivity(activityTop);
@@ -507,10 +533,7 @@ async function loadInsights(uid){
     setNum('statArticles', articlesSnap.length);
     setNum('statPosts', postsSnap.length);
 
-    const content = [
-      ...articlesSnap.map(a=>({...a, type:'article'})),
-      ...postsSnap.map(p=>({...p, type:'post'}))
-    ];
+    const content = _content;
 
     if(!content.length){
       document.getElementById('perfList').innerHTML = emptyState(
@@ -561,8 +584,8 @@ async function loadInsights(uid){
       emptyState(`<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>`, `Trend data unavailable.`);
     document.getElementById('activityCard').innerHTML =
       emptyState(ICONS.eye, `Activity unavailable.`);
-    const fcMiniEl = document.getElementById('fcMini');
-    if(fcMiniEl) fcMiniEl.style.display = 'none';
+    const fcSectionEl = document.getElementById('fcSection');
+    if(fcSectionEl) fcSectionEl.style.display = 'none';
   }
 }
 
@@ -628,14 +651,15 @@ function smoothLine(pts){
   return d;
 }
 
-function renderTrend(viewDocs, followDocs){
-  const views = bucketByDay(viewDocs, TREND_DAYS);
-  const followers = bucketByDay(followDocs, TREND_DAYS);
+function renderTrend(viewDocs, followDocs, days){
+  days = days || currentTrendDays;
+  const views = bucketByDay(viewDocs, days);
+  const followers = bucketByDay(followDocs, days);
   const max = Math.max(...views, ...followers, 1);
 
   const w=280, h=112, padTop=10, padBottom=10;
   const innerH = h-padTop-padBottom;
-  const step = w/(TREND_DAYS-1);
+  const step = w/(days-1);
   const toPoints = arr => arr.map((v,i)=>({ x:+(i*step).toFixed(1), y:+(padTop + innerH - (v/max)*innerH).toFixed(1) }));
 
   const viewPts = toPoints(views);
@@ -647,9 +671,9 @@ function renderTrend(viewDocs, followDocs){
 
   // Four evenly-spaced date labels instead of just start/end — easier to
   // read at a glance, still just one row, nothing scattered across the card.
-  const startDate = new Date(); startDate.setHours(0,0,0,0); startDate.setDate(startDate.getDate()-(TREND_DAYS-1));
+  const startDate = new Date(); startDate.setHours(0,0,0,0); startDate.setDate(startDate.getDate()-(days-1));
   const fmt = d => d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
-  const labelIdx = [0, Math.round((TREND_DAYS-1)/3), Math.round(2*(TREND_DAYS-1)/3), TREND_DAYS-1];
+  const labelIdx = [0, Math.round((days-1)/3), Math.round(2*(days-1)/3), days-1];
   const labelsHtml = labelIdx.map(i=>{
     const d = new Date(startDate); d.setDate(d.getDate()+i);
     return `<span>${fmt(d)}</span>`;
@@ -677,36 +701,129 @@ function renderTrend(viewDocs, followDocs){
     <div class="trend-legend">
       <div class="trend-legend-item">
         <div class="trend-legend-line" style="background:var(--p)"></div>
-        <div><div class="trend-legend-text">Profile Views</div><div class="trend-legend-sub">${totalViews} in 14 days</div></div>
+        <div><div class="trend-legend-text">Profile Views</div><div class="trend-legend-sub">${totalViews} in ${days} days</div></div>
       </div>
       <div class="trend-legend-item">
         <div class="trend-legend-line" style="background:var(--amber)"></div>
-        <div><div class="trend-legend-text">New Followers</div><div class="trend-legend-sub">${totalFollowers} in 14 days</div></div>
+        <div><div class="trend-legend-text">New Followers</div><div class="trend-legend-sub">${totalFollowers} in ${days} days</div></div>
       </div>
     </div>
   `;
 }
 
-/* ── FOUNDING CREATOR MINI CARD ── */
-function renderFoundingCreatorMini(fc){
-  const el = document.getElementById('fcMini');
-  if(!fc || !fc.status || fc.status === 'lost'){ el.style.display='none'; return; }
-  el.style.display='flex';
-  const icon = document.getElementById('fcMiniIcon');
-  const sub = document.getElementById('fcMiniSub');
-  if(fc.status === 'pending'){
-    icon.classList.remove('faded');
-    sub.className = 'fc-mini-sub muted';
-    sub.textContent = 'Tracking starts soon — tap to view';
-  } else if(fc.status === 'faded'){
-    icon.classList.add('faded');
-    sub.className = 'fc-mini-sub warn';
-    sub.textContent = 'At risk — tap to see why';
+/* ── PROFILE ROW ── */
+function renderProfileRow(userDocData){
+  const nameEl = document.getElementById('prName');
+  const avatarEl = document.getElementById('prAvatar');
+  if(userDocData){
+    nameEl.textContent = userDocData.name || userDocData.username || 'Your Profile';
+    if(userDocData.photoURL || userDocData.avatar) avatarEl.src = userDocData.photoURL || userDocData.avatar;
   } else {
-    icon.classList.remove('faded');
-    sub.className = 'fc-mini-sub ok';
-    sub.textContent = 'Active this week — tap to view progress';
+    nameEl.textContent = 'Your Profile';
   }
+}
+
+/* ── FOUNDING CREATOR — weekly progress rings ── */
+async function loadFoundingCreatorRings(){
+  try{
+    const user = auth.currentUser;
+    if(!user) return;
+    const idToken = await user.getIdToken();
+    const resp = await fetch('/api/founding-creator/status', { headers: { Authorization: `Bearer ${idToken}` } });
+    const data = await resp.json();
+    if(!resp.ok) throw new Error(data.error || 'failed');
+    renderFcRings(data);
+  }catch(e){
+    console.error('founding-creator rings failed:', e);
+    const section = document.getElementById('fcSection');
+    if(section) section.style.display = 'none';
+  }
+}
+
+function ringSvg(pct, color){
+  const r = 28, c = 2*Math.PI*r;
+  const off = c * (1 - Math.min(1, Math.max(0, pct)));
+  return `<svg viewBox="0 0 66 66">
+    <circle cx="33" cy="33" r="${r}" fill="none" stroke="var(--border2)" stroke-width="6"/>
+    <circle cx="33" cy="33" r="${r}" fill="none" stroke="${color}" stroke-width="6" stroke-linecap="round"
+      stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}" transform="rotate(-90 33 33)"/>
+  </svg>`;
+}
+function ringItem(label, have, target, color){
+  const pct = target > 0 ? have/target : 0;
+  return `<div class="ring-item">
+    <div class="ring-wrap">${ringSvg(pct, color)}<div class="ring-center">${Math.min(have,target)}/${target}</div></div>
+    <div class="ring-label">${label}</div>
+  </div>`;
+}
+
+function renderFcRings(data){
+  const section = document.getElementById('fcSection');
+  const card = document.getElementById('fcRingsCard');
+  const sub = document.getElementById('fcSectionSub');
+  if(!data || !data.earned || data.status === 'lost'){ section.style.display = 'none'; return; }
+
+  section.style.display = 'block';
+  if(data.status === 'pending'){
+    card.className = 'rings-card prompt';
+    sub.textContent = 'Tracking starts soon';
+    const startDate = data.trackingStartsAt
+      ? new Date(data.trackingStartsAt).toLocaleDateString('en-US', { weekday:'long', month:'short', day:'numeric' })
+      : 'next week';
+    card.innerHTML = `This badge just launched, so this week doesn't count against you — your real tracking starts ${startDate}. Tap to see what you'll need.`;
+    return;
+  }
+
+  card.className = 'rings-card';
+  sub.textContent = data.status === 'faded'
+    ? "At risk — hit this week's target to recover"
+    : "This week's progress";
+  card.innerHTML =
+    ringItem('Content', data.progress.content, data.target.content, 'var(--p)') +
+    ringItem('Views', data.progress.views, data.target.views, 'var(--p2)') +
+    ringItem('Engagement', data.progress.engagement, data.target.engagement, 'var(--amber)');
+}
+
+/* ── ANALYTICS: day-range toggle + period boxes ── */
+function setTrendDays(days){
+  currentTrendDays = days;
+  document.querySelectorAll('.day-pill').forEach(b => b.classList.toggle('active', Number(b.dataset.days) === days));
+  renderTrend(_viewDocs, _followDocs, days);
+  renderAnalyticsBoxes(days);
+}
+
+function periodCount(docs, days){
+  const cutoff = Date.now() - days*86400000;
+  return docs.reduce((n,d)=>{
+    const ts = d.createdAt; if(!ts) return n;
+    const t = (ts.toDate ? ts.toDate() : new Date(ts)).getTime();
+    return t >= cutoff ? n+1 : n;
+  }, 0);
+}
+
+function analyticsBox(label, now, prev){
+  const diff = now - prev;
+  const dir = diff > 0 ? 'up' : diff < 0 ? 'down' : 'flat';
+  const arrow = dir === 'up' ? '▲' : dir === 'down' ? '▼' : '–';
+  return `<div class="analytics-box">
+    <div class="ab-label">${label}</div>
+    <div class="ab-value">${now.toLocaleString()}</div>
+    <div class="ab-delta ${dir}">${arrow} ${Math.abs(diff).toLocaleString()}</div>
+  </div>`;
+}
+
+function renderAnalyticsBoxes(days){
+  const viewsNow = periodCount(_viewDocs, days);
+  const viewsPrev = periodCount(_viewDocs, days*2) - viewsNow;
+  const followersNow = periodCount(_followDocs, days);
+  const followersPrev = periodCount(_followDocs, days*2) - followersNow;
+  const postsNow = periodCount(_content, days);
+  const postsPrev = periodCount(_content, days*2) - postsNow;
+
+  document.getElementById('analyticsGrid').innerHTML =
+    analyticsBox('Views', viewsNow, viewsPrev) +
+    analyticsBox('New Followers', followersNow, followersPrev) +
+    analyticsBox('Posts', postsNow, postsPrev);
 }
 
 /* ── BEST CONTENT (article or post) ── */

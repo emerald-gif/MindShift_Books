@@ -11,27 +11,36 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --p:#4f46e5;--p2:#06b6d4;--g:linear-gradient(90deg,#4f46e5,#06b6d4);
-  --txt:#0f172a;--sub:#6b7280;--mute:#9ca3af;
-  --bg:#f8fafc;--card:#fff;--border:#e5e7eb;--border2:#e2e8f0;
-  --green:#10b981;--red:#ef4444;--amber:#f59e0b;--radius:16px;
+  --p:#6366f1;--p2:#06b6d4;--p3:#8b5cf6;
+  --g:linear-gradient(135deg,#6366f1 0%,#8b5cf6 55%,#06b6d4 100%);
+  --txt:#0f172a;--sub:#64748b;--mute:#94a3b8;
+  --bg:#f4f4fb;--card:#fff;--border2:#edeef5;
+  --green:#10b981;--red:#ef4444;--amber:#f59e0b;--radius:20px;
+  --shadow:0 1px 2px rgba(15,23,42,.04),0 10px 28px -12px rgba(76,60,190,.16);
+  --shadow-sm:0 1px 2px rgba(15,23,42,.04),0 4px 14px -6px rgba(15,23,42,.08);
 }
-body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh}
+body{font-family:'Segoe UI',system-ui,sans-serif;color:var(--txt);min-height:100vh;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(99,102,241,.10), transparent 42%),
+    radial-gradient(circle at 88% 6%, rgba(6,182,212,.08), transparent 46%),
+    var(--bg);
+  background-attachment:fixed}
 
 /* ── HEADER (back-button style, matches post-read.html / article-read.html) ── */
 .hdr{position:sticky;top:0;z-index:100;background:rgba(248,247,255,.92);backdrop-filter:blur(12px);
-  border-bottom:1px solid var(--border);padding:0 16px;height:56px;
+  border-bottom:1px solid var(--border2);padding:0 16px;height:56px;
   display:flex;align-items:center;justify-content:space-between;gap:8px}
-.btn-back,.hdr-open{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--border);
+.btn-back,.hdr-open{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--border2);
   background:var(--card);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt);flex-shrink:0}
 .btn-back svg,.hdr-open svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
 .hdr-open svg{width:16px;height:16px;stroke-width:2}
 .hdr-title{font-size:15px;font-weight:800;color:var(--txt);flex:1;text-align:center}
 
 /* ── PREVIEW CARD ── */
-.preview-card{margin:16px;border:1.5px solid var(--border);border-radius:18px;background:var(--card);
-  display:flex;gap:12px;padding:14px;cursor:pointer;align-items:flex-start}
-.preview-thumb{width:64px;height:64px;border-radius:12px;flex-shrink:0;background:#e0e7ff center/cover no-repeat;
+.preview-card{margin:16px;border-radius:var(--radius);background:var(--card);box-shadow:var(--shadow);
+  display:flex;gap:12px;padding:15px;cursor:pointer;align-items:flex-start;transition:transform .15s}
+.preview-card:active{transform:scale(.99)}
+.preview-thumb{width:64px;height:64px;border-radius:14px;flex-shrink:0;background:linear-gradient(135deg,#e0e7ff,#c7d2fe) center/cover no-repeat;
   display:flex;align-items:center;justify-content:center;color:var(--p);overflow:hidden}
 .preview-thumb img{width:100%;height:100%;object-fit:cover;display:block}
 .preview-thumb svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -47,30 +56,33 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .section-title{font-size:15px;font-weight:900;color:var(--txt);margin-bottom:2px}
 .section-sub{font-size:12.5px;color:var(--mute);margin-bottom:14px}
 .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.stat-card{background:var(--card);border:1.5px solid var(--border);border-radius:16px;
-  padding:14px;display:flex;flex-direction:column;gap:10px}
-.stat-icon{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center}
-.stat-icon svg{width:18px;height:18px;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.stat-icon.views{background:#e0e7ff;color:var(--p)}
-.stat-icon.engagement{background:#fee2e2;color:#dc2626}
+.stat-card{background:var(--card);border-radius:18px;box-shadow:var(--shadow-sm);
+  padding:15px;display:flex;flex-direction:column;gap:10px}
+.stat-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+  background:transparent;border:1.5px solid var(--border2)}
+.stat-icon svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;color:#1e293b}
 .stat-value{font-size:22px;font-weight:900;color:var(--txt)}
 .stat-label{font-size:11.5px;color:var(--mute);font-weight:600}
 
 /* ── TREND CARD (matches insights.html) ── */
-.trend-card{background:var(--card);border:1.5px solid var(--border);border-radius:20px;padding:18px}
+.day-pills{display:flex;gap:8px;margin-bottom:14px}
+.day-pill{padding:7px 15px;border-radius:99px;border:1.5px solid var(--border2);background:var(--card);
+  font-size:12.5px;font-weight:700;color:var(--sub);cursor:pointer;font-family:inherit;transition:all .15s}
+.day-pill.active{background:var(--txt);color:#fff;border-color:var(--txt)}
+.trend-card{background:var(--card);border-radius:var(--radius);padding:20px 18px 18px;box-shadow:var(--shadow)}
 .trend-chart-wrap{width:100%}
-.trend-chart-wrap svg{width:100%;height:auto;display:block}
-.trend-axis{display:flex;justify-content:space-between;font-size:11px;color:var(--mute);font-weight:600;margin-top:6px}
-.trend-total{font-size:12px;color:var(--mute);font-weight:600;margin-top:12px;padding-top:12px;border-top:1px solid var(--border2);text-align:center}
+.trend-chart-wrap svg{width:100%;height:auto;display:block;overflow:visible}
+.trend-axis{display:flex;justify-content:space-between;font-size:10.5px;color:var(--mute);font-weight:700;margin-top:8px}
+.trend-total{font-size:12px;color:var(--mute);font-weight:600;margin-top:14px;padding-top:14px;border-top:1px solid var(--border2);text-align:center}
 
 /* ── ENGAGEMENT LIST ── */
-.metric-list{background:var(--card);border:1.5px solid var(--border);border-radius:18px;overflow:hidden}
+.metric-list{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
 .metric-row{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border2)}
 .metric-row:last-child{border-bottom:none}
 .metric-icon{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.metric-icon svg{width:16px;height:16px;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.metric-icon.like{background:#fee2e2;color:#dc2626}
-.metric-icon.comment{background:#fef3c7;color:#d97706}
+.metric-icon svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.metric-icon.like{background:linear-gradient(135deg,#fee2e2,#fecaca);color:#dc2626}
+.metric-icon.comment{background:linear-gradient(135deg,#fef3c7,#fde68a);color:#d97706}
 .metric-label{flex:1;font-size:13.5px;font-weight:700;color:var(--txt)}
 .metric-value{font-size:15px;font-weight:900;color:var(--txt)}
 
@@ -87,7 +99,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .skel-stat-val{height:22px;width:50px;border-radius:6px}
 .skel-card{height:140px;border-radius:20px}
 .skel-row{height:46px;border-radius:10px;margin-bottom:10px}
-.skel-thumb{width:64px;height:64px;border-radius:12px;flex-shrink:0}
+.skel-thumb{width:64px;height:64px;border-radius:14px;flex-shrink:0}
 .skel-line{height:13px;border-radius:6px;margin-bottom:8px}
 
 .bottom-pad{height:24px}
@@ -142,7 +154,12 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   <!-- VIEWS TREND -->
   <div class="section">
     <div class="section-title">Views</div>
-    <div class="section-sub">Last 14 days</div>
+    <div class="section-sub">Daily views for this content</div>
+    <div class="day-pills">
+      <button class="day-pill" data-days="7" onclick="setTrendDays(7)">7 days</button>
+      <button class="day-pill active" data-days="14" onclick="setTrendDays(14)">14 days</button>
+      <button class="day-pill" data-days="28" onclick="setTrendDays(28)">28 days</button>
+    </div>
     <div class="trend-card" id="trendCard">
       <div class="skel skel-card"></div>
     </div>
@@ -178,7 +195,8 @@ const fbApp = initializeApp({
 const auth = getAuth(fbApp);
 const db   = getFirestore(fbApp, 'default');
 
-const TREND_DAYS = 14;
+let currentTrendDays = 14;
+let _dayMap = {};
 const ICONS = {
   eye: `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`,
   heart: `<path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>`,
@@ -238,7 +256,8 @@ async function loadContentInsights(uid) {
     renderPreview(content);
     setNum('statViews', views);
     setNum('statEngagement', likes + comments);
-    renderTrend(dayMap);
+    _dayMap = dayMap;
+    renderTrend(_dayMap, currentTrendDays);
     renderEngagement(likes, comments);
 
   } catch (e) {
@@ -269,15 +288,39 @@ function renderPreview(c) {
   document.getElementById('hdrOpen').onclick = () => location.href = readHref;
 }
 
-function renderTrend(dayMap) {
-  const start = new Date(); start.setHours(0, 0, 0, 0); start.setDate(start.getDate() - (TREND_DAYS - 1));
-  const days = [];
-  for (let i = 0; i < TREND_DAYS; i++) {
+function smoothLine(pts){
+  if (pts.length < 2) return `M${pts[0].x},${pts[0].y}`;
+  let d = `M${pts[0].x},${pts[0].y}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] || pts[i];
+    const p1 = pts[i];
+    const p2 = pts[i + 1];
+    const p3 = pts[i + 2] || p2;
+    const cp1x = p1.x + (p2.x - p0.x) / 6;
+    const cp1y = p1.y + (p2.y - p0.y) / 6;
+    const cp2x = p2.x - (p3.x - p1.x) / 6;
+    const cp2y = p2.y - (p3.y - p1.y) / 6;
+    d += ` C${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2.x.toFixed(1)},${p2.y.toFixed(1)}`;
+  }
+  return d;
+}
+
+function setTrendDays(days){
+  currentTrendDays = days;
+  document.querySelectorAll('.day-pill').forEach(b => b.classList.toggle('active', Number(b.dataset.days) === days));
+  renderTrend(_dayMap, days);
+}
+
+function renderTrend(dayMap, days) {
+  days = days || currentTrendDays;
+  const start = new Date(); start.setHours(0, 0, 0, 0); start.setDate(start.getDate() - (days - 1));
+  const daySeries = [];
+  for (let i = 0; i < days; i++) {
     const d = new Date(start); d.setDate(start.getDate() + i);
     const key = `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
-    days.push(dayMap[key] || 0);
+    daySeries.push(dayMap[key] || 0);
   }
-  const total = days.reduce((a, b) => a + b, 0);
+  const total = daySeries.reduce((a, b) => a + b, 0);
   const card = document.getElementById('trendCard');
 
   if (total === 0) {
@@ -285,30 +328,42 @@ function renderTrend(dayMap) {
     return;
   }
 
-  const max = Math.max(...days, 1);
-  const w = 280, h = 100, padTop = 8, padBottom = 8;
+  const max = Math.max(...daySeries, 1);
+  const w = 280, h = 112, padTop = 10, padBottom = 10;
   const innerH = h - padTop - padBottom;
-  const step = w / (TREND_DAYS - 1);
-  const path = days.map((v, i) => {
-    const x = (i * step).toFixed(1);
-    const y = (padTop + innerH - (v / max) * innerH).toFixed(1);
-    return `${i === 0 ? 'M' : 'L'}${x},${y}`;
-  }).join(' ');
+  const step = w / (days - 1);
+  const pts = daySeries.map((v, i) => ({
+    x: +(i * step).toFixed(1),
+    y: +(padTop + innerH - (v / max) * innerH).toFixed(1)
+  }));
+  const linePath = smoothLine(pts);
+  const baseline = h - padBottom;
+  const areaPath = `${linePath} L${pts[pts.length - 1].x},${baseline} L${pts[0].x},${baseline} Z`;
 
-  const endDate = new Date();
+  // Four evenly-spaced date labels instead of just start/end.
   const fmt = d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const labelIdx = [0, Math.round((days - 1) / 3), Math.round(2 * (days - 1) / 3), days - 1];
+  const labelsHtml = labelIdx.map(i => {
+    const d = new Date(start); d.setDate(d.getDate() + i);
+    return `<span>${fmt(d)}</span>`;
+  }).join('');
 
   card.innerHTML = `
     <div class="trend-chart-wrap">
       <svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
-        <line x1="0" y1="${padTop}" x2="${w}" y2="${padTop}" stroke="var(--border2)" stroke-width="1"/>
-        <line x1="0" y1="${(h / 2).toFixed(1)}" x2="${w}" y2="${(h / 2).toFixed(1)}" stroke="var(--border2)" stroke-width="1"/>
-        <line x1="0" y1="${h - padBottom}" x2="${w}" y2="${h - padBottom}" stroke="var(--border2)" stroke-width="1"/>
-        <path d="${path}" fill="none" stroke="var(--p)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <defs>
+          <linearGradient id="ciTrendFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="var(--p)" stop-opacity="0.34"/>
+            <stop offset="100%" stop-color="var(--p)" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <line x1="0" y1="${(h / 2).toFixed(1)}" x2="${w}" y2="${(h / 2).toFixed(1)}" stroke="var(--border2)" stroke-width="1" stroke-dasharray="3 4"/>
+        <path d="${areaPath}" fill="url(#ciTrendFill)" stroke="none"/>
+        <path d="${linePath}" fill="none" stroke="var(--p)" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </div>
-    <div class="trend-axis"><span>${fmt(start)}</span><span>${fmt(endDate)}</span></div>
-    <div class="trend-total">${total} view${total === 1 ? '' : 's'} in the last 14 days</div>
+    <div class="trend-axis">${labelsHtml}</div>
+    <div class="trend-total">${total} view${total === 1 ? '' : 's'} in the last ${days} days</div>
   `;
 }
 
