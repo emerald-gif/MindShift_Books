@@ -87,6 +87,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;color:var(--txt);min-height:100
 .metric-icon svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .metric-icon.like{background:linear-gradient(135deg,#fee2e2,#fecaca);color:#dc2626}
 .metric-icon.comment{background:linear-gradient(135deg,#fef3c7,#fde68a);color:#d97706}
+.metric-icon.repost{background:linear-gradient(135deg,#cffafe,#a5f3fc);color:#0891b2}
 .metric-label{flex:1;font-size:13.5px;font-weight:700;color:var(--txt)}
 .metric-value{font-size:15px;font-weight:900;color:var(--txt)}
 
@@ -206,6 +207,7 @@ const ICONS = {
   eye: `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`,
   heart: `<path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>`,
   comment: `<path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/>`,
+  repost: `<path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/>`,
   doc: `<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>`
 };
 
@@ -247,23 +249,28 @@ async function loadContentInsights(uid) {
       return;
     }
 
-    const [metaSnap, likeSnap, viewsSnap] = await Promise.all([
+    const [metaSnap, likeSnap, viewsSnap, repostSnap] = await Promise.all([
       getDoc(doc(db, metaCol, contentId)).catch(() => null),
       getDoc(doc(db, 'articleLikes', contentId)).catch(() => null),
-      getDoc(doc(db, viewsCol, contentId)).catch(() => null)
+      getDoc(doc(db, viewsCol, contentId)).catch(() => null),
+      getDoc(doc(db, 'repostCounts', contentId)).catch(() => null)
     ]);
 
     const views    = metaSnap && metaSnap.exists() ? (metaSnap.data().viewCount || 0) : 0;
     const comments = metaSnap && metaSnap.exists() ? (metaSnap.data().commentCount || 0) : 0;
     const likes    = likeSnap && likeSnap.exists() ? (likeSnap.data().count || 0) : 0;
+    const reposts  = repostSnap && repostSnap.exists() ? (repostSnap.data().count || 0) : 0;
     const dayMap   = viewsSnap && viewsSnap.exists() ? (viewsSnap.data().days || {}) : {};
 
     renderPreview(content);
     setNum('statViews', views);
-    setNum('statEngagement', likes + comments);
+    // Matches the Founding Creator weekly target's definition of
+    // engagement (likes+comments+reposts) — same word, same meaning,
+    // everywhere in the app.
+    setNum('statEngagement', likes + comments + reposts);
     _dayMap = dayMap;
     renderTrend(_dayMap, currentTrendDays);
-    renderEngagement(likes, comments);
+    renderEngagement(likes, comments, reposts);
 
   } catch (e) {
     console.error('loadContentInsights failed:', e && e.code, e && e.message);
@@ -387,8 +394,9 @@ function renderTrend(dayMap, days) {
   `;
 }
 
-function renderEngagement(likes, comments) {
-  document.getElementById('engagementCount').textContent = (likes + comments).toLocaleString();
+function renderEngagement(likes, comments, reposts) {
+  reposts = reposts || 0;
+  document.getElementById('engagementCount').textContent = (likes + comments + reposts).toLocaleString();
   document.getElementById('engagementList').innerHTML = `
     <div class="metric-row">
       <div class="metric-icon like"><svg viewBox="0 0 24 24">${ICONS.heart}</svg></div>
@@ -399,6 +407,11 @@ function renderEngagement(likes, comments) {
       <div class="metric-icon comment"><svg viewBox="0 0 24 24">${ICONS.comment}</svg></div>
       <div class="metric-label">Comments</div>
       <div class="metric-value">${comments.toLocaleString()}</div>
+    </div>
+    <div class="metric-row">
+      <div class="metric-icon repost"><svg viewBox="0 0 24 24">${ICONS.repost}</svg></div>
+      <div class="metric-label">Reposts</div>
+      <div class="metric-value">${reposts.toLocaleString()}</div>
     </div>
   `;
 }

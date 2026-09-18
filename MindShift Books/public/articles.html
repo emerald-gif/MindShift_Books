@@ -988,9 +988,14 @@ async function loadMyProfile(){
 }
 
 /* ── PROFILE-SETUP FEED BANNER ──
-   Same 4 live checks as /complete-profile and the profile-page banner —
-   nothing stored, so this always reflects reality even for accounts that
-   were already following 10+ people or had 20+ likes before this existed.
+   Same 4 checks as /complete-profile and the profile-page banner. Checks
+   ebookVoucher.claimed first — set server-side, once, inside
+   claim-profile-voucher the moment all 4 steps are verified — so a
+   completed profile short-circuits to the one read below instead of
+   re-deriving doneCount from scratch on every feed load. Previously this
+   ran the full check forever, even for accounts long past all 4 steps.
+   Still-incomplete accounts use count-aggregate reads (getCountFromServer)
+   instead of fetching every follow/article/post.
    Dismissible per session (sessionStorage) rather than a permanent flag,
    so it comes back next time they open the app if they're still incomplete
    — visibility matters more here than on the profile page, since this is
@@ -1018,16 +1023,21 @@ async function checkFeedProfileSetup(user){
 
   try{
     const uid = user.uid;
-    const [userSnap, followSnap, articleSnap, postSnap] = await Promise.all([
-      getDoc(doc(db,'users',uid)),
-      getDocs(query(collection(db,'follows'), where('followerId','==',uid))),
-      getDocs(query(collection(db,'articles'), where('authorUid','==',uid))),
-      getDocs(query(collection(db,'posts'), where('authorUid','==',uid)))
-    ]);
+    const userSnap = await getDoc(doc(db,'users',uid));
     const u = userSnap.exists() ? userSnap.data() : {};
+    if(u.ebookVoucher && u.ebookVoucher.claimed){
+      banner.style.display = 'none';
+      return;
+    }
+
     const profileDone = !!(u.photo || user.photoURL) && !!u.cover && !!(u.bio && u.bio.trim()) && Array.isArray(u.categories) && u.categories.length > 0;
-    const followDone = followSnap.size >= 10;
-    const contentDone = (articleSnap.size + postSnap.size) >= 1;
+    const [followCountSnap, articleCountSnap, postCountSnap] = await Promise.all([
+      getCountFromServer(query(collection(db,'follows'), where('followerId','==',uid))),
+      getCountFromServer(query(collection(db,'articles'), where('authorUid','==',uid))),
+      getCountFromServer(query(collection(db,'posts'), where('authorUid','==',uid)))
+    ]);
+    const followDone = followCountSnap.data().count >= 10;
+    const contentDone = (articleCountSnap.data().count + postCountSnap.data().count) >= 1;
     const engageDone = likedSet.size >= 10; // already loaded above by loadLikedSet()
     const steps = [profileDone, followDone, contentDone, engageDone];
     const doneCount = steps.filter(Boolean).length;
@@ -1817,6 +1827,15 @@ function recordViewOnce(id, metaCollection){
   }catch(e){ /* storage blocked (private mode etc.) — fall through, count once */ }
   updateDoc(doc(db,metaCollection,id),{viewCount:increment(1)})
     .catch(()=>setDoc(doc(db,metaCollection,id),{viewCount:1},{merge:true}).catch(()=>{}));
+  // Day-bucketed view, same as article-read.html / post-read.html write —
+  // without this, a view counted here (a feed dwell) would still show up
+  // in the lifetime viewCount above, but silently never appear on that
+  // content's Insights trend chart, since the chart only ever reads the
+  // day map, not viewCount. Same key format as the read pages so the two
+  // sources never drift apart.
+  const viewsCollection = metaCollection === 'postMeta' ? 'postViews' : 'articleViews';
+  updateDoc(doc(db,viewsCollection,id),{[`days.${today}`]:increment(1)})
+    .catch(()=>setDoc(doc(db,viewsCollection,id),{days:{[today]:1}},{merge:true}).catch(()=>{}));
   return true;
 }
 

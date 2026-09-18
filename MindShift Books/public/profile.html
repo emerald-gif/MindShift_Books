@@ -436,6 +436,11 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
 .btn-write-now{padding:10px 20px;border-radius:99px;background:var(--g);border:none;
   color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
 
+.acard-load-more{display:block;width:calc(100% - 32px);margin:4px 16px 20px;padding:12px;
+  border-radius:var(--radius);border:1px solid var(--border);background:var(--card);
+  color:var(--sub);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+.acard-load-more:disabled{opacity:.6;cursor:default}
+
 /* ── EDIT PROFILE SHEET ── */
 .sheet-bg{position:fixed;inset:0;background:rgba(15,10,30,.5);backdrop-filter:blur(4px);
   z-index:200;opacity:0;pointer-events:none;transition:opacity .3s}
@@ -867,7 +872,7 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged, updateProfile } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
-import { getFirestore, doc, getDoc, setDoc, deleteDoc, updateDoc, collection, query, where, getDocs, getCountFromServer, orderBy, serverTimestamp, onSnapshot, addDoc, writeBatch, increment, limit, runTransaction }
+import { getFirestore, doc, getDoc, setDoc, deleteDoc, updateDoc, collection, query, where, getDocs, getCountFromServer, orderBy, serverTimestamp, onSnapshot, addDoc, writeBatch, increment, limit, startAfter, runTransaction }
   from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
 import { initNotificationUI } from '/notifications.js';
 import { initRepost } from '/repost.js';
@@ -910,6 +915,11 @@ let activeTab = 'all';
 let isFollowing = false;
 let allSubmissions = [];
 let allReposts = [];
+const GRID_PAGE_SIZE = 24;
+let _artLastDoc = null, _postLastDoc = null;
+let _artExhausted = false, _postExhausted = false;
+let _gridLoadingMore = false;
+let _repostsLoaded = false, _repostsLoading = false;
 let likedSet = new Set();
 let savedSet = new Set();
 let likeCountCache = {};
@@ -1100,7 +1110,9 @@ async function loadProfile(uid){
   // loadArticles first so allSubmissions is populated for loadStats article count
   await Promise.all([loadLikedSet(), loadSavedSet()]);
   await loadArticles();
-  loadReposts(); // not awaited — Reposts tab renders once this resolves, doesn't block the rest
+  // loadReposts() no longer fires here — it's lazy now, triggered by
+  // switchTab() the first time someone actually opens the Reposts tab,
+  // since most profile visits never touch it.
   await Promise.all([loadStats(), loadFollowState()]);
   if(isOwner) renderSetupBanner();
   // Track this as a profile view for Insights — analytics only, never a
@@ -1368,18 +1380,16 @@ function renderProfileHeader(){
 async function loadStats(){
   const uid = profileData.uid;
 
-  // Articles count — if allSubmissions is already loaded by loadArticles(), use it.
-  // Otherwise fall back to a simple single-field query (no composite index needed).
+  // Articles count — count-aggregate read (~1 read regardless of how many
+  // match), same trick as the follower/following counts just below. Used to
+  // depend on allSubmissions from loadArticles() having fetched every
+  // article; now it's independent, so capping/paginating that fetch doesn't
+  // affect this number.
   try{
-    if(allSubmissions.length >= 0){
-      // Use in-memory data if available (loadArticles ran first via Promise.all)
-      const count = allSubmissions.filter(s=>s.type==='article').length;
-      document.getElementById('statArticles').textContent = count;
-    } else {
-      const pubQ = query(collection(db,'articles'), where('authorUid','==',uid));
-      const pubSnap = await getDocs(pubQ);
-      document.getElementById('statArticles').textContent = pubSnap.size;
-    }
+    const pubQ = query(collection(db,'articles'), where('authorUid','==',uid));
+    const pubCountSnap = await getCountFromServer(pubQ);
+    const el = document.getElementById('statArticles');
+    if(el) el.textContent = pubCountSnap.data().count;
   }catch(e){
     console.warn('loadStats articles failed:', e?.code);
     const el = document.getElementById('statArticles');
@@ -1503,12 +1513,15 @@ window.toggleFollow = async function(){
 async function loadArticles(){
   const uid = profileData.uid;
   try{
-    // Simple single-field where() only — no orderBy, so no composite index needed.
-    // Sort client-side instead.
-    const [artSnap, postSnap] = await Promise.all([
-      getDocs(query(collection(db,'articles'), where('authorUid','==',uid))),
-      getDocs(query(collection(db,'posts'), where('authorUid','==',uid)))
-    ]);
+    // orderBy+limit here needs a composite index (authorUid Asc, createdAt
+    // Desc) on both the articles and posts collections — Firestore throws
+    // a direct console link to create it the first time this query actually
+    // runs; click it once (or add the index proactively) and it's live in a
+    // couple of minutes. First page only — loadMoreArticles() below pages
+    // further, same cursor pattern as the main feed's own pagination.
+    const artQ  = query(collection(db,'articles'), where('authorUid','==',uid), orderBy('createdAt','desc'), limit(GRID_PAGE_SIZE));
+    const postQ = query(collection(db,'posts'),    where('authorUid','==',uid), orderBy('createdAt','desc'), limit(GRID_PAGE_SIZE));
+    const [artSnap, postSnap] = await Promise.all([getDocs(artQ), getDocs(postQ)]);
     // type is tagged AFTER the spread so it can't be clobbered by a post's
     // own `type` field ('text'/'video', set by create-post.html to tell
     // video posts apart from text posts) — that collision with this same
@@ -1516,6 +1529,10 @@ async function loadArticles(){
     // through to the article card (badge "ARTICLE", title "Untitled").
     const arts  = artSnap.docs.map(d=>({...d.data(), id:d.id, type:'article'}));
     const posts = postSnap.docs.map(d=>({...d.data(), id:d.id, type:'post'}));
+    _artLastDoc  = artSnap.docs[artSnap.docs.length-1]   || null;
+    _postLastDoc = postSnap.docs[postSnap.docs.length-1] || null;
+    _artExhausted  = artSnap.docs.length  < GRID_PAGE_SIZE;
+    _postExhausted = postSnap.docs.length < GRID_PAGE_SIZE;
     allSubmissions = [...arts, ...posts].sort((a,b)=>{
       const ta = a.createdAt?.toDate?.() || new Date(a.createdAt||0);
       const tb = b.createdAt?.toDate?.() || new Date(b.createdAt||0);
@@ -1524,15 +1541,61 @@ async function loadArticles(){
     renderArticles();
   }catch(e){
     console.error('loadArticles failed:', e?.code, e?.message);
+    // TEMP — see /api/debug/log in server.js; remove both once the
+    // composite index is confirmed created.
+    fetch('/api/debug/log', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ context:'profile.html loadArticles', code:e?.code, message:e?.message }) }).catch(()=>{});
     allSubmissions = [];
     renderArticles();
   }
 }
 
-/* ── LOAD REPOSTS ── */
+// Pulls the next page of articles/posts and appends it — triggered by the
+// "Load more" control renderArticles() shows whenever either cursor isn't
+// exhausted yet. Two independent cursors (articles, posts) since they're
+// separate collections; re-sorts the merged list after appending so a
+// creator's articles and posts keep interleaving by date correctly.
+async function loadMoreArticles(){
+  if(_gridLoadingMore || (_artExhausted && _postExhausted)) return;
+  _gridLoadingMore = true;
+  const uid = profileData.uid;
+  try{
+    const [artSnap, postSnap] = await Promise.all([
+      _artExhausted ? Promise.resolve(null) : getDocs(query(collection(db,'articles'), where('authorUid','==',uid), orderBy('createdAt','desc'), startAfter(_artLastDoc), limit(GRID_PAGE_SIZE))),
+      _postExhausted ? Promise.resolve(null) : getDocs(query(collection(db,'posts'), where('authorUid','==',uid), orderBy('createdAt','desc'), startAfter(_postLastDoc), limit(GRID_PAGE_SIZE)))
+    ]);
+    if(artSnap){
+      allSubmissions.push(...artSnap.docs.map(d=>({...d.data(), id:d.id, type:'article'})));
+      _artLastDoc = artSnap.docs[artSnap.docs.length-1] || _artLastDoc;
+      _artExhausted = artSnap.docs.length < GRID_PAGE_SIZE;
+    }
+    if(postSnap){
+      allSubmissions.push(...postSnap.docs.map(d=>({...d.data(), id:d.id, type:'post'})));
+      _postLastDoc = postSnap.docs[postSnap.docs.length-1] || _postLastDoc;
+      _postExhausted = postSnap.docs.length < GRID_PAGE_SIZE;
+    }
+    allSubmissions.sort((a,b)=>{
+      const ta = a.createdAt?.toDate?.() || new Date(a.createdAt||0);
+      const tb = b.createdAt?.toDate?.() || new Date(b.createdAt||0);
+      return tb - ta;
+    });
+    renderArticles();
+  }catch(e){
+    console.error('loadMoreArticles failed:', e?.code, e?.message);
+    // TEMP — see /api/debug/log in server.js; remove both once the
+    // composite index is confirmed created.
+    fetch('/api/debug/log', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ context:'profile.html loadMoreArticles', code:e?.code, message:e?.message }) }).catch(()=>{});
+  }finally{
+    _gridLoadingMore = false;
+  }
+}
+window.loadMoreArticles = loadMoreArticles;
+
+/* ── LOAD REPOSTS (lazy — only fetched once the Reposts tab is actually opened) ── */
 // Single-field where(), no orderBy — same reasoning as loadArticles just
 // above: sort client-side instead of requiring a composite index.
 async function loadReposts(){
+  if(_repostsLoaded || _repostsLoading) return;
+  _repostsLoading = true;
   const uid = profileData.uid;
   try{
     const snap = await getDocs(query(collection(db,'reposts'), where('reposterUid','==',uid)));
@@ -1553,10 +1616,12 @@ async function loadReposts(){
         const tb = b.createdAt?.toDate?.() || new Date(b.createdAt||0);
         return tb - ta;
       });
+    _repostsLoaded = true;
   }catch(e){
     console.error('loadReposts failed:', e?.code, e?.message);
     allReposts = [];
   }
+  _repostsLoading = false;
   if(activeTab==='repost') renderArticles(); // in case the tab was clicked before this resolved
 }
 
@@ -1566,6 +1631,7 @@ window.switchTab = function(tab){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   const el = document.getElementById(`tab${tab.charAt(0).toUpperCase()+tab.slice(1)}`);
   if(el) el.classList.add('active');
+  if(tab==='repost' && !_repostsLoaded && !_repostsLoading) loadReposts(); // fetched on first visit to this tab, not on every profile load
   renderArticles();
 };
 
@@ -1689,6 +1755,10 @@ window.onPostScroll = function(id){
 // repost is a real post of the reposter's own, so it renders like any
 // other post card, with the quoted content embedded under the caption.
 function renderRepostsSection(sec){
+  if(_repostsLoading || (!_repostsLoaded && !allReposts.length)){
+    sec.innerHTML = `<div class="empty-state"><p>Loading…</p></div>`;
+    return;
+  }
   if(!allReposts.length){
     sec.innerHTML = `<div class="empty-state">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
@@ -1892,7 +1962,11 @@ function renderArticles(){
     </div>`;
   });
 
-  sec.innerHTML = `<div class="acard-list">${cardsHtml.join('')}</div>`;
+  const moreAvailable = !(_artExhausted && _postExhausted);
+  const loadMoreHtml = moreAvailable
+    ? `<button class="acard-load-more" onclick="loadMoreArticles()" ${_gridLoadingMore ? 'disabled' : ''}>${_gridLoadingMore ? 'Loading…' : 'Load more'}</button>`
+    : '';
+  sec.innerHTML = `<div class="acard-list">${cardsHtml.join('')}</div>${loadMoreHtml}`;
   observeProfileVideos();
 
   // hideLikeCount hides the number from everyone except the owner
