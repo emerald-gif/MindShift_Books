@@ -74,6 +74,10 @@ body{font-family:'Segoe UI',system-ui,sans-serif;color:var(--txt);min-height:100
 .trend-chart-wrap svg{width:100%;height:auto;display:block;overflow:visible}
 .trend-axis{display:flex;justify-content:space-between;font-size:10.5px;color:var(--mute);font-weight:700;margin-top:8px}
 .trend-total{font-size:12px;color:var(--mute);font-weight:600;margin-top:14px;padding-top:14px;border-top:1px solid var(--border2);text-align:center}
+.today-summary{display:flex;align-items:center;justify-content:center;padding:14px 0}
+.today-summary-item{text-align:center}
+.today-summary-value{font-size:36px;font-weight:900;color:var(--txt);line-height:1}
+.today-summary-label{font-size:11.5px;color:var(--mute);font-weight:700;margin-top:6px}
 
 /* ── ENGAGEMENT LIST ── */
 .metric-list{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
@@ -156,6 +160,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;color:var(--txt);min-height:100
     <div class="section-title">Views</div>
     <div class="section-sub">Daily views for this content</div>
     <div class="day-pills">
+      <button class="day-pill" data-days="1" onclick="setTrendDays(1)">Today</button>
       <button class="day-pill" data-days="7" onclick="setTrendDays(7)">7 days</button>
       <button class="day-pill active" data-days="14" onclick="setTrendDays(14)">14 days</button>
       <button class="day-pill" data-days="28" onclick="setTrendDays(28)">28 days</button>
@@ -305,7 +310,10 @@ function smoothLine(pts){
   return d;
 }
 
-function setTrendDays(days){
+// Exposed on window — see the matching note in insights.html: a top-level
+// function inside type="module" is module-scoped, not global, so the
+// inline onclick on these pills couldn't reach it without this.
+window.setTrendDays = function(days){
   currentTrendDays = days;
   document.querySelectorAll('.day-pill').forEach(b => b.classList.toggle('active', Number(b.dataset.days) === days));
   renderTrend(_dayMap, days);
@@ -322,6 +330,18 @@ function renderTrend(dayMap, days) {
   }
   const total = daySeries.reduce((a, b) => a + b, 0);
   const card = document.getElementById('trendCard');
+
+  // "Today" is a single point — no line to draw, just show the number.
+  if (days === 1) {
+    card.innerHTML = `
+      <div class="today-summary">
+        <div class="today-summary-item">
+          <div class="today-summary-value">${total.toLocaleString()}</div>
+          <div class="today-summary-label">View${total === 1 ? '' : 's'} today</div>
+        </div>
+      </div>`;
+    return;
+  }
 
   if (total === 0) {
     card.innerHTML = emptyStateHtml(ICONS.eye, "Not enough data yet.<br>Daily views will start building a trend here.");

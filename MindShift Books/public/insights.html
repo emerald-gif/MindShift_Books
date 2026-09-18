@@ -100,6 +100,11 @@ body{font-family:'Segoe UI',system-ui,sans-serif;color:var(--txt);min-height:100
 .trend-legend-line{width:14px;height:14px;border-radius:5px;flex-shrink:0}
 .trend-legend-text{font-size:12px;font-weight:700;color:var(--txt)}
 .trend-legend-sub{font-size:11px;color:var(--mute);font-weight:600}
+.today-summary{display:flex;align-items:center;justify-content:space-around;padding:10px 0}
+.today-summary-item{text-align:center}
+.today-summary-value{font-size:32px;font-weight:900;color:var(--txt);line-height:1}
+.today-summary-label{font-size:11.5px;color:var(--mute);font-weight:700;margin-top:6px}
+.today-summary-divider{width:1px;height:44px;background:var(--border2)}
 
 /* ── STATS GRID ── */
 .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:4px 16px 0}
@@ -249,6 +254,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;color:var(--txt);min-height:100
   <div class="section-title">Analytics</div>
   <div class="section-sub">Your activity over time</div>
   <div class="day-pills">
+    <button class="day-pill" data-days="1" onclick="setTrendDays(1)">Today</button>
     <button class="day-pill" data-days="7" onclick="setTrendDays(7)">7 days</button>
     <button class="day-pill active" data-days="14" onclick="setTrendDays(14)">14 days</button>
     <button class="day-pill" data-days="28" onclick="setTrendDays(28)">28 days</button>
@@ -655,6 +661,25 @@ function renderTrend(viewDocs, followDocs, days){
   days = days || currentTrendDays;
   const views = bucketByDay(viewDocs, days);
   const followers = bucketByDay(followDocs, days);
+
+  // "Today" is a single point — a line/area chart can't show a trend across
+  // one value, so show it as a clean summary instead of an empty/broken canvas.
+  if(days === 1){
+    document.getElementById('trendCard').innerHTML = `
+      <div class="today-summary">
+        <div class="today-summary-item">
+          <div class="today-summary-value">${views[0].toLocaleString()}</div>
+          <div class="today-summary-label">Profile Views today</div>
+        </div>
+        <div class="today-summary-divider"></div>
+        <div class="today-summary-item">
+          <div class="today-summary-value">${followers[0].toLocaleString()}</div>
+          <div class="today-summary-label">New Followers today</div>
+        </div>
+      </div>`;
+    return;
+  }
+
   const max = Math.max(...views, ...followers, 1);
 
   const w=280, h=112, padTop=10, padBottom=10;
@@ -785,7 +810,13 @@ function renderFcRings(data){
 }
 
 /* ── ANALYTICS: day-range toggle + period boxes ── */
-function setTrendDays(days){
+// Exposed on window — this is called from an inline onclick, and inline
+// handlers only ever reach window-scoped names. Top-level declarations in
+// a type="module" script are module-scoped, NOT automatically global, so
+// without this the button silently did nothing (a ReferenceError in the
+// console, no visible error, no visible effect) — exactly why the day
+// pills looked broken.
+window.setTrendDays = function(days){
   currentTrendDays = days;
   document.querySelectorAll('.day-pill').forEach(b => b.classList.toggle('active', Number(b.dataset.days) === days));
   renderTrend(_viewDocs, _followDocs, days);
