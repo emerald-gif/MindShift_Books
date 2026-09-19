@@ -321,7 +321,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
 import { getFirestore, doc, getDoc, setDoc, deleteDoc, updateDoc, collection,
-  query, where, getDocs, getCountFromServer, orderBy, serverTimestamp, onSnapshot, increment, limit, runTransaction } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
+  query, where, getDocs, getCountFromServer, orderBy, serverTimestamp, onSnapshot, increment, limit, runTransaction, enableNetwork, disableNetwork } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
+import { createResilient } from '/resilient.js';
 
 const fbApp = initializeApp({
   apiKey:"AIzaSyDTn70s1_uIiSOR6lPLY_nKh8Ff1FViFCs",
@@ -334,6 +335,12 @@ const fbApp = initializeApp({
 });
 const auth = getAuth(fbApp);
 const db   = getFirestore(fbApp, 'default');
+const { resilient, reconnectFirestore } = createResilient({ db, enableNetwork, disableNetwork });
+const rgetDoc  = (ref, o) => resilient(() => getDoc(ref),  { tries: 2, ...o });
+const rgetDocs = (q,   o) => resilient(() => getDocs(q),   { tries: 2, ...o });
+// Which sections failed to load — so an outage shows "Try again", not a false
+// "No articles yet" / "0 followers".
+const _failed = { articles:false, posts:false, followers:false };
 
 let currentUser = null;
 let isFollowing  = false;
@@ -345,7 +352,7 @@ onAuthStateChanged(auth, async user => {
   if(user){
     const followId = `${user.uid}_official`;
     try{
-      const s = await getDoc(doc(db,'follows',followId));
+      const s = await rgetDoc(doc(db,'follows',followId));
       isFollowing = s.exists();
       updateFollowBtn();
     }catch{}
@@ -361,7 +368,7 @@ async function init(){
 // falling back to the hardcoded defaults already in the HTML if nothing's been saved yet.
 async function loadMindshiftProfile(){
   try{
-    const snap = await getDoc(doc(db,'platform','official-profile'));
+    const snap = await rgetDoc(doc(db,'platform','official-profile'));
     if(!snap.exists()) return;
     const p = snap.data();
     if(p.name)    { document.getElementById('kvName').textContent = p.name; document.title = p.name + ' — MindShift Books'; }
@@ -388,13 +395,16 @@ async function loadArticles(){
       orderBy('publishedAt','desc'),
       limit(60)
     );
-    const snap = await getDocs(q);
+    const snap = await rgetDocs(q);
     articles = snap.docs.map(d=>({id:d.id,...d.data()}));
 
+    _failed.articles = false;
     document.getElementById('statArticles').textContent = articles.length;
     renderArticles();
   }catch(e){
     console.error(e);
+    _failed.articles = true;
+    const sa = document.getElementById('statArticles'); if(sa && !/\d/.test(sa.textContent)) sa.textContent = '–';
     renderArticles();
   }
 }
@@ -406,7 +416,7 @@ async function loadFollowerCount(){
     // getCountFromServer is an aggregation query — Firestore bills it as
     // ~1 read no matter how many follow docs match, instead of 1 read per
     // follower (which is what a plain getDocs count would cost).
-    followerCount = (await getCountFromServer(folQ)).data().count;
+    followerCount = (await resilient(()=>getCountFromServer(folQ),{tries:2})).data().count;
   }catch(e){
     // Seen in production: this call can fail (permission/config quirks
     // with aggregation queries) while the exact same filter via a plain
@@ -414,10 +424,11 @@ async function loadFollowerCount(){
     // followers. Falling straight to '0' on that failure is what caused
     // the stat to read 0 while the followers screen showed real people.
     // Fall back to counting the actual docs instead.
-    try{ followerCount = (await getDocs(folQ)).size; }
-    catch{ document.getElementById('statFollowers').textContent = '0'; return; }
+    try{ followerCount = (await rgetDocs(folQ)).size; }
+    catch{ _failed.followers = true; const sf = document.getElementById('statFollowers'); if(sf && !/\d/.test(sf.textContent)) sf.textContent = '–'; return; }
   }
 
+  _failed.followers = false;
   document.getElementById('statFollowers').textContent = fmtNum(followerCount);
 
   try{
@@ -440,8 +451,12 @@ async function loadFollowerCount(){
   }catch{} // the count above is already correct and displayed either way
 }
 
+function loadErrorHtml(){
+  return `<div class="empty"><p>Could not load.<br>Check your connection and try again.</p><button onclick="retryProfile()" style="margin-top:12px;background:var(--p);color:#fff;border:none;padding:10px 20px;border-radius:99px;font-size:13px;font-weight:700;cursor:pointer">Try again</button></div>`;
+}
 function renderArticles(){
   const el = document.getElementById('artList');
+  if(!articles.length && _failed.articles){ el.innerHTML = loadErrorHtml(); return; }
   if(!articles.length){
     el.innerHTML = `<div class="empty">
       <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
@@ -485,7 +500,8 @@ async function loadPosts(){
     // Sorted client-side instead, which is fine at the volume the official
     // account posts at.
     const q = query(collection(db,'posts'), where('authorUid','==','official'), limit(120));
-    const snap = await getDocs(q);
+    const snap = await rgetDocs(q);
+    _failed.posts = false;
     posts = snap.docs.map(d=>({id:d.id,...d.data()}));
     posts.sort((a,b)=>{
       const ta = a.publishedAt?.toMillis ? a.publishedAt.toMillis() : (a.publishedAt ? new Date(a.publishedAt).getTime() : 0);
@@ -504,6 +520,8 @@ async function loadPosts(){
     });
   }catch(e){
     console.error('MindShift Books posts load error:', e);
+    _failed.posts = true;
+    const sp = document.getElementById('statPosts'); if(sp && !/\d/.test(sp.textContent)) sp.textContent = '–';
     renderPosts();
   }
 }
@@ -630,7 +648,7 @@ let likeCountCache = {};
 async function loadLikedSet(){
   if(!currentUser) return;
   try{
-    const s = await getDoc(doc(db,'userLikes',currentUser.uid));
+    const s = await rgetDoc(doc(db,'userLikes',currentUser.uid));
     likedSet.clear();
     if(s.exists()){
       const data = s.data();
@@ -641,7 +659,7 @@ async function loadLikedSet(){
 async function loadSavedSet(){
   if(!currentUser) return;
   try{
-    const s = await getDoc(doc(db,'userSaves',currentUser.uid));
+    const s = await rgetDoc(doc(db,'userSaves',currentUser.uid));
     savedSet.clear();
     if(s.exists()){
       const data = s.data();
@@ -730,7 +748,7 @@ window.handleLike = function(id){
       if(didLike){ likedSet.add(id); } else { likedSet.delete(id); }
       if(btn) btn.classList.toggle('liked', didLike);
       if(countEl){
-        const s = await getDoc(cRefFor(id));
+        const s = await rgetDoc(cRefFor(id));
         const c = s.exists() ? (s.data().count||0) : 0;
         likeCountCache[id] = c;
         countEl.textContent = c > 0 ? c : '';
@@ -765,6 +783,7 @@ window.handleSave = function(id){
 
 function renderPosts(){
   const el = document.getElementById('postList');
+  if(!posts.length && _failed.posts){ el.innerHTML = loadErrorHtml(); return; }
   if(!posts.length){
     el.innerHTML = `<div class="empty">
       <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
@@ -862,7 +881,7 @@ window.showFollowers = async function(type){
   document.body.style.overflow = 'hidden';
   try{
     const q = query(collection(db,'follows'), where('followingId','==','official'));
-    const snap = await getDocs(q);
+    const snap = await rgetDocs(q);
     const uids = snap.docs.map(d=>d.data().followerId);
     if(!uids.length){
       document.getElementById('followList').innerHTML = `<div style="padding:24px;text-align:center;color:var(--mute);font-size:14px">No followers yet.</div>`;
@@ -874,13 +893,13 @@ window.showFollowers = async function(type){
     if(currentUser){
       try{
         const mq = query(collection(db,'follows'), where('followerId','==',currentUser.uid));
-        const ms = await getDocs(mq);
+        const ms = await rgetDocs(mq);
         ms.docs.forEach(d=>myFollowing.add(d.data().followingId));
       }catch{}
     }
 
     const profiles = await Promise.all(uids.map(async uid=>{
-      try{ const s=await getDoc(doc(db,'users',uid)); return s.exists()?{uid,...s.data()}:{uid,name:'MindShift Books Member'}; }
+      try{ const s=await rgetDoc(doc(db,'users',uid)); return s.exists()?{uid,...s.data()}:{uid,name:'MindShift Books Member'}; }
       catch{ return {uid,name:'MindShift Books Member'}; }
     }));
 
@@ -929,6 +948,24 @@ window.showToast = function(msg){
 };
 
 init();
+
+// Retry + automatic recovery (idle tab, network back, back-forward cache).
+window.retryProfile = async function(){
+  await reconnectFirestore();
+  ['artList','postList'].forEach(id=>{ const el=document.getElementById(id); if(el && el.querySelector('.empty button')) el.innerHTML='<div class="empty"><p>Loading…</p></div>'; });
+  init();
+};
+const _anyFailed = () => _failed.articles || _failed.posts || _failed.followers;
+let _hiddenAt = 0;
+document.addEventListener('visibilitychange', ()=>{
+  if(document.hidden){ _hiddenAt = Date.now(); return; }
+  const away = _hiddenAt ? Date.now() - _hiddenAt : 0;
+  _hiddenAt = 0;
+  if(_anyFailed()) retryProfile();
+  else if(away > 5*60*1000) reconnectFirestore();
+});
+window.addEventListener('online', ()=>{ if(_anyFailed()) retryProfile(); });
+window.addEventListener('pageshow', e=>{ if(e.persisted && _anyFailed()) retryProfile(); });
 </script>
 </body>
 </html>

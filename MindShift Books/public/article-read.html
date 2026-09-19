@@ -643,7 +643,8 @@ header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
 import { getFirestore, doc, getDoc, setDoc, deleteDoc, updateDoc, increment, onSnapshot,
-         collection, query, where, orderBy, limit, addDoc, serverTimestamp, getDocs, getCountFromServer, writeBatch, runTransaction } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
+         collection, query, where, orderBy, limit, addDoc, serverTimestamp, getDocs, getCountFromServer, writeBatch, runTransaction, enableNetwork, disableNetwork } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
+import { createResilient } from '/resilient.js';
 import { initNotificationUI } from '/notifications.js';
 import { initRepost } from '/repost.js';
 
@@ -658,6 +659,7 @@ const fbApp = initializeApp({
 });
 const auth = getAuth(fbApp);
 const db   = getFirestore(fbApp, 'default');
+const { resilient, reconnectFirestore } = createResilient({ db, enableNetwork, disableNetwork });
 const notif = initNotificationUI({
   db, getCurrentUser: () => currentUser, getMyProfile: () => myProfile,
   fs: { collection, query, where, onSnapshot, getDocs, getCountFromServer, orderBy, limit, addDoc, writeBatch, serverTimestamp, doc, getDoc, setDoc, increment, runTransaction }
@@ -748,11 +750,18 @@ article = ARTICLES.find(a=>a.id===artId);
     .catch(()=>setDoc(doc(db,'articleViews',artId),{days:{[today]:1}},{merge:true}).catch(()=>{}));
 })();
 
-if(!article){
-  // Try Firestore — user-submitted articles won't be in the hardcoded array
-  (async()=>{
+// Loads the doc from Firestore (user-submitted content isn't in the hardcoded
+// array). A network failure is NOT "not found": retry, then offer Try again.
+let _artLoadState = 'idle'; // 'loading' | 'ok' | 'error'
+const _notFoundHtml = `<div style="text-align:center;padding:60px 20px"><h2>Article not found</h2><a href="/articles" style="color:var(--p)">← Back</a></div>`;
+async function loadArticleFromFirestore(){
+  const box = document.getElementById('artContent');
+  if(!artId){ _artLoadState='ok'; box.innerHTML = _notFoundHtml; return; }
+  _artLoadState = 'loading';
+  box.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--mute)">Loading…</div>';
+  {
     try{
-      const snap = await getDoc(doc(db,'articles',artId));
+      const snap = await resilient(()=>getDoc(doc(db,'articles',artId)));
       if(snap.exists()){
         const x = snap.data();
         article = {
@@ -775,14 +784,36 @@ if(!article){
         document.title = article.title + ' · MindShift Books';
         document.getElementById('hdrTitle').textContent = article.title;
         document.getElementById('copyUrl').textContent = location.href;
+        _artLoadState = 'ok';
         renderArticle();
       } else {
-        document.getElementById('artContent').innerHTML = `<div style="text-align:center;padding:60px 20px"><h2>Article not found</h2><a href="/articles" style="color:var(--p)">← Back</a></div>`;
+        _artLoadState = 'ok';
+        box.innerHTML = _notFoundHtml;
       }
     }catch(e){
-      document.getElementById('artContent').innerHTML = `<div style="text-align:center;padding:60px 20px"><h2>Article not found</h2><a href="/articles" style="color:var(--p)">← Back</a></div>`;
+      console.error('article load failed:', e && e.code, e && e.message);
+      _artLoadState = 'error';
+      box.innerHTML = `<div style="text-align:center;padding:60px 20px"><h2>Could not load this article</h2><p style="color:var(--mute);margin:8px 0 18px">Check your connection and try again.</p><button onclick="retryArticleLoad()" style="background:var(--p);color:#fff;border:none;padding:10px 22px;border-radius:99px;font-size:14px;font-weight:700;cursor:pointer">Try again</button><div style="margin-top:14px"><a href="/articles" style="color:var(--p)">← Back</a></div></div>`;
     }
-  })();
+  }
+}
+window.retryArticleLoad = async function(){ await reconnectFirestore(); loadArticleFromFirestore(); };
+
+// Returning to a long-idle tab / network back / back-forward cache: recover
+// automatically instead of leaving a stuck or errored page.
+let _hiddenAt = 0;
+document.addEventListener('visibilitychange', ()=>{
+  if(document.hidden){ _hiddenAt = Date.now(); return; }
+  const away = _hiddenAt ? Date.now() - _hiddenAt : 0;
+  _hiddenAt = 0;
+  if(!article && (_artLoadState==='error' || (_artLoadState==='loading' && away > 5000))) retryArticleLoad();
+  else if(away > 5*60*1000) reconnectFirestore();
+});
+window.addEventListener('online', ()=>{ if(!article && _artLoadState==='error') retryArticleLoad(); });
+window.addEventListener('pageshow', e=>{ if(e.persisted && !article && _artLoadState!=='ok') retryArticleLoad(); });
+
+if(!article){
+  loadArticleFromFirestore();
 } else {
   document.title = article.title + ' · MindShift Books';
   document.getElementById('hdrTitle').textContent = article.title;
@@ -795,7 +826,7 @@ async function loadMyProfile(){
   const fallbackName  = currentUser.displayName || 'Someone';
   const fallbackPhoto = currentUser.photoURL    || '';
   try{
-    const s = await getDoc(doc(db,'users',currentUser.uid));
+    const s = await resilient(()=>getDoc(doc(db,'users',currentUser.uid)), {tries:2});
     if(s.exists()){
       const ud = s.data();
       myProfile = {
@@ -847,19 +878,19 @@ async function renderDownloadLockBadge(){
 /* ── FIRESTORE ── */
 async function fetchUserLiked(){
   if(!currentUser) return false;
-  try{ const s=await getDoc(doc(db,'userLikes',currentUser.uid)); return s.exists()&&!!s.data()[artId]; }catch{ return false; }
+  try{ const s=await resilient(()=>getDoc(doc(db,'userLikes',currentUser.uid)),{tries:2}); return s.exists()&&!!s.data()[artId]; }catch{ return false; }
 }
 async function fetchUserSaved(){
   if(!currentUser) return false;
-  try{ const s=await getDoc(doc(db,'userSaves',currentUser.uid)); return s.exists()&&!!s.data()[artId]; }catch{ return false; }
+  try{ const s=await resilient(()=>getDoc(doc(db,'userSaves',currentUser.uid)),{tries:2}); return s.exists()&&!!s.data()[artId]; }catch{ return false; }
 }
 async function fetchUserFollowing(){
   if(!currentUser||!article||!article.authorUid) return false;
-  try{ const s=await getDoc(doc(db,'follows',`${currentUser.uid}_${article.authorUid}`)); return s.exists(); }catch{ return false; }
+  try{ const s=await resilient(()=>getDoc(doc(db,'follows',`${currentUser.uid}_${article.authorUid}`)),{tries:2}); return s.exists(); }catch{ return false; }
 }
 async function fetchUserDownloaded(){
   if(!currentUser) return false;
-  try{ const s=await getDoc(doc(db,'userDownloads',currentUser.uid)); return s.exists()&&!!s.data()[artId]; }catch{ return false; }
+  try{ const s=await resilient(()=>getDoc(doc(db,'userDownloads',currentUser.uid)),{tries:2}); return s.exists()&&!!s.data()[artId]; }catch{ return false; }
 }
 
 function subDownloads(){
@@ -1215,11 +1246,11 @@ let cList=[],cReplies={},cLikedSet=new Set(),cOpenReplies=new Set(),cActiveReply
 window.loadComments=async function(){
   if(!artId){buildCommentsUI([]);return;}
   try{
-    const countSnap=await getDoc(doc(db,'articleMeta',artId));
+    const countSnap=await resilient(()=>getDoc(doc(db,'articleMeta',artId)),{tries:2});
     cCommentCount=countSnap.exists()?(countSnap.data().commentCount||0):0;
     updateCCount();
     const q=query(collection(db,'comments'),where('articleId','==',artId),where('parentId','==',null),orderBy('createdAt','asc'));
-    const snap=await getDocs(q);
+    const snap=await resilient(()=>getDocs(q),{tries:2});
     cList=snap.docs.map(d=>({id:d.id,...d.data()}));
     cLikedSet.clear();
     if(currentUser){
@@ -1230,7 +1261,12 @@ window.loadComments=async function(){
       });
     }
     buildCommentsUI(cList);
-  }catch(e){console.error('loadComments:',e);buildCommentsUI([]);}
+  }catch(e){
+    console.error('loadComments:',e);
+    buildCommentsUI([]);
+    const le=document.getElementById('commentsList');
+    if(le) le.innerHTML='<div style="padding:16px 0;text-align:center;font-size:13px;color:var(--mute)">Could not load comments. <a href="#" onclick="loadComments();return false" style="color:var(--p);font-weight:700">Try again</a></div>';
+  }
 };
 
 function updateCCount(){
@@ -1373,7 +1409,7 @@ window.toggleReplies=async function(cid){
   re.innerHTML='<div style="padding:8px 0;font-size:12px;color:var(--mute)">Loading…</div>';
   try{
     const q=query(collection(db,'comments'),where('articleId','==',artId),where('parentId','==',cid),orderBy('createdAt','asc'));
-    const snap=await getDocs(q);
+    const snap=await resilient(()=>getDocs(q),{tries:2});
     const replies=snap.docs.map(d=>({id:d.id,...d.data()}));
     if(currentUser){
       replies.forEach(r=>{
@@ -1383,7 +1419,7 @@ window.toggleReplies=async function(cid){
     cReplies[cid]=replies;
     re.innerHTML=replies.length?replies.map(r=>buildCHTML(r,true)).join(''):'<div style="padding:8px 0;font-size:12px;color:var(--mute)">No replies yet.</div>';
     window.MSBAuthorLive && window.MSBAuthorLive.refresh(db, { doc, getDoc }, re);
-  }catch(e){re.innerHTML='<div style="padding:8px 0;font-size:12px;color:var(--red)">Could not load.</div>';}
+  }catch(e){cOpenReplies.delete(cid);re.innerHTML='<div style="padding:8px 0;font-size:12px;color:var(--red)">Could not load — tap replies to try again.</div>';}
 };
 
 window.likeComment=async function(cid,authorUid){

@@ -793,6 +793,7 @@ main{max-width:1100px;margin:0 auto}
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
 import { getFirestore, doc, getDoc, setDoc, deleteDoc, updateDoc, increment, onSnapshot, collection, query, where, getDocs, getCountFromServer, orderBy, addDoc, serverTimestamp, writeBatch, limit, startAfter, enableNetwork, disableNetwork, runTransaction } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
+import { createResilient } from '/resilient.js';
 import { initNotificationUI } from '/notifications.js';
 import { initRepost } from '/repost.js';
 
@@ -807,6 +808,12 @@ const fbApp = initializeApp({
 });
 const auth = getAuth(fbApp);
 const db   = getFirestore(fbApp, 'default');
+// Reads go through resilient(): per-attempt timeout + retry + forced reconnect.
+// Critically, a hung read can no longer pin loadFeedBatch()'s coalesced promise
+// forever (which made every watchdog retry just re-await the same dead request).
+const { resilient, reconnectFirestore } = createResilient({ db, enableNetwork, disableNetwork });
+const rgetDoc  = (ref, o) => resilient(() => getDoc(ref),  { tries: 2, timeoutMs: 10000, ...o });
+const rgetDocs = (q,   o) => resilient(() => getDocs(q),   { tries: 2, timeoutMs: 10000, ...o });
 const notif = initNotificationUI({
   db, getCurrentUser: () => currentUser, getMyProfile: () => myProfile,
   fs: { collection, query, where, onSnapshot, getDocs, getCountFromServer, orderBy, limit, addDoc, writeBatch, serverTimestamp, doc, getDoc, setDoc, increment, runTransaction }
@@ -979,7 +986,7 @@ async function loadMyProfile(){
   const fallbackName  = currentUser.displayName || 'Someone';
   const fallbackPhoto = currentUser.photoURL    || '';
   try{
-    const s = await getDoc(doc(db,'users',currentUser.uid));
+    const s = await rgetDoc(doc(db,'users',currentUser.uid));
     if(s.exists()){
       const ud = s.data();
       myProfile = { name: ud.name||ud.displayName||fallbackName, photo: ud.photo||ud.photoURL||fallbackPhoto, username: ud.username||'' };
@@ -1023,7 +1030,7 @@ async function checkFeedProfileSetup(user){
 
   try{
     const uid = user.uid;
-    const userSnap = await getDoc(doc(db,'users',uid));
+    const userSnap = await rgetDoc(doc(db,'users',uid));
     const u = userSnap.exists() ? userSnap.data() : {};
     if(u.ebookVoucher && u.ebookVoucher.claimed){
       banner.style.display = 'none';
@@ -1098,7 +1105,7 @@ onAuthStateChanged(auth, async user => {
     }catch(e){}
     if(!userCategories.length){
       try{
-        const s = await getDoc(doc(db,'users',user.uid));
+        const s = await rgetDoc(doc(db,'users',user.uid));
         if(s.exists()){
           const ud = s.data();
           if(Array.isArray(ud.categories) && ud.categories.length) userCategories = ud.categories;
@@ -1350,7 +1357,7 @@ async function renderFollowingTab(fresh = false){
     // recent 30 follows; a "you follow a lot of people" pagination story is
     // a reasonable follow-up if that limit is ever actually hit.
     const followQ = query(collection(db,'follows'), where('followerId','==',currentUser.uid), orderBy('createdAt','desc'), limit(30));
-    const followSnap = await getDocs(followQ);
+    const followSnap = await rgetDocs(followQ);
     const followedUids = followSnap.docs.map(d => d.data().followingId).filter(Boolean);
 
     if(!followedUids.length){
@@ -1530,9 +1537,10 @@ async function renderFollowingTab(fresh = false){
 
   }catch(e){
     console.warn('Following tab error:',e);
-    feed.innerHTML=`<div style="padding:40px 20px;text-align:center;color:#9ca3af;font-size:13px">Could not load feed — check your connection.</div>`;
+    feed.innerHTML=`<div style="padding:40px 20px;text-align:center;color:#9ca3af;font-size:13px">Could not load feed — check your connection.<br><button onclick="retryFollowing()" style="margin-top:12px;background:var(--p);color:#fff;border:none;padding:10px 20px;border-radius:99px;font-size:13px;font-weight:700;cursor:pointer">Try again</button></div>`;
   }
 }
+window.retryFollowing = async function(){ await reconnectFirestore(); renderFollowingTab(false); };
 
 async function renderSuggestedAccounts(container){
   const cat=userCategories[0];
@@ -1565,7 +1573,7 @@ async function getMyFollowingUids(){
   if(!currentUser) return new Set();
   if(_myFollowingCache) return _myFollowingCache;
   try{
-    const snap = await getDocs(query(collection(db,'follows'), where('followerId','==',currentUser.uid)));
+    const snap = await rgetDocs(query(collection(db,'follows'), where('followerId','==',currentUser.uid)));
     _myFollowingCache = new Set(snap.docs.map(d=>d.data().followingId).filter(Boolean));
   }catch(e){ _myFollowingCache = new Set(); }
   return _myFollowingCache;
@@ -1578,11 +1586,11 @@ async function loadSugList(excludeUids=[]){
     let q; const cat=userCategories[0];
     if(cat){ q=query(collection(db,'users'),where('categories','array-contains',cat),limit(10)); }
     else    { q=query(collection(db,'users'),limit(10)); }
-    const snap=await getDocs(q);
+    const snap=await rgetDocs(q);
     let users=snap.docs.map(d=>({uid:d.id,...d.data()}))
       .filter(u=>u.uid!==currentUser?.uid && !_dismissedUids.has(u.uid) && !excludeUids.includes(u.uid) && !myFollowing.has(u.uid));
     if(!users.length && cat){
-      const fb=await getDocs(query(collection(db,'users'),limit(10)));
+      const fb=await rgetDocs(query(collection(db,'users'),limit(10)));
       users=fb.docs.map(d=>({uid:d.id,...d.data()})).filter(u=>u.uid!==currentUser?.uid && !_dismissedUids.has(u.uid) && !myFollowing.has(u.uid));
     }
     renderSugList(users, list);
@@ -1677,11 +1685,11 @@ async function loadPtfRow(idSuffix, excludeUids=[]){
     let q; const cat=userCategories[0];
     if(cat){ q=query(collection(db,'users'),where('categories','array-contains',cat),limit(12)); }
     else    { q=query(collection(db,'users'),limit(12)); }
-    const snap=await getDocs(q);
+    const snap=await rgetDocs(q);
     let users=snap.docs.map(d=>({uid:d.id,...d.data()}))
       .filter(u=>u.uid!==currentUser?.uid && !_ptfDismissed.has(u.uid) && !excludeUids.includes(u.uid) && !myFollowing.has(u.uid));
     if(!users.length && cat){
-      const fb=await getDocs(query(collection(db,'users'),limit(12)));
+      const fb=await rgetDocs(query(collection(db,'users'),limit(12)));
       users=fb.docs.map(d=>({uid:d.id,...d.data()})).filter(u=>u.uid!==currentUser?.uid && !_ptfDismissed.has(u.uid) && !excludeUids.includes(u.uid) && !myFollowing.has(u.uid));
     }
     if(!users.length){ if(wrap) wrap.style.display='none'; return; }
@@ -1781,7 +1789,7 @@ function fmtRel(ts){
 async function loadSavedSet(){
   if(!currentUser) return;
   try{
-    const s = await getDoc(doc(db,'userSaves',currentUser.uid));
+    const s = await rgetDoc(doc(db,'userSaves',currentUser.uid));
     savedSet.clear();
     if(s.exists()){
       const data = s.data();
@@ -1802,7 +1810,7 @@ function updateSavesBadge(){
 async function loadLikedSet(){
   if(!currentUser) return;
   try{
-    const s = await getDoc(doc(db,'userLikes',currentUser.uid));
+    const s = await rgetDoc(doc(db,'userLikes',currentUser.uid));
     likedSet.clear();
     if(s.exists()){
       const data = s.data();
@@ -2738,7 +2746,7 @@ window.toggleCardMenu = function(id, event){
     if(fbtn && item && item.authorUid && currentUser){
       (async()=>{
         try{
-          const s = await getDoc(doc(db,'follows',`${currentUser.uid}_${item.authorUid}`));
+          const s = await rgetDoc(doc(db,'follows',`${currentUser.uid}_${item.authorUid}`));
           const svgEl = fbtn.querySelector('svg');
           fbtn.childNodes[fbtn.childNodes.length-1].textContent = s.exists() ? ' Following' : ' Follow';
         }catch{}
@@ -2844,7 +2852,7 @@ window.followFromMenu = async function(authorUid, authorName, cardId){
   if(!authorUid) return;
   try{
     const followDocId = `${currentUser.uid}_${authorUid}`;
-    const s = await getDoc(doc(db,'follows',followDocId));
+    const s = await rgetDoc(doc(db,'follows',followDocId));
     const isFollowing = s.exists();
     if(isFollowing){
       await deleteDoc(doc(db,'follows',followDocId));
@@ -2922,7 +2930,7 @@ async function loadPublishedArticles(){
       orderBy('publishedAt','desc'),
       limit(ARTICLES_PAGE_SIZE)
     );
-    const snap = await getDocs(q);
+    const snap = await rgetDocs(q, { tries: 1, timeoutMs: 12000 });
     if(snap.empty) return true; // nothing published yet — empty state from initial renderGrid() stays up; a real, successful "nothing" is not a failure
     // Fully replace with Firestore data — what admin approves is what shows
     ARTICLES = snap.docs.map(mapArticleDoc);
@@ -2948,7 +2956,7 @@ async function loadMoreArticles(){
       startAfter(_articlesLastDoc),
       limit(ARTICLES_PAGE_SIZE)
     );
-    const snap = await getDocs(q);
+    const snap = await rgetDocs(q);
     if(snap.empty){ _articlesExhausted = true; return 0; }
     ARTICLES = ARTICLES.concat(snap.docs.map(mapArticleDoc));
     _articlesLastDoc = snap.docs[snap.docs.length-1];
@@ -2990,7 +2998,7 @@ async function loadPublishedPosts(){
       orderBy('publishedAt','desc'),
       limit(60)
     );
-    const snap = await getDocs(q);
+    const snap = await rgetDocs(q, { tries: 1, timeoutMs: 12000 });
     POSTS = snap.docs.map(d=>{
       const x = d.data();
       return {
@@ -3031,7 +3039,7 @@ async function loadRecentReposts(){
       orderBy('createdAt','desc'),
       limit(60)
     );
-    const snap = await getDocs(q);
+    const snap = await rgetDocs(q, { tries: 1, timeoutMs: 12000 });
     REPOSTS = snap.docs
       .map(d=>({ id:d.id, ...d.data() }))
       .filter(x=>x.kind==='plain')
@@ -3229,7 +3237,7 @@ async function searchAccountsList(q){
   const isOfficialMatch = OFFICIAL_ALIASES.some(alias => alias.includes(q) || q.includes(alias));
   if(!_allUsersCache){
     try{
-      const snap = await getDocs(query(collection(db,'users'), limit(200)));
+      const snap = await rgetDocs(query(collection(db,'users'), limit(200)));
       _allUsersCache = snap.docs.map(d=>({uid:d.id,...d.data()}));
     }catch(e){ _allUsersCache = []; }
   }

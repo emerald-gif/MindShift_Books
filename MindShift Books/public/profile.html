@@ -613,6 +613,10 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
       <div class="stat-num" id="statArticles"><div class="skel skel-stat" id="statArticlesSkel"></div></div>
       <div class="stat-label">Articles</div>
     </div>
+    <div class="stat" onclick="switchTab('post');document.getElementById('tabsRow').scrollIntoView({behavior:'smooth'})">
+      <div class="stat-num" id="statPosts"><div class="skel skel-stat" id="statPostsSkel"></div></div>
+      <div class="stat-label">Posts</div>
+    </div>
     <div class="stat" onclick="showFollowers('followers')">
       <div class="stat-num" id="statFollowers"><div class="skel skel-stat" id="statFollowersSkel"></div></div>
       <div class="stat-label">Followers</div>
@@ -872,7 +876,7 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged, updateProfile } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
-import { getFirestore, doc, getDoc, setDoc, deleteDoc, updateDoc, collection, query, where, getDocs, getCountFromServer, orderBy, serverTimestamp, onSnapshot, addDoc, writeBatch, increment, limit, startAfter, runTransaction }
+import { getFirestore, doc, getDoc, setDoc, deleteDoc, updateDoc, collection, query, where, getDocs, getCountFromServer, orderBy, serverTimestamp, onSnapshot, addDoc, writeBatch, increment, limit, startAfter, runTransaction, enableNetwork, disableNetwork }
   from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
 import { initNotificationUI } from '/notifications.js';
 import { initRepost } from '/repost.js';
@@ -1003,11 +1007,56 @@ function initSocialLinksUI(){
 }
 initSocialLinksUI();
 
+/* ── RESILIENT LOADING ──
+   Firestore reads can hang or fail with `unavailable` when the tab has been
+   idle a long time (dead websocket) or the network blips while navigating.
+   Every profile read goes through resilient(): a timeout per attempt, retries
+   with backoff, and a forced reconnect after the second failure. Permanent
+   errors (permission-denied, missing index) are NOT retried. */
+const RETRYABLE_CODES = new Set(['unavailable','deadline-exceeded','resource-exhausted','aborted','internal','unknown','cancelled']);
+function withTimeout(promise, ms){
+  return Promise.race([
+    promise,
+    new Promise((_,rej)=>setTimeout(()=>rej(Object.assign(new Error('timeout'),{code:'deadline-exceeded'})), ms))
+  ]);
+}
+async function reconnectFirestore(){
+  try{ await disableNetwork(db); await enableNetwork(db); }catch(e){ console.warn('reconnect failed:', e?.message); }
+}
+async function resilient(fn, { tries = 3, timeoutMs = 8000 } = {}){
+  let lastErr;
+  for(let i=0;i<tries;i++){
+    try{ return await withTimeout(fn(), timeoutMs); }
+    catch(e){
+      lastErr = e;
+      const code = e?.code || '';
+      const retryable = !code || RETRYABLE_CODES.has(code);
+      if(!retryable || i === tries-1) break;
+      if(i === 1) await reconnectFirestore(); // 2nd failure in a row = stale connection
+      await new Promise(r=>setTimeout(r, 500*(i+1)));
+    }
+  }
+  throw lastErr;
+}
+
+const SKEL_IDS = ['nameSkel','avatarSkel','statArticlesSkel','statPostsSkel','statFollowersSkel','statFollowingSkel'];
+function showLoadError(msg){
+  SKEL_IDS.forEach(id=>{ const el=document.getElementById(id); if(el) el.remove(); });
+  ['statArticles','statPosts','statFollowers','statFollowing'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el && !el.textContent.trim()) el.textContent='–';
+  });
+  const sec = document.getElementById('articlesSection');
+  if(sec) sec.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><p>${msg}<br>Check your connection and try again.</p><button class="btn-write-now" onclick="retryProfileLoad()">Try again</button></div>`;
+}
+
 /* ── AUTH ── */
 let authCallSeq = 0;
-onAuthStateChanged(auth, async user => {
-  const seq = ++authCallSeq; // ignore this run if a newer auth event starts before it finishes
+let _authReady = false;
+let _loadState = 'idle'; // 'loading' | 'ok' | 'error' — drives the safety net + auto-recovery
+onAuthStateChanged(auth, user => {
   currentUser = user;
+  _authReady = true;
 
   // Sidebar auth-only / guest-only sections (independent of whose profile is being viewed)
   const sbProfile = document.getElementById('sbProfileLink');
@@ -1020,18 +1069,33 @@ onAuthStateChanged(auth, async user => {
   if(sbAuthCta) sbAuthCta.style.display = user ? 'none' : 'block';
   if(user) notif.initNotifications(user.uid); else notif.clearNotifications();
 
+  bootProfile(user);
+});
+
+// Loads (or reloads) the whole profile page. Split out of onAuthStateChanged so
+// "Try again", coming back online, and returning to a long-idle tab can re-run it.
+async function bootProfile(user){
+  const seq = ++authCallSeq; // ignore this run if a newer one starts before it finishes
+  _loadState = 'loading';
+  try{
   // ── Resolve uid: support both ?uid= (legacy) and ?username= (new) ──
   let resolvedUid = profileUid;
   if (!resolvedUid && profileUsername) {
+    let lookupFailed = false;
     try {
-      const unSnap = await getDoc(doc(db, 'usernames', profileUsername.toLowerCase()));
+      const unSnap = await resilient(()=>getDoc(doc(db, 'usernames', profileUsername.toLowerCase())));
       if (unSnap.exists()) resolvedUid = unSnap.data().uid;
-    } catch(e) { console.warn('Username lookup failed:', e.message); }
+    } catch(e) { lookupFailed = true; console.warn('Username lookup failed:', e?.code, e?.message); }
+    if (!resolvedUid && lookupFailed) {
+      // A network failure is NOT "profile doesn't exist" — offer a retry instead
+      if(seq === authCallSeq){ _loadState = 'error'; showLoadError('Could not load this profile.'); }
+      return;
+    }
     if (!resolvedUid) {
-      // Username not found — show a not-found state
+      // Username genuinely not found — show a not-found state
+      _loadState = 'ok';
       document.title = 'Profile not found — MindShift Books';
-      ['nameSkel','avatarSkel','statArticlesSkel','statFollowersSkel','statFollowingSkel']
-        .forEach(id=>{ const el=document.getElementById(id); if(el) el.remove(); });
+      SKEL_IDS.forEach(id=>{ const el=document.getElementById(id); if(el) el.remove(); });
       const sec = document.getElementById('articlesSection');
       if(sec) sec.innerHTML=`<div class="empty-state"><p>No profile found for @${profileUsername}.</p></div>`;
       return;
@@ -1042,8 +1106,10 @@ onAuthStateChanged(auth, async user => {
   if(!uid){ if(seq===authCallSeq) window.location.href='/login'; return; }
   if(seq !== authCallSeq) return; // a newer auth event has since superseded this one
   isOwner = user && user.uid === uid;
-  await loadProfile(uid);
+  const loaded = await loadProfile(uid);
   if(seq !== authCallSeq) return; // stale — a newer call already re-rendered the page
+  _loadState = loaded ? 'ok' : 'error';
+  if(!loaded){ showLoadError('Could not load this profile.'); return; }
   if(isOwner) initPickerHandlers();
 
   // Deep link from /complete-profile's "Edit Profile" CTA — open the edit
@@ -1065,28 +1131,53 @@ onAuthStateChanged(auth, async user => {
       }
     }catch{ myProfile = { name: user.displayName||'Someone', photo: user.photoURL||'', username: '' }; }
   }
-});
-
-// Safety net: if skeleton is still visible after 8s, force-clear it
-setTimeout(()=>{
-  ['nameSkel','avatarSkel','statArticlesSkel','statFollowersSkel','statFollowingSkel']
-    .forEach(id=>{ const el=document.getElementById(id); if(el) el.remove(); });
-  const sec = document.getElementById('articlesSection');
-  if(sec && sec.querySelector('.skel-art-row')){
-    sec.innerHTML=`<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><p>Could not load articles.<br>Check your connection and try again.</p></div>`;
+  }catch(e){
+    console.error('bootProfile failed:', e?.code, e?.message);
+    if(seq === authCallSeq){ _loadState = 'error'; showLoadError('Could not load this profile.'); }
   }
-  ['statArticles','statFollowers','statFollowing'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(el && el.querySelector('.skel')) el.textContent='0';
-  });
-}, 8000);
+}
+
+// Manual / automatic recovery: force a fresh Firestore connection, then reload.
+async function recoverProfile(){
+  if(!_authReady) return; // auth hasn't resolved yet — the normal boot will handle it
+  const sec = document.getElementById('articlesSection');
+  if(sec && sec.querySelector('button[onclick="retryProfileLoad()"]')) sec.innerHTML = '<div class="empty-state"><p>Loading…</p></div>';
+  await reconnectFirestore();
+  bootProfile(currentUser);
+}
+window.retryProfileLoad = recoverProfile;
+
+// Coming back to the tab / network / back-forward cache. Long-idle tabs hold a
+// dead Firestore socket; reconnect it so the first request after returning
+// doesn't hang until it times out.
+let _hiddenAt = 0;
+document.addEventListener('visibilitychange', ()=>{
+  if(document.hidden){ _hiddenAt = Date.now(); return; }
+  const away = _hiddenAt ? Date.now() - _hiddenAt : 0;
+  _hiddenAt = 0;
+  if(_loadState === 'error' || (_loadState === 'loading' && away > 5000)) recoverProfile();
+  else if(away > 5*60*1000) reconnectFirestore();
+});
+window.addEventListener('online', ()=>{ if(_loadState !== 'ok') recoverProfile(); });
+window.addEventListener('pageshow', e=>{ if(e.persisted && _loadState !== 'ok') recoverProfile(); });
+
+// Safety net: still on the skeleton after 12s → stop the endless-skeleton feel
+// and show a Try again button. Loads keep running underneath and simply replace
+// this if they finish.
+setTimeout(()=>{ if(_loadState === 'loading') showLoadError('This is taking longer than usual.'); }, 12000);
 
 /* ── LOAD PROFILE ── */
 async function loadProfile(uid){
+  // If this read fails we must NOT carry on with placeholder data: the owner
+  // sync below would write the Google name/photo over the real ones in
+  // Firestore. Retry, and if it still fails bail out to the error state.
   try{
-    const snap = await getDoc(doc(db,'users',uid));
+    const snap = await resilient(()=>getDoc(doc(db,'users',uid)));
     profileData = snap.exists() ? {uid,...snap.data()} : {uid, name: 'MindShift Books User'};
-  }catch{ profileData = {uid: profileUid||currentUser?.uid, name:'MindShift Books User'}; }
+  }catch(e){
+    console.error('loadProfile failed:', e?.code, e?.message);
+    return false;
+  }
 
   // If owner, fill in Google photo/name as defaults and auto-sync to Firestore
   if(isOwner && currentUser){
@@ -1107,17 +1198,19 @@ async function loadProfile(uid){
   }
 
   renderProfileHeader();
-  // loadArticles first so allSubmissions is populated for loadStats article count
+  // Liked/saved first (cards render their heart state from these), then the
+  // grid, stats and follow state in parallel so one slow read can't stall the rest.
   await Promise.all([loadLikedSet(), loadSavedSet()]);
-  await loadArticles();
   // loadReposts() no longer fires here — it's lazy now, triggered by
   // switchTab() the first time someone actually opens the Reposts tab,
   // since most profile visits never touch it.
-  await Promise.all([loadStats(), loadFollowState()]);
+  const [gridOk] = await Promise.all([loadArticles(), loadStats(), loadFollowState()]);
+  if(!gridOk) return false;
   if(isOwner) renderSetupBanner();
   // Track this as a profile view for Insights — analytics only, never a
   // bell notification to the profile owner.
   if(currentUser && !isOwner) notif.trackProfileView(profileData.uid);
+  return true;
 }
 
 /* ── PROFILE SETUP BANNER ──
@@ -1268,7 +1361,7 @@ document.getElementById('celebrateBadgeCta')?.addEventListener('click', () => { 
 /* ── RENDER HEADER ── */
 function renderProfileHeader(){
   // Clear skeleton placeholders
-  ['nameSkel','avatarSkel','statArticlesSkel','statFollowersSkel','statFollowingSkel'].forEach(id=>{
+  ['nameSkel','avatarSkel','statArticlesSkel','statPostsSkel','statFollowersSkel','statFollowingSkel'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.remove();
   });
   const av = document.getElementById('avatar');
@@ -1387,13 +1480,26 @@ async function loadStats(){
   // affect this number.
   try{
     const pubQ = query(collection(db,'articles'), where('authorUid','==',uid));
-    const pubCountSnap = await getCountFromServer(pubQ);
+    const pubCountSnap = await resilient(()=>getCountFromServer(pubQ));
     const el = document.getElementById('statArticles');
     if(el) el.textContent = pubCountSnap.data().count;
   }catch(e){
     console.warn('loadStats articles failed:', e?.code);
     const el = document.getElementById('statArticles');
-    if(el) el.textContent = '0';
+    if(el) el.textContent = '–'; // unknown, not zero
+  }
+
+  // Posts count — same count-aggregate trick as articles above, against the
+  // separate `posts` collection (text + video posts).
+  try{
+    const postQ = query(collection(db,'posts'), where('authorUid','==',uid));
+    const postCountSnap = await resilient(()=>getCountFromServer(postQ));
+    const pel = document.getElementById('statPosts');
+    if(pel) pel.textContent = postCountSnap.data().count;
+  }catch(e){
+    console.warn('loadStats posts failed:', e?.code);
+    const pel = document.getElementById('statPosts');
+    if(pel) pel.textContent = '–'; // unknown, not zero
   }
 
   // Follower / following counts — always computed fresh from the follows
@@ -1406,7 +1512,7 @@ async function loadStats(){
   // on a page every profile view runs this on.
   try{
     const folQ = query(collection(db,'follows'), where('followingId','==',uid));
-    const folCount = (await getCountFromServer(folQ)).data().count;
+    const folCount = (await resilient(()=>getCountFromServer(folQ))).data().count;
     const fe = document.getElementById('statFollowers');
     if(fe) fe.textContent = folCount;
     if(profileData.followerCount !== folCount){
@@ -1414,7 +1520,7 @@ async function loadStats(){
     }
 
     const ingQ = query(collection(db,'follows'), where('followerId','==',uid));
-    const ingCount = (await getCountFromServer(ingQ)).data().count;
+    const ingCount = (await resilient(()=>getCountFromServer(ingQ))).data().count;
     const ie = document.getElementById('statFollowing');
     if(ie) ie.textContent = ingCount;
     const ingCountChanged = profileData.followingCount !== ingCount;
@@ -1426,8 +1532,8 @@ async function loadStats(){
     console.warn('loadStats counts failed:', e?.code);
     const fe = document.getElementById('statFollowers');
     const ie = document.getElementById('statFollowing');
-    if(fe) fe.textContent = '0';
-    if(ie) ie.textContent = '0';
+    if(fe && !/\d/.test(fe.textContent)) fe.textContent = '–';
+    if(ie && !/\d/.test(ie.textContent)) ie.textContent = '–';
   }
 }
 
@@ -1436,7 +1542,7 @@ async function loadFollowState(){
   if(!currentUser || isOwner) return;
   try{
     const id = `${currentUser.uid}_${profileData.uid}`;
-    const s = await getDoc(doc(db,'follows',id));
+    const s = await resilient(()=>getDoc(doc(db,'follows',id)));
     isFollowing = s.exists();
     const btn = document.getElementById('followBtn');
     if(btn){ btn.textContent = isFollowing?'Following':'Follow'; btn.classList.toggle('following',isFollowing); }
@@ -1512,41 +1618,42 @@ window.toggleFollow = async function(){
 /* ── LOAD ARTICLES + POSTS (everything auto-publishes now — no review states) ── */
 async function loadArticles(){
   const uid = profileData.uid;
-  try{
-    // orderBy+limit here needs a composite index (authorUid Asc, createdAt
-    // Desc) on both the articles and posts collections — Firestore throws
-    // a direct console link to create it the first time this query actually
-    // runs; click it once (or add the index proactively) and it's live in a
-    // couple of minutes. First page only — loadMoreArticles() below pages
-    // further, same cursor pattern as the main feed's own pagination.
-    const artQ  = query(collection(db,'articles'), where('authorUid','==',uid), orderBy('createdAt','desc'), limit(GRID_PAGE_SIZE));
-    const postQ = query(collection(db,'posts'),    where('authorUid','==',uid), orderBy('createdAt','desc'), limit(GRID_PAGE_SIZE));
-    const [artSnap, postSnap] = await Promise.all([getDocs(artQ), getDocs(postQ)]);
-    // type is tagged AFTER the spread so it can't be clobbered by a post's
-    // own `type` field ('text'/'video', set by create-post.html to tell
-    // video posts apart from text posts) — that collision with this same
-    // field name was making every post since video upload launched fall
-    // through to the article card (badge "ARTICLE", title "Untitled").
-    const arts  = artSnap.docs.map(d=>({...d.data(), id:d.id, type:'article'}));
-    const posts = postSnap.docs.map(d=>({...d.data(), id:d.id, type:'post'}));
-    _artLastDoc  = artSnap.docs[artSnap.docs.length-1]   || null;
-    _postLastDoc = postSnap.docs[postSnap.docs.length-1] || null;
-    _artExhausted  = artSnap.docs.length  < GRID_PAGE_SIZE;
-    _postExhausted = postSnap.docs.length < GRID_PAGE_SIZE;
-    allSubmissions = [...arts, ...posts].sort((a,b)=>{
-      const ta = a.createdAt?.toDate?.() || new Date(a.createdAt||0);
-      const tb = b.createdAt?.toDate?.() || new Date(b.createdAt||0);
-      return tb - ta;
-    });
-    renderArticles();
-  }catch(e){
+  // orderBy+limit here needs a composite index (authorUid Asc, createdAt
+  // Desc) on both the articles and posts collections. The two collections are
+  // fetched independently: if one fails the other still renders.
+  const artQ  = query(collection(db,'articles'), where('authorUid','==',uid), orderBy('createdAt','desc'), limit(GRID_PAGE_SIZE));
+  const postQ = query(collection(db,'posts'),    where('authorUid','==',uid), orderBy('createdAt','desc'), limit(GRID_PAGE_SIZE));
+  const [artRes, postRes] = await Promise.allSettled([
+    resilient(()=>getDocs(artQ)),
+    resilient(()=>getDocs(postQ))
+  ]);
+  if(artRes.status==='rejected' && postRes.status==='rejected'){
+    const e = artRes.reason;
     console.error('loadArticles failed:', e?.code, e?.message);
     // TEMP — see /api/debug/log in server.js; remove both once the
     // composite index is confirmed created.
     fetch('/api/debug/log', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ context:'profile.html loadArticles', code:e?.code, message:e?.message }) }).catch(()=>{});
-    allSubmissions = [];
-    renderArticles();
+    return false; // caller shows the error state + Try again (NOT a fake "Nothing shared yet")
   }
+  const artSnap  = artRes.status==='fulfilled'  ? artRes.value  : null;
+  const postSnap = postRes.status==='fulfilled' ? postRes.value : null;
+  // type is tagged AFTER the spread so it can't be clobbered by a post's
+  // own `type` field ('text'/'video', set by create-post.html to tell
+  // video posts apart from text posts).
+  const arts  = artSnap  ? artSnap.docs.map(d=>({...d.data(), id:d.id, type:'article'})) : [];
+  const posts = postSnap ? postSnap.docs.map(d=>({...d.data(), id:d.id, type:'post'}))    : [];
+  _artLastDoc  = artSnap  ? (artSnap.docs[artSnap.docs.length-1]   || null) : null;
+  _postLastDoc = postSnap ? (postSnap.docs[postSnap.docs.length-1] || null) : null;
+  _artExhausted  = artSnap  ? artSnap.docs.length  < GRID_PAGE_SIZE : true;
+  _postExhausted = postSnap ? postSnap.docs.length < GRID_PAGE_SIZE : true;
+  allSubmissions = [...arts, ...posts].sort((a,b)=>{
+    const ta = a.createdAt?.toDate?.() || new Date(a.createdAt||0);
+    const tb = b.createdAt?.toDate?.() || new Date(b.createdAt||0);
+    return tb - ta;
+  });
+  renderArticles();
+  if(!artSnap || !postSnap) showToast(`Some ${!artSnap ? 'articles' : 'posts'} could not be loaded`);
+  return true;
 }
 
 // Pulls the next page of articles/posts and appends it — triggered by the
@@ -1560,8 +1667,8 @@ async function loadMoreArticles(){
   const uid = profileData.uid;
   try{
     const [artSnap, postSnap] = await Promise.all([
-      _artExhausted ? Promise.resolve(null) : getDocs(query(collection(db,'articles'), where('authorUid','==',uid), orderBy('createdAt','desc'), startAfter(_artLastDoc), limit(GRID_PAGE_SIZE))),
-      _postExhausted ? Promise.resolve(null) : getDocs(query(collection(db,'posts'), where('authorUid','==',uid), orderBy('createdAt','desc'), startAfter(_postLastDoc), limit(GRID_PAGE_SIZE)))
+      _artExhausted ? Promise.resolve(null) : resilient(()=>getDocs(query(collection(db,'articles'), where('authorUid','==',uid), orderBy('createdAt','desc'), startAfter(_artLastDoc), limit(GRID_PAGE_SIZE)))),
+      _postExhausted ? Promise.resolve(null) : resilient(()=>getDocs(query(collection(db,'posts'), where('authorUid','==',uid), orderBy('createdAt','desc'), startAfter(_postLastDoc), limit(GRID_PAGE_SIZE))))
     ]);
     if(artSnap){
       allSubmissions.push(...artSnap.docs.map(d=>({...d.data(), id:d.id, type:'article'})));
@@ -1996,7 +2103,7 @@ function fmtRel(ts){
 async function loadLikedSet(){
   if(!currentUser) return;
   try{
-    const s = await getDoc(doc(db,'userLikes',currentUser.uid));
+    const s = await resilient(()=>getDoc(doc(db,'userLikes',currentUser.uid)), {tries:2});
     likedSet.clear();
     if(s.exists()){
       const data = s.data();
@@ -2273,8 +2380,8 @@ window.doDeleteConfirmed = async function(){
     deleteDoc(doc(db, type==='post' ? 'postMeta' : 'articleMeta', id)).catch(()=>{});
     deleteDoc(doc(db, type==='post' ? 'postViews' : 'articleViews', id)).catch(()=>{});
     allSubmissions = allSubmissions.filter(a=>a.id!==id);
-    const statEl = document.getElementById('statArticles');
-    if(statEl && type==='article'){
+    const statEl = document.getElementById(type==='post' ? 'statPosts' : 'statArticles');
+    if(statEl){
       const cur = parseInt(statEl.textContent)||0;
       statEl.textContent = Math.max(0, cur-1);
     }
@@ -2291,7 +2398,7 @@ window.doDeleteConfirmed = async function(){
 async function loadSavedSet(){
   if(!currentUser) return;
   try{
-    const s = await getDoc(doc(db,'userSaves',currentUser.uid));
+    const s = await resilient(()=>getDoc(doc(db,'userSaves',currentUser.uid)), {tries:2});
     savedSet.clear();
     if(s.exists()){
       const data = s.data();
