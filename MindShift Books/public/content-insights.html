@@ -187,7 +187,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;color:var(--txt);min-height:100
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
-import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
+import { getFirestore, doc, getDoc, enableNetwork, disableNetwork } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
+import { createResilient, isTransient } from '/resilient.js';
 
 const fbApp = initializeApp({
   apiKey:"AIzaSyDTn70s1_uIiSOR6lPLY_nKh8Ff1FViFCs",
@@ -200,6 +201,7 @@ const fbApp = initializeApp({
 });
 const auth = getAuth(fbApp);
 const db   = getFirestore(fbApp, 'default');
+const { resilient, reconnectFirestore } = createResilient({ db, enableNetwork, disableNetwork });
 
 let currentTrendDays = 14;
 let _dayMap = {};
@@ -220,22 +222,36 @@ const isPost = contentType === 'post';
 
 document.getElementById('hdrType').textContent = isPost ? 'Post Insights' : 'Article Insights';
 
+let _ciUid = null;
+let _ciState = 'idle'; // 'loading' | 'ok' | 'error'
 onAuthStateChanged(auth, async user => {
   if (!user) { window.location.href = '/login'; return; }
+  _ciUid = user.uid;
   await loadContentInsights(user.uid);
 });
+
+// Retry + automatic recovery (long-idle tab, network back).
+window.retryInsights = async function () {
+  await reconnectFirestore();
+  document.getElementById('stateContainer').style.display = 'none';
+  document.getElementById('mainContent').style.display = '';
+  if (_ciUid) loadContentInsights(_ciUid);
+};
+document.addEventListener('visibilitychange', () => { if (!document.hidden && _ciState === 'error') retryInsights(); });
+window.addEventListener('online', () => { if (_ciState === 'error') retryInsights(); });
 
 async function loadContentInsights(uid) {
   if (!contentId) {
     showEmpty('Content not found', "We couldn't find this post or article.");
     return;
   }
+  _ciState = 'loading';
   try {
     const contentCol = isPost ? 'posts' : 'articles';
     const metaCol     = isPost ? 'postMeta' : 'articleMeta';
     const viewsCol    = isPost ? 'postViews' : 'articleViews';
 
-    const contentSnap = await getDoc(doc(db, contentCol, contentId));
+    const contentSnap = await resilient(() => getDoc(doc(db, contentCol, contentId)));
     if (!contentSnap.exists()) {
       showEmpty('Content not found', "This post or article may have been deleted.");
       return;
@@ -249,11 +265,17 @@ async function loadContentInsights(uid) {
       return;
     }
 
+    // A network failure here used to be swallowed as "0 views / 0 likes",
+    // showing a creator false zeros. Now transient failures surface the
+    // "Could not load" + Try again state; only permanent errors (e.g. a
+    // rules denial on an optional counter doc) still fall back to empty.
+    const softGet = ref => resilient(() => getDoc(ref), { tries: 2 })
+      .catch(e => { if (isTransient(e)) throw e; return null; });
     const [metaSnap, likeSnap, viewsSnap, repostSnap] = await Promise.all([
-      getDoc(doc(db, metaCol, contentId)).catch(() => null),
-      getDoc(doc(db, 'articleLikes', contentId)).catch(() => null),
-      getDoc(doc(db, viewsCol, contentId)).catch(() => null),
-      getDoc(doc(db, 'repostCounts', contentId)).catch(() => null)
+      softGet(doc(db, metaCol, contentId)),
+      softGet(doc(db, 'articleLikes', contentId)),
+      softGet(doc(db, viewsCol, contentId)),
+      softGet(doc(db, 'repostCounts', contentId))
     ]);
 
     const views    = metaSnap && metaSnap.exists() ? (metaSnap.data().viewCount || 0) : 0;
@@ -271,10 +293,12 @@ async function loadContentInsights(uid) {
     _dayMap = dayMap;
     renderTrend(_dayMap, currentTrendDays);
     renderEngagement(likes, comments, reposts);
+    _ciState = 'ok';
 
   } catch (e) {
     console.error('loadContentInsights failed:', e && e.code, e && e.message);
-    showEmpty('Could not load insights', 'Check your connection and try again.');
+    _ciState = 'error';
+    showEmpty('Could not load insights', 'Check your connection and try again.', true);
   }
 }
 
@@ -416,10 +440,11 @@ function renderEngagement(likes, comments, reposts) {
   `;
 }
 
-function showEmpty(title, sub) {
+function showEmpty(title, sub, retry) {
   document.getElementById('mainContent').style.display = 'none';
   const s = document.getElementById('stateContainer');
-  s.innerHTML = emptyStateHtml(ICONS.eye, `<strong>${title}</strong>${sub}`);
+  s.innerHTML = emptyStateHtml(ICONS.eye, `<strong>${title}</strong>${sub}` +
+    (retry ? `<br><button onclick="retryInsights()" style="margin-top:14px;background:var(--p,#4f46e5);color:#fff;border:none;padding:10px 22px;border-radius:99px;font-size:13.5px;font-weight:700;cursor:pointer">Try again</button>` : ''));
   s.style.display = 'block';
 }
 

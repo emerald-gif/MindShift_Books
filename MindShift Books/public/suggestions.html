@@ -89,8 +89,9 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/fireba
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
 import {
   getFirestore, collection, query, where, limit, startAfter,
-  getDocs, doc, setDoc, deleteDoc, updateDoc, increment, serverTimestamp
+  getDocs, doc, setDoc, deleteDoc, updateDoc, increment, serverTimestamp, enableNetwork, disableNetwork
 } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
+import { createResilient } from '/resilient.js';
 
 const fbApp = initializeApp({
   apiKey:"AIzaSyDTn70s1_uIiSOR6lPLY_nKh8Ff1FViFCs",
@@ -103,6 +104,7 @@ const fbApp = initializeApp({
 });
 const auth = getAuth(fbApp);
 const db   = getFirestore(fbApp, 'default');
+const { resilient, reconnectFirestore } = createResilient({ db, enableNetwork, disableNetwork });
 
 const PAGE_SIZE = 20;
 // Linked from /complete-profile's "Find Creators" CTA as /suggestions?quality=1
@@ -156,7 +158,7 @@ function renderCatChips(){
 async function loadFollowing(uid){
   followingUids = new Set();
   try{
-    const snap = await getDocs(query(collection(db,'follows'), where('followerId','==',uid)));
+    const snap = await resilient(()=>getDocs(query(collection(db,'follows'), where('followerId','==',uid))), {tries:2});
     snap.docs.forEach(d => followingUids.add(d.data().followingId));
   }catch(e){ /* non-fatal — worst case a followed user briefly shows up */ }
 }
@@ -167,9 +169,23 @@ function resetAndLoad(){
   loadMore();
 }
 
+let _sgFailed = false;
+window.retrySuggestions = async function(){
+  await reconnectFirestore();
+  _sgFailed = false;
+  if(currentUser && !followingUids.size) await loadFollowing(currentUser.uid);
+  const list = document.getElementById('list');
+  loadingMore = false;
+  // No rows on screen (first load failed) → start over cleanly; otherwise just fetch the next page.
+  if(!list.querySelector('.sg-row')) resetAndLoad(); else loadMore();
+};
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && _sgFailed) retrySuggestions(); });
+window.addEventListener('online', ()=>{ if(_sgFailed) retrySuggestions(); });
+
 async function loadMore(){
   if(loadingMore || exhausted) return;
   loadingMore = true;
+  _sgFailed = false;
   const list = document.getElementById('list');
   const btn = document.getElementById('loadMoreBtn');
   if(btn){ btn.disabled = true; btn.textContent = 'Loading…'; }
@@ -182,7 +198,7 @@ async function loadMore(){
       ? query(collection(db,'users'), where('categories','array-contains',activeCat), startAfter(lastDoc), limit(RAW_FETCH_SIZE))
       : query(collection(db,'users'), startAfter(lastDoc), limit(RAW_FETCH_SIZE));
 
-    const snap = await getDocs(q);
+    const snap = await resilient(()=>getDocs(q), {tries:2, timeoutMs:10000});
     if(snap.docs.length < RAW_FETCH_SIZE) exhausted = true;
     lastDoc = snap.docs[snap.docs.length - 1] || lastDoc;
 
@@ -219,8 +235,12 @@ async function loadMore(){
     }
   }catch(e){
     console.error('suggestions load error:', e);
+    _sgFailed = true;
     if(!list.children.length){
-      list.innerHTML = `<div class="empty-state"><p>Couldn't load suggestions — check your connection and try again.</p></div>`;
+      list.innerHTML = `<div class="empty-state"><p>Couldn't load suggestions — check your connection and try again.</p><button onclick="retrySuggestions()" style="margin-top:14px;background:var(--p,#4f46e5);color:#fff;border:none;padding:10px 22px;border-radius:99px;font-size:13.5px;font-weight:700;cursor:pointer">Try again</button></div>`;
+    } else if(btn){
+      // Before: the "Load more" button stayed disabled on "Loading…" forever.
+      btn.disabled = false; btn.textContent = 'Couldn\'t load — tap to retry';
     }
   }
   loadingMore = false;

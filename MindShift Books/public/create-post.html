@@ -31,6 +31,14 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .btn-post{padding:9px 20px;border-radius:99px;border:none;background:var(--g);color:#fff;
   font-size:13.5px;font-weight:800;cursor:pointer;transition:opacity .2s}
 .btn-post:disabled{opacity:.45;cursor:not-allowed}
+.hdr-right{display:flex;align-items:center;gap:8px}
+.btn-draft{padding:8px 14px;border-radius:99px;border:1.5px solid var(--border);background:var(--card);
+  font-size:13px;font-weight:600;color:var(--sub);cursor:pointer;transition:all .2s}
+.btn-draft:hover{border-color:var(--p);color:var(--p)}
+/* "Saving… / Saved just now" sits just under the header so it never crowds the buttons on narrow phones */
+.autosave-status{position:absolute;right:16px;top:calc(100% + 5px);font-size:11px;color:var(--mute);font-weight:600;
+  opacity:0;transition:opacity .3s;white-space:nowrap;pointer-events:none}
+.autosave-status.show{opacity:1}
 
 /* ── MAIN ── */
 .main{max-width:640px;margin:0 auto;padding:20px 16px 60px}
@@ -101,7 +109,11 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
     </button>
     <span class="hdr-title" id="hdrTitle">Create Post</span>
   </div>
-  <button class="btn-post" id="postBtn" onclick="submitPost()" disabled>Post</button>
+  <div class="hdr-right">
+    <button class="btn-draft" id="saveDraftBtn" onclick="saveDraft()">Save Draft</button>
+    <button class="btn-post" id="postBtn" onclick="submitPost()" disabled>Post</button>
+  </div>
+  <span class="autosave-status" id="autosaveStatus"></span>
 </div>
 
 <main class="main">
@@ -168,8 +180,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
-import { getFirestore, collection, doc, setDoc, getDoc, serverTimestamp }
+import { getFirestore, collection, doc, setDoc, getDoc, serverTimestamp, enableNetwork, disableNetwork }
   from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
+import { createResilient } from '/resilient.js';
 
 const fbApp = initializeApp({
   apiKey:"AIzaSyDTn70s1_uIiSOR6lPLY_nKh8Ff1FViFCs",
@@ -182,12 +195,20 @@ const fbApp = initializeApp({
 });
 const auth = getAuth(fbApp);
 const db   = getFirestore(fbApp, 'default');
+const { resilient, reconnectFirestore } = createResilient({ db, enableNetwork, disableNetwork });
 
 let currentUser = null;
 let userProfile = {};
 // Each item: {url, uploading} — url filled in once /api/upload-image responds
 let images = [];
 const MAX_IMAGES = 5;
+
+/* ── DRAFT STATE (logic lives in the DRAFTS block above SUBMIT) ── */
+const DRAFT_KEY = 'mindshift_post_draft';
+let _draftReady = false;      // true once the saved draft (if any) has been restored — autosave stays off until then
+let _draftInitDone = false;   // initDraft() runs once, even if the auth listener fires again
+let _lastDraftJson = '';      // what's currently saved, so unchanged state never re-saves
+let _autosaveTimer = null, _autosaveFadeTimer = null;
 
 /* ── VIDEO ──
    Per the video architecture spec: the file goes straight from this device
@@ -200,14 +221,18 @@ const VIDEO_MAX_DURATION = 5 * 60;           // 5 minutes — spec section 9
 /* ── EDIT MODE ── /create-post?edit=<postId> loads the existing post instead
    of a blank composer, and submitPost() below updates that doc in place. */
 const editId = new URLSearchParams(location.search).get('edit');
+// Drafts are for NEW posts only — an edit already has its own saved copy in Firestore.
+if(editId){ const _b = document.getElementById('saveDraftBtn'); if(_b) _b.style.display = 'none'; }
 
 onAuthStateChanged(auth, async user => {
   currentUser = user;
   if(!user){ window.location.href = '/login'; return; }
+  initDraft(); // instant + local — must not wait on the network profile read below
   try{
-    const s = await getDoc(doc(db,'users',user.uid));
+    const s = await resilient(()=>getDoc(doc(db,'users',user.uid)));
     userProfile = s.exists() ? s.data() : {};
-  }catch{}
+    _profileLoaded = true;
+  }catch(e){ console.warn('profile load failed:', e && e.code); } // submitPost() retries before publishing
   document.getElementById('composerName').textContent = userProfile.name || user.displayName || (user.email||'').split('@')[0] || 'You';
   const av = document.getElementById('composerAv');
   av.src = userProfile.photo || user.photoURL || '';
@@ -215,9 +240,27 @@ onAuthStateChanged(auth, async user => {
   if(editId) loadPostForEdit(editId);
 });
 
+let _profileLoaded = false; // author name/photo/username for NEW posts — see submitPost()
+
+// Editing an item that failed to load must NOT be saveable: the form would be
+// blank and saving would overwrite the real content. Show why, with a retry.
+function showEditLoadError(what, retryFn){
+  let b = document.getElementById('editLoadBanner');
+  if(!b){
+    b = document.createElement('div');
+    b.id = 'editLoadBanner';
+    b.style.cssText = 'position:fixed;left:12px;right:12px;top:64px;z-index:400;background:#fff1f2;border:1.5px solid #fecdd3;color:#9f1239;border-radius:14px;padding:12px 14px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:10px;box-shadow:0 6px 24px rgba(0,0,0,.12)';
+    document.body.appendChild(b);
+  }
+  b.innerHTML = `<span style="flex:1">Couldn't load your ${what}. Saving is disabled until it loads.</span><button style="background:#e11d48;color:#fff;border:none;padding:8px 14px;border-radius:99px;font-size:12.5px;font-weight:700;cursor:pointer">Try again</button>`;
+  b.querySelector('button').onclick = retryFn;
+}
+function hideEditLoadError(){ const b = document.getElementById('editLoadBanner'); if(b) b.remove(); }
+let _editRetryable = false; // true only after a network-type failure (not 'not found')
+let _editLoaded = false; // stays false until the post really loaded — see submitPost()
 async function loadPostForEdit(id){
   try{
-    const snap = await getDoc(doc(db,'posts',id));
+    const snap = await resilient(()=>getDoc(doc(db,'posts',id)));
     if(!snap.exists()){ showToast('Post not found'); return; }
     const p = snap.data();
     if(p.authorUid !== currentUser.uid){ showToast("You can't edit this post"); location.href='/profile'; return; }
@@ -231,11 +274,17 @@ async function loadPostForEdit(id){
     onTextInput();
     renderImages();
     renderVideoTile();
+    _editLoaded = true; _editRetryable = false;
+    hideEditLoadError();
   }catch(e){
     console.error('loadPostForEdit failed:', e);
-    showToast("Couldn't load post — try again");
+    _editRetryable = true;
+    showEditLoadError('post', async ()=>{ await reconnectFirestore(); loadPostForEdit(id); });
   }
 }
+// Coming back to a long-idle tab / network back: retry a failed edit-load automatically.
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && editId && _editRetryable && !_editLoaded && currentUser) loadPostForEdit(editId); });
+window.addEventListener('online', ()=>{ if(editId && _editRetryable && !_editLoaded && currentUser) loadPostForEdit(editId); });
 
 /* ── TEXT ── */
 window.onTextInput = function(){
@@ -250,6 +299,7 @@ function updatePostBtn(){
   const val = document.getElementById('postText').value.trim();
   const stillUploading = images.some(i => i.uploading) || (video && video.uploading);
   document.getElementById('postBtn').disabled = (!val && !images.length && !video) || stillUploading;
+  scheduleAutosave(); // text, photo and video changes all pass through here
 }
 
 /* ── IMAGES ── */
@@ -441,9 +491,109 @@ document.getElementById('videoInput').addEventListener('change', async (e) => {
   }
 });
 
+/* ── DRAFTS ──
+   Same idea as write.html: autosaves ~2.5s after you stop typing, plus a manual
+   Save Draft button. Extras for posts: uploaded photos/video are kept (only the
+   already-uploaded URLs — never an in-progress upload), the draft is tied to the
+   signed-in account, and it's flushed the moment the tab is hidden so switching
+   apps on a phone can't lose the last few words. */
+function draftSnapshot(){
+  const vid = (video && video.url && !video.uploading)
+    ? { url: video.url, thumbnailUrl: video.thumbnailUrl || '', duration: video.duration || 0, publicId: video.publicId || '' }
+    : null;
+  return {
+    uid: currentUser ? currentUser.uid : '',
+    text: document.getElementById('postText').value,
+    images: images.filter(i => i.url && !i.uploading).map(i => i.url),
+    video: vid
+  };
+}
+function draftIsEmpty(d){ return !d.text.trim() && !d.images.length && !d.video; }
+
+function clearDraft(){
+  try{ localStorage.removeItem(DRAFT_KEY); }catch(e){}
+  _lastDraftJson = JSON.stringify(draftSnapshot());
+}
+
+window.saveDraft = function(silent = false){
+  if(editId || !currentUser || !_draftReady) return;
+  const d = draftSnapshot();
+  if(draftIsEmpty(d)){
+    // Composer was emptied out — don't keep an empty draft around.
+    clearDraft();
+    if(!silent) showToast('Nothing to save yet');
+    return;
+  }
+  try{
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({ ...d, saved: Date.now() }));
+    _lastDraftJson = JSON.stringify(d);
+  }catch(e){
+    // Private mode / storage full — say so on a manual save, stay quiet on autosave.
+    if(!silent) showToast("Couldn't save draft on this device");
+    return;
+  }
+  if(silent){
+    const el = document.getElementById('autosaveStatus');
+    el.textContent = 'Saved just now';
+    el.classList.add('show');
+    clearTimeout(_autosaveFadeTimer);
+    _autosaveFadeTimer = setTimeout(() => el.classList.remove('show'), 2500);
+  } else {
+    showToast('Draft saved ✓');
+  }
+};
+
+function scheduleAutosave(){
+  if(!_draftReady || editId || !currentUser) return;
+  // Only when something actually changed — upload-progress redraws etc. don't count.
+  if(JSON.stringify(draftSnapshot()) === _lastDraftJson) return;
+  const el = document.getElementById('autosaveStatus');
+  el.textContent = 'Saving…';
+  el.classList.add('show');
+  clearTimeout(_autosaveTimer);
+  _autosaveTimer = setTimeout(() => saveDraft(true), 2500);
+}
+
+function flushDraft(){
+  if(!_draftReady || editId || !currentUser) return;
+  clearTimeout(_autosaveTimer);
+  if(JSON.stringify(draftSnapshot()) !== _lastDraftJson) saveDraft(true);
+}
+document.addEventListener('visibilitychange', () => { if(document.hidden) flushDraft(); });
+window.addEventListener('pagehide', flushDraft);
+
+function initDraft(){
+  if(_draftInitDone) return;
+  _draftInitDone = true;
+  if(editId) return; // edit mode: no drafts
+  let restored = false;
+  try{
+    const d = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null');
+    // Ignore a draft that belongs to a different account on this device.
+    if(d && (!d.uid || d.uid === currentUser.uid) && ((d.text || '').trim() || (d.images || []).length || d.video)){
+      document.getElementById('postText').value = d.text || '';
+      if(d.video && d.video.url){
+        // one video OR photos, never both
+        video = { url: d.video.url, thumbnailUrl: d.video.thumbnailUrl || '', duration: d.video.duration || 0, publicId: d.video.publicId || '', uploading: false };
+        images = [];
+      } else {
+        images = (d.images || []).slice(0, MAX_IMAGES).map(url => ({ url, uploading: false }));
+      }
+      onTextInput();
+      renderImages();
+      renderVideoTile();
+      restored = true;
+    }
+  }catch(e){ console.warn('draft restore failed:', e && e.message); }
+  _draftReady = true;
+  _lastDraftJson = JSON.stringify(draftSnapshot());
+  if(restored) showToast('Draft restored');
+}
+
 /* ── SUBMIT ── */
 window.submitPost = async function(){
   if(!currentUser) return;
+  if(editId && !_editLoaded){ showToast("Your post hasn't loaded yet — tap Try again"); return; }
   const text = document.getElementById('postText').value.trim();
   const urls = images.filter(i=>i.url).map(i=>i.url);
   const hasVideo = !!(video && video.url && !video.uploading);
@@ -475,6 +625,13 @@ window.submitPost = async function(){
       setTimeout(()=>{ location.href = `/post-read?id=${editId}`; }, 700);
       return;
     }
+    // New post: make sure the author's profile really loaded — otherwise the
+    // post would be saved with no username/photo (broken author links).
+    if(!_profileLoaded){
+      const s = await resilient(()=>getDoc(doc(db,'users',currentUser.uid)));
+      userProfile = s.exists() ? s.data() : {};
+      _profileLoaded = true;
+    }
     const id = `post_${currentUser.uid}_${Date.now()}`;
     await setDoc(doc(db,'posts',id),{
       id, authorUid: currentUser.uid,
@@ -487,6 +644,11 @@ window.submitPost = async function(){
       createdAt: serverTimestamp(),
       publishedAt: serverTimestamp()
     });
+    // Published — the draft has served its purpose. Stop autosave first so a
+    // pending timer can't write it straight back.
+    clearTimeout(_autosaveTimer);
+    _draftReady = false;
+    try{ localStorage.removeItem(DRAFT_KEY); }catch(e){}
     document.getElementById('successOverlay').classList.add('show');
   }catch(e){
     console.error(e);

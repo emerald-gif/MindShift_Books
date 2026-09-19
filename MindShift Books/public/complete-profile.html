@@ -136,8 +136,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
 import {
-  getFirestore, doc, getDoc, collection, query, where, getCountFromServer
+  getFirestore, doc, getDoc, collection, query, where, getCountFromServer, enableNetwork, disableNetwork
 } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
+import { createResilient } from '/resilient.js';
 
 const fbApp = initializeApp({
   apiKey:"AIzaSyDTn70s1_uIiSOR6lPLY_nKh8Ff1FViFCs",
@@ -150,12 +151,13 @@ const fbApp = initializeApp({
 });
 const auth = getAuth(fbApp);
 const db   = getFirestore(fbApp, 'default');
+const { resilient, reconnectFirestore } = createResilient({ db, enableNetwork, disableNetwork });
 
 // Every check below reads live data — nothing here is a stored "completed
 // step X" flag. A user who already had 10+ follows or 15 likes before this
 // checklist existed sees those rows checked off the first time they open it.
 async function computeSetup(uid, photoURLFallback){
-  const userSnap = await getDoc(doc(db,'users',uid));
+  const userSnap = await resilient(()=>getDoc(doc(db,'users',uid)));
   const u = userSnap.exists() ? userSnap.data() : {};
 
   const hasPhoto = !!(u.photo || photoURLFallback);
@@ -170,16 +172,16 @@ async function computeSetup(uid, photoURLFallback){
   if(!hasCategories) profileMissing.push('interests');
 
   const [followCountSnap, articleCountSnap, postCountSnap] = await Promise.all([
-    getCountFromServer(query(collection(db,'follows'), where('followerId','==',uid))),
-    getCountFromServer(query(collection(db,'articles'), where('authorUid','==',uid))),
-    getCountFromServer(query(collection(db,'posts'), where('authorUid','==',uid)))
+    resilient(()=>getCountFromServer(query(collection(db,'follows'), where('followerId','==',uid)))),
+    resilient(()=>getCountFromServer(query(collection(db,'articles'), where('authorUid','==',uid)))),
+    resilient(()=>getCountFromServer(query(collection(db,'posts'), where('authorUid','==',uid))))
   ]);
   const followCount = followCountSnap.data().count;
   const contentCount = articleCountSnap.data().count + postCountSnap.data().count;
 
   let likeCount = 0;
   try{
-    const likesSnap = await getDoc(doc(db,'userLikes',uid));
+    const likesSnap = await resilient(()=>getDoc(doc(db,'userLikes',uid)), {tries:2});
     if(likesSnap.exists()){
       likeCount = Object.values(likesSnap.data()).filter(Boolean).length;
     }
@@ -272,17 +274,33 @@ async function claimVoucherAndReveal(user){
   }
 }
 
-onAuthStateChanged(auth, async (user) => {
-  if(!user){ location.href = '/login'; return; }
+let _cpUser = null;
+let _cpState = 'idle'; // 'loading' | 'ok' | 'error'
+async function loadSetup(){
+  if(!_cpUser) return;
+  _cpState = 'loading';
   try{
-    const setup = await computeSetup(user.uid, user.photoURL || '');
+    const setup = await computeSetup(_cpUser.uid, _cpUser.photoURL || '');
+    _cpState = 'ok';
     const doneCount = render(setup);
-    if(doneCount === 4) claimVoucherAndReveal(user);
+    if(doneCount === 4) claimVoucherAndReveal(_cpUser);
   }catch(e){
     console.error('complete-profile load error:', e);
-    document.getElementById('stepList').innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--sub);font-size:13.5px">Couldn't load your progress — check your connection and try again.</div>`;
+    _cpState = 'error';
+    document.getElementById('stepList').innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--sub);font-size:13.5px">Couldn't load your progress — check your connection and try again.<br><button onclick="retrySetup()" style="margin-top:14px;background:var(--p,#4f46e5);color:#fff;border:none;padding:10px 22px;border-radius:99px;font-size:13.5px;font-weight:700;cursor:pointer">Try again</button></div>`;
   }
+}
+window.retrySetup = async function(){ await reconnectFirestore(); loadSetup(); };
+
+onAuthStateChanged(auth, async (user) => {
+  if(!user){ location.href = '/login'; return; }
+  _cpUser = user;
+  loadSetup();
 });
+
+// Recover automatically after a long-idle tab / network coming back.
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && _cpState === 'error') retrySetup(); });
+window.addEventListener('online', ()=>{ if(_cpState === 'error') retrySetup(); });
 </script>
 <script src="/create-picker.js"></script>
 </body>

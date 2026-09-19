@@ -163,6 +163,8 @@ function buildNotifItem(id, n) {
   return `<div class="notif-item ${unread ? 'unread' : ''}" onclick="handleNotifTap('${nEsc(id)}')"><span class="notif-unread-dot ${unread ? '' : 'invisible'}"></span>${avHtml}<div class="notif-body"><div class="notif-msg">${msg}</div><div class="notif-time">${time}</div></div></div>`;
 }
 
+import { retryRead } from '/resilient.js';
+
 export function initNotificationUI({ db, getCurrentUser, getMyProfile, fs }) {
   injectStylesOnce();
   injectPanelOnce();
@@ -254,7 +256,8 @@ export function initNotificationUI({ db, getCurrentUser, getMyProfile, fs }) {
     listEl.innerHTML = '<div class="notif-spinner-wrap"><div class="notif-spinner"></div>Loading…</div>';
     try {
       const q = query(collection(db, 'notifications'), where('recipientUid', '==', currentUser.uid), orderBy('lastAt', 'desc'), limit(40));
-      const snap = await getDocs(q);
+      // Timeout + retry: a dead connection used to leave this spinner forever.
+      const snap = await retryRead(() => getDocs(q), { tries: 2, timeoutMs: 10000 });
       notifCache.clear();
       snap.docs.forEach(d => notifCache.set(d.id, d.data()));
       if (snap.empty) {
@@ -266,9 +269,11 @@ export function initNotificationUI({ db, getCurrentUser, getMyProfile, fs }) {
       document.getElementById('notifMarkAllBtn').style.display = hasUnread ? 'block' : 'none';
       listEl.innerHTML = snap.docs.map(d => buildNotifItem(d.id, d.data())).join('');
     } catch (e) {
-      listEl.innerHTML = '<div class="notif-empty"><div class="notif-empty-ico"><svg width="44" height="44" fill="none" viewBox="0 0 24 24" stroke="#9ca3af" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m0 3.75h.008M10.29 3.86l-8.18 14.18A1.5 1.5 0 003.42 20.5h17.16a1.5 1.5 0 001.31-2.46L13.71 3.86a1.5 1.5 0 00-2.42 0z"/></svg></div><div class="notif-empty-ttl">Couldn&#39;t load</div><div class="notif-empty-sub">Check your connection and try again.</div></div>';
+      listEl.innerHTML = '<div class="notif-empty"><div class="notif-empty-ico"><svg width="44" height="44" fill="none" viewBox="0 0 24 24" stroke="#9ca3af" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m0 3.75h.008M10.29 3.86l-8.18 14.18A1.5 1.5 0 003.42 20.5h17.16a1.5 1.5 0 001.31-2.46L13.71 3.86a1.5 1.5 0 00-2.42 0z"/></svg></div><div class="notif-empty-ttl">Couldn&#39;t load</div><div class="notif-empty-sub">Check your connection and try again.</div><button onclick="retryNotifs()" style="margin-top:12px;background:#4f46e5;color:#fff;border:none;padding:9px 20px;border-radius:99px;font-size:13px;font-weight:700;cursor:pointer">Try again</button></div>';
     }
   }
+
+  window.retryNotifs = function () { loadNotifications(); };
 
   window.openNotifPanel = function () {
     document.getElementById('notifSheet').classList.add('on');

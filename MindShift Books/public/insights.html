@@ -425,8 +425,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;color:var(--txt);min-height:100
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
-import { getFirestore, doc, getDoc, collection, query, where, getDocs, orderBy, limit, getCountFromServer }
+import { getFirestore, doc, getDoc, collection, query, where, getDocs, orderBy, limit, getCountFromServer, enableNetwork, disableNetwork }
   from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
+import { createResilient, isTransient } from '/resilient.js';
 
 const fbApp = initializeApp({
   apiKey:"AIzaSyDTn70s1_uIiSOR6lPLY_nKh8Ff1FViFCs",
@@ -439,6 +440,7 @@ const fbApp = initializeApp({
 });
 const auth = getAuth(fbApp);
 const db   = getFirestore(fbApp, 'default');
+const { resilient, reconnectFirestore } = createResilient({ db, enableNetwork, disableNetwork });
 
 const CIRC = 2 * Math.PI * 40; // donut circumference
 let currentTrendDays = 14;
@@ -452,13 +454,29 @@ const ICONS = {
   userPlus: `<path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/>`
 };
 
+let _insUid = null;
+let _insState = 'idle'; // 'loading' | 'ok' | 'error'
 onAuthStateChanged(auth, async user => {
   if(!user){ window.location.href='/login'; return; }
+  _insUid = user.uid;
   await loadInsights(user.uid);
   loadFoundingCreatorRings(); // independent of the main load — its own small request, never blocks the rest of the page
 });
 
+// Retry + automatic recovery (long-idle tab, network back).
+window.retryInsights = async function(){
+  await reconnectFirestore();
+  ['perfList','trendCard','activityCard'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.innerHTML = '<div class="empty-state"><p>Loading…</p></div>';
+  });
+  if(_insUid){ await loadInsights(_insUid); loadFoundingCreatorRings(); }
+};
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && _insState === 'error') retryInsights(); });
+window.addEventListener('online', ()=>{ if(_insState === 'error') retryInsights(); });
+
 async function loadInsights(uid){
+  _insState = 'loading';
   try{
 
     // ── Single parallel fetch ──
@@ -498,12 +516,12 @@ async function loadInsights(uid){
     let totalViews = viewDocs.length;
     let userDocData = null;
     try{
-      const userSnap = await getDoc(doc(db,'users',uid));
+      const userSnap = await resilient(()=>getDoc(doc(db,'users',uid)), {tries:2});
       if(userSnap.exists()){
         userDocData = userSnap.data();
         if(typeof userDocData.profileViewCount === 'number') totalViews = userDocData.profileViewCount;
       }
-    }catch{ /* falls back to the filtered viewDocs.length above */ }
+    }catch(e){ if(isTransient(e)) throw e; /* permanent error: fall back to the filtered viewDocs.length above */ }
 
     // ── Founding Creator status now rendered by its own rings widget
     // (loadFoundingCreatorRings, fired alongside this from onAuthStateChanged) —
@@ -516,8 +534,8 @@ async function loadInsights(uid){
     // ── Total followers: getCountFromServer with single-field where (uses auto-index) ──
     let totalFollowers = followDocs.length;
     try{
-      const fc = await getCountFromServer(                        // FIX: uses getCountFromServer for accuracy
-        query(collection(db,'follows'), where('followingId','==',uid)));
+      const fc = await resilient(()=>getCountFromServer(         // FIX: uses getCountFromServer for accuracy
+        query(collection(db,'follows'), where('followingId','==',uid))), {tries:2});
       totalFollowers = fc.data().count;
     }catch{}
     document.getElementById('prFollowers').textContent = `${totalFollowers.toLocaleString()} follower${totalFollowers===1?'':'s'}`;
@@ -591,16 +609,19 @@ async function loadInsights(uid){
     renderBestArticle(enriched);
     renderBreakdown(totalLikes, totalComments, totalReposts);
     renderPerfList(enriched);
+    _insState = 'ok';
 
   }catch(e){
     // FIX: was completely missing — page would freeze on skeletons on any error
     console.error('loadInsights failed:', e?.code, e?.message);
+    _insState = 'error';
     document.getElementById('perfList').innerHTML = emptyState(
       `<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>`,
-      `Could not load insights.<br>Check your connection and try again.`
+      `Could not load insights.<br>Check your connection and try again.<br><button onclick="retryInsights()" style="margin-top:14px;background:var(--p,#4f46e5);color:#fff;border:none;padding:10px 22px;border-radius:99px;font-size:13.5px;font-weight:700;cursor:pointer">Try again</button>`
     );
+    // Unknown, not zero — never show a creator fake zeros during an outage.
     ['statViews','statFollowers','statArticles','statPosts','statArticleViews','statEngagement']
-      .forEach(id => setNum(id, 0));
+      .forEach(id => { const el = document.getElementById(id); if(el) el.textContent = '–'; });
     document.getElementById('trendCard').innerHTML =
       emptyState(`<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>`, `Trend data unavailable.`);
     document.getElementById('activityCard').innerHTML =
@@ -990,9 +1011,17 @@ function renderActivity(docs){
 function emptyState(iconPath, text){
   return `<div class="empty-state"><svg viewBox="0 0 24 24">${iconPath}</svg><p>${text}</p></div>`;
 }
+// Network failures now THROW (after retries) so the page shows "Could not load
+// insights + Try again" instead of fake zeros. Permanent errors (a missing
+// composite index, a rules denial) still degrade to an empty list so one
+// unavailable widget can't take the whole page down.
 async function safeDocs(q){
-  try{ const s = await getDocs(q); return s.docs.map(d=>({id:d.id,...d.data()})); }
-  catch{ return []; }
+  try{ const s = await resilient(()=>getDocs(q), {tries:2}); return s.docs.map(d=>({id:d.id,...d.data()})); }
+  catch(e){
+    if(isTransient(e)) throw e;
+    console.warn('safeDocs: permanent error, showing empty:', e?.code, e?.message);
+    return [];
+  }
 }
 function setNum(id, val){
   const el = document.getElementById(id);

@@ -150,6 +150,8 @@ function injectSheetOnce() {
   while (wrap.firstChild) document.body.appendChild(wrap.firstChild);
 }
 
+import { retryRead } from '/resilient.js';
+
 export function initRepost({ db, fs, getCurrentUser, getMyProfile, notif, openAuth, showToast }) {
   injectStylesOnce();
   injectSheetOnce();
@@ -184,18 +186,24 @@ export function initRepost({ db, fs, getCurrentUser, getMyProfile, notif, openAu
     document.getElementById('rpCaptionInput').focus();
   }
 
-  async function isReposted(targetType, targetId) {
+  // Strict version: THROWS if the read fails. Used by submitPlain() — treating
+  // a failed read as "not reposted yet" made it re-create the repost and bump
+  // the repost count a second time (count inflation), or skip an undo.
+  async function isRepostedStrict(targetType, targetId) {
     const u = getCurrentUser();
     if (!u) return false;
-    try {
-      const snap = await getDoc(doc(db, 'reposts', plainId(u.uid, targetType, targetId)));
-      return snap.exists();
-    } catch (e) { return false; }
+    const snap = await retryRead(() => getDoc(doc(db, 'reposts', plainId(u.uid, targetType, targetId))), { tries: 2 });
+    return snap.exists();
+  }
+  // Display-only version (label on the sheet): a failed read just falls back to false.
+  async function isReposted(targetType, targetId) {
+    try { return await isRepostedStrict(targetType, targetId); }
+    catch (e) { return false; }
   }
 
   async function getRepostCount(targetId) {
     try {
-      const snap = await getDoc(doc(db, 'repostCounts', targetId));
+      const snap = await retryRead(() => getDoc(doc(db, 'repostCounts', targetId)), { tries: 2 });
       return snap.exists() ? (snap.data().count || 0) : 0;
     } catch (e) { return 0; }
   }
@@ -213,7 +221,7 @@ export function initRepost({ db, fs, getCurrentUser, getMyProfile, notif, openAu
     const btn = document.getElementById('rpPlainBtn');
     if (btn) btn.style.opacity = '.6';
     try {
-      const already = await isReposted(targetType, targetId);
+      const already = await isRepostedStrict(targetType, targetId);
       if (already) {
         await deleteDoc(doc(db, 'reposts', id));
         await bumpRepostCount(targetId, -1);

@@ -139,7 +139,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
-import { getFirestore, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
+import { getFirestore, doc, getDoc, setDoc, enableNetwork, disableNetwork } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
+import { createResilient, isTransient } from '/resilient.js';
 
 const fbApp = initializeApp({
   apiKey:"AIzaSyDTn70s1_uIiSOR6lPLY_nKh8Ff1FViFCs",
@@ -152,6 +153,7 @@ const fbApp = initializeApp({
 });
 const auth = getAuth(fbApp);
 const db   = getFirestore(fbApp, 'default');
+const { resilient, reconnectFirestore } = createResilient({ db, enableNetwork, disableNetwork });
 
 const ICONS = {
   doc: `<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>`,
@@ -164,6 +166,9 @@ const ICONS = {
 let currentUser = null;
 let currentTab = 'saved';
 const loaded = { saved:false, wishlist:false, books:false };
+const loading = { saved:false, wishlist:false, books:false }; // guards against overlapping loads
+const failed  = { saved:false, wishlist:false, books:false }; // tab needs a retry
+const TAB_EL  = { saved:'savedList', wishlist:'wishlistGrid', books:'booksGrid' };
 const VALID_TABS = ['saved','wishlist','books'];
 
 const params = new URLSearchParams(location.search);
@@ -193,17 +198,23 @@ function cap(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
 
 /* ── SAVED TAB ── */
 async function loadSaved(){
-  loaded.saved = true;
+  if (loading.saved) return;
+  loading.saved = true;
+  let failedReads = 0;
   try{
-    const snap = await getDoc(doc(db,'userSaves',currentUser.uid));
+    const snap = await resilient(() => getDoc(doc(db,'userSaves',currentUser.uid)));
     const map = snap.exists() ? snap.data() : {};
     const ids = Object.keys(map).filter(id => map[id]);
-    if (!ids.length){ renderSavedEmpty(); return; }
+    if (!ids.length){ loaded.saved = true; failed.saved = false; renderSavedEmpty(); return; }
 
+    // Per-item reads retry too. A network failure is counted (not silently
+    // dropped as "doesn't exist"); permanent errors still just skip the item.
+    const softGet = ref => resilient(() => getDoc(ref), { tries: 2 })
+      .catch(e => { if (isTransient(e)) failedReads++; return null; });
     const pairs = await Promise.all(ids.map(async id => {
       const [postSnap, articleSnap] = await Promise.all([
-        getDoc(doc(db,'posts',id)).catch(()=>null),
-        getDoc(doc(db,'articles',id)).catch(()=>null)
+        softGet(doc(db,'posts',id)),
+        softGet(doc(db,'articles',id))
       ]);
       if (postSnap && postSnap.exists()) return { id, type:'post', data: postSnap.data() };
       if (articleSnap && articleSnap.exists()) return { id, type:'article', data: articleSnap.data() };
@@ -211,7 +222,10 @@ async function loadSaved(){
     }));
     const items = pairs.filter(Boolean).sort((a,b) => tsMillis(b.data.publishedAt||b.data.createdAt) - tsMillis(a.data.publishedAt||a.data.createdAt));
 
-    if (!items.length){ renderSavedEmpty(); return; }
+    if (!items.length){
+      if (failedReads) throw new Error('saved items failed to load'); // not "Nothing saved yet"
+      loaded.saved = true; failed.saved = false; renderSavedEmpty(); return;
+    }
     document.getElementById('savedList').innerHTML = items.map(it => {
       const img = it.type==='post' ? (it.data.images && it.data.images[0]) : it.data.cover;
       const title = it.type==='post' ? (it.data.text||'Untitled post') : (it.data.title||'Untitled');
@@ -228,10 +242,17 @@ async function loadSaved(){
           </button>
         </div>`;
     }).join('');
+    if (failedReads) {
+      document.getElementById('savedList').insertAdjacentHTML('beforeend', partialNoteHtml('saved'));
+      failed.saved = true; loaded.saved = false;
+    } else { failed.saved = false; loaded.saved = true; }
   }catch(e){
     console.error('loadSaved failed:', e);
-    renderSavedEmpty();
-  }
+    failed.saved = true; loaded.saved = false;
+    // Was renderSavedEmpty() — telling someone their saved items are gone
+    // because of a network blip. Show an error with a retry instead.
+    document.getElementById('savedList').innerHTML = errorHtml('saved');
+  } finally { loading.saved = false; }
 }
 window.unsaveItem = async function(id, btn){
   const row = btn.closest('.saved-row');
@@ -246,19 +267,19 @@ function renderSavedEmpty(){
 
 /* ── WISHLIST TAB ── */
 async function loadWishlist(){
-  loaded.wishlist = true;
+  if (loading.wishlist) return;
+  loading.wishlist = true;
   try{
     const token = await currentUser.getIdToken();
-    const [wlRes, prodRes] = await Promise.all([
-      fetch('/api/wishlist', { headers:{ Authorization:`Bearer ${token}` } }),
-      fetch('/api/products')
+    const [wl, prod] = await Promise.all([
+      fetchJson('/api/wishlist', { headers:{ Authorization:`Bearer ${token}` } }),
+      fetchJson('/api/products')
     ]);
-    const wl = await wlRes.json();
-    const prod = await prodRes.json();
     const catalog = {};
     (prod.products||[]).forEach(p => catalog[p.id] = p);
     const items = (wl.ids||[]).map(id => catalog[id]).filter(Boolean);
 
+    loaded.wishlist = true; failed.wishlist = false;
     if (!items.length){ renderWishlistEmpty(); return; }
     document.getElementById('wishlistGrid').innerHTML = items.map(p => `
       <div class="book-card">
@@ -274,8 +295,9 @@ async function loadWishlist(){
       </div>`).join('');
   }catch(e){
     console.error('loadWishlist failed:', e);
-    renderWishlistEmpty();
-  }
+    failed.wishlist = true; loaded.wishlist = false;
+    document.getElementById('wishlistGrid').innerHTML = errorHtml('wishlist');
+  } finally { loading.wishlist = false; }
 }
 window.removeFromWishlist = async function(productId, btn){
   const card = btn.closest('.book-card');
@@ -297,17 +319,20 @@ function renderWishlistEmpty(){
 
 /* ── BOOKS TAB (owned — from past orders) ── */
 async function loadBooks(){
-  loaded.books = true;
+  if (loading.books) return;
+  loading.books = true;
   try{
     const token = await currentUser.getIdToken();
-    const res = await fetch('/api/my-orders', { headers:{ Authorization:`Bearer ${token}` } });
-    const data = await res.json();
+    // fetchJson checks res.ok — a 401/500 body used to be parsed as "no orders",
+    // telling someone who bought books that they own none.
+    const data = await fetchJson('/api/my-orders', { headers:{ Authorization:`Bearer ${token}` } });
     const seen = new Map();
     (data.rows||[]).forEach(order => (order.items||[]).forEach(it => {
       if (it.pdfUrl && it.productId && !seen.has(it.productId)) seen.set(it.productId, it);
     }));
     const items = Array.from(seen.values());
 
+    loaded.books = true; failed.books = false;
     if (!items.length){ renderBooksEmpty(); return; }
     document.getElementById('booksGrid').innerHTML = items.map(it => {
       const readHref = `/read-book?src=${encodeURIComponent(it.pdfUrl)}&title=${encodeURIComponent(it.title||'')}&cover=${encodeURIComponent(it.coverUrl||'')}`;
@@ -327,13 +352,54 @@ async function loadBooks(){
     }).join('');
   }catch(e){
     console.error('loadBooks failed:', e);
-    renderBooksEmpty();
-  }
+    failed.books = true; loaded.books = false;
+    document.getElementById('booksGrid').innerHTML = errorHtml('books');
+  } finally { loading.books = false; }
 }
 function renderBooksEmpty(){
   document.getElementById('booksGrid').outerHTML = `<div id="booksGrid">${emptyHtml(ICONS.doc,
     "You don't own any books yet", 'Books you buy will show up here, ready to read any time.', '/books', 'Browse Books')}</div>`;
 }
+
+/* ── RESILIENCE HELPERS ── */
+// fetch with a timeout, a res.ok check, and one retry on network errors / 5xx.
+async function fetchJson(url, opts = {}){
+  let lastErr;
+  for (let i = 0; i < 2; i++){
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 12000);
+    try{
+      const res = await fetch(url, { ...opts, signal: ctrl.signal });
+      if (res.ok) return await res.json();
+      lastErr = new Error('HTTP ' + res.status);
+      if (res.status < 500) break; // 4xx: retrying won't help
+    }catch(e){ lastErr = e; }
+    finally{ clearTimeout(timer); }
+    await new Promise(r => setTimeout(r, 600));
+  }
+  throw lastErr;
+}
+function errorHtml(tab){
+  return `<div class="lib-empty" style="grid-column:1/-1"><svg viewBox="0 0 24 24">${ICONS.doc}</svg><p>Couldn't load</p><span>Check your connection and try again.</span><a href="#" onclick="retryTab('${tab}');return false">Try again</a></div>`;
+}
+function partialNoteHtml(tab){
+  return `<div style="text-align:center;padding:14px;font-size:12.5px;color:#9ca3af">Some items couldn't be loaded. <a href="#" onclick="retryTab('${tab}');return false" style="color:#4f46e5;font-weight:700">Try again</a></div>`;
+}
+window.retryTab = async function(tab){
+  const el = document.getElementById(TAB_EL[tab]);
+  if (el) el.innerHTML = '<div class="lib-empty"><span>Loading…</span></div>';
+  await reconnectFirestore();
+  loaded[tab] = false;
+  if (tab === 'saved') loadSaved();
+  else if (tab === 'wishlist') loadWishlist();
+  else if (tab === 'books') loadBooks();
+};
+// Coming back to a long-idle tab / network back / back-forward cache: retry
+// whatever failed on the tab being viewed.
+function recoverIfNeeded(){ if (currentUser && failed[currentTab]) retryTab(currentTab); }
+document.addEventListener('visibilitychange', () => { if (!document.hidden) recoverIfNeeded(); });
+window.addEventListener('online', recoverIfNeeded);
+window.addEventListener('pageshow', e => { if (e.persisted) recoverIfNeeded(); });
 
 /* ── HELPERS ── */
 function emptyHtml(iconPath, title, sub, href, cta){

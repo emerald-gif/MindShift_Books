@@ -322,7 +322,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
-import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
+import { getFirestore, doc, getDoc, enableNetwork, disableNetwork } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
+import { createResilient } from '/resilient.js';
 
 const fbApp = initializeApp({
   apiKey:"AIzaSyDTn70s1_uIiSOR6lPLY_nKh8Ff1FViFCs",
@@ -335,6 +336,7 @@ const fbApp = initializeApp({
 });
 const auth = getAuth(fbApp);
 const db   = getFirestore(fbApp);
+const { resilient } = createResilient({ db, enableNetwork, disableNetwork });
 let currentUid = null;
 let currentName = '';
 let currentUsername = '';
@@ -366,7 +368,7 @@ onAuthStateChanged(auth, async user => {
 
   // Load username from Firestore so shareProfile() generates a clean @username URL
   try{
-    const snap = await getDoc(doc(db, 'users', user.uid));
+    const snap = await resilient(()=>getDoc(doc(db, 'users', user.uid)), {tries:2});
     if(snap.exists()) currentUsername = snap.data().username || '';
   }catch(e){ console.warn('Could not load username:', e.message); }
 
@@ -526,7 +528,7 @@ window.shareProfile = async function(){
   // If username hasn't loaded yet (e.g. tapped right after page load), fetch it now
   if(!currentUsername){
     try{
-      const snap = await getDoc(doc(db, 'users', currentUid));
+      const snap = await resilient(()=>getDoc(doc(db, 'users', currentUid)), {tries:2});
       if(snap.exists()) currentUsername = snap.data().username || '';
     }catch(e){ console.warn('Could not load username:', e.message); }
   }

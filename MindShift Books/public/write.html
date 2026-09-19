@@ -480,8 +480,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
-import { getFirestore, collection, doc, setDoc, getDoc, getDocs, query, where, deleteDoc, serverTimestamp }
+import { getFirestore, collection, doc, setDoc, getDoc, getDocs, query, where, deleteDoc, serverTimestamp, enableNetwork, disableNetwork }
   from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
+import { createResilient } from '/resilient.js';
 
 const fbApp = initializeApp({
   apiKey:"AIzaSyDTn70s1_uIiSOR6lPLY_nKh8Ff1FViFCs",
@@ -494,6 +495,7 @@ const fbApp = initializeApp({
 });
 const auth = getAuth(fbApp);
 const db   = getFirestore(fbApp, 'default');
+const { resilient, reconnectFirestore } = createResilient({ db, enableNetwork, disableNetwork });
 
 let currentUser = null;
 let selectedCat = '';
@@ -516,9 +518,26 @@ onAuthStateChanged(auth, async user => {
   else window.location.href = '/login';
 });
 
+
+// Editing an item that failed to load must NOT be saveable: the form would be
+// blank and saving would overwrite the real content. Show why, with a retry.
+function showEditLoadError(what, retryFn){
+  let b = document.getElementById('editLoadBanner');
+  if(!b){
+    b = document.createElement('div');
+    b.id = 'editLoadBanner';
+    b.style.cssText = 'position:fixed;left:12px;right:12px;top:64px;z-index:400;background:#fff1f2;border:1.5px solid #fecdd3;color:#9f1239;border-radius:14px;padding:12px 14px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:10px;box-shadow:0 6px 24px rgba(0,0,0,.12)';
+    document.body.appendChild(b);
+  }
+  b.innerHTML = `<span style="flex:1">Couldn't load your ${what}. Saving is disabled until it loads.</span><button style="background:#e11d48;color:#fff;border:none;padding:8px 14px;border-radius:99px;font-size:12.5px;font-weight:700;cursor:pointer">Try again</button>`;
+  b.querySelector('button').onclick = retryFn;
+}
+function hideEditLoadError(){ const b = document.getElementById('editLoadBanner'); if(b) b.remove(); }
+let _editRetryable = false; // true only after a network-type failure (not 'not found')
+let _editLoaded = false; // stays false until the article really loaded — see submitArticle()
 async function loadArticleForEdit(id){
   try{
-    const snap = await getDoc(doc(db,'articles',id));
+    const snap = await resilient(()=>getDoc(doc(db,'articles',id)));
     if(!snap.exists()){ showToast('Article not found'); return; }
     const a = snap.data();
     if(a.authorUid !== currentUser.uid){ showToast("You can't edit this article"); location.href='/profile'; return; }
@@ -540,11 +559,17 @@ async function loadArticleForEdit(id){
     updateWordCount();
     const btn = document.getElementById('submitBtn');
     if(btn) btn.innerHTML = `<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Save Changes`;
+    _editLoaded = true; _editRetryable = false;
+    hideEditLoadError();
   }catch(e){
     console.error('loadArticleForEdit failed:', e);
-    showToast("Couldn't load article — try again");
+    _editRetryable = true;
+    showEditLoadError('article', async ()=>{ await reconnectFirestore(); loadArticleForEdit(id); });
   }
 }
+// Coming back to a long-idle tab / network back: retry a failed edit-load automatically.
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && editId && _editRetryable && !_editLoaded && currentUser) loadArticleForEdit(editId); });
+window.addEventListener('online', ()=>{ if(editId && _editRetryable && !_editLoaded && currentUser) loadArticleForEdit(editId); });
 
 /* ── CATEGORY PILLS (from window.MSB_CATEGORIES, article-categories.js) ── */
 function renderCatPills(){
@@ -1087,6 +1112,7 @@ function loadDraft(){
 /* ── SUBMIT ── */
 window.submitArticle = async function(){
   if(!currentUser) return;
+  if(editId && !_editLoaded){ showToast("Your article hasn't loaded yet — tap Try again"); return; }
   const title = document.getElementById('titleInput').value.trim();
   const brief = document.getElementById('briefInput').value.trim();
   const body  = document.getElementById('editorBody').innerHTML.trim();
@@ -1152,11 +1178,12 @@ window.submitArticle = async function(){
     : `<svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Publish`;
 };
 
+// Throws if the read fails. It used to swallow errors and return {}, which
+// published articles with a blank username/bio/photo (broken author links) on
+// any network hiccup. Now the publish aborts ("Publish failed — try again").
 async function getUserProfile(){
-  try{
-    const s = await getDoc(doc(db,'users',currentUser.uid));
-    return s.exists() ? s.data() : {};
-  }catch{ return {}; }
+  const s = await resilient(()=>getDoc(doc(db,'users',currentUser.uid)));
+  return s.exists() ? s.data() : {};
 }
 
 function clearForm(){
@@ -1183,7 +1210,7 @@ async function loadSubmissions(){
   try{
     // Single-field where only — avoids needing a composite index with orderBy
     const q = query(collection(db,'articles'), where('authorUid','==',currentUser.uid));
-    const snap = await getDocs(q);
+    const snap = await resilient(()=>getDocs(q), {tries:2});
     submissions = snap.docs
       .map(d=>({id:d.id,...d.data()}))
       .sort((a,b)=>{
