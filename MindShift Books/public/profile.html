@@ -263,6 +263,30 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
 .stat-num{font-size:18px;font-weight:900;color:var(--txt)}
 .stat-label{font-size:11px;color:var(--mute);font-weight:500;margin-top:2px}
 .stat:hover .stat-num{color:var(--p)}
+/* Compact content-count row (Articles · Posts · Reposts) under the CTA buttons */
+.stats-row{padding-top:10px}
+.stats-row .stat-num{font-size:15px}
+.stats-row .stat-label{font-size:10.5px;margin-top:1px}
+/* Followers / Following live up beside the avatar, in the space between it and the gear */
+.follow-stats{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:2px 14px;flex:1;min-width:0;padding:0 8px;align-self:flex-end;min-height:42px}
+/* DEFAULT — count beside the label:  "310 followers · 24 following"
+   To stack the count ABOVE the label instead, add class "stacked" to <div class="follow-stats"> in the markup. */
+.fstat{display:inline-flex;align-items:baseline;gap:4px;white-space:nowrap;cursor:pointer}
+.fstat .stat-num{font-size:14px;font-weight:800}
+.fstat .stat-label{font-size:13px;font-weight:400;color:var(--txt);margin-top:0;text-transform:lowercase}
+.fstat:first-child::after{content:'·';margin-left:10px;color:var(--mute);font-weight:800}
+.fstat:hover .stat-num,.fstat:hover .stat-label{color:var(--p)}
+/* Very narrow phones: drop the dot (it could end up dangling if the two items wrap) and tighten a touch */
+@media (max-width:370px){
+  .fstat:first-child::after{display:none}
+  .fstat .stat-num,.fstat .stat-label{font-size:12.5px}
+}
+/* ALTERNATIVE — count above the label */
+.follow-stats.stacked{gap:0 22px}
+.follow-stats.stacked .fstat{flex-direction:column;align-items:center;gap:0}
+.follow-stats.stacked .fstat:first-child::after{display:none}
+.follow-stats.stacked .fstat .stat-num{font-size:17px}
+.follow-stats.stacked .fstat .stat-label{font-size:11px;font-weight:500;color:var(--mute);text-transform:none}
 
 /* ── TABS ── */
 .tabs{display:flex;background:var(--card);border-bottom:1.5px solid var(--border);
@@ -568,6 +592,16 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
 <div class="profile-card" id="profileCard">
   <div class="avatar-row">
     <div class="avatar" id="avatar" onclick="openImageViewer('avatar')"><div class="skel skel-avatar" id="avatarSkel" style="border:3px solid var(--card)"></div></div>
+    <div class="follow-stats">
+      <div class="fstat" onclick="showFollowers('followers')">
+        <div class="stat-num" id="statFollowers"><div class="skel skel-stat" id="statFollowersSkel"></div></div>
+        <div class="stat-label">Followers</div>
+      </div>
+      <div class="fstat" onclick="showFollowers('following')">
+        <div class="stat-num" id="statFollowing"><div class="skel skel-stat" id="statFollowingSkel"></div></div>
+        <div class="stat-label">Following</div>
+      </div>
+    </div>
     <div class="profile-actions" id="profileActions">
       <!-- filled by JS -->
     </div>
@@ -609,7 +643,7 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
     Profile Insight
   </a>
   <div class="stats-row">
-    <div class="stat" onclick="document.getElementById('articlesSection').scrollIntoView({behavior:'smooth'})">
+    <div class="stat" onclick="switchTab('article');document.getElementById('tabsRow').scrollIntoView({behavior:'smooth'})">
       <div class="stat-num" id="statArticles"><div class="skel skel-stat" id="statArticlesSkel"></div></div>
       <div class="stat-label">Articles</div>
     </div>
@@ -617,13 +651,9 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
       <div class="stat-num" id="statPosts"><div class="skel skel-stat" id="statPostsSkel"></div></div>
       <div class="stat-label">Posts</div>
     </div>
-    <div class="stat" onclick="showFollowers('followers')">
-      <div class="stat-num" id="statFollowers"><div class="skel skel-stat" id="statFollowersSkel"></div></div>
-      <div class="stat-label">Followers</div>
-    </div>
-    <div class="stat" onclick="showFollowers('following')">
-      <div class="stat-num" id="statFollowing"><div class="skel skel-stat" id="statFollowingSkel"></div></div>
-      <div class="stat-label">Following</div>
+    <div class="stat" onclick="switchTab('repost');document.getElementById('tabsRow').scrollIntoView({behavior:'smooth'})">
+      <div class="stat-num" id="statReposts"><div class="skel skel-stat" id="statRepostsSkel"></div></div>
+      <div class="stat-label">Reposts</div>
     </div>
   </div>
 </div>
@@ -815,11 +845,11 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
     </button>
   </div>
   <div class="manage-body">
-    <button class="manage-row" id="manageEditBtn">
+    <button class="manage-row owner-only" id="manageEditBtn">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4z"/></svg>
       <span>Edit</span>
     </button>
-    <div class="manage-row manage-toggle-row">
+    <div class="manage-row manage-toggle-row owner-only">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
       <span>Turn off commenting</span>
       <label class="manage-switch">
@@ -827,7 +857,7 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
         <span class="manage-switch-track"></span>
       </label>
     </div>
-    <div class="manage-row manage-toggle-row">
+    <div class="manage-row manage-toggle-row owner-only">
       <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
       <span>Hide like count</span>
       <label class="manage-switch">
@@ -843,7 +873,7 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
       <span>Share as Image</span>
     </button>
-    <button class="manage-row manage-row-danger" onclick="confirmDeleteFromManage()">
+    <button class="manage-row manage-row-danger owner-only" onclick="confirmDeleteFromManage()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
       <span>Delete</span>
     </button>
@@ -1039,10 +1069,10 @@ async function resilient(fn, { tries = 3, timeoutMs = 8000 } = {}){
   throw lastErr;
 }
 
-const SKEL_IDS = ['nameSkel','avatarSkel','statArticlesSkel','statPostsSkel','statFollowersSkel','statFollowingSkel'];
+const SKEL_IDS = ['nameSkel','avatarSkel','statArticlesSkel','statPostsSkel','statRepostsSkel','statFollowersSkel','statFollowingSkel'];
 function showLoadError(msg){
   SKEL_IDS.forEach(id=>{ const el=document.getElementById(id); if(el) el.remove(); });
-  ['statArticles','statPosts','statFollowers','statFollowing'].forEach(id=>{
+  ['statArticles','statPosts','statReposts','statFollowers','statFollowing'].forEach(id=>{
     const el=document.getElementById(id);
     if(el && !el.textContent.trim()) el.textContent='–';
   });
@@ -1361,7 +1391,7 @@ document.getElementById('celebrateBadgeCta')?.addEventListener('click', () => { 
 /* ── RENDER HEADER ── */
 function renderProfileHeader(){
   // Clear skeleton placeholders
-  ['nameSkel','avatarSkel','statArticlesSkel','statPostsSkel','statFollowersSkel','statFollowingSkel'].forEach(id=>{
+  ['nameSkel','avatarSkel','statArticlesSkel','statPostsSkel','statRepostsSkel','statFollowersSkel','statFollowingSkel'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.remove();
   });
   const av = document.getElementById('avatar');
@@ -1500,6 +1530,18 @@ async function loadStats(){
     console.warn('loadStats posts failed:', e?.code);
     const pel = document.getElementById('statPosts');
     if(pel) pel.textContent = '–'; // unknown, not zero
+  }
+
+  // Reposts count — same set the Reposts tab lists (plain + quote reposts).
+  try{
+    const rpQ = query(collection(db,'reposts'), where('reposterUid','==',uid));
+    const rpCountSnap = await resilient(()=>getCountFromServer(rpQ));
+    const rel = document.getElementById('statReposts');
+    if(rel) rel.textContent = rpCountSnap.data().count;
+  }catch(e){
+    console.warn('loadStats reposts failed:', e?.code);
+    const rel = document.getElementById('statReposts');
+    if(rel) rel.textContent = '–'; // unknown, not zero
   }
 
   // Follower / following counts — always computed fresh from the follows
@@ -1986,13 +2028,16 @@ function renderArticles(){
   const authorName = esc(profileData.name || 'MindShift Books User');
   const authorAv = profileData.photo || 'logo.jpg';
 
-  // Manage ("⋯") button — only on your own profile, on your own content.
-  const manageBtnHtml = (s) => isOwner ? `
+  // "⋯" button on every card, like the feed on articles.html. On your own
+  // profile it opens the full manage sheet (edit / toggles / delete); on
+  // someone else's it opens the same sheet showing only Copy link and
+  // Share as Image (see openManageSheet).
+  const manageBtnHtml = (s) => `
     <div class="acard-menu-wrap corner" onclick="event.stopPropagation()">
-      <button class="acard-menu-btn" onclick="openManageSheet('${s.id}','${s.type}')" title="Manage">
+      <button class="acard-menu-btn" onclick="openManageSheet('${s.id}','${s.type}')" title="${isOwner ? 'Manage' : 'More options'}">
         <svg fill="currentColor" viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
       </button>
-    </div>` : '';
+    </div>`;
 
   const cardsHtml = filtered.map(s=>{
     if(s.type==='post'){
@@ -2282,12 +2327,18 @@ window.openManageSheet = function(id, type){
   const item = allSubmissions.find(a=>a.id===id);
   if(!item) return;
   _manageId = id; _manageType = type;
-  document.getElementById('manageSheetTitle').textContent = type==='post' ? 'Manage post' : 'Manage article';
-  document.getElementById('manageEditBtn').onclick = () => {
-    location.href = type==='post' ? `/create-post?edit=${id}` : `/write?edit=${id}`;
-  };
-  document.getElementById('manageCommentsToggle').checked = !!item.commentsOff;
-  document.getElementById('manageLikeCountToggle').checked = !!item.hideLikeCount;
+  // Owner sees everything; a visitor only gets Copy link + Share as Image.
+  document.querySelectorAll('#manageSheet .owner-only').forEach(el => { el.style.display = isOwner ? '' : 'none'; });
+  document.getElementById('manageSheetTitle').textContent = isOwner
+    ? (type==='post' ? 'Manage post' : 'Manage article')
+    : (type==='post' ? 'Post options' : 'Article options');
+  if(isOwner){
+    document.getElementById('manageEditBtn').onclick = () => {
+      location.href = type==='post' ? `/create-post?edit=${id}` : `/write?edit=${id}`;
+    };
+    document.getElementById('manageCommentsToggle').checked = !!item.commentsOff;
+    document.getElementById('manageLikeCountToggle').checked = !!item.hideLikeCount;
+  }
   document.getElementById('manageBg').classList.add('show');
   document.getElementById('manageSheet').classList.add('show');
 };
@@ -2311,18 +2362,26 @@ window.shareManageAsImage = function(){
   const item = allSubmissions.find(a=>a.id===_manageId);
   if(!item) return;
   closeManageSheet();
+  // Items here are RAW Firestore docs (authorName / authorPhoto / cover), not
+  // the normalised feed objects articles.html uses (author / avatar / img).
+  // Reading item.author / item.avatar gave undefined, so the share card fell
+  // back to "MindShift Books" + the logo. Use the same name/photo the cards on
+  // this page display (the profile owner), with the doc's own fields as backup.
+  const shareAuthor = profileData.name || item.authorName || 'MindShift Books User';
+  const shareAvatar = profileData.photo || item.authorPhoto || (isOwner && currentUser && currentUser.photoURL) || '';
   openShareImageCard({
     type: _manageType, id: _manageId,
-    author: item.author, avatar: item.avatar, publishedAt: item.publishedAt,
+    author: shareAuthor, avatar: shareAvatar, publishedAt: item.publishedAt || item.createdAt,
     text: item.text, title: item.title, brief: item.brief,
     // Video posts have no `images` array — use the video's thumbnail
     // instead, since a share card is a static image and can't play video.
-    image: _manageType==='post' ? (item.videoUrl ? item.thumbnailUrl : (item.images && item.images[0])) : (item.img || item.coverImage)
+    // Articles store their cover as `cover` (feed items call it `img`).
+    image: _manageType==='post' ? (item.videoUrl ? item.thumbnailUrl : (item.images && item.images[0])) : (item.cover || item.img || item.coverImage)
   });
 };
 
 window.onManageCommentsToggle = async function(checked){
-  if(!_manageId) return;
+  if(!_manageId || !isOwner) return;
   const coll = _manageType==='post' ? 'posts' : 'articles';
   const item = allSubmissions.find(a=>a.id===_manageId);
   try{
@@ -2338,7 +2397,7 @@ window.onManageCommentsToggle = async function(checked){
 };
 
 window.onManageLikeCountToggle = async function(checked){
-  if(!_manageId) return;
+  if(!_manageId || !isOwner) return;
   const coll = _manageType==='post' ? 'posts' : 'articles';
   const item = allSubmissions.find(a=>a.id===_manageId);
   try{
@@ -2354,7 +2413,7 @@ window.onManageLikeCountToggle = async function(checked){
 };
 
 window.confirmDeleteFromManage = function(){
-  if(!_manageId) return;
+  if(!_manageId || !isOwner) return;
   closeManageSheet();
   document.getElementById('deleteSheetTitle').textContent =
     _manageType==='post' ? 'Delete this post?' : 'Delete this article?';
@@ -2368,7 +2427,7 @@ window.closeDeleteConfirm = function(){
 };
 
 window.doDeleteConfirmed = async function(){
-  if(!_manageId) return;
+  if(!_manageId || !isOwner) return;
   const id = _manageId, type = _manageType;
   const coll = type==='post' ? 'posts' : 'articles';
   closeDeleteConfirm();
