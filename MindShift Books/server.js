@@ -300,6 +300,7 @@ const BREVO_AFFILIATE_BROADCAST_TEMPLATE_ID = Number(process.env.BREVO_AFFILIATE
 const BREVO_PROMO_KIT_TEMPLATE_ID = 6; // fixed-content "Wave 1" style promo kit email (slides + copy angles) — see promo-kit-template-6.html — matches Brevo template #6
 const BREVO_CUSTOMER_DISCOUNT_TEMPLATE_ID = 7; // fixed-content "books are discounted right now" announcement to every registered customer — content lives entirely in Brevo template #7, this just triggers the send
 const BREVO_CREATOR_OUTREACH_TEMPLATE_ID = 8; // one template covers every creator-outreach stage (initial ask + 2 follow-ups) — same "one template, which blocks render depends on which params are sent" pattern as templates 5-7. Build the template with conditional blocks keyed on isInitial / isFollowUp1 / isFollowUp2.
+const BREVO_FOUNDING_CREATOR_TEMPLATE_ID = Number(process.env.BREVO_FOUNDING_CREATOR_TEMPLATE_ID || 10); // every Founding Creator badge lifecycle email (live / at-risk / final warning / removed / welcome back) — same "one template, conditional blocks" pattern as #8. Build the template with blocks keyed on isLive / isAtRisk / isFinalWarning / isRemoved / isWelcomeBack — see email-templates/founding-creator-template-10.html
 // (AFFILIATE_HOST / AFFILIATE_SITE_URL / AFFILIATE_ECOSYSTEM_PATHS are declared
 // near the top of the file, before the static file server — see the comment there.)
 
@@ -1718,6 +1719,10 @@ async function runFoundingCreatorWeeklyCycle() {
         'foundingCreator.lastCheckedWeek': thisWeekKey,
         'foundingCreator.missedAt': missedAt
       };
+      // Emails ride along in the same write as the status change (queued, not
+      // sent here — see the Founding Creator emails block further down).
+      if (fc.status === 'faded' && newStatus === 'active') update['foundingCreator.emailQueue'] = fcQueuedEmail('welcomeBack');
+      else if (newStatus === 'lost') update['foundingCreator.emailQueue'] = fcQueuedEmail('removed');
       // A lost badge stops being tracked — no reason to keep rolling its
       // snapshot forward every week after it's gone for good.
       if (newStatus !== 'lost') {
@@ -2513,6 +2518,325 @@ app.get('/api/founding-creator/status', requireUser, async (req, res) => {
   } catch (err) {
     console.error('/api/founding-creator/status error', err);
     return res.status(500).json({ error: 'Could not load your badge status.' });
+  }
+});
+
+// ── Founding Creator emails (Brevo template #10) ────────────────────────────
+// Five lifecycle emails through ONE Brevo template (blocks keyed on isLive /
+// isAtRisk / isFinalWarning / isRemoved / isWelcomeBack):
+//   live         — once, at launch, to everyone who earned the badge during the
+//                  launch grace period. The only time this one ever goes out.
+//   atRisk       — Friday nudge: badge is active but this week's target isn't
+//                  met yet — hit it before the badge fades to black and white.
+//   finalWarning — Friday nudge: badge is ALREADY faded and this week's target
+//                  isn't met yet — miss it and the badge is removed for good.
+//   removed      — the Monday the badge is lost for good.
+//   welcomeBack  — the Monday a faded badge is restored to full color.
+//
+// Nothing in here sends inline. Anything that should email is first written to
+// users/{uid}.foundingCreator.emailQueue = { stage, queuedAt, attempts } — by
+// the weekly cycle above (removed / welcomeBack) or by the launch + Friday jobs
+// below — and an hourly tick flushes the queue, but only between 10:00 and
+// 21:00 Lagos time, so a status change made at 12:05am Monday reaches an inbox
+// at 10am instead. Each queued email is claimed in a transaction before it's
+// sent, so a restart (or two overlapping instances during a deploy) can never
+// send the same email twice. The Friday nudges are queued for everyone and the
+// flush works out who's actually behind, using fresh numbers, so nobody who
+// caught up in the meantime gets nagged.
+const FC_EMAIL_STAGES = ['live', 'atRisk', 'finalWarning', 'removed', 'welcomeBack'];
+const FC_EMAIL_START_HOUR = 10;   // Lagos-shifted clock, same convention as the digest
+const FC_EMAIL_END_HOUR = 21;
+const FC_NUDGE_MIN_WEEKDAY = 5;   // Friday (Sun=0). Saturday still catches up if Friday was missed; Sunday never nudges.
+const FC_LIVE_EMAIL_WINDOW_MS = 3 * 24 * 60 * 60 * 1000; // if the launch email somehow hasn't gone out within 3 days of launch, don't send a stale "it's live!" later
+const FC_EMAIL_MAX_ATTEMPTS = 3;
+const FC_DAY_MS = 24 * 60 * 60 * 1000;
+
+function fcQueuedEmail(stage) {
+  return { stage, queuedAt: admin.firestore.Timestamp.now(), attempts: 0 };
+}
+
+// This week's progress = lifetime totals now minus the snapshot taken at the
+// start of the tracked week — same maths as the weekly evaluator and the
+// /api/founding-creator/status endpoint.
+function foundingCreatorProgress(fc, totals) {
+  const s = fc.snapshot || { content: 0, views: 0, engagement: 0 };
+  const progress = {
+    content: Math.max(0, totals.content - s.content),
+    views: Math.max(0, totals.views - s.views),
+    engagement: Math.max(0, totals.engagement - s.engagement)
+  };
+  progress.met = progress.content >= FOUNDING_CREATOR_TARGET.content &&
+                 progress.views >= FOUNDING_CREATOR_TARGET.views &&
+                 progress.engagement >= FOUNDING_CREATOR_TARGET.engagement;
+  return progress;
+}
+
+const FC_METRICS = [
+  { key: 'content', label: 'Content posted' },
+  { key: 'views', label: 'Views' },
+  { key: 'engagement', label: 'Engagement (likes + comments + reposts)' }
+];
+
+// The three requirement rows, pre-rendered as email-safe table HTML and handed
+// to the template as {{ params.progress_html }} — same idea as the digest's
+// summary_html, since a Brevo template can't do the bar-width maths. With
+// `progress` it shows a bar + "x/y" per requirement; without, just the targets.
+function fcRowsHtml(progress) {
+  const font = "font-family:'Inter',Arial,sans-serif;";
+  return FC_METRICS.map(m => {
+    const target = FOUNDING_CREATOR_TARGET[m.key];
+    if (!progress) {
+      return `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 10px;border-bottom:1px solid #e5e7eb;">
+      <tr>
+        <td style="${font}font-size:14px;color:#0f172a;padding:0 0 10px;">${m.label}</td>
+        <td align="right" style="${font}font-size:14px;font-weight:700;color:#0f172a;padding:0 0 10px;white-space:nowrap;">${target} a week</td>
+      </tr>
+    </table>`;
+    }
+    const have = Math.min(progress[m.key], target);
+    const done = have >= target;
+    const pct = Math.round((have / target) * 100);
+    const fill = done ? '#10b981' : '#2563eb';
+    const bar = pct >= 100
+      ? `<td style="height:8px;background:${fill};border-radius:999px;font-size:0;line-height:0;">&nbsp;</td>`
+      : pct <= 0
+        ? `<td style="height:8px;font-size:0;line-height:0;">&nbsp;</td>`
+        : `<td width="${pct}%" style="height:8px;background:${fill};border-radius:999px;font-size:0;line-height:0;">&nbsp;</td><td width="${100 - pct}%" style="height:8px;font-size:0;line-height:0;">&nbsp;</td>`;
+    return `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 16px;">
+      <tr>
+        <td style="${font}font-size:14px;color:#0f172a;">${m.label}</td>
+        <td align="right" style="${font}font-size:14px;font-weight:700;color:${done ? '#059669' : '#0f172a'};white-space:nowrap;">${have}/${target}${done ? ' ✓' : ''}</td>
+      </tr>
+      <tr>
+        <td colspan="2" style="padding-top:6px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#e5e7eb;border-radius:999px;"><tr>${bar}</tr></table>
+        </td>
+      </tr>
+    </table>`;
+  }).join('');
+}
+
+const FC_EMAIL_COPY = {
+  live:         { accent: '#2563eb', faded: false, subject: (n) => `🏅 ${n}, your Founding Creator badge is live`,          preview: () => 'Tracking starts today — here’s what you need each week.' },
+  atRisk:       { accent: '#f59e0b', faded: false, subject: () => '⏳ Your Founding Creator badge is at risk this week',     preview: (d) => `${d} day${d === 1 ? '' : 's'} left to hit this week’s target and keep it in full color.` },
+  finalWarning: { accent: '#ef4444', faded: true,  subject: () => '⚠️ Last chance to save your Founding Creator badge',      preview: (d) => `${d} day${d === 1 ? '' : 's'} left — miss this week and the badge is removed for good.` },
+  removed:      { accent: '#64748b', faded: true,  subject: () => 'Your Founding Creator badge has been removed',            preview: () => 'Here’s what happened, and what you can do next.' },
+  welcomeBack:  { accent: '#10b981', faded: false, subject: (n) => `🎉 Welcome back, ${n} — your badge is back in color`,    preview: () => 'You hit this week’s target. Your badge is visible to everyone again.' }
+};
+
+async function sendFoundingCreatorEmail(user, stage, { progress } = {}) {
+  if (!BREVO_API_KEY || !user.email) return { ok: false, error: 'missing key/email' };
+  const copy = FC_EMAIL_COPY[stage];
+  if (!copy) return { ok: false, error: 'unknown stage: ' + stage };
+
+  const now = lagosNow();
+  const firstName = String(user.name || 'there').split(' ')[0].replace(/[<>&"]/g, '') || 'there';
+  const weekEnd = new Date(mondayStartOfWeek(now).getTime() + 7 * FC_DAY_MS); // next Monday 00:00, Lagos-shifted clock
+  const daysLeft = Math.max(1, Math.ceil((weekEnd.getTime() - now.getTime()) / FC_DAY_MS));
+  const weekEndsLabel = new Date(weekEnd.getTime() - FC_DAY_MS).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
+  const T = FOUNDING_CREATOR_TARGET;
+  const showBars = (stage === 'atRisk' || stage === 'finalWarning') && !!progress;
+
+  try {
+    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: { accept: 'application/json', 'api-key': BREVO_API_KEY, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        sender: { name: BREVO_SENDER_NAME, email: BREVO_SENDER_EMAIL },
+        to: [{ email: user.email, name: user.name || undefined }],
+        subject: copy.subject(firstName),
+        templateId: BREVO_FOUNDING_CREATOR_TEMPLATE_ID,
+        params: {
+          first_name: firstName,
+          preview_text: copy.preview(daysLeft),
+          isLive: stage === 'live',
+          isAtRisk: stage === 'atRisk',
+          isFinalWarning: stage === 'finalWarning',
+          isRemoved: stage === 'removed',
+          isWelcomeBack: stage === 'welcomeBack',
+          accent_color: copy.accent,
+          badge_image_url: `${PUBLIC_SITE_URL}/${copy.faded ? 'fcbadge-email-faded.jpg' : 'fcbadge-email.jpg'}`,
+          progress_html: stage === 'removed' ? '' : fcRowsHtml(showBars ? progress : null),
+          target_content: T.content,
+          target_views: T.views,
+          target_engagement: T.engagement,
+          days_left: daysLeft,
+          days_left_label: `${daysLeft} day${daysLeft === 1 ? '' : 's'}`,
+          week_ends_label: weekEndsLabel,
+          status_url: `${PUBLIC_SITE_URL}/founding-creator`,
+          create_url: `${PUBLIC_SITE_URL}/create-post`,
+          support_url: `${PUBLIC_SITE_URL}/support`
+        }
+      })
+    });
+    if (!res.ok) { const txt = await res.text().catch(() => null); return { ok: false, error: `Brevo ${res.status}: ${(txt || '').slice(0, 160)}` }; }
+    return { ok: true };
+  } catch (err) { return { ok: false, error: (err.message || String(err)).slice(0, 160) }; }
+}
+
+// Launch email: runs once, ever. Everyone who earned the badge BEFORE the
+// launch grace period ended (i.e. everyone who was parked in "pendingStart")
+// gets queued the first tick after launch. Deliberately keyed off earnedAt
+// vs. the grace cutoff instead of hooking maybeActivatePendingFoundingCreators,
+// so it still fires if that activation already ran before this code deployed.
+// Badges earned AFTER launch never get it — for them the badge is live from
+// the moment they earn it.
+async function queueFoundingCreatorLiveEmails(now) {
+  const graceUntilMs = await foundingCreatorGraceUntil();
+  if (!graceUntilMs || now.getTime() < graceUntilMs) return 0;               // not launched yet
+  if (now.getTime() > graceUntilMs + FC_LIVE_EMAIL_WINDOW_MS) return 0;      // too late to still be news
+  const flagRef = db.collection('meta').doc('foundingCreatorLiveEmail');
+  const flag = await flagRef.get();
+  if (flag.exists && flag.data().done) return 0;
+
+  const snap = await db.collection('users')
+    .where('foundingCreator.earnedAt', '<', admin.firestore.Timestamp.fromMillis(graceUntilMs))
+    .get();
+  let queued = 0;
+  for (const doc of snap.docs) {
+    const fc = doc.data().foundingCreator;
+    if (!fc || !['active', 'faded'].includes(fc.status) || fc.liveEmailQueuedAt) continue;
+    // earnedAt is a real timestamp; graceUntilMs lives on the Lagos-shifted
+    // clock (+1h). Line them up so someone who earned it in the last hour
+    // before launch isn't mistaken for a pre-launch holder.
+    if (!fc.earnedAt || !fc.earnedAt.toMillis || fc.earnedAt.toMillis() + 60 * 60 * 1000 >= graceUntilMs) continue;
+    try {
+      await doc.ref.update({
+        'foundingCreator.emailQueue': fcQueuedEmail('live'),
+        'foundingCreator.liveEmailQueuedAt': admin.firestore.Timestamp.now()
+      });
+      queued++;
+    } catch (err) { console.error('[founding-creator] live-email queue failed for', doc.id, err); }
+  }
+  await flagRef.set({ done: true, doneAt: admin.firestore.Timestamp.now(), queued }, { merge: true });
+  console.log('[founding-creator] launch email queued for', queued, 'badge holders');
+  return queued;
+}
+
+// Friday (Saturday if Friday was missed), once per tracked week: queue the
+// "you're behind" nudge for every live badge — atRisk if it's still in full
+// color, finalWarning if it's already faded. The flush below drops anyone who
+// has actually hit the target by the time it goes to send.
+async function queueFoundingCreatorNudges(now) {
+  if (now.getUTCDay() < FC_NUDGE_MIN_WEEKDAY) return 0;
+  const thisWeekKey = weekMondayKey(now);
+  const stateRef = db.collection('meta').doc('foundingCreatorNudgeSchedule');
+  const stateDoc = await stateRef.get();
+  if (stateDoc.exists && stateDoc.data().lastRunWeek === thisWeekKey) return 0;
+
+  const snap = await db.collection('users').where('foundingCreator.status', 'in', ['active', 'faded']).get();
+  let queued = 0;
+  for (const doc of snap.docs) {
+    const fc = doc.data().foundingCreator;
+    if (!fc || fc.pendingStart || fc.lastNudgeWeek === thisWeekKey) continue;
+    try {
+      await doc.ref.update({
+        'foundingCreator.emailQueue': fcQueuedEmail(fc.status === 'faded' ? 'finalWarning' : 'atRisk'),
+        'foundingCreator.lastNudgeWeek': thisWeekKey
+      });
+      queued++;
+    } catch (err) { console.error('[founding-creator] nudge queue failed for', doc.id, err); }
+  }
+  await stateRef.set({ lastRunWeek: thisWeekKey, lastRunAt: admin.firestore.Timestamp.now(), queued }, { merge: true });
+  console.log('[founding-creator] weekly nudges queued:', thisWeekKey, queued);
+  return queued;
+}
+
+async function flushFoundingCreatorEmails() {
+  const snap = await db.collection('users').where('foundingCreator.emailQueue.stage', 'in', FC_EMAIL_STAGES).get();
+  let sent = 0, failed = 0, skipped = 0;
+  for (const doc of snap.docs) {
+    const ref = doc.ref;
+    try {
+      // Claim it first (at-most-once): whoever clears the queue entry owns the send.
+      const claimed = await db.runTransaction(async (tx) => {
+        const cur = await tx.get(ref);
+        const q = cur.exists ? cur.get('foundingCreator.emailQueue') : null;
+        if (!q || !q.stage) return null;
+        tx.update(ref, { 'foundingCreator.emailQueue': admin.firestore.FieldValue.delete() });
+        return { user: cur.data(), queue: q };
+      });
+      if (!claimed) continue;
+
+      const { user, queue } = claimed;
+      const fc = user.foundingCreator || {};
+      let stage = queue.stage;
+      let progress = null;
+      if (!user.email) { skipped++; continue; }
+
+      if (stage === 'atRisk' || stage === 'finalWarning') {
+        // State may have moved since it was queued — never warn about a badge
+        // that's gone / not tracking yet, never nag someone who's caught up.
+        if (fc.status === 'lost' || fc.pendingStart) { skipped++; continue; }
+        progress = foundingCreatorProgress(fc, await currentContentTotals(doc.id));
+        if (progress.met) { skipped++; continue; }
+        stage = fc.status === 'faded' ? 'finalWarning' : 'atRisk';
+      }
+
+      const result = await sendFoundingCreatorEmail(user, stage, { progress });
+      if (result.ok) {
+        sent++;
+        await ref.update({ 'foundingCreator.lastEmail': { stage, at: admin.firestore.Timestamp.now() } }).catch(() => null);
+      } else {
+        failed++;
+        const attempts = (queue.attempts || 0) + 1;
+        console.error('[founding-creator] email failed:', stage, doc.id, result.error, `(attempt ${attempts}/${FC_EMAIL_MAX_ATTEMPTS})`);
+        if (attempts < FC_EMAIL_MAX_ATTEMPTS) {
+          await ref.update({ 'foundingCreator.emailQueue': { ...queue, attempts } }).catch(() => null);
+        }
+      }
+      await new Promise(r => setTimeout(r, 250)); // small pause between sends, same courtesy as the digest
+    } catch (err) {
+      console.error('[founding-creator] flush failed for', doc.id, err);
+    }
+  }
+  return { queued: snap.size, sent, failed, skipped };
+}
+
+let fcEmailTickRunning = false;
+async function maybeRunFoundingCreatorEmails() {
+  if (!db || !BREVO_API_KEY || fcEmailTickRunning) return;
+  fcEmailTickRunning = true;
+  try {
+    const now = lagosNow();
+    const hour = now.getUTCHours(); // Lagos-shifted clock, same convention as the digest
+    if (hour < FC_EMAIL_START_HOUR || hour >= FC_EMAIL_END_HOUR) return;
+    await queueFoundingCreatorLiveEmails(now);
+    await queueFoundingCreatorNudges(now);
+    const result = await flushFoundingCreatorEmails();
+    if (result.queued) console.log('[founding-creator] email flush:', result);
+  } catch (err) {
+    console.error('[founding-creator] email tick failed', err);
+  } finally {
+    fcEmailTickRunning = false;
+  }
+}
+
+if (db) {
+  maybeRunFoundingCreatorEmails();
+  setInterval(maybeRunFoundingCreatorEmails, 60 * 60 * 1000);
+}
+
+// POST /api/admin/founding-creator/test-email — sends one sample of any of the
+// five emails to any inbox so the template can be checked before launch.
+// Body: { stage: 'live'|'atRisk'|'finalWarning'|'removed'|'welcomeBack', email: '...' }.
+// requireAdminApi is explicit because this route sits above the blanket
+// app.use('/api/admin', requireAdminApi) further down the file.
+app.post('/api/admin/founding-creator/test-email', requireAdminApi, async (req, res) => {
+  try {
+    const stage = String((req.body && req.body.stage) || '').trim();
+    const email = String((req.body && req.body.email) || '').trim();
+    if (!FC_EMAIL_STAGES.includes(stage)) return res.status(400).json({ error: 'stage must be one of: ' + FC_EMAIL_STAGES.join(', ') });
+    if (!email) return res.status(400).json({ error: 'email is required' });
+    const sampleProgress = { content: 1, views: 12, engagement: 10 }; // one requirement done, two partly there
+    const result = await sendFoundingCreatorEmail({ email, name: 'Test Creator' }, stage, { progress: sampleProgress });
+    if (!result.ok) return res.status(502).json({ error: result.error || 'Send failed.' });
+    return res.json({ ok: true, stage, sentTo: email });
+  } catch (err) {
+    console.error('/api/admin/founding-creator/test-email error', err);
+    return res.status(500).json({ error: 'Could not send test email' });
   }
 });
 
