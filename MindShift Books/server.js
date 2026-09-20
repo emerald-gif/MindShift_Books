@@ -4679,13 +4679,78 @@ app.post('/api/upload-image',
       }
       const result = await uploadImageToCloudinary(dataUrl, 'article-ecosystem');
       if (!result.ok) return res.status(502).json({ error: result.error || 'Upload failed.' });
-      return res.json({ ok: true, url: result.url });
+      // deleteToken proves THIS user uploaded THIS image, so the same user can later
+      // remove it (POST /api/delete-image) once an edit has replaced it. Nobody else can.
+      return res.json({ ok: true, url: result.url, deleteToken: result.publicId ? imageDeleteToken(req.uid, result.publicId) : undefined });
     } catch (err) {
       console.error('/api/upload-image error', err);
       return res.status(500).json({ error: 'Could not upload image' });
     }
   }
 );
+
+// ── Cleanup of superseded uploads ───────────────────────────────────────────
+// When someone edits a photo (crop/filters) the editor uploads the new version and the
+// previous copy is left unused on Cloudinary. The upload response now carries a
+// deleteToken = HMAC(uid + public_id); presenting it here lets the uploader — and only the
+// uploader — delete that one image. Images uploaded before this existed have no token and
+// are never touched, and only images in the folder(s) /api/upload-image writes to can be removed.
+const IMAGE_DELETE_FOLDERS = ['article-ecosystem'];
+function imageDeleteToken(uid, publicId) {
+  return crypto.createHmac('sha256', String(CLOUDINARY_API_SECRET || ''))
+    .update('delete-image|' + uid + '|' + publicId).digest('hex');
+}
+// https://res.cloudinary.com/<cloud>/image/upload/[transforms/]v123/folder/name.jpg -> "folder/name"
+function publicIdFromCloudinaryUrl(url) {
+  try {
+    const u = new URL(String(url));
+    if (u.hostname !== 'res.cloudinary.com') return '';
+    const parts = u.pathname.split('/').filter(Boolean);           // [cloud, image, upload, ...rest]
+    if (parts[0] !== CLOUDINARY_CLOUD_NAME || parts[1] !== 'image' || parts[2] !== 'upload') return '';
+    let rest = parts.slice(3);
+    const vi = rest.findIndex(p => /^v\d+$/.test(p));
+    if (vi > -1) rest = rest.slice(vi + 1);
+    if (!rest.length) return '';
+    rest[rest.length - 1] = rest[rest.length - 1].replace(/\.[a-z0-9]+$/i, '');
+    return decodeURIComponent(rest.join('/'));
+  } catch (e) { return ''; }
+}
+app.post('/api/delete-image', requireUser, async (req, res) => {
+  try {
+    const { url, token } = req.body || {};
+    const publicId = publicIdFromCloudinaryUrl(url);
+    if (!publicId || !IMAGE_DELETE_FOLDERS.some(f => publicId.startsWith(f + '/'))) {
+      return res.status(400).json({ error: 'Not a deletable image.' });
+    }
+    const expected = imageDeleteToken(req.uid, publicId);
+    const given = String(token || '');
+    const ok = given.length === expected.length &&
+      crypto.timingSafeEqual(Buffer.from(given), Buffer.from(expected));
+    if (!ok) return res.status(403).json({ error: 'Not your image.' });
+    if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_API_KEY || !CLOUDINARY_API_SECRET) {
+      return res.status(500).json({ error: 'Image hosting is not configured.' });
+    }
+    const timestamp = Math.round(Date.now() / 1000);
+    const signature = signCloudinaryParams({ invalidate: 'true', public_id: publicId, timestamp });
+    const form = new URLSearchParams();
+    form.set('public_id', publicId);
+    form.set('invalidate', 'true');
+    form.set('timestamp', String(timestamp));
+    form.set('api_key', CLOUDINARY_API_KEY);
+    form.set('signature', signature);
+    const r = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/destroy`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: form.toString()
+    });
+    const json = await r.json().catch(() => null);
+    if (!r.ok || !json) return res.status(502).json({ error: 'Could not delete image.' });
+    return res.json({ ok: true, result: json.result });   // 'ok' or 'not found' — both mean it's gone
+  } catch (err) {
+    console.error('/api/delete-image error', err);
+    return res.status(500).json({ error: 'Could not delete image.' });
+  }
+});
 
 // POST /api/admin/affiliate-broadcast/upload-image — takes the banner image
 // the dashboard just read locally as a base64 data URI, hosts it on
