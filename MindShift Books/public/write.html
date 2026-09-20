@@ -604,6 +604,26 @@ function renderCatPills(){
 }
 renderCatPills();
 
+/* ── CLEANUP OF UNUSED COVER UPLOADS ──
+   Covers replaced by an edit / removed / superseded by a new photo are only QUEUED here and deleted
+   by flushDiscards() once the saved draft (or the published article) no longer points at them.
+   Only uploads made in this page session carry a delete token, so a cover that came from a saved
+   article or draft is never touched. */
+const _pendingDiscards = new Set();
+function discardUpload(url){ if(url) _pendingDiscards.add(url); }
+function flushDiscards(published){
+  if(!window.MindshiftUploads || !_pendingDiscards.size) return;
+  const inUse = new Set();
+  const cur = document.getElementById('coverUrl').value;
+  if(cur) inUse.add(cur);
+  if(!published && window._cover && window._cover.baseUrl) inUse.add(window._cover.baseUrl);
+  Array.from(_pendingDiscards).forEach(u => {
+    if(inUse.has(u)) return;
+    _pendingDiscards.delete(u);
+    window.MindshiftUploads.discard(u, () => currentUser.getIdToken());
+  });
+}
+
 /* ── COVER IMAGE ── */
 // The cover's edit memory ({url, orig, state, baseUrl}) only applies to the URL it was made for —
 // if the cover changes any other way (draft restore, loading an article to edit), forget it.
@@ -635,8 +655,14 @@ window._kvOpenCoverUploader = function() {
     editTitle: 'Edit cover',
     getToken: () => currentUser.getIdToken(),
     onSuccess: function(url, info) {
+      const oldUrl = document.getElementById('coverUrl').value, oldC = window._cover;
+      if(oldUrl && oldUrl !== url){
+        discardUpload(oldUrl);
+        if(oldC && oldC.baseUrl) discardUpload(oldC.baseUrl);
+      }
       window._cover = { url, orig: info && info.orig, state: info && info.state, baseUrl: (info && info.edited) ? '' : url };
       window.previewCover(url);
+      scheduleAutosave();   // re-saves the draft, then the replaced cover can be deleted
     }
   });
 };
@@ -650,6 +676,7 @@ async function uploadCoverDataUrl(dataUrl){
   });
   const json = await res.json();
   if(!res.ok) throw new Error(json.error || 'Upload failed');
+  if(window.MindshiftUploads) window.MindshiftUploads.remember(json.url, json.deleteToken);
   return json.url;
 }
 
@@ -672,10 +699,15 @@ window.editCover = async function(){
     let newUrl = url;
     if(res.changed) newUrl = await uploadCoverDataUrl(res.dataUrl);
     else if(c.baseUrl && c.baseUrl !== url) newUrl = c.baseUrl;             // back to the untouched original, no upload needed
-    else if(c.orig && !c.baseUrl) newUrl = await uploadCoverDataUrl(c.orig); // only the edited copy was ever uploaded
+    else if(c.orig && !c.baseUrl){                                           // only the edited copy was ever uploaded
+      newUrl = await uploadCoverDataUrl(c.orig);
+      c.baseUrl = newUrl;              // the original is hosted now, so later reverts need no upload
+    }
+    if(newUrl !== url && url !== c.baseUrl) discardUpload(url);              // the previous edited copy is now unused
     c.url = newUrl;
     window._cover = c;                 // set before previewCover so it isn't treated as a different cover
     window.previewCover(newUrl);
+    if(newUrl !== url) scheduleAutosave();
   }catch(e){
     showToast("Couldn't save your edit — try again");
   }finally{
@@ -684,8 +716,12 @@ window.editCover = async function(){
 };
 
 window.removeCover = function(){
+  const cur = document.getElementById('coverUrl').value, c = window._cover;
+  if(cur) discardUpload(cur);
+  if(c && c.baseUrl) discardUpload(c.baseUrl);
   window._cover = null;
   window.previewCover('');
+  scheduleAutosave();
 };
 
 /* ── CATEGORY ── */
@@ -1058,6 +1094,7 @@ window.saveDraft = function(silent=false){
     saved: Date.now()
   };
   localStorage.setItem('mindshift_draft', JSON.stringify(draft));
+  flushDiscards();   // the saved draft no longer points at any queued cover
   if (silent) {
     const el = document.getElementById('autosaveStatus');
     el.textContent = 'Saved just now';
@@ -1337,6 +1374,8 @@ window.submitArticle = async function(){
         updatedAt: serverTimestamp()
       }, { merge: true });
       localStorage.removeItem('mindshift_draft');
+      if(window._cover && window._cover.baseUrl && window._cover.baseUrl !== cover) discardUpload(window._cover.baseUrl);
+      flushDiscards(true);
       showToast('Article updated');
       setTimeout(()=>{ location.href = `/article-read?id=${editId}`; }, 700);
       return;
@@ -1359,6 +1398,9 @@ window.submitArticle = async function(){
     });
     // clear draft
     localStorage.removeItem('mindshift_draft');
+    if(window._cover && window._cover.baseUrl && window._cover.baseUrl !== cover) discardUpload(window._cover.baseUrl);
+    flushDiscards(true);
+    window._cover = null;
     clearForm();
     await loadSubmissions();
     document.getElementById('successOverlay').classList.add('show');
@@ -1479,6 +1521,7 @@ window.showToast = function(msg){
 <script src="/image-compress.js"></script>
 <script src="/uploader.js"></script>
 <script src="/photo-editor.js"></script>
+<script src="/upload-cleanup.js"></script>
 
 </body>
 </html>

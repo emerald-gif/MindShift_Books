@@ -196,6 +196,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 
 <script src="/image-compress.js"></script>
 <script src="/photo-editor.js"></script>
+<script src="/upload-cleanup.js"></script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
@@ -397,7 +398,25 @@ async function uploadDataUrl(dataUrl){
   });
   const json = await res.json();
   if(!res.ok) throw new Error(json.error || 'Upload failed');
+  if(window.MindshiftUploads) window.MindshiftUploads.remember(json.url, json.deleteToken);
   return json.url;
+}
+// Uploads from this session that nothing needs any more (replaced by an edit, removed, or the
+// untouched original of an edited photo). They're only QUEUED here and actually deleted by
+// flushDiscards() once it's certain nothing still points at them — after the draft has been
+// re-saved without them, or after the post is published — so an unsaved draft can never end up
+// with a broken picture. Anything not uploaded in this session has no token and is never touched.
+const _pendingDiscards = new Set();
+function discardUpload(url){ if(url) _pendingDiscards.add(url); }
+function flushDiscards(published){
+  if(!window.MindshiftUploads || !_pendingDiscards.size) return;
+  const inUse = new Set();
+  images.forEach(i => { if(i.url) inUse.add(i.url); if(!published && i.baseUrl) inUse.add(i.baseUrl); });
+  Array.from(_pendingDiscards).forEach(u => {
+    if(inUse.has(u)) return;                       // still referenced — keep it queued
+    _pendingDiscards.delete(u);
+    window.MindshiftUploads.discard(u, () => currentUser.getIdToken());
+  });
 }
 
 document.getElementById('fileInput').addEventListener('change', async (e) => {
@@ -440,7 +459,8 @@ window.openImagePicker = function(){
 };
 
 window.removeImage = function(idx){
-  images.splice(idx,1);
+  const [gone] = images.splice(idx,1);
+  if(gone){ discardUpload(gone.url); if(gone.baseUrl !== gone.url) discardUpload(gone.baseUrl); }
   renderImages();
 };
 
@@ -461,7 +481,7 @@ window.editImage = async function(idx){
   if(!res) return;                    // cancelled
   item.editState = res.state;
   if(!res.changed){                   // back to the untouched original — no upload needed
-    if(item.url !== item.baseUrl){ item.url = item.baseUrl; item.preview = item.orig || ''; }
+    if(item.url !== item.baseUrl){ const edited = item.url; item.url = item.baseUrl; item.preview = item.orig || ''; discardUpload(edited); }
     renderImages();
     return;
   }
@@ -471,6 +491,7 @@ window.editImage = async function(idx){
   renderImages();
   try{
     item.url = await uploadDataUrl(res.dataUrl);
+    if(prev.url && prev.url !== item.baseUrl) discardUpload(prev.url);   // the earlier edited copy is now unused (the original is kept for "revert")
   }catch(err){
     item.url = prev.url; item.preview = prev.preview;
     showToast("Couldn't save your edit — try again");
@@ -691,6 +712,7 @@ function draftIsEmpty(d){ return !d.text.trim() && !d.images.length && !d.video;
 function clearDraft(){
   try{ localStorage.removeItem(DRAFT_KEY); }catch(e){}
   _lastDraftJson = JSON.stringify(draftSnapshot());
+  flushDiscards();
 }
 
 window.saveDraft = function(silent = false){
@@ -705,6 +727,7 @@ window.saveDraft = function(silent = false){
   try{
     localStorage.setItem(DRAFT_KEY, JSON.stringify({ ...d, saved: Date.now() }));
     _lastDraftJson = JSON.stringify(d);
+    flushDiscards();   // the saved draft no longer points at anything queued for deletion
   }catch(e){
     // Private mode / storage full — say so on a manual save, stay quiet on autosave.
     if(!silent) showToast("Couldn't save draft on this device");
@@ -800,6 +823,8 @@ window.submitPost = async function(){
         text, images: urls, ...videoFields,
         updatedAt: serverTimestamp()
       }, { merge: true });
+      images.forEach(i => { if(i.baseUrl && i.baseUrl !== i.url) discardUpload(i.baseUrl); });
+      flushDiscards(true);
       showToast('Post updated');
       setTimeout(()=>{ location.href = `/post-read?id=${editId}`; }, 700);
       return;
@@ -828,6 +853,9 @@ window.submitPost = async function(){
     clearTimeout(_autosaveTimer);
     _draftReady = false;
     try{ localStorage.removeItem(DRAFT_KEY); }catch(e){}
+    // Published: for photos that were edited, the untouched original upload is no longer needed.
+    images.forEach(i => { if(i.baseUrl && i.baseUrl !== i.url) discardUpload(i.baseUrl); });
+    flushDiscards(true);
     document.getElementById('successOverlay').classList.add('show');
   }catch(e){
     console.error(e);

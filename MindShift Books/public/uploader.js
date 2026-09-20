@@ -168,6 +168,7 @@
         var json = await res.json();
         if (!res.ok) throw new Error(json.error || 'Upload failed');
         close();
+        if (window.MindshiftUploads) window.MindshiftUploads.remember(json.url, json.deleteToken);
         if (_opts.onSuccess) _opts.onSuccess(json.url, { orig: _orig, state: _editState, edited: _edited });
       } catch (err) {
         $('kv-up-upl').classList.remove('kv-on');

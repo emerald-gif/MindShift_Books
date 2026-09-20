@@ -1049,8 +1049,15 @@ function withTimeout(promise, ms){
     new Promise((_,rej)=>setTimeout(()=>rej(Object.assign(new Error('timeout'),{code:'deadline-exceeded'})), ms))
   ]);
 }
-async function reconnectFirestore(){
-  try{ await disableNetwork(db); await enableNetwork(db); }catch(e){ console.warn('reconnect failed:', e?.message); }
+let _reconnecting = null;
+function reconnectFirestore(){
+  // Several reads can fail at the same moment (the stats now load in parallel) — share ONE reconnect.
+  if(!_reconnecting){
+    _reconnecting = (async()=>{
+      try{ await disableNetwork(db); await enableNetwork(db); }catch(e){ console.warn('reconnect failed:', e?.message); }
+    })().finally(()=>{ _reconnecting = null; });
+  }
+  return _reconnecting;
 }
 async function resilient(fn, { tries = 3, timeoutMs = 8000 } = {}){
   let lastErr;
@@ -1227,13 +1234,17 @@ async function loadProfile(uid){
   }
 
   renderProfileHeader();
+  // The stat counts don't depend on anything below, so they start NOW instead of queueing
+  // behind the liked/saved reads (they were waiting on those before). loadStats() never
+  // rejects — every count catches its own errors.
+  const statsPromise = loadStats();
   // Liked/saved first (cards render their heart state from these), then the
-  // grid, stats and follow state in parallel so one slow read can't stall the rest.
+  // grid and follow state in parallel so one slow read can't stall the rest.
   await Promise.all([loadLikedSet(), loadSavedSet()]);
   // loadReposts() no longer fires here — it's lazy now, triggered by
   // switchTab() the first time someone actually opens the Reposts tab,
   // since most profile visits never touch it.
-  const [gridOk] = await Promise.all([loadArticles(), loadStats(), loadFollowState()]);
+  const [gridOk] = await Promise.all([loadArticles(), statsPromise, loadFollowState()]);
   if(!gridOk) return false;
   if(isOwner) renderSetupBanner();
   // Track this as a profile view for Insights — analytics only, never a
@@ -1389,10 +1400,12 @@ document.getElementById('celebrateBadgeCta')?.addEventListener('click', () => { 
 
 /* ── RENDER HEADER ── */
 function renderProfileHeader(){
-  // Clear skeleton placeholders
-  ['nameSkel','avatarSkel','statArticlesSkel','statPostsSkel','statRepostsSkel','statFollowersSkel','statFollowingSkel'].forEach(id=>{
+  // Clear the name/avatar placeholders. The five stat placeholders stay until a real number
+  // replaces them (setStat), so the counts never sit blank while loading.
+  ['nameSkel','avatarSkel'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.remove();
   });
+  paintStatsInstantly();
   const av = document.getElementById('avatar');
   const nameEl = document.getElementById('profileName');
   const actions = document.getElementById('profileActions');
@@ -1498,84 +1511,82 @@ function renderProfileHeader(){
   }
 }
 
-/* ── STATS ── */
+/* ── STATS ──
+   All five numbers load IN PARALLEL (they used to load one after another, with a Firestore
+   write in the middle), and show up in this order of speed:
+     1. the last numbers this device saw for this profile (localStorage) — instant
+     2. else the follower/following counters already on the profile doc — instant
+     3. the real counts (getCountFromServer ≈ 1 read each) — replace whatever is showing
+   A placeholder shimmer stays wherever nothing is known yet, so a number never blinks away. */
+const STATS_CACHE_KEY = uid => 'msb_stats_' + uid;
+function readStatsCache(uid){
+  try{ return JSON.parse(localStorage.getItem(STATS_CACHE_KEY(uid)) || 'null') || {}; }catch{ return {}; }
+}
+function writeStatsCache(uid, patch){
+  try{ localStorage.setItem(STATS_CACHE_KEY(uid), JSON.stringify({ ...readStatsCache(uid), ...patch })); }catch{}
+}
+function setStat(id, value){
+  const el = document.getElementById(id);
+  if(el) el.textContent = value;                 // replaces the shimmer placeholder inside it
+}
+function statHasNumber(id){
+  const el = document.getElementById(id);
+  return !!el && /\d/.test(el.textContent);
+}
+function paintStatsInstantly(){
+  if(!profileData || !profileData.uid) return;
+  const c = readStatsCache(profileData.uid);
+  const known = {
+    statArticles:  c.a,
+    statPosts:     c.p,
+    statReposts:   c.r,
+    statFollowers: typeof c.f === 'number' ? c.f : (profileData.followerCount > 0 ? profileData.followerCount : undefined),
+    statFollowing: typeof c.i === 'number' ? c.i : (profileData.followingCount > 0 ? profileData.followingCount : undefined)
+  };
+  Object.keys(known).forEach(id=>{
+    if(typeof known[id] === 'number' && !statHasNumber(id)) setStat(id, known[id]);
+  });
+}
+
+// Runs one count query and shows / caches the result. Resolves to the number, or null on failure
+// (a failure keeps whatever number is already showing, else shows a dash — "unknown", not zero).
+async function countInto(elId, cacheKey, q, label){
+  try{
+    const n = (await resilient(()=>getCountFromServer(q))).data().count;
+    setStat(elId, n);
+    writeStatsCache(profileData.uid, { [cacheKey]: n });
+    return n;
+  }catch(e){
+    console.warn('loadStats ' + label + ' failed:', e?.code);
+    if(!statHasNumber(elId)) setStat(elId, '–');
+    return null;
+  }
+}
+
 async function loadStats(){
   const uid = profileData.uid;
 
-  // Articles count — count-aggregate read (~1 read regardless of how many
-  // match), same trick as the follower/following counts just below. Used to
-  // depend on allSubmissions from loadArticles() having fetched every
-  // article; now it's independent, so capping/paginating that fetch doesn't
-  // affect this number.
-  try{
-    const pubQ = query(collection(db,'articles'), where('authorUid','==',uid));
-    const pubCountSnap = await resilient(()=>getCountFromServer(pubQ));
-    const el = document.getElementById('statArticles');
-    if(el) el.textContent = pubCountSnap.data().count;
-  }catch(e){
-    console.warn('loadStats articles failed:', e?.code);
-    const el = document.getElementById('statArticles');
-    if(el) el.textContent = '–'; // unknown, not zero
-  }
-
-  // Posts count — same count-aggregate trick as articles above, against the
-  // separate `posts` collection (text + video posts).
-  try{
-    const postQ = query(collection(db,'posts'), where('authorUid','==',uid));
-    const postCountSnap = await resilient(()=>getCountFromServer(postQ));
-    const pel = document.getElementById('statPosts');
-    if(pel) pel.textContent = postCountSnap.data().count;
-  }catch(e){
-    console.warn('loadStats posts failed:', e?.code);
-    const pel = document.getElementById('statPosts');
-    if(pel) pel.textContent = '–'; // unknown, not zero
-  }
-
-  // Reposts count — same set the Reposts tab lists (plain + quote reposts).
-  try{
-    const rpQ = query(collection(db,'reposts'), where('reposterUid','==',uid));
-    const rpCountSnap = await resilient(()=>getCountFromServer(rpQ));
-    const rel = document.getElementById('statReposts');
-    if(rel) rel.textContent = rpCountSnap.data().count;
-  }catch(e){
-    console.warn('loadStats reposts failed:', e?.code);
-    const rel = document.getElementById('statReposts');
-    if(rel) rel.textContent = '–'; // unknown, not zero
-  }
-
-  // Follower / following counts — always computed fresh from the follows
-  // collection (the source of truth), then the cached fields on the user
-  // doc are refreshed in the background. This keeps the numbers correct
-  // even if a previous increment/decrement write ever failed silently.
-  // Uses getCountFromServer (an aggregation query) instead of getDocs —
-  // Firestore bills that ~1 read total no matter how many follow docs
-  // match, instead of 1 read per follower/following, which matters a lot
-  // on a page every profile view runs this on.
-  try{
-    const folQ = query(collection(db,'follows'), where('followingId','==',uid));
-    const folCount = (await resilient(()=>getCountFromServer(folQ))).data().count;
-    const fe = document.getElementById('statFollowers');
-    if(fe) fe.textContent = folCount;
-    if(profileData.followerCount !== folCount){
-      try{ await setDoc(doc(db,'users',uid),{followerCount:folCount},{merge:true}); }catch{}
-    }
-
-    const ingQ = query(collection(db,'follows'), where('followerId','==',uid));
-    const ingCount = (await resilient(()=>getCountFromServer(ingQ))).data().count;
-    const ie = document.getElementById('statFollowing');
-    if(ie) ie.textContent = ingCount;
-    const ingCountChanged = profileData.followingCount !== ingCount;
-    profileData.followingCount = ingCount; // keep in-memory copy fresh too — renderSetupBanner() reads this
-    if(ingCountChanged){
-      try{ await setDoc(doc(db,'users',uid),{followingCount:ingCount},{merge:true}); }catch{}
-    }
-  }catch(e){
-    console.warn('loadStats counts failed:', e?.code);
-    const fe = document.getElementById('statFollowers');
-    const ie = document.getElementById('statFollowing');
-    if(fe && !/\d/.test(fe.textContent)) fe.textContent = '–';
-    if(ie && !/\d/.test(ie.textContent)) ie.textContent = '–';
-  }
+  // Follower / following counts are the source of truth in the follows collection; the cached
+  // fields on the user doc are refreshed in the background (fire-and-forget — nothing waits on
+  // that write any more) so they self-heal if an increment ever failed silently.
+  await Promise.all([
+    countInto('statArticles', 'a', query(collection(db,'articles'), where('authorUid','==',uid)), 'articles'),
+    countInto('statPosts',    'p', query(collection(db,'posts'),    where('authorUid','==',uid)), 'posts'),
+    // Same set the Reposts tab lists (plain + quote reposts).
+    countInto('statReposts',  'r', query(collection(db,'reposts'),  where('reposterUid','==',uid)), 'reposts'),
+    countInto('statFollowers','f', query(collection(db,'follows'),  where('followingId','==',uid)), 'followers').then(n=>{
+      if(n === null) return;
+      const changed = profileData.followerCount !== n;
+      profileData.followerCount = n;
+      if(changed) setDoc(doc(db,'users',uid),{followerCount:n},{merge:true}).catch(()=>{});
+    }),
+    countInto('statFollowing','i', query(collection(db,'follows'),  where('followerId','==',uid)), 'following').then(n=>{
+      if(n === null) return;
+      const changed = profileData.followingCount !== n;
+      profileData.followingCount = n;   // keep the in-memory copy fresh too — renderSetupBanner() reads this
+      if(changed) setDoc(doc(db,'users',uid),{followingCount:n},{merge:true}).catch(()=>{});
+    })
+  ]);
 }
 
 /* ── FOLLOW STATE ── */

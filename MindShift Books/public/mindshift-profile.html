@@ -465,17 +465,6 @@ async function loadFollowerCount(){
 
   _failed.followers = false;
   setFollowerCount(followerCount);
-
-  // Best-effort only: nudge the cached users/official.followerCount counter
-  // back in line if it has drifted. This never touches what's displayed, and
-  // if the rules reject it, nothing visible changes.
-  try{
-    const snap = await rgetDoc(doc(db,'users','official'));
-    const cached = snap.exists() ? (snap.data().followerCount || 0) : null;
-    if(cached !== followerCount){
-      setDoc(doc(db,'users','official'),{followerCount},{merge:true}).catch(()=>{});
-    }
-  }catch{}
 }
 
 function loadErrorHtml(){
