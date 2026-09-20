@@ -361,6 +361,7 @@ onAuthStateChanged(auth, async user => {
 
 /* ── LOAD ── */
 async function init(){
+  showCachedFollowerCount(); // instant paint on entry — no waiting on the network for the first number
   await Promise.all([loadMindshiftProfile(), loadArticles(), loadFollowerCount(), loadPosts()]);
 }
 
@@ -409,6 +410,35 @@ async function loadArticles(){
   }
 }
 
+// The number on screen always comes from the follows collection itself (the
+// aggregate count above), never from the cached users/official.followerCount
+// counter. That cached counter is what used to overwrite the real number: a
+// live listener on users/official replaced the (correct) count with whatever
+// the counter held — often stale or 0 — and the client-side "fix the counter"
+// write it tried first is rejected by Firestore rules for visitors, which
+// rolled the listener back to the stale value. Result: the count flashed in,
+// then vanished/reverted. Now nothing can overwrite it except a newer real count
+// or this user's own follow/unfollow.
+const FOLLOWER_CACHE_KEY = 'msb_official_follower_count';
+let _followerCount = null;
+
+function showFollowerCount(n){
+  const el = document.getElementById('statFollowers');
+  if(el) el.textContent = fmtNum(n);
+}
+function showCachedFollowerCount(){
+  if(_followerCount !== null) return; // real count already known (e.g. Try again) — don't go backwards
+  try{
+    const v = localStorage.getItem(FOLLOWER_CACHE_KEY);
+    if(v !== null && !isNaN(Number(v))) showFollowerCount(Number(v));
+  }catch{}
+}
+function setFollowerCount(n){
+  _followerCount = Math.max(0, n);
+  showFollowerCount(_followerCount);
+  try{ localStorage.setItem(FOLLOWER_CACHE_KEY, String(_followerCount)); }catch{}
+}
+
 async function loadFollowerCount(){
   const folQ = query(collection(db,'follows'), where('followingId','==','official'));
   let followerCount;
@@ -425,30 +455,27 @@ async function loadFollowerCount(){
     // the stat to read 0 while the followers screen showed real people.
     // Fall back to counting the actual docs instead.
     try{ followerCount = (await rgetDocs(folQ)).size; }
-    catch{ _failed.followers = true; const sf = document.getElementById('statFollowers'); if(sf && !/\d/.test(sf.textContent)) sf.textContent = '–'; return; }
+    catch{
+      _failed.followers = true;
+      const sf = document.getElementById('statFollowers');
+      if(sf && !/\d/.test(sf.textContent)) sf.textContent = '–';
+      return;
+    }
   }
 
   _failed.followers = false;
-  document.getElementById('statFollowers').textContent = fmtNum(followerCount);
+  setFollowerCount(followerCount);
 
+  // Best-effort only: nudge the cached users/official.followerCount counter
+  // back in line if it has drifted. This never touches what's displayed, and
+  // if the rules reject it, nothing visible changes.
   try{
-    // Run once per page load to reconcile the cached
-    // users/official.followerCount counter if it's drifted; the live
-    // onSnapshot below then keeps the displayed number current for free
-    // after that.
-    let reconciled = false;
-    onSnapshot(doc(db,'users','official'), snap=>{
-      const cached = snap.exists() ? (snap.data().followerCount||0) : 0;
-      if(!reconciled){
-        reconciled = true;
-        if(cached !== followerCount){
-          setDoc(doc(db,'users','official'),{followerCount},{merge:true}).catch(()=>{});
-          return; // this write re-triggers the listener with the corrected value
-        }
-      }
-      document.getElementById('statFollowers').textContent = fmtNum(cached);
-    });
-  }catch{} // the count above is already correct and displayed either way
+    const snap = await rgetDoc(doc(db,'users','official'));
+    const cached = snap.exists() ? (snap.data().followerCount || 0) : null;
+    if(cached !== followerCount){
+      setDoc(doc(db,'users','official'),{followerCount},{merge:true}).catch(()=>{});
+    }
+  }catch{}
 }
 
 function loadErrorHtml(){
@@ -842,6 +869,7 @@ window.toggleFollow = async function(){
     if(isFollowing){
       await deleteDoc(ref);
       setDoc(doc(db,'users','official'),{followerCount:increment(-1)},{merge:true}).catch(()=>{});
+      if(_followerCount !== null) setFollowerCount(_followerCount - 1);
       isFollowing = false;
       showToast('Unfollowed MindShift Books');
     } else {
@@ -851,15 +879,13 @@ window.toggleFollow = async function(){
         createdAt: serverTimestamp()
       });
       setDoc(doc(db,'users','official'),{followerCount:increment(1)},{merge:true}).catch(()=>{});
+      if(_followerCount !== null) setFollowerCount(_followerCount + 1);
       isFollowing = true;
       showToast('Following MindShift Books ✓');
     }
     updateFollowBtn();
-    // No re-subscribe needed — loadFollowerCount()'s listener (attached once,
-    // on page load) already updates the instant the increment above commits.
-    // Calling loadFollowerCount() again here, like before, would stack a
-    // fresh live listener on every single click without ever closing the
-    // old one.
+    // The on-screen count was already adjusted by setFollowerCount() above —
+    // no listener or re-fetch needed.
   }catch(e){ showToast('Something went wrong'); }
 };
 

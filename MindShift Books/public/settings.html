@@ -116,6 +116,14 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   font-weight:600;z-index:999;transition:transform .35s cubic-bezier(.34,1.56,.64,1);white-space:nowrap}
 .toast.on{transform:translateX(-50%) translateY(0)}
 
+/* ── TOGGLE SWITCH (notification preferences) ── */
+.switch{position:relative;width:46px;height:28px;border-radius:99px;border:none;background:#cbd5e1;cursor:pointer;flex-shrink:0;padding:0;transition:background .2s;-webkit-tap-highlight-color:transparent}
+.switch::after{content:'';position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}
+.switch[aria-checked="true"]{background:var(--p)}
+.switch[aria-checked="true"]::after{transform:translateX(18px)}
+.switch:disabled{opacity:.55;cursor:default}
+.notif-hint{font-size:12.5px;color:var(--mute);line-height:1.55;padding:12px 6px 0}
+
 /* ── PORTED FROM account.html: Order History / My Details inline sub-views ── */
 .settings-subview{padding:16px 0 24px}
 .loader{width:26px;height:26px;margin:40px auto;border:3px solid var(--border2,#e2e8f0);border-top-color:var(--p);border-radius:50%;animation:setspin .7s linear infinite}
@@ -191,6 +199,16 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
       </div>
       <div class="row-chevron"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
     </a>
+    <button class="settings-row link" type="button" onclick="showSettingsView('notifications')">
+      <div class="row-icon privacy">
+        <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+      </div>
+      <div class="row-text">
+        <div class="row-label">Notifications</div>
+        <div class="row-value">Email activity digest</div>
+      </div>
+      <div class="row-chevron"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+    </button>
     <button class="settings-row action" type="button" onclick="shareProfile()">
       <div class="row-icon email">
         <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
@@ -316,6 +334,25 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   </div>
 </div>
 
+<!-- NOTIFICATIONS (inline sub-view — email preferences, PATCH /api/account/email-prefs) -->
+<div id="settingsNotifications" class="settings-subview" style="display:none">
+  <div style="padding:0 16px">
+    <div class="settings-card">
+      <div class="settings-row">
+        <div class="row-icon email">
+          <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></svg>
+        </div>
+        <div class="row-text">
+          <div class="row-label">Activity digest</div>
+          <div class="row-value" style="white-space:normal">Likes, comments, follows &amp; views, emailed at 12:00 PM and 7:00 PM</div>
+        </div>
+        <button type="button" class="switch" id="digestSwitch" role="switch" aria-checked="true" aria-label="Activity digest emails" disabled></button>
+      </div>
+    </div>
+    <div class="notif-hint">Only affects emails. You'll still see everything in your in-app notifications. If you turn it back on, you'll only get updates about new activity from that point on.</div>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
@@ -407,14 +444,60 @@ window.showSettingsView = function(view){
   document.getElementById('settingsMain').style.display    = view==='main' ? '' : 'none';
   document.getElementById('settingsOrders').style.display  = view==='orders' ? '' : 'none';
   document.getElementById('settingsDetails').style.display = view==='details' ? '' : 'none';
+  document.getElementById('settingsNotifications').style.display = view==='notifications' ? '' : 'none';
   document.getElementById('settingsHdrTitle').textContent =
-    view==='orders' ? 'Order History' : view==='details' ? 'My Details' : 'Settings & Activity';
+    view==='orders' ? 'Order History' : view==='details' ? 'My Details' : view==='notifications' ? 'Notifications' : 'Settings & Activity';
   document.getElementById('settingsHdr').style.display = view==='main' ? 'none' : 'flex';
   window.scrollTo({top:0, behavior:'instant' in window ? 'instant' : 'auto'});
   history.replaceState(null, '', view==='main' ? '/settings' : `/settings#${view}`);
   if(view==='orders')  loadOrders();
   if(view==='details') loadDetails();
+  if(view==='notifications') loadNotifPrefs();
 };
+
+/* ── NOTIFICATION PREFERENCES ── */
+let notifPrefsLoaded = false;
+async function loadNotifPrefs(){
+  if(notifPrefsLoaded) return;
+  const sw = document.getElementById('digestSwitch');
+  try{
+    await authReady;
+    if(!currentUser) throw new Error('Not signed in');
+    const token = await currentUser.getIdToken();
+    const res = await fetch('/api/account', { headers:{ Authorization:`Bearer ${token}` } });
+    const data = await res.json();
+    if(!res.ok) throw new Error();
+    sw.setAttribute('aria-checked', (data.emailPrefs && data.emailPrefs.activityDigest === false) ? 'false' : 'true');
+    sw.disabled = false;
+    notifPrefsLoaded = true;
+  }catch(e){
+    showToast('Could not load your preferences.');
+  }
+}
+
+document.getElementById('digestSwitch').addEventListener('click', async ()=>{
+  const sw = document.getElementById('digestSwitch');
+  const next = sw.getAttribute('aria-checked') !== 'true';
+  sw.setAttribute('aria-checked', String(next)); // optimistic — feels instant
+  sw.disabled = true;                            // one request at a time, no rapid-fire toggling
+  try{
+    await authReady;
+    if(!currentUser) throw new Error('Not signed in');
+    const token = await currentUser.getIdToken();
+    const res = await fetch('/api/account/email-prefs', {
+      method:'PATCH',
+      headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` },
+      body: JSON.stringify({ activityDigest: next })
+    });
+    if(!res.ok) throw new Error();
+    showToast(next ? 'Activity digest turned on' : 'Activity digest turned off');
+  }catch(e){
+    sw.setAttribute('aria-checked', String(!next)); // revert — server never saved it
+    showToast('Could not save. Please try again.');
+  }finally{
+    sw.disabled = false;
+  }
+});
 
 async function loadOrders(){
   if(ordersLoaded) return;
@@ -512,7 +595,7 @@ document.getElementById('detSaveBtn').addEventListener('click', async ()=>{
 // Deep-link support: /settings#orders or /settings#details opens straight
 // to that sub-view (same convention account.html used).
 const initialHash = window.location.hash.replace('#','');
-if(initialHash==='orders' || initialHash==='details') showSettingsView(initialHash);
+if(initialHash==='orders' || initialHash==='details' || initialHash==='notifications') showSettingsView(initialHash);
 
 /* ── SHARE PROFILE ── */
 let toastTimer;
