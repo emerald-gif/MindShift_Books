@@ -20,25 +20,30 @@
 }
 body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh}
 
-/* ── HEADER ── */
+/* ── HEADER ── (one line on any phone: nothing wraps, the title gives way first, autosave status tucks under the title) */
 .hdr{position:sticky;top:0;z-index:100;background:rgba(248,247,255,.92);backdrop-filter:blur(12px);
-  border-bottom:1px solid var(--border);padding:0 16px;height:56px;
+  border-bottom:1px solid var(--border);padding:0 16px;height:60px;
   display:flex;align-items:center;justify-content:space-between;gap:12px}
-.hdr-left{display:flex;align-items:center;gap:10px}
-.btn-back{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--border);background:var(--card);
-  display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt)}
+.hdr-left{display:flex;align-items:center;gap:12px;min-width:0;flex:1}
+.hdr-titles{display:flex;flex-direction:column;justify-content:center;min-width:0}
+.hdr-title{font-size:17px;font-weight:800;color:var(--txt);letter-spacing:-.2px;line-height:1.2;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hdr-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.btn-back,.btn-guide{width:38px;height:38px;border-radius:50%;border:1.5px solid var(--border);background:var(--card);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt);flex-shrink:0;
+  text-decoration:none;transition:border-color .15s,color .15s,transform .1s}
+.btn-guide{color:var(--sub)}
+.btn-back:active,.btn-guide:active,.btn-draft:active{transform:scale(.95)}
+.btn-guide:hover{border-color:var(--p);color:var(--p)}
 .btn-back svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
-.btn-guide{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-  color:var(--mute);text-decoration:none;flex-shrink:0;transition:color .15s}
-.btn-guide:hover{color:var(--p)}
-.btn-guide svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.hdr-title{font-size:16px;font-weight:800;color:var(--txt)}
-.btn-draft{padding:8px 16px;border-radius:99px;border:1.5px solid var(--border);background:var(--card);
-  font-size:13px;font-weight:600;color:var(--sub);cursor:pointer;transition:all .2s}
+.btn-guide svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.btn-draft{padding:10px 16px;border-radius:99px;border:1.5px solid var(--border);background:var(--card);
+  font-size:13.5px;font-weight:700;color:var(--sub);cursor:pointer;white-space:nowrap;flex-shrink:0;
+  transition:border-color .15s,color .15s,transform .1s}
 .btn-draft:hover{border-color:var(--p);color:var(--p)}
-.autosave-status{font-size:11px;color:var(--mute);font-weight:600;margin-right:10px;
-  opacity:0;transition:opacity .3s;white-space:nowrap}
-.autosave-status.show{opacity:1}
+.autosave-status{display:block;font-size:11px;line-height:14px;color:var(--mute);font-weight:600;white-space:nowrap;
+  max-height:0;opacity:0;overflow:hidden;transition:max-height .25s,opacity .25s}
+.autosave-status.show{max-height:14px;opacity:1}
 
 /* ── MAIN ── */
 .main{max-width:680px;margin:0 auto;padding:24px 16px 80px}
@@ -281,16 +286,20 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 <!-- HEADER -->
 <header class="hdr">
   <div class="hdr-left">
-    <button class="btn-back" onclick="history.back()">
+    <button class="btn-back" onclick="history.back()" aria-label="Back">
       <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
     </button>
-    <span class="hdr-title" id="hdrTitle">Write Article</span>
-    <a class="btn-guide" href="/article-guide" title="How to use this editor">
+    <div class="hdr-titles">
+      <span class="hdr-title" id="hdrTitle">Write Article</span>
+      <span class="autosave-status" id="autosaveStatus"></span>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <a class="btn-guide" href="/article-guide" title="How to use this editor" aria-label="How to use this editor">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 115.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
     </a>
+    <button class="btn-draft" onclick="saveDraft()">Save Draft</button>
   </div>
-  <span class="autosave-status" id="autosaveStatus"></span>
-  <button class="btn-draft" onclick="saveDraft()">Save Draft</button>
 </header>
 
 <main class="main">
