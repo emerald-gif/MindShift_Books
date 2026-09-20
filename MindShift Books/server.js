@@ -1721,8 +1721,13 @@ async function runFoundingCreatorWeeklyCycle() {
       };
       // Emails ride along in the same write as the status change (queued, not
       // sent here — see the Founding Creator emails block further down).
+      // Every user evaluated on a Monday gets exactly one email describing where
+      // they now stand: still active → newWeek, just went inactive → faded,
+      // restored → welcomeBack, lost → removed.
       if (fc.status === 'faded' && newStatus === 'active') update['foundingCreator.emailQueue'] = fcQueuedEmail('welcomeBack');
       else if (newStatus === 'lost') update['foundingCreator.emailQueue'] = fcQueuedEmail('removed');
+      else if (fc.status === 'active' && newStatus === 'faded') update['foundingCreator.emailQueue'] = fcQueuedEmail('faded');
+      else if (fc.status === 'active' && newStatus === 'active') update['foundingCreator.emailQueue'] = fcQueuedEmail('newWeek');
       // A lost badge stops being tracked — no reason to keep rolling its
       // snapshot forward every week after it's gone for good.
       if (newStatus !== 'lost') {
@@ -2522,16 +2527,21 @@ app.get('/api/founding-creator/status', requireUser, async (req, res) => {
 });
 
 // ── Founding Creator emails (Brevo template #10) ────────────────────────────
-// Five lifecycle emails through ONE Brevo template (blocks keyed on isLive /
-// isAtRisk / isFinalWarning / isRemoved / isWelcomeBack):
+// Seven lifecycle emails through ONE Brevo template (blocks keyed on isLive /
+// isNewWeek / isAtRisk / isFaded / isFinalWarning / isRemoved / isWelcomeBack).
+// In the emails "faded" is called "inactive" — greyed out and hidden from other
+// people, but recoverable for one week.
 //   live         — once, at launch, to everyone who earned the badge during the
 //                  launch grace period. The only time this one ever goes out.
-//   atRisk       — Friday nudge: badge is active but this week's target isn't
-//                  met yet — hit it before the badge fades to black and white.
-//   finalWarning — Friday nudge: badge is ALREADY faded and this week's target
-//                  isn't met yet — miss it and the badge is removed for good.
-//   removed      — the Monday the badge is lost for good.
-//   welcomeBack  — the Monday a faded badge is restored to full color.
+// Mondays (after the weekly evaluation) — exactly one of these per user:
+//   newWeek      — hit last week's target, badge stays active: "new week, here's your goal".
+//   faded        — missed last week's target, badge just went inactive: what
+//                  happened, and the week they have to get it back.
+//   welcomeBack  — was inactive, hit the target: badge is active again.
+//   removed      — was inactive, missed again: badge is gone for good.
+// Fridays — only for users still short of this week's target:
+//   atRisk       — badge is active: hit it before the badge goes inactive.
+//   finalWarning — badge is already inactive: miss it and it's removed for good.
 //
 // Nothing in here sends inline. Anything that should email is first written to
 // users/{uid}.foundingCreator.emailQueue = { stage, queuedAt, attempts } — by
@@ -2543,7 +2553,7 @@ app.get('/api/founding-creator/status', requireUser, async (req, res) => {
 // send the same email twice. The Friday nudges are queued for everyone and the
 // flush works out who's actually behind, using fresh numbers, so nobody who
 // caught up in the meantime gets nagged.
-const FC_EMAIL_STAGES = ['live', 'atRisk', 'finalWarning', 'removed', 'welcomeBack'];
+const FC_EMAIL_STAGES = ['live', 'newWeek', 'atRisk', 'faded', 'finalWarning', 'removed', 'welcomeBack'];
 const FC_EMAIL_START_HOUR = 10;   // Lagos-shifted clock, same convention as the digest
 const FC_EMAIL_END_HOUR = 21;
 const FC_NUDGE_MIN_WEEKDAY = 5;   // Friday (Sun=0). Saturday still catches up if Friday was missed; Sunday never nudges.
@@ -2620,10 +2630,12 @@ function fcRowsHtml(progress) {
 
 const FC_EMAIL_COPY = {
   live:         { accent: '#2563eb', faded: false, subject: (n) => `🏅 ${n}, your Founding Creator badge is live`,          preview: () => 'Tracking starts today — here’s what you need each week.' },
-  atRisk:       { accent: '#f59e0b', faded: false, subject: () => '⏳ Your Founding Creator badge is at risk this week',     preview: (d) => `${d} day${d === 1 ? '' : 's'} left to hit this week’s target and keep it in full color.` },
+  newWeek:      { accent: '#4f46e5', faded: false, subject: (n) => `📅 New week, ${n} — here’s your badge target`,     preview: () => 'A new tracked week starts today. Hit all three targets by Sunday to keep your badge active.' },
+  atRisk:       { accent: '#f59e0b', faded: false, subject: () => '⏳ Your Founding Creator badge is at risk this week',     preview: (d) => `${d} day${d === 1 ? '' : 's'} left to hit this week’s target and keep your badge active.` },
+  faded:        { accent: '#ef4444', faded: true,  subject: () => 'Your Founding Creator badge is now inactive',           preview: (d) => `You still have ${d} day${d === 1 ? '' : 's'} to get it back — here’s what to hit.` },
   finalWarning: { accent: '#ef4444', faded: true,  subject: () => '⚠️ Last chance to save your Founding Creator badge',      preview: (d) => `${d} day${d === 1 ? '' : 's'} left — miss this week and the badge is removed for good.` },
   removed:      { accent: '#64748b', faded: true,  subject: () => 'Your Founding Creator badge has been removed',            preview: () => 'Here’s what happened, and what you can do next.' },
-  welcomeBack:  { accent: '#10b981', faded: false, subject: (n) => `🎉 Welcome back, ${n} — your badge is back in color`,    preview: () => 'You hit this week’s target. Your badge is visible to everyone again.' }
+  welcomeBack:  { accent: '#10b981', faded: false, subject: (n) => `🎉 Welcome back, ${n} — your badge is active again`,     preview: () => 'You hit the target. Your badge is visible to everyone again.' }
 };
 
 async function sendFoundingCreatorEmail(user, stage, { progress } = {}) {
@@ -2652,7 +2664,9 @@ async function sendFoundingCreatorEmail(user, stage, { progress } = {}) {
           first_name: firstName,
           preview_text: copy.preview(daysLeft),
           isLive: stage === 'live',
+          isNewWeek: stage === 'newWeek',
           isAtRisk: stage === 'atRisk',
+          isFaded: stage === 'faded',
           isFinalWarning: stage === 'finalWarning',
           isRemoved: stage === 'removed',
           isWelcomeBack: stage === 'welcomeBack',
@@ -2820,8 +2834,8 @@ if (db) {
 }
 
 // POST /api/admin/founding-creator/test-email — sends one sample of any of the
-// five emails to any inbox so the template can be checked before launch.
-// Body: { stage: 'live'|'atRisk'|'finalWarning'|'removed'|'welcomeBack', email: '...' }.
+// seven emails to any inbox so the template can be checked before launch.
+// Body: { stage: 'live'|'newWeek'|'atRisk'|'faded'|'finalWarning'|'removed'|'welcomeBack', email: '...' }.
 // requireAdminApi is explicit because this route sits above the blanket
 // app.use('/api/admin', requireAdminApi) further down the file.
 app.post('/api/admin/founding-creator/test-email', requireAdminApi, async (req, res) => {
