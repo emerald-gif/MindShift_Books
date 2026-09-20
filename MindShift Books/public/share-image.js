@@ -3,13 +3,13 @@
    ──────────────────────────────────────────────────────────────────────
    Turns a post or article into a shareable image card — a "Grid" (square,
    1080x1080) or "Stories" (portrait, 1080x1920) format, matching the
-   toggle Substack uses for their Notes. Reuses the exact html2canvas
-   pattern already proven in whoami.html: build the real card off-screen
-   at true pixel resolution, capture it, hand the PNG to the Web Share API
-   (with a caption/link fallback chain) or a plain download.
+   toggle Substack uses for their Notes. The card is drawn directly on a
+   <canvas> (no html2canvas / no DOM capture), images are preloaded when
+   the sheet opens, and the final file is encoded in the background, so
+   Download/Share are near-instant. Images are drawn with an explicit
+   cover-crop, so they are never squashed.
 
    Include on any page with:
-       <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
        <script src="/share-image.js"></script>
    then call:
        window.openShareImageCard({
@@ -51,20 +51,7 @@
     '.shareimg-bg-swatch.active svg{display:block}' +
     '.shareimg-preview-wrap{display:flex;justify-content:center;margin-bottom:18px}' +
     '.shareimg-frame{border-radius:18px;overflow:hidden;box-shadow:0 10px 30px rgba(15,23,42,.18);background:#e2e8f0}' +
-    '.shareimg-card{transform-origin:top left;font-family:inherit}' +
-    '.shareimg-bg{width:100%;height:100%;box-sizing:border-box;background:linear-gradient(160deg,#4338ca 0%,#4f46e5 45%,#06b6d4 100%);display:flex;flex-direction:column;position:relative}' +
-    '.shareimg-cardbody-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 56px}' +
-    '.shareimg-cardbody{background:#fff;border-radius:26px;padding:44px;width:100%;box-shadow:0 14px 28px rgba(0,0,0,.18)}' +
-    '.shareimg-author-row{display:flex;align-items:center;gap:16px;margin-bottom:28px}' +
-    '.shareimg-author-row img{width:58px;height:58px;border-radius:50%;object-fit:cover;flex-shrink:0;background:linear-gradient(135deg,#4f46e5,#06b6d4)}' +
-    '.shareimg-author-name{font-weight:800;font-size:26px;color:#0f172a;flex:1;min-width:0}' +
-    '.shareimg-flag{width:30px;height:30px;flex-shrink:0;border-radius:8px;object-fit:cover}' +
-    '.shareimg-img{width:100%;border-radius:18px;object-fit:cover;margin-bottom:24px;display:block}' +
-    '.shareimg-title{font-weight:800;font-size:34px;color:#0f172a;line-height:1.28;margin:0 0 14px}' +
-    '.shareimg-text{font-weight:600;font-size:32px;color:#0f172a;line-height:1.38;margin:0;white-space:pre-wrap;word-break:break-word}' +
-    '.shareimg-brief{font-weight:500;font-size:24px;color:#475569;line-height:1.45;margin:0}' +
-    '.shareimg-divider{height:2px;background:#e2e8f0;margin:32px 0 24px}' +
-    '.shareimg-foot{display:flex;align-items:center;justify-content:space-between;font-size:20px;font-weight:600;color:#94a3b8}' +
+    '.shareimg-frame canvas{display:block;width:100%;height:100%}' +
     '.shareimg-actions{display:flex;gap:10px}' +
     '.shareimg-actions button{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:13px 10px;border-radius:14px;border:none;font-weight:700;font-size:14px;cursor:pointer;-webkit-tap-highlight-color:transparent}' +
     '.shareimg-actions button svg{width:17px;height:17px}' +
@@ -96,9 +83,7 @@
         '</button>' +
       '</div>' +
       '<div class="shareimg-preview-wrap">' +
-        '<div class="shareimg-frame" id="shareimgFrame">' +
-          '<div class="shareimg-card" id="shareimgCard"></div>' +
-        '</div>' +
+        '<div class="shareimg-frame" id="shareimgFrame"></div>' +
       '</div>' +
       '<div class="shareimg-bg-label">Background</div>' +
       '<div class="shareimg-bg-row" id="shareimgBgRow"></div>' +
@@ -123,32 +108,39 @@
     grid:    { w: 1080, h: 1080 },
     stories: { w: 1080, h: 1920 }
   };
-  // Background choices for the card frame — a swatch row like every other
-  // "pick a style" picker in the app (see sidebar-nav.js's icon items for
-  // the same "one array, rendered" pattern). Brand gradient stays first
-  // and selected by default. The rest lean on gradients (matching the
-  // app's own indigo->cyan visual language) rather than flat pastel
-  // swatches, so a shared card still reads as "MindShift Books" even in
-  // a different colorway. Six options keeps the row on one line at
-  // typical phone widths.
+  // Background choices — one array, used for BOTH the swatch buttons (CSS
+  // string built from the spec) and the canvas painter. Brand gradient
+  // stays first/default.
   var BG_OPTIONS = [
-    { id: 'brand',    css: 'linear-gradient(160deg,#4338ca 0%,#4f46e5 45%,#06b6d4 100%)' },
-    { id: 'midnight', css: '#0f172a' },
-    { id: 'sunrise',  css: 'linear-gradient(160deg,#fb923c 0%,#ec4899 100%)' },
-    { id: 'emerald',  css: 'linear-gradient(160deg,#059669 0%,#34d399 100%)' },
-    { id: 'lavender', css: 'linear-gradient(160deg,#a78bfa 0%,#f0abfc 100%)' },
-    { id: 'sand',     css: '#d8b48c' }
+    { id: 'brand',    angle: 160, stops: [[0, '#4338ca'], [0.45, '#4f46e5'], [1, '#06b6d4']] },
+    { id: 'midnight', solid: '#0f172a' },
+    { id: 'sunrise',  angle: 160, stops: [[0, '#fb923c'], [1, '#ec4899']] },
+    { id: 'emerald',  angle: 160, stops: [[0, '#059669'], [1, '#34d399']] },
+    { id: 'lavender', angle: 160, stops: [[0, '#a78bfa'], [1, '#f0abfc']] },
+    { id: 'sand',     solid: '#d8b48c' }
   ];
   var currentShape = 'grid';
   var currentBg = BG_OPTIONS[0].id;
   var currentItem = null;
-  var PREVIEW_TARGET_W = 280; // on-screen preview width in CSS px, height follows shape ratio
+  var PREVIEW_TARGET_W = 280;  // on-screen preview width in CSS px
+  var PREVIEW_SCALE = 0.55;    // preview canvas px per design px (~2x retina of 280)
+  var EXPORT_TYPE = 'image/jpeg'; // JPEG encodes ~5x faster and is ~8x smaller than PNG for this card (it has no transparency). Set to 'image/png' to go back.
+  var EXPORT_QUALITY = 0.94;
+  var EXPORT_EXT = EXPORT_TYPE === 'image/png' ? 'png' : 'jpg';
+  var MARK_URL = '/share-mark.png'; // 96px logo (the old card downloaded the 723KB MINDSHIFT.jpg every time)
+  var FONT_STACK = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 
-  function bgCssById(id) {
-    for (var i = 0; i < BG_OPTIONS.length; i++) {
-      if (BG_OPTIONS[i].id === id) return BG_OPTIONS[i].css;
-    }
-    return BG_OPTIONS[0].css;
+  // Card design constants (design px, the card is laid out at 1080 wide).
+  var BG_PAD_X = 56, BG_PAD_Y = 40, CARD_PAD = 44, CARD_RADIUS = 26;
+  var MIN_IMG_H = 240;
+
+  function bgOptionById(id) {
+    for (var i = 0; i < BG_OPTIONS.length; i++) if (BG_OPTIONS[i].id === id) return BG_OPTIONS[i];
+    return BG_OPTIONS[0];
+  }
+  function bgCss(o) {
+    if (o.solid) return o.solid;
+    return 'linear-gradient(' + o.angle + 'deg,' + o.stops.map(function (s) { return s[1] + ' ' + Math.round(s[0] * 100) + '%'; }).join(',') + ')';
   }
 
   function renderBgSwatches() {
@@ -157,7 +149,7 @@
     row.innerHTML = BG_OPTIONS.map(function (o) {
       var active = o.id === currentBg;
       return '<button type="button" class="shareimg-bg-swatch' + (active ? ' active' : '') + '" ' +
-        'style="background:' + o.css + '" onclick="setShareImageBg(\'' + o.id + '\')" aria-label="' + o.id + ' background">' +
+        'style="background:' + bgCss(o) + '" onclick="setShareImageBg(\'' + o.id + '\')" aria-label="' + o.id + ' background">' +
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
         '</button>';
     }).join('');
@@ -180,21 +172,9 @@
     return new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   }
 
-  function esc(s) {
-    return (s || '').replace(/[&<>"']/g, function (m) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
-    });
-  }
-
-  // Cloudinary URLs come straight from upload (full original resolution —
-  // often several MB). The card only ever displays these at a few hundred
-  // px wide, so ask Cloudinary to serve an already-downsized, compressed
-  // copy by inserting an f_auto,q_auto,w_###,c_limit transform right after
-  // "/upload/". This is what actually cuts the "Preparing…" wait down —
-  // html2canvas has to fully download every <img> in the card before it
-  // can capture it, and a multi-MB original over a phone connection was
-  // the bulk of the delay, not the canvas render itself. Non-Cloudinary
-  // URLs (or ones that already carry a transform) pass through untouched.
+  // Cloudinary originals are often several MB. Ask Cloudinary for a
+  // downsized, compressed copy (f_auto,q_auto,w_###,c_limit). Non-Cloudinary
+  // URLs, or ones that already carry a transform, pass through untouched.
   function cldResize(url, width) {
     if (!url || typeof url !== 'string') return url;
     if (url.indexOf('res.cloudinary.com') === -1) return url;
@@ -202,60 +182,318 @@
     var i = url.indexOf(marker);
     if (i === -1) return url;
     var after = url.slice(i + marker.length, i + marker.length + 12);
-    if (/^[a-z]_/.test(after)) return url; // already has a transform
+    if (/^[a-z]_/.test(after)) return url;
     return url.slice(0, i + marker.length) + 'f_auto,q_auto,w_' + width + ',c_limit/' + url.slice(i + marker.length);
   }
 
-  // Builds the inner HTML for the card at its TRUE pixel resolution
-  // (1080-wide). The same markup is used for the live on-screen preview
-  // (shrunk via a CSS transform: scale() on the wrapper) and for the real
-  // export (transform temporarily removed, see exportCanvas() below) — one
-  // template, so preview and output can never drift apart.
-  function buildCardInnerHtml(item, shape) {
-    var dims = SHAPES[shape];
-    var isArticle = item.type === 'article';
-    // 700px source is still comfortably above the ~650px the image ever
-    // actually renders at now that export happens at scale:0.6 — kept
-    // slightly above rather than exact so it isn't visibly soft.
-    var img = cldResize(item.image || '', 700);
-    var avatar = cldResize(item.avatar || '/logo.jpg', 120);
-    var bodyHtml = isArticle
-      ? '<div class="shareimg-title">' + esc(truncate(item.title, 90)) + '</div>' +
-        (item.brief ? '<div class="shareimg-brief">' + esc(truncate(item.brief, 160)) + '</div>' : '')
-      : '<div class="shareimg-text">' + esc(truncate(item.text, 220)) + '</div>';
+  function coverUrl(item) { return item && item.image ? cldResize(item.image, 900) : ''; }
+  function avatarUrl(item) { return item && item.avatar ? cldResize(item.avatar, 120) : MARK_URL; }
 
-    return (
-      '<div class="shareimg-bg" style="width:' + dims.w + 'px;height:' + dims.h + 'px;background:' + bgCssById(currentBg) + '">' +
-        '<div class="shareimg-cardbody-wrap">' +
-          '<div class="shareimg-cardbody">' +
-            '<div class="shareimg-author-row">' +
-              '<img src="' + avatar + '" alt="">' +
-              '<div class="shareimg-author-name">' + esc(item.author || 'MindShift Books') + '</div>' +
-              '<img class="shareimg-flag" src="/MINDSHIFT.jpg" alt="">' +
-            '</div>' +
-            (img ? '<img class="shareimg-img" src="' + img + '" alt="" style="height:' + Math.round(dims.w * 0.42) + 'px">' : '') +
-            bodyHtml +
-            '<div class="shareimg-divider"></div>' +
-            '<div class="shareimg-foot"><span>' + fmtDate(item.publishedAt) + '</span><span>mindshiftbooks.shop</span></div>' +
-          '</div>' +
-        '</div>' +
-      '</div>'
-    );
+  // ── Image loading ─────────────────────────────────────────────────────
+  // Every image is loaded ONCE into a cache and drawn straight onto a
+  // canvas. Loads start the moment the sheet opens, so by the time the
+  // person taps Download the bytes are already here. crossOrigin keeps the
+  // canvas untainted so it can be exported; if an image can't be loaded
+  // that way we skip it instead of failing the whole export.
+  var imgCache = {};
+  function loadImg(url) {
+    if (!url) return null;
+    if (imgCache[url]) return imgCache[url];
+    var e = imgCache[url] = { status: 'loading', img: null, promise: null };
+    e.promise = new Promise(function (resolve) {
+      function done(ok, img) {
+        if (e.status !== 'loading') return;
+        e.status = ok ? 'ok' : 'err';
+        e.img = ok ? img : null;
+        resolve(e);
+      }
+      var timer = setTimeout(function () { done(false); }, 8000);
+      var im = new Image();
+      im.crossOrigin = 'anonymous';
+      im.onload = function () { clearTimeout(timer); done(true, im); };
+      im.onerror = function () {
+        // Retry through fetch, bypassing a cached copy that was stored without CORS headers.
+        fetch(url, { mode: 'cors', cache: 'reload' })
+          .then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return r.blob(); })
+          .then(function (b) {
+            var i2 = new Image();
+            i2.onload = function () { clearTimeout(timer); done(true, i2); };
+            i2.onerror = function () { clearTimeout(timer); done(false); };
+            i2.src = URL.createObjectURL(b);
+          })
+          .catch(function () { clearTimeout(timer); done(false); });
+      };
+      im.src = url;
+    });
+    return e;
   }
 
+  function itemUrls(item) {
+    return [coverUrl(item), avatarUrl(item), MARK_URL].filter(Boolean);
+  }
+  function startLoads(item) { itemUrls(item).forEach(loadImg); }
+  function settleImages(item) {
+    return Promise.all(itemUrls(item).map(function (u) { return loadImg(u).promise; }));
+  }
+
+  var fontsPromise = null;
+  function ensureFonts(item) {
+    var sample = item ? [item.author, item.title, item.brief, item.text].join(' ').slice(0, 400) : 'Aa';
+    var specs = ['500 24px ' + FONT_STACK, '600 32px ' + FONT_STACK, '800 34px ' + FONT_STACK];
+    var p = (document.fonts && document.fonts.load)
+      ? Promise.all(specs.map(function (s) { return document.fonts.load(s, sample); })).catch(function () {})
+      : Promise.resolve();
+    // Never let a slow font hold up the card — fall back to the system stack.
+    return Promise.race([p, new Promise(function (r) { setTimeout(r, 1500); })]);
+  }
+
+  // ── Canvas drawing ────────────────────────────────────────────────────
+  // The card is drawn straight onto a <canvas> (no html2canvas). The same
+  // function draws the on-screen preview (small scale) and the export
+  // (scale 1), so they can never drift apart. Images are drawn with an
+  // explicit "cover" crop from their natural size, which is what keeps
+  // them from being squashed into the slot.
+  function roundRectPath(ctx, x, y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  // Draws img into (x,y,w,h) like CSS object-fit:cover — uniform scale,
+  // centered crop (fx/fy = 0..1 focus), never stretched.
+  function drawCover(ctx, img, x, y, w, h, fx, fy) {
+    var iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
+    if (!iw || !ih) return;
+    var s = Math.max(w / iw, h / ih);
+    var sw = w / s, sh = h / s;
+    ctx.drawImage(img, (iw - sw) * fx, (ih - sh) * fy, sw, sh, x, y, w, h);
+  }
+
+  function paintBg(ctx, w, h, opt) {
+    if (opt.solid) { ctx.fillStyle = opt.solid; ctx.fillRect(0, 0, w, h); return; }
+    var a = opt.angle * Math.PI / 180;
+    var dx = Math.sin(a), dy = -Math.cos(a);
+    var len = Math.abs(w * dx) + Math.abs(h * dy);
+    var cx = w / 2, cy = h / 2;
+    var g = ctx.createLinearGradient(cx - dx * len / 2, cy - dy * len / 2, cx + dx * len / 2, cy + dy * len / 2);
+    opt.stops.forEach(function (s) { g.addColorStop(s[0], s[1]); });
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+  }
+
+  // Word-wraps to maxW, honouring newlines and breaking over-long words.
+  function wrapText(ctx, text, maxW) {
+    var out = [];
+    String(text || '').split('\n').forEach(function (para) {
+      if (para === '') { out.push(''); return; }
+      var line = '';
+      para.split(' ').forEach(function (word) {
+        var test = line ? line + ' ' + word : word;
+        if (ctx.measureText(test).width <= maxW) { line = test; return; }
+        if (line) { out.push(line); line = ''; }
+        if (ctx.measureText(word).width <= maxW) { line = word; return; }
+        var chunk = '';
+        Array.from(word).forEach(function (ch) {
+          if (chunk && ctx.measureText(chunk + ch).width > maxW) { out.push(chunk); chunk = ch; }
+          else chunk += ch;
+        });
+        line = chunk;
+      });
+      out.push(line);
+    });
+    return out;
+  }
+
+  function fitText(ctx, text, maxW) {
+    if (ctx.measureText(text).width <= maxW) return text;
+    var t = text;
+    while (t.length > 1 && ctx.measureText(t + '\u2026').width > maxW) t = t.slice(0, -1);
+    return t.trim() + '\u2026';
+  }
+
+  function drawCard(item, shape, bgId, scale) {
+    var dims = SHAPES[shape];
+    var canvas = document.createElement('canvas');
+    canvas.width = Math.round(dims.w * scale);
+    canvas.height = Math.round(dims.h * scale);
+    var ctx = canvas.getContext('2d');
+    ctx.scale(scale, scale);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.textBaseline = 'middle';
+
+    paintBg(ctx, dims.w, dims.h, bgOptionById(bgId));
+
+    var isArticle = item.type === 'article';
+    var cardW = dims.w - BG_PAD_X * 2;
+    var contentW = cardW - CARD_PAD * 2;
+
+    // ── Measure text ──
+    var titleLines = [], briefLines = [], textLines = [];
+    var TITLE = { px: 34, lh: 34 * 1.28 }, BRIEF = { px: 24, lh: 24 * 1.45 }, POST = { px: 32, lh: 32 * 1.38 };
+    var textH = 0;
+    if (isArticle) {
+      ctx.font = '800 ' + TITLE.px + 'px ' + FONT_STACK;
+      var t = truncate(item.title, 90);
+      titleLines = t ? wrapText(ctx, t, contentW) : [];
+      ctx.font = '500 ' + BRIEF.px + 'px ' + FONT_STACK;
+      var b = truncate(item.brief, 160);
+      briefLines = b ? wrapText(ctx, b, contentW) : [];
+      textH = titleLines.length * TITLE.lh + 14 + briefLines.length * BRIEF.lh;
+    } else {
+      ctx.font = '600 ' + POST.px + 'px ' + FONT_STACK;
+      var p = truncate(item.text, 220);
+      textLines = p ? wrapText(ctx, p, contentW) : [];
+      textH = textLines.length * POST.lh;
+    }
+
+    // ── Image slot: follows the picture's own shape, limited by the space left ──
+    var cUrl = coverUrl(item);
+    var cEntry = cUrl ? loadImg(cUrl) : null;
+    var hasImg = !!cEntry && cEntry.status !== 'err';
+    var imgH = 0;
+    var AUTHOR_H = 58, AUTHOR_GAP = 28, DIV_H = 58, FOOT_H = 24;
+    var fixed = CARD_PAD * 2 + AUTHOR_H + AUTHOR_GAP + textH + DIV_H + FOOT_H + (hasImg ? 24 : 0);
+    if (hasImg) {
+      var room = (dims.h - BG_PAD_Y * 2) - fixed;
+      var natural = cEntry.status === 'ok' && cEntry.img.naturalWidth
+        ? contentW * cEntry.img.naturalHeight / cEntry.img.naturalWidth
+        : Math.round(dims.w * 0.42);
+      imgH = Math.round(Math.max(MIN_IMG_H, Math.min(natural, contentW, room)));
+    }
+    var cardH = fixed + imgH;
+    var cardX = BG_PAD_X;
+    var cardY = Math.max(BG_PAD_Y, Math.round((dims.h - cardH) / 2));
+
+    // ── Card ──
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,.18)';
+    ctx.shadowBlur = 28 * scale;   // canvas shadows ignore ctx.scale
+    ctx.shadowOffsetY = 14 * scale;
+    ctx.fillStyle = '#fff';
+    roundRectPath(ctx, cardX, cardY, cardW, cardH, CARD_RADIUS);
+    ctx.fill();
+    ctx.restore();
+
+    var x0 = cardX + CARD_PAD;
+    var y = cardY + CARD_PAD;
+
+    // Author row
+    var avEntry = loadImg(avatarUrl(item));
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(x0 + 29, y + 29, 29, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.clip();
+    if (avEntry && avEntry.status === 'ok') {
+      drawCover(ctx, avEntry.img, x0, y, 58, 58, 0.5, 0.5);
+    } else {
+      var ag = ctx.createLinearGradient(x0, y, x0 + 58, y + 58);
+      ag.addColorStop(0, '#4f46e5'); ag.addColorStop(1, '#06b6d4');
+      ctx.fillStyle = ag;
+      ctx.fillRect(x0, y, 58, 58);
+      if (avEntry && avEntry.status === 'err') {
+        ctx.fillStyle = '#fff';
+        ctx.font = '800 26px ' + FONT_STACK;
+        ctx.textAlign = 'center';
+        ctx.fillText(String(item.author || 'M').trim().charAt(0).toUpperCase() || 'M', x0 + 29, y + 30);
+        ctx.textAlign = 'left';
+      }
+    }
+    ctx.restore();
+
+    ctx.fillStyle = '#0f172a';
+    ctx.font = '800 26px ' + FONT_STACK;
+    ctx.textAlign = 'left';
+    var nameX = x0 + 58 + 16;
+    ctx.fillText(fitText(ctx, item.author || 'MindShift Books', contentW - 58 - 16 - 30 - 16), nameX, y + 30);
+
+    var mark = loadImg(MARK_URL);
+    if (mark && mark.status === 'ok') {
+      ctx.save();
+      roundRectPath(ctx, x0 + contentW - 30, y + 14, 30, 30, 8);
+      ctx.clip();
+      drawCover(ctx, mark.img, x0 + contentW - 30, y + 14, 30, 30, 0.5, 0.5);
+      ctx.restore();
+    }
+    y += AUTHOR_H + AUTHOR_GAP;
+
+    // Cover / post image
+    if (hasImg) {
+      ctx.save();
+      roundRectPath(ctx, x0, y, contentW, imgH, 18);
+      ctx.clip();
+      if (cEntry.status === 'ok') {
+        drawCover(ctx, cEntry.img, x0, y, contentW, imgH, 0.5, 0.5);
+      } else {
+        ctx.fillStyle = '#e2e8f0';
+        ctx.fillRect(x0, y, contentW, imgH);
+      }
+      ctx.restore();
+      y += imgH + 24;
+    }
+
+    // Text
+    if (isArticle) {
+      ctx.fillStyle = '#0f172a';
+      ctx.font = '800 ' + TITLE.px + 'px ' + FONT_STACK;
+      titleLines.forEach(function (ln, i) { ctx.fillText(ln, x0, y + TITLE.lh * i + TITLE.lh / 2); });
+      y += titleLines.length * TITLE.lh + 14;
+      ctx.fillStyle = '#475569';
+      ctx.font = '500 ' + BRIEF.px + 'px ' + FONT_STACK;
+      briefLines.forEach(function (ln, i) { ctx.fillText(ln, x0, y + BRIEF.lh * i + BRIEF.lh / 2); });
+      y += briefLines.length * BRIEF.lh;
+    } else {
+      ctx.fillStyle = '#0f172a';
+      ctx.font = '600 ' + POST.px + 'px ' + FONT_STACK;
+      textLines.forEach(function (ln, i) { ctx.fillText(ln, x0, y + POST.lh * i + POST.lh / 2); });
+      y += textLines.length * POST.lh;
+    }
+
+    // Divider + footer
+    y += 32;
+    ctx.fillStyle = '#e2e8f0';
+    ctx.fillRect(x0, y, contentW, 2);
+    y += 2 + 24;
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '600 20px ' + FONT_STACK;
+    ctx.textAlign = 'left';
+    ctx.fillText(fmtDate(item.publishedAt), x0, y + FOOT_H / 2);
+    ctx.textAlign = 'right';
+    ctx.fillText('mindshiftbooks.shop', x0 + contentW, y + FOOT_H / 2);
+    ctx.textAlign = 'left';
+
+    return canvas;
+  }
+
+  // ── Preview ───────────────────────────────────────────────────────────
+  var renderToken = 0;
   function renderPreview() {
+    var token = ++renderToken;
     var dims = SHAPES[currentShape];
-    var scale = PREVIEW_TARGET_W / dims.w;
     var frame = document.getElementById('shareimgFrame');
-    var card = document.getElementById('shareimgCard');
-    frame.style.width = Math.round(dims.w * scale) + 'px';
-    frame.style.height = Math.round(dims.h * scale) + 'px';
-    card.style.width = dims.w + 'px';
-    card.style.height = dims.h + 'px';
-    card.style.transform = 'scale(' + scale + ')';
-    card.innerHTML = buildCardInnerHtml(currentItem, currentShape);
+    frame.style.width = PREVIEW_TARGET_W + 'px';
+    frame.style.height = Math.round(PREVIEW_TARGET_W * dims.h / dims.w) + 'px';
     document.getElementById('shareimgGridBtn').classList.toggle('active', currentShape === 'grid');
     document.getElementById('shareimgStoriesBtn').classList.toggle('active', currentShape === 'stories');
+
+    function paint() {
+      var cv = drawCard(currentItem, currentShape, currentBg, PREVIEW_SCALE);
+      frame.innerHTML = '';
+      frame.appendChild(cv);
+    }
+    paint(); // instant first paint with whatever is already loaded
+    ensureFonts(currentItem).then(function () { if (token === renderToken) paint(); });
+    settleImages(currentItem).then(function () {
+      if (token !== renderToken) return;
+      paint();
+      schedulePrepare();
+    });
   }
 
   window.setShareImageShape = function (shape) {
@@ -267,6 +505,8 @@
     currentItem = item;
     currentShape = 'grid';
     currentBg = BG_OPTIONS[0].id;
+    prepared = null;
+    startLoads(item); // start downloading images right now, in parallel with opening the sheet
     document.getElementById('shareimgOverlay').classList.add('on');
     document.getElementById('shareimgSheet').classList.add('on');
     document.body.style.overflow = 'hidden';
@@ -280,49 +520,47 @@
     document.body.style.overflow = '';
   };
 
-  // Temporarily removes the preview's scale-down transform (so html2canvas
-  // captures the card at its true 1080-wide resolution, not shrunk), runs
-  // the capture, then restores the preview transform. Same node throughout
-  // — no separate off-screen duplicate to keep in sync.
-  // Builds and captures the card at full resolution off-screen, rather
-  // than temporarily un-scaling the visible preview card in place. The
-  // old approach removed the preview's scale-down transform on the same
-  // node sitting inside its small clipped frame — for a moment the card
-  // was full-size inside a tiny clipping window, so all that showed was
-  // a corner crop of the background (reported: preview flashes to a
-  // plain color block on Download, then "snaps back" after). Rendering
-  // an off-screen clone means the on-screen preview is never touched, so
-  // there's nothing to flash.
-  async function exportCanvas() {
-    var dims = SHAPES[currentShape];
-    var clone = document.createElement('div');
-    clone.style.position = 'fixed';
-    clone.style.left = '-99999px';
-    clone.style.top = '0';
-    clone.style.width = dims.w + 'px';
-    clone.style.height = dims.h + 'px';
-    clone.className = 'shareimg-card';
-    clone.innerHTML = buildCardInnerHtml(currentItem, currentShape);
-    document.body.appendChild(clone);
-    // Let images/layout settle before html2canvas measures it.
-    await new Promise(function (r) { requestAnimationFrame(function () { requestAnimationFrame(r); }); });
-    try {
-      // scale:0.6 — the card layout is still designed at true 1080/1920px
-      // (see SHAPES above, and dims.w/dims.h below), so this only shrinks
-      // the final rasterized/encoded pixel count, not the text sizing or
-      // padding math. html2canvas's paint + shadow-blur + PNG-encode time
-      // scales with pixel count, and that (not the DOM walk) was most of
-      // the "Preparing…" wait — 0.6 cuts it to ~36% of the pixels at
-      // scale:1 while still landing well above typical feed/story preview
-      // sizes, so it doesn't look soft when shared.
-      return await html2canvas(clone, { scale: 0.6, backgroundColor: null, useCORS: true, allowTaint: true, width: dims.w, height: dims.h });
-    } finally {
-      clone.remove();
-    }
-  }
+  // ── Export ────────────────────────────────────────────────────────────
+  // The final image is encoded in the background as soon as the preview
+  // settles, so Download/Share usually just pick up a finished Blob.
+  var prepared = null, prepTimer = null;
 
   function canvasToBlob(canvas) {
-    return new Promise(function (resolve) { canvas.toBlob(resolve, 'image/png'); });
+    return new Promise(function (resolve, reject) {
+      canvas.toBlob(function (b) { b ? resolve(b) : reject(new Error('toBlob returned null')); }, EXPORT_TYPE, EXPORT_QUALITY);
+    });
+  }
+
+  function buildBlob() {
+    var item = currentItem, shape = currentShape, bg = currentBg;
+    return ensureFonts(item)
+      .then(function () { return settleImages(item); })
+      .then(function () { return canvasToBlob(drawCard(item, shape, bg, 1)); });
+  }
+
+  function getBlob() {
+    var key = currentShape + '|' + currentBg;
+    if (prepared && prepared.key === key) return prepared.promise;
+    var p = buildBlob();
+    prepared = { key: key, promise: p };
+    p.catch(function () { if (prepared && prepared.promise === p) prepared = null; });
+    return p;
+  }
+
+  function schedulePrepare() {
+    clearTimeout(prepTimer);
+    prepTimer = setTimeout(function () { getBlob().catch(function () {}); }, 200);
+  }
+
+  function saveBlob(blob, name) {
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement('a');
+    link.download = name;
+    link.href = url;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
   }
 
   window.downloadShareImageCard = async function () {
@@ -331,16 +569,11 @@
     btn.disabled = true;
     btn.textContent = 'Preparing\u2026';
     try {
-      var canvas = await exportCanvas();
-      var link = document.createElement('a');
-      link.download = 'mindshift-' + (currentItem.type || 'post') + '-' + currentShape + '.png';
-      link.href = canvas.toDataURL('image/png');
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+      var blob = await getBlob();
+      saveBlob(blob, 'mindshift-' + (currentItem.type || 'post') + '-' + currentShape + '.' + EXPORT_EXT);
     } catch (e) {
       console.error('downloadShareImageCard failed:', e);
-      alert('Could not generate the image — try again.');
+      alert('Could not generate the image \u2014 try again.');
     } finally {
       btn.disabled = false;
       btn.innerHTML = original;
@@ -353,9 +586,8 @@
     btn.disabled = true;
     btn.textContent = 'Preparing\u2026';
     try {
-      var canvas = await exportCanvas();
-      var blob = await canvasToBlob(canvas);
-      var file = new File([blob], 'mindshift-share.png', { type: 'image/png' });
+      var blob = await getBlob();
+      var file = new File([blob], 'mindshift-share.' + EXPORT_EXT, { type: blob.type });
       var caption = (currentItem.type === 'article' ? currentItem.title : currentItem.text) || 'Check this out on MindShift Books';
       var url = currentItem.id
         ? (location.origin + '/' + (currentItem.type === 'post' ? 'post-read' : 'article-read') + '?id=' + currentItem.id)
@@ -366,12 +598,7 @@
       } else if (navigator.share) {
         await navigator.share({ text: caption, url: url });
       } else {
-        var link = document.createElement('a');
-        link.download = 'mindshift-share.png';
-        link.href = canvas.toDataURL('image/png');
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
+        saveBlob(blob, 'mindshift-share.' + EXPORT_EXT);
       }
     } catch (e) {
       if (e && e.name !== 'AbortError') console.error('shareShareImageCard failed:', e);
