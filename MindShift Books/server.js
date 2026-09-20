@@ -1539,6 +1539,27 @@ async function runProfileDigestCycle(windowStartMs) {
     .where('lastAt', '>=', windowStart)
     .get();
 
+  // Two tiny lookups (only users who opted out / recently resumed — .select()
+  // with no fields returns just doc IDs) so opted-out users are dropped
+  // BEFORE any per-user work below.
+  //  - optedOut: anyone with the digest switched off.
+  //  - resumedAt: anyone who switched it back ON since this window began.
+  //    Their notifications from before the switch-on moment are ignored, so
+  //    turning it back on never sends a "here's what happened while it was
+  //    off" digest (the view baseline is reset separately, in the PATCH route).
+  const [offSnap, resumedSnap] = await Promise.all([
+    db.collection('users').where('emailPrefs.activityDigest', '==', false).select().get(),
+    db.collection('users').where('emailPrefs.activityDigestResumedAt', '>=', windowStart)
+      .select('emailPrefs.activityDigestResumedAt').get()
+  ]);
+  const optedOut = new Set(offSnap.docs.map(d => d.id));
+  const resumedAt = new Map();
+  resumedSnap.docs.forEach(d => {
+    const t = d.get('emailPrefs.activityDigestResumedAt');
+    if (t && t.toMillis) resumedAt.set(d.id, t.toMillis());
+  });
+  const skippedOptOut = new Set();
+
   // Follows/likes/reposts are grouped client-side into 3-hour bucket docs
   // (notifications.js: upsertGrouped) — a single Firestore doc can carry
   // totalCount: 220 and actorNames: [last 5] representing 220 separate
@@ -1554,6 +1575,9 @@ async function runProfileDigestCycle(windowStartMs) {
     const n = d.data();
     const group = DIGEST_TYPE_GROUPS[n.type];
     if (!group || !n.recipientUid) return;
+    if (optedOut.has(n.recipientUid)) { skippedOptOut.add(n.recipientUid); return; }
+    const floor = resumedAt.get(n.recipientUid);
+    if (floor && n.lastAt && n.lastAt.toMillis && n.lastAt.toMillis() < floor) return;
     if (!byRecipient.has(n.recipientUid)) {
       byRecipient.set(n.recipientUid, {
         follows: { names: [], count: 0 }, likes: { names: [], count: 0 },
@@ -1574,6 +1598,9 @@ async function runProfileDigestCycle(windowStartMs) {
       if (!userSnap.exists) continue;
       const user = userSnap.data();
       if (!user.email) continue;
+      // Last-moment safety check: they may have switched it off while this
+      // cycle was already running.
+      if (user.emailPrefs && user.emailPrefs.activityDigest === false) continue;
 
       const currentViews = await currentTotalViews(uid);
       const viewDelta = Math.max(0, currentViews - (user.lastDigestViewTotal || 0));
@@ -1590,7 +1617,7 @@ async function runProfileDigestCycle(windowStartMs) {
     }
   }
 
-  return { emailsSent, recipientsChecked: byRecipient.size };
+  return { emailsSent, recipientsChecked: byRecipient.size, skippedOptOut: skippedOptOut.size };
 }
 
 // Hourly check, same guard pattern as the other scheduled jobs — a
@@ -2210,7 +2237,7 @@ const PROFILE_VOUCHER_AMOUNT = 2000;
 //   snapshot: { content, views, engagement } — lifetime totals as of weekStart
 //   lastCheckedWeek: 'YYYY-MM-DD' (Monday key of the last week actually evaluated)
 //   missedAt: 'YYYY-MM-DD' | null (Monday key of the week that first triggered "faded" — cleared on recovery)
-const FOUNDING_CREATOR_TARGET = { content: 5, views: 50, engagement: 20 };
+const FOUNDING_CREATOR_TARGET = { content: 3, views: 30, engagement: 10 };
 
 // Monday 00:00 (Lagos time) of the week containing `date` — a real Date,
 // not just the key. Everyone's tracked week snaps to this same Mon–Sun
@@ -2409,7 +2436,9 @@ app.get('/api/account', requireUser, async (req, res) => {
       email: d.email || req.userEmail,
       name: d.name || req.userName || null,
       createdAt: d.createdAt ? (d.createdAt.toDate ? d.createdAt.toDate().toISOString() : d.createdAt) : null,
-      referredByName: d.referredByName || null
+      referredByName: d.referredByName || null,
+      // Missing = ON (everyone was already getting the digest before this setting existed)
+      emailPrefs: { activityDigest: !(d.emailPrefs && d.emailPrefs.activityDigest === false) }
     });
   } catch (err) {
     console.error('/api/account error', err);
@@ -2540,6 +2569,47 @@ app.patch('/api/account', requireUser, async (req, res) => {
   } catch (err) {
     console.error('PATCH /api/account error', err);
     return res.status(500).json({ error: 'Could not update your details.' });
+  }
+});
+
+// Email preferences (currently just the twice-daily activity digest, Brevo
+// template 9). Design goals:
+//  - OFF costs nothing afterwards: it's a single field write, and the digest
+//    cycle drops opted-out users before doing ANY per-user work (no user-doc
+//    read, no view-total scan, no Brevo call, no send-delay).
+//  - ON never "catches up": turning it back on stamps a resume time and
+//    re-baselines lastDigestViewTotal to the CURRENT total, so the first digest
+//    after resuming only reports activity from that moment on (no giant
+//    "+5,000 views" headline, no backlog of things that happened while off).
+//  - Repeat/no-op requests (already in that state) do nothing and cost nothing.
+app.patch('/api/account/email-prefs', requireUser, async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const { activityDigest } = req.body || {};
+    if (typeof activityDigest !== 'boolean') return res.status(400).json({ error: 'activityDigest must be true or false' });
+
+    const ref = db.collection('users').doc(req.uid);
+    const snap = await ref.get();
+    const cur = snap.exists ? snap.data() : {};
+    const wasOn = !(cur.emailPrefs && cur.emailPrefs.activityDigest === false);
+    if (activityDigest === wasOn) return res.json({ ok: true, activityDigest });
+
+    if (!activityDigest) {
+      await ref.set({
+        emailPrefs: { activityDigest: false, activityDigestOffAt: admin.firestore.Timestamp.now() }
+      }, { merge: true });
+    } else {
+      // One-time cost, only on the off -> on transition (never while it's off).
+      const views = await currentTotalViews(req.uid);
+      await ref.set({
+        emailPrefs: { activityDigest: true, activityDigestResumedAt: admin.firestore.Timestamp.now() },
+        lastDigestViewTotal: views
+      }, { merge: true });
+    }
+    return res.json({ ok: true, activityDigest });
+  } catch (err) {
+    console.error('PATCH /api/account/email-prefs error', err);
+    return res.status(500).json({ error: 'Could not update your email preferences.' });
   }
 });
 
