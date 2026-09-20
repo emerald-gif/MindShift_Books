@@ -59,6 +59,7 @@
     '          <span class="kv-up-spin-lbl" id="kv-up-spin-lbl">Uploading…</span>' +
     '        </div>' +
     '      </div>' +
+    '      <button class="kv-up-edit" id="kv-up-edit" style="display:none"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>Crop &amp; edit photo</button>' +
     '      <button class="kv-up-change" id="kv-up-change">&#8592; Choose a different image</button>' +
     '      <div class="kv-up-err-box" id="kv-up-err"></div>' +
     '      <button class="kv-up-cta" id="kv-up-cta">Upload Image</button>' +
@@ -67,6 +68,8 @@
     '  </div>' +
     '</div>';
 
+  // Extra rule for the optional "Crop & edit photo" button.
+  STYLE += "\n.kv-up-edit{display:flex;align-items:center;justify-content:center;gap:8px;width:calc(100% - 40px);margin:12px 20px 0;padding:12px;border:1.5px solid #e0e7ff;background:#eef2ff;color:#4f46e5;font-weight:700;font-size:14px;border-radius:12px;cursor:pointer;font-family:inherit}\n.kv-up-edit:active{background:#e0e7ff}\n";
   var styleEl = document.createElement('style');
   styleEl.textContent = STYLE;
   document.head.appendChild(styleEl);
@@ -76,10 +79,12 @@
 
   window.MindshiftUploader = (function () {
     var _opts = {}, _dataUrl = null;
+    var _orig = null, _editState = null, _edited = false; // for the optional "Crop & edit photo" step
     var $ = function (id) { return document.getElementById(id); };
 
     function open(opts) {
-      _opts = opts || {}; _dataUrl = null;
+      _opts = opts || {}; _dataUrl = null; _orig = null; _editState = null; _edited = false;
+      $('kv-up-edit').style.display = 'none';
       $('kv-up-ttl').textContent = _opts.title || 'Upload Image';
       $('kv-up-err').style.display = 'none';
       $('kv-up-lib-in').value = '';
@@ -115,6 +120,8 @@
       $('kv-up-cta').disabled = true;
       try {
         _dataUrl = await window.MindshiftImage.compress(file);
+        _orig = _dataUrl; _editState = null; _edited = false;   // a new file starts a fresh edit
+        $('kv-up-edit').style.display = (_opts.editable && window.MindshiftPhotoEditor) ? 'flex' : 'none';
         $('kv-up-prev-img').src = _dataUrl;
         $('kv-up-err').style.display = 'none';
       } catch (err) {
@@ -129,6 +136,27 @@
       $('kv-up-cta').disabled = false;
     }
 
+    // Optional step: crop / rotate / filters before uploading. Always edits from the
+    // untouched original and remembers the last settings, like the create-post pen.
+    async function doEdit() {
+      if (!_orig || !window.MindshiftPhotoEditor) return;
+      var res;
+      try {
+        res = await window.MindshiftPhotoEditor.open({ src: _orig, state: _editState, aspect: _opts.aspect, title: _opts.editTitle || 'Edit photo' });
+      } catch (err) {
+        var el = $('kv-up-err');
+        el.textContent = "Couldn't open this photo for editing.";
+        el.style.display = 'block';
+        return;
+      }
+      if (!res) return;                     // cancelled
+      _editState = res.state;
+      _edited = !!res.changed;
+      _dataUrl = res.changed ? res.dataUrl : _orig;
+      $('kv-up-prev-img').src = _dataUrl;
+      $('kv-up-err').style.display = 'none';
+    }
+
     async function doUpload() {
       if (!_dataUrl) return;
       $('kv-up-cta').disabled = true;
@@ -140,7 +168,7 @@
         var json = await res.json();
         if (!res.ok) throw new Error(json.error || 'Upload failed');
         close();
-        if (_opts.onSuccess) _opts.onSuccess(json.url);
+        if (_opts.onSuccess) _opts.onSuccess(json.url, { orig: _orig, state: _editState, edited: _edited });
       } catch (err) {
         $('kv-up-upl').classList.remove('kv-on');
         $('kv-up-cta').disabled = false;
@@ -157,6 +185,7 @@
     $('kv-up-lib-in').addEventListener('change', onFile);
     $('kv-up-cam-in').addEventListener('change', onFile);
     $('kv-up-change').addEventListener('click', function () { setState('pick'); });
+    $('kv-up-edit').addEventListener('click', doEdit);
     $('kv-up-cta').addEventListener('click', doUpload);
 
     return { open: open, close: close };

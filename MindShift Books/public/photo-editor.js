@@ -9,7 +9,8 @@
 //     src,            // data: URL, blob: URL or https URL of the ORIGINAL photo
 //     state,          // optional: the `state` returned last time, to reopen with edits intact
 //     title,          // optional header text (default "Edit photo")
-//     aspects         // optional: e.g. ['16:9'] to offer only some crop shapes
+//     aspects,        // optional: e.g. ['16:9'] to offer only some crop shapes
+//     aspect          // optional: start with this crop shape, e.g. '16:9' (new edits only)
 //   });
 //   // res === null                      -> cancelled
 //   // res.changed === false             -> back to the untouched original (res.dataUrl is null)
@@ -609,10 +610,14 @@ window.MindshiftPhotoEditor = (function () {
           S.filter = st.filter || 'none';
           S.adj = { b: (st.adj && st.adj.b) || 0, c: (st.adj && st.adj.c) || 0, s: (st.adj && st.adj.s) || 0 };
         }
+        // opts.aspect (e.g. '16:9') = a suggested starting crop shape for a brand-new edit
+        if (!st && opts.aspect) {
+          for (var ai = 0; ai < ASPECTS.length; ai++) if (ASPECTS[ai].id === opts.aspect) S.aspect = opts.aspect;
+        }
         rebuildTransform();
         S.crop = st && st.crop
           ? clampCrop({ x: st.crop.x * S.tw, y: st.crop.y * S.th, w: st.crop.w * S.tw, h: st.crop.h * S.th }, S.tw, S.th)
-          : fullCrop();
+          : fitAspect(fullCrop(), currentAR());
         syncSliders();
         renderAspectChips();
         $('pe-loading').style.display = 'none';
