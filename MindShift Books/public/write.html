@@ -558,6 +558,7 @@ async function loadArticleForEdit(id){
     document.getElementById('titleInput').value = a.title||'';
     document.getElementById('briefInput').value = a.brief||'';
     document.getElementById('editorBody').innerHTML = a.body||'';
+    resetEditorHistory();
     if(a.cover) window.previewCover(a.cover);
     if(a.cat){
       const pill = document.querySelector(`#catPills .cat-pill[data-cat="${a.cat}"]`);
@@ -710,10 +711,124 @@ window.selectSubCat = function(el){
 
 /* ── RICH TEXT EDITOR ── */
 window.fmt = function(cmd, val=null){
+  if(cmd === 'undo') return undoEditor();
+  if(cmd === 'redo') return redoEditor();
   document.getElementById('editorBody').focus();
+  histFlush();                        // typing so far becomes its own undo step
   document.execCommand(cmd, false, val);
   updateToolbarState();
 };
+
+/* ── UNDO / REDO ──
+   The browser's built-in undo history is unreliable in a contenteditable: it is wiped or
+   corrupted by our own DOM edits (inline code, links, colours, inserted images, loading a
+   draft) and behaves differently on every phone keyboard. So the editor keeps its own
+   history: snapshots of the content + caret, captured after each pause in typing and after
+   every change made by a toolbar action (a MutationObserver sees them all). */
+const hist = { stack:[], idx:-1, timer:null, restoring:false, dirty:false };
+const HIST_MAX = 100;
+
+function _histEditor(){ return document.getElementById('editorBody'); }
+function _textOffset(node, offset){
+  const r = document.createRange();
+  r.selectNodeContents(_histEditor());
+  r.setEnd(node, offset);
+  return r.toString().length;
+}
+function _saveSel(){
+  const s = window.getSelection();
+  if(!s.rangeCount || !_histEditor().contains(s.anchorNode)) return null;
+  const r = s.getRangeAt(0);
+  return { a:_textOffset(r.startContainer, r.startOffset), b:_textOffset(r.endContainer, r.endOffset) };
+}
+function _locate(off){
+  const ed = _histEditor();
+  const w = document.createTreeWalker(ed, NodeFilter.SHOW_TEXT);
+  let n, left = off, last = null;
+  while((n = w.nextNode())){
+    last = n;
+    if(left <= n.nodeValue.length) return { node:n, offset:left };
+    left -= n.nodeValue.length;
+  }
+  return last ? { node:last, offset:last.nodeValue.length } : { node:ed, offset:0 };
+}
+function _restoreSel(sel){
+  if(!sel) return;
+  try{
+    const a = _locate(sel.a), b = _locate(sel.b);
+    const r = document.createRange();
+    r.setStart(a.node, a.offset); r.setEnd(b.node, b.offset);
+    const s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+  }catch{}
+}
+function _histButtons(){
+  const u = document.querySelector('#toolbar [data-cmd="undo"]');
+  const r = document.querySelector('#toolbar [data-cmd="redo"]');
+  if(u) u.disabled = !(hist.idx > 0 || hist.dirty);
+  if(r) r.disabled = !(hist.idx < hist.stack.length - 1);
+}
+function histPush(){
+  if(hist.restoring) return;
+  clearTimeout(hist.timer);
+  const html = _histEditor().innerHTML;
+  const cur = hist.stack[hist.idx];
+  hist.dirty = false;
+  if(cur && cur.html === html){ cur.sel = _saveSel() || cur.sel; _histButtons(); return; }
+  hist.stack = hist.stack.slice(0, hist.idx + 1);
+  hist.stack.push({ html, sel:_saveSel() });
+  if(hist.stack.length > HIST_MAX) hist.stack.shift();
+  hist.idx = hist.stack.length - 1;
+  _histButtons();
+}
+function histFlush(){ if(hist.dirty || hist.timer) histPush(); }
+window.resetEditorHistory = function(){
+  clearTimeout(hist.timer); hist.timer = null; hist.dirty = false;
+  hist.stack = [{ html:_histEditor().innerHTML, sel:null }];
+  hist.idx = 0;
+  _histButtons();
+};
+function _histApply(snap){
+  const ed = _histEditor();
+  hist.restoring = true;
+  ed.innerHTML = snap.html;
+  histObserver.takeRecords();
+  ed.focus();
+  _restoreSel(snap.sel);
+  ed.dispatchEvent(new Event('input', { bubbles:true }));   // word count + autosave
+  hist.restoring = false;
+  hist.dirty = false;
+  updateToolbarState();
+  _histButtons();
+}
+window.undoEditor = function(){
+  histFlush();
+  if(hist.idx > 0){ hist.idx--; _histApply(hist.stack[hist.idx]); }
+};
+window.redoEditor = function(){
+  histFlush();
+  if(hist.idx < hist.stack.length - 1){ hist.idx++; _histApply(hist.stack[hist.idx]); }
+};
+const histObserver = new MutationObserver(() => {
+  if(hist.restoring) return;
+  hist.dirty = true;
+  clearTimeout(hist.timer);
+  hist.timer = setTimeout(histPush, 450);   // one step per pause in typing
+  _histButtons();
+});
+histObserver.observe(_histEditor(), { childList:true, subtree:true, characterData:true, attributes:true });
+// Ctrl/Cmd+Z, Ctrl+Y, the phone keyboard's undo/redo and shake-to-undo all arrive as these:
+_histEditor().addEventListener('beforeinput', e => {
+  if(e.inputType === 'historyUndo'){ e.preventDefault(); undoEditor(); }
+  else if(e.inputType === 'historyRedo'){ e.preventDefault(); redoEditor(); }
+});
+// Pressing any toolbar button first closes off whatever was being typed, so the action is its own step.
+document.getElementById('toolbar').addEventListener('pointerdown', e => {
+  if(e.target.closest('.tb-btn')) histFlush();
+}, true);
+// Keep the keyboard open / caret in place when tapping undo or redo.
+document.querySelectorAll('#toolbar [data-cmd="undo"], #toolbar [data-cmd="redo"]').forEach(b =>
+  b.addEventListener('mousedown', e => e.preventDefault()));
+window.resetEditorHistory();
 
 /* ── INLINE CODE (no native execCommand — wrap selection manually) ── */
 window.toggleInlineCode = function(){
@@ -1165,6 +1280,7 @@ function loadDraft(){
     if(d.title) document.getElementById('titleInput').value = d.title;
     if(d.brief) document.getElementById('briefInput').value = d.brief;
     if(d.body)  document.getElementById('editorBody').innerHTML = d.body;
+    resetEditorHistory();
     if(d.cat){
       const pill = document.querySelector(`#catPills .cat-pill[data-cat="${d.cat}"]`);
       if(pill){ pill.classList.add('sel'); selectedCat = d.cat; renderSubCatPills(d.cat); }
@@ -1259,6 +1375,7 @@ function clearForm(){
   document.getElementById('titleInput').value = '';
   document.getElementById('briefInput').value = '';
   document.getElementById('editorBody').innerHTML = '';
+  resetEditorHistory();
   document.getElementById('coverUrl').value = '';
   document.getElementById('coverPreview').style.display = 'none';
   document.getElementById('coverPlaceholder').style.display = 'flex';

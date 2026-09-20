@@ -53,7 +53,13 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   color:var(--txt);min-height:120px;background:transparent}
 .post-textarea::placeholder{color:var(--mute)}
 
-.char-count{text-align:right;font-size:11.5px;color:var(--mute);margin-top:4px}
+.ta-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:4px}
+.ta-hist{display:flex;gap:4px}
+.ta-btn{width:34px;height:34px;border:none;background:none;border-radius:10px;color:var(--sub);display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.ta-btn:active{background:#eef2ff;color:var(--p)}
+.ta-btn:disabled{opacity:.3;cursor:default}
+.ta-btn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.char-count{text-align:right;font-size:11.5px;color:var(--mute)}
 .char-count.over{color:var(--red);font-weight:700}
 
 /* ── PHOTO PREVIEW — mirrors how photos look in the feed (single = big, several = swipeable strip with a 1/N counter) ── */
@@ -128,7 +134,17 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
       </div>
     </div>
     <textarea class="post-textarea" id="postText" placeholder="What's on your mind?" oninput="onTextInput()" maxlength="2000"></textarea>
-    <div class="char-count" id="charCount">0 / 2000</div>
+    <div class="ta-row">
+      <div class="ta-hist">
+        <button type="button" class="ta-btn" id="undoBtn" aria-label="Undo" title="Undo" onmousedown="event.preventDefault()" onclick="undoText()" disabled>
+          <svg viewBox="0 0 24 24"><polyline points="7 6 3 10 7 14"/><path d="M3 10h10a5 5 0 0 1 5 5v1a5 5 0 0 1-5 5H9"/></svg>
+        </button>
+        <button type="button" class="ta-btn" id="redoBtn" aria-label="Redo" title="Redo" onmousedown="event.preventDefault()" onclick="redoText()" disabled>
+          <svg viewBox="0 0 24 24"><polyline points="17 6 21 10 17 14"/><path d="M21 10H11a5 5 0 0 0-5 5v1a5 5 0 0 0 5 5h4"/></svg>
+        </button>
+      </div>
+      <div class="char-count" id="charCount">0 / 2000</div>
+    </div>
 
     <div class="pv" id="imgGrid" style="display:none"></div>
     <div class="video-tile" id="videoTile" style="display:none"></div>
@@ -270,6 +286,7 @@ async function loadPostForEdit(id){
     document.getElementById('hdrTitle').textContent = 'Edit Post';
     document.getElementById('postBtn').textContent = 'Save';
     document.getElementById('postText').value = p.text||'';
+    resetTextHistory();
     images = (p.images||[]).map(url=>({ url, uploading:false }));
     if(p.videoUrl){
       video = { url: p.videoUrl, thumbnailUrl: p.thumbnailUrl||'', duration: p.duration||0, publicId: p.cloudinaryPublicId||'', uploading:false };
@@ -288,6 +305,61 @@ async function loadPostForEdit(id){
 // Coming back to a long-idle tab / network back: retry a failed edit-load automatically.
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && editId && _editRetryable && !_editLoaded && currentUser) loadPostForEdit(editId); });
 window.addEventListener('online', ()=>{ if(editId && _editRetryable && !_editLoaded && currentUser) loadPostForEdit(editId); });
+
+/* ── UNDO / REDO (text) ──
+   The browser's own undo is hidden on phones and gets wiped whenever the text is set from
+   code (restoring a draft), so the composer keeps its own history: a snapshot of the text +
+   caret after every pause in typing. */
+const th = { stack:[], idx:-1, timer:null, restoring:false };
+function _ta(){ return document.getElementById('postText'); }
+function _thButtons(){
+  const cur = th.stack[th.idx];
+  const dirty = !!cur && _ta().value !== cur.v;
+  document.getElementById('undoBtn').disabled = !(th.idx > 0 || dirty);
+  document.getElementById('redoBtn').disabled = !(th.idx < th.stack.length - 1);
+}
+function thPush(){
+  if(th.restoring) return;
+  clearTimeout(th.timer); th.timer = null;
+  const t = _ta(), cur = th.stack[th.idx];
+  if(cur && cur.v === t.value){ cur.s = t.selectionStart; cur.e = t.selectionEnd; _thButtons(); return; }
+  th.stack = th.stack.slice(0, th.idx + 1);
+  th.stack.push({ v:t.value, s:t.selectionStart, e:t.selectionEnd });
+  if(th.stack.length > 200) th.stack.shift();
+  th.idx = th.stack.length - 1;
+  _thButtons();
+}
+function resetTextHistory(){
+  clearTimeout(th.timer); th.timer = null;
+  const t = _ta();
+  th.stack = [{ v:t.value, s:t.selectionStart, e:t.selectionEnd }];
+  th.idx = 0;
+  _thButtons();
+}
+function _thApply(s){
+  const t = _ta();
+  th.restoring = true;
+  t.value = s.v;
+  t.focus();
+  try{ t.setSelectionRange(s.s, s.e); }catch{}
+  t.dispatchEvent(new Event('input', { bubbles:true }));   // counter, Post button, autosave
+  th.restoring = false;
+  _thButtons();
+}
+window.undoText = function(){ thPush(); if(th.idx > 0){ th.idx--; _thApply(th.stack[th.idx]); } };
+window.redoText = function(){ thPush(); if(th.idx < th.stack.length - 1){ th.idx++; _thApply(th.stack[th.idx]); } };
+_ta().addEventListener('input', () => {
+  if(th.restoring) return;
+  clearTimeout(th.timer);
+  th.timer = setTimeout(thPush, 450);   // one step per pause in typing
+  _thButtons();
+});
+// Ctrl/Cmd+Z, the phone keyboard's undo/redo and shake-to-undo:
+_ta().addEventListener('beforeinput', e => {
+  if(e.inputType === 'historyUndo'){ e.preventDefault(); undoText(); }
+  else if(e.inputType === 'historyRedo'){ e.preventDefault(); redoText(); }
+});
+resetTextHistory();
 
 /* ── TEXT ── */
 window.onTextInput = function(){
@@ -678,6 +750,7 @@ function initDraft(){
     // Ignore a draft that belongs to a different account on this device.
     if(d && (!d.uid || d.uid === currentUser.uid) && ((d.text || '').trim() || (d.images || []).length || d.video)){
       document.getElementById('postText').value = d.text || '';
+      resetTextHistory();
       if(d.video && d.video.url){
         // one video OR photos, never both
         video = { url: d.video.url, thumbnailUrl: d.video.thumbnailUrl || '', duration: d.video.duration || 0, publicId: d.video.publicId || '', uploading: false };

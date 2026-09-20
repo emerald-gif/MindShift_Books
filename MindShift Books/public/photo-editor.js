@@ -179,7 +179,12 @@ window.MindshiftPhotoEditor = (function () {
     '#kv-pe{position:fixed;inset:0;z-index:10000;background:#0b0b12;color:#fff;display:none;flex-direction:column;font-family:Inter,system-ui,-apple-system,sans-serif;-webkit-user-select:none;user-select:none;touch-action:manipulation}' +
     '#kv-pe.on{display:flex}' +
     '#kv-pe .pe-hdr{display:flex;align-items:center;justify-content:space-between;padding:calc(env(safe-area-inset-top,0px) + 10px) 12px 10px;flex-shrink:0}' +
-    '#kv-pe .pe-title{font-size:15px;font-weight:700}' +
+    '#kv-pe .pe-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}' +
+    '#kv-pe .pe-hist{display:flex;gap:8px}' +
+    '#kv-pe .pe-ibtn{width:40px;height:40px;border-radius:50%;border:none;background:#1c1c2e;color:#e2e8f0;display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent}' +
+    '#kv-pe .pe-ibtn:active{background:#2b2b45}' +
+    '#kv-pe .pe-ibtn:disabled{opacity:.3;cursor:default}' +
+    '#kv-pe .pe-ibtn svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}' +
     '#kv-pe .pe-hbtn{background:none;border:none;color:#cbd5e1;font-weight:600;font-size:15px;font-family:inherit;padding:8px 10px;cursor:pointer;border-radius:10px}' +
     '#kv-pe .pe-done{background:linear-gradient(135deg,#4f46e5,#06b6d4);color:#fff;padding:8px 18px;border-radius:99px;font-weight:700}' +
     '#kv-pe .pe-done:disabled{opacity:.45}' +
@@ -225,6 +230,8 @@ window.MindshiftPhotoEditor = (function () {
   var ICON = {
     rot:  '<svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7"/><polyline points="21 3 21 9 15 9"/></svg>',
     flip: '<svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M8 7L3 17h5z"/><path d="M16 7l5 10h-5z"/></svg>',
+    undo: '<svg viewBox="0 0 24 24"><polyline points="7 6 3 10 7 14"/><path d="M3 10h10a5 5 0 0 1 5 5v1a5 5 0 0 1-5 5H9"/></svg>',
+    redo: '<svg viewBox="0 0 24 24"><polyline points="17 6 21 10 17 14"/><path d="M21 10H11a5 5 0 0 0-5 5v1a5 5 0 0 0 5 5h4"/></svg>',
     crop: '<svg viewBox="0 0 24 24"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg>',
     fx:   '<svg viewBox="0 0 24 24"><circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/></svg>',
     adj:  '<svg viewBox="0 0 24 24"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="9" cy="7" r="2.4" fill="#14141f"/><circle cx="15" cy="17" r="2.4" fill="#14141f"/></svg>'
@@ -249,7 +256,11 @@ window.MindshiftPhotoEditor = (function () {
     el.innerHTML =
       '<div class="pe-hdr">' +
         '<button type="button" class="pe-hbtn" id="pe-cancel">Cancel</button>' +
-        '<div class="pe-title" id="pe-title">Edit photo</div>' +
+        '<div class="pe-title pe-sr" id="pe-title">Edit photo</div>' +
+        '<div class="pe-hist" role="group" aria-label="History">' +
+          '<button type="button" class="pe-ibtn" id="pe-undo" aria-label="Undo" title="Undo" disabled>' + ICON.undo + '</button>' +
+          '<button type="button" class="pe-ibtn" id="pe-redo" aria-label="Redo" title="Redo" disabled>' + ICON.redo + '</button>' +
+        '</div>' +
         '<button type="button" class="pe-hbtn pe-done" id="pe-done" disabled>Done</button>' +
       '</div>' +
       '<div class="pe-stage" id="pe-stage">' +
@@ -291,14 +302,17 @@ window.MindshiftPhotoEditor = (function () {
 
     $('pe-cancel').onclick = function () { cancel(); };
     $('pe-done').onclick = function () { done(); };
-    $('pe-rot').onclick = function () { if (S) { S.rot = (S.rot + 1) % 4; transformChanged(true); } };
-    $('pe-flip').onclick = function () { if (S) { S.flip = !S.flip; transformChanged(true); } };
+    $('pe-rot').onclick = function () { if (S) { S.rot = (S.rot + 1) % 4; transformChanged(true); pushHistory(); } };
+    $('pe-flip').onclick = function () { if (S) { S.flip = !S.flip; transformChanged(true); pushHistory(); } };
     $('pe-reset').onclick = function () {
       if (!S) return;
       S.adj = { b: 0, c: 0, s: 0 };
       syncSliders();
       lookChanged();
+      pushHistory();
     };
+    $('pe-undo').onclick = function () { undo(); };
+    $('pe-redo').onclick = function () { redo(); };
     Array.prototype.forEach.call(el.querySelectorAll('.pe-tab'), function (b) {
       b.onclick = function () { setTab(b.getAttribute('data-tab')); };
     });
@@ -309,6 +323,8 @@ window.MindshiftPhotoEditor = (function () {
         inp.nextElementSibling.textContent = inp.value;
         lookChanged();
       });
+      // 'change' fires when the finger lifts — one undo step per slider drag, not per pixel
+      inp.addEventListener('change', function () { pushHistory(); });
     });
 
     // crop dragging (one pointer at a time)
@@ -329,12 +345,18 @@ window.MindshiftPhotoEditor = (function () {
       S.crop = dragCrop(drag.start, drag.hx, drag.hy, (e.clientX - drag.x) / k, (e.clientY - drag.y) / k, ar, S.tw, S.th);
       positionBox();
     });
-    function endDrag(e) { if (drag && e.pointerId === drag.id) drag = null; }
+    function endDrag(e) { if (drag && e.pointerId === drag.id) { drag = null; pushHistory(); } }
     cropEl.addEventListener('pointerup', endDrag);
     cropEl.addEventListener('pointercancel', endDrag);
 
     window.addEventListener('resize', function () { if (S) layoutStage(); });
-    document.addEventListener('keydown', function (e) { if (S && e.key === 'Escape') cancel(); });
+    document.addEventListener('keydown', function (e) {
+      if (!S) return;
+      if (e.key === 'Escape') { cancel(); return; }
+      var mod = e.ctrlKey || e.metaKey, k = (e.key || '').toLowerCase();
+      if (mod && k === 'z') { e.preventDefault(); if (e.shiftKey) redo(); else undo(); }
+      else if (mod && k === 'y') { e.preventDefault(); redo(); }
+    });
   }
 
   /* ───────────────────────── session logic ───────────────────────── */
@@ -470,6 +492,7 @@ window.MindshiftPhotoEditor = (function () {
         if (ar) S.crop = clampCrop(fitAspect(S.crop, ar), S.tw, S.th);
         renderAspectChips();
         positionBox();
+        pushHistory();
       };
       host.appendChild(b);
     });
@@ -495,7 +518,7 @@ window.MindshiftPhotoEditor = (function () {
       b.type = 'button'; b.className = 'pe-f'; b.setAttribute('data-f', p.id);
       b.appendChild(c);
       var lbl = document.createElement('span'); lbl.textContent = p.name; b.appendChild(lbl);
-      b.onclick = function () { S.filter = p.id; markFilter(); lookChanged(); };
+      b.onclick = function () { S.filter = p.id; markFilter(); lookChanged(); pushHistory(); };
       host.appendChild(b);
     });
     S.thumbsDirty = false;
@@ -522,6 +545,54 @@ window.MindshiftPhotoEditor = (function () {
     if (tab === 'filters') buildThumbs();
     layoutStage();
   }
+
+  /* ───────────────────────── undo / redo ─────────────────────────
+     One step per deliberate action: a rotate, a flip, a crop-shape chip, a finished crop
+     drag, a filter tap, a finished slider drag, "Reset adjustments". Each step is the
+     whole edit state (serialize()), so undoing always lands on an exact earlier look. */
+  var HIST_MAX = 60;
+
+  function histKey(st) {
+    var c = st.crop;
+    return JSON.stringify([st.rot, st.flip, st.aspect, st.filter, st.adj.b, st.adj.c, st.adj.s,
+      Math.round(c.x * 1e4), Math.round(c.y * 1e4), Math.round(c.w * 1e4), Math.round(c.h * 1e4)]);
+  }
+
+  function updateHistButtons() {
+    var u = $('pe-undo'), r = $('pe-redo');
+    if (!u || !r) return;
+    u.disabled = !S || !S.hist || S.hi <= 0;
+    r.disabled = !S || !S.hist || S.hi >= S.hist.length - 1;
+  }
+
+  function pushHistory() {
+    if (!S || !S.hist) return;
+    var st = serialize();
+    if (S.hist[S.hi] && histKey(S.hist[S.hi]) === histKey(st)) return;   // nothing actually changed
+    S.hist = S.hist.slice(0, S.hi + 1);
+    S.hist.push(st);
+    if (S.hist.length > HIST_MAX) S.hist.shift();
+    S.hi = S.hist.length - 1;
+    updateHistButtons();
+  }
+
+  function applySnap(snap) {
+    var needT = snap.rot !== S.rot || snap.flip !== S.flip;
+    S.rot = snap.rot; S.flip = snap.flip; S.aspect = snap.aspect; S.filter = snap.filter;
+    S.adj = { b: snap.adj.b, c: snap.adj.c, s: snap.adj.s };
+    if (needT) rebuildTransform();
+    S.crop = clampCrop({ x: snap.crop.x * S.tw, y: snap.crop.y * S.th, w: snap.crop.w * S.tw, h: snap.crop.h * S.th }, S.tw, S.th);
+    S.lookDirty = true;
+    syncSliders();
+    renderAspectChips();
+    if (S.tab === 'filters') { if (needT) buildThumbs(); else markFilter(); }
+    else if (needT) S.thumbsDirty = true;
+    layoutStage();
+    updateHistButtons();
+  }
+
+  function undo() { if (S && S.hist && S.hi > 0) { S.hi--; applySnap(S.hist[S.hi]); } }
+  function redo() { if (S && S.hist && S.hi < S.hist.length - 1) { S.hi++; applySnap(S.hist[S.hi]); } }
 
   /* ───────────────────────── finishing ───────────────────────── */
 
@@ -590,6 +661,7 @@ window.MindshiftPhotoEditor = (function () {
       $('pe-title').textContent = opts.title || 'Edit photo';
       $('pe-loading').style.display = 'flex';
       $('pe-done').disabled = true;
+      $('pe-undo').disabled = true; $('pe-redo').disabled = true;
       $('pe-filters').innerHTML = '';
       el.className = 'on tab-crop';
 
@@ -624,6 +696,8 @@ window.MindshiftPhotoEditor = (function () {
         $('pe-done').disabled = false;
         requestAnimationFrame(function () { if (S) layoutStage(); });
         S.initial = JSON.stringify(serialize()); // baseline for the "Discard your changes?" prompt
+        S.hist = [serialize()]; S.hi = 0;        // baseline for undo/redo
+        updateHistButtons();
       }).catch(function (err) {
         S = null; el.className = ''; document.body.style.overflow = S_prevOverflow;
         reject(err);
