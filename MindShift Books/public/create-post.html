@@ -56,23 +56,25 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .char-count{text-align:right;font-size:11.5px;color:var(--mute);margin-top:4px}
 .char-count.over{color:var(--red);font-weight:700}
 
-/* ── IMAGE GRID ── */
-.img-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
-.img-tile{position:relative;aspect-ratio:1;border-radius:12px;overflow:hidden;background:#f1f5f9}
-.img-tile img{width:100%;height:100%;object-fit:cover;display:block}
-.img-tile .rm-btn{position:absolute;top:5px;right:5px;width:22px;height:22px;border-radius:50%;
-  background:rgba(15,10,30,.65);border:none;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
-.img-tile .rm-btn svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round}
-.img-tile.uploading::after{content:'';position:absolute;inset:0;background:rgba(255,255,255,.6);
-  border:2px solid #e0e7ff;border-top-color:#4f46e5;border-radius:50%;width:22px;height:22px;margin:auto;
-  top:0;bottom:0;left:0;right:0;animation:spin .72s linear infinite}
+/* ── PHOTO PREVIEW — mirrors how photos look in the feed (single = big, several = swipeable strip with a 1/N counter) ── */
+.pv{margin-top:14px}
+.pv-single{display:flex;justify-content:center}
+.pv-box{position:relative;width:max-content;max-width:100%;border-radius:14px;overflow:hidden;background:#f1f5f9}
+.pv-box img{max-width:100%;max-height:340px;width:auto;height:auto;object-fit:contain;display:block}
+.pv-carousel{position:relative}
+.pv-track{display:flex;gap:4px;overflow-x:auto;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;scrollbar-width:none;height:340px;max-height:60vh}
+.pv-track::-webkit-scrollbar{display:none}
+.pv-slide{position:relative;flex:0 0 auto;height:100%;scroll-snap-align:start;border-radius:14px;overflow:hidden;background:#f1f5f9}
+.pv-slide img{width:100%;height:100%;object-fit:contain;display:block}
+.pv-count{position:absolute;top:8px;left:8px;background:rgba(0,0,0,.55);color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;pointer-events:none;z-index:3}
+.pv-actions{position:absolute;top:8px;right:8px;display:flex;gap:8px;z-index:3}
+.pv-btn{width:34px;height:34px;border-radius:50%;background:rgba(15,10,30,.68);border:none;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.pv-btn:active{background:rgba(15,10,30,.9)}
+.pv-btn svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.pv-box.uploading::before,.pv-slide.uploading::before{content:'';position:absolute;inset:0;background:rgba(255,255,255,.55);z-index:1}
+.pv-box.uploading::after,.pv-slide.uploading::after{content:'';position:absolute;top:50%;left:50%;width:26px;height:26px;margin:-13px 0 0 -13px;
+  border:3px solid #e0e7ff;border-top-color:#4f46e5;border-radius:50%;animation:spin .72s linear infinite;z-index:2}
 @keyframes spin{to{transform:rotate(360deg)}}
-.add-img-tile{aspect-ratio:1;border-radius:12px;border:2px dashed var(--border);background:#fafbff;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;
-  color:var(--mute);transition:all .2s}
-.add-img-tile:hover{border-color:var(--p);color:var(--p);background:#eef2ff}
-.add-img-tile svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.add-img-tile span{font-size:10.5px;font-weight:700}
 
 .img-hint{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:700;color:var(--p);
   margin-top:12px;padding:10px 14px;border-radius:99px;background:#eef2ff;border:none;cursor:pointer;width:fit-content}
@@ -128,7 +130,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
     <textarea class="post-textarea" id="postText" placeholder="What's on your mind?" oninput="onTextInput()" maxlength="2000"></textarea>
     <div class="char-count" id="charCount">0 / 2000</div>
 
-    <div class="img-grid" id="imgGrid" style="display:none"></div>
+    <div class="pv" id="imgGrid" style="display:none"></div>
     <div class="video-tile" id="videoTile" style="display:none"></div>
     <div class="composer-media-hints" id="composerMediaHints">
       <button type="button" class="img-hint" id="imgHint" onclick="openImagePicker()">
@@ -177,6 +179,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 <div class="toast" id="toast"></div>
 
 <script src="/image-compress.js"></script>
+<script src="/photo-editor.js"></script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
@@ -302,39 +305,60 @@ function updatePostBtn(){
   scheduleAutosave(); // text, photo and video changes all pass through here
 }
 
-/* ── IMAGES ── */
+/* ── IMAGES ──
+   Each item: { url, uploading, preview, orig, baseUrl, editState }
+     url       = hosted URL that gets saved with the post
+     preview   = local data URL shown instantly while/after uploading
+     orig      = the untouched compressed original (fresh picks) — edits always start from this
+     baseUrl   = the hosted URL of the untouched original, so "Original" filter + no crop
+                 simply switches back to it with no re-upload
+     editState = the editor's last settings, so reopening the pen keeps your edits */
+const ICON_PEN = '<svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
+const ICON_X   = '<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+
+async function uploadDataUrl(dataUrl){
+  const token = await currentUser.getIdToken();
+  const res = await fetch('/api/upload-image', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+    body: JSON.stringify({dataUrl})
+  });
+  const json = await res.json();
+  if(!res.ok) throw new Error(json.error || 'Upload failed');
+  return json.url;
+}
+
 document.getElementById('fileInput').addEventListener('change', async (e) => {
   const files = Array.from(e.target.files || []).slice(0, MAX_IMAGES - images.length);
   e.target.value = '';
+  const uploads = [];
   for(const file of files){
     if(images.length >= MAX_IMAGES) break;
-    const idx = images.length;
-    images.push({ url:'', uploading:true });
+    const item = { url:'', uploading:true };   // referenced by object, not index, so removing photos mid-upload can't mix them up
+    images.push(item);
     renderImages();
     try{
       // Resize/re-encode client-side (see image-compress.js) instead of a
       // hard 5MB reject — also normalizes odd source MIME types (e.g.
       // images saved out of ChatGPT) into a clean image/jpeg.
       const dataUrl = await window.MindshiftImage.compress(file);
-      // show local preview immediately while the real upload happens
-      images[idx].preview = dataUrl;
+      item.preview = dataUrl;   // show it immediately while the real upload happens
+      item.orig = dataUrl;
       renderImages();
-      const token = await currentUser.getIdToken();
-      const res = await fetch('/api/upload-image', {
-        method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
-        body: JSON.stringify({dataUrl})
-      });
-      const json = await res.json();
-      if(!res.ok) throw new Error(json.error || 'Upload failed');
-      images[idx].url = json.url;
-      images[idx].uploading = false;
+      // Upload runs in the background so the next photo can start compressing right away.
+      uploads.push(uploadDataUrl(dataUrl).then(url => {
+        item.url = url; item.baseUrl = url; item.uploading = false;
+      }).catch(() => {
+        showToast('Image upload failed — removed');
+        const k = images.indexOf(item); if(k > -1) images.splice(k,1);
+      }).then(renderImages));
     }catch(err){
       showToast('Image upload failed — removed');
-      images.splice(idx,1);
+      const k = images.indexOf(item); if(k > -1) images.splice(k,1);
+      renderImages();
     }
-    renderImages();
   }
+  await Promise.all(uploads);
 });
 
 window.openImagePicker = function(){
@@ -348,32 +372,114 @@ window.removeImage = function(idx){
   renderImages();
 };
 
+// The pen: opens the photo editor on the ORIGINAL, keeps the last settings, and
+// only re-uploads if something actually changed.
+window.editImage = async function(idx){
+  const item = images[idx];
+  if(!item || item.uploading) return;
+  if(!window.MindshiftPhotoEditor){ showToast('Photo editor is not available right now'); return; }
+  if(!item.baseUrl) item.baseUrl = item.url;   // photos loaded from an existing post/draft: their hosted copy is the original
+  let res;
+  try{
+    res = await window.MindshiftPhotoEditor.open({ src: item.orig || item.baseUrl, state: item.editState });
+  }catch(err){
+    showToast("Couldn't open this photo for editing");
+    return;
+  }
+  if(!res) return;                    // cancelled
+  item.editState = res.state;
+  if(!res.changed){                   // back to the untouched original — no upload needed
+    if(item.url !== item.baseUrl){ item.url = item.baseUrl; item.preview = item.orig || ''; }
+    renderImages();
+    return;
+  }
+  const prev = { url:item.url, preview:item.preview };
+  item.preview = res.dataUrl;         // instant visual, real upload follows
+  item.uploading = true;
+  renderImages();
+  try{
+    item.url = await uploadDataUrl(res.dataUrl);
+  }catch(err){
+    item.url = prev.url; item.preview = prev.preview;
+    showToast("Couldn't save your edit — try again");
+  }
+  item.uploading = false;
+  renderImages();
+};
+
+function pvButtons(i, item){
+  return `<div class="pv-actions">` +
+    (item.uploading ? '' : `<button type="button" class="pv-btn" aria-label="Edit photo" onclick="editImage(${i})">${ICON_PEN}</button>`) +
+    `<button type="button" class="pv-btn" aria-label="Remove photo" onclick="removeImage(${i})">${ICON_X}</button>` +
+  `</div>`;
+}
+
+// Same sizing rules as the feed's carousel (slides keep their own shape; nothing is cropped).
+function layoutPvTrack(){
+  const track = document.getElementById('pvTrack');
+  if(!track) return;
+  track.style.height = '';
+  const baseH = track.clientHeight, maxAllowed = track.clientWidth * 0.82;
+  let finalH = 0;
+  images.forEach(it => {
+    const a = it.aspect || 1;
+    const h = (baseH * a) > maxAllowed ? (maxAllowed / a) : baseH;
+    if(h > finalH) finalH = h;
+  });
+  if(finalH > 0 && finalH < baseH) track.style.height = finalH + 'px';
+  Array.prototype.forEach.call(track.children, (slide, i) => {
+    const a = (images[i] && images[i].aspect) || 1;
+    const w = Math.min(finalH * a, maxAllowed);
+    slide.style.width = w + 'px'; slide.style.flexBasis = w + 'px'; slide.style.height = finalH + 'px'; slide.style.alignSelf = 'flex-start';
+  });
+}
+window.pvFit = function(img, i){
+  const it = images[i]; if(!it || !img.naturalWidth || !img.naturalHeight) return;
+  const a = img.naturalWidth / img.naturalHeight;
+  if(it.aspect !== a){ it.aspect = a; layoutPvTrack(); }
+};
+window.onPvScroll = function(){
+  const track = document.getElementById('pvTrack'), count = document.getElementById('pvCount');
+  if(!track || !count) return;
+  let idx = 0; const mid = track.scrollLeft + track.clientWidth/2;
+  Array.prototype.forEach.call(track.children, (slide,i)=>{ if(slide.offsetLeft <= mid) idx = i; });
+  count.textContent = `${idx+1}/${track.children.length}`;
+};
+
 function renderImages(){
   const grid = document.getElementById('imgGrid');
   const hint = document.getElementById('imgHint');
   const videoHint = document.getElementById('videoHint');
   if(!images.length){ grid.style.display='none'; grid.innerHTML=''; videoHint.style.display = video ? 'none' : ''; hint.style.display = video ? 'none' : 'flex'; updatePostBtn(); return; }
-  grid.style.display = 'grid';
+  grid.style.display = 'block';
   hint.style.display = 'none';
   videoHint.style.display = 'none'; // one video OR photos, not both
-  let html = images.map((img,i)=>`
-    <div class="img-tile${img.uploading?' uploading':''}">
-      <img src="${img.preview||img.url||''}" alt="">
-      <button class="rm-btn" onclick="removeImage(${i})">
-        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
-  `).join('');
+  const prevTrack = document.getElementById('pvTrack');
+  const prevScroll = prevTrack ? prevTrack.scrollLeft : 0;   // keep your place in the strip when a photo finishes uploading
+  const src = it => it.preview || it.url || '';
+  let html;
+  if(images.length === 1){
+    const it = images[0];
+    html = `<div class="pv-single"><div class="pv-box${it.uploading?' uploading':''}"><img src="${src(it)}" alt="">${pvButtons(0,it)}</div></div>`;
+  }else{
+    html = `<div class="pv-carousel"><div class="pv-track" id="pvTrack" onscroll="onPvScroll()">` +
+      images.map((it,i)=>`<div class="pv-slide${it.uploading?' uploading':''}"><img src="${src(it)}" alt="" onload="pvFit(this,${i})">${pvButtons(i,it)}</div>`).join('') +
+      `</div><div class="pv-count" id="pvCount">1/${images.length}</div></div>`;
+  }
   if(images.length < MAX_IMAGES){
-    html += `<div class="add-img-tile" onclick="openImagePicker()">
+    html += `<button type="button" class="img-hint" onclick="openImagePicker()">
       <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      <span>Add</span>
-    </div>`;
+      Add photo (${images.length}/${MAX_IMAGES})</button>`;
   }
   grid.innerHTML = html;
+  if(images.length > 1){
+    layoutPvTrack();
+    const t = document.getElementById('pvTrack');
+    if(t && prevScroll){ t.scrollLeft = prevScroll; onPvScroll(); }
+  }
   updatePostBtn();
 }
-// Show the "Add" tile from the start so a bare textarea isn't the only entry point.
+// Show the "Add" hint from the start so a bare textarea isn't the only entry point.
 renderImages();
 
 /* ── VIDEO ── */
