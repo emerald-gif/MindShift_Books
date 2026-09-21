@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Badge email test · MindShift admin</title>
+<style>
+  body{margin:0;background:#f8fafc;font-family:'Inter',Arial,sans-serif;color:#0f172a}
+  .wrap{max-width:480px;margin:0 auto;padding:24px 16px}
+  h1{font-size:20px;margin:0 0 6px}
+  p{font-size:14px;line-height:1.6;color:#64748b;margin:0 0 18px}
+  label{display:block;font-size:13px;font-weight:700;margin:14px 0 6px}
+  input,select{width:100%;box-sizing:border-box;padding:12px;border:1px solid #cbd5e1;border-radius:10px;font-size:15px;background:#fff}
+  button{width:100%;margin-top:14px;padding:13px;border:0;border-radius:10px;font-size:15px;font-weight:700;color:#fff;background:linear-gradient(90deg,#4f46e5,#06b6d4)}
+  button.alt{background:#0f172a}
+  button:disabled{opacity:.5}
+  #log{margin-top:18px;font-size:13px;line-height:1.7;white-space:pre-wrap}
+  .ok{color:#059669}.bad{color:#dc2626}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Badge email test</h1>
+  <p>Sends a sample of a template #10 email to any inbox. Uses sample numbers, not a real user's. You must be logged in to the admin dashboard in this browser.</p>
+
+  <label for="email">Send to</label>
+  <input id="email" type="email" placeholder="you@example.com" autocomplete="email">
+
+  <label for="stage">Email</label>
+  <select id="stage">
+    <option value="live">Badge is live (launch)</option>
+    <option value="newWeek">New week (Monday)</option>
+    <option value="faded">Badge went inactive (Monday)</option>
+    <option value="welcomeBack">Welcome back (Monday)</option>
+    <option value="removed">Badge removed (Monday)</option>
+    <option value="atRisk">At risk (Friday)</option>
+    <option value="finalWarning">Final warning (Friday)</option>
+  </select>
+
+  <button id="one">Send this email</button>
+  <button id="all" class="alt">Send all 7</button>
+  <div id="log"></div>
+
+</div>
+<script>
+const STAGES = ['live','newWeek','faded','welcomeBack','removed','atRisk','finalWarning'];
+const log = document.getElementById('log');
+const say = (t, cls) => { const d = document.createElement('div'); d.className = cls || ''; d.textContent = t; log.appendChild(d); };
+async function send(stage, email) {
+  try {
+    const r = await fetch('/api/admin/founding-creator/test-email', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ stage, email })
+    });
+    const j = await r.json().catch(() => ({}));
+    if (r.ok) say('✓ ' + stage + ' sent', 'ok');
+    else say('✗ ' + stage + ': ' + (j.error || r.status), 'bad');
+  } catch (e) { say('✗ ' + stage + ': ' + e.message, 'bad'); }
+}
+async function run(stages) {
+  const email = document.getElementById('email').value.trim();
+  if (!email) { say('Type an email address first.', 'bad'); return; }
+  const btns = document.querySelectorAll('button'); btns.forEach(b => b.disabled = true);
+  for (const s of stages) { await send(s, email); await new Promise(r => setTimeout(r, 400)); }
+  btns.forEach(b => b.disabled = false);
+}
+document.getElementById('one').onclick = () => run([document.getElementById('stage').value]);
+document.getElementById('all').onclick = () => run(STAGES);
+</script>
+</body>
+</html>
