@@ -2729,6 +2729,40 @@ async function queueFoundingCreatorLiveEmails(now) {
   return queued;
 }
 
+// One-time automatic re-send of the launch email, for launch day only (Mon 21
+// Sept). The first send went out with a template bug, so on the first check
+// after this code is deployed — anywhere inside the normal 10:00–21:00 Lagos
+// window — everyone who got that first email gets the corrected one. It runs
+// once (meta flag + a per-person stamp), never after launch day, and never
+// reaches anyone who didn't get the first email. Nothing to click.
+async function queueFoundingCreatorLiveResend(now) {
+  const graceUntilMs = await foundingCreatorGraceUntil();
+  if (!graceUntilMs) return 0;
+  if (now.getTime() < graceUntilMs || now.getTime() >= graceUntilMs + FC_DAY_MS) return 0; // launch day only
+  const flagRef = db.collection('meta').doc('foundingCreatorLiveResend');
+  const flag = await flagRef.get();
+  if (flag.exists && flag.data().done) return 0;
+
+  const snap = await db.collection('users')
+    .where('foundingCreator.liveEmailQueuedAt', '>', admin.firestore.Timestamp.fromMillis(0))
+    .get();
+  let queued = 0;
+  for (const doc of snap.docs) {
+    const u = doc.data(); const fc = u.foundingCreator;
+    if (!fc || !['active', 'faded'].includes(fc.status) || fc.liveResendAt || !u.email) continue;
+    try {
+      await doc.ref.update({
+        'foundingCreator.emailQueue': fcQueuedEmail('live'),
+        'foundingCreator.liveResendAt': admin.firestore.Timestamp.now()
+      });
+      queued++;
+    } catch (err) { console.error('[founding-creator] live resend queue failed for', doc.id, err); }
+  }
+  await flagRef.set({ done: true, doneAt: admin.firestore.Timestamp.now(), queued }, { merge: true });
+  console.log('[founding-creator] corrected launch email queued for', queued, 'badge holders');
+  return queued;
+}
+
 // Friday (Saturday if Friday was missed), once per tracked week: queue the
 // "you're behind" nudge for every live badge — atRisk if it's still in full
 // color, finalWarning if it's already faded. The flush below drops anyone who
@@ -2818,6 +2852,7 @@ async function maybeRunFoundingCreatorEmails() {
     const hour = now.getUTCHours(); // Lagos-shifted clock, same convention as the digest
     if (hour < FC_EMAIL_START_HOUR || hour >= FC_EMAIL_END_HOUR) return;
     await queueFoundingCreatorLiveEmails(now);
+    await queueFoundingCreatorLiveResend(now);
     await queueFoundingCreatorNudges(now);
     const result = await flushFoundingCreatorEmails();
     if (result.queued) console.log('[founding-creator] email flush:', result);
