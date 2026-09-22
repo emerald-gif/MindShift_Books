@@ -52,8 +52,6 @@
     help: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 115.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
     shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
     receipt: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2h16v20l-3-2-2 2-2-2-2 2-2-2-2 2-3-2z"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="16" y2="11"/></svg>',
-    sun: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.2M12 19.3v2.2M4.5 12H2.3M21.7 12h-2.2M5.6 5.6l1.55 1.55M16.85 16.85l1.55 1.55M18.4 5.6l-1.55 1.55M7.15 16.85l-1.55 1.55"/></svg>',
-    moon: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20.5 14.5A8.5 8.5 0 019.5 3.5 8.5 8.5 0 1020.5 14.5z"/></svg>',
     chevron: '<svg class="sb-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>'
   };
 
@@ -75,15 +73,9 @@
           '<img src="/MINDSHIFT.jpg" alt="logo">' +
           '<div class="sb-brand">MindShift Books</div>' +
         '</div>' +
-        '<div class="sb-top-actions">' +
-          '<button type="button" class="theme-toggle-btn" id="sbThemeToggle" onclick="msToggleTheme()" aria-label="Switch to dark mode" title="Dark mode">' +
-            '<span class="tt-ico tt-sun">' + ICONS.sun + '</span>' +
-            '<span class="tt-ico tt-moon">' + ICONS.moon + '</span>' +
-          '</button>' +
-          '<button type="button" class="sidebar-close-btn" onclick="toggleSidebar()" aria-label="Close menu">' +
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
-          '</button>' +
-        '</div>' +
+        '<button type="button" class="sidebar-close-btn" onclick="toggleSidebar()" aria-label="Close menu">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+        '</button>' +
       '</div>' +
       '<div class="sb-scroll">' +
         '<ul class="sb-group">' +
@@ -152,61 +144,16 @@
     '.sidebar-auth-cta .btn:last-child{margin-bottom:0}' +
     '.sidebar-auth-signup{background:var(--g,linear-gradient(90deg,#4f46e5,#06b6d4));color:#fff}' +
     '.sidebar-auth-login{background:#fff;color:var(--txt,#0f172a);border:1.5px solid var(--border,#e2e8f0)!important}' +
-    '.sidebar-auth-login:hover{background:var(--bg,#f8fafc)}' +
-    '.sb-top-actions{display:flex;align-items:center;gap:6px;flex-shrink:0}' +
-    '.theme-toggle-btn{width:32px;height:32px;border-radius:50%;border:none;background:var(--bg,#f8fafc);color:var(--sub,#6b7280);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;-webkit-tap-highlight-color:transparent}' +
-    '.theme-toggle-btn:active{background:var(--border,#e2e8f0)}' +
-    '.theme-toggle-btn .tt-ico{width:16px;height:16px;display:flex}' +
-    '.theme-toggle-btn .tt-ico svg{width:16px;height:16px}' +
-    '.theme-toggle-btn .tt-moon{display:none}' +
-    'html[data-theme="dark"] .theme-toggle-btn .tt-sun{display:none}' +
-    'html[data-theme="dark"] .theme-toggle-btn .tt-moon{display:flex}' +
-    'html[data-theme="dark"]{' +
-      '--bg:#0b1220;--card:#131b2c;--border:#26314a;--border2:#26314a;--border-soft:#26314a;' +
-      '--txt:#f1f5f9;--primary:#f1f5f9;--sub:#94a3b8;--mute:#64748b;' +
-      '--p:#818cf8;--p2:#22d3ee;--p3:#a78bfa;--ps:#6366f1;--accent:#22d3ee;--indigo:#818cf8;' +
-      '--g:linear-gradient(90deg,#818cf8,#22d3ee);--indigo-soft:#1e2340;' +
-      '--green:#34d399;--red:#f87171;--red-bg:#3b1220;--yellow:#fbbf24;--amber:#fbbf24;' +
-      '--save:#818cf8;--save-bg:#1e2340;' +
-      '--shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px -12px rgba(0,0,0,.5);--shadow-sm:0 1px 2px rgba(0,0,0,.3)' +
-    '}' +
-    'html[data-theme="dark"] body{background:var(--bg);color-scheme:dark}';
+    '.sidebar-auth-login:hover{background:var(--bg,#f8fafc)}';
 
   var styleTag = document.createElement('style');
   styleTag.setAttribute('data-sidebar-nav', '');
   styleTag.textContent = SIDEBAR_CSS;
   document.head.appendChild(styleTag);
 
-  // Theme (light/dark), shared by every page through this one script.
-  // Pages that want zero flash-of-light-before-dark on load can also add
-  //   <script>var t=localStorage.getItem('msb-theme');if(t==='dark')document.documentElement.setAttribute('data-theme','dark')</script>
-  // early in <head>, before their own <style> tag; this file re-applies the
-  // same thing a little later regardless, so pages that skip that snippet
-  // still work correctly, just with a possible one-frame flash.
-  function applyTheme(theme) {
-    if (theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
-    else document.documentElement.removeAttribute('data-theme');
-  }
-  function currentTheme() {
-    return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
-  }
-  applyTheme(localStorage.getItem('msb-theme') === 'dark' ? 'dark' : 'light');
-
-  window.msToggleTheme = function () {
-    var next = currentTheme() === 'dark' ? 'light' : 'dark';
-    applyTheme(next);
-    try { localStorage.setItem('msb-theme', next); } catch (e) {}
-    var btn = document.getElementById('sbThemeToggle');
-    if (btn) btn.setAttribute('aria-label', next === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
-    window.dispatchEvent(new CustomEvent('msb-theme-changed', { detail: { theme: next } }));
-  };
-  window.MSBTheme = { get: currentTheme, set: function (t) { applyTheme(t); try { localStorage.setItem('msb-theme', t); } catch (e) {} } };
-
   var slot = document.getElementById('sidebar-slot');
   if (slot) {
     slot.outerHTML = SIDEBAR_HTML;
-    var themeBtn = document.getElementById('sbThemeToggle');
-    if (themeBtn) themeBtn.setAttribute('aria-label', currentTheme() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
   } else {
     // No slot on this page (shouldn't normally happen) — bail out quietly
     // rather than injecting a floating sidebar nobody asked for.
