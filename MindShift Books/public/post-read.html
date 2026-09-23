@@ -54,82 +54,50 @@ header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hdr-title.show{opacity:1}
 .hdr-av{width:32px;height:32px;border-radius:50%;background:var(--g);display:none;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;border:2px solid var(--border);cursor:pointer;background-size:cover;background-position:center;flex-shrink:0}
 
-/* ── RATING SECTION ── */
+/* ── RATING SECTION ──
+   Was a big animated card (giant glowing stars, bouncing emoji, confetti,
+   particle bursts) that only revealed the average rating AFTER you rated.
+   Replaced with a calmer, standard pattern (average shown up front, like
+   an app-store listing; small flat stars; a plain "Rated" confirmation) —
+   still writes to the same userRatings/articleRatings docs, nothing about
+   the data model changed, just how it looks. */
 .rating-card{
   margin:24px 0 0;
-  background:linear-gradient(135deg,#ecfeff,#cffafe);
-  border-radius:20px;
+  background:var(--card,#fff);
+  border-radius:16px;
   border:1.5px solid var(--border);
-  padding:24px 20px 28px;
+  padding:20px;
 }
-.rating-card.done{background:linear-gradient(135deg,#f0fdf4,#dcfce7)}
 
-.rating-dismiss{position:absolute;top:12px;right:14px;background:none;border:none;font-size:18px;cursor:pointer;color:var(--mute);line-height:1;padding:4px}
+.rating-summary{display:flex;align-items:center;gap:14px;margin-bottom:2px}
+.rating-summary-num{font-size:30px;font-weight:800;color:var(--txt);line-height:1}
+.rating-summary-stars{display:flex;gap:2px;margin:4px 0 3px}
+.rating-summary-stars svg{width:15px;height:15px}
+.rating-summary-count{font-size:12.5px;color:var(--sub)}
+.rating-summary-empty{font-size:13.5px;color:var(--sub)}
 
-.rating-emoji{font-size:36px;text-align:center;margin-bottom:4px;min-height:44px;display:flex;align-items:center;justify-content:center;
-  animation:emojiIdle 2s ease-in-out infinite}
-@keyframes emojiIdle{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
-.rating-emoji.picked{animation:emojiBounce .5s cubic-bezier(.34,1.56,.64,1) forwards}
-@keyframes emojiBounce{0%{transform:scale(1)}40%{transform:scale(1.5) rotate(-10deg)}70%{transform:scale(.9) rotate(5deg)}100%{transform:scale(1.2) rotate(0deg)}}
+.rating-divider{height:1px;background:var(--border);margin:16px 0}
 
-.rating-title{text-align:center;font-size:15px;font-weight:800;color:var(--txt);margin-bottom:2px}
-.rating-label{text-align:center;font-size:13px;color:var(--p);font-weight:600;min-height:20px;margin-bottom:16px;
-  transition:all .2s;letter-spacing:-.1px}
+.rating-title{font-size:13.5px;font-weight:700;color:var(--txt);margin-bottom:10px}
 
-.stars-row{display:flex;justify-content:center;gap:10px;margin-bottom:20px}
-.star-btn{background:none;border:none;cursor:pointer;padding:4px;position:relative;
-  transition:transform .15s;-webkit-tap-highlight-color:transparent}
-.star-btn:active{transform:scale(.9)}
-.star-btn svg{width:42px;height:42px;display:block;
-  transition:transform .3s cubic-bezier(.34,1.56,.64,1),filter .2s}
-.star-btn.lit svg{filter:drop-shadow(0 0 8px rgba(251,191,36,.8))}
-.star-btn.hov svg{transform:scale(1.25) rotate(-5deg)}
+.stars-row{display:flex;gap:6px;margin-bottom:4px}
+.star-btn{background:none;border:none;cursor:pointer;padding:2px;
+  -webkit-tap-highlight-color:transparent}
+.star-btn:active{transform:scale(.92)}
+.star-btn svg{width:26px;height:26px;display:block;transition:transform .12s}
 
-@keyframes starPop{
-  0%{transform:scale(1)}
-  30%{transform:scale(1.5) rotate(-8deg)}
-  60%{transform:scale(.85) rotate(4deg)}
-  80%{transform:scale(1.15) rotate(-2deg)}
-  100%{transform:scale(1) rotate(0deg)}
-}
-@keyframes starWiggle{
-  0%,100%{transform:rotate(0deg)}
-  25%{transform:rotate(-12deg) scale(1.1)}
-  75%{transform:rotate(12deg) scale(1.1)}
-}
-.star-btn.popping svg{animation:starPop .45s cubic-bezier(.34,1.56,.64,1) forwards}
+.rating-label{font-size:12.5px;color:var(--sub);min-height:16px;margin-bottom:14px}
 
-/* particles */
-.particle{position:fixed;width:8px;height:8px;border-radius:50%;pointer-events:none;z-index:9999;animation:particleFly .8s ease-out forwards}
-@keyframes particleFly{
-  0%{opacity:1;transform:translate(0,0) scale(1)}
-  100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(0)}
-}
+/* rated confirmation — replaces the old confetti "done" card */
+.rating-rated-row{display:none;align-items:center;gap:8px;font-size:13.5px;color:var(--txt);font-weight:600}
+.rating-rated-row.show{display:flex}
+.rating-rated-row svg{width:15px;height:15px;color:#10b981;flex-shrink:0}
+.rating-form.hide{display:none}
 
 /* rating submit btn */
-.rating-submit{width:100%;padding:14px;border-radius:99px;background:var(--g);border:none;color:#fff;
-  font-size:15px;font-weight:800;cursor:pointer;letter-spacing:-.2px;
-  transition:transform .2s,box-shadow .2s;
-  box-shadow:0 4px 20px rgba(37,99,235,.35)}
-.rating-submit:active{transform:scale(.97)}
-.rating-submit:disabled{opacity:.5;cursor:not-allowed}
-.rating-submit:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 8px 28px rgba(37,99,235,.45)}
-
-/* done state */
-.rating-done{text-align:center;display:none}
-.rating-done.show{display:block}
-.rating-form.hide{display:none}
-.rating-avg{font-size:32px;font-weight:900;color:var(--p);margin:8px 0 4px;
-  animation:countUp .6s cubic-bezier(.34,1.56,.64,1)}
-@keyframes countUp{0%{transform:scale(0) rotate(-180deg);opacity:0}100%{transform:scale(1) rotate(0);opacity:1}}
-.rating-avg-label{font-size:13px;color:var(--sub)}
-
-/* confetti */
-.confetti-piece{position:fixed;width:10px;height:10px;pointer-events:none;z-index:9999;
-  animation:confettiFall 1s ease-out forwards}
-@keyframes confettiFall{
-  0%{opacity:1;transform:translate(var(--sx),var(--sy)) rotate(0deg) scale(1)}
-  100%{opacity:0;transform:translate(var(--ex),var(--ey)) rotate(720deg) scale(0)}
+.rating-submit{padding:9px 22px;border-radius:99px;background:var(--p);border:none;color:#fff;
+  font-size:13.5px;font-weight:700;cursor:pointer}
+.rating-submit:disabled{opacity:.4;cursor:not-allowed}
 }
 
 
@@ -1014,12 +982,16 @@ async function renderArticle(){
         </div>
         <div id="commentSheetInput"></div>
       </div>`}
+      <div id="moreArticlesSlot"></div>
+      <div id="ratingCard" class="rating-card"></div>
     </div>
   `;
 
   window.MSBAuthorLive && window.MSBAuthorLive.refresh(db, { doc, getDoc }, document.getElementById('artContent'));
   syncLikeUI();
   syncSaveUI();
+  injectRatingCard();
+  loadMorePosts();
   const persistentBar = document.getElementById('postCommentBar');
   if(persistentBar) persistentBar.style.display = article.commentsOff ? 'none' : '';
   // Comment data is never deleted when comments are turned off — we just
@@ -1108,19 +1080,24 @@ function getGatedContent(html){
   `;
 }
 
-function buildMoreArticles(){
-  const others = ARTICLES.filter(a=>a.id!==artId).slice(0,3);
-  if(!others.length) return '';
+/* ── MORE ARTICLES (smart) ──
+   Old version filtered a hardcoded ARTICLES array that was declared empty
+   and never populated — this block never actually showed anything. Now it
+   does a real fetch: same-category articles first (most relevant), topped
+   up with the most recent articles overall if the category doesn't have
+   enough, current article and duplicates always excluded. */
+function renderMoreCards(list){
+  if(!list.length) return '';
   return `
     <div class="more-section">
-      <div class="more-title">More Articles</div>
+      <div class="more-title">More Posts</div>
       <div class="more-list">
-        ${others.map(a=>`
+        ${list.map(a=>`
           <div class="more-card" onclick="location.href='/post-read?id=${a.id}'">
-            <img class="more-img" src="${a.img}" alt="${a.title}" loading="lazy" onerror="this.style.background='linear-gradient(135deg,#cffafe,#93c5fd)'">
+            <img class="more-img" src="${a.img}" alt="${cEsc(a.title)}" loading="lazy" onerror="this.style.background='linear-gradient(135deg,#cffafe,#93c5fd)'">
             <div class="more-body">
               <div class="more-cat">${window.msbCatLabel ? window.msbCatLabel(a.cat) : a.cat}</div>
-              <div class="more-ttl">${a.title}</div>
+              <div class="more-ttl">${cEsc(a.title)}</div>
               <div class="more-meta">${a.read}</div>
             </div>
           </div>
@@ -1134,6 +1111,45 @@ function buildMoreArticles(){
   `;
 }
 
+function toMoreCard(d){
+  const x = d.data();
+  return { id:d.id, cat:x.cat||'CAREERS', title:x.title||'', img:x.cover||x.img||'', read:x.readTime||x.read||'5 min read' };
+}
+
+async function loadMorePosts(){
+  const slot = document.getElementById('moreArticlesSlot');
+  if(!slot || !article) return;
+  try{
+    const picked = [];
+    const seen = new Set([artId]);
+
+    // 1) same category, most recent first — the actually-relevant ones
+    try{
+      const catSnap = await getDocs(query(collection(db,"posts"),
+        where('cat','==',article.cat), orderBy('publishedAt','desc'), limit(6)));
+      catSnap.forEach(d=>{
+        if(picked.length>=3 || seen.has(d.id)) return;
+        seen.add(d.id); picked.push(toMoreCard(d));
+      });
+    }catch{}
+
+    // 2) not enough in that category — fill with the most recent articles overall
+    if(picked.length<3){
+      try{
+        const recentSnap = await getDocs(query(collection(db,"posts"),
+          orderBy('publishedAt','desc'), limit(6+picked.length)));
+        recentSnap.forEach(d=>{
+          if(picked.length>=3 || seen.has(d.id)) return;
+          seen.add(d.id); picked.push(toMoreCard(d));
+        });
+      }catch{}
+    }
+
+    slot.innerHTML = renderMoreCards(picked);
+  }catch(e){ /* related articles are a nice-to-have, never block the page on this */ }
+}
+
+/* ── SYNC UI ── */
 /* ── SYNC UI ── */
 function syncLikeUI(){
   const el=document.getElementById('actLike');
@@ -2008,6 +2024,7 @@ async function generateArticlePdf(){
 
 
 /* ── RATING STATE ── */
+window.MSB_RATING_NOUN = 'post';
 let userRating = 0;
 let hoveredRating = 0;
 let ratingSubmitted = false;
@@ -2019,39 +2036,60 @@ function injectRatingCard(){
   const card = document.getElementById('ratingCard');
   if(!card) return;
   card.innerHTML = `
-    <div id="ratingEmoji" class="rating-emoji">🤔</div>
-    <div class="rating-title">Rate this article</div>
-    <div id="ratingLabel" class="rating-label">Tap a star to rate</div>
+    <div id="ratingSummary" class="rating-summary">
+      <div class="rating-summary-empty">Loading rating…</div>
+    </div>
+    <div class="rating-divider"></div>
+    <div class="rating-title">Rate this ${window.MSB_RATING_NOUN||'article'}</div>
     <div class="rating-form" id="ratingForm">
       <div class="stars-row" id="starsRow">
         ${[1,2,3,4,5].map(i=>`
           <button class="star-btn" id="star${i}"
             onmouseenter="hoverStar(${i})"
             onmouseleave="unhoverStar()"
-            onclick="selectStar(${i}, event)">
-            <svg viewBox="0 0 24 24">
-              <defs>
-                <linearGradient id="sg${i}" x1="0" y1="0" x2="1" y2="0">
-                  <stop id="sg${i}a" offset="0%" stop-color="#fbbf24"/>
-                  <stop id="sg${i}b" offset="0%" stop-color="#e5e7eb"/>
-                </linearGradient>
-              </defs>
-              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
-                fill="url(#sg${i})" stroke="#fbbf24" stroke-width=".5"/>
+            onclick="selectStar(${i})">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.6">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
             </svg>
           </button>
         `).join('')}
       </div>
-      <button class="rating-submit" id="ratingSubmit" onclick="submitRating()" disabled>Submit Rating</button>
+      <div id="ratingLabel" class="rating-label"></div>
+      <button class="rating-submit" id="ratingSubmit" onclick="submitRating()" disabled>Submit</button>
     </div>
-    <div class="rating-done" id="ratingDone">
-      <div style="font-size:48px;margin-bottom:8px" id="doneEmoji">🎉</div>
-      <div style="font-size:15px;font-weight:800;color:var(--txt);margin-bottom:4px">Thanks for rating!</div>
-      <div class="rating-avg" id="ratingAvgDisplay"></div>
-      <div class="rating-avg-label">average rating from <span id="ratingCount">—</span> readers</div>
+    <div class="rating-rated-row" id="ratingRatedRow">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      <span id="ratingRatedText"></span>
     </div>
   `;
+  loadRatingSummary();
   loadUserRating();
+}
+
+/* ── AVERAGE RATING (shown to everyone, not just after you rate) ── */
+async function loadRatingSummary(){
+  const el = document.getElementById('ratingSummary');
+  if(!el) return;
+  try{
+    const s = await getDoc(doc(db,'articleRatings',artId));
+    if(s.exists() && s.data().count){
+      const {total,count} = s.data();
+      const avg = total/count;
+      el.innerHTML = `
+        <div class="rating-summary-num">${avg.toFixed(1)}</div>
+        <div>
+          <div class="rating-summary-stars">${[1,2,3,4,5].map(i=>`
+            <svg viewBox="0 0 24 24" fill="${i<=Math.round(avg)?'#f59e0b':'none'}" stroke="${i<=Math.round(avg)?'#f59e0b':'#cbd5e1'}" stroke-width="1.6"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          `).join('')}</div>
+          <div class="rating-summary-count">${count} rating${count===1?'':'s'}</div>
+        </div>
+      `;
+    } else {
+      el.innerHTML = `<div class="rating-summary-empty">No ratings yet — be the first</div>`;
+    }
+  }catch{
+    el.innerHTML = `<div class="rating-summary-empty">Rating unavailable</div>`;
+  }
 }
 
 /* ── LOAD USER RATING ── */
@@ -2062,7 +2100,8 @@ async function loadUserRating(){
     if(s.exists() && s.data()[artId]){
       userRating = s.data()[artId];
       ratingSubmitted = true;
-      showRatingDone();
+      updateStarVisuals(userRating);
+      showRated(userRating);
     }
   }catch{}
 }
@@ -2073,46 +2112,21 @@ window.hoverStar = function(n){
   hoveredRating = n;
   updateStarVisuals(n);
   document.getElementById('ratingLabel').textContent = RATING_LABELS[n];
-  document.getElementById('ratingEmoji').textContent = RATING_EMOJIS[n];
-  // wiggle hovered star
-  const btn = document.getElementById(`star${n}`);
-  btn.style.animation = 'none';
-  btn.offsetHeight;
-  btn.style.animation = 'starWiggle .3s ease';
 };
 window.unhoverStar = function(){
   if(ratingSubmitted) return;
   hoveredRating = 0;
   updateStarVisuals(userRating);
-  document.getElementById('ratingLabel').textContent = userRating ? RATING_LABELS[userRating] : 'Tap a star to rate';
-  document.getElementById('ratingEmoji').textContent = RATING_EMOJIS[userRating||0];
+  document.getElementById('ratingLabel').textContent = userRating ? RATING_LABELS[userRating] : '';
 };
 
 /* ── STAR SELECT ── */
-window.selectStar = function(n, e){
+window.selectStar = function(n){
   if(ratingSubmitted) return;
   userRating = n;
   updateStarVisuals(n);
   document.getElementById('ratingLabel').textContent = RATING_LABELS[n];
   document.getElementById('ratingSubmit').disabled = false;
-  // pop each lit star sequentially
-  for(let i=1;i<=n;i++){
-    setTimeout(()=>{
-      const btn = document.getElementById(`star${i}`);
-      btn.classList.remove('popping');
-      btn.offsetHeight;
-      btn.classList.add('popping');
-      setTimeout(()=>btn.classList.remove('popping'),450);
-    }, (i-1)*60);
-  }
-  // emoji bounce
-  const em = document.getElementById('ratingEmoji');
-  em.textContent = RATING_EMOJIS[n];
-  em.classList.remove('picked');
-  em.offsetHeight;
-  em.classList.add('picked');
-  // burst particles from click point
-  burstParticles(e.clientX, e.clientY, n);
 };
 
 /* ── UPDATE STAR VISUALS ── */
@@ -2120,55 +2134,10 @@ function updateStarVisuals(n){
   for(let i=1;i<=5;i++){
     const btn = document.getElementById(`star${i}`);
     if(!btn) continue;
-    const stopA = document.getElementById(`sg${i}a`);
-    const stopB = document.getElementById(`sg${i}b`);
-    if(i<=n){
-      stopA.setAttribute('offset','100%');
-      stopB.setAttribute('offset','100%');
-      btn.classList.add('lit');
-      btn.classList.toggle('hov', hoveredRating===i);
-    } else {
-      stopA.setAttribute('offset','0%');
-      stopB.setAttribute('offset','0%');
-      btn.classList.remove('lit','hov');
-    }
-  }
-}
-
-/* ── BURST PARTICLES ── */
-function burstParticles(x, y, rating){
-  const colors = rating===5
-    ? ['#fbbf24','#f59e0b','#06b6d4','#22d3ee','#ef4444','#10b981']
-    : ['#fbbf24','#f59e0b','#fde68a'];
-  const count = rating===5 ? 20 : 10;
-  for(let i=0;i<count;i++){
-    const p = document.createElement('div');
-    p.className = 'particle';
-    const angle = (i/count)*360;
-    const dist = 60 + Math.random()*80;
-    const tx = Math.cos(angle*Math.PI/180)*dist + 'px';
-    const ty = Math.sin(angle*Math.PI/180)*dist + 'px';
-    p.style.cssText = `left:${x}px;top:${y}px;background:${colors[i%colors.length]};--tx:${tx};--ty:${ty};width:${6+Math.random()*6}px;height:${6+Math.random()*6}px`;
-    document.body.appendChild(p);
-    setTimeout(()=>p.remove(), 900);
-  }
-  if(rating===5) launchConfetti();
-}
-
-/* ── CONFETTI ── */
-function launchConfetti(){
-  const colors=['#06b6d4','#fbbf24','#ef4444','#10b981','#22d3ee','#f97316'];
-  const shapes=['50%','0%','0% 50%'];
-  for(let i=0;i<40;i++){
-    const c=document.createElement('div');
-    c.className='confetti-piece';
-    const sx=(Math.random()*window.innerWidth)+'px';
-    const sy=(window.innerHeight*0.6)+'px';
-    const ex=(Math.random()*window.innerWidth)+'px';
-    const ey=(-100-Math.random()*300)+'px';
-    c.style.cssText=`left:0;top:0;background:${colors[i%colors.length]};border-radius:${shapes[i%shapes.length]};--sx:${sx};--sy:${sy};--ex:${ex};--ey:${ey};width:${8+Math.random()*8}px;height:${8+Math.random()*8}px;animation-delay:${Math.random()*0.4}s;animation-duration:${0.8+Math.random()*0.6}s`;
-    document.body.appendChild(c);
-    setTimeout(()=>c.remove(),1500);
+    const svg = btn.querySelector('svg');
+    const lit = i<=n;
+    svg.setAttribute('fill', lit?'#f59e0b':'none');
+    svg.setAttribute('stroke', lit?'#f59e0b':'#cbd5e1');
   }
 }
 
@@ -2178,43 +2147,32 @@ window.submitRating = async function(){
   if(!userRating || ratingSubmitted) return;
   ratingSubmitted = true;
   const btn = document.getElementById('ratingSubmit');
-  btn.textContent = 'Submitting...';
+  btn.textContent = 'Submitting…';
   btn.disabled = true;
   try{
     await setDoc(doc(db,'userRatings',currentUser.uid),{[artId]:userRating},{merge:true});
     const rRef = doc(db,'articleRatings',artId);
     try{ await updateDoc(rRef,{total:increment(userRating),count:increment(1)}); }
     catch{ await setDoc(rRef,{total:userRating,count:1}); }
-    showRatingDone();
-    if(userRating===5) launchConfetti();
+    showRated(userRating);
+    loadRatingSummary();
   }catch(e){
     ratingSubmitted=false;
-    btn.textContent='Submit Rating';
+    btn.textContent='Submit';
     btn.disabled=false;
     showToast('Could not submit — try again');
   }
 };
 
-/* ── SHOW DONE STATE ── */
-async function showRatingDone(){
+/* ── SHOW RATED STATE (replaces the old confetti "done" card) ── */
+function showRated(n){
   document.getElementById('ratingForm').classList.add('hide');
-  const doneEl = document.getElementById('ratingDone');
-  doneEl.classList.add('show');
-  document.getElementById('doneEmoji').textContent = RATING_EMOJIS[userRating]||'🎉';
-  document.getElementById('ratingCard').classList.add('done');
-  // fetch average
-  try{
-    const s = await getDoc(doc(db,'articleRatings',artId));
-    if(s.exists()){
-      const {total,count} = s.data();
-      const avg = (total/count).toFixed(1);
-      document.getElementById('ratingAvgDisplay').textContent = `⭐ ${avg}`;
-      document.getElementById('ratingCount').textContent = count;
-    }
-  }catch{}
+  const row = document.getElementById('ratingRatedRow');
+  row.classList.add('show');
+  document.getElementById('ratingRatedText').textContent = `You rated this ${n} star${n===1?'':'s'}`;
 }
 
-
+/* ── FOLLOW ── */
 /* ── FOLLOW ── */
 window.doFollow = async function(){
   if(!currentUser){ openAuth(); return; }
