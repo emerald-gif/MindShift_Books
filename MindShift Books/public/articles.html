@@ -345,6 +345,26 @@ main{max-width:1100px;margin:0 auto}
 
 /* ── AUTH DRAWER ── */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;opacity:0;pointer-events:none;transition:opacity .25s;backdrop-filter:blur(3px)}
+
+/* VISITOR PROMO POPUP */
+.vpromo-overlay{position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:900;opacity:0;pointer-events:none;transition:opacity .25s;backdrop-filter:blur(3px)}
+.vpromo-overlay.show{opacity:1;pointer-events:auto}
+.vpromo-card{position:fixed;left:50%;top:50%;width:min(320px,86vw);z-index:901;
+  transform:translate(-50%,-50%) scale(.9);opacity:0;pointer-events:none;
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1),opacity .25s;
+  border-radius:22px;overflow:visible;box-shadow:0 20px 50px rgba(79,70,229,.35)}
+.vpromo-card.show{transform:translate(-50%,-50%) scale(1);opacity:1;pointer-events:auto}
+.vpromo-top{background:var(--g);border-radius:22px 22px 0 0;padding:26px 20px 30px;text-align:center;cursor:pointer}
+.vpromo-badge{width:64px;height:64px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,.85);box-shadow:0 4px 14px rgba(0,0,0,.25);margin-bottom:12px}
+.vpromo-headline{font-size:30px;font-weight:900;color:#fff;line-height:1.15}
+.vpromo-headline span{display:block;font-size:30px}
+.vpromo-sub{margin-top:6px;font-size:14px;font-weight:700;color:rgba(255,255,255,.92)}
+.vpromo-bottom{background:#fff;border-radius:0 0 22px 22px;padding:20px 22px 24px}
+.vpromo-cta{display:block;text-align:center;padding:13px 0;border-radius:99px;background:#0f172a;color:#fff;
+  font-size:14.5px;font-weight:800;text-decoration:none;font-family:inherit}
+.vpromo-close{position:absolute;left:50%;bottom:-46px;transform:translateX(-50%);width:32px;height:32px;
+  border-radius:50%;border:none;background:rgba(255,255,255,.9);color:#0f172a;display:flex;align-items:center;
+  justify-content:center;cursor:pointer}
 .overlay.on{opacity:1;pointer-events:all}
 .auth-sheet{position:fixed;left:0;right:0;bottom:0;z-index:301;background:#fff;border-radius:24px 24px 0 0;padding:20px 20px 44px;transform:translateY(100%);transition:transform .32s cubic-bezier(.32,0,.15,1)}
 .auth-sheet.on{transform:none}
@@ -700,6 +720,22 @@ main{max-width:1100px;margin:0 auto}
   <button class="welcome-nudge-cta" onclick="goToFeed()">See my feed →</button>
 </div>
 
+<!-- VISITOR PROMO POPUP (guests only, once per day) -->
+<div class="vpromo-overlay" id="vpromoOverlay" onclick="closeVisitorPromo()"></div>
+<div class="vpromo-card" id="vpromoCard">
+  <div class="vpromo-top" onclick="location.href='/signup?redirect=/complete-profile'">
+    <img src="/fcbadge.jpg" alt="Founding Creator badge" class="vpromo-badge">
+    <div class="vpromo-headline">Get ₦2,000<span>Free</span></div>
+    <div class="vpromo-sub">+ Founding Creator badge</div>
+  </div>
+  <div class="vpromo-bottom">
+    <a href="/signup?redirect=/complete-profile" class="vpromo-cta">Claim It Free</a>
+  </div>
+  <button class="vpromo-close" onclick="closeVisitorPromo()" aria-label="Close">
+    <svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 8l8 8M16 8l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+  </button>
+</div>
+
 <!-- AUTH SHEET -->
 <div class="overlay" id="authOverlay" onclick="closeAll()"></div>
 <div class="auth-sheet" id="authSheet">
@@ -834,6 +870,30 @@ function markDismissed(feature, uid){
   try{ localStorage.setItem(dismissKeyFor(feature, uid), '1'); }catch{}
 }
 function isHeroDismissed(uid){ return isDismissed('hero', uid); }
+
+// ── VISITOR PROMO POPUP (guests only) ───────────────────────────────────
+// Shows once per calendar day per browser. Closing it (X or overlay tap)
+// just marks today as seen — it comes back tomorrow regardless of whether
+// it was closed or ignored; there's no separate "snooze longer" state.
+const VPROMO_KEY = 'mindshift_vpromo_last_shown';
+function showVisitorPromo(){
+  const today = new Date().toDateString();
+  let last = null;
+  try{ last = localStorage.getItem(VPROMO_KEY); }catch{}
+  if(last === today) return; // already shown today
+  const overlay = document.getElementById('vpromoOverlay');
+  const card = document.getElementById('vpromoCard');
+  if(!overlay || !card) return;
+  overlay.classList.add('show');
+  card.classList.add('show');
+  try{ localStorage.setItem(VPROMO_KEY, today); }catch{}
+}
+window.closeVisitorPromo = function(){
+  const overlay = document.getElementById('vpromoOverlay');
+  const card = document.getElementById('vpromoCard');
+  if(overlay) overlay.classList.remove('show');
+  if(card) card.classList.remove('show');
+};
 function markHeroDismissed(uid){ markDismissed('hero', uid); }
 function setHeroVisible(visible){
   const hero = document.getElementById('heroBanner');
@@ -1125,6 +1185,7 @@ onAuthStateChanged(auth, async user => {
     userCategories = [];
     const fsb = document.getElementById('feedSetupBanner');
     if(fsb) fsb.style.display = 'none';
+    setTimeout(showVisitorPromo, 600); // small delay so it doesn't collide with initial paint
   }
   if(seq !== authCallSeq) return; // a newer auth event has already taken over
   // Only re-render here if there's already something loaded to reflect (e.g.
