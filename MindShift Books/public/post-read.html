@@ -454,6 +454,18 @@ body{padding-bottom:64px} /* room for the fixed comment bar on post-read */
 .sb-comment{display:flex;align-items:center;gap:7px;padding:10px 18px;border-radius:99px;border:1.5px solid var(--border2);background:#fff;font-size:14px;font-weight:700;color:var(--sub);cursor:pointer;transition:all .2s;flex:1;justify-content:center}
 .sb-comment svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2}
 .sb-comment:hover{border-color:var(--p);color:var(--p)}
+/* ── IMAGE VIEWER (tap a post photo to view full-size) — same pattern used
+   for the profile picture / cover banner on the profile page ── */
+.img-viewer-bg{position:fixed;inset:0;background:rgba(10,8,20,.92);z-index:2200;
+  display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;
+  transition:opacity .2s}
+.img-viewer-bg.show{opacity:1;pointer-events:all}
+.img-viewer-close{position:absolute;top:18px;right:18px;width:40px;height:40px;border-radius:50%;
+  background:rgba(0,0,0,.55);border:none;color:#fff;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;z-index:2201}
+.img-viewer-close svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+#imgViewerImg{max-width:92vw;max-height:85vh;object-fit:contain;border-radius:8px}
+.post-single img,.post-carousel-slide img{cursor:pointer}
 </style>
 <script src="/article-categories.js"></script>
 </head>
@@ -530,6 +542,14 @@ body{padding-bottom:64px} /* room for the fixed comment bar on post-read */
     <button class="manage-row manage-row-danger" onclick="doDeletePost()"><span>Delete</span></button>
     <button class="manage-row" onclick="closeDeleteConfirm()"><span>Cancel</span></button>
   </div>
+</div>
+
+<!-- IMAGE VIEWER (tap a post photo to view full-size) -->
+<div class="img-viewer-bg" id="imgViewerBg" onclick="closeImageViewer()">
+  <button class="img-viewer-close" onclick="closeImageViewer()" aria-label="Close">
+    <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+  </button>
+  <img id="imgViewerImg" src="" alt="" onclick="event.stopPropagation()">
 </div>
 
 <div id="sidebar-slot"></div>
@@ -932,6 +952,18 @@ function fmtRel(ts){
   return new Date(ms).toLocaleDateString('en-US',{month:'short',day:'numeric'});
 }
 
+/* ── IMAGE VIEWER (tap a post photo to view full-size) ── */
+window.openImageViewer = function(src){
+  if(!src) return;
+  document.getElementById('imgViewerImg').src = src;
+  document.getElementById('imgViewerBg').classList.add('show');
+  document.body.style.overflow='hidden';
+};
+window.closeImageViewer = function(){
+  document.getElementById('imgViewerBg').classList.remove('show');
+  document.body.style.overflow='';
+};
+
 async function renderArticle(){
   // likeCount and downloadCount come from the onSnapshot first emission — no extra getDoc needed
   isLiked       = await fetchUserLiked();
@@ -950,11 +982,11 @@ async function renderArticle(){
       <video src="${article.videoUrl}" poster="${article.thumbnailUrl||''}" controls playsinline preload="metadata"></video>
     </div>` : !imgs.length ? '' : imgs.length===1 ? `
     <div class="post-single">
-      <img src="${imgs[0]}" alt="" loading="lazy">
+      <img src="${imgs[0]}" alt="" loading="lazy" onclick="openImageViewer('${imgs[0]}')">
     </div>` : `
     <div class="post-carousel">
       <div class="post-carousel-track" id="postCarouselTrack" onscroll="onPostReadScroll()">
-        ${imgs.map(url=>`<div class="post-carousel-slide"><img src="${url}" alt="" loading="lazy" onload="fitCarouselSlide(this)" onerror="fitCarouselSlide(this)"></div>`).join('')}
+        ${imgs.map(url=>`<div class="post-carousel-slide"><img src="${url}" alt="" loading="lazy" onload="fitCarouselSlide(this)" onerror="fitCarouselSlide(this)" onclick="openImageViewer('${url}')"></div>`).join('')}
       </div>
       <div class="post-carousel-count" id="postCarouselCount">1/${imgs.length}</div>
     </div>`;
