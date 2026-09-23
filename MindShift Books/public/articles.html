@@ -31,6 +31,13 @@
 }
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
+<!-- Cold visits (e.g. straight from a Google result) pay for DNS/TLS + module downloads
+     one after another. These hints let the browser start them all at once. -->
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin/>
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin/>
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js"/>
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js"/>
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js"/>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"/>
 <style>
 :root{
@@ -1039,6 +1046,19 @@ function esc(str){
 /* ── AUTH ── */
 // Show skeleton immediately while auth + data loads
 showSkeletons();
+window.__msbBooted = true; // lets the safety net at the bottom of the page know this script actually ran
+
+// Start fetching the feed right away. Articles/posts are public-read, so there is
+// no reason to wait for Firebase Auth (which can be slow on a cold visit) — and,
+// for signed-in users, no reason to wait for their saved/liked/profile reads
+// either. onAuthStateChanged below re-renders once those arrive.
+let _feedKickedOff = false;
+function kickOffFeed(){
+  if(_feedKickedOff) return;
+  _feedKickedOff = true;
+  loadFeedBatch([loadPublishedArticles, loadPublishedPosts, loadRecentReposts]);
+}
+setTimeout(kickOffFeed, 0); // after the module finishes evaluating, so every `let` below is initialised
 
 /* ── MY PROFILE CACHE ── */
 async function loadMyProfile(){
@@ -1198,7 +1218,7 @@ onAuthStateChanged(auth, async user => {
   // leaves the skeleton up until real content (or a real empty result)
   // arrives, instead of flashing a false "nothing here" in between.
   if(ARTICLES.length || POSTS.length) renderGrid();
-  loadFeedBatch([loadPublishedArticles, loadPublishedPosts, loadRecentReposts]);
+  kickOffFeed(); // no-op if the feed already started at page load
   const p = new URLSearchParams(location.search);
   if(p.get('id')) location.href = `/article-read?id=${p.get('id')}`;
 });
@@ -3559,6 +3579,16 @@ window.goToFeed=function(){
       }
     }, 200);
   })();
+</script>
+<script>
+/* Safety net: if the main module script never runs (a blocked/failed Firebase
+   download, a stale cached file…) nothing else on the page could ever recover it.
+   After 15s with no sign of life, say so and offer a reload instead of a blank page. */
+setTimeout(function(){
+  if(window.__msbBooted) return;
+  var g=document.getElementById('grid'); if(!g) return;
+  g.innerHTML='<div style="text-align:center;padding:60px 20px"><h3 style="margin:0 0 8px">Couldn\'t load the feed</h3><p style="color:#94a3b8;margin:0 0 16px">Check your connection and try again.</p><button onclick="location.reload()" style="background:#4f46e5;color:#fff;border:none;padding:10px 22px;border-radius:99px;font-size:14px;font-weight:700;cursor:pointer">Reload</button></div>';
+}, 15000);
 </script>
 </body>
 </html>
