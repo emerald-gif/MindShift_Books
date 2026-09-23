@@ -985,8 +985,9 @@ window.toggleLinkPopover = function(e){
 
   const btn = e.currentTarget.getBoundingClientRect();
   const toolbar = document.getElementById('toolbar').getBoundingClientRect();
+  const popW = Math.min(320, window.innerWidth * 0.9); // matches .link-popover's own CSS width
   pop.style.top  = (btn.bottom - toolbar.top + 8) + 'px';
-  pop.style.left = Math.max(0, btn.left - toolbar.left - 100) + 'px';
+  pop.style.left = Math.max(0, Math.min(btn.left - toolbar.left - 100, toolbar.width - popW)) + 'px';
   pop.classList.add('open');
   setTimeout(() => document.getElementById('linkInput').focus(), 30);
 };
@@ -1057,8 +1058,9 @@ window.openColorPopover = function(e, mode){
 
   const btn = e.currentTarget.getBoundingClientRect();
   const toolbar = document.getElementById('toolbar').getBoundingClientRect();
+  const popW = 220; // matches .color-popover's own CSS width
   pop.style.top  = (btn.bottom - toolbar.top + 8) + 'px';
-  pop.style.left = Math.max(0, btn.left - toolbar.left - 30) + 'px';
+  pop.style.left = Math.max(0, Math.min(btn.left - toolbar.left - 30, toolbar.width - popW)) + 'px';
   pop.classList.add('open');
   closeLinkPopover();
 };
