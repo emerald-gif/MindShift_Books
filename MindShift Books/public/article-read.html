@@ -98,7 +98,6 @@ header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rating-submit{padding:9px 22px;border-radius:99px;background:var(--p);border:none;color:#fff;
   font-size:13.5px;font-weight:700;cursor:pointer}
 .rating-submit:disabled{opacity:.4;cursor:not-allowed}
-}
 
 
 /* ── HERO IMG ── */
@@ -948,6 +947,7 @@ async function renderArticle(){
       </div>
       <img class="art-hero" src="${article.img}" alt="${article.title}" onerror="this.style.display='none'">
       <div class="art-body">${contentHtml}</div>
+      <div id="creatorArticlesSlot"></div>
       <div id="moreArticlesSlot"></div>
       <div id="ratingCard" class="rating-card"></div>
     </div>
@@ -959,6 +959,7 @@ async function renderArticle(){
   syncDownloadUI();
   startProgress();
   injectRatingCard();
+  loadMoreFromCreator();
   loadMoreArticles();
   // Comment data is never deleted when comments are turned off — we just
   // don't query/render it, so re-enabling instantly brings everything back.
@@ -1027,6 +1028,44 @@ function renderMoreCards(list){
 function toMoreCard(d){
   const x = d.data();
   return { id:d.id, cat:x.cat||'CAREERS', title:x.title||'', img:x.cover||x.img||'', read:x.readTime||x.read||'5 min read' };
+}
+
+/* ── MORE FROM THIS CREATOR ──
+   Same card style as "More Articles" below, but scoped to one author instead
+   of one category — shown first, since right after finishing a piece "who
+   wrote this" is usually the stronger pull than "what's this about". Hidden
+   entirely (not shown empty) for MindShift's own official posts, or for a
+   creator who doesn't have anything else published yet. */
+async function loadMoreFromCreator(){
+  const slot = document.getElementById('creatorArticlesSlot');
+  if(!slot || !article || !article.authorUid || article.isMindshift) return;
+  try{
+    const snap = await getDocs(query(collection(db,'articles'),
+      where('authorUid','==',article.authorUid), orderBy('publishedAt','desc'), limit(4)));
+    const picked = [];
+    snap.forEach(d=>{
+      if(picked.length>=3 || d.id===artId) return;
+      picked.push(toMoreCard(d));
+    });
+    if(!picked.length) return; // nothing else from them yet — say nothing, don't show an empty section
+    slot.innerHTML = `
+      <div class="more-section">
+        <div class="more-title">More from ${cEsc(article.author||'this creator')}</div>
+        <div class="more-list">
+          ${picked.map(a=>`
+            <div class="more-card" onclick="location.href='/article-read?id=${a.id}'">
+              <img class="more-img" src="${a.img}" alt="${cEsc(a.title)}" loading="lazy" onerror="this.style.background='linear-gradient(135deg,#cffafe,#93c5fd)'">
+              <div class="more-body">
+                <div class="more-cat">${window.msbCatLabel ? window.msbCatLabel(a.cat) : a.cat}</div>
+                <div class="more-ttl">${cEsc(a.title)}</div>
+                <div class="more-meta">${a.read}</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }catch(e){ /* nice-to-have, never block the page on this */ }
 }
 
 async function loadMoreArticles(){
