@@ -457,14 +457,19 @@ body{padding-bottom:64px} /* room for the fixed comment bar on post-read */
 /* ── IMAGE VIEWER (tap a post photo to view full-size) — same pattern used
    for the profile picture / cover banner on the profile page ── */
 .img-viewer-bg{position:fixed;inset:0;background:rgba(10,8,20,.92);z-index:2200;
-  display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;
-  transition:opacity .2s}
+  opacity:0;pointer-events:none;transition:opacity .2s}
 .img-viewer-bg.show{opacity:1;pointer-events:all}
 .img-viewer-close{position:absolute;top:18px;right:18px;width:40px;height:40px;border-radius:50%;
   background:rgba(0,0,0,.55);border:none;color:#fff;display:flex;align-items:center;justify-content:center;
   cursor:pointer;z-index:2201}
 .img-viewer-close svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
-#imgViewerImg{max-width:92vw;max-height:85vh;object-fit:contain;border-radius:8px}
+.img-viewer-count{position:absolute;top:22px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.55);
+  color:#fff;font-size:12.5px;font-weight:700;padding:5px 13px;border-radius:99px;z-index:2201;letter-spacing:.2px}
+.img-viewer-track{display:flex;width:100vw;height:100vh;overflow-x:auto;scroll-snap-type:x mandatory;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none}
+.img-viewer-track::-webkit-scrollbar{display:none}
+.img-viewer-slide{flex:0 0 100vw;scroll-snap-align:center;display:flex;align-items:center;justify-content:center}
+.img-viewer-slide img{max-width:92vw;max-height:85vh;object-fit:contain;border-radius:8px}
 .post-single img,.post-carousel-slide img{cursor:pointer}
 </style>
 <script src="/article-categories.js"></script>
@@ -549,7 +554,8 @@ body{padding-bottom:64px} /* room for the fixed comment bar on post-read */
   <button class="img-viewer-close" onclick="closeImageViewer()" aria-label="Close">
     <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
   </button>
-  <img id="imgViewerImg" src="" alt="" onclick="event.stopPropagation()">
+  <div class="img-viewer-count" id="imgViewerCount"></div>
+  <div class="img-viewer-track" id="imgViewerTrack" onscroll="onImgViewerScroll()"></div>
 </div>
 
 <div id="sidebar-slot"></div>
@@ -953,12 +959,26 @@ function fmtRel(ts){
 }
 
 /* ── IMAGE VIEWER (tap a post photo to view full-size) ── */
-window.openImageViewer = function(src){
-  if(!src) return;
-  document.getElementById('imgViewerImg').src = src;
+let imgViewerCount = 0;
+window.openImageViewer = function(list, startIndex){
+  if(!list || !list.length) return;
+  imgViewerCount = list.length;
+  const track = document.getElementById('imgViewerTrack');
+  track.innerHTML = list.map(src=>`<div class="img-viewer-slide"><img src="${src}" alt="" onclick="event.stopPropagation()"></div>`).join('');
+  const countEl = document.getElementById('imgViewerCount');
+  countEl.style.display = imgViewerCount>1 ? '' : 'none';
   document.getElementById('imgViewerBg').classList.add('show');
   document.body.style.overflow='hidden';
+  track.scrollLeft = (startIndex||0) * track.clientWidth;
+  updateImgViewerCount();
 };
+window.onImgViewerScroll = function(){ updateImgViewerCount(); };
+function updateImgViewerCount(){
+  const track = document.getElementById('imgViewerTrack');
+  if(!track || !imgViewerCount) return;
+  const idx = Math.round(track.scrollLeft / track.clientWidth);
+  document.getElementById('imgViewerCount').textContent = `${idx+1}/${imgViewerCount}`;
+}
 window.closeImageViewer = function(){
   document.getElementById('imgViewerBg').classList.remove('show');
   document.body.style.overflow='';
@@ -977,16 +997,17 @@ async function renderArticle(){
 
 
   const imgs = article.images || [];
+  window.currentPostImages = imgs;
   const carouselHtml = article.videoUrl ? `
     <div class="post-video">
       <video src="${article.videoUrl}" poster="${article.thumbnailUrl||''}" controls playsinline preload="metadata"></video>
     </div>` : !imgs.length ? '' : imgs.length===1 ? `
     <div class="post-single">
-      <img src="${imgs[0]}" alt="" loading="lazy" onclick="openImageViewer('${imgs[0]}')">
+      <img src="${imgs[0]}" alt="" loading="lazy" onclick="openImageViewer(window.currentPostImages,0)">
     </div>` : `
     <div class="post-carousel">
       <div class="post-carousel-track" id="postCarouselTrack" onscroll="onPostReadScroll()">
-        ${imgs.map(url=>`<div class="post-carousel-slide"><img src="${url}" alt="" loading="lazy" onload="fitCarouselSlide(this)" onerror="fitCarouselSlide(this)" onclick="openImageViewer('${url}')"></div>`).join('')}
+        ${imgs.map((url,i)=>`<div class="post-carousel-slide"><img src="${url}" alt="" loading="lazy" onload="fitCarouselSlide(this)" onerror="fitCarouselSlide(this)" onclick="openImageViewer(window.currentPostImages,${i})"></div>`).join('')}
       </div>
       <div class="post-carousel-count" id="postCarouselCount">1/${imgs.length}</div>
     </div>`;

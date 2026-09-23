@@ -166,15 +166,22 @@ header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .art-body s{color:var(--sub)}
 
 /* auth gate */
-.art-gate{background:linear-gradient(160deg,#ecfeff,#fff);border:1.5px solid var(--border2);border-radius:20px;padding:32px 24px;text-align:center;margin:28px 0}
-.art-gate-ico{font-size:40px;margin-bottom:12px}
-.art-gate h3{font-size:20px;font-weight:900;color:var(--txt);margin-bottom:6px}
-.art-gate p{font-size:14px;color:var(--sub);line-height:1.65;margin-bottom:22px}
+/* ── PAYWALL GATE — was a flat card with a giant lock emoji floating on a
+   pale gradient. Now: an icon badge, tighter copy width so it doesn't run
+   edge-to-edge, a clearer primary/secondary button pair, and a small trust
+   line under the buttons (a standard signup-conversion pattern). ── */
+.art-gate{background:var(--card,#fff);border:1.5px solid var(--border);border-radius:20px;padding:36px 24px 28px;text-align:center;margin:28px 0;box-shadow:0 1px 2px rgba(15,23,42,.04),0 12px 32px -16px rgba(15,23,42,.12)}
+.art-gate-ico{width:52px;height:52px;border-radius:50%;background:var(--g);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;box-shadow:0 6px 16px -4px rgba(37,99,235,.4)}
+.art-gate-ico svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.art-gate h3{font-size:19px;font-weight:900;color:var(--txt);margin-bottom:8px;letter-spacing:-.3px}
+.art-gate p{font-size:13.5px;color:var(--sub);line-height:1.6;margin:0 auto 22px;max-width:300px}
 .art-gate-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
-.art-gate-btns a{display:inline-flex;align-items:center;gap:6px;padding:12px 24px;border-radius:99px;font-size:14px;font-weight:700;text-decoration:none;transition:all .2s}
-.gate-li{background:#fff;border:1.5px solid var(--border2);color:var(--txt)}
-.gate-su{background:var(--g);color:#fff;box-shadow:0 4px 16px rgba(37,99,235,.28)}
-.gate-su:hover{opacity:.9}
+.art-gate-btns a{display:inline-flex;align-items:center;gap:6px;padding:13px 26px;border-radius:99px;font-size:14px;font-weight:700;text-decoration:none;transition:all .2s}
+.gate-li{background:transparent;border:1.5px solid var(--border2);color:var(--txt)}
+.gate-li:hover{background:var(--bg)}
+.gate-su{background:var(--g);color:#fff;box-shadow:0 4px 14px -2px rgba(37,99,235,.35)}
+.gate-su:hover{opacity:.92}
+.art-gate-note{font-size:11.5px;color:var(--mute);margin-top:16px;letter-spacing:.1px}
 .art-fade{height:80px;background:linear-gradient(to bottom,transparent,#fff);margin-bottom:-4px;pointer-events:none}
 
 /* ── MORE ARTICLES ── */
@@ -405,14 +412,19 @@ header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* ── IMAGE VIEWER (tap the cover photo to view full-size) — same pattern
    used for the profile picture / cover banner on the profile page ── */
 .img-viewer-bg{position:fixed;inset:0;background:rgba(10,8,20,.92);z-index:2200;
-  display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;
-  transition:opacity .2s}
+  opacity:0;pointer-events:none;transition:opacity .2s}
 .img-viewer-bg.show{opacity:1;pointer-events:all}
 .img-viewer-close{position:absolute;top:18px;right:18px;width:40px;height:40px;border-radius:50%;
   background:rgba(0,0,0,.55);border:none;color:#fff;display:flex;align-items:center;justify-content:center;
   cursor:pointer;z-index:2201}
 .img-viewer-close svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
-#imgViewerImg{max-width:92vw;max-height:85vh;object-fit:contain;border-radius:8px}
+.img-viewer-count{position:absolute;top:22px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.55);
+  color:#fff;font-size:12.5px;font-weight:700;padding:5px 13px;border-radius:99px;z-index:2201;letter-spacing:.2px}
+.img-viewer-track{display:flex;width:100vw;height:100vh;overflow-x:auto;scroll-snap-type:x mandatory;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none}
+.img-viewer-track::-webkit-scrollbar{display:none}
+.img-viewer-slide{flex:0 0 100vw;scroll-snap-align:center;display:flex;align-items:center;justify-content:center}
+.img-viewer-slide img{max-width:92vw;max-height:85vh;object-fit:contain;border-radius:8px}
 .art-hero{cursor:pointer}
 </style>
 <script src="/article-categories.js"></script>
@@ -497,7 +509,8 @@ header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   <button class="img-viewer-close" onclick="closeImageViewer()" aria-label="Close">
     <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
   </button>
-  <img id="imgViewerImg" src="" alt="" onclick="event.stopPropagation()">
+  <div class="img-viewer-count" id="imgViewerCount"></div>
+  <div class="img-viewer-track" id="imgViewerTrack" onscroll="onImgViewerScroll()"></div>
 </div>
 
 <div id="sidebar-slot"></div>
@@ -965,7 +978,7 @@ async function renderArticle(){
           <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
         </button>
       </div>
-      <img class="art-hero" src="${article.img}" alt="${article.title}" onclick="openImageViewer(article.img)" onerror="this.style.display='none'">
+      <img class="art-hero" src="${article.img}" alt="${article.title}" onclick="openImageViewer(['${article.img}'], 0)" onerror="this.style.display='none'">
       <div class="art-body">${contentHtml}</div>
       <div id="creatorArticlesSlot"></div>
       <div id="moreArticlesSlot"></div>
@@ -1003,13 +1016,14 @@ function getGatedContent(html){
     ${preview}
     <div class="art-fade"></div>
     <div class="art-gate">
-      <div class="art-gate-ico">🔒</div>
+      <div class="art-gate-ico"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
       <h3>Continue Reading Free</h3>
       <p>Create a free MindShift Books account to read the full article, like posts, save articles, and get a feed picked for you.</p>
       <div class="art-gate-btns">
         <a href="/login?redirect=${redirect}" class="gate-li">Log in</a>
         <a href="/signup?redirect=${redirect}" class="gate-su">✨ Sign up free</a>
       </div>
+      <div class="art-gate-note">Free forever · No card required</div>
     </div>
   `;
 }
@@ -1998,12 +2012,26 @@ const RATING_EMOJIS = ['🤔','😣','😕','👍','🔥','🤯'];
 
 /* ── INJECT RATING CARD ── */
 /* ── IMAGE VIEWER (tap the cover photo to view full-size) ── */
-window.openImageViewer = function(src){
-  if(!src) return;
-  document.getElementById('imgViewerImg').src = src;
+let imgViewerCount = 0;
+window.openImageViewer = function(list, startIndex){
+  if(!list || !list.length) return;
+  imgViewerCount = list.length;
+  const track = document.getElementById('imgViewerTrack');
+  track.innerHTML = list.map(src=>`<div class="img-viewer-slide"><img src="${src}" alt="" onclick="event.stopPropagation()"></div>`).join('');
+  const countEl = document.getElementById('imgViewerCount');
+  countEl.style.display = imgViewerCount>1 ? '' : 'none';
   document.getElementById('imgViewerBg').classList.add('show');
   document.body.style.overflow='hidden';
+  track.scrollLeft = (startIndex||0) * track.clientWidth;
+  updateImgViewerCount();
 };
+window.onImgViewerScroll = function(){ updateImgViewerCount(); };
+function updateImgViewerCount(){
+  const track = document.getElementById('imgViewerTrack');
+  if(!track || !imgViewerCount) return;
+  const idx = Math.round(track.scrollLeft / track.clientWidth);
+  document.getElementById('imgViewerCount').textContent = `${idx+1}/${imgViewerCount}`;
+}
 window.closeImageViewer = function(){
   document.getElementById('imgViewerBg').classList.remove('show');
   document.body.style.overflow='';
