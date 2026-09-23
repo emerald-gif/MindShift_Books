@@ -42,37 +42,85 @@ function injectStylesOnce() {
   const style = document.createElement('style');
   style.textContent = `
 .notif-wrap{position:relative;flex-shrink:0}
-.notif-badge{position:absolute;top:2px;right:2px;background:var(--red,#ef4444);color:#fff;font-size:10px;font-weight:800;min-width:16px;height:16px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;border:2px solid #fff;line-height:1;pointer-events:none}
-.notif-sheet{position:fixed;inset:0;z-index:2500;background:var(--bg,#fff);display:flex;flex-direction:column;overflow:hidden;transform:translateX(100%);transition:transform .3s cubic-bezier(.32,0,.15,1)}
-.notif-sheet.on{transform:none}
-.notif-sheet-top{display:flex;align-items:center;gap:12px;padding:14px 20px 12px;flex-shrink:0;border-bottom:1px solid var(--border,#e5e7eb)}
-.notif-sheet-title{font-size:16px;font-weight:900;color:var(--txt,#0f172a);flex:1}
-.notif-mark-all-btn{font-size:12px;font-weight:700;color:var(--p,#4f46e5);background:none;border:none;cursor:pointer;padding:6px 10px;border-radius:8px}
-.notif-mark-all-btn:hover{background:#eef2ff}
-.notif-list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:24px}
-.notif-empty{text-align:center;padding:52px 24px 40px}
-.notif-empty-ico{margin:0 auto 14px;display:flex;align-items:center;justify-content:center}
-.notif-empty-ttl{font-size:15px;font-weight:800;color:var(--txt,#0f172a);margin-bottom:6px}
-.notif-empty-sub{font-size:13px;color:var(--mute,#9ca3af);line-height:1.6}
-.notif-item{display:flex;align-items:flex-start;gap:12px;padding:13px 20px 13px 16px;cursor:pointer;transition:background .15s;position:relative;border-bottom:1px solid #eef2ff}
-.notif-item:active{background:#eef2ff}
-.notif-item.unread{background:#eef2ff}
-.notif-unread-dot{width:6px;height:6px;border-radius:50%;background:var(--p,#4f46e5);flex-shrink:0;margin-top:7px}
-.notif-unread-dot.invisible{visibility:hidden}
-.notif-av{width:44px;height:44px;border-radius:50%;background:var(--g,linear-gradient(90deg,#4f46e5,#06b6d4));display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#fff;flex-shrink:0;overflow:hidden;border:2px solid var(--border,#e5e7eb)}
+.notif-badge{position:absolute;top:2px;right:2px;background:linear-gradient(135deg,#f43f5e,#ef4444);color:#fff;font-size:10px;font-weight:800;min-width:17px;height:17px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 4px;border:2px solid #fff;line-height:1;pointer-events:none;box-shadow:0 2px 6px rgba(239,68,68,.4);animation:nbadgepop .35s cubic-bezier(.34,1.56,.64,1)}
+@keyframes nbadgepop{0%{transform:scale(0)}100%{transform:scale(1)}}
+
+.notif-sheet{position:fixed;inset:0;z-index:2500;background:var(--bg,#f8fafc);display:flex;flex-direction:column;overflow:hidden;transform:translateX(100%);transition:transform .32s cubic-bezier(.32,0,.15,1);visibility:hidden}
+.notif-sheet.on{transform:none;visibility:visible}
+
+.notif-sheet-top{display:flex;align-items:center;gap:12px;padding:calc(12px + env(safe-area-inset-top,0px)) 16px 12px;flex-shrink:0;background:rgba(255,255,255,.88);-webkit-backdrop-filter:saturate(180%) blur(14px);backdrop-filter:saturate(180%) blur(14px);border-bottom:1px solid rgba(15,23,42,.06);position:relative;z-index:2}
+.notif-back-btn{width:38px;height:38px;border-radius:50%;background:#f1f5f9;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--txt,#0f172a);flex-shrink:0;transition:background .15s,transform .15s}
+.notif-back-btn:active{transform:scale(.92);background:#e2e8f0}
+.notif-sheet-titles{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.notif-sheet-title{font-size:19px;font-weight:900;color:var(--txt,#0f172a);letter-spacing:-.3px;line-height:1.15}
+.notif-sheet-sub{font-size:12px;font-weight:700;color:var(--p,#4f46e5);display:none}
+.notif-mark-all-btn{font-size:12px;font-weight:800;color:var(--p,#4f46e5);background:#eef2ff;border:none;cursor:pointer;padding:8px 13px;border-radius:99px;white-space:nowrap;transition:background .15s,transform .15s}
+.notif-mark-all-btn:hover{background:#e0e7ff}
+.notif-mark-all-btn:active{transform:scale(.95)}
+
+.notif-list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:4px 0 calc(28px + env(safe-area-inset-bottom,0px));overscroll-behavior:contain}
+.notif-group-label{font-size:11.5px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:var(--mute,#94a3b8);padding:18px 20px 8px}
+
+.notif-empty{text-align:center;padding:72px 32px 40px}
+.notif-empty-ico{width:84px;height:84px;margin:0 auto 18px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:linear-gradient(135deg,#eef2ff,#e0f2fe);box-shadow:0 8px 24px rgba(79,70,229,.12)}
+.notif-empty-ico svg{stroke:var(--p,#4f46e5)!important}
+.notif-empty-ttl{font-size:17px;font-weight:900;color:var(--txt,#0f172a);margin-bottom:8px;letter-spacing:-.2px}
+.notif-empty-sub{font-size:13.5px;color:var(--mute,#94a3b8);line-height:1.65;max-width:280px;margin:0 auto}
+
+.notif-item{display:flex;align-items:flex-start;gap:13px;margin:4px 12px;padding:13px 14px;cursor:pointer;transition:background .15s,transform .15s,box-shadow .15s;position:relative;background:#fff;border-radius:16px;border:1px solid rgba(15,23,42,.05);animation:nitemin .35s ease both;-webkit-tap-highlight-color:transparent}
+.notif-item:active{transform:scale(.985);background:#f8fafc}
+.notif-item.unread{background:linear-gradient(90deg,#eef2ff 0%,#f5f8ff 100%);border-color:rgba(79,70,229,.14);box-shadow:0 2px 10px rgba(79,70,229,.07)}
+.notif-item.unread::before{content:'';position:absolute;left:0;top:14px;bottom:14px;width:3px;border-radius:0 3px 3px 0;background:var(--p,#4f46e5)}
+@keyframes nitemin{0%{opacity:0;transform:translateY(8px)}100%{opacity:1;transform:none}}
+
+.notif-unread-dot{position:absolute;top:16px;right:14px;width:9px;height:9px;border-radius:50%;background:var(--p,#4f46e5);box-shadow:0 0 0 3px rgba(79,70,229,.16)}
+.notif-unread-dot.invisible{display:none}
+
+.notif-lead{position:relative;flex-shrink:0}
+.notif-av{width:46px;height:46px;border-radius:50%;background:var(--g,linear-gradient(90deg,#4f46e5,#06b6d4));display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;color:#fff;flex-shrink:0;overflow:hidden;border:2px solid #fff;box-shadow:0 1px 4px rgba(15,23,42,.12)}
 .notif-av img{width:100%;height:100%;object-fit:cover;display:block}
-.notif-av-stack{display:flex;flex-shrink:0;width:60px;height:44px;position:relative}
-.notif-av-stack .notif-av-stacked{position:absolute;top:6px;width:34px;height:34px;border:2px solid #fff}
-.notif-av-stack .notif-av-stacked:nth-child(1){left:26px;z-index:3}
-.notif-av-stack .notif-av-stacked:nth-child(2){left:13px;z-index:2}
+.notif-av-stack{display:flex;flex-shrink:0;width:62px;height:46px;position:relative}
+.notif-av-stack .notif-av-stacked{position:absolute;top:6px;width:34px;height:34px;border:2px solid #fff;font-size:13px}
+.notif-av-stack .notif-av-stacked:nth-child(1){left:28px;z-index:3}
+.notif-av-stack .notif-av-stacked:nth-child(2){left:14px;z-index:2}
 .notif-av-stack .notif-av-stacked:nth-child(3){left:0;z-index:1}
-.notif-body{flex:1;min-width:0;padding-top:2px}
-.notif-msg{font-size:13.5px;color:var(--txt,#0f172a);line-height:1.46}
-.notif-msg strong{font-weight:800}
-.notif-time{font-size:11px;color:var(--mute,#9ca3af);margin-top:3px;font-weight:600}
+
+.notif-type{position:absolute;right:-3px;bottom:-3px;width:21px;height:21px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid #fff;color:#fff;z-index:5}
+.notif-type svg{width:11px;height:11px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.notif-type.like{background:#ef4444}.notif-type.like svg{fill:currentColor;stroke:none}
+.notif-type.follow{background:#4f46e5}
+.notif-type.comment{background:#0ea5e9}
+.notif-type.repost{background:#10b981}
+.notif-type.ok{background:#10b981}
+.notif-type.warn{background:#f59e0b}
+.notif-type.info{background:#64748b}
+
+.notif-body{flex:1;min-width:0;padding-top:1px;padding-right:14px}
+.notif-msg{font-size:14px;color:#334155;line-height:1.5;word-wrap:break-word;overflow-wrap:anywhere}
+.notif-msg strong{font-weight:800;color:var(--txt,#0f172a)}
+.notif-item.unread .notif-msg{color:var(--txt,#0f172a)}
+.notif-time{font-size:11.5px;color:var(--mute,#94a3b8);margin-top:4px;font-weight:700}
+.notif-item.unread .notif-time{color:var(--p,#4f46e5)}
+
 .notif-spinner-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px;gap:12px;color:var(--mute,#9ca3af);font-size:13px;font-weight:600}
 .notif-spinner{width:26px;height:26px;border:3px solid var(--border2,#e2e8f0);border-top-color:var(--p,#4f46e5);border-radius:50%;animation:nspin .7s linear infinite}
 @keyframes nspin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+
+.notif-skel{display:flex;gap:13px;margin:4px 12px;padding:14px;background:#fff;border-radius:16px;border:1px solid rgba(15,23,42,.05)}
+.notif-skel-av,.notif-skel-l1,.notif-skel-l2{background:linear-gradient(90deg,#eef2f7 25%,#f8fafc 50%,#eef2f7 75%);background-size:200% 100%;animation:nshimmer 1.3s linear infinite}
+.notif-skel-av{width:46px;height:46px;border-radius:50%;flex-shrink:0}
+.notif-skel-lines{flex:1;display:flex;flex-direction:column;gap:9px;padding-top:6px}
+.notif-skel-l1{height:11px;border-radius:6px;width:88%}
+.notif-skel-l2{height:9px;border-radius:6px;width:34%}
+@keyframes nshimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+@media (min-width:720px){
+  .notif-sheet{left:auto;width:440px;box-shadow:-12px 0 40px rgba(15,23,42,.14)}
+}
+@media (prefers-reduced-motion:reduce){
+  .notif-item,.notif-badge{animation:none}
+  .notif-sheet{transition:none}
+}
 `;
   document.head.appendChild(style);
 }
@@ -84,16 +132,15 @@ function injectPanelOnce() {
   wrap.innerHTML = `
 <div class="notif-sheet" id="notifSheet">
   <div class="notif-sheet-top">
-    <button onclick="closeNotifPanel()" aria-label="Back" style="background:none;border:none;padding:4px 8px 4px 0;cursor:pointer;display:flex;align-items:center;color:var(--txt)"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
-    <span class="notif-sheet-title">Notifications</span>
+    <button class="notif-back-btn" onclick="closeNotifPanel()" aria-label="Back"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <div class="notif-sheet-titles">
+      <span class="notif-sheet-title">Notifications</span>
+      <span class="notif-sheet-sub" id="notifSheetSub"></span>
+    </div>
     <button class="notif-mark-all-btn" id="notifMarkAllBtn" onclick="markAllRead()" style="display:none">Mark all read</button>
   </div>
   <div class="notif-list" id="notifList">
-    <div class="notif-empty">
-      <div class="notif-empty-ico"><svg width="44" height="44" fill="none" viewBox="0 0 24 24" stroke="#9ca3af" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg></div>
-      <div class="notif-empty-ttl">No notifications yet</div>
-      <div class="notif-empty-sub">When someone likes your article, follows you, or views your profile, you&#39;ll see it here.</div>
-    </div>
+    <div class="notif-empty"><div class="notif-empty-ico"><svg width="38" height="38" fill="none" viewBox="0 0 24 24" stroke-width="1.6"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg></div><div class="notif-empty-ttl">You&#39;re all caught up</div><div class="notif-empty-sub">Likes, follows, comments and reposts on your work will show up here.</div></div>
   </div>
 </div>`;
   document.body.appendChild(wrap.firstElementChild);
@@ -146,7 +193,38 @@ function notifMessage(n) {
     default:              return `${name} interacted with you`;
   }
 }
-function buildNotifItem(id, n) {
+// Small coloured badge on the avatar so the kind of notification reads at a glance.
+const N_ICONS = {
+  heart:   '<svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z"/></svg>',
+  user:    '<svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>',
+  comment: '<svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.4 8.4 0 01-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.4 8.4 0 013.8-.9h.5a8.5 8.5 0 018 8z"/></svg>',
+  repost:  '<svg viewBox="0 0 24 24"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>',
+  check:   '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>',
+  alert:   '<svg viewBox="0 0 24 24"><line x1="12" y1="8" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+  bell:    '<svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>'
+};
+function nTypeBadge(type) {
+  switch (type) {
+    case 'article_like': case 'comment_like': return ['like', N_ICONS.heart];
+    case 'follow':                            return ['follow', N_ICONS.user];
+    case 'new_comment': case 'comment_reply': return ['comment', N_ICONS.comment];
+    case 'repost': case 'repost_quote':       return ['repost', N_ICONS.repost];
+    case 'article_approved':                  return ['ok', N_ICONS.check];
+    case 'article_rejected': case 'article_removed': case 'post_removed': return ['warn', N_ICONS.alert];
+    default:                                  return ['info', N_ICONS.bell];
+  }
+}
+function nGroupLabel(ts) {
+  if (!ts) return 'Earlier';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  const startToday = new Date(); startToday.setHours(0, 0, 0, 0);
+  const diffDays = Math.floor((startToday.getTime() - d.getTime()) / 86400000) + 1;
+  if (d >= startToday) return 'Today';
+  if (diffDays <= 1) return 'Yesterday';
+  if (diffDays <= 7) return 'This week';
+  return 'Earlier';
+}
+function buildNotifItem(id, n, idx) {
   const unread = !n.read, msg = notifMessage(n), time = nTimeAgo(n.lastAt || n.createdAt);
   const photos = Array.isArray(n.actorPhotos) ? n.actorPhotos.filter(Boolean) : [];
   let avHtml;
@@ -156,11 +234,27 @@ function buildNotifItem(id, n) {
     const shown = photos.slice(-3).reverse();
     avHtml = `<div class="notif-av-stack">${shown.map(p => `<div class="notif-av notif-av-stacked"><img src="${nEsc(p)}" alt="" onerror="this.style.display='none'"></div>`).join('')}</div>`;
   } else {
-    const init = (n.actorName || '?').charAt(0).toUpperCase();
+    const init = (n.actorName || 'M').charAt(0).toUpperCase(); // system messages (no actor) show an M for MindShift
     const avInner = n.actorPhoto ? `<img src="${nEsc(n.actorPhoto)}" alt="" onerror="this.style.display='none'">` : init;
     avHtml = `<div class="notif-av">${avInner}</div>`;
   }
-  return `<div class="notif-item ${unread ? 'unread' : ''}" onclick="handleNotifTap('${nEsc(id)}')"><span class="notif-unread-dot ${unread ? '' : 'invisible'}"></span>${avHtml}<div class="notif-body"><div class="notif-msg">${msg}</div><div class="notif-time">${time}</div></div></div>`;
+  const [kind, icon] = nTypeBadge(n.type);
+  const delay = Math.min(idx || 0, 12) * 25;
+  return `<div class="notif-item ${unread ? 'unread' : ''}" style="animation-delay:${delay}ms" onclick="handleNotifTap('${nEsc(id)}')"><span class="notif-unread-dot ${unread ? '' : 'invisible'}"></span><div class="notif-lead">${avHtml}<span class="notif-type ${kind}">${icon}</span></div><div class="notif-body"><div class="notif-msg">${msg}</div><div class="notif-time">${time}</div></div></div>`;
+}
+function buildNotifList(docs) {
+  let last = '', idx = 0;
+  return docs.map(d => {
+    const data = d.data();
+    const label = nGroupLabel(data.lastAt || data.createdAt);
+    const head = label !== last ? `<div class="notif-group-label">${label}</div>` : '';
+    last = label;
+    return head + buildNotifItem(d.id, data, idx++);
+  }).join('');
+}
+function notifSkeleton() {
+  const row = '<div class="notif-skel"><div class="notif-skel-av"></div><div class="notif-skel-lines"><div class="notif-skel-l1"></div><div class="notif-skel-l2"></div></div></div>';
+  return row.repeat(5);
 }
 
 import { retryRead } from '/resilient.js';
@@ -253,7 +347,7 @@ export function initNotificationUI({ db, getCurrentUser, getMyProfile, fs }) {
     const currentUser = getCurrentUser();
     if (!currentUser) return;
     const listEl = document.getElementById('notifList');
-    listEl.innerHTML = '<div class="notif-spinner-wrap"><div class="notif-spinner"></div>Loading…</div>';
+    listEl.innerHTML = notifSkeleton();
     try {
       const q = query(collection(db, 'notifications'), where('recipientUid', '==', currentUser.uid), orderBy('lastAt', 'desc'), limit(40));
       // Timeout + retry: a dead connection used to leave this spinner forever.
@@ -261,15 +355,18 @@ export function initNotificationUI({ db, getCurrentUser, getMyProfile, fs }) {
       notifCache.clear();
       snap.docs.forEach(d => notifCache.set(d.id, d.data()));
       if (snap.empty) {
-        listEl.innerHTML = '<div class="notif-empty"><div class="notif-empty-ico"><svg width="44" height="44" fill="none" viewBox="0 0 24 24" stroke="#9ca3af" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg></div><div class="notif-empty-ttl">No notifications yet</div><div class="notif-empty-sub">When someone likes your article, follows you, or views your profile, you&#39;ll see it here.</div></div>';
+        listEl.innerHTML = '<div class="notif-empty"><div class="notif-empty-ico"><svg width="38" height="38" fill="none" viewBox="0 0 24 24" stroke-width="1.6"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg></div><div class="notif-empty-ttl">You&#39;re all caught up</div><div class="notif-empty-sub">Likes, follows, comments and reposts on your work will show up here.</div></div>';
+        const subE = document.getElementById('notifSheetSub'); if (subE) subE.style.display = 'none';
         document.getElementById('notifMarkAllBtn').style.display = 'none';
         return;
       }
-      const hasUnread = snap.docs.some(d => !d.data().read);
-      document.getElementById('notifMarkAllBtn').style.display = hasUnread ? 'block' : 'none';
-      listEl.innerHTML = snap.docs.map(d => buildNotifItem(d.id, d.data())).join('');
+      const unreadCount = snap.docs.filter(d => !d.data().read).length;
+      document.getElementById('notifMarkAllBtn').style.display = unreadCount ? 'block' : 'none';
+      const subEl = document.getElementById('notifSheetSub');
+      if (subEl) { subEl.textContent = unreadCount + ' new'; subEl.style.display = unreadCount ? 'block' : 'none'; }
+      listEl.innerHTML = buildNotifList(snap.docs);
     } catch (e) {
-      listEl.innerHTML = '<div class="notif-empty"><div class="notif-empty-ico"><svg width="44" height="44" fill="none" viewBox="0 0 24 24" stroke="#9ca3af" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m0 3.75h.008M10.29 3.86l-8.18 14.18A1.5 1.5 0 003.42 20.5h17.16a1.5 1.5 0 001.31-2.46L13.71 3.86a1.5 1.5 0 00-2.42 0z"/></svg></div><div class="notif-empty-ttl">Couldn&#39;t load</div><div class="notif-empty-sub">Check your connection and try again.</div><button onclick="retryNotifs()" style="margin-top:12px;background:#4f46e5;color:#fff;border:none;padding:9px 20px;border-radius:99px;font-size:13px;font-weight:700;cursor:pointer">Try again</button></div>';
+      listEl.innerHTML = '<div class="notif-empty"><div class="notif-empty-ico"><svg width="44" height="44" fill="none" viewBox="0 0 24 24" stroke="#9ca3af" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m0 3.75h.008M10.29 3.86l-8.18 14.18A1.5 1.5 0 003.42 20.5h17.16a1.5 1.5 0 001.31-2.46L13.71 3.86a1.5 1.5 0 00-2.42 0z"/></svg></div><div class="notif-empty-ttl">Couldn&#39;t load</div><div class="notif-empty-sub">Check your connection and try again.</div><button onclick="retryNotifs()" style="margin-top:14px;background:linear-gradient(135deg,#4f46e5,#6366f1);color:#fff;border:none;padding:10px 24px;border-radius:99px;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(79,70,229,.3)">Try again</button></div>';
     }
   }
 
@@ -319,6 +416,7 @@ export function initNotificationUI({ db, getCurrentUser, getMyProfile, fs }) {
       await batch.commit();
       const btn = document.getElementById('notifMarkAllBtn');
       if (btn) btn.style.display = 'none';
+      const subM = document.getElementById('notifSheetSub'); if (subM) subM.style.display = 'none';
       // Free client-side update — we already know everything just got
       // marked read, no need to pay for another getCountFromServer read.
       updateBadge(0);
