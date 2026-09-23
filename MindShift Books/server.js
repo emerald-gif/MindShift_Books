@@ -2897,26 +2897,38 @@ app.post('/api/admin/founding-creator/test-email', requireAdminApi, async (req, 
 // stuck at 0: most Firestore rule setups only let a user write their own
 // users/{uid} doc, so that increment was very likely being rejected on
 // every single view, with nothing surfacing the failure anywhere.
-app.post('/api/profile/track-view', requireUser, async (req, res) => {
+app.post('/api/profile/track-view', async (req, res) => {
   try {
     if (!db) return res.status(500).json({ error: 'Database unavailable' });
-    const viewerUid = req.uid;
-    const targetUid = String(req.body?.targetUid || '').trim();
-    if (!targetUid || targetUid === viewerUid) return res.json({ ok: true, counted: false });
 
-    // Dedup with .create() instead of a get-then-set — one atomic write
-    // instead of two round trips, and it throws (code 'already-exists') if
-    // this viewer has already been counted for this profile TODAY. The key
-    // is scoped per calendar day (not lifetime) so a returning viewer counts
-    // again tomorrow — matching how LinkedIn's profile-view counter works,
-    // and keeping the 14-day trend graph on Insights meaningful long after
-    // launch instead of trailing off as regular visitors get "used up."
+    // Signed-in OR logged-out visitors both count. If a valid Firebase token is
+    // sent we use the real uid; otherwise the browser's random anonymous id.
+    let viewerKey = '', viewerUid = null;
+    const authHeader = String(req.headers.authorization || '');
+    if (authHeader.startsWith('Bearer ')) {
+      try { viewerUid = (await admin.auth().verifyIdToken(authHeader.slice(7))).uid; viewerKey = viewerUid; } catch (e) { viewerUid = null; }
+    }
+    if (!viewerKey) {
+      const anonId = String(req.body?.anonId || '').trim();
+      if (!/^[A-Za-z0-9_-]{12,64}$/.test(anonId)) return res.json({ ok: true, counted: false });
+      viewerKey = 'anon_' + anonId;
+    }
+
+    const targetUid = String(req.body?.targetUid || '').trim();
+    if (!targetUid || targetUid === viewerUid || targetUid.includes('/')) return res.json({ ok: true, counted: false });
+
+    // Only count real profiles (stops junk docs from made-up target ids).
+    const targetSnap = await db.collection('users').doc(targetUid).get();
+    if (!targetSnap.exists) return res.json({ ok: true, counted: false });
+
+    // One count per viewer per profile per calendar day (.create() is atomic and
+    // throws 'already-exists' on a repeat).
     const dateKey = lagosDateKey(lagosNow());
-    const viewRef = db.collection('profileViews').doc(`${viewerUid}_${targetUid}_${dateKey}`);
+    const viewRef = db.collection('profileViews').doc(`${viewerKey}_${targetUid}_${dateKey}`);
     try {
-      await viewRef.create({ viewerUid, profileUid: targetUid, createdAt: admin.firestore.Timestamp.now() });
+      await viewRef.create({ viewerUid: viewerUid || null, anonymous: !viewerUid, profileUid: targetUid, createdAt: admin.firestore.Timestamp.now() });
     } catch (err) {
-      if (err.code === 6 || err.code === 'already-exists') return res.json({ ok: true, counted: false }); // already counted this viewer today
+      if (err.code === 6 || err.code === 'already-exists') return res.json({ ok: true, counted: false });
       throw err;
     }
 
