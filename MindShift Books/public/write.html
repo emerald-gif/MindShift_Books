@@ -71,6 +71,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .cover-placeholder svg{width:36px;height:36px;color:var(--mute)}
 .cover-placeholder span{font-size:14px;color:var(--sub);font-weight:500}
 .cover-placeholder small{font-size:12px;color:var(--mute)}
+.cover-required-badge{font-size:10.5px;font-weight:800;color:#e11d48;text-transform:uppercase;
+  letter-spacing:.5px;background:rgba(225,29,72,.08);padding:3px 9px;border-radius:99px;margin-top:2px}
 .cover-overlay span{font-size:13px;color:#fff;font-weight:600}
 
 
@@ -87,7 +89,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   background:transparent;resize:none;font-family:inherit;line-height:1.6}
 .brief-input::placeholder{color:#d1d5db}
 
-/* ── CATEGORY PILLS ── */
+/* ── CATEGORY PILLS (Tag row only — see .cat-grid/.cat-card below for the
+   main Category picker, styled to match Edit Profile's Interests picker) ── */
 .cat-pills{display:flex;flex-wrap:wrap;gap:8px}
 .cat-pill{padding:7px 14px;border-radius:99px;border:1.5px solid var(--border);background:transparent;
   font-size:13px;font-weight:600;color:var(--sub);cursor:pointer;transition:all .2s;font-family:inherit}
@@ -95,11 +98,38 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   box-shadow:0 4px 14px rgba(37,99,235,.3)}
 .cat-pill:hover:not(.sel){border-color:var(--p);color:var(--p)}
 
-/* ── EDITOR TOOLBAR ── */
+/* ── CATEGORY CARD GRID (main Category picker) ── */
+.cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:380px){ .cat-grid{grid-template-columns:1fr} }
+.cat-card{display:flex;align-items:center;gap:10px;padding:12px;border-radius:14px;
+  border:1.5px solid var(--border);background:var(--card);cursor:pointer;
+  transition:border-color .15s,background .15s;font-family:inherit;text-align:left;position:relative}
+.cat-card:active{transform:scale(.98)}
+.cat-card-ico{width:36px;height:36px;border-radius:10px;flex-shrink:0;display:flex;
+  align-items:center;justify-content:center;background:var(--bg);color:var(--mute);
+  transition:background .15s,color .15s}
+.cat-card-ico svg{width:19px;height:19px}
+.cat-card-label{font-size:12.5px;font-weight:700;color:var(--txt);line-height:1.3}
+.cat-card-check{position:absolute;top:8px;right:8px;width:16px;height:16px;border-radius:50%;
+  background:var(--g);display:flex;align-items:center;justify-content:center;opacity:0;
+  transform:scale(.5);transition:all .15s}
+.cat-card-check svg{width:10px;height:10px;stroke:#fff;stroke-width:3}
+.cat-card.sel{border-color:transparent;background:var(--indigo-soft,rgba(79,70,229,.08))}
+.cat-card.sel .cat-card-ico{background:var(--g);color:#fff}
+.cat-card.sel .cat-card-check{opacity:1;transform:scale(1)}
+
+/* ── EDITOR TOOLBAR ──
+   .editor-wrap has no overflow:hidden on purpose: the toolbar below is
+   position:sticky so it can pin under the header while scrolling through
+   a long article, and a sticky element clips to an overflow:hidden
+   ancestor's box instead of the viewport. The toolbar and the word-count
+   footer round their own top/bottom corners instead, to still match this
+   card's shape. */
 .editor-wrap{background:var(--card);border-radius:var(--radius);border:1.5px solid var(--border);
-  overflow:hidden;margin-bottom:16px}
+  margin-bottom:16px}
 .editor-toolbar{display:flex;align-items:center;gap:2px;padding:10px 12px;
-  border-bottom:1px solid var(--border);background:#fafafa;flex-wrap:wrap;position:relative}
+  border-bottom:1px solid var(--border);background:#fafafa;flex-wrap:wrap;
+  position:sticky;top:60px;z-index:40;border-radius:var(--radius) var(--radius) 0 0}
 .tb-btn{width:32px;height:32px;border:none;background:none;border-radius:8px;cursor:pointer;
   display:flex;align-items:center;justify-content:center;color:var(--sub);font-size:13px;
   font-weight:700;font-family:inherit;transition:all .15s}
@@ -172,7 +202,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .color-popover-custom span{font-size:12px;color:var(--sub);font-weight:600}
 
 .word-count{padding:8px 20px;border-top:1px solid var(--border);font-size:12px;
-  color:var(--mute);background:#fafafa;display:flex;justify-content:space-between}
+  color:var(--mute);background:#fafafa;display:flex;justify-content:space-between;
+  border-radius:0 0 var(--radius) var(--radius)}
 
 /* ── SUBMIT AREA ── */
 .submit-card{background:var(--card);border-radius:var(--radius);border:1.5px solid var(--border);
@@ -314,6 +345,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
       </svg>
       <span id="coverPlaceholderText">Add Cover Image</span>
       <small id="coverPlaceholderSub">Tap to upload (JPG, PNG, WebP · max 5MB)</small>
+      <span class="cover-required-badge">Required</span>
     </div>
     <img id="coverPreview" src="" alt="" style="display:none">
     <div class="cover-actions" id="coverActions">
@@ -336,7 +368,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   <!-- CATEGORY -->
   <div class="form-section">
     <div class="form-label">Category</div>
-    <div class="cat-pills" id="catPills">
+    <div class="cat-grid" id="catPills">
       <!-- populated from /article-categories.js (window.MSB_CATEGORIES) at load time — see renderCatPills() -->
     </div>
   </div>
@@ -570,7 +602,7 @@ async function loadArticleForEdit(id){
     resetEditorHistory();
     if(a.cover) window.previewCover(a.cover);
     if(a.cat){
-      const pill = document.querySelector(`#catPills .cat-pill[data-cat="${a.cat}"]`);
+      const pill = document.querySelector(`#catPills .cat-card[data-cat="${a.cat}"]`);
       if(pill){ pill.classList.add('sel'); selectedCat = a.cat; renderSubCatPills(a.cat); }
     }
     if(a.subCat){
@@ -594,13 +626,34 @@ async function loadArticleForEdit(id){
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && editId && _editRetryable && !_editLoaded && currentUser) loadArticleForEdit(editId); });
 window.addEventListener('online', ()=>{ if(editId && _editRetryable && !_editLoaded && currentUser) loadArticleForEdit(editId); });
 
-/* ── CATEGORY PILLS (from window.MSB_CATEGORIES, article-categories.js) ── */
+/* ── CATEGORY PICKER (from window.MSB_CATEGORIES, article-categories.js) ──
+   Icon-card style, matching Edit Profile's Interests picker — same icon set
+   as profile.html's INTEREST_ICONS, kept in sync since both read the same
+   category codes from article-categories.js. Single-select (an article has
+   one category), unlike the multi-select Interests picker on the profile. */
+const CAT_ICONS = {
+  MINDSET: '<path d="M9.5 2a4.5 4.5 0 00-4.2 6.1A4 4 0 003 11.5 4 4 0 006 15.3v1.2a4 4 0 004 4h.5a2 2 0 002-2V6.5A4.5 4.5 0 009.5 2z"/><path d="M14.5 2a4.5 4.5 0 014.2 6.1A4 4 0 0121 11.5a4 4 0 01-3 3.8v1.2a4 4 0 01-4 4h-.5a2 2 0 01-2-2V6.5A4.5 4.5 0 0114.5 2z"/>',
+  MONEY: '<rect x="2.5" y="6" width="19" height="12" rx="2.2"/><circle cx="12" cy="12" r="2.6"/><path d="M6 6V5a3 3 0 013-3h6a3 3 0 013 3v1"/>',
+  PRODUCTIVITY: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+  RELATIONSHIPS: '<path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>',
+  HEALTH: '<path d="M2 20c4-8 8-3 10-8 2 5 6 0 10 8"/><path d="M12 2v10"/>',
+  CAREER: '<path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 00-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 018-8c2 0 3.5 1.5 3.5 3.5a22 22 0 01-8 8z"/><path d="M9 12H4s1.5-2.5 2-3 3.5-2 3.5-2"/><path d="M12 15v5s2.5-1.5 3-2 2-3.5 2-3.5"/>',
+  EDUCATION: '<path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1.5 3 3 6 3s6-1.5 6-3v-5"/>',
+  PURPOSE: '<circle cx="12" cy="12" r="9"/><path d="M3.6 9h16.8M3.6 15h16.8"/><path d="M12 3a13 13 0 010 18M12 3a13 13 0 000 18"/>',
+  REFLECTIVE: '<path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>',
+  FICTION: '<path d="M2 4.5A2.5 2.5 0 014.5 2H11v18H4.5A2.5 2.5 0 012 17.5z"/><path d="M22 4.5A2.5 2.5 0 0019.5 2H13v18h6.5a2.5 2.5 0 002.5-2.5z"/>'
+};
 function renderCatPills(){
   const wrap = document.getElementById('catPills');
   if(!wrap || !window.MSB_CATEGORIES) return;
-  wrap.innerHTML = window.MSB_CATEGORIES.map(c =>
-    `<button class="cat-pill" data-cat="${c.code}" onclick="selectCat(this)">${c.emoji} ${c.label}</button>`
-  ).join('');
+  wrap.innerHTML = window.MSB_CATEGORIES.map(c => {
+    const sel = c.code === selectedCat;
+    return `<button type="button" class="cat-card${sel?' sel':''}" data-cat="${c.code}" onclick="selectCat(this)">
+      <span class="cat-card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${CAT_ICONS[c.code]||''}</svg></span>
+      <span class="cat-card-label">${c.label}</span>
+      <span class="cat-card-check"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+    </button>`;
+  }).join('');
 }
 renderCatPills();
 
@@ -726,7 +779,7 @@ window.removeCover = function(){
 
 /* ── CATEGORY ── */
 window.selectCat = function(el){
-  document.querySelectorAll('#catPills .cat-pill').forEach(p=>p.classList.remove('sel'));
+  document.querySelectorAll('#catPills .cat-card').forEach(p=>p.classList.remove('sel'));
   el.classList.add('sel');
   selectedCat = el.dataset.cat;
   selectedSubCat = '';
@@ -1328,7 +1381,7 @@ function loadDraft(){
     if(d.body)  document.getElementById('editorBody').innerHTML = d.body;
     resetEditorHistory();
     if(d.cat){
-      const pill = document.querySelector(`#catPills .cat-pill[data-cat="${d.cat}"]`);
+      const pill = document.querySelector(`#catPills .cat-card[data-cat="${d.cat}"]`);
       if(pill){ pill.classList.add('sel'); selectedCat = d.cat; renderSubCatPills(d.cat); }
     }
     if(d.subCat){
@@ -1349,6 +1402,7 @@ window.submitArticle = async function(){
   const body  = document.getElementById('editorBody').innerHTML.trim();
   const cover = document.getElementById('coverUrl').value.trim();
 
+  if(!cover){ showToast('Please add a cover image'); return; }
   if(!title){ showToast('Please add a title'); return; }
   if(!selectedCat){ showToast('Please select a category'); return; }
   if(!brief){ showToast('Please add a brief summary'); return; }
@@ -1433,7 +1487,7 @@ function clearForm(){
   document.getElementById('coverPlaceholderText').textContent = 'Add Cover Image';
   document.getElementById('coverPlaceholderSub').textContent  = 'Tap to upload (JPG, PNG, WebP · max 5MB)';
   document.getElementById('coverZone').classList.remove('has-img');
-  document.querySelectorAll('.cat-pill').forEach(p=>p.classList.remove('sel'));
+  document.querySelectorAll('.cat-pill, .cat-card').forEach(p=>p.classList.remove('sel'));
   selectedCat = '';
   selectedSubCat = '';
   const subSection = document.getElementById('subCatSection');

@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Writing Guide · MindShift Books</title>
+<meta name="description" content="A quick guide to writing articles on MindShift Books."/>
+<link rel="icon" href="/MINDSHIFT.jpg">
+<meta name="robots" content="noindex, nofollow"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  /* MindShift Books brand tokens (matches write.html / styles.css --primary/--accent) */
+  --p:#4f46e5;--p2:#06b6d4;--ps:#4338ca;
+  --g:linear-gradient(90deg,#4f46e5,#06b6d4);
+  --bg:#f8fafc;--card:#fff;
+  --border:#e5e7eb;--border2:#e5e7eb;
+  --txt:#0f172a;--sub:#6b7280;--mute:#9ca3af;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);
+  min-height:100vh;-webkit-font-smoothing:antialiased}
+
+/* ── HEADER ── */
+.hdr{position:sticky;top:0;z-index:100;background:rgba(248,247,255,.92);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);padding:0 16px;height:56px;
+  display:flex;align-items:center;gap:12px}
+.btn-back{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--border);background:var(--card);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt);flex-shrink:0}
+.btn-back svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.hdr-title{font-size:16px;font-weight:800;color:var(--txt)}
+
+.wrap{max-width:680px;margin:0 auto;padding:28px 18px 80px}
+
+/* ── HERO ── */
+.hero{margin-bottom:36px}
+.hero-eyebrow{font-size:11px;font-weight:800;color:var(--p);text-transform:uppercase;
+  letter-spacing:.8px;margin-bottom:10px}
+.hero h1{font-size:30px;font-weight:900;letter-spacing:-.8px;line-height:1.15;margin-bottom:12px}
+.hero p{font-size:15px;color:var(--sub);line-height:1.6;max-width:520px}
+
+/* live opening demo: a tiny formatted sentence showing several tools at once */
+.hero-demo{margin-top:22px;background:var(--card);border:1.5px solid var(--border2);
+  border-radius:16px;padding:18px 20px;font-size:15px;line-height:1.7;color:var(--txt);
+  box-shadow:0 2px 10px rgba(79,70,229,.05)}
+
+/* ── SECTION HEADERS ── */
+.section{margin-bottom:38px}
+.section-head{margin-bottom:16px}
+.section-label{font-size:11px;font-weight:800;color:var(--p);text-transform:uppercase;
+  letter-spacing:.6px;margin-bottom:4px}
+.section-title{font-size:21px;font-weight:900;letter-spacing:-.4px}
+.section-sub{font-size:13.5px;color:var(--sub);margin-top:4px;line-height:1.5}
+
+/* ── FEATURE CARD ── */
+.feat-group{display:flex;flex-direction:column;gap:10px}
+.feat-card{background:var(--card);border:1.5px solid var(--border2);border-radius:16px;
+  padding:16px;box-shadow:0 2px 10px rgba(79,70,229,.04)}
+.feat-top{display:flex;align-items:flex-start;gap:12px;margin-bottom:12px}
+.feat-icon{width:38px;height:38px;border-radius:11px;background:#f3f0ff;color:var(--p);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.feat-icon svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;
+  stroke-linecap:round;stroke-linejoin:round}
+.feat-icon b,.feat-icon i,.feat-icon u{font-size:15px;font-style:normal;color:var(--p)}
+.feat-name{font-size:14.5px;font-weight:800;margin-bottom:2px}
+.feat-desc{font-size:13px;color:var(--sub);line-height:1.5}
+.feat-hint{display:inline-flex;align-items:center;gap:5px;margin-top:8px;font-size:11.5px;
+  font-weight:700;color:var(--ps);background:#f8f5ff;padding:4px 10px;border-radius:99px}
+.feat-hint kbd{background:#fff;border:1px solid var(--border2);border-radius:5px;
+  padding:1px 6px;font-family:'SF Mono',Consolas,monospace;font-size:11px;color:var(--p)}
+.feat-demo{background:var(--bg);border:1px solid var(--border);border-radius:11px;
+  padding:14px 16px;font-size:14.5px}
+
+/* ── art-body clone — used inside demos & the anatomy mockup so they match
+   article-read.html's rendering exactly, not an approximation ── */
+.art-body{line-height:1.75;color:#374151}
+.art-body p{margin-bottom:10px}
+.art-body h2{font-size:18px;font-weight:900;color:var(--txt);line-height:1.3;margin:4px 0 8px;letter-spacing:-.3px}
+.art-body h3{font-size:15.5px;font-weight:800;color:var(--txt);margin:4px 0 6px}
+.art-body ul,.art-body ol{padding-left:20px;margin-bottom:8px}
+.art-body li{margin-bottom:5px}
+.art-body strong{color:var(--txt);font-weight:800}
+.art-body em{font-style:italic;color:var(--sub)}
+.art-body s{color:var(--sub)}
+.art-body code{font-size:12.5px;background:#f1f5f9;padding:2px 7px;border-radius:5px;
+  font-family:'SF Mono',Consolas,monospace;color:#0f172a}
+.art-body hr{border:none;border-top:2px solid #ece9f5;margin:14px 0}
+.art-body blockquote{background:#f8f5ff;border-left:4px solid var(--p);border-radius:0 10px 10px 0;
+  padding:10px 14px;margin:10px 0;font-style:italic;color:var(--ps)}
+.art-body a{color:var(--p);text-decoration:underline;font-weight:600}
+.art-body img{max-width:100%;height:auto;border-radius:10px;margin:10px 0;display:block}
+
+/* ── TABLES ── */
+.ref-table{width:100%;border-collapse:collapse;background:var(--card);border:1.5px solid var(--border2);
+  border-radius:14px;overflow:hidden}
+.ref-table td{padding:12px 14px;font-size:13.5px;border-top:1px solid var(--border)}
+.ref-table tr:first-child td{border-top:none}
+.ref-table td:first-child{width:42%}
+.kbd-combo{display:inline-flex;gap:4px}
+kbd{background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:3px 8px;
+  font-family:'SF Mono',Consolas,monospace;font-size:12px;font-weight:700;color:var(--p)}
+.ref-table .desc{color:var(--sub)}
+
+/* ── SMART FEATURE CARDS ── */
+.smart-card{display:flex;gap:14px;background:var(--card);border:1.5px solid var(--border2);
+  border-radius:16px;padding:16px;margin-bottom:10px}
+.smart-icon{width:38px;height:38px;border-radius:11px;background:#ecfdf5;color:#059669;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.smart-icon svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;
+  stroke-linecap:round;stroke-linejoin:round}
+.smart-name{font-size:14px;font-weight:800;margin-bottom:3px}
+.smart-desc{font-size:13px;color:var(--sub);line-height:1.5}
+
+/* ── ANATOMY MOCKUP (pixel-faithful clone of article-read.html's real #artContent markup) ── */
+.anatomy-card{background:var(--card,#fff);border:1.5px solid var(--border2);border-radius:18px;
+  padding:18px;box-shadow:0 4px 18px rgba(79,70,229,.07);position:relative}
+.an-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:2px}
+.an-badge{flex-shrink:0;width:22px;height:22px;border-radius:50%;background:var(--g);color:#fff;
+  font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;
+  margin-top:2px}
+.an-content{flex:1;min-width:0}
+
+/* .art-cat clone */
+.an-cat{display:inline-block;background:var(--g);color:#fff;font-size:10px;font-weight:800;
+  padding:4px 11px;border-radius:99px;letter-spacing:.4px;text-transform:uppercase;margin-bottom:12px}
+/* .art-title clone */
+.an-title{font-size:22px;font-weight:900;line-height:1.22;letter-spacing:-.5px;color:var(--txt);margin-bottom:14px}
+/* .author-row-wrap / .author-row clone */
+.an-author-row{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding-bottom:14px;border-bottom:1px solid #f3f4f6;margin-bottom:0}
+.an-author-left{display:flex;align-items:center;gap:10px}
+.an-avatar{width:34px;height:34px;border-radius:50%;background:var(--g);flex-shrink:0;border:2px solid var(--border)}
+.an-author-name{font-size:14px;font-weight:700;color:var(--txt);display:flex;align-items:center;gap:5px}
+.an-vbadge{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;
+  border-radius:50%;background:var(--g);flex-shrink:0}
+.an-vbadge svg{width:9px;height:9px;stroke:#fff;stroke-width:3;fill:none}
+.an-author-meta{font-size:12px;color:var(--mute)}
+/* .action-bar clone — same 6 icons, same order, save pushed right */
+.an-actions{display:flex;align-items:center;gap:24px;padding:14px 0 16px;border-bottom:1px solid #f3f4f6;
+  margin-bottom:16px;overflow-x:hidden}
+.an-act-btn{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--sub)}
+.an-act-btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;flex-shrink:0}
+.an-act-btn.an-act-save{margin-left:auto}
+/* .art-hero clone */
+.an-hero{width:100%;height:150px;object-fit:cover;border-radius:14px;
+  background:linear-gradient(135deg,#cffafe,#ecfeff);margin:2px 0 22px;
+  display:flex;align-items:center;justify-content:center;color:var(--p2);font-size:11px;font-weight:700}
+
+.legend{margin-top:18px;display:flex;flex-direction:column;gap:10px}
+.legend-item{display:flex;gap:10px;align-items:flex-start}
+.legend-badge{flex-shrink:0;width:22px;height:22px;border-radius:50%;background:#f3f0ff;color:var(--p);
+  font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.legend-text b{font-size:13px;font-weight:800;display:block;margin-bottom:1px}
+.legend-text span{font-size:12.5px;color:var(--sub);line-height:1.5}
+
+/* ── CTA ── */
+.cta{background:var(--g);border-radius:18px;padding:26px 22px;text-align:center;color:#fff;
+  margin-top:10px}
+.cta h3{font-size:18px;font-weight:900;margin-bottom:6px}
+.cta p{font-size:13px;opacity:.92;margin-bottom:16px;line-height:1.5}
+.cta a{display:inline-flex;align-items:center;gap:6px;background:#fff;color:var(--p);
+  font-size:14px;font-weight:800;padding:11px 22px;border-radius:99px;text-decoration:none}
+
+@media(max-width:420px){
+  .hero h1{font-size:25px}
+  .feat-top{flex-wrap:wrap}
+}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <button class="btn-back" onclick="history.back()">
+    <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+  </button>
+  <span class="hdr-title">Writing Guide</span>
+</div>
+
+<div class="wrap">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-eyebrow">Before you write</div>
+    <h1>Everything the editor can do</h1>
+    <p>A quick tour of every formatting tool, shortcut, and smart feature in the article editor — plus how it all turns into a published article readers actually see.</p>
+    <div class="hero-demo art-body">
+      You can make text <strong>bold</strong>, <em>italic</em>, or <s>struck through</s>, drop in <code>inline code</code>, add a <a href="#">link</a>, or even <span style="color:#7c3aed;font-weight:700">color</span> it — <span style="background:#fef08a;padding:0 3px;border-radius:3px">highlight</span> included.
+    </div>
+  </div>
+
+  <!-- FORMATTING TOOLS -->
+  <div class="section">
+    <div class="section-head">
+      <div class="section-label">Toolbar</div>
+      <div class="section-title">Formatting tools</div>
+      <div class="section-sub">Select some text first, then tap a tool — or use a shortcut below.</div>
+    </div>
+
+    <div class="feat-group">
+
+      <div class="feat-card">
+        <div class="feat-top">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><polyline points="7 6 3 10 7 14"/><path d="M3 10h10a5 5 0 0 1 5 5v1a5 5 0 0 1-5 5H9"/></svg></div>
+          <div>
+            <div class="feat-name">Undo / Redo</div>
+            <div class="feat-desc">Step backward or forward through your recent edits.</div>
+            <div class="feat-hint"><kbd>Ctrl Z</kbd> undo · <kbd>Ctrl Shift Z</kbd> redo</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-top">
+          <div class="feat-icon"><b>B</b></div>
+          <div>
+            <div class="feat-name">Bold</div>
+            <div class="feat-desc">Make a word or phrase stand out for emphasis.</div>
+            <div class="feat-hint"><kbd>Ctrl B</kbd></div>
+          </div>
+        </div>
+        <div class="feat-demo art-body">Make your <strong>most important point</strong> impossible to miss.</div>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-top">
+          <div class="feat-icon"><i>I</i></div>
+          <div>
+            <div class="feat-name">Italic</div>
+            <div class="feat-desc">Soften a phrase, or set off a term you're defining.</div>
+            <div class="feat-hint"><kbd>Ctrl I</kbd></div>
+          </div>
+        </div>
+        <div class="feat-demo art-body">Often used for <em>asides or definitions</em> mid-sentence.</div>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-top">
+          <div class="feat-icon"><u>U</u></div>
+          <div>
+            <div class="feat-name">Underline</div>
+            <div class="feat-desc">Draw the eye to a specific word or short phrase.</div>
+            <div class="feat-hint"><kbd>Ctrl U</kbd></div>
+          </div>
+        </div>
+        <div class="feat-demo art-body">Use sparingly — <u>underlined text reads as a link</u> to some people.</div>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-top">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M16 4H9a3 3 0 0 0-2.83 4"/><path d="M14 12a4 4 0 0 1 0 8H6"/><line x1="4" y1="12" x2="20" y2="12"/></svg></div>
+          <div>
+            <div class="feat-name">Strikethrough</div>
+            <div class="feat-desc">Show something's been corrected or is no longer true.</div>
+          </div>
+        </div>
+        <div class="feat-demo art-body">Submit by <s>Friday</s> Monday at the latest.</div>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-top">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></div>
+          <div>
+            <div class="feat-name">Inline code</div>
+            <div class="feat-desc">For commands, file names, or short technical terms.</div>
+            <div class="feat-hint">Type <kbd>`text`</kbd> — closes automatically</div>
+          </div>
+        </div>
+        <div class="feat-demo art-body">Run <code>npm install</code> before starting the server.</div>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-top">
+          <div class="feat-icon" style="position:relative">
+            <b style="font-size:14px">A</b>
+            <div style="position:absolute;bottom:6px;left:9px;right:9px;height:3px;border-radius:2px;background:#dc2626"></div>
+          </div>
+          <div>
+            <div class="feat-name">Text color</div>
+            <div class="feat-desc">Pick from preset colors or any custom shade.</div>
+          </div>
+        </div>
+        <div class="feat-demo art-body">Make a <span style="color:#dc2626;font-weight:700">warning</span> or <span style="color:#059669;font-weight:700">key takeaway</span> visually distinct.</div>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-top">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/></svg></div>
+          <div>
+            <div class="feat-name">Highlight color</div>
+            <div class="feat-desc">Mark text the way you would with a highlighter pen.</div>
+          </div>
+        </div>
+        <div class="feat-demo art-body">The deadline is <span style="background:#fef08a;padding:0 3px;border-radius:3px">end of day Friday</span> — no extensions.</div>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-top">
+          <div class="feat-icon" style="font-weight:800;font-size:12px">H2</div>
+          <div>
+            <div class="feat-name">Heading 2</div>
+            <div class="feat-desc">Start a new major section of your article.</div>
+            <div class="feat-hint">Type <kbd>## </kbd> at the start of a line</div>
+          </div>
+        </div>
+        <div class="feat-demo art-body"><h2 style="margin-top:0">Why this matters</h2>Section headings break a long article into something skimmable.</div>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-top">
+          <div class="feat-icon" style="font-weight:700;font-size:11px">H3</div>
+          <div>
+            <div class="feat-name">Heading 3</div>
+            <div class="feat-desc">A smaller sub-section inside a larger one.</div>
+            <div class="feat-hint">Type <kbd>### </kbd> at the start of a line</div>
+          </div>
+        </div>
+        <div class="feat-demo art-body"><h3 style="margin-top:0">A smaller point</h3>Use this to break up a section without starting a whole new one.</div>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-top">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1.5" fill="currentColor"/><circle cx="4" cy="12" r="1.5" fill="currentColor"/><circle cx="4" cy="18" r="1.5" fill="currentColor"/></svg></div>
+          <div>
+            <div class="feat-name">Bullet list</div>
+            <div class="feat-desc">For a set of items where order doesn't matter.</div>
+            <div class="feat-hint">Type <kbd>- </kbd> or <kbd>* </kbd> at the start of a line</div>
+          </div>
+        </div>
+        <div class="feat-demo art-body"><ul style="margin-bottom:0"><li>Clear, scannable points</li><li>No particular order</li><li>Easy to skim</li></ul></div>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-top">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg></div>
+          <div>
+            <div class="feat-name">Numbered list</div>
+            <div class="feat-desc">For steps or items where order matters.</div>
+            <div class="feat-hint">Type <kbd>1. </kbd> at the start of a line</div>
+          </div>
+        </div>
+        <div class="feat-demo art-body"><ol style="margin-bottom:0"><li>Update your resume</li><li>Tailor it to the role</li><li>Submit before the deadline</li></ol></div>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-top">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg></div>
+          <div>
+            <div class="feat-name">Quote</div>
+            <div class="feat-desc">Set apart a quotation or a line you want to emphasize.</div>
+            <div class="feat-hint">Type <kbd>&gt; </kbd> at the start of a line</div>
+          </div>
+        </div>
+        <div class="feat-demo art-body"><blockquote style="margin:0">"The best time to start was a year ago. The second best time is today."</blockquote></div>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-top">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+          <div>
+            <div class="feat-name">Divider</div>
+            <div class="feat-desc">A visual break between two distinct parts of an article.</div>
+          </div>
+        </div>
+        <div class="feat-demo art-body">Section one ends here.<hr style="margin:10px 0">Section two starts here.</div>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-top">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>
+          <div>
+            <div class="feat-name">Insert image</div>
+            <div class="feat-desc">Add a screenshot, photo, chart, or diagram right in the body.</div>
+            <div class="feat-hint">Also works by pasting an image directly</div>
+          </div>
+        </div>
+        <div class="feat-demo art-body" style="background:#f3f0ff;border:1.5px dashed var(--border2);text-align:center;color:var(--p2);font-weight:600;padding:18px">🖼 Your image appears here, full width</div>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-top">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg></div>
+          <div>
+            <div class="feat-name">Link</div>
+            <div class="feat-desc">Point readers to a source, tool, or related article.</div>
+            <div class="feat-hint"><kbd>Ctrl K</kbd></div>
+          </div>
+        </div>
+        <div class="feat-demo art-body">Read the <a href="#">full report</a> for the complete data.</div>
+      </div>
+
+      <div class="feat-card">
+        <div class="feat-top">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M17 3H7L3 21h4l3-9 3 9h4L13 9l4-6z"/><line x1="18" y1="12" x2="22" y2="16"/><line x1="22" y1="12" x2="18" y2="16"/></svg></div>
+          <div>
+            <div class="feat-name">Clear formatting</div>
+            <div class="feat-desc">Strip all formatting from selected text back to plain.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- KEYBOARD SHORTCUTS -->
+  <div class="section">
+    <div class="section-head">
+      <div class="section-label">Faster writing</div>
+      <div class="section-title">Keyboard shortcuts</div>
+    </div>
+    <table class="ref-table">
+      <tr><td><span class="kbd-combo"><kbd>Ctrl</kbd>+<kbd>B</kbd></span></td><td class="desc">Bold</td></tr>
+      <tr><td><span class="kbd-combo"><kbd>Ctrl</kbd>+<kbd>I</kbd></span></td><td class="desc">Italic</td></tr>
+      <tr><td><span class="kbd-combo"><kbd>Ctrl</kbd>+<kbd>U</kbd></span></td><td class="desc">Underline</td></tr>
+      <tr><td><span class="kbd-combo"><kbd>Ctrl</kbd>+<kbd>K</kbd></span></td><td class="desc">Insert a link</td></tr>
+      <tr><td><span class="kbd-combo"><kbd>Ctrl</kbd>+<kbd>Z</kbd></span></td><td class="desc">Undo</td></tr>
+      <tr><td><span class="kbd-combo"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd></span></td><td class="desc">Redo</td></tr>
+      <tr><td><kbd>Esc</kbd></td><td class="desc">Close a popover</td></tr>
+    </table>
+  </div>
+
+  <!-- MARKDOWN SHORTCUTS -->
+  <div class="section">
+    <div class="section-head">
+      <div class="section-label">Faster writing</div>
+      <div class="section-title">Type-to-format</div>
+      <div class="section-sub">Type these at the very start of a line, then hit space — no need to touch the toolbar.</div>
+    </div>
+    <table class="ref-table">
+      <tr><td><kbd>## </kbd></td><td class="desc">Heading 2</td></tr>
+      <tr><td><kbd>### </kbd></td><td class="desc">Heading 3</td></tr>
+      <tr><td><kbd>- </kbd> or <kbd>* </kbd></td><td class="desc">Bullet list</td></tr>
+      <tr><td><kbd>1. </kbd></td><td class="desc">Numbered list</td></tr>
+      <tr><td><kbd>&gt; </kbd></td><td class="desc">Quote</td></tr>
+      <tr><td><kbd>`text`</kbd></td><td class="desc">Inline code — wraps as you type the closing backtick</td></tr>
+    </table>
+  </div>
+
+  <!-- SMART FEATURES -->
+  <div class="section">
+    <div class="section-head">
+      <div class="section-label">Working in the background</div>
+      <div class="section-title">Smart features</div>
+    </div>
+
+    <div class="smart-card">
+      <div class="smart-icon"><svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg></div>
+      <div>
+        <div class="smart-name">Autosave</div>
+        <div class="smart-desc">Stops typing for about 2 seconds and your draft saves itself. A small "Saved" note appears near the Save Draft button so you always know it's safe.</div>
+      </div>
+    </div>
+
+    <div class="smart-card">
+      <div class="smart-icon"><svg viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg></div>
+      <div>
+        <div class="smart-name">Clean paste</div>
+        <div class="smart-desc">Paste in from Word, Google Docs, or any webpage — the messy fonts and styles get stripped automatically so it matches the rest of your article.</div>
+      </div>
+    </div>
+
+    <div class="smart-card">
+      <div class="smart-icon"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+      <div>
+        <div class="smart-name">Word count & read time</div>
+        <div class="smart-desc">Updates live as you type, so you always know roughly how long the finished piece will take to read.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ANATOMY OF A PUBLISHED ARTICLE -->
+  <div class="section">
+    <div class="section-head">
+      <div class="section-label">Where it all goes</div>
+      <div class="section-title">Anatomy of a published article</div>
+      <div class="section-sub">Here's exactly how the fields you fill in become the article a reader sees.</div>
+    </div>
+
+    <div class="anatomy-card">
+      <span class="an-cat">① Mindset &amp; Personal Development</span>
+      <div class="an-title">② Why Self-Discipline Beats Motivation Every Time</div>
+      <div class="an-author-row">
+        <div class="an-author-left">
+          <div class="an-avatar"></div>
+          <div>
+            <div class="an-author-name">③ Your Name <span class="an-vbadge"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span></div>
+            <div class="an-author-meta">6 min read · 2h</div>
+          </div>
+        </div>
+      </div>
+      <div class="an-actions">
+        <span class="an-act-btn">④ <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg> 0</span>
+        <span class="an-act-btn"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg> 0</span>
+        <span class="an-act-btn"><svg viewBox="0 0 24 24"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg> 0</span>
+        <span class="an-act-btn"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></span>
+        <span class="an-act-btn"><svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg> 0</span>
+        <span class="an-act-btn an-act-save"><svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg></span>
+      </div>
+      <div class="an-hero">⑤ Cover image</div>
+      <div class="art-body" style="font-size:13.5px">
+        ⑥ <h2 style="margin-top:0;font-size:16px">Discipline is a skill, not a trait</h2>
+        Everything below this line — headings, lists, quotes, images, links — comes straight from what you type in the editor body.
+      </div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-badge">1</div>
+        <div class="legend-text"><b>Category</b><span>The pill you select before writing. Helps readers filter and find your article.</span></div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-badge">2</div>
+        <div class="legend-text"><b>Title</b><span>The headline field at the top of the editor — kept separate from the body so it always renders large and bold.</span></div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-badge">3</div>
+        <div class="legend-text"><b>Author row</b><span>Filled in automatically from your profile name and photo. Nothing to do here.</span></div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-badge">4</div>
+        <div class="legend-text"><b>Action bar</b><span>Like, comment, repost, share, download, and save — these populate automatically once it's published.</span></div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-badge">5</div>
+        <div class="legend-text"><b>Cover image</b><span>The image you upload before submitting. Shows full-width right above your article.</span></div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-badge">6</div>
+        <div class="legend-text"><b>Body</b><span>Everything you write in the main editor — every heading, list, quote, image, and link, exactly as formatted.</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta">
+    <h3>Ready to write?</h3>
+    <p>Your draft saves itself — there's nothing to lose by just starting.</p>
+    <a href="/write">Start writing →</a>
+  </div>
+
+</div>
+</body>
+</html>
