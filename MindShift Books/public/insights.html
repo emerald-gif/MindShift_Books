@@ -490,7 +490,8 @@ async function loadInsights(uid){
       safeDocs(query(collection(db,'profileViews'),
         where('profileUid','==',uid),
         orderBy('createdAt','desc'),
-        limit(300))),
+        limit(300)),
+        query(collection(db,'profileViews'), where('profileUid','==',uid))),
       safeDocs(query(collection(db,'notifications'),
         where('recipientUid','==',uid),
         orderBy('createdAt','desc'),
@@ -498,7 +499,8 @@ async function loadInsights(uid){
       safeDocs(query(collection(db,'follows'),
         where('followingId','==',uid),
         orderBy('createdAt','desc'),
-        limit(1000))),                                            // uses followingId+createdAt index
+        limit(1000)),
+        query(collection(db,'follows'), where('followingId','==',uid))),                                            // uses followingId+createdAt index
       safeDocs(query(collection(db,'articles'),
         where('authorUid','==',uid))),
       safeDocs(query(collection(db,'posts'),
@@ -685,9 +687,10 @@ function smoothLine(pts){
     const p2 = pts[i+1];
     const p3 = pts[i+2] || p2;
     const cp1x = p1.x + (p2.x - p0.x)/6;
-    const cp1y = p1.y + (p2.y - p0.y)/6;
+    const lo = Math.min(p1.y, p2.y), hi = Math.max(p1.y, p2.y);
+    const cp1y = Math.min(hi, Math.max(lo, p1.y + (p2.y - p0.y)/6)); // clamped: no overshoot below zero
     const cp2x = p2.x - (p3.x - p1.x)/6;
-    const cp2y = p2.y - (p3.y - p1.y)/6;
+    const cp2y = Math.min(hi, Math.max(lo, p2.y - (p3.y - p1.y)/6));
     d += ` C${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2.x.toFixed(1)},${p2.y.toFixed(1)}`;
   }
   return d;
@@ -698,23 +701,11 @@ function renderTrend(viewDocs, followDocs, days){
   const views = bucketByDay(viewDocs, days);
   const followers = bucketByDay(followDocs, days);
 
-  // "Today" is a single point — a line/area chart can't show a trend across
-  // one value, so show it as a clean summary instead of an empty/broken canvas.
-  if(days === 1){
-    document.getElementById('trendCard').innerHTML = `
-      <div class="today-summary">
-        <div class="today-summary-item">
-          <div class="today-summary-value">${views[0].toLocaleString()}</div>
-          <div class="today-summary-label">Profile Views today</div>
-        </div>
-        <div class="today-summary-divider"></div>
-        <div class="today-summary-item">
-          <div class="today-summary-value">${followers[0].toLocaleString()}</div>
-          <div class="today-summary-label">New Followers today</div>
-        </div>
-      </div>`;
-    return;
-  }
+  // "Today" is a single point, and the boxes above already show it — so hide the
+  // chart card instead of repeating the same numbers underneath.
+  const trendEl = document.getElementById('trendCard');
+  if(days === 1){ trendEl.style.display = 'none'; trendEl.innerHTML = ''; return; }
+  trendEl.style.display = '';
 
   const max = Math.max(...views, ...followers, 1);
 
@@ -857,10 +848,45 @@ window.setTrendDays = function(days){
   document.querySelectorAll('.day-pill').forEach(b => b.classList.toggle('active', Number(b.dataset.days) === days));
   renderTrend(_viewDocs, _followDocs, days);
   renderAnalyticsBoxes(days);
+  refreshAnalytics(); // pull the latest views/followers so "Today" is never stale
 }
 
+// The page used to load once and never look again, so views that arrived after you
+// opened it (or while the tab sat in the background) never showed up in Today.
+// This re-reads just the two analytics lists and redraws the boxes + chart.
+let _refreshing = false, _lastRefresh = Date.now();
+async function refreshAnalytics(){
+  if(_refreshing || !_insUid || _insState !== 'ok') return;
+  _refreshing = true;
+  try{
+    const uid = _insUid;
+    const [pv, fl] = await Promise.all([
+      safeDocs(query(collection(db,'profileViews'), where('profileUid','==',uid), orderBy('createdAt','desc'), limit(300)),
+               query(collection(db,'profileViews'), where('profileUid','==',uid))),
+      safeDocs(query(collection(db,'follows'), where('followingId','==',uid), orderBy('createdAt','desc'), limit(1000)),
+               query(collection(db,'follows'), where('followingId','==',uid)))
+    ]);
+    _viewDocs = pv; _followDocs = fl; _lastRefresh = Date.now();
+    renderTrend(_viewDocs, _followDocs, currentTrendDays);
+    renderAnalyticsBoxes(currentTrendDays);
+    renderDelta('viewsDelta', weekDelta(_viewDocs), false);
+    renderDelta('followersDelta', weekDelta(_followDocs), false);
+    try{
+      const us = await getDoc(doc(db,'users',uid));
+      if(us.exists() && typeof us.data().profileViewCount === 'number') setNum('statViews', us.data().profileViewCount);
+    }catch{}
+  }catch(e){ console.warn('refreshAnalytics failed:', e?.code, e?.message); }
+  finally{ _refreshing = false; }
+}
+document.addEventListener('visibilitychange', ()=>{
+  if(!document.hidden && Date.now() - _lastRefresh > 20000) refreshAnalytics();
+});
+setInterval(()=>{ if(!document.hidden) refreshAnalytics(); }, 60000);
+
 function periodCount(docs, days){
-  const cutoff = Date.now() - days*86400000;
+  // Calendar days, same as the trend chart: "Today" = since midnight, 7 days = today + previous 6.
+  const start = new Date(); start.setHours(0,0,0,0); start.setDate(start.getDate()-(days-1));
+  const cutoff = start.getTime();
   return docs.reduce((n,d)=>{
     const ts = d.createdAt; if(!ts) return n;
     const t = (ts.toDate ? ts.toDate() : new Date(ts)).getTime();
@@ -888,7 +914,7 @@ function renderAnalyticsBoxes(days){
   const postsPrev = periodCount(_content, days*2) - postsNow;
 
   document.getElementById('analyticsGrid').innerHTML =
-    analyticsBox('Views', viewsNow, viewsPrev) +
+    analyticsBox('Profile Views', viewsNow, viewsPrev) +
     analyticsBox('New Followers', followersNow, followersPrev) +
     analyticsBox('Posts', postsNow, postsPrev);
 }
@@ -1015,11 +1041,26 @@ function emptyState(iconPath, text){
 // insights + Try again" instead of fake zeros. Permanent errors (a missing
 // composite index, a rules denial) still degrade to an empty list so one
 // unavailable widget can't take the whole page down.
-async function safeDocs(q){
-  try{ const s = await resilient(()=>getDocs(q), {tries:2}); return s.docs.map(d=>({id:d.id,...d.data()})); }
+async function safeDocs(q, fallbackQ){
+  const run = async (query_)=>{ const s = await resilient(()=>getDocs(query_), {tries:2}); return s.docs.map(d=>({id:d.id,...d.data()})); };
+  try{ return await run(q); }
   catch(e){
     if(isTransient(e)) throw e;
-    console.warn('safeDocs: permanent error, showing empty:', e?.code, e?.message);
+    console.warn('safeDocs: permanent error:', e?.code, e?.message);
+    // Most common cause: the composite index (field + createdAt) hasn't been created yet.
+    // Retry with an equality-only query (works on Firestore's automatic indexes) and
+    // sort newest-first in the browser, so the numbers still show up.
+    if(fallbackQ){
+      try{
+        const docs = await run(fallbackQ);
+        const ms = d=>{ const t=d.createdAt; return t ? (t.toDate?t.toDate():new Date(t)).getTime() : 0; };
+        docs.sort((a,b)=>ms(b)-ms(a));
+        return docs;
+      }catch(e2){
+        if(isTransient(e2)) throw e2;
+        console.warn('safeDocs: fallback also failed, showing empty:', e2?.code, e2?.message);
+      }
+    }
     return [];
   }
 }

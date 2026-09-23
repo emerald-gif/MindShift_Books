@@ -422,25 +422,28 @@ export function initNotificationUI({ db, getCurrentUser, getMyProfile, fs }) {
   // Now it just calls the server, which does the write with the Admin SDK
   // (always bypasses security rules) and actually logs failures.
   async function trackProfileView(targetUid) {
-    const currentUser = getCurrentUser();
-    if (!currentUser || !targetUid || targetUid === currentUser.uid) return;
-    // Cheap client-side skip: once this browser tab has already sent a view
-    // for this profile, don't call the server again for the rest of the
-    // session — cuts most of the repeat-request cost from someone
-    // re-visiting or refreshing the same profile several times in one
-    // sitting. This is purely a cost optimization, not the real dedup — the
-    // server is still the source of truth (one count per viewer per
-    // calendar day), so it's fine that this resets on a new tab or session.
+    const currentUser = getCurrentUser();           // may be null — logged-out visitors count too
+    if (!targetUid || (currentUser && targetUid === currentUser.uid)) return;
+    // Cheap client-side skip: one request per profile per tab session. The server
+    // is the real dedup (one count per viewer per profile per calendar day).
     const skipKey = `msb_pv_${targetUid}`;
     try { if (sessionStorage.getItem(skipKey)) return; } catch (e) {}
     try {
-      const idToken = await currentUser.getIdToken();
-      const resp = await fetch('/api/profile/track-view', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
-        body: JSON.stringify({ targetUid })
-      });
-      if (!resp.ok) { console.error('trackProfileView: server rejected the view', resp.status, await resp.text().catch(()=>'')); return; }
+      const headers = { 'Content-Type': 'application/json' };
+      const body = { targetUid };
+      if (currentUser) {
+        headers.Authorization = `Bearer ${await currentUser.getIdToken()}`;
+      } else {
+        let anonId = '';
+        try { anonId = localStorage.getItem('msb_anon_id') || ''; } catch (e) {}
+        if (!anonId) {
+          anonId = (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2) + Date.now()).replace(/[^A-Za-z0-9_-]/g, '');
+          try { localStorage.setItem('msb_anon_id', anonId); } catch (e) {}
+        }
+        body.anonId = anonId;
+      }
+      const resp = await fetch('/api/profile/track-view', { method: 'POST', headers, body: JSON.stringify(body) });
+      if (!resp.ok) { console.error('trackProfileView: server rejected the view', resp.status); return; }
       try { sessionStorage.setItem(skipKey, '1'); } catch (e) {}
     } catch (e) {
       console.error('trackProfileView failed:', e);

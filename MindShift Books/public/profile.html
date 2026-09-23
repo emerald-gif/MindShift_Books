@@ -1249,7 +1249,7 @@ async function loadProfile(uid){
   if(isOwner) renderSetupBanner();
   // Track this as a profile view for Insights — analytics only, never a
   // bell notification to the profile owner.
-  if(currentUser && !isOwner) notif.trackProfileView(profileData.uid);
+  if(!isOwner) notif.trackProfileView(profileData.uid);
   return true;
 }
 
