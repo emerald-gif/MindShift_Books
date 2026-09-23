@@ -266,6 +266,15 @@ export function initNotificationUI({ db, getCurrentUser, getMyProfile, fs }) {
   const { collection, query, where, onSnapshot, getDocs, getCountFromServer, orderBy, limit, addDoc, writeBatch, serverTimestamp, doc, getDoc, setDoc, runTransaction } = fs;
   const notifCache = new Map();
 
+  // Short-lived list cache: reopening the panel within a minute re-uses the list
+  // already fetched (0 reads) instead of querying Firestore again. Expires on its
+  // own, is dropped on sign-out, and is updated in place by markAllRead.
+  const LIST_CACHE_MS = 60 * 1000;
+  let listDocs = null, listUid = null, listAt = 0;
+  // null = not known yet. Lets closing the panel skip the "mark all read" query
+  // when we already know nothing is unread.
+  let badgeCount = null, listUnread = null;
+
   // Likes, follows, and reposts land in a shared 3-hour bucket per
   // (type, target-or-recipient) instead of one doc per event — see the
   // module-level notes above for the full reasoning. The window number is
@@ -315,6 +324,7 @@ export function initNotificationUI({ db, getCurrentUser, getMyProfile, fs }) {
   }
 
   function updateBadge(count) {
+    badgeCount = count;
     const badge = document.getElementById('notifBadge');
     const wrap = document.getElementById('notifWrap');
     if (wrap) wrap.style.display = 'block';
@@ -337,15 +347,38 @@ export function initNotificationUI({ db, getCurrentUser, getMyProfile, fs }) {
   }
 
   function clearNotifications() {
+    listDocs = null; listUid = null; listAt = 0; badgeCount = null; listUnread = null;
     const badge = document.getElementById('notifBadge');
     if (badge) badge.style.display = 'none';
     const wrap = document.getElementById('notifWrap');
     if (wrap) wrap.style.display = 'none';
   }
 
+  function renderList(docs) {
+    const listEl = document.getElementById('notifList');
+      if (!docs.length) {
+        listEl.innerHTML = '<div class="notif-empty"><div class="notif-empty-ico"><svg width="38" height="38" fill="none" viewBox="0 0 24 24" stroke-width="1.6"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg></div><div class="notif-empty-ttl">You&#39;re all caught up</div><div class="notif-empty-sub">Likes, follows, comments and reposts on your work will show up here.</div></div>';
+        const subE = document.getElementById('notifSheetSub'); if (subE) subE.style.display = 'none';
+        document.getElementById('notifMarkAllBtn').style.display = 'none';
+        listUnread = 0;
+        return;
+      }
+      const unreadCount = docs.filter(d => !d.data().read).length;
+      document.getElementById('notifMarkAllBtn').style.display = unreadCount ? 'block' : 'none';
+      const subEl = document.getElementById('notifSheetSub');
+      if (subEl) { subEl.textContent = unreadCount + ' new'; subEl.style.display = unreadCount ? 'block' : 'none'; }
+      listUnread = unreadCount;
+      listEl.innerHTML = buildNotifList(docs);
+  }
+
   async function loadNotifications() {
     const currentUser = getCurrentUser();
     if (!currentUser) return;
+    // Fresh enough? Show what we already have — no query, no skeleton flash.
+    if (listDocs && listUid === currentUser.uid && Date.now() - listAt < LIST_CACHE_MS) {
+      renderList(listDocs);
+      return;
+    }
     const listEl = document.getElementById('notifList');
     listEl.innerHTML = notifSkeleton();
     try {
@@ -354,23 +387,16 @@ export function initNotificationUI({ db, getCurrentUser, getMyProfile, fs }) {
       const snap = await retryRead(() => getDocs(q), { tries: 2, timeoutMs: 10000 });
       notifCache.clear();
       snap.docs.forEach(d => notifCache.set(d.id, d.data()));
-      if (snap.empty) {
-        listEl.innerHTML = '<div class="notif-empty"><div class="notif-empty-ico"><svg width="38" height="38" fill="none" viewBox="0 0 24 24" stroke-width="1.6"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg></div><div class="notif-empty-ttl">You&#39;re all caught up</div><div class="notif-empty-sub">Likes, follows, comments and reposts on your work will show up here.</div></div>';
-        const subE = document.getElementById('notifSheetSub'); if (subE) subE.style.display = 'none';
-        document.getElementById('notifMarkAllBtn').style.display = 'none';
-        return;
-      }
-      const unreadCount = snap.docs.filter(d => !d.data().read).length;
-      document.getElementById('notifMarkAllBtn').style.display = unreadCount ? 'block' : 'none';
-      const subEl = document.getElementById('notifSheetSub');
-      if (subEl) { subEl.textContent = unreadCount + ' new'; subEl.style.display = unreadCount ? 'block' : 'none'; }
-      listEl.innerHTML = buildNotifList(snap.docs);
+      // Plain copies so the cache can be edited (marked read) without another read.
+      listDocs = snap.docs.map(d => { const data = d.data(); return { id: d.id, data: () => data }; });
+      listUid = currentUser.uid; listAt = Date.now();
+      renderList(listDocs);
     } catch (e) {
       listEl.innerHTML = '<div class="notif-empty"><div class="notif-empty-ico"><svg width="44" height="44" fill="none" viewBox="0 0 24 24" stroke="#9ca3af" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m0 3.75h.008M10.29 3.86l-8.18 14.18A1.5 1.5 0 003.42 20.5h17.16a1.5 1.5 0 001.31-2.46L13.71 3.86a1.5 1.5 0 00-2.42 0z"/></svg></div><div class="notif-empty-ttl">Couldn&#39;t load</div><div class="notif-empty-sub">Check your connection and try again.</div><button onclick="retryNotifs()" style="margin-top:14px;background:linear-gradient(135deg,#4f46e5,#6366f1);color:#fff;border:none;padding:10px 24px;border-radius:99px;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(79,70,229,.3)">Try again</button></div>';
     }
   }
 
-  window.retryNotifs = function () { loadNotifications(); };
+  window.retryNotifs = function () { listAt = 0; loadNotifications(); };
 
   window.openNotifPanel = function () {
     document.getElementById('notifSheet').classList.add('on');
@@ -380,6 +406,7 @@ export function initNotificationUI({ db, getCurrentUser, getMyProfile, fs }) {
   window.closeNotifPanel = function () {
     document.getElementById('notifSheet').classList.remove('on');
     document.body.style.overflow = '';
+    if (badgeCount === 0 && listUnread === 0) return; // nothing unread — skip the query
     window.markAllRead();
   };
   window.handleNotifTap = function (id) {
@@ -410,10 +437,12 @@ export function initNotificationUI({ db, getCurrentUser, getMyProfile, fs }) {
     try {
       const q = query(collection(db, 'notifications'), where('recipientUid', '==', currentUser.uid), where('read', '==', false));
       const snap = await getDocs(q);
-      if (snap.empty) return;
+      if (snap.empty) { listUnread = 0; return; }
       const batch = writeBatch(db);
       snap.docs.forEach(d => batch.update(d.ref, { read: true }));
       await batch.commit();
+      if (listDocs) listDocs.forEach(d => { d.data().read = true; });
+      listUnread = 0;
       const btn = document.getElementById('notifMarkAllBtn');
       if (btn) btn.style.display = 'none';
       const subM = document.getElementById('notifSheetSub'); if (subM) subM.style.display = 'none';
