@@ -133,8 +133,12 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
         <div class="composer-sub">Posting publicly · goes live immediately</div>
       </div>
     </div>
-    <textarea class="post-textarea" id="postText" placeholder="What's on your mind?" oninput="onTextInput()" maxlength="2000"></textarea>
-    <div class="mention-pop" id="mentionPop" role="listbox" aria-label="Mention suggestions" style="display:none"></div>
+    <div class="ta-wrap" id="taWrap">
+      <div class="ta-mirror" id="taMirror" aria-hidden="true"></div>
+      <div class="ta-mirror ta-probe" id="taProbe" aria-hidden="true"></div>
+      <textarea class="post-textarea" id="postText" placeholder="What's on your mind?" oninput="onTextInput()" maxlength="2000"></textarea>
+      <div class="mention-pop" id="mentionPop" role="listbox" aria-label="Mention suggestions" style="display:none"></div>
+    </div>
     <div class="ta-row">
       <div class="ta-hist">
         <button type="button" class="ta-btn" id="undoBtn" aria-label="Undo" title="Undo" onmousedown="event.preventDefault()" onclick="undoText()" disabled>
@@ -143,10 +147,21 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
         <button type="button" class="ta-btn" id="redoBtn" aria-label="Redo" title="Redo" onmousedown="event.preventDefault()" onclick="redoText()" disabled>
           <svg viewBox="0 0 24 24"><polyline points="17 6 21 10 17 14"/><path d="M21 10H11a5 5 0 0 0-5 5v1a5 5 0 0 0 5 5h4"/></svg>
         </button>
+        <button type="button" class="ta-btn ta-at" id="atBtn" aria-label="Mention someone" title="Mention someone" onmousedown="event.preventDefault()" onclick="insertAtSymbol()">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94"/></svg>
+          <span class="ta-new" id="atNew">NEW</span>
+        </button>
       </div>
       <div class="char-count" id="charCount">0 / 2000</div>
     </div>
 
+    <div class="mention-intro" id="mentionIntro" role="button" tabindex="0" onmousedown="event.preventDefault()" onclick="insertAtSymbol()">
+      <div class="mi-ico">@</div>
+      <div class="mi-txt"><span class="mi-new">NEW</span><b>Mention your favorite creators</b><br>Tap here or type @ to tag someone.</div>
+      <button type="button" class="mi-x" aria-label="Dismiss" onmousedown="event.preventDefault()" onclick="event.stopPropagation();dismissMentionIntro()">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
     <div class="pv" id="imgGrid" style="display:none"></div>
     <div class="video-tile" id="videoTile" style="display:none"></div>
     <div class="composer-media-hints" id="composerMediaHints">
@@ -177,19 +192,50 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   .video-tile .vt-progress-fill{height:100%;background:linear-gradient(135deg,#4f46e5,#06b6d4);width:0%;transition:width .15s}
   .video-tile .vt-progress-txt{color:#fff;font-size:12px;font-weight:700;min-width:34px;text-align:right}
 
-/* ── @MENTIONS (autocomplete) ── */
-.composer{position:relative}
-.mention-pop{position:absolute;left:0;right:0;z-index:60;background:var(--card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:14px;box-shadow:0 12px 32px -8px rgba(15,23,42,.25);overflow:hidden;max-height:288px;overflow-y:auto;-webkit-overflow-scrolling:touch}
-.mention-pop.fixed{position:fixed;left:8px;right:8px;border-radius:14px 14px 0 0;box-shadow:0 -8px 24px -8px rgba(15,23,42,.22)}
-.mention-hint{padding:10px 14px 4px;font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--mute,#94a3b8)}
-.mention-row{display:flex;align-items:center;gap:11px;padding:10px 14px;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.mention-row.active,.mention-row:active{background:#eef2ff}
-.mention-av{width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;background:linear-gradient(135deg,#4f46e5,#06b6d4);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;overflow:hidden}
+/* ── @MENTIONS: coloured @handles while typing + Instagram/X-style suggestion list ── */
+.ta-wrap{position:relative}
+/* The textarea and its "mirror" must share identical text metrics or the colours drift out of line. */
+.ta-mirror,.post-textarea{box-sizing:border-box;width:100%;margin:0;padding:2px;border:0;font-family:inherit;font-size:16px;line-height:1.55;letter-spacing:normal;word-spacing:normal;white-space:pre-wrap;overflow-wrap:break-word;word-wrap:break-word;word-break:normal;text-align:left}
+.ta-mirror{display:none;position:absolute;left:0;top:0;right:0;bottom:0;overflow:hidden;pointer-events:none;color:var(--txt,#0f172a)}
+.ta-wrap.mirror-on .ta-mirror{display:block}
+.ta-wrap.mirror-on .ta-probe{visibility:hidden;bottom:auto}
+.ta-wrap.mirror-on .post-textarea{display:block;position:relative;z-index:1;overflow:hidden;background:transparent;color:transparent;-webkit-text-fill-color:transparent;caret-color:var(--txt,#0f172a)}
+.ta-wrap.mirror-on .post-textarea::placeholder{color:var(--mute,#94a3b8);-webkit-text-fill-color:var(--mute,#94a3b8)}
+.ta-wrap.mirror-on .post-textarea::selection{background:rgba(79,70,229,.22)}
+.ta-mirror .mn{color:#4f46e5}
+
+.mention-pop{position:absolute;z-index:60;width:min(340px,100%);max-height:min(324px,42vh);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:#fff;border:1px solid #e8ecf3;border-radius:16px;box-shadow:0 14px 44px -10px rgba(15,23,42,.32);animation:mpop .14s ease-out}
+.mention-pop.fixed{position:fixed;left:0;right:0;width:auto;border:none;border-top:1px solid #eef1f6;border-radius:20px 20px 0 0;box-shadow:0 -12px 32px -14px rgba(15,23,42,.28);padding-bottom:env(safe-area-inset-bottom,0px)}
+@keyframes mpop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.mention-hint{padding:12px 16px 4px;font-size:12px;font-weight:800;letter-spacing:.4px;color:#94a3b8}
+.mention-row{display:flex;align-items:center;gap:12px;padding:8px 16px;min-height:58px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .1s}
+.mention-row.active{background:#f4f6ff}
+.mention-row:active{background:#e9edff}
+.mention-av{width:42px;height:42px;border-radius:50%;flex-shrink:0;overflow:hidden;background:linear-gradient(135deg,#4f46e5,#06b6d4);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800}
 .mention-av img{width:100%;height:100%;object-fit:cover;display:block}
-.mention-txt{min-width:0;display:flex;flex-direction:column}
-.mention-name{font-size:14px;font-weight:700;color:var(--txt,#0f172a);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.mention-user{font-size:12.5px;color:var(--mute,#94a3b8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.mention-empty{padding:14px;font-size:13px;color:var(--mute,#94a3b8)}
+.mention-txt{min-width:0;flex:1;display:flex;flex-direction:column;gap:1px}
+.mention-name{font-size:15px;font-weight:800;color:#0f172a;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mention-user{font-size:14px;color:#64748b;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mention-flw{flex-shrink:0;font-size:12px;font-weight:700;color:#64748b;background:#f1f5f9;padding:4px 10px;border-radius:99px}
+.mention-empty{padding:18px 16px;font-size:14px;color:#64748b;text-align:center}
+@media (prefers-reduced-motion:reduce){.mention-pop{animation:none}}
+
+/* ── "NEW: mention creators" intro + @ toolbar button ── */
+.ta-at{position:relative}
+.ta-new{display:none;position:absolute;top:-5px;right:-9px;background:linear-gradient(135deg,#4f46e5,#06b6d4);color:#fff;font-size:8.5px;font-weight:800;letter-spacing:.4px;padding:2px 5px;border-radius:99px;line-height:1.2;pointer-events:none;box-shadow:0 2px 6px -1px rgba(79,70,229,.5)}
+.ta-at.fresh .ta-new{display:block;animation:atpulse 2s ease-in-out infinite}
+.ta-at.fresh{color:var(--p)}
+@keyframes atpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+.mention-intro{display:none;align-items:center;gap:12px;margin:10px 0 12px;padding:11px 10px 11px 12px;border-radius:16px;background:linear-gradient(135deg,#eef2ff 0%,#ecfeff 100%);border:1px solid #dfe4fb;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .12s}
+.mention-intro.show{display:flex;animation:mpop .25s ease-out}
+.mention-intro:active{transform:scale(.99)}
+.mi-ico{width:34px;height:34px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,#4f46e5,#06b6d4);color:#fff;font-size:17px;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 10px -3px rgba(79,70,229,.5)}
+.mi-txt{flex:1;min-width:0;font-size:12.5px;line-height:1.4;color:#475569}
+.mi-txt b{font-size:13.5px;font-weight:800;color:#312e81}
+.mi-new{display:inline-block;margin-right:7px;vertical-align:1px;background:#4f46e5;color:#fff;font-size:9px;font-weight:800;letter-spacing:.5px;padding:2px 6px;border-radius:99px}
+.mi-x{flex-shrink:0;width:28px;height:28px;border:none;background:rgba(255,255,255,.7);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#64748b}
+.mi-x svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
+@media (prefers-reduced-motion:reduce){.ta-at.fresh .ta-new,.mention-intro.show{animation:none}}
 </style>
 
 <!-- SUCCESS OVERLAY -->
@@ -218,6 +264,7 @@ import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/
 import { getFirestore, collection, doc, setDoc, getDoc, getDocs, query, where, orderBy, limit, serverTimestamp, enableNetwork, disableNetwork }
   from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
 import { createResilient } from '/resilient.js';
+import { sendMentionNotifications } from '/notifications.js';
 
 const fbApp = initializeApp({
   apiKey:"AIzaSyDTn70s1_uIiSOR6lPLY_nKh8Ff1FViFCs",
@@ -808,34 +855,68 @@ function initDraft(){
 }
 
 /* ── @MENTIONS ──
-   Type @ and a few letters → matching usernames appear; tap one and it fills in. Suggestions come
-   from users.username (prefix search). Bare "@" shows people you follow. When you publish, every
-   @handle in the text is verified against usernames/{handle} and saved on the post as
+   Type @ and a few letters → matching usernames appear (people you follow first); tap one and it
+   fills in. While typing, @handles are drawn in colour via a "mirror" layer behind the (transparent-text)
+   textarea. On publish every @handle is verified against usernames/{handle} and saved on the post as
    mentions:[{uid,username}] — only those become clickable links where the post is shown. */
 const MENTION_MAX = 10;
 const mentionMap = new Map();            // username -> uid, for handles picked from the list
 const _mentionCache = new Map();         // query -> results
-let _mentionFollowing = null;            // cached "people you follow" list
+let _mentionFollowing = null, _followingIds = new Set();   // "people you follow" (cached)
 let _mentionSeq = 0, _mentionTimer = null, _mentionList = [], _mentionActive = 0, _mentionRange = null;
+
+/* mirror layer: same text, but @handles wrapped in a coloured span */
+function _escHtml(x){ return x.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function mirrorHtml(text){
+  // colour from the first letter typed (X style); only 3+ char handles can actually be saved as mentions
+  return _escHtml(text).replace(/(^|[^a-z0-9_])@([a-z0-9_]{1,20})(?![a-z0-9_])/gi, (all, pre, h) => pre + '<span class="mn">@' + h + '</span>')
+    + (text.endsWith('\n') ? ' ' : '');   // trailing newline needs a spacer line, like a textarea
+}
+function syncMirror(){
+  const t = _ta(), wrap = document.getElementById('taWrap');
+  if(!wrap) return;
+  wrap.classList.add('mirror-on');
+  // auto-grow (so the mirror never needs its own scrolling): one line more than the content, min 120px
+  t.style.height = 'auto';
+  t.style.height = Math.max(120, t.scrollHeight) + 'px';
+  document.getElementById('taMirror').innerHTML = mirrorHtml(t.value);
+}
+{ // keep the mirror in step with every path that changes the text (typing, draft restore, undo, edit-load)
+  const prev = window.onTextInput;
+  window.onTextInput = function(){ prev && prev(); syncMirror(); };
+  window.addEventListener('resize', syncMirror);
+  syncMirror();
+}
 
 function mentionPop(){ return document.getElementById('mentionPop'); }
 function hideMentionPop(){
   const pop = mentionPop(); if(!pop) return;
   pop.style.display = 'none'; pop.innerHTML = ''; _mentionList = []; _mentionRange = null; _mentionSeq++;
 }
-// Phones: dock the list right above the keyboard. Desktop: just under the text box.
+// Caret position inside the text box, measured on the hidden probe layer.
+function caretXY(pos){
+  const probe = document.getElementById('taProbe'), t = _ta();
+  probe.style.height = 'auto';
+  probe.innerHTML = _escHtml(t.value.slice(0, pos)) + '<span id="mProbeMark">\u200b</span>';
+  const m = document.getElementById('mProbeMark');
+  return { x: m.offsetLeft, y: m.offsetTop };
+}
+// Phones: docked right above the keyboard (Instagram style). Desktop: floats under the caret (X style).
 function placeMentionPop(){
-  const pop = mentionPop(), ta = _ta();
+  const pop = mentionPop(), wrap = document.getElementById('taWrap');
   if(!pop || pop.style.display === 'none') return;
   const vv = window.visualViewport;
   if(matchMedia('(pointer:coarse)').matches && vv){
     pop.classList.add('fixed');
-    pop.style.top = ''; 
+    pop.style.top = ''; pop.style.left = '';
     pop.style.bottom = Math.max(0, window.innerHeight - (vv.height + vv.offsetTop)) + 'px';
   } else {
     pop.classList.remove('fixed');
     pop.style.bottom = '';
-    pop.style.top = (ta.offsetTop + ta.offsetHeight + 4) + 'px';
+    const c = caretXY(_mentionRange ? _mentionRange.start : _ta().selectionStart);
+    const w = pop.offsetWidth || 340;
+    pop.style.left = Math.max(0, Math.min(c.x, wrap.clientWidth - w)) + 'px';
+    pop.style.top = (c.y + 30) + 'px';
   }
 }
 if(window.visualViewport){
@@ -854,23 +935,31 @@ function currentMentionTrigger(){
   return { q, start: caret - q.length - 1, end: caret };
 }
 
-function renderMentionPop(items, hint){
+function renderMentionPop(items, hint, emptyFor, emptyMsg){
   const pop = mentionPop();
-  if(!items.length){ hideMentionPop(); return; }
-  _mentionList = items; _mentionActive = 0;
   pop.innerHTML = '';
+  if(!items.length){
+    if(!emptyFor && !emptyMsg){ hideMentionPop(); return; }
+    _mentionList = [];
+    const e = document.createElement('div'); e.className = 'mention-empty'; e.textContent = emptyMsg || ('No one found for “@' + emptyFor + '”');
+    pop.appendChild(e); pop.style.display = 'block'; placeMentionPop();
+    return;
+  }
+  _mentionList = items; _mentionActive = 0;
   if(hint){ const h = document.createElement('div'); h.className = 'mention-hint'; h.textContent = hint; pop.appendChild(h); }
   items.forEach((u, i) => {
     const row = document.createElement('div');
     row.className = 'mention-row' + (i === 0 ? ' active' : '');
     row.setAttribute('role', 'option');
     const av = document.createElement('div'); av.className = 'mention-av';
-    if(u.photo){ const im = document.createElement('img'); im.src = u.photo; im.alt = ''; im.onerror = () => { im.remove(); av.textContent = (u.name || u.username || '?').charAt(0).toUpperCase(); }; av.appendChild(im); }
-    else av.textContent = (u.name || u.username || '?').charAt(0).toUpperCase();
+    const initial = (u.name || u.username || '?').charAt(0).toUpperCase();
+    if(u.photo){ const im = document.createElement('img'); im.src = u.photo; im.alt = ''; im.onerror = () => { im.remove(); av.textContent = initial; }; av.appendChild(im); }
+    else av.textContent = initial;
     const tx = document.createElement('div'); tx.className = 'mention-txt';
     const nm = document.createElement('span'); nm.className = 'mention-name'; nm.textContent = u.name || u.username;
     const un = document.createElement('span'); un.className = 'mention-user'; un.textContent = '@' + u.username;
     tx.appendChild(nm); tx.appendChild(un); row.appendChild(av); row.appendChild(tx);
+    if(u.following){ const f = document.createElement('span'); f.className = 'mention-flw'; f.textContent = 'Following'; row.appendChild(f); }
     // pointerdown + preventDefault: picking must not blur the textarea (that would close the keyboard)
     row.addEventListener('pointerdown', e => { e.preventDefault(); pickMention(i); });
     pop.appendChild(row);
@@ -879,22 +968,28 @@ function renderMentionPop(items, hint){
   placeMentionPop();
 }
 
-function userToItem(id, d){ return { uid:id, username:(d.username||'').toLowerCase(), name:d.name||d.displayName||'', photo:d.photo||d.photoURL||'' }; }
+function userToItem(id, d){ return { uid:id, username:(d.username||'').toLowerCase(), name:d.name||d.displayName||'', photo:d.photo||d.photoURL||'', following:_followingIds.has(id) }; }
 
-async function searchMentionUsers(q){
-  if(_mentionCache.has(q)) return _mentionCache.get(q);
-  const snap = await resilient(() => getDocs(query(collection(db,'users'), where('username','>=',q), where('username','<=',q+'\uf8ff'), orderBy('username'), limit(6))), { tries:1, timeoutMs:6000 });
-  const out = snap.docs.filter(d => d.id !== (currentUser && currentUser.uid) && d.data().username).map(d => userToItem(d.id, d.data()));
-  _mentionCache.set(q, out);
-  return out;
-}
 async function followingForMentions(){
   if(_mentionFollowing) return _mentionFollowing;
   if(!currentUser) return [];
   const fs = await resilient(() => getDocs(query(collection(db,'follows'), where('followerId','==',currentUser.uid), limit(8))), { tries:1, timeoutMs:6000 });
-  const docs = await Promise.all(fs.docs.map(d => getDoc(doc(db,'users',d.data().followingId)).catch(() => null)));
-  _mentionFollowing = docs.filter(s => s && s.exists() && s.data().username).map(s => userToItem(s.id, s.data()));
+  const ids = fs.docs.map(d => d.data().followingId);
+  ids.forEach(id => _followingIds.add(id));
+  const docs = await Promise.all(ids.map(id => getDoc(doc(db,'users',id)).catch(() => null)));
+  _mentionFollowing = docs.filter(x => x && x.exists() && x.data().username).map(x => userToItem(x.id, x.data()));
   return _mentionFollowing;
+}
+async function searchMentionUsers(q){
+  if(_mentionCache.has(q)) return _mentionCache.get(q);
+  const [snap] = await Promise.all([
+    resilient(() => getDocs(query(collection(db,'users'), where('username','>=',q), where('username','<=',q+'\uf8ff'), orderBy('username'), limit(8))), { tries:1, timeoutMs:6000 }),
+    followingForMentions().catch(() => null)    // so people you follow can be tagged + ranked first
+  ]);
+  let out = snap.docs.filter(d => d.id !== (currentUser && currentUser.uid) && d.data().username).map(d => userToItem(d.id, d.data()));
+  out = out.filter(u => u.following).concat(out.filter(u => !u.following)).slice(0, 6);
+  _mentionCache.set(q, out);
+  return out;
 }
 
 function updateMentionPop(){
@@ -905,13 +1000,18 @@ function updateMentionPop(){
   clearTimeout(_mentionTimer);
   _mentionTimer = setTimeout(async () => {
     try{
-      let items, hint = '';
-      if(trig.q === ''){ items = await followingForMentions(); hint = 'People you follow'; }
-      else items = await searchMentionUsers(trig.q);
-      if(seq !== _mentionSeq) return;                 // typing moved on — drop stale results
-      renderMentionPop(items, hint);
+      if(trig.q === ''){
+        const items = await followingForMentions();
+        if(seq !== _mentionSeq) return;
+        if(!items.length){ renderMentionPop([], '', '', 'Type a name to find someone to mention'); return; }
+        renderMentionPop(items, 'People you follow');
+      } else {
+        const items = await searchMentionUsers(trig.q);
+        if(seq !== _mentionSeq) return;                 // typing moved on — drop stale results
+        renderMentionPop(items, '', trig.q.length >= 2 ? trig.q : '');
+      }
     }catch(e){ if(seq === _mentionSeq) hideMentionPop(); }
-  }, trig.q === '' ? 0 : 160);
+  }, trig.q === '' ? 0 : 140);
 }
 
 function pickMention(i){
@@ -924,9 +1024,10 @@ function pickMention(i){
   const pos = r.start + ins.length;
   try{ t.setSelectionRange(pos, pos); }catch{}
   mentionMap.set(u.username, u.uid);
+  markMentionIntroSeen();
   hideMentionPop();
   t.focus();
-  t.dispatchEvent(new Event('input', { bubbles:true }));   // counter, Post button, autosave, undo history
+  t.dispatchEvent(new Event('input', { bubbles:true }));   // counter, Post button, autosave, undo history, colour
 }
 
 (function wireMentions(){
@@ -939,13 +1040,58 @@ function pickMention(i){
     const pop = mentionPop();
     if(!pop || pop.style.display === 'none' || !_mentionList.length) return;
     const rows = () => pop.querySelectorAll('.mention-row');
-    const setActive = n => { _mentionActive = (n + _mentionList.length) % _mentionList.length; rows().forEach((r, k) => r.classList.toggle('active', k === _mentionActive)); };
+    const setActive = n => {
+      _mentionActive = (n + _mentionList.length) % _mentionList.length;
+      rows().forEach((r, k) => r.classList.toggle('active', k === _mentionActive));
+      const cur = rows()[_mentionActive]; if(cur && cur.scrollIntoView) cur.scrollIntoView({ block:'nearest' });
+    };
     if(e.key === 'ArrowDown'){ e.preventDefault(); setActive(_mentionActive + 1); }
     else if(e.key === 'ArrowUp'){ e.preventDefault(); setActive(_mentionActive - 1); }
     else if(e.key === 'Enter' || e.key === 'Tab'){ e.preventDefault(); pickMention(_mentionActive); }
     else if(e.key === 'Escape'){ e.preventDefault(); hideMentionPop(); }
   });
 })();
+
+/* ── "NEW: mention creators" intro ──
+   Shown until the person uses mentions once (or dismisses it); remembered in localStorage. */
+const MENTION_INTRO_KEY = 'msb_mention_intro_v1';
+function _mentionIntroSeen(){ try{ return !!localStorage.getItem(MENTION_INTRO_KEY); }catch(e){ return false; } }
+function markMentionIntroSeen(){
+  try{ localStorage.setItem(MENTION_INTRO_KEY, '1'); }catch(e){}
+  const box = document.getElementById('mentionIntro'); if(box) box.classList.remove('show');
+  const btn = document.getElementById('atBtn'); if(btn) btn.classList.remove('fresh');
+}
+window.dismissMentionIntro = markMentionIntroSeen;
+if(!_mentionIntroSeen()){
+  document.getElementById('mentionIntro').classList.add('show');
+  document.getElementById('atBtn').classList.add('fresh');
+}
+// Tapping the @ button (or the intro card) types an "@" at the cursor and opens the suggestions.
+window.insertAtSymbol = function(){
+  const t = _ta();
+  t.focus();
+  const end = t.selectionEnd == null ? t.value.length : t.selectionEnd;
+  const before = t.value.slice(0, end), after = t.value.slice(end);
+  const ins = (before && !/\s$/.test(before) ? ' ' : '') + '@';   // a mention needs a space (or start) before it
+  if(t.value.length + ins.length > 2000){ showToast('Post is at the character limit'); return; }
+  t.value = before + ins + after;
+  const pos = end + ins.length;
+  try{ t.setSelectionRange(pos, pos); }catch{}
+  markMentionIntroSeen();
+  t.dispatchEvent(new Event('input', { bubbles:true }));   // colour, counter, autosave, and it opens the list
+};
+
+// Tell each mentioned person. Waits briefly (max 4s) so the request isn't cut off by the redirect,
+// but a slow/failed notification never blocks or fails the post itself.
+async function notifyMentioned(mentions, targetId, text){
+  if(!mentions.length) return;
+  try{
+    await Promise.race([
+      sendMentionNotifications({ db, fs:{ doc, getDoc, setDoc, serverTimestamp }, currentUser, profile:userProfile, mentions, targetId, targetType:'post', snippet:text }),
+      new Promise(r => setTimeout(r, 4000))
+    ]);
+  }catch(e){ console.warn('mention notify failed:', e); }
+}
 
 // Publish-time: turn every @handle in the text into a verified {uid, username}. Handles picked from
 // the list are already known; typed-by-hand ones are looked up in usernames/{handle}. Unknown ones are ignored.
@@ -1000,6 +1146,7 @@ window.submitPost = async function(){
         text, mentions, images: urls, ...videoFields,
         updatedAt: serverTimestamp()
       }, { merge: true });
+      await notifyMentioned(mentions, editId, text);
       images.forEach(i => { if(i.baseUrl && i.baseUrl !== i.url) discardUpload(i.baseUrl); });
       flushDiscards(true);
       showToast('Post updated');
@@ -1025,6 +1172,7 @@ window.submitPost = async function(){
       createdAt: serverTimestamp(),
       publishedAt: serverTimestamp()
     });
+    await notifyMentioned(mentions, id, text);
     // Published — the draft has served its purpose. Stop autosave first so a
     // pending timer can't write it straight back.
     clearTimeout(_autosaveTimer);

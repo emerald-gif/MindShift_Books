@@ -94,6 +94,9 @@ function injectStylesOnce() {
 .notif-type.ok{background:#10b981}
 .notif-type.warn{background:#f59e0b}
 .notif-type.info{background:#64748b}
+.notif-type.mention{background:#7c3aed}
+.notif-snip{color:#64748b}
+.notif-item.unread .notif-snip{color:#475569}
 
 .notif-body{flex:1;min-width:0;padding-top:1px;padding-right:14px}
 .notif-msg{font-size:14px;color:#334155;line-height:1.5;word-wrap:break-word;overflow-wrap:anywhere}
@@ -184,6 +187,7 @@ function notifMessage(n) {
     case 'comment_like': return `${name} liked your comment on${title}`;
     case 'new_comment':  return `${name} commented on your ${n.targetType==='post'?'post':'article'}${title}`;
     case 'comment_reply':return `${name} replied to your comment on${title}`;
+    case 'mention':      return `${name} mentioned you in a ${n.targetType==='article'?'article':'post'}${n.targetTitle ? `<span class="notif-snip">: “${nEsc(nTrunc(n.targetTitle, 60))}”</span>` : ''}`;
     case 'repost':       return `${name} reposted your ${n.targetType==='post'?'post':'article'}${title}`;
     case 'repost_quote': return `${name} reposted your ${n.targetType==='post'?'post':'article'} with a caption${title}`;
     case 'admin_message':    return `<strong>${nEsc(n.title || 'Message from MindShift Books')}</strong>${n.message ? ' — ' + nEsc(n.message) : ''}`;
@@ -201,12 +205,14 @@ const N_ICONS = {
   repost:  '<svg viewBox="0 0 24 24"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>',
   check:   '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>',
   alert:   '<svg viewBox="0 0 24 24"><line x1="12" y1="8" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+  at:      '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94"/></svg>',
   bell:    '<svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>'
 };
 function nTypeBadge(type) {
   switch (type) {
     case 'article_like': case 'comment_like': return ['like', N_ICONS.heart];
     case 'follow':                            return ['follow', N_ICONS.user];
+    case 'mention':                           return ['mention', N_ICONS.at];
     case 'new_comment': case 'comment_reply': return ['comment', N_ICONS.comment];
     case 'repost': case 'repost_quote':       return ['repost', N_ICONS.repost];
     case 'article_approved':                  return ['ok', N_ICONS.check];
@@ -258,6 +264,32 @@ function notifSkeleton() {
 }
 
 import { retryRead } from '/resilient.js';
+
+// Sends one "X mentioned you" notification per mentioned person. Standalone on purpose: the composer
+// page has no bell/panel, so it can't use initNotificationUI. The doc id is deterministic
+// (mention_<type>_<targetId>_<recipient>), so editing a post never notifies the same person twice —
+// only people newly added to the post get a notification.
+export async function sendMentionNotifications({ db, fs, currentUser, profile, mentions, targetId, targetType, snippet }) {
+  const { doc, getDoc, setDoc, serverTimestamp } = fs;
+  if (!currentUser || !targetId || !Array.isArray(mentions) || !mentions.length) return;
+  const actorName = (profile && profile.name) || currentUser.displayName || 'Someone';
+  const actorPhoto = (profile && profile.photo) || currentUser.photoURL || '';
+  const actorUsername = (profile && profile.username) || '';
+  const title = String(snippet || '').replace(/\s+/g, ' ').trim().slice(0, 80);
+  await Promise.all(mentions.slice(0, 10).map(async m => {
+    if (!m || !m.uid || m.uid === currentUser.uid) return;
+    const id = `mention_${targetType || 'post'}_${targetId}_${m.uid}`;
+    try {
+      const ref = doc(db, 'notifications', id);
+      if ((await getDoc(ref)).exists()) return;
+      await setDoc(ref, {
+        recipientUid: m.uid, type: 'mention', actorUid: currentUser.uid, actorName, actorPhoto, actorUsername,
+        targetId, targetTitle: title, targetType: targetType || 'post',
+        read: false, createdAt: serverTimestamp(), lastAt: serverTimestamp()
+      });
+    } catch (e) { console.warn('mention notification failed for', m.uid, e && e.code); }
+  }));
+}
 
 export function initNotificationUI({ db, getCurrentUser, getMyProfile, fs }) {
   injectStylesOnce();
@@ -422,7 +454,7 @@ export function initNotificationUI({ db, getCurrentUser, getMyProfile, fs }) {
         if (n.actorUid) location.href = `/profile?uid=${encodeURIComponent(n.actorUid)}`;
         else if (n.actorUsername) location.href = `/profile/@${encodeURIComponent(n.actorUsername)}`;
         break;
-      case 'article_like': case 'new_comment': case 'comment_like': case 'comment_reply': case 'repost': case 'repost_quote':
+      case 'article_like': case 'new_comment': case 'comment_like': case 'comment_reply': case 'repost': case 'repost_quote': case 'mention':
         if (n.targetId) location.href = (n.targetType === 'post' ? '/post-read' : '/article-read') + `?id=${n.targetId}`;
         break;
       case 'article_approved':
