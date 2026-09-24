@@ -318,8 +318,19 @@
       border: 1.5px solid #e2e8f0; border-radius: 12px; background: #fff;
     }
 
-    /* Product details */
-    .bk-specs { max-width: 720px; margin: 0; }
+    /* Book details (collapsible) */
+    .bk-acc-h { margin: 0; font-size: inherit; }
+    .bk-acc {
+      width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 0; background: none; border: none; cursor: pointer; text-align: left; font: inherit; color: inherit;
+    }
+    .bk-acc-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .bk-acc .bk-h { margin: 0; }
+    .bk-acc-sub { font-size: 0.82rem; color: #94a3b8; font-weight: 600; }
+    .bk-acc-chev { flex-shrink: 0; color: #64748b; transition: transform 0.2s ease; }
+    .bk-acc.is-open .bk-acc-chev { transform: rotate(180deg); }
+    .bk-specs[hidden] { display: none; }
+    .bk-specs { max-width: 720px; margin: 8px 0 0; }
     .bk-spec { display: flex; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid #eef1f5; font-size: 0.92rem; }
     .bk-spec:last-child { border-bottom: none; }
     .bk-spec dt { color: #64748b; font-weight: 600; flex-shrink: 0; }
@@ -874,6 +885,7 @@ function renderBookDetail(prod) {
   let paras = String(prod.description || '').trim().split(/\n\s*\n/).map(t => t.trim()).filter(Boolean);
   const _norm = t => String(t || '').toLowerCase().replace(/[^a-z0-9]/g, '');
   if (paras.length > 1 && _norm(paras[0]) === _norm(prod.title)) paras.shift();
+  const detailsSummary = ['PDF eBook', prod.language || 'English', prod.pages ? `${prod.pages} pages` : ''].filter(Boolean).join(' · ');
   const aboutHtml = paras.length
     ? paras.map((t, i) => `<p${i === 0 && t.length < 180 ? ' class="bk-lead"' : ''}>${escapeHtml(t)}</p>`).join('')
     : '<p class="bk-muted">No description available yet for this book.</p>';
@@ -921,10 +933,18 @@ function renderBookDetail(prod) {
       </button>
     </section>
 
-    <!-- ── Product details ── -->
-    <section class="bk-section">
-      <h2 class="bk-h">Product details</h2>
-      <dl class="bk-specs">
+    <!-- ── Book details (collapsible) ── -->
+    <section class="bk-section" id="bkDetailsSection">
+      <h2 class="bk-acc-h">
+        <button type="button" class="bk-acc" id="bkDetailsBtn" aria-expanded="false" aria-controls="bkDetailsPanel">
+          <span class="bk-acc-text">
+            <span class="bk-h">Book details</span>
+            <span class="bk-acc-sub">${escapeHtml(detailsSummary)}</span>
+          </span>
+          <svg class="bk-acc-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+      </h2>
+      <dl class="bk-specs" id="bkDetailsPanel" hidden>
         <div class="bk-spec"><dt>Author</dt><dd>${escapeHtml(prod.author || 'MindShift Books')}</dd></div>
         <div class="bk-spec"><dt>Format</dt><dd>PDF eBook</dd></div>
         <div class="bk-spec"><dt>Language</dt><dd>${escapeHtml(prod.language || 'English')}</dd></div>
@@ -984,6 +1004,16 @@ function renderBookDetail(prod) {
     const open = aboutEl.classList.toggle('is-clamped') === false;
     aboutBtn.querySelector('span').textContent = open ? 'Show less' : 'Read more';
     aboutBtn.classList.toggle('is-open', open);
+  });
+
+  // ── Book details: collapsed by default, tap the row to expand ──
+  const detBtn = document.getElementById('bkDetailsBtn');
+  const detPanel = document.getElementById('bkDetailsPanel');
+  detBtn.addEventListener('click', () => {
+    const open = detPanel.hidden;   // currently closed → opening
+    detPanel.hidden = !open;
+    detBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    detBtn.classList.toggle('is-open', open);
   });
 
   // ── Reviews ──
