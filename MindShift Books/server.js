@@ -215,6 +215,9 @@ app.get('/', (req, res) => {
 app.get('/books', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'books.html'));
 });
+app.get('/books/all', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'all-books.html'));
+});
 
 // /profile/@username is a client-side-parsed clean URL — profile.html reads
 // the username straight out of location.pathname (see the _pathUsername
