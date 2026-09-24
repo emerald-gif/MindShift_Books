@@ -1535,8 +1535,13 @@ function renderMentionPop(items, hint, emptyFor, emptyMsg){
     const un = document.createElement('span'); un.className = 'mention-user'; un.textContent = '@' + u.username;
     tx.appendChild(nm); tx.appendChild(un); row.appendChild(av); row.appendChild(tx);
     if(u.following){ const f = document.createElement('span'); f.className = 'mention-flw'; f.textContent = 'Following'; row.appendChild(f); }
-    // pointerdown + preventDefault: picking must not move the caret out of the editor (keyboard would close)
-    row.addEventListener('pointerdown', e => { e.preventDefault(); pickMention(i); });
+    // Only commit the pick on pointerup, and only if it was a real tap (not a scroll drag) —
+    // this keeps "don't move the caret out of the editor" (which would close the keyboard) while
+    // still letting the list scroll normally on touch.
+    let _mRowStartY = 0, _mRowMoved = false;
+    row.addEventListener('pointerdown', e => { _mRowStartY = e.clientY; _mRowMoved = false; });
+    row.addEventListener('pointermove', e => { if(Math.abs(e.clientY - _mRowStartY) > 8) _mRowMoved = true; });
+    row.addEventListener('pointerup', e => { if(_mRowMoved) return; e.preventDefault(); pickMention(i); });
     pop.appendChild(row);
   });
   pop.style.display = 'block';
