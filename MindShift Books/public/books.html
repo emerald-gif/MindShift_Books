@@ -92,6 +92,31 @@
       .msb-cat-pill { padding: 7px 13px; font-size: 0.82rem; }
       .card-genre-tag { font-size: 0.62rem; padding: 3px 8px; }
     }
+
+    /* ---- "New Releases" / "Recommended for You" card replica ----
+       White boxed card, cover on top, left-aligned title + publisher
+       subtitle, price row, single full-width Add to Cart button. */
+    #ourBooksGrid, #ourBooksGrid2 { gap: 14px; }
+    .our-book-item {
+      background: #fff;
+      border-radius: 16px;
+      padding: 10px 10px 14px;
+      box-shadow: 0 4px 16px rgba(15,23,42,0.07);
+      border: 1px solid rgba(15,23,42,0.05);
+      align-items: stretch;
+      text-align: left;
+    }
+    .our-book-item .our-cover { box-shadow: none; }
+    .our-book-item .our-title { text-align: left; }
+    .our-book-item .our-author {
+      display: block;
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: #64748b;
+      margin: 0 0 4px;
+    }
+    .our-book-item .card-price-block { align-items: flex-start; text-align: left; }
+    .our-book-item .card-price-subrow { justify-content: flex-start; }
   </style>
 </head>
 <body>
@@ -192,25 +217,15 @@
   <section class="hero" id="ourBooksSection" aria-labelledby="our-books-h">
     <div class="section-head">
       <div class="section-label-row">
-        <span class="section-accent"></span>
-        <h2 id="our-books-h">Our Books</h2>
-        <span class="section-pill section-pill--new">New Release</span>
+        <h2 id="our-books-h">New Releases</h2>
+        <a href="#ourBooksSection2" class="section-view-all">View all &rarr;</a>
       </div>
     </div>
 
-    <!-- our books swiper: Broke, Confused & Trying -> When God Feels Silent -> Escape Your Environment -->
-    <div class="swiper-wrap">
-      <div id="ourBooksGrid" class="swiper-track" data-swiper-group="ours" aria-live="polite">
-        <div class="skel-card"><div class="skel-img"></div><div class="skel-line w70"></div><div class="skel-line w45"></div><div class="skel-btn"></div></div>
-        <div class="skel-card"><div class="skel-img"></div><div class="skel-line w70"></div><div class="skel-line w45"></div><div class="skel-btn"></div></div>
-        <div class="skel-card"><div class="skel-img"></div><div class="skel-line w70"></div><div class="skel-line w45"></div><div class="skel-btn"></div></div>
-      </div>
-      <button type="button" class="swiper-arrow swiper-arrow--next" data-swiper-next aria-label="Next books">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><polyline points="9 18 15 12 9 6"></polyline></svg>
-      </button>
-      <button type="button" class="swiper-arrow swiper-arrow--prev" data-swiper-prev aria-label="Previous books">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><polyline points="15 18 9 12 15 6"></polyline></svg>
-      </button>
+    <!-- our books grid: Broke, Confused & Trying -> When God Feels Silent -> Escape Your Environment -->
+    <div id="ourBooksGrid" class="product-grid" aria-live="polite">
+      <div class="skel-card"><div class="skel-img"></div><div class="skel-line w70"></div><div class="skel-line w45"></div><div class="skel-btn"></div></div>
+      <div class="skel-card"><div class="skel-img"></div><div class="skel-line w70"></div><div class="skel-line w45"></div><div class="skel-btn"></div></div>
     </div>
 
   </section>
@@ -218,24 +233,14 @@
   <section class="hero" id="ourBooksSection2" aria-labelledby="our-books-h2" style="margin-top:28px">
     <div class="section-head">
       <div class="section-label-row">
-        <span class="section-accent"></span>
-        <h2 id="our-books-h2">More From Us</h2>
+        <h2 id="our-books-h2">Recommended for You</h2>
       </div>
     </div>
 
-    <!-- our books swiper 2: The Discipline Advantage -> Getting Clients Without Ads -> The Money Mindset Gap -->
-    <div class="swiper-wrap">
-      <div id="ourBooksGrid2" class="swiper-track" data-swiper-group="ours2" aria-live="polite">
-        <div class="skel-card"><div class="skel-img"></div><div class="skel-line w70"></div><div class="skel-line w45"></div><div class="skel-btn"></div></div>
-        <div class="skel-card"><div class="skel-img"></div><div class="skel-line w70"></div><div class="skel-line w45"></div><div class="skel-btn"></div></div>
-        <div class="skel-card"><div class="skel-img"></div><div class="skel-line w70"></div><div class="skel-line w45"></div><div class="skel-btn"></div></div>
-      </div>
-      <button type="button" class="swiper-arrow swiper-arrow--next" data-swiper-next aria-label="Next books">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><polyline points="9 18 15 12 9 6"></polyline></svg>
-      </button>
-      <button type="button" class="swiper-arrow swiper-arrow--prev" data-swiper-prev aria-label="Previous books">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><polyline points="15 18 9 12 15 6"></polyline></svg>
-      </button>
+    <!-- our books grid 2: The Discipline Advantage -> Getting Clients Without Ads -> The Money Mindset Gap -->
+    <div id="ourBooksGrid2" class="product-grid" aria-live="polite">
+      <div class="skel-card"><div class="skel-img"></div><div class="skel-line w70"></div><div class="skel-line w45"></div><div class="skel-btn"></div></div>
+      <div class="skel-card"><div class="skel-img"></div><div class="skel-line w70"></div><div class="skel-line w45"></div><div class="skel-btn"></div></div>
     </div>
   </section>
 

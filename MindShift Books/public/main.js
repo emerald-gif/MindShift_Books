@@ -226,11 +226,11 @@ function applyMsbCategoryFilter(code) {
   ['ourBooksSection', 'ourBooksSection2', 'featuredSection', 'featuredSection2', 'featuredSection3'].forEach(id => {
     const sec = document.getElementById(id);
     if (!sec) return;
-    const track = sec.querySelector('.swiper-track');
+    const track = sec.querySelector('.swiper-track, .product-grid');
     if (!track || !track.children.length) return; // still loading — leave as-is
     const anyVisible = Array.from(track.children).some(c => c.style.display !== 'none');
     sec.style.display = anyVisible ? '' : 'none';
-    if (window.updateSwiperArrows) window.updateSwiperArrows(track);
+    if (track.classList.contains('swiper-track') && window.updateSwiperArrows) window.updateSwiperArrows(track);
   });
 }
 window.applyMsbCategoryFilter = applyMsbCategoryFilter;
@@ -314,14 +314,9 @@ function productCardInner(p) {
     </div>
     <div class="card-cover-wrap">
       <img src="${escapeHtml(p.cover || '')}" class="our-cover" alt="${escapeHtml(p.title || 'ebook')}"/>
-      ${wishlistToggleButton(p.id, { cardOverlay: true })}
     </div>
-    <div class="card-meta-row">
-      ${genreTagHtml(p.genre)}
-      ${p.pages ? `<span class="card-pages">${escapeHtml(String(p.pages))} pages</span>` : ''}
-    </div>
-    <div class="our-title">${escapeHtml(p.title || '')}</div>
-    <div class="our-author">${escapeHtml(p.author || '')}</div>
+    <div class="our-title" data-product-id="${escapeHtml(p.id || '')}" data-action="review" style="cursor:pointer;">${escapeHtml(p.title || '')}</div>
+    <div class="our-author">MindShift Books</div>
     <div class="card-price-block">
       <div class="card-price">${price}</div>
       ${(orig || pct) ? `
@@ -331,11 +326,9 @@ function productCardInner(p) {
       </div>` : ''}
     </div>
     <div class="our-actions">
-      <button class="btn buy-btn" data-product-id="${escapeHtml(p.id || '')}" data-action="add-to-cart">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" style="vertical-align:-2px;margin-right:4px;"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+      <button class="btn buy-btn" data-product-id="${escapeHtml(p.id || '')}" data-action="add-to-cart" style="width:100%;">
         Add to Cart
       </button>
-      <button class="btn review-btn" data-product-id="${escapeHtml(p.id || '')}" data-action="review">Details</button>
     </div>
   `;
 }
@@ -709,7 +702,7 @@ fetchProducts();
 
 // Delegated click handler for product buttons (avoids inline onclick and quoting issues)
 document.addEventListener('click', function (ev) {
-  const btn = ev.target.closest('button[data-action]');
+  const btn = ev.target.closest('[data-action]');
   if (!btn) return;
   const action = btn.getAttribute('data-action');
   const productId = btn.getAttribute('data-product-id');
