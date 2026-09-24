@@ -674,6 +674,7 @@ body{padding-bottom:64px} /* room for the fixed comment bar on post-read */
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+<script src="/mentions.js"></script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
@@ -815,7 +816,8 @@ async function loadArticleFromFirestore(){
           commentsOff: !!x.commentsOff,
           hideLikeCount: !!x.hideLikeCount,
           quotedFrom: x.quotedFrom||null,
-          quotedSnapshot: x.quotedSnapshot||null
+          quotedSnapshot: x.quotedSnapshot||null,
+          mentions: Array.isArray(x.mentions) ? x.mentions : []
         };
         document.title = (article.text ? article.text.slice(0,60) : 'Post') + ' · MindShift Books';
         document.getElementById('hdrTitle').textContent = 'Post';
@@ -1031,7 +1033,7 @@ async function renderArticle(){
           ${isFollowing?'Following':'Follow'}
         </button>` : ''}
       </div>
-      ${article.text ? `<div class="post-text">${esc(article.text)}</div>` : ''}
+      ${article.text ? `<div class="post-text">${(window.msbLinkMentions ? msbLinkMentions(esc(article.text), article.mentions) : esc(article.text))}</div>` : ''}
       ${article.quotedFrom ? repost.buildEmbedCardHtml(article.quotedSnapshot) : ''}
       ${carouselHtml}
       <div class="action-bar">

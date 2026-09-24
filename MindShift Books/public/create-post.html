@@ -134,6 +134,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
       </div>
     </div>
     <textarea class="post-textarea" id="postText" placeholder="What's on your mind?" oninput="onTextInput()" maxlength="2000"></textarea>
+    <div class="mention-pop" id="mentionPop" role="listbox" aria-label="Mention suggestions" style="display:none"></div>
     <div class="ta-row">
       <div class="ta-hist">
         <button type="button" class="ta-btn" id="undoBtn" aria-label="Undo" title="Undo" onmousedown="event.preventDefault()" onclick="undoText()" disabled>
@@ -175,6 +176,20 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   .video-tile .vt-progress-bar{flex:1;height:5px;border-radius:99px;background:rgba(255,255,255,.25);overflow:hidden}
   .video-tile .vt-progress-fill{height:100%;background:linear-gradient(135deg,#4f46e5,#06b6d4);width:0%;transition:width .15s}
   .video-tile .vt-progress-txt{color:#fff;font-size:12px;font-weight:700;min-width:34px;text-align:right}
+
+/* ── @MENTIONS (autocomplete) ── */
+.composer{position:relative}
+.mention-pop{position:absolute;left:0;right:0;z-index:60;background:var(--card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:14px;box-shadow:0 12px 32px -8px rgba(15,23,42,.25);overflow:hidden;max-height:288px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.mention-pop.fixed{position:fixed;left:8px;right:8px;border-radius:14px 14px 0 0;box-shadow:0 -8px 24px -8px rgba(15,23,42,.22)}
+.mention-hint{padding:10px 14px 4px;font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--mute,#94a3b8)}
+.mention-row{display:flex;align-items:center;gap:11px;padding:10px 14px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.mention-row.active,.mention-row:active{background:#eef2ff}
+.mention-av{width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;background:linear-gradient(135deg,#4f46e5,#06b6d4);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;overflow:hidden}
+.mention-av img{width:100%;height:100%;object-fit:cover;display:block}
+.mention-txt{min-width:0;display:flex;flex-direction:column}
+.mention-name{font-size:14px;font-weight:700;color:var(--txt,#0f172a);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mention-user{font-size:12.5px;color:var(--mute,#94a3b8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mention-empty{padding:14px;font-size:13px;color:var(--mute,#94a3b8)}
 </style>
 
 <!-- SUCCESS OVERLAY -->
@@ -200,7 +215,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
-import { getFirestore, collection, doc, setDoc, getDoc, serverTimestamp, enableNetwork, disableNetwork }
+import { getFirestore, collection, doc, setDoc, getDoc, getDocs, query, where, orderBy, limit, serverTimestamp, enableNetwork, disableNetwork }
   from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
 import { createResilient } from '/resilient.js';
 
@@ -792,6 +807,166 @@ function initDraft(){
   if(restored) showToast('Draft restored');
 }
 
+/* ── @MENTIONS ──
+   Type @ and a few letters → matching usernames appear; tap one and it fills in. Suggestions come
+   from users.username (prefix search). Bare "@" shows people you follow. When you publish, every
+   @handle in the text is verified against usernames/{handle} and saved on the post as
+   mentions:[{uid,username}] — only those become clickable links where the post is shown. */
+const MENTION_MAX = 10;
+const mentionMap = new Map();            // username -> uid, for handles picked from the list
+const _mentionCache = new Map();         // query -> results
+let _mentionFollowing = null;            // cached "people you follow" list
+let _mentionSeq = 0, _mentionTimer = null, _mentionList = [], _mentionActive = 0, _mentionRange = null;
+
+function mentionPop(){ return document.getElementById('mentionPop'); }
+function hideMentionPop(){
+  const pop = mentionPop(); if(!pop) return;
+  pop.style.display = 'none'; pop.innerHTML = ''; _mentionList = []; _mentionRange = null; _mentionSeq++;
+}
+// Phones: dock the list right above the keyboard. Desktop: just under the text box.
+function placeMentionPop(){
+  const pop = mentionPop(), ta = _ta();
+  if(!pop || pop.style.display === 'none') return;
+  const vv = window.visualViewport;
+  if(matchMedia('(pointer:coarse)').matches && vv){
+    pop.classList.add('fixed');
+    pop.style.top = ''; 
+    pop.style.bottom = Math.max(0, window.innerHeight - (vv.height + vv.offsetTop)) + 'px';
+  } else {
+    pop.classList.remove('fixed');
+    pop.style.bottom = '';
+    pop.style.top = (ta.offsetTop + ta.offsetHeight + 4) + 'px';
+  }
+}
+if(window.visualViewport){
+  visualViewport.addEventListener('resize', placeMentionPop);
+  visualViewport.addEventListener('scroll', placeMentionPop);
+}
+
+// Finds "@partial" ending exactly at the caret.
+function currentMentionTrigger(){
+  const t = _ta();
+  if(t.selectionStart !== t.selectionEnd) return null;
+  const caret = t.selectionStart;
+  const m = /(^|[\s(])@([a-z0-9_]{0,20})$/i.exec(t.value.slice(0, caret));
+  if(!m) return null;
+  const q = m[2].toLowerCase();
+  return { q, start: caret - q.length - 1, end: caret };
+}
+
+function renderMentionPop(items, hint){
+  const pop = mentionPop();
+  if(!items.length){ hideMentionPop(); return; }
+  _mentionList = items; _mentionActive = 0;
+  pop.innerHTML = '';
+  if(hint){ const h = document.createElement('div'); h.className = 'mention-hint'; h.textContent = hint; pop.appendChild(h); }
+  items.forEach((u, i) => {
+    const row = document.createElement('div');
+    row.className = 'mention-row' + (i === 0 ? ' active' : '');
+    row.setAttribute('role', 'option');
+    const av = document.createElement('div'); av.className = 'mention-av';
+    if(u.photo){ const im = document.createElement('img'); im.src = u.photo; im.alt = ''; im.onerror = () => { im.remove(); av.textContent = (u.name || u.username || '?').charAt(0).toUpperCase(); }; av.appendChild(im); }
+    else av.textContent = (u.name || u.username || '?').charAt(0).toUpperCase();
+    const tx = document.createElement('div'); tx.className = 'mention-txt';
+    const nm = document.createElement('span'); nm.className = 'mention-name'; nm.textContent = u.name || u.username;
+    const un = document.createElement('span'); un.className = 'mention-user'; un.textContent = '@' + u.username;
+    tx.appendChild(nm); tx.appendChild(un); row.appendChild(av); row.appendChild(tx);
+    // pointerdown + preventDefault: picking must not blur the textarea (that would close the keyboard)
+    row.addEventListener('pointerdown', e => { e.preventDefault(); pickMention(i); });
+    pop.appendChild(row);
+  });
+  pop.style.display = 'block';
+  placeMentionPop();
+}
+
+function userToItem(id, d){ return { uid:id, username:(d.username||'').toLowerCase(), name:d.name||d.displayName||'', photo:d.photo||d.photoURL||'' }; }
+
+async function searchMentionUsers(q){
+  if(_mentionCache.has(q)) return _mentionCache.get(q);
+  const snap = await resilient(() => getDocs(query(collection(db,'users'), where('username','>=',q), where('username','<=',q+'\uf8ff'), orderBy('username'), limit(6))), { tries:1, timeoutMs:6000 });
+  const out = snap.docs.filter(d => d.id !== (currentUser && currentUser.uid) && d.data().username).map(d => userToItem(d.id, d.data()));
+  _mentionCache.set(q, out);
+  return out;
+}
+async function followingForMentions(){
+  if(_mentionFollowing) return _mentionFollowing;
+  if(!currentUser) return [];
+  const fs = await resilient(() => getDocs(query(collection(db,'follows'), where('followerId','==',currentUser.uid), limit(8))), { tries:1, timeoutMs:6000 });
+  const docs = await Promise.all(fs.docs.map(d => getDoc(doc(db,'users',d.data().followingId)).catch(() => null)));
+  _mentionFollowing = docs.filter(s => s && s.exists() && s.data().username).map(s => userToItem(s.id, s.data()));
+  return _mentionFollowing;
+}
+
+function updateMentionPop(){
+  const trig = currentMentionTrigger();
+  if(!trig){ hideMentionPop(); return; }
+  _mentionRange = trig;
+  const seq = ++_mentionSeq;
+  clearTimeout(_mentionTimer);
+  _mentionTimer = setTimeout(async () => {
+    try{
+      let items, hint = '';
+      if(trig.q === ''){ items = await followingForMentions(); hint = 'People you follow'; }
+      else items = await searchMentionUsers(trig.q);
+      if(seq !== _mentionSeq) return;                 // typing moved on — drop stale results
+      renderMentionPop(items, hint);
+    }catch(e){ if(seq === _mentionSeq) hideMentionPop(); }
+  }, trig.q === '' ? 0 : 160);
+}
+
+function pickMention(i){
+  const u = _mentionList[i], r = _mentionRange, t = _ta();
+  if(!u || !r) return;
+  const ins = '@' + u.username + ' ';
+  const next = t.value.slice(0, r.start) + ins + t.value.slice(r.end);
+  if(next.length > 2000){ showToast('Post is at the character limit'); hideMentionPop(); return; }
+  t.value = next;
+  const pos = r.start + ins.length;
+  try{ t.setSelectionRange(pos, pos); }catch{}
+  mentionMap.set(u.username, u.uid);
+  hideMentionPop();
+  t.focus();
+  t.dispatchEvent(new Event('input', { bubbles:true }));   // counter, Post button, autosave, undo history
+}
+
+(function wireMentions(){
+  const t = _ta();
+  t.addEventListener('input', updateMentionPop);
+  t.addEventListener('click', updateMentionPop);
+  t.addEventListener('keyup', e => { if(!['ArrowDown','ArrowUp','Enter','Tab','Escape'].includes(e.key)) updateMentionPop(); });
+  t.addEventListener('blur', () => setTimeout(hideMentionPop, 180));
+  t.addEventListener('keydown', e => {
+    const pop = mentionPop();
+    if(!pop || pop.style.display === 'none' || !_mentionList.length) return;
+    const rows = () => pop.querySelectorAll('.mention-row');
+    const setActive = n => { _mentionActive = (n + _mentionList.length) % _mentionList.length; rows().forEach((r, k) => r.classList.toggle('active', k === _mentionActive)); };
+    if(e.key === 'ArrowDown'){ e.preventDefault(); setActive(_mentionActive + 1); }
+    else if(e.key === 'ArrowUp'){ e.preventDefault(); setActive(_mentionActive - 1); }
+    else if(e.key === 'Enter' || e.key === 'Tab'){ e.preventDefault(); pickMention(_mentionActive); }
+    else if(e.key === 'Escape'){ e.preventDefault(); hideMentionPop(); }
+  });
+})();
+
+// Publish-time: turn every @handle in the text into a verified {uid, username}. Handles picked from
+// the list are already known; typed-by-hand ones are looked up in usernames/{handle}. Unknown ones are ignored.
+async function resolveMentions(text){
+  const seen = new Set(), handles = [];
+  const re = /(^|[^a-z0-9_])@([a-z0-9_]{3,20})(?![a-z0-9_])/gi;
+  let m;
+  while((m = re.exec(text)) && handles.length < MENTION_MAX){
+    const h = m[2].toLowerCase();
+    if(!seen.has(h)){ seen.add(h); handles.push(h); }
+  }
+  const out = await Promise.all(handles.map(async h => {
+    try{
+      let uid = mentionMap.get(h);
+      if(!uid){ const s = await resilient(() => getDoc(doc(db,'usernames',h)), { tries:1, timeoutMs:5000 }); uid = s.exists() ? s.data().uid : null; }
+      return (uid && uid !== (currentUser && currentUser.uid)) ? { uid, username: h } : null;
+    }catch(e){ return null; }
+  }));
+  return out.filter(Boolean);
+}
+
 /* ── SUBMIT ── */
 window.submitPost = async function(){
   if(!currentUser) return;
@@ -804,6 +979,8 @@ window.submitPost = async function(){
   const btn = document.getElementById('postBtn');
   btn.disabled = true;
   btn.textContent = editId ? 'Saving…' : 'Posting…';
+  let mentions = [];
+  try{ mentions = await resolveMentions(text); }catch(e){ mentions = []; }
 
   // videoFields per the Firebase/Firestore data model in the video spec —
   // Firebase stores the reference (URL/duration/publicId), never the binary.
@@ -820,7 +997,7 @@ window.submitPost = async function(){
       // Editing an existing post — update in place, keep id/author/dates and
       // any commentsOff/hideLikeCount settings untouched.
       await setDoc(doc(db,'posts',editId),{
-        text, images: urls, ...videoFields,
+        text, mentions, images: urls, ...videoFields,
         updatedAt: serverTimestamp()
       }, { merge: true });
       images.forEach(i => { if(i.baseUrl && i.baseUrl !== i.url) discardUpload(i.baseUrl); });
@@ -842,7 +1019,7 @@ window.submitPost = async function(){
       authorName: userProfile.name || currentUser.displayName || (currentUser.email||'').split('@')[0] || 'MindShift Books User',
       authorPhoto: userProfile.photo || currentUser.photoURL || '',
       authorUsername: userProfile.username || '',
-      text, images: urls, ...videoFields,
+      text, mentions, images: urls, ...videoFields,
       status: 'published',
       likeCount: 0, commentCount: 0, saveCount: 0,
       createdAt: serverTimestamp(),

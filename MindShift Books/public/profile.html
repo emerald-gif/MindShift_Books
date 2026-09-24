@@ -933,6 +933,7 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
+<script src="/mentions.js"></script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged, updateProfile } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
@@ -2016,7 +2017,7 @@ function renderRepostsSection(sec){
           <span class="acard-author-dot">·</span>
           <span class="acard-author-date">${fmtRel(p.publishedAt||p.createdAt)}</span>
         </div>
-        ${p.text ? `<div class="pcard-text">${esc(p.text)}</div>` : ''}
+        ${p.text ? `<div class="pcard-text">${(window.msbLinkMentions ? msbLinkMentions(esc(p.text), p.mentions) : esc(p.text))}</div>` : ''}
         ${embed || media}
         <div class="acard-foot">
           <button class="acard-like ${likedSet.has(p.id)?'liked':''}" id="lb-${p.id}" onclick="event.stopPropagation();handleLike('${p.id}')">
@@ -2099,7 +2100,7 @@ function renderArticles(){
             <span class="acard-author-date">${fmtRel(s.publishedAt||s.createdAt)}</span>
             ${manageBtnHtml(s)}
           </div>
-          ${s.text ? `<div class="pcard-text">${esc(s.text)}</div>` : ''}
+          ${s.text ? `<div class="pcard-text">${(window.msbLinkMentions ? msbLinkMentions(esc(s.text), s.mentions) : esc(s.text))}</div>` : ''}
           ${embed || media}
           ${isOwner ? `<button class="acard-insights" onclick="event.stopPropagation();location.href='/content-insights?id=${s.id}&type=post'">
             <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>

@@ -863,6 +863,7 @@ main{max-width:1100px;margin:0 auto}
 
 <div class="toast" id="toast"></div>
 
+<script src="/mentions.js"></script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
@@ -2339,7 +2340,7 @@ function buildPostCardHtml(p){
         <span class="acard-author-dot">·</span>
         <span class="acard-author-date">${fmtRel(p.publishedAt)}</span>
       </div>
-      ${p.text ? `<div class="pcard-text">${esc(p.text)}</div>` : ''}
+      ${p.text ? `<div class="pcard-text">${(window.msbLinkMentions ? msbLinkMentions(esc(p.text), p.mentions) : esc(p.text))}</div>` : ''}
       ${embed || carousel}
       <div class="acard-foot">
         <button class="acard-like" id="lb-${p.id}" onclick="event.stopPropagation();handleLike('${p.id}')">
@@ -3130,7 +3131,8 @@ async function loadPublishedPosts(){
         commentsOff: !!x.commentsOff,
         hideLikeCount: !!x.hideLikeCount,
         quotedFrom: x.quotedFrom||null,
-        quotedSnapshot: x.quotedSnapshot||null
+        quotedSnapshot: x.quotedSnapshot||null,
+        mentions: Array.isArray(x.mentions) ? x.mentions : []
       };
     });
     if(!_suppressAutoRender){ rebuildMergedFeedOrder(); renderGrid(); }
