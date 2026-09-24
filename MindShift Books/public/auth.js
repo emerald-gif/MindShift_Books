@@ -495,9 +495,21 @@
     return auth.signOut();
   }
 
+  // Remembers the last-known sign-in state so pages that render before
+  // Firebase has actually resolved (slow connection, or auth.js loading
+  // late/after heavy SDK script tags) can show auth-only UI right away
+  // instead of sitting hidden for however long the real check takes. This
+  // is only ever a same-tab-load head start — the real onAuthStateChanged
+  // result below still runs and corrects it if it's ever wrong.
+  const LAST_SIGNED_IN_KEY = 'msb_last_signed_in';
+  try {
+    window.MSB_WAS_SIGNED_IN = localStorage.getItem(LAST_SIGNED_IN_KEY) === '1';
+  } catch (e) { window.MSB_WAS_SIGNED_IN = false; }
+
   auth.onAuthStateChanged(async user => {
     if (!user && await tryRestoreCrossDomainSession()) return; // signInWithCustomToken() above re-fires this listener with the real user — let that call finish the job instead of reporting a false sign-out here.
     renderNavSlot(user);
+    try { localStorage.setItem(LAST_SIGNED_IN_KEY, user ? '1' : '0'); } catch (e) {}
     if (user) {
       initAccountOnServer(user.displayName || null);
       syncCrossDomainSession(user);

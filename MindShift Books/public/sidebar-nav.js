@@ -161,6 +161,22 @@
     return;
   }
 
+  // ── Optimistic auth-item display ──
+  // This script normally runs near the top of the page, well before auth.js
+  // (loaded near the bottom, after the Firebase SDK script tags) has had a
+  // chance to actually ask Firebase who's signed in — on a slow connection
+  // that real answer can take a long time, leaving My Library/Log Out/etc.
+  // hidden the whole time even though the person is signed in. auth.js
+  // remembers the last resolved sign-in state in localStorage, so read that
+  // directly here (no need to wait for auth.js itself to load) and show
+  // those items right away if it says "signed in". applyAuthState() below
+  // still runs once the real check finishes and will correct this if it's
+  // ever actually wrong (e.g. someone signed out in another tab) — this is
+  // only ever a same-load head start, never the final answer.
+  try {
+    if (localStorage.getItem('msb_last_signed_in') === '1') applyAuthState(true);
+  } catch (e) {}
+
   // ── Open/close ──
   // Defined globally so old per-page copies (main.js, or a page's own
   // inline script) that also define toggleSidebar don't conflict —

@@ -221,12 +221,26 @@ main{max-width:1100px;margin:0 auto}
 .acard-menu-item:hover{background:#eef2ff;color:var(--p)}
 .acard-menu-item svg{width:15px;height:15px;flex-shrink:0;opacity:.75}
 
-/* ── GUEST BAR ── */
-.guest-bar{background:linear-gradient(135deg,rgba(37,99,235,.08),rgba(59,130,246,.05));border:1px solid rgba(37,99,235,.15);border-radius:14px;padding:13px 14px;margin:0 16px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+/* ── GUEST BAR — redesigned as a real conversion card, not a thin cramped
+   strip. Icon badge + benefit copy on top, a full-width primary CTA below
+   it so "Sign up" reads as the obvious next tap instead of a tiny pill
+   fighting "Log in" for space. Entrance animation gives it a moment of
+   presence instead of just appearing inertly with the rest of the page. ── */
+.guest-bar{background:linear-gradient(135deg,#eef2ff,#f5f3ff);border:1.5px solid rgba(79,70,229,.16);border-radius:18px;padding:16px;margin:0 16px 16px;box-shadow:0 4px 18px -8px rgba(79,70,229,.25);animation:guestBarIn .35s cubic-bezier(.2,.8,.2,1) both}
+@keyframes guestBarIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@media (prefers-reduced-motion:reduce){.guest-bar{animation:none}}
+.guest-bar-top{display:flex;align-items:center;gap:12px}
+.guest-bar-ic{width:42px;height:42px;border-radius:12px;flex-shrink:0;background:var(--g);display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px -2px rgba(79,70,229,.5)}
+.guest-bar-ic svg{width:21px;height:21px;stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.guest-bar-txt{font-size:14px;font-weight:800;color:var(--txt);line-height:1.3}
+.guest-bar-sub{font-size:12px;color:var(--sub);margin-top:2px}
+.guest-bar-btns{display:flex;gap:8px;margin-top:13px}
+.guest-bar-btns a{flex:1;padding:11px 12px;border-radius:12px;font-size:13.5px;font-weight:800;text-decoration:none;text-align:center;transition:transform .12s,filter .15s;display:inline-flex;align-items:center;justify-content:center}
+.gbl{background:#fff;border:1.5px solid var(--border2);color:var(--txt);flex:0 0 auto;padding-left:18px;padding-right:18px}
+.gbl:active{background:var(--bg,#f8fafc);transform:scale(.97)}
+.gbs{background:var(--g);color:#fff;flex:1;box-shadow:0 4px 14px -4px rgba(79,70,229,.55)}
+.gbs:active{transform:scale(.97);filter:brightness(.96)}
 
-/* ── FEED PROFILE-SETUP BANNER — same gold-ticket look as the profile
-   page's version, mounted here too so it's seen on the highest-traffic
-   surface, not just for people who visit their own profile. ── */
 .feed-setup-banner{display:flex;align-items:center;gap:12px;margin:0 16px 16px;padding:12px 14px;position:relative;
   background:linear-gradient(135deg,#fff7ed,#fdf2f8);border:1.5px dashed #fbbf24;border-radius:16px;
   cursor:pointer;box-shadow:0 2px 10px rgba(251,191,36,.14);overflow:visible}
@@ -253,12 +267,6 @@ main{max-width:1100px;margin:0 auto}
 .fsb-sub{font-size:11.5px;color:#c2410c;margin-top:2px;opacity:.85}
 .fsb-arrow{color:#fb923c;flex-shrink:0}
 .fsb-arrow svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
-.guest-bar-txt{font-size:12px;font-weight:700;color:var(--p)}
-.guest-bar-sub{font-size:10.5px;color:var(--sub);margin-top:1px}
-.guest-bar-btns{display:flex;gap:7px;flex-shrink:0}
-.guest-bar-btns a{padding:6px 12px;border-radius:99px;font-size:11.5px;font-weight:700;text-decoration:none;transition:all .18s;display:inline-flex}
-.gbl{background:#fff;border:1.5px solid var(--border2);color:var(--txt)}
-.gbs{background:var(--g);color:#fff}
 
 /* ── NO RESULTS ── */
 .no-res{display:none;text-align:center;padding:60px 20px;color:var(--mute)}
@@ -469,18 +477,21 @@ main{max-width:1100px;margin:0 auto}
 .xs-search-wrap{flex:1;position:relative}
 .xs-search-ico{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--mute);display:flex}
 .xs-search-ico svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.xs-inp{width:100%;padding:10px 36px;border-radius:99px;border:1.5px solid var(--border2);background:#eef2ff;font-size:14px;font-family:'Inter',sans-serif;color:var(--txt);outline:none;transition:border-color .18s}
-.xs-inp:focus{border-color:var(--p);background:#fff}
-.xs-clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:22px;height:22px;border-radius:50%;background:var(--border2);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--sub);padding:0}
+.xs-inp{width:100%;padding:10px 36px;border-radius:99px;border:1.5px solid var(--border2);background:#eef2ff;font-size:14px;font-family:'Inter',sans-serif;color:var(--txt);outline:none;transition:border-color .18s,box-shadow .18s,background .18s}
+.xs-inp:focus{border-color:var(--p);background:#fff;box-shadow:0 0 0 4px rgba(79,70,229,.12)}
+.xs-clear{position:absolute;right:8px;top:50%;transform:translateY(-50%) scale(1);opacity:1;width:22px;height:22px;border-radius:50%;background:var(--border2);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--sub);padding:0;transition:opacity .15s,transform .15s}
+.xs-clear[hidden]{display:flex;opacity:0;transform:translateY(-50%) scale(.5);pointer-events:none}
 .xs-clear svg{width:11px;height:11px;stroke:currentColor;stroke-width:2.6;fill:none;stroke-linecap:round}
-.xs-tabs{display:none;background:var(--card);border-bottom:1.5px solid var(--border)}
+.xs-tabs{display:none;background:var(--card);border-bottom:1.5px solid var(--border);position:relative}
 .xs-tabs.show{display:flex}
-.xs-tab{flex:1;padding:12px 8px;text-align:center;font-size:13.5px;font-weight:700;color:var(--mute);background:none;border:none;border-bottom:2.5px solid transparent;cursor:pointer;transition:all .18s;font-family:'Inter',sans-serif;-webkit-tap-highlight-color:transparent}
-.xs-tab.active{color:var(--p);border-bottom-color:var(--p)}
+.xs-tab{flex:1;padding:12px 8px;text-align:center;font-size:13.5px;font-weight:700;color:var(--mute);background:none;border:none;cursor:pointer;transition:color .18s;font-family:'Inter',sans-serif;-webkit-tap-highlight-color:transparent}
+.xs-tab.active{color:var(--p)}
+.xs-tab-indicator{position:absolute;left:0;bottom:-1.5px;height:2.5px;width:33.3333%;background:var(--p);border-radius:2px;transition:transform .28s cubic-bezier(.4,0,.2,1);transform:translateX(0)}
 .xs-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .xs-section-lbl{padding:14px 16px 8px;font-size:12px;font-weight:800;color:var(--mute);text-transform:uppercase;letter-spacing:.4px}
 .xgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:6px}
-.xcard{position:relative;border-radius:12px;overflow:hidden;cursor:pointer;background:linear-gradient(135deg,#e0e7ff,#eef2ff);aspect-ratio:3/4;-webkit-tap-highlight-color:transparent}
+.xcard{position:relative;border-radius:12px;overflow:hidden;cursor:pointer;background:linear-gradient(135deg,#e0e7ff,#eef2ff);aspect-ratio:3/4;-webkit-tap-highlight-color:transparent;transition:transform .1s}
+.xcard:active{transform:scale(.97)}
 .xcard.big{grid-column:span 2;aspect-ratio:16/9}
 .xcard img{width:100%;height:100%;object-fit:cover;display:block}
 .xcard-ov{position:absolute;left:0;right:0;bottom:0;padding:10px;background:linear-gradient(to top,rgba(0,0,0,.78),rgba(0,0,0,.05) 70%,transparent);color:#fff}
@@ -491,14 +502,14 @@ main{max-width:1100px;margin:0 auto}
 .xcard-author img{width:18px;height:18px;border-radius:50%;object-fit:cover;display:block}
 .xcard-author span{font-size:10px;font-weight:700;color:#fff;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .xres-list{padding-bottom:40px}
-.xacc-row{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .15s}
-.xacc-row:active{background:#eef2ff}
+.xacc-row{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .15s,transform .1s}
+.xacc-row:active{background:#eef2ff;transform:scale(.98)}
 .xacc-av{width:42px;height:42px;border-radius:50%;object-fit:cover;background:var(--g);flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px;overflow:hidden}
 .xacc-info{flex:1;min-width:0}
 .xacc-name{font-size:14px;font-weight:800;color:var(--txt);display:flex;align-items:center;gap:5px}
 .xacc-sub{font-size:12px;color:var(--mute);margin-top:1px}
-.xpost-row{display:flex;align-items:flex-start;gap:12px;padding:12px 16px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .15s}
-.xpost-row:active{background:#eef2ff}
+.xpost-row{display:flex;align-items:flex-start;gap:12px;padding:12px 16px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .15s,transform .1s}
+.xpost-row:active{background:#eef2ff;transform:scale(.98)}
 .xpost-av{width:38px;height:38px;border-radius:50%;object-fit:cover;background:var(--g);flex-shrink:0}
 .xpost-body{flex:1;min-width:0}
 .xpost-name{font-size:13.5px;font-weight:800;color:var(--txt);display:flex;align-items:center;gap:5px}
@@ -508,8 +519,8 @@ main{max-width:1100px;margin:0 auto}
 /* Article discovery row — summary text on the left, cover on the right,
    same shape as .xpost-row so the two feel like one continuous feed
    when they're mixed together in Discover. */
-.xart-row{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .15s;border-bottom:1px solid var(--border)}
-.xart-row:active{background:#eef2ff}
+.xart-row{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .15s,transform .1s;border-bottom:1px solid var(--border)}
+.xart-row:active{background:#eef2ff;transform:scale(.98)}
 .xart-row:last-child{border-bottom:none}
 .xart-body{flex:1;min-width:0}
 .xart-cat{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--p);margin-bottom:4px}
@@ -533,6 +544,27 @@ main{max-width:1100px;margin:0 auto}
 .xacc-follow-btn{flex-shrink:0;padding:7px 16px;border-radius:99px;border:1.5px solid var(--border2);background:#fff;
   font-size:12.5px;font-weight:800;color:var(--txt);cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent;transition:all .15s}
 .xacc-follow-btn.following{background:var(--txt);color:#fff;border-color:var(--txt)}
+
+/* Matched-text highlight in search results */
+.xs-hl{background:none;color:var(--p);font-weight:800}
+
+/* Recent searches (shown above trending topics while the box is empty) */
+.xs-recent-hd{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 6px}
+.xs-recent-hd span{font-size:12px;font-weight:800;color:var(--mute);text-transform:uppercase;letter-spacing:.4px}
+.xs-recent-clear{background:none;border:none;font-size:12px;font-weight:700;color:var(--p);cursor:pointer;padding:2px 4px;font-family:inherit;-webkit-tap-highlight-color:transparent}
+.xs-recent-row{display:flex;align-items:center;gap:12px;padding:10px 16px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .15s,transform .1s}
+.xs-recent-row:active{background:#eef2ff;transform:scale(.98)}
+.xs-recent-ico{width:34px;height:34px;border-radius:50%;background:var(--bg,#f8fafc);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--mute)}
+.xs-recent-ico svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.xs-recent-txt{flex:1;min-width:0;font-size:13.5px;font-weight:700;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.xs-recent-rm{width:26px;height:26px;border-radius:50%;background:none;border:none;display:flex;align-items:center;justify-content:center;color:var(--mute);cursor:pointer;flex-shrink:0;-webkit-tap-highlight-color:transparent}
+.xs-recent-rm svg{width:13px;height:13px;stroke:currentColor;stroke-width:2.4;fill:none;stroke-linecap:round}
+
+/* Smooth cross-fade whenever the body content changes — new query, new tab,
+   or the discover screen reappearing — instead of an instant snap-in. */
+@keyframes xsFadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.xs-fade-in{animation:xsFadeIn .22s cubic-bezier(.2,.8,.2,1) both}
+@media (prefers-reduced-motion:reduce){.xs-fade-in{animation:none}}
 
 /* ══ WEEKLY UI POLISH — feed (CSS only: no markup, script or behaviour changes) ══ */
 .filter-row{gap:8px;padding:12px 16px;border-bottom:1px solid #eef2f7}
@@ -586,7 +618,7 @@ main{max-width:1100px;margin:0 auto}
       </button>
       <div class="notif-wrap" id="notifWrap" style="display:none">
         <button type="button" class="icon-btn" id="notifBtn" onclick="openNotifPanel()" aria-label="Notifications">
-          <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path fill-rule="evenodd" clip-rule="evenodd" d="M5.25 9a6.75 6.75 0 0113.5 0v.75c0 2.123.8 4.057 2.118 5.52a.75.75 0 01-.297 1.206 24.585 24.585 0 01-4.831 1.243 3.75 3.75 0 11-7.48 0 24.585 24.585 0 01-4.831-1.244.75.75 0 01-.298-1.205A8.217 8.217 0 005.25 9.75V9zm4.502 8.9a2.25 2.25 0 104.496 0 25.057 25.057 0 01-4.496 0z"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
           <span class="notif-badge" id="notifBadge" style="display:none;position:absolute;top:2px;right:2px;background:#ef4444;color:#fff;font-size:10px;font-weight:800;min-width:16px;height:16px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</span>
         </button>
       </div>
@@ -659,13 +691,16 @@ main{max-width:1100px;margin:0 auto}
 
 <!-- GUEST BAR -->
 <div class="guest-bar" id="guestBar">
-  <div>
-    <div class="guest-bar-txt">❤️ Like, save & share articles</div>
-    <div class="guest-bar-sub">Free account — takes 30 seconds</div>
+  <div class="guest-bar-top">
+    <div class="guest-bar-ic"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg></div>
+    <div>
+      <div class="guest-bar-txt">Like, save &amp; share articles</div>
+      <div class="guest-bar-sub">Free account, ready in 30 seconds</div>
+    </div>
   </div>
   <div class="guest-bar-btns">
+    <a href="/signup" class="gbs">Sign up free</a>
     <a href="/login" class="gbl">Log in</a>
-    <a href="/signup" class="gbs">Sign up</a>
   </div>
 </div>
 <script>
@@ -838,8 +873,8 @@ main{max-width:1100px;margin:0 auto}
     </button>
     <div class="xs-search-wrap">
       <span class="xs-search-ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="m21 21-4.35-4.35"/></svg></span>
-      <input class="xs-inp" id="xSearchInp" type="text" placeholder="People, articles, or posts" oninput="onXSearchInput()" autocomplete="off"/>
-      <button class="xs-clear" id="xClearBtn" onclick="clearXSearch()" style="display:none" aria-label="Clear search">
+      <input class="xs-inp" id="xSearchInp" type="text" placeholder="People, articles, or posts" oninput="onXSearchInput()" onkeydown="if(event.key==='Enter'){event.preventDefault();if(xQuery)addRecentSearch(xQuery);this.blur();}" autocomplete="off" enterkeyhint="search"/>
+      <button class="xs-clear" id="xClearBtn" onclick="clearXSearch()" hidden aria-label="Clear search">
         <svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
       </button>
     </div>
@@ -848,8 +883,10 @@ main{max-width:1100px;margin:0 auto}
     <button class="xs-tab active" data-xtab="articles" onclick="switchXTab('articles')">Articles</button>
     <button class="xs-tab" data-xtab="posts" onclick="switchXTab('posts')">Posts</button>
     <button class="xs-tab" data-xtab="accounts" onclick="switchXTab('accounts')">People</button>
+    <span class="xs-tab-indicator" id="xTabIndicator"></span>
   </div>
   <div class="xs-body" id="xBody">
+    <div id="xRecentWrap"></div>
     <div id="xDiscover"></div>
     <div id="xArticlesRes" class="xgrid" style="display:none"></div>
     <div id="xPostsRes" class="xres-list" style="display:none"></div>
@@ -3220,6 +3257,100 @@ let xQuery = '';
 let _xActiveTab = 'articles';
 let _xDiscoverBuilt = false;
 let _allUsersCache = null;
+let _usersCachePromise = null;
+
+// Fetches (and caches) the users list ahead of time — called the moment the
+// search screen opens, not on the first keystroke — so by the time someone
+// actually starts typing, "People" results are already local and instant
+// instead of the first search of the session waiting on a network round trip.
+function ensureUsersCache(){
+  if(_allUsersCache) return Promise.resolve(_allUsersCache);
+  if(_usersCachePromise) return _usersCachePromise;
+  _usersCachePromise = (async () => {
+    try{
+      const snap = await rgetDocs(query(collection(db,'users'), limit(200)));
+      _allUsersCache = snap.docs.map(d=>({uid:d.id,...d.data()}));
+    }catch(e){ _allUsersCache = []; }
+    return _allUsersCache;
+  })();
+  return _usersCachePromise;
+}
+
+// Escapes text, then wraps the current query (if it's found) in a <mark> so
+// matches jump out in the results — a small thing, but it's what makes a
+// results list feel like it actually understood what you typed.
+function hl(text){
+  const s = esc(text||'');
+  if(!xQuery) return s;
+  const q = esc(xQuery);
+  const idx = s.toLowerCase().indexOf(q.toLowerCase());
+  if(idx === -1) return s;
+  return s.slice(0, idx) + '<mark class="xs-hl">' + s.slice(idx, idx + q.length) + '</mark>' + s.slice(idx + q.length);
+}
+
+// Small "fade + rise" replay every time a container's content changes
+// (new query, new tab, discover reappearing) instead of an instant snap.
+function fadeIn(el){
+  if(!el) return;
+  el.classList.remove('xs-fade-in');
+  void el.offsetWidth; // restart the animation even if the class never left
+  el.classList.add('xs-fade-in');
+}
+
+// ── Recent searches (local to this browser, shown above Trending topics
+//    while the box is empty — same pattern as X/Instagram search) ──
+const RECENT_SEARCH_KEY = 'msb_recent_searches';
+function getRecentSearches(){
+  try{ return JSON.parse(localStorage.getItem(RECENT_SEARCH_KEY) || '[]'); }catch(e){ return []; }
+}
+function saveRecentSearches(list){
+  try{ localStorage.setItem(RECENT_SEARCH_KEY, JSON.stringify(list.slice(0, 8))); }catch(e){}
+}
+function addRecentSearch(q){
+  q = (q||'').trim();
+  if(!q) return;
+  const list = getRecentSearches().filter(x => x.toLowerCase() !== q.toLowerCase());
+  list.unshift(q);
+  saveRecentSearches(list);
+}
+function removeRecentSearch(q){
+  saveRecentSearches(getRecentSearches().filter(x => x !== q));
+  renderRecentSearches();
+}
+window.removeRecentSearch = removeRecentSearch;
+window.runRecentSearch = function(q){
+  const inp = document.getElementById('xSearchInp');
+  if(!inp) return;
+  inp.value = q;
+  inp.focus();
+  onXSearchInput();
+};
+window.clearAllRecentSearches = function(){
+  saveRecentSearches([]);
+  renderRecentSearches();
+};
+function renderRecentSearches(){
+  const wrap = document.getElementById('xRecentWrap');
+  if(!wrap) return;
+  const list = getRecentSearches();
+  if(!list.length){ wrap.innerHTML = ''; return; }
+  wrap.innerHTML = `<div class="xs-recent-hd"><span>Recent</span><button type="button" class="xs-recent-clear" onclick="clearAllRecentSearches()">Clear all</button></div>` +
+    list.map(q => `<div class="xs-recent-row" onclick="runRecentSearch('${esc(q).replace(/'/g,"\\'")}')">
+      <span class="xs-recent-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg></span>
+      <span class="xs-recent-txt">${esc(q)}</span>
+      <button type="button" class="xs-recent-rm" onclick="event.stopPropagation();removeRecentSearch('${esc(q).replace(/'/g,"\\'")}')" aria-label="Remove"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>`).join('');
+}
+
+// Slides the underline to whichever tab is active — index-based so it stays
+// correct even if a tab is added/reordered later.
+function moveTabIndicator(tab){
+  const ind = document.getElementById('xTabIndicator');
+  if(!ind) return;
+  const order = ['articles','posts','accounts'];
+  const i = Math.max(0, order.indexOf(tab));
+  ind.style.transform = `translateX(${i * 100}%)`;
+}
 
 function shuffleArr(arr){
   const a = [...arr];
@@ -3253,7 +3384,7 @@ function buildXCard(a, big){
     </div>
     <div class="xcard-ov">
       <span class="xcard-cat">${esc(a.cat||'')}</span>
-      <div class="xcard-title">${esc(a.title||'')}</div>
+      <div class="xcard-title">${hl(a.title||'')}</div>
     </div>
   </div>`;
 }
@@ -3261,14 +3392,15 @@ function buildXCard(a, big){
 function renderXGrid(list, container){
   container.innerHTML = list.map((a,i)=> buildXCard(a, i%5===2)).join('');
   window.MSBAuthorLive && window.MSBAuthorLive.refresh(db, { doc, getDoc }, container);
+  fadeIn(container);
 }
 
 function buildXArticleRow(a){
   return `<div class="xart-row" onclick="closeSearchScreen();goRead('${a.id}')">
     <div class="xart-body">
       <div class="xart-cat">${esc(a.cat||'')}</div>
-      <div class="xart-title">${esc(a.title||'')}</div>
-      ${a.brief ? `<div class="xart-brief">${esc(a.brief)}</div>` : ''}
+      <div class="xart-title">${hl(a.title||'')}</div>
+      ${a.brief ? `<div class="xart-brief">${hl(a.brief)}</div>` : ''}
       <div class="xart-author" data-author-uid="${a.authorUid||''}" onclick="event.stopPropagation();closeSearchScreen();goAuthor('${a.authorUid||''}',${!!a.isMindshift})">
         <img data-author-photo src="${a.avatar||'logo.jpg'}" alt="" onerror="this.style.display='none'">
         <span data-author-name>${esc(a.author||'MindShift Books')}</span>
@@ -3280,6 +3412,7 @@ function buildXArticleRow(a){
 function renderXArticleRows(list, container){
   container.innerHTML = list.map(buildXArticleRow).join('');
   window.MSBAuthorLive && window.MSBAuthorLive.refresh(db, { doc, getDoc }, container);
+  fadeIn(container);
 }
 
 // Top article categories by volume — the closest real signal we have to
@@ -3324,17 +3457,21 @@ function renderDiscover(){
   el.innerHTML = html || '';
   window.MSBAuthorLive && window.MSBAuthorLive.refresh(db, { doc, getDoc }, el);
   loadPtfRow('discover');
+  fadeIn(el);
 }
 
 window.openSearchScreen = function(){
   document.getElementById('searchScreen').classList.add('on');
   document.body.style.overflow = 'hidden';
   if(!_xDiscoverBuilt){ renderDiscover(); _xDiscoverBuilt = true; }
+  renderRecentSearches();          // refreshed every open — cheap, and keeps it current
+  ensureUsersCache();              // pre-warm People results so the first search this session is instant, not fired-and-forgotten
   setTimeout(()=>{ const i=document.getElementById('xSearchInp'); if(i) i.focus(); }, 280);
 };
 window.closeSearchScreen = function(){
   document.getElementById('searchScreen').classList.remove('on');
   document.body.style.overflow = '';
+  if(xQuery) addRecentSearch(xQuery);   // leaving the screen after a real search remembers it, like tapping a result on X/Instagram
 };
 window.clearXSearch = function(){
   const inp = document.getElementById('xSearchInp');
@@ -3350,12 +3487,7 @@ window.clearXSearch = function(){
 const OFFICIAL_ALIASES = ['official','mindshift','mindshift books'];
 async function searchAccountsList(q){
   const isOfficialMatch = OFFICIAL_ALIASES.some(alias => alias.includes(q) || q.includes(alias));
-  if(!_allUsersCache){
-    try{
-      const snap = await rgetDocs(query(collection(db,'users'), limit(200)));
-      _allUsersCache = snap.docs.map(d=>({uid:d.id,...d.data()}));
-    }catch(e){ _allUsersCache = []; }
-  }
+  await ensureUsersCache();
   const matches = _allUsersCache.filter(u=>{
     if(u.uid==='official') return false; // canonical entry added below — avoid a duplicate
     const name=(u.name||u.displayName||'').toLowerCase();
@@ -3376,11 +3508,12 @@ function renderXAccounts(users, container){
     return `<div class="xacc-row" onclick="closeSearchScreen();goAuthor('${u.uid}',${!!u.isMindshift})">
       <div class="xacc-av">${ph?`<img src="${ph}" style="width:100%;height:100%;border-radius:50%;object-fit:cover" onerror="this.parentElement.textContent='${ini}'">`:ini}</div>
       <div class="xacc-info">
-        <div class="xacc-name">${esc(u.name||u.displayName||'MindShift Books User')}${u.isMindshift?` <span class="vbadge"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>`:''}</div>
+        <div class="xacc-name">${hl(u.name||u.displayName||'MindShift Books User')}${u.isMindshift?` <span class="vbadge"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>`:''}</div>
         <div class="xacc-sub">${esc(u.jobTitle||u.category||'MindShift Books member')}</div>
       </div>
     </div>`;
   }).join('');
+  fadeIn(container);
 }
 
 function buildXPostRow(p){
@@ -3389,7 +3522,7 @@ function buildXPostRow(p){
     <img class="xpost-av" data-author-photo src="${p.avatar||'logo.jpg'}" alt="" onerror="this.style.background='linear-gradient(135deg,#4f46e5,#06b6d4)'">
     <div class="xpost-body">
       <div class="xpost-name"><span data-author-name>${esc(p.author||'MindShift Books User')}</span>${p.isMindshift?` <span class="vbadge"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>`:''}</div>
-      <div class="xpost-text">${esc(p.text||'')}</div>
+      <div class="xpost-text">${hl(p.text||'')}</div>
     </div>
     ${thumb ? `<img class="xpost-thumb" src="${thumb}" alt="" loading="lazy" onerror="this.style.display='none'">` : ''}
   </div>`;
@@ -3397,12 +3530,14 @@ function buildXPostRow(p){
 function renderXPosts(posts, container){
   container.innerHTML = posts.map(buildXPostRow).join('');
   window.MSBAuthorLive && window.MSBAuthorLive.refresh(db, { doc, getDoc }, container);
+  fadeIn(container);
 }
 
 window.onXSearchInput = async function(){
   xQuery = document.getElementById('xSearchInp').value.trim().toLowerCase();
-  document.getElementById('xClearBtn').style.display = xQuery ? 'flex' : 'none';
+  document.getElementById('xClearBtn').hidden = !xQuery;
   const discover = document.getElementById('xDiscover');
+  const recent   = document.getElementById('xRecentWrap');
   const tabs     = document.getElementById('xTabs');
   const artRes   = document.getElementById('xArticlesRes');
   const postRes  = document.getElementById('xPostsRes');
@@ -3410,11 +3545,12 @@ window.onXSearchInput = async function(){
   const empty    = document.getElementById('xEmpty');
 
   if(!xQuery){
-    discover.style.display='block'; tabs.classList.remove('show');
+    discover.style.display='block'; if(recent) recent.style.display='block'; tabs.classList.remove('show');
     artRes.style.display='none'; postRes.style.display='none'; accRes.style.display='none'; empty.style.display='none';
+    fadeIn(discover);
     return;
   }
-  discover.style.display='none'; tabs.classList.add('show');
+  discover.style.display='none'; if(recent) recent.style.display='none'; tabs.classList.add('show');
 
   const artMatches = ARTICLES.filter(a =>
     (a.title||'').toLowerCase().includes(xQuery) ||
@@ -3436,6 +3572,7 @@ window.onXSearchInput = async function(){
   }
 
   document.querySelectorAll('.xs-tab').forEach(t=>t.classList.toggle('active', t.dataset.xtab===_xActiveTab));
+  moveTabIndicator(_xActiveTab);
 
   artRes.style.display  = _xActiveTab==='articles' ? 'grid'  : 'none';
   postRes.style.display = _xActiveTab==='posts'    ? 'block' : 'none';
@@ -3445,6 +3582,7 @@ window.onXSearchInput = async function(){
   if(!list.length){
     empty.style.display='block';
     artRes.innerHTML=''; postRes.innerHTML=''; accRes.innerHTML='';
+    fadeIn(empty);
   } else {
     empty.style.display='none';
     if(_xActiveTab==='articles') renderXGrid(artMatches, artRes);
@@ -3455,6 +3593,7 @@ window.onXSearchInput = async function(){
 
 window.switchXTab = function(tab){
   _xActiveTab = tab;
+  moveTabIndicator(tab);
   onXSearchInput();
 };
 
