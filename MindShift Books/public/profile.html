@@ -543,6 +543,12 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
   background:#0f0a1e;color:#fff;padding:12px 20px;border-radius:99px;font-size:14px;
   font-weight:600;z-index:999;transition:transform .35s cubic-bezier(.34,1.56,.64,1);white-space:nowrap}
 .toast.on{transform:translateX(-50%) translateY(0)}
+/* ── PIN TO PROFILE ── */
+.pin-wrap{background:linear-gradient(180deg,#f5f7ff 0,#fff 90px)}
+.pin-label{display:flex;align-items:center;gap:6px;padding:14px 16px 0;font-size:12px;font-weight:800;color:var(--p);letter-spacing:.2px}
+.pin-label svg{width:14px;height:14px;transform:rotate(35deg)}
+.pin-wrap .acard{padding-top:12px}
+
 </style>
 <script src="/article-categories.js"></script>
 </head>
@@ -864,6 +870,10 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
         <span class="manage-switch-track"></span>
       </label>
     </div>
+    <button class="manage-row owner-only" id="managePinBtn" onclick="pinFromManage()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg>
+      <span id="managePinLabel">Pin to profile</span>
+    </button>
     <button class="manage-row" onclick="copyManageLink()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
       <span>Copy link</span>
@@ -875,6 +885,27 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
     <button class="manage-row manage-row-danger owner-only" onclick="confirmDeleteFromManage()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
       <span>Delete</span>
+    </button>
+  </div>
+</div>
+
+<!-- REPLACE PIN CONFIRM SHEET -->
+<div class="sheet-bg" id="pinBg" onclick="closePinReplace()"></div>
+<div class="sheet" id="pinSheet" style="padding-bottom:24px">
+  <div class="manage-hdr">
+    <div class="sheet-title" style="border-bottom:none;padding:16px 0 4px">Replace your pinned item?</div>
+    <button class="manage-close" onclick="closePinReplace()" aria-label="Close">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="manage-body">
+    <p class="delete-warning" id="pinReplaceMsg">Only one item can be pinned. Pinning this will replace your current pin.</p>
+    <button class="manage-row" onclick="confirmPinReplace()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg>
+      <span>Replace pin</span>
+    </button>
+    <button class="manage-row" onclick="closePinReplace()">
+      <span>Cancel</span>
     </button>
   </div>
 </div>
@@ -1704,6 +1735,7 @@ async function loadArticles(){
     const tb = b.createdAt?.toDate?.() || new Date(b.createdAt||0);
     return tb - ta;
   });
+  await ensurePinnedLoaded();
   renderArticles();
   if(!artSnap || !postSnap) showToast(`Some ${!artSnap ? 'articles' : 'posts'} could not be loaded`);
   return true;
@@ -2015,7 +2047,11 @@ function renderRepostsSection(sec){
 function renderArticles(){
   const sec = document.getElementById('articlesSection');
   if(activeTab==='repost'){ renderRepostsSection(sec); return; }
-  const filtered = activeTab==='all' ? allSubmissions : allSubmissions.filter(s=>s.type===activeTab);
+  let filtered = activeTab==='all' ? allSubmissions : allSubmissions.filter(s=>s.type===activeTab);
+  // Pinned item floats to the top of the tabs it belongs to (All, or its own type).
+  const pinItem = currentPinItem();
+  const pinShown = (pinItem && (activeTab==='all' || activeTab===pinItem.type)) ? pinItem : null;
+  if(pinShown) filtered = [pinShown, ...filtered.filter(s=>s.id!==pinShown.id)];
 
   if(!filtered.length){
     const msgs = {
@@ -2050,7 +2086,7 @@ function renderArticles(){
       </button>
     </div>`;
 
-  const cardsHtml = filtered.map(s=>{
+  const buildCard = (s)=>{
     if(s.type==='post'){
       const media = s.videoUrl ? buildVideoTileHtml(s) : buildMediaGridHtml(s.images, s.id);
       const embed = s.quotedFrom ? repost.buildEmbedCardHtml(s.quotedSnapshot) : '';
@@ -2123,7 +2159,11 @@ function renderArticles(){
       </div>
       ${s.cover ? `<div class="acard-img"><img src="${s.cover}" alt="${esc(s.title||'')}" loading="lazy" onerror="this.parentElement.style.background='linear-gradient(135deg,#e0e7ff,#93c5fd)'"></div>` : ''}
     </div>`;
-  });
+  };
+  const pinLabelHtml = `<div class="pin-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg><span>Pinned</span></div>`;
+  const cardsHtml = filtered.map(s => (pinShown && s.id===pinShown.id)
+    ? `<div class="pin-wrap">${pinLabelHtml}${buildCard(s)}</div>`
+    : buildCard(s));
 
   const moreAvailable = !(_artExhausted && _postExhausted);
   const loadMoreHtml = moreAvailable
@@ -2283,7 +2323,7 @@ window.handleLike = function(id){
   if(!currentUser){ window.location.href='/login'; return; }
   const btn = document.getElementById(`lb-${id}`);
   const countEl = document.getElementById(`lc-${id}`);
-  const item = allSubmissions.find(a=>a.id===id);
+  const item = findItem(id);
   // hideLikeCount hides the number from everyone except the item's owner —
   // isOwner here means "this is my own profile", so if the item's showing
   // here at all with isOwner true, I'm its author.
@@ -2335,7 +2375,7 @@ let _manageId = null;
 let _manageType = null; // 'article' | 'post'
 
 window.openManageSheet = function(id, type){
-  const item = allSubmissions.find(a=>a.id===id);
+  const item = findItem(id);
   if(!item) return;
   _manageId = id; _manageType = type;
   // Owner sees everything; a visitor only gets Copy link + Share as Image.
@@ -2349,6 +2389,7 @@ window.openManageSheet = function(id, type){
     };
     document.getElementById('manageCommentsToggle').checked = !!item.commentsOff;
     document.getElementById('manageLikeCountToggle').checked = !!item.hideLikeCount;
+    document.getElementById('managePinLabel').textContent = (profileData.pinned && profileData.pinned.id===id) ? 'Unpin from profile' : 'Pin to profile';
   }
   document.getElementById('manageBg').classList.add('show');
   document.getElementById('manageSheet').classList.add('show');
@@ -2357,6 +2398,76 @@ window.openManageSheet = function(id, type){
 window.closeManageSheet = function(){
   document.getElementById('manageBg').classList.remove('show');
   document.getElementById('manageSheet').classList.remove('show');
+};
+
+/* ── PIN TO PROFILE ──
+   One pinned item per profile, stored as users/{uid}.pinned = { type:'post'|'article', id } (null = none).
+   Only the id is stored — the card itself is looked up like any other, so edits/deletes stay in sync.
+   Pinning a second item asks first, then replaces the old pin. */
+let _pinnedFetched = null;  // the pinned item, when it isn't in the first page of allSubmissions
+let _pinPending = null;     // { id, type } waiting on the "Replace pin?" confirmation
+
+function findItem(id){
+  return allSubmissions.find(a=>a.id===id) || (_pinnedFetched && _pinnedFetched.id===id ? _pinnedFetched : null);
+}
+function currentPinItem(){
+  const pin = profileData.pinned;
+  return pin && pin.id ? findItem(pin.id) : null;
+}
+async function ensurePinnedLoaded(){
+  _pinnedFetched = null;
+  const pin = profileData.pinned;
+  if(!pin || !pin.id || (pin.type!=='post' && pin.type!=='article')) return;
+  if(allSubmissions.some(a=>a.id===pin.id)) return; // already in the loaded page
+  try{
+    const snap = await resilient(()=>getDoc(doc(db, pin.type==='post' ? 'posts' : 'articles', pin.id)), {tries:2});
+    // Must really be this profile's own content.
+    if(snap.exists() && snap.data().authorUid === profileData.uid){
+      _pinnedFetched = { ...snap.data(), id: snap.id, type: pin.type };
+    }
+  }catch(e){ console.warn('pinned item load failed:', e?.code, e?.message); }
+}
+async function setPinned(pin){
+  if(!isOwner || !currentUser) return;
+  const prev = profileData.pinned || null;
+  profileData.pinned = pin;
+  renderArticles();
+  try{
+    await setDoc(doc(db,'users',currentUser.uid), { pinned: pin }, { merge:true });
+    showToast(pin ? 'Pinned to your profile' : 'Unpinned');
+  }catch(e){
+    console.error('pin update failed:', e);
+    profileData.pinned = prev;
+    renderArticles();
+    showToast('Could not update — try again');
+  }
+}
+window.pinFromManage = function(){
+  if(!_manageId || !isOwner) return;
+  const id = _manageId, type = _manageType;
+  closeManageSheet();
+  const cur = profileData.pinned;
+  if(cur && cur.id===id){ setPinned(null); return; }            // already pinned → unpin
+  if(cur && cur.id!==id && currentPinItem()){                    // something else is pinned → confirm the swap
+    _pinPending = { id, type };
+    const old = currentPinItem();
+    const label = old.type==='post' ? (old.text ? '“'+String(old.text).slice(0,40).trim()+(old.text.length>40?'…':'')+'”' : 'your pinned post') : (old.title ? '“'+old.title+'”' : 'your pinned article');
+    document.getElementById('pinReplaceMsg').textContent = 'Only one item can be pinned. Pinning this will replace '+label+'.';
+    document.getElementById('pinBg').classList.add('show');
+    document.getElementById('pinSheet').classList.add('show');
+    return;
+  }
+  setPinned({ type, id });
+};
+window.closePinReplace = function(){
+  document.getElementById('pinBg').classList.remove('show');
+  document.getElementById('pinSheet').classList.remove('show');
+  _pinPending = null;
+};
+window.confirmPinReplace = function(){
+  const p = _pinPending;
+  closePinReplace();
+  if(p) setPinned({ type:p.type, id:p.id });
 };
 
 window.copyManageLink = function(){
@@ -2370,7 +2481,7 @@ window.copyManageLink = function(){
 // than re-fetching, so it works identically here.
 window.shareManageAsImage = function(){
   if(!_manageId || typeof openShareImageCard!=='function') return;
-  const item = allSubmissions.find(a=>a.id===_manageId);
+  const item = findItem(_manageId);
   if(!item) return;
   closeManageSheet();
   // Items here are RAW Firestore docs (authorName / authorPhoto / cover), not
@@ -2394,7 +2505,7 @@ window.shareManageAsImage = function(){
 window.onManageCommentsToggle = async function(checked){
   if(!_manageId || !isOwner) return;
   const coll = _manageType==='post' ? 'posts' : 'articles';
-  const item = allSubmissions.find(a=>a.id===_manageId);
+  const item = findItem(_manageId);
   try{
     await updateDoc(doc(db,coll,_manageId),{ commentsOff: checked });
     if(item) item.commentsOff = checked;
@@ -2410,7 +2521,7 @@ window.onManageCommentsToggle = async function(checked){
 window.onManageLikeCountToggle = async function(checked){
   if(!_manageId || !isOwner) return;
   const coll = _manageType==='post' ? 'posts' : 'articles';
-  const item = allSubmissions.find(a=>a.id===_manageId);
+  const item = findItem(_manageId);
   try{
     await updateDoc(doc(db,coll,_manageId),{ hideLikeCount: checked });
     if(item) item.hideLikeCount = checked;
@@ -2450,6 +2561,10 @@ window.doDeleteConfirmed = async function(){
     deleteDoc(doc(db, type==='post' ? 'postMeta' : 'articleMeta', id)).catch(()=>{});
     deleteDoc(doc(db, type==='post' ? 'postViews' : 'articleViews', id)).catch(()=>{});
     allSubmissions = allSubmissions.filter(a=>a.id!==id);
+    if(profileData.pinned && profileData.pinned.id===id){
+      profileData.pinned = null; _pinnedFetched = null;
+      setDoc(doc(db,'users',currentUser.uid),{ pinned:null },{merge:true}).catch(()=>{});
+    }
     const statEl = document.getElementById(type==='post' ? 'statPosts' : 'statArticles');
     if(statEl){
       const cur = parseInt(statEl.textContent)||0;
