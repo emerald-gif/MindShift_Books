@@ -221,10 +221,14 @@ main{max-width:1100px;margin:0 auto}
 .acard-menu-item:hover{background:#eef2ff;color:var(--p)}
 .acard-menu-item svg{width:15px;height:15px;flex-shrink:0;opacity:.75}
 
-/* ── GUEST BAR — compact one-row strip: icon + short pitch (with a quiet
-   "Log in" link) on the left, one primary "Sign up free" button on the right.
-   Kept slim so it doesn't push the feed down on phones. ── */
-.guest-bar{display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,#eef2ff,#f5f3ff);border:1px solid rgba(79,70,229,.14);border-radius:14px;padding:8px 8px 8px 10px;margin:0 16px 12px;animation:guestBarIn .35s cubic-bezier(.2,.8,.2,1) both}
+/* ── GUEST BAR — compact one-row strip, STICKY: it stays pinned right under
+   the header while the feed scrolls. The wrapper carries the page background
+   so posts don't show through the gap around the strip. --hdr-h / --gbar-h
+   are measured by the small script near the end of the page, so the feed tabs
+   can stack under it (see .feed-tabs top). Hidden with display:none on
+   #guestBar for logged-in users — the tabs then snap back up automatically. ── */
+.guest-bar-wrap{position:sticky;top:var(--hdr-h,56px);z-index:60;background:var(--bg);padding:8px 12px}
+.guest-bar{display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,#eef2ff,#f5f3ff);border:1px solid rgba(79,70,229,.14);border-radius:14px;padding:7px 8px 7px 10px;animation:guestBarIn .35s cubic-bezier(.2,.8,.2,1) both}
 @keyframes guestBarIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 @media (prefers-reduced-motion:reduce){.guest-bar{animation:none}}
 .guest-bar-ic{width:32px;height:32px;border-radius:10px;flex-shrink:0;background:var(--g);display:flex;align-items:center;justify-content:center}
@@ -270,7 +274,7 @@ main{max-width:1100px;margin:0 auto}
 
 /* ── FEED TABS ── */
 .feed-tabs{display:flex;background:var(--card);border-bottom:1.5px solid var(--border);
-  position:sticky;top:56px;z-index:50}
+  position:sticky;top:calc(var(--hdr-h,56px) + var(--gbar-h,0px));z-index:50}
 .feed-tab{flex:1;padding:13px 8px;text-align:center;font-size:13.5px;font-weight:700;
   color:var(--mute);background:none;border:none;border-bottom:2.5px solid transparent;
   cursor:pointer;transition:all .18s;font-family:'Inter',sans-serif;-webkit-tap-highlight-color:transparent}
@@ -685,13 +689,15 @@ main{max-width:1100px;margin:0 auto}
 </div>
 
 <!-- GUEST BAR -->
-<div class="guest-bar" id="guestBar">
-  <div class="guest-bar-ic"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg></div>
-  <div class="guest-bar-body">
-    <div class="guest-bar-txt">Like, save &amp; share articles</div>
-    <div class="guest-bar-sub">Have an account? <a href="/login" class="gbl">Log in</a></div>
+<div class="guest-bar-wrap" id="guestBar">
+  <div class="guest-bar">
+    <div class="guest-bar-ic"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg></div>
+    <div class="guest-bar-body">
+      <div class="guest-bar-txt">Like, save &amp; share articles</div>
+      <div class="guest-bar-sub">Have an account? <a href="/login" class="gbl">Log in</a></div>
+    </div>
+    <a href="/signup" class="gbs">Sign up free</a>
   </div>
-  <a href="/signup" class="gbs">Sign up free</a>
 </div>
 <script>
   /* Same fix as the hero banner above, same reason: hide this BEFORE the
@@ -786,14 +792,14 @@ main{max-width:1100px;margin:0 auto}
 <!-- VISITOR PROMO POPUP (guests only, once per day, after ~10s on the tab) -->
 <div class="vpromo-overlay" id="vpromoOverlay" onclick="closeVisitorPromo()"></div>
 <div class="vpromo-card" id="vpromoCard">
-  <div class="vpromo-top" onclick="location.href='/signup?redirect=/complete-profile'">
+  <div class="vpromo-top" onclick="location.href='/signup?returnTo=%2Fcomplete-profile'">
     <img src="/fcbadge.jpg" alt="Founding Creator badge" class="vpromo-badge">
     <div class="vpromo-kicker">A gift for creators</div>
     <div class="vpromo-headline">₦2,000 + a Founding Creator badge</div>
     <div class="vpromo-sub">Waiting for you when you join</div>
   </div>
   <div class="vpromo-bottom">
-    <a href="/signup?redirect=/complete-profile" class="vpromo-cta">See how to unlock it</a>
+    <a href="/signup?returnTo=%2Fcomplete-profile" class="vpromo-cta">See how to unlock it</a>
   </div>
   <button class="vpromo-close" onclick="closeVisitorPromo()" aria-label="Close">
     <svg viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 8l8 8M16 8l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
@@ -3752,6 +3758,31 @@ setTimeout(function(){
   var g=document.getElementById('grid'); if(!g) return;
   g.innerHTML='<div style="text-align:center;padding:60px 20px"><h3 style="margin:0 0 8px">Couldn\'t load the feed</h3><p style="color:#94a3b8;margin:0 0 16px">Check your connection and try again.</p><button onclick="location.reload()" style="background:#4f46e5;color:#fff;border:none;padding:10px 22px;border-radius:99px;font-size:14px;font-weight:700;cursor:pointer">Reload</button></div>';
 }, 15000);
+</script>
+<script>
+/* Keeps the sticky stack (header → guest bar → feed tabs) aligned: publishes
+   the real header height and the guest bar's height (0 when hidden) as CSS
+   variables. ResizeObserver also fires when the bar is hidden for logged-in
+   users, so the tabs move up on their own. */
+(function(){
+  var root=document.documentElement;
+  function sync(){
+    var h=document.querySelector('header'), g=document.getElementById('guestBar');
+    if(h) root.style.setProperty('--hdr-h', h.offsetHeight+'px');
+    var shown=g && getComputedStyle(g).display!=='none';
+    root.style.setProperty('--gbar-h', (shown?g.offsetHeight:0)+'px');
+  }
+  sync();
+  document.addEventListener('DOMContentLoaded',sync);
+  window.addEventListener('load',sync);
+  window.addEventListener('resize',sync);
+  if(window.ResizeObserver){
+    var ro=new ResizeObserver(sync);
+    var h=document.querySelector('header'), g=document.getElementById('guestBar');
+    if(h) ro.observe(h);
+    if(g) ro.observe(g);
+  }
+})();
 </script>
 </body>
 </html>
