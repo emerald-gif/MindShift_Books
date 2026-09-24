@@ -135,6 +135,8 @@ async function fetchProducts() {
   const cached = getCachedProducts();
   if (cached && cached.length) {
     PRODUCTS = cached;
+    window.MSB_PRODUCTS = PRODUCTS;
+    window.dispatchEvent(new CustomEvent('msb-products-ready'));
     renderProducts();
   }
 
@@ -146,6 +148,8 @@ async function fetchProducts() {
     // Only re-render if data actually changed
     if (JSON.stringify(fresh) !== JSON.stringify(PRODUCTS)) {
       PRODUCTS = fresh;
+      window.MSB_PRODUCTS = PRODUCTS;
+      window.dispatchEvent(new CustomEvent('msb-products-ready'));
       renderProducts();
     }
     setCachedProducts(fresh);
@@ -196,6 +200,7 @@ const GENRE_TO_MSB_CAT = {
 function genreToMsbCat(genre) {
   return GENRE_TO_MSB_CAT[genre] || null;
 }
+window.genreToMsbCat = genreToMsbCat;
 // Small accent colors per category, used for the genre tag chip on cards.
 const MSB_CAT_TAG_COLOR = {
   MINDSET: '#4f46e5', MONEY: '#059669', PRODUCTIVITY: '#d97706',
@@ -759,6 +764,7 @@ function addToCart(productId) {
   }
   cart.push(productId);
   saveCart(cart);
+  showToast('Added to cart.', 'success');
 }
 
 function removeFromCart(productId) {

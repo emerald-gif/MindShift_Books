@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="icon" href="/MINDSHIFT.jpg">
+
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>All Books | MindShift Books</title>
+  <meta name="description" content="Browse every MindShift Books title — psychology, money, and personal-growth eBooks, delivered instantly by email." />
+  <link rel="shortcut icon" href="MINDSHIFT.jpg" type="image/jpg">
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="canonical" href="https://mindshiftbooks.shop/books/all" />
+
+  <style>
+    /* This page intentionally skips the site's usual fixed header/logo/
+       cart/hamburger — just a back button + search, like the reference. */
+    body { padding-top: 0; }
+    main { max-width: 640px; padding-top: 20px; padding-bottom: 60px; }
+
+    .ab-topbar { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+    .ab-back-btn { flex-shrink: 0; }
+    .ab-search-wrap {
+      position: relative; flex: 1; display: flex; align-items: center;
+      background: #eef2f6; border-radius: 999px; padding: 0 14px;
+    }
+    .ab-search-wrap svg { color: #94a3b8; flex-shrink: 0; }
+    .ab-search-wrap input {
+      flex: 1; border: none; outline: none; background: transparent;
+      font-size: 0.92rem; padding: 11px 8px; color: var(--primary); font-family: inherit;
+    }
+
+    .ab-title { font-size: 1.5rem; font-weight: 800; color: var(--primary); margin: 4px 0 14px; }
+
+    /* Category pills — identical markup/behavior to books.html's bar */
+    .msb-cat-bar {
+      display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 18px;
+      -ms-overflow-style: none; scrollbar-width: none;
+    }
+    .msb-cat-bar::-webkit-scrollbar { display: none; }
+    .msb-cat-pill {
+      flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 16px; border-radius: 999px; border: 1.5px solid #e2e8f0;
+      background: #fff; color: #475569; font-size: 0.86rem; font-weight: 600;
+      cursor: pointer; white-space: nowrap; transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+    .msb-cat-pill:hover { border-color: #cbd5e1; }
+    .msb-cat-pill.is-active { background: var(--primary); border-color: var(--primary); color: #fff; }
+    .msb-cat-emoji { font-size: 0.95rem; line-height: 1; }
+
+    /* ---- Row list ---- */
+    .ab-list { display: flex; flex-direction: column; }
+    .ab-row {
+      display: flex; align-items: flex-start; gap: 14px;
+      padding: 18px 0; border-bottom: 1px solid rgba(15,23,42,0.06);
+    }
+    .ab-row:first-child { padding-top: 4px; }
+    .ab-row-cover {
+      width: 68px; flex-shrink: 0; aspect-ratio: 2/3; object-fit: cover;
+      border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.10); cursor: pointer;
+    }
+    .ab-row-body { flex: 1; min-width: 0; }
+    .ab-row-title {
+      font-weight: 700; font-size: 0.98rem; color: var(--primary);
+      line-height: 1.3; cursor: pointer;
+    }
+    .ab-row-author { font-size: 0.82rem; color: #64748b; font-weight: 600; margin: 2px 0 8px; }
+    .ab-row-price-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+    .ab-row-price { font-weight: 800; font-size: 1rem; color: var(--primary); }
+    .ab-row-price-old { font-size: 0.82rem; color: #9ca3af; text-decoration: line-through; }
+    .ab-row-discount {
+      background: #fef2f2; color: #dc2626; font-size: 0.7rem; font-weight: 700;
+      padding: 2px 8px; border-radius: 20px; border: 1px solid #fecaca;
+    }
+    .ab-row-add {
+      background: linear-gradient(90deg,#4f46e5,#06b6d4); color: #fff; border: none;
+      padding: 9px 22px; border-radius: 10px; font-weight: 700; font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .ab-empty { padding: 40px 0; text-align: center; color: #94a3b8; font-size: 0.92rem; }
+  </style>
+</head>
+<body>
+
+<div id="sidebar-slot"></div>
+<script src="/sidebar-nav.js"></script>
+
+<main>
+  <div class="ab-topbar">
+    <button type="button" class="icon-btn ab-back-btn" onclick="window.location.href='/books'" aria-label="Back to books">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+    </button>
+    <div class="ab-search-wrap" role="search" aria-label="Search books">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <input id="abSearch" type="text" placeholder="Search books..." autocomplete="off">
+    </div>
+  </div>
+
+  <h1 class="ab-title">All Books</h1>
+
+  <div class="msb-cat-bar" id="abCatBar" role="tablist" aria-label="Browse books by category"></div>
+
+  <div id="abList" class="ab-list" aria-live="polite"></div>
+  <div id="abEmpty" class="ab-empty" style="display:none;">No books match your search.</div>
+</main>
+
+<script src="/article-categories.js"></script>
+<script>
+(function () {
+  var SHORT_LABEL = {
+    MINDSET: 'Mindset', MONEY: 'Money', PRODUCTIVITY: 'Productivity',
+    RELATIONSHIPS: 'Relationships', HEALTH: 'Health', CAREER: 'Career',
+    EDUCATION: 'Education', PURPOSE: 'Purpose', REFLECTIVE: 'Reflective', FICTION: 'Fiction'
+  };
+  var activeCat = 'ALL';
+  var searchTerm = '';
+  var allOurBooks = [];
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function formatPrice(p) {
+    return p.priceNGN ? ('₦' + Number(p.priceNGN).toLocaleString()) : '';
+  }
+
+  function rowHtml(p) {
+    var orig = p.originalPriceNGN ? ('₦' + Number(p.originalPriceNGN).toLocaleString()) : null;
+    var pct = (p.originalPriceNGN && p.priceNGN) ? Math.round((1 - p.priceNGN / p.originalPriceNGN) * 100) : null;
+    var cover = esc(p.cover || '');
+    var title = esc(p.title || '');
+    return (
+      '<div class="ab-row" data-msb-cat="' + esc((window.genreToMsbCat && window.genreToMsbCat(p.genre)) || '') + '">' +
+        '<img src="' + cover + '" alt="' + title + '" class="ab-row-cover" data-action="review" data-product-id="' + esc(p.id) + '" loading="lazy">' +
+        '<div class="ab-row-body">' +
+          '<div class="ab-row-title" data-action="review" data-product-id="' + esc(p.id) + '">' + title + '</div>' +
+          '<div class="ab-row-author">MindShift Books</div>' +
+          '<div class="ab-row-price-row">' +
+            '<span class="ab-row-price">' + formatPrice(p) + '</span>' +
+            (orig ? '<span class="ab-row-price-old">' + orig + '</span>' : '') +
+            (pct ? '<span class="ab-row-discount">' + pct + '% OFF</span>' : '') +
+          '</div>' +
+          '<button type="button" class="ab-row-add" data-action="add-to-cart" data-product-id="' + esc(p.id) + '">Add to Cart</button>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
+  function render() {
+    var list = document.getElementById('abList');
+    var empty = document.getElementById('abEmpty');
+    if (!list) return;
+    var term = searchTerm.trim().toLowerCase();
+    var filtered = allOurBooks.filter(function (p) {
+      if (activeCat !== 'ALL' && (window.genreToMsbCat ? window.genreToMsbCat(p.genre) : null) !== activeCat) return false;
+      if (term && (p.title || '').toLowerCase().indexOf(term) === -1) return false;
+      return true;
+    });
+    list.innerHTML = filtered.map(rowHtml).join('');
+    empty.style.display = filtered.length ? 'none' : '';
+  }
+
+  function initPills() {
+    var bar = document.getElementById('abCatBar');
+    if (!bar || !window.MSB_CATEGORIES) return;
+    var html = '<button type="button" class="msb-cat-pill is-active" data-cat="ALL" role="tab" aria-selected="true">All</button>';
+    html += window.MSB_CATEGORIES.map(function (c) {
+      var label = SHORT_LABEL[c.code] || c.label;
+      return '<button type="button" class="msb-cat-pill" data-cat="' + c.code + '" role="tab" aria-selected="false">' +
+        '<span class="msb-cat-emoji">' + c.emoji + '</span>' + label + '</button>';
+    }).join('');
+    bar.innerHTML = html;
+    bar.addEventListener('click', function (e) {
+      var btn = e.target.closest('.msb-cat-pill');
+      if (!btn) return;
+      bar.querySelectorAll('.msb-cat-pill').forEach(function (b) {
+        var active = b === btn;
+        b.classList.toggle('is-active', active);
+        b.setAttribute('aria-selected', active ? 'true' : 'false');
+      });
+      activeCat = btn.dataset.cat;
+      render();
+    });
+  }
+
+  function onProducts() {
+    var products = window.MSB_PRODUCTS || [];
+    allOurBooks = products.filter(function (p) { return p.category === 'ours'; });
+    render();
+  }
+
+  document.getElementById('abSearch').addEventListener('input', function (e) {
+    searchTerm = e.target.value;
+    render();
+  });
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initPills);
+  else initPills();
+
+  if (window.MSB_PRODUCTS && window.MSB_PRODUCTS.length) onProducts();
+  window.addEventListener('msb-products-ready', onProducts);
+})();
+</script>
+
+<div id="toastContainer"></div>
+
+<!-- Firebase + Main script (shared cart/products/auth logic) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://cdn.emailjs.com/sdk/3.2/email.min.js"></script>
+<script src="/main.js"></script>
+<script src="/auth.js"></script>
+
+</body>
+</html>
