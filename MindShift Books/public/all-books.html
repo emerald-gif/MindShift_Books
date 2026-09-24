@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<base href="/">
 <link rel="icon" href="/MINDSHIFT.jpg">
 
   <meta charset="UTF-8"/>
@@ -10,16 +11,22 @@
   <link rel="shortcut icon" href="MINDSHIFT.jpg" type="image/jpg">
 
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="/styles.css">
   <link rel="canonical" href="https://mindshiftbooks.shop/books/all" />
 
   <style>
     /* This page intentionally skips the site's usual fixed header/logo/
        cart/hamburger — just a back button + search, like the reference. */
     body { padding-top: 0; }
-    main { max-width: 640px; padding-top: 20px; padding-bottom: 60px; }
+    main { max-width: 640px; padding-top: 0; padding-bottom: 110px; }
 
-    .ab-topbar { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+    .ab-topbar {
+      position: sticky; top: 0; z-index: 20;
+      display: flex; align-items: center; gap: 10px;
+      margin: 0 -16px 10px; padding: 12px 16px;
+      background: rgba(248,250,252,0.94);
+      -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+    }
     .ab-back-btn { flex-shrink: 0; }
     .ab-search-wrap {
       position: relative; flex: 1; display: flex; align-items: center;
@@ -47,7 +54,6 @@
     }
     .msb-cat-pill:hover { border-color: #cbd5e1; }
     .msb-cat-pill.is-active { background: var(--primary); border-color: var(--primary); color: #fff; }
-    .msb-cat-emoji { font-size: 0.95rem; line-height: 1; }
 
     /* ---- Row list ---- */
     .ab-list { display: flex; flex-direction: column; }
@@ -57,7 +63,7 @@
     }
     .ab-row:first-child { padding-top: 4px; }
     .ab-row-cover {
-      width: 68px; flex-shrink: 0; aspect-ratio: 2/3; object-fit: cover;
+      width: 84px; flex-shrink: 0; aspect-ratio: 2/3; object-fit: cover;
       border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.10); cursor: pointer;
     }
     .ab-row-body { flex: 1; min-width: 0; }
@@ -78,6 +84,22 @@
       padding: 9px 22px; border-radius: 10px; font-weight: 700; font-size: 0.85rem;
       cursor: pointer;
     }
+    /* Sticky checkout bar — appears as soon as something is in the cart */
+    .ab-cartbar {
+      position: fixed; left: 12px; right: 12px; bottom: 14px; z-index: 40;
+      max-width: 616px; margin: 0 auto;
+      display: none; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 12px 14px 12px 18px; border-radius: 16px; color: #fff;
+      background: linear-gradient(90deg,#4f46e5,#06b6d4);
+      box-shadow: 0 12px 30px rgba(79,70,229,0.35);
+    }
+    .ab-cartbar.show { display: flex; }
+    .ab-cartbar-info { font-size: 0.82rem; font-weight: 600; line-height: 1.25; opacity: 0.95; }
+    .ab-cartbar-info strong { display: block; font-size: 1.02rem; font-weight: 800; opacity: 1; }
+    .ab-cartbar-btn {
+      background: #fff; color: #4f46e5; border: none; border-radius: 11px;
+      padding: 11px 18px; font-weight: 800; font-size: 0.88rem; cursor: pointer; white-space: nowrap;
+    }
     .ab-empty { padding: 40px 0; text-align: center; color: #94a3b8; font-size: 0.92rem; }
   </style>
 </head>
@@ -95,6 +117,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
       <input id="abSearch" type="text" placeholder="Search books..." autocomplete="off">
     </div>
+    <button type="button" class="icon-btn" id="cartIcon" aria-label="View cart">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+      <span class="cart-badge" id="cartBadge" style="display:none;">0</span>
+    </button>
   </div>
 
   <h1 class="ab-title">All Books</h1>
@@ -170,7 +196,7 @@
     html += window.MSB_CATEGORIES.map(function (c) {
       var label = SHORT_LABEL[c.code] || c.label;
       return '<button type="button" class="msb-cat-pill" data-cat="' + c.code + '" role="tab" aria-selected="false">' +
-        '<span class="msb-cat-emoji">' + c.emoji + '</span>' + label + '</button>';
+        label + '</button>';
     }).join('');
     bar.innerHTML = html;
     bar.addEventListener('click', function (e) {
@@ -200,10 +226,126 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initPills);
   else initPills();
 
+  function updateCartBar() {
+    var bar = document.getElementById('abCartBar');
+    if (!bar || typeof getCart !== 'function') return;
+    var ids = getCart();
+    if (!ids.length) { bar.classList.remove('show'); return; }
+    var products = window.MSB_PRODUCTS || [];
+    var total = ids.reduce(function (sum, id) {
+      var p = products.find(function (x) { return x.id === id; });
+      return sum + (p && p.priceNGN ? Number(p.priceNGN) : 0);
+    }, 0);
+    document.getElementById('abCartCount').textContent = ids.length + (ids.length === 1 ? ' book' : ' books') + ' in cart';
+    document.getElementById('abCartTotal').textContent = total ? '₦' + total.toLocaleString() : '';
+    bar.classList.add('show');
+  }
+  function wireCartBar() {
+    var btn = document.getElementById('abCartBtn');
+    if (btn) btn.addEventListener('click', function () {
+      if (typeof openCartOverlay === 'function') openCartOverlay();
+    });
+    // main.js refreshes #cartBadge on every cart change — piggyback on that
+    var badgeEl = document.getElementById('cartBadge');
+    if (badgeEl) new MutationObserver(updateCartBar).observe(badgeEl, { childList: true, characterData: true, subtree: true, attributes: true });
+    updateCartBar();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wireCartBar);
+  else wireCartBar();
+  window.addEventListener('msb-products-ready', updateCartBar);
+  window.addEventListener('load', updateCartBar);
+
   if (window.MSB_PRODUCTS && window.MSB_PRODUCTS.length) onProducts();
   window.addEventListener('msb-products-ready', onProducts);
 })();
 </script>
+
+<!-- FULL-SCREEN CART OVERLAY (replaces the old single-book checkout modal) -->
+<div class="cart-overlay" id="cartOverlay" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="cart-title">
+  <div class="cart-overlay-inner">
+    <div class="cart-header">
+      <h2 id="cart-title">Your Cart <span id="cartItemCount" class="cart-item-count"></span></h2>
+      <button class="cart-close" id="cartCloseBtn" aria-label="Close cart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+    </div>
+
+    <div id="cartItemsList" class="cart-items-list"></div>
+
+    <div class="cart-summary" id="cartSummary">
+      <!-- Shown only when the signed-in user has an unused voucher -->
+      <div class="cart-voucher-row" id="cartVoucherRow" style="display:none">
+        <label for="cartVoucherToggle">
+          <input type="checkbox" id="cartVoucherToggle" checked>
+          <span class="cvr-gift">🎁</span> <span id="cartVoucherLabel">Apply ₦2,000 voucher</span>
+        </label>
+        <span class="cvr-amount" id="cartVoucherAmount">−₦2,000</span>
+      </div>
+      <!-- Shown instead of the row above when the cart total is below the
+           voucher's value — the voucher only applies once you're spending
+           at least what it's worth, so it doesn't get burned on a cheap item. -->
+      <div class="cart-voucher-hint" id="cartVoucherHint" style="display:none">
+        <span class="cvh-emoji">🎁</span> <span id="cartVoucherHintText"></span>
+      </div>
+
+      <div class="cart-total-row">
+        <span>Total</span>
+        <span id="cartTotalPrice">$0.00</span>
+      </div>
+
+      <!-- Signed-in: books are sent straight to the account's own email —
+           no re-typing name/email, nothing to get wrong. -->
+      <div id="cartCheckoutSignedIn" style="display:none;">
+        <div class="checkout-heading">Sending your eBooks to</div>
+        <div class="cart-recipient">
+          <div class="cart-recipient-avatar" id="cartRecipientAvatar">?</div>
+          <div class="cart-recipient-info">
+            <div class="cart-recipient-name" id="cartRecipientName">—</div>
+            <div class="cart-recipient-email" id="cartRecipientEmail">—</div>
+          </div>
+          <button type="button" class="cart-recipient-switch" id="cartSwitchAccountBtn">Not you?</button>
+        </div>
+
+        <button class="btn buy-btn checkout-btn" id="cartProceedBtn" style="margin-top:18px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          Proceed to Payment
+        </button>
+
+        <div class="checkout-trust">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          Payments secured by Paystack
+        </div>
+
+        <div class="muted" style="margin-top:8px;text-align:center;font-size:0.82rem;">
+          You'll be redirected after payment and your PDFs will be emailed automatically — or check anytime under My Account.
+        </div>
+        <div class="muted" style="margin-top:6px;text-align:center;font-size:0.82rem;">
+          <a href="/support#faq-payment-methods" style="color:#4f46e5;font-weight:700;">Questions about payment?</a>
+        </div>
+      </div>
+
+      <!-- Signed-out: no checkout details or Proceed to Payment at all —
+           just a friendly nudge to sign in or create an account first. -->
+      <div id="cartCheckoutSignedOut" style="display:none;">
+        <div class="cart-auth-gate">
+          <div class="cart-auth-gate-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          </div>
+          <h3>Sign in to check out</h3>
+          <p>Create a free account or sign in so we know exactly where to send your eBooks.</p>
+          <div class="cart-auth-gate-actions">
+            <button type="button" class="btn buy-btn" id="cartSignUpBtn">Create Account</button>
+            <button type="button" class="cart-auth-secondary" id="cartSignInBtn">Sign In</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Sticky checkout bar -->
+<div class="ab-cartbar" id="abCartBar">
+  <div class="ab-cartbar-info"><span id="abCartCount">0 items</span><strong id="abCartTotal"></strong></div>
+  <button type="button" class="ab-cartbar-btn" id="abCartBtn">Checkout &rarr;</button>
+</div>
 
 <div id="toastContainer"></div>
 
