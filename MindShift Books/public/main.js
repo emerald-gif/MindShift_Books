@@ -1010,10 +1010,13 @@ async function fetchVoucherStatus() {
 function updateVoucherBanner() {
   const el = document.getElementById('voucherBanner');
   if (!el) return; // only present on books.html
-  el.style.display = userVoucher ? 'flex' : 'none';
+  let dismissed = false;
+  try { dismissed = sessionStorage.getItem('msb_voucher_banner_dismissed') === '1'; } catch (e) {}
+  el.style.display = (userVoucher && !dismissed) ? 'flex' : 'none';
   const textEl = document.getElementById('voucherBannerText');
   if (textEl && userVoucher) {
-    textEl.textContent = `You have a ₦${(Number(userVoucher.amount) || 0).toLocaleString()} voucher — it'll be applied automatically at checkout.`;
+    const amt = (Number(userVoucher.amount) || 0).toLocaleString();
+    textEl.innerHTML = `<strong>₦${amt} voucher</strong><small>Applied automatically at checkout</small>`;
   }
 }
 

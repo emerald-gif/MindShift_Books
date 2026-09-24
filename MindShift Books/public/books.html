@@ -115,6 +115,41 @@
     }
     .our-book-item .card-price-block { align-items: flex-start; text-align: left; }
     .our-book-item .card-price-subrow { justify-content: flex-start; }
+
+    /* ---- "View all" link on section headers ---- */
+    .section-view-all {
+      display: inline-flex; align-items: center; gap: 2px;
+      padding: 6px 8px 6px 12px; border-radius: 999px;
+      background: #eef2ff; color: #4f46e5; font-size: 0.78rem; font-weight: 700;
+    }
+    .section-view-all:hover { background: #e0e7ff; color: #4338ca; }
+    .section-view-all svg { flex-shrink: 0; }
+
+    /* ---- Voucher banner (compact, dismissible) ---- */
+    .voucher-page-banner {
+      display: flex; align-items: center; gap: 12px;
+      max-width: none; margin: 0 0 18px; padding: 10px 10px 10px 12px;
+      border-radius: 16px; border: 1px solid #fde68a; overflow: hidden;
+      background: linear-gradient(135deg, #fffbeb 0%, #fff1f2 100%);
+      box-shadow: 0 4px 14px rgba(245,158,11,0.12);
+      font-size: 0.9rem; color: #9a3412;
+    }
+    .voucher-page-banner::before, .voucher-page-banner::after { display: none; }
+    .voucher-page-banner .vpb-icon {
+      flex: 0 0 auto; width: 38px; height: 38px; border-radius: 12px;
+      display: inline-flex; align-items: center; justify-content: center; color: #fff;
+      background: linear-gradient(135deg, #f59e0b, #f97316);
+      box-shadow: 0 4px 10px rgba(249,115,22,0.30);
+    }
+    .voucher-page-banner .vpb-text { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
+    .voucher-page-banner .vpb-text strong { font-size: 0.92rem; font-weight: 800; color: #9a3412; }
+    .voucher-page-banner .vpb-text small { font-size: 0.76rem; font-weight: 600; color: #b45309; }
+    .voucher-page-banner .vpb-close {
+      flex: 0 0 auto; width: 30px; height: 30px; border-radius: 50%; border: none;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: rgba(180,83,9,0.08); color: #b45309; cursor: pointer; padding: 0;
+    }
+    .voucher-page-banner .vpb-close:hover { background: rgba(180,83,9,0.16); }
   </style>
 </head>
 <body>
@@ -207,14 +242,20 @@
   <!-- Profile-completion voucher reminder — shown by main.js while the
        signed-in user has an unused ebookVoucher on their account. -->
   <div id="voucherBanner" class="voucher-page-banner" style="display:none">
-    <span class="vpb-emoji">🎁</span>
-    <span id="voucherBannerText">You have a ₦2,000 voucher — it'll be applied automatically at checkout.</span>
+    <span class="vpb-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><polyline points="20 12 20 22 4 22 4 12"></polyline><rect x="2" y="7" width="20" height="5"></rect><line x1="12" y1="22" x2="12" y2="7"></line><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path></svg>
+    </span>
+    <span id="voucherBannerText" class="vpb-text"><strong>₦2,000 voucher</strong><small>Applied automatically at checkout</small></span>
+    <button type="button" class="vpb-close" id="voucherBannerClose" aria-label="Dismiss">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </button>
   </div>
 
   <section class="hero" id="ourBooksSection" aria-labelledby="our-books-h">
     <div class="section-head">
       <div class="section-label-row">
         <h2 id="our-books-h">New Releases</h2>
+        <a href="/books/all" class="section-view-all">View all <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg></a>
       </div>
     </div>
 
@@ -230,6 +271,7 @@
     <div class="section-head">
       <div class="section-label-row">
         <h2 id="our-books-h2">Recommended for You</h2>
+        <a href="/books/all" class="section-view-all">View all <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg></a>
       </div>
     </div>
 
@@ -244,6 +286,7 @@
     <div class="section-head">
       <div class="section-label-row">
         <h2 id="free-ebooks-h">Free eBooks</h2>
+        <a href="/free-ebooks" class="section-view-all">View all <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg></a>
       </div>
     </div>
 
@@ -389,6 +432,7 @@
     <div class="section-head">
       <div class="section-label-row">
         <h2 id="featured-h">Recommended Reads</h2>
+        <a href="/books/all" class="section-view-all">View all <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg></a>
       </div>
     </div>
 
@@ -412,6 +456,7 @@
     <div class="section-head">
       <div class="section-label-row">
         <h2 id="featured-h2">Reader Favorites</h2>
+        <a href="/books/all" class="section-view-all">View all <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg></a>
       </div>
     </div>
 
@@ -435,6 +480,7 @@
     <div class="section-head">
       <div class="section-label-row">
         <h2 id="featured-h3">Editor's Picks</h2>
+        <a href="/books/all" class="section-view-all">View all <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg></a>
       </div>
     </div>
 
@@ -669,7 +715,24 @@ function adjustMainPadding(){
 }
 window.addEventListener('load', adjustMainPadding);
 window.addEventListener('resize', adjustMainPadding);
+document.addEventListener('DOMContentLoaded', adjustMainPadding);
+// The header grows after first paint (category pills render, Inter font loads),
+// which used to leave the top of the page hidden under it after a reload.
+if ('ResizeObserver' in window) {
+  const hdr = document.querySelector('header');
+  if (hdr) new ResizeObserver(adjustMainPadding).observe(hdr);
+}
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(adjustMainPadding);
 adjustMainPadding();
+// Dismiss the voucher banner for this browser session (voucher still applies at checkout)
+(function () {
+  const btn = document.getElementById('voucherBannerClose');
+  if (!btn) return;
+  btn.addEventListener('click', function () {
+    try { sessionStorage.setItem('msb_voucher_banner_dismissed', '1'); } catch (e) {}
+    document.getElementById('voucherBanner').style.display = 'none';
+  });
+})();
 </script>
 
 <!-- Firebase + EmailJS + Main script -->
