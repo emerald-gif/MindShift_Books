@@ -1662,6 +1662,156 @@ if (db) {
   setInterval(maybeRunProfileDigest, 60 * 60 * 1000);
 }
 
+// ── Reward reminder emails (profile not finished / voucher unused) ──────────
+// Two afternoon sends, Mon / Wed / Fri, Lagos time, both through the digest
+// template (#9, BREVO_DIGEST_TEMPLATE_ID). The template shows the normal
+// activity summary unless one of the two flags below is true, so the 12 PM /
+// 7 PM digest is completely unaffected.
+//   3 PM → is_profile_nudge:    hasn't claimed the ₦2,000 voucher yet (profile not finished)
+//   5 PM → is_voucher_reminder: claimed the voucher, hasn't used it
+// Same email for everyone in each group — no progress numbers. Each user is
+// marked with users/{uid}.nudges.<kind>.lastDay, so a restart or an extra
+// hourly tick can never send the same person twice in a day.
+const NUDGE_DAYS = [1, 3, 5];          // Mon, Wed, Fri (Lagos-shifted clock, Sun=0)
+const NUDGE_MAX_PER_TICK = 300;        // safety cap per hourly tick
+const NUDGE_VOUCHER_FALLBACK = 2000;
+const NUDGE_KINDS = {
+  profile: { startHour: 15, endHour: 17 }, // 3 PM (a missed tick still catches up until 5 PM)
+  voucher: { startHour: 17, endHour: 19 }  // 5 PM (catches up until 7 PM)
+};
+
+const nairaFmt = (n) => '₦' + String(Math.round(Number(n) || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+const NUDGE_COPY = {
+  profile: {
+    subjects: (first, amt) => [
+      `${first}, your ${amt} is still sitting there 🎁`,
+      `You haven't claimed your Founding Creator badge`,
+      `Finish your profile, get ${amt} free`
+    ],
+    headlines: (first, amt) => [
+      `You're leaving ${amt} on the table.`,
+      `Your Founding Creator badge is still unclaimed.`,
+      `${amt} free — you just haven't unlocked it yet.`
+    ],
+    previews: (amt) => [
+      `Your profile isn't complete yet — here's what you're missing 👇`,
+      `${amt} + your Founding Creator badge are waiting`,
+      `Finish your profile to unlock both 🎁`
+    ]
+  },
+  voucher: {
+    subjects: (first, amt) => [
+      `Your ${amt} is waiting at checkout, ${first}`,
+      `You earned ${amt} and haven't used it yet 🎁`,
+      `${first}, don't let your ${amt} sit unused`
+    ],
+    headlines: (first, amt) => [
+      `That ${amt} is already yours.`,
+      `You earned ${amt} — use it.`,
+      `Your ${amt} voucher is ready to spend.`
+    ],
+    previews: (amt) => [
+      `It's applied automatically at checkout 👇`,
+      `You already earned it — pick your next book`,
+      `${amt} off your next ebook is waiting`
+    ]
+  }
+};
+
+async function sendRewardNudgeEmail(user, kind) {
+  if (!BREVO_API_KEY || !user.email) return { ok: false, error: 'missing key/email' };
+  const firstName = (user.name || 'there').split(' ')[0];
+  const amount = nairaFmt(kind === 'voucher'
+    ? ((user.ebookVoucher && user.ebookVoucher.amount) || NUDGE_VOUCHER_FALLBACK)
+    : NUDGE_VOUCHER_FALLBACK);
+  const copy = NUDGE_COPY[kind];
+  try {
+    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: { accept: 'application/json', 'api-key': BREVO_API_KEY, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        sender: { name: BREVO_SENDER_NAME, email: BREVO_SENDER_EMAIL },
+        to: [{ email: user.email, name: user.name || undefined }],
+        subject: pick(copy.subjects(firstName, amount)),
+        templateId: BREVO_DIGEST_TEMPLATE_ID,
+        params: {
+          first_name: firstName,
+          headline: pick(copy.headlines(firstName, amount)),
+          preview_text: pick(copy.previews(amount)),
+          voucher_amount: amount,
+          is_profile_nudge: kind === 'profile',
+          is_voucher_reminder: kind === 'voucher',
+          cta_link: kind === 'profile' ? `${PUBLIC_SITE_URL}/complete-profile` : `${PUBLIC_SITE_URL}/books`
+        }
+      })
+    });
+    if (!res.ok) { const txt = await res.text().catch(() => null); return { ok: false, error: `Brevo ${res.status}: ${(txt || '').slice(0, 160)}` }; }
+    return { ok: true };
+  } catch (err) { return { ok: false, error: err.message }; }
+}
+
+async function runRewardNudgeCycle(kind, dayKey) {
+  // Voucher reminders can be queried directly. "Hasn't claimed" can't (Firestore
+  // != skips docs where the field is missing), so the profile nudge reads all
+  // users but only pulls the handful of fields it needs.
+  const fields = ['name', 'email', 'ebookVoucher', 'emailPrefs', 'nudges'];
+  const base = kind === 'voucher' ? db.collection('users').where('ebookVoucher.claimed', '==', true) : db.collection('users');
+  const snap = await base.select(...fields).get();
+
+  let sent = 0, failed = 0, skippedOptOut = 0;
+  for (const doc of snap.docs) {
+    if (sent >= NUDGE_MAX_PER_TICK) break;
+    const u = doc.data();
+    if (!u.email) continue;
+    const v = u.ebookVoucher;
+    if (kind === 'profile' && v && v.claimed) continue;                 // already earned it
+    if (kind === 'voucher' && (!v || !v.claimed || v.used)) continue;   // nothing left to use
+    if (u.emailPrefs && u.emailPrefs.activityDigest === false) { skippedOptOut++; continue; }
+    const n = u.nudges || {};
+    if (n[kind] && n[kind].lastDay === dayKey) continue;                // already sent today
+    if (kind === 'voucher' && n.profile && n.profile.lastDay === dayKey) continue; // just got the 3 PM one
+
+    const result = await sendRewardNudgeEmail(u, kind);
+    if (result.ok) {
+      sent++;
+      await doc.ref.set({ nudges: { [kind]: { lastDay: dayKey, count: admin.firestore.FieldValue.increment(1) } } }, { merge: true }).catch(() => null);
+    } else {
+      failed++;
+      console.error('[reward-nudge] send failed:', kind, doc.id, result.error);
+    }
+    await new Promise(r => setTimeout(r, 250)); // small pause between sends, same courtesy as the digest
+  }
+  return { sent, failed, skippedOptOut };
+}
+
+let rewardNudgeRunning = false;
+async function maybeRunRewardNudges() {
+  if (!db || !BREVO_API_KEY || rewardNudgeRunning) return;
+  rewardNudgeRunning = true;
+  try {
+    const now = lagosNow();
+    if (!NUDGE_DAYS.includes(now.getUTCDay())) return;
+    const hour = now.getUTCHours(); // Lagos-shifted clock, same convention as the digest
+    const dayKey = now.toISOString().slice(0, 10);
+    for (const kind of Object.keys(NUDGE_KINDS)) {
+      const w = NUDGE_KINDS[kind];
+      if (hour < w.startHour || hour >= w.endHour) continue;
+      const result = await runRewardNudgeCycle(kind, dayKey);
+      if (result.sent || result.failed) console.log('[reward-nudge]', kind, dayKey, result);
+    }
+  } catch (err) {
+    console.error('[reward-nudge] run failed', err);
+  } finally {
+    rewardNudgeRunning = false;
+  }
+}
+
+if (db) {
+  maybeRunRewardNudges();
+  setInterval(maybeRunRewardNudges, 60 * 60 * 1000);
+}
+
 // ── Founding Creator weekly evaluation ──────────────────────────────────────
 // No external cron / Render cron service needed — same self-scheduling
 // pattern as the digest above: an hourly tick inside this already-running
@@ -2885,6 +3035,38 @@ app.post('/api/admin/founding-creator/test-email', requireAdminApi, async (req, 
     return res.json({ ok: true, stage, sentTo: email });
   } catch (err) {
     console.error('/api/admin/founding-creator/test-email error', err);
+    return res.status(500).json({ error: 'Could not send test email' });
+  }
+});
+
+// POST /api/admin/digest-template/test-email — sends one sample of any of the
+// three template #9 emails (12 PM / 7 PM activity digest, 3 PM profile reminder,
+// 5 PM voucher reminder) to any inbox. Sample data only, never a real user's.
+// Body: { kind: 'digest'|'profile'|'voucher', email: '...' }.
+// requireAdminApi is explicit for the same reason as the founding-creator test route above.
+app.post('/api/admin/digest-template/test-email', requireAdminApi, async (req, res) => {
+  try {
+    const kind = String((req.body && req.body.kind) || '').trim();
+    const email = String((req.body && req.body.email) || '').trim();
+    if (!['digest', 'profile', 'voucher'].includes(kind)) return res.status(400).json({ error: 'kind must be one of: digest, profile, voucher' });
+    if (!email) return res.status(400).json({ error: 'email is required' });
+    const user = { email, name: 'Test Creator', ebookVoucher: { amount: NUDGE_VOUCHER_FALLBACK } };
+    let result;
+    if (kind === 'digest') {
+      const groups = {
+        follows: { names: ['Sarah', 'David'], count: 5 },
+        likes: { names: ['Chidi', 'Amaka'], count: 12 },
+        comments: { names: ['Tolu'], count: 1 },
+        reposts: { names: [], count: 0 }
+      };
+      result = await sendDigestEmail(user, groups, 40);
+    } else {
+      result = await sendRewardNudgeEmail(user, kind);
+    }
+    if (!result.ok) return res.status(502).json({ error: result.error || 'Send failed.' });
+    return res.json({ ok: true, kind, sentTo: email });
+  } catch (err) {
+    console.error('/api/admin/digest-template/test-email error', err);
     return res.status(500).json({ error: 'Could not send test email' });
   }
 });
