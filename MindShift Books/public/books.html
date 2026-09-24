@@ -31,6 +31,68 @@
   <meta name="twitter:description" content="MindShift Books — Practical eBooks on mindset and business. Instant PDF delivery after payment." />
   <meta name="twitter:image" content="https://mindshiftbooks.shop/og-image.jpg" />
   <link rel="canonical" href="https://mindshiftbooks.shop/books" />
+
+  <!-- Bookstore-page-only visual refresh: category pill bar + refined
+       cards. Scoped to this page (rather than styles.css) since header,
+       .swiper-card, .our-book-item etc. are shared by every page on the
+       site and this look is specific to the storefront. -->
+  <style>
+    /* extra header row = taller fixed header; give main room to clear it.
+       Header stack: 16px pad-top + ~40px logo/icon row + 10px gap +
+       ~50px search bar + 10px gap + ~42px pill row + 20px pad-bottom
+       ≈ 188px on desktop, slightly less on narrow screens where the
+       header's own padding shrinks (14px/18px) — 200px/186px covers both
+       with a little breathing room. Check on a real phone and nudge if
+       the pill row still peeks under the header. */
+    main { padding-top: 200px; }
+    @media (max-width: 600px) { main { padding-top: 186px; } }
+
+    /* ---- Category pill bar ---- */
+    .msb-cat-bar {
+      display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 4px;
+      -ms-overflow-style: none; scrollbar-width: none;
+    }
+    .msb-cat-bar::-webkit-scrollbar { display: none; }
+    .msb-cat-pill {
+      flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 16px; border-radius: 999px; border: 1.5px solid #e2e8f0;
+      background: #fff; color: #475569; font-size: 0.86rem; font-weight: 600;
+      cursor: pointer; white-space: nowrap; transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+    .msb-cat-pill:hover { border-color: #cbd5e1; }
+    .msb-cat-pill.is-active {
+      background: var(--primary); border-color: var(--primary); color: #fff;
+    }
+    .msb-cat-emoji { font-size: 0.95rem; line-height: 1; }
+
+    /* ---- Refined card look ---- */
+    .swiper-card, .our-book-item, .product-card {
+      border-radius: 18px;
+    }
+    .swiper-card {
+      background: #fff; box-shadow: 0 10px 28px rgba(15,23,42,0.07);
+      border: 1px solid rgba(15,23,42,0.04); padding: 10px 10px 12px;
+    }
+    .swiper-card .ebook-cover { border-radius: 12px; box-shadow: none; }
+    .our-book-item .card-cover-wrap { border-radius: 14px; overflow: hidden; }
+    .our-cover { border-radius: 14px; }
+
+    .card-meta-row {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 6px; width: 100%; margin: 8px 0 4px;
+    }
+    .card-genre-tag {
+      font-size: 0.66rem; font-weight: 700; text-transform: none;
+      color: var(--tag-color, #475569); background: color-mix(in srgb, var(--tag-color, #475569) 12%, white);
+      padding: 3px 9px; border-radius: 999px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .card-pages { font-size: 0.68rem; color: #94a3b8; font-weight: 600; white-space: nowrap; flex-shrink: 0; }
+
+    @media (max-width: 600px) {
+      .msb-cat-pill { padding: 7px 13px; font-size: 0.82rem; }
+      .card-genre-tag { font-size: 0.62rem; padding: 3px 8px; }
+    }
+  </style>
 </head>
 <body>
 
@@ -68,7 +130,44 @@
     </button>
     <div id="suggestionsBox" class="suggestions" role="listbox" aria-hidden="true"></div>
   </div>
+
+  <!-- Category pills — same content taxonomy as onboarding/articles (article-categories.js),
+       so a reader's picks stay consistent across the whole platform. -->
+  <div class="msb-cat-bar" id="msbCatBar" role="tablist" aria-label="Browse books by category"></div>
 </header>
+<script src="/article-categories.js"></script>
+<script>
+(function () {
+  var SHORT_LABEL = {
+    MINDSET: 'Mindset', MONEY: 'Money', PRODUCTIVITY: 'Productivity',
+    RELATIONSHIPS: 'Relationships', HEALTH: 'Health', CAREER: 'Career',
+    EDUCATION: 'Education', PURPOSE: 'Purpose', REFLECTIVE: 'Reflective', FICTION: 'Fiction'
+  };
+  function init() {
+    var bar = document.getElementById('msbCatBar');
+    if (!bar || !window.MSB_CATEGORIES) return;
+    var html = '<button type="button" class="msb-cat-pill is-active" data-cat="ALL" role="tab" aria-selected="true">All</button>';
+    html += window.MSB_CATEGORIES.map(function (c) {
+      var label = SHORT_LABEL[c.code] || c.label;
+      return '<button type="button" class="msb-cat-pill" data-cat="' + c.code + '" role="tab" aria-selected="false">' +
+        '<span class="msb-cat-emoji">' + c.emoji + '</span>' + label + '</button>';
+    }).join('');
+    bar.innerHTML = html;
+    bar.addEventListener('click', function (e) {
+      var btn = e.target.closest('.msb-cat-pill');
+      if (!btn) return;
+      bar.querySelectorAll('.msb-cat-pill').forEach(function (b) {
+        var active = b === btn;
+        b.classList.toggle('is-active', active);
+        b.setAttribute('aria-selected', active ? 'true' : 'false');
+      });
+      if (window.applyMsbCategoryFilter) window.applyMsbCategoryFilter(btn.dataset.cat);
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
 
 
   

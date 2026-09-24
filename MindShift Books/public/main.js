@@ -177,6 +177,64 @@ function formatPrice(p) {
   return '';
 }
 
+// ── Platform category tagging for the bookstore ─────────────────────
+// Maps each book's server-side `genre` string (see server/bookstore.js)
+// onto one of the platform-wide content categories defined in
+// article-categories.js (window.MSB_CATEGORIES) so the same "Mindset /
+// Money / Productivity…" pills used in onboarding and articles.html can
+// also filter the bookstore. Book genres are a different, smaller
+// vocabulary than article categories, so this is a many-to-one mapping —
+// add a line here whenever a new genre shows up in bookstore.js.
+const GENRE_TO_MSB_CAT = {
+  'Personal Development': 'MINDSET',
+  'Psychology': 'MINDSET',
+  'Business & Marketing': 'CAREER',
+  'Personal Finance': 'MONEY',
+  'Faith & Spirituality': 'PURPOSE',
+  'Self-Help & Productivity': 'PRODUCTIVITY'
+};
+function genreToMsbCat(genre) {
+  return GENRE_TO_MSB_CAT[genre] || null;
+}
+// Small accent colors per category, used for the genre tag chip on cards.
+const MSB_CAT_TAG_COLOR = {
+  MINDSET: '#4f46e5', MONEY: '#059669', PRODUCTIVITY: '#d97706',
+  RELATIONSHIPS: '#e11d48', HEALTH: '#0d9488', CAREER: '#0284c7',
+  EDUCATION: '#7c3aed', PURPOSE: '#7c2d92', REFLECTIVE: '#475569', FICTION: '#be123c'
+};
+function genreTagHtml(genre) {
+  if (!genre) return '';
+  const cat = genreToMsbCat(genre);
+  const color = MSB_CAT_TAG_COLOR[cat] || '#475569';
+  return `<span class="card-genre-tag" style="--tag-color:${color}">${escapeHtml(genre)}</span>`;
+}
+
+// ── Category pill filtering (books.html only — bar is injected there) ──
+// Hides/shows book cards whose mapped category doesn't match the active
+// pill, and hides a whole swiper section if none of its cards match. The
+// Free eBooks swiper is intentionally left alone: its items come from
+// Gutendex subjects, a different vocabulary that doesn't map onto
+// MSB_CATEGORIES, so it always stays visible regardless of the filter.
+window.__msbActiveCat = 'ALL';
+function applyMsbCategoryFilter(code) {
+  window.__msbActiveCat = code || 'ALL';
+  const cards = document.querySelectorAll('#ourBooksGrid .our-book-item, #ourBooksGrid2 .our-book-item, #featuredGrid1 .swiper-card, #featuredGrid2 .swiper-card, #featuredGrid3 .swiper-card');
+  cards.forEach(card => {
+    const match = window.__msbActiveCat === 'ALL' || card.dataset.msbCat === window.__msbActiveCat;
+    card.style.display = match ? '' : 'none';
+  });
+  ['ourBooksSection', 'ourBooksSection2', 'featuredSection', 'featuredSection2', 'featuredSection3'].forEach(id => {
+    const sec = document.getElementById(id);
+    if (!sec) return;
+    const track = sec.querySelector('.swiper-track');
+    if (!track || !track.children.length) return; // still loading — leave as-is
+    const anyVisible = Array.from(track.children).some(c => c.style.display !== 'none');
+    sec.style.display = anyVisible ? '' : 'none';
+    if (window.updateSwiperArrows) window.updateSwiperArrows(track);
+  });
+}
+window.applyMsbCategoryFilter = applyMsbCategoryFilter;
+
 // ── Toast notification system ────────────────────────────────────────
 function showToast(msg, type = 'info', duration = 4000) {
   let container = document.getElementById('toastContainer');
@@ -227,6 +285,10 @@ function productCardInner(p) {
         <img src="${escapeHtml(p.cover || '')}" class="ebook-cover" alt="${escapeHtml(p.title || 'ebook')}"/>
         ${wishlistToggleButton(p.id, { cardOverlay: true })}
       </div>
+      <div class="card-meta-row">
+        ${genreTagHtml(p.genre)}
+        ${p.pages ? `<span class="card-pages">${escapeHtml(String(p.pages))} pages</span>` : ''}
+      </div>
       <div class="title">${escapeHtml(p.title || '')}</div>
       <div class="card-author">${escapeHtml(p.author || '')}</div>
       <div class="card-actions button-group" style="width:100%;margin-top:auto;">
@@ -253,6 +315,10 @@ function productCardInner(p) {
     <div class="card-cover-wrap">
       <img src="${escapeHtml(p.cover || '')}" class="our-cover" alt="${escapeHtml(p.title || 'ebook')}"/>
       ${wishlistToggleButton(p.id, { cardOverlay: true })}
+    </div>
+    <div class="card-meta-row">
+      ${genreTagHtml(p.genre)}
+      ${p.pages ? `<span class="card-pages">${escapeHtml(String(p.pages))} pages</span>` : ''}
     </div>
     <div class="our-title">${escapeHtml(p.title || '')}</div>
     <div class="our-author">${escapeHtml(p.author || '')}</div>
@@ -287,6 +353,7 @@ function renderGrid(grid, list, emptyMessage) {
   list.forEach(p => {
     const card = document.createElement('div');
     card.className = isOurBooks ? 'our-book-item' : (isSwiper ? 'swiper-card' : 'product-card');
+    card.dataset.msbCat = genreToMsbCat(p.genre) || '';
     card.innerHTML = productCardInner(p);
     grid.appendChild(card);
   });
@@ -586,6 +653,8 @@ function renderProducts() {
     section.style.display = groups[i].length ? '' : 'none';
     renderGrid(featuredGrids[i], groups[i], 'No books available.');
   });
+
+  if (window.applyMsbCategoryFilter) window.applyMsbCategoryFilter(window.__msbActiveCat || 'ALL');
 
   updateAuthCtaVisibility();
 }
