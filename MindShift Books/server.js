@@ -1684,10 +1684,10 @@ const nairaFmt = (n) => '₦' + String(Math.round(Number(n) || 0)).replace(/\B(?
 
 const NUDGE_COPY = {
   profile: {
-    subjects: (first, amt) => [
-      `${first}, your ${amt} is still sitting there 🎁`,
-      `You haven't claimed your Founding Creator badge`,
-      `Finish your profile, get ${amt} free`
+    // Only this subject: it's the one that landed in Gmail's Inbox; the versions
+    // with the ₦ amount, the 🎁 emoji or "free" in the subject went to Promotions.
+    subjects: () => [
+      `You haven't claimed your Founding Creator badge`
     ],
     headlines: (first, amt) => [
       `You're leaving ${amt} on the table.`,
@@ -1701,10 +1701,12 @@ const NUDGE_COPY = {
     ]
   },
   voucher: {
-    subjects: (first, amt) => [
-      `Your ${amt} is waiting at checkout, ${first}`,
-      `You earned ${amt} and haven't used it yet 🎁`,
-      `${first}, don't let your ${amt} sit unused`
+    // Plain, personal wording like the 3 PM subject that reached the Inbox — no ₦ amount,
+    // no emoji, no "free" — since every version with those went to Promotions.
+    subjects: (first) => [
+      `You haven't used your voucher yet, ${first}`,
+      `You haven't used your reward yet`,
+      `${first}, your voucher hasn't been used`
     ],
     headlines: (first, amt) => [
       `That ${amt} is already yours.`,
@@ -1712,9 +1714,9 @@ const NUDGE_COPY = {
       `Your ${amt} voucher is ready to spend.`
     ],
     previews: (amt) => [
-      `It's applied automatically at checkout 👇`,
+      `It's applied automatically at checkout`,
       `You already earned it — pick your next book`,
-      `${amt} off your next ebook is waiting`
+      `It's already on your account`
     ]
   }
 };
