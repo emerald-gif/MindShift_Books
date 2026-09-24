@@ -534,6 +534,37 @@ main{max-width:1100px;margin:0 auto}
   font-size:12.5px;font-weight:800;color:var(--txt);cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent;transition:all .15s}
 .xacc-follow-btn.following{background:var(--txt);color:#fff;border-color:var(--txt)}
 
+/* ══ WEEKLY UI POLISH — feed (CSS only: no markup, script or behaviour changes) ══ */
+.filter-row{gap:8px;padding:12px 16px;border-bottom:1px solid #eef2f7}
+.fpill{padding:8px 16px;font-size:12.5px;font-weight:700;border:1px solid #e6eaf1;background:#f8fafc;color:#475569;transition:background .18s,color .18s,box-shadow .18s,transform .12s}
+.fpill:hover{background:#eef2ff;color:var(--p);border-color:#dfe4fb}
+.fpill:active{transform:scale(.96)}
+.fpill.active{background:var(--g);border-color:transparent;color:#fff;box-shadow:0 4px 12px -3px rgba(79,70,229,.45)}
+
+.acard{padding:18px 16px;gap:16px;border-bottom:1px solid #eef2f7}
+.acard:active:not(:has(button:active,.acard-author:active)){background:#f5f7ff}
+.acard-author{gap:8px;margin-bottom:9px}
+.acard-av{width:26px;height:26px;border:2px solid #fff;box-shadow:0 0 0 1px #e6eaf1}
+.acard-author-name{font-size:13px;font-weight:700;color:#0f172a}
+.acard-author-dot,.acard-author-date{font-size:12px;color:#94a3b8}
+.acard-meta{margin-bottom:7px}
+.acard-cat{background:#eef2ff;color:#4338ca;font-size:10px;padding:3px 10px;letter-spacing:.5px}
+.acard-title{font-size:17.5px;line-height:1.32;letter-spacing:-.35px;margin-bottom:7px}
+.acard-brief{font-size:13.5px;line-height:1.55;color:#64748b}
+.acard-img{width:108px;height:108px;border-radius:14px;box-shadow:0 6px 16px -8px rgba(15,23,42,.35);margin-top:0}
+.acard-img img{transition:transform .35s ease}
+@media (hover:hover){.acard:hover .acard-img img{transform:scale(1.05)}}
+.acard-foot{margin-top:10px;gap:4px}
+.acard-like,.acard-save,.acard-repost,.acard-comment{border-radius:99px;padding:7px 10px}
+.acard-read{margin-left:auto;font-size:11.5px;color:#94a3b8}
+.pcard-slide,.pcard-single img,.pcard-video{border-radius:16px}
+@media (min-width:720px){
+  .acard{padding:22px 20px}
+  .acard-img{width:128px;height:128px}
+  .acard-title{font-size:19px}
+}
+@media (prefers-reduced-motion:reduce){.acard-img img{transition:none}}
+
 </style>
 <script src="/article-categories.js"></script>
 </head>
@@ -1165,8 +1196,9 @@ onAuthStateChanged(auth, async user => {
   const sbInsights = document.getElementById('sbInsightsLink');
   const sbSaved = document.getElementById('sbSavedLink');
   const sbAuthCta = document.getElementById('sidebarAuthCta');
-  if(sbProfile) sbProfile.style.display = isAuth ? 'block' : 'none';
-  if(sbInsights) sbInsights.style.display = isAuth ? 'block' : 'none';
+  // My Profile / My Insights visibility is owned by /sidebar-nav.js (it uses display:flex).
+  // These pages used to set display:'block' here, which stacked the icon above the label
+  // whenever this ran after the sidebar's own toggle — hence the intermittent broken layout.
   if(sbSaved) sbSaved.style.display = isAuth ? 'block' : 'none';
   if(sbAuthCta) sbAuthCta.style.display = isAuth ? 'none' : 'block';
   const gBar = document.getElementById('guestBar');

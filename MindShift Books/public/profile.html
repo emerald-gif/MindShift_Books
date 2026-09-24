@@ -1099,8 +1099,9 @@ onAuthStateChanged(auth, user => {
   const sbInsights = document.getElementById('sbInsightsLink');
   const sbSaved = document.getElementById('sbSavedLink');
   const sbAuthCta = document.getElementById('sidebarAuthCta');
-  if(sbProfile) sbProfile.style.display = user ? 'block' : 'none';
-  if(sbInsights) sbInsights.style.display = user ? 'block' : 'none';
+  // My Profile / My Insights visibility is owned by /sidebar-nav.js (it uses display:flex).
+  // These pages used to set display:'block' here, which stacked the icon above the label
+  // whenever this ran after the sidebar's own toggle — hence the intermittent broken layout.
   if(sbSaved) sbSaved.style.display = user ? 'block' : 'none';
   if(sbAuthCta) sbAuthCta.style.display = user ? 'none' : 'block';
   if(user) notif.initNotifications(user.uid); else notif.clearNotifications();

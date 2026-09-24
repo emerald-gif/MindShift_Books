@@ -426,6 +426,59 @@ header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .img-viewer-slide{flex:0 0 100vw;scroll-snap-align:center;display:flex;align-items:center;justify-content:center}
 .img-viewer-slide img{max-width:92vw;max-height:85vh;object-fit:contain;border-radius:8px}
 .art-hero{cursor:pointer}
+/* ══ WEEKLY UI POLISH — article reader (CSS only: no markup, script or behaviour changes) ══ */
+.art-wrap{padding:0 20px 72px}
+.art-cat{margin:22px 0 14px;padding:5px 12px;font-size:10.5px;letter-spacing:.6px;box-shadow:0 4px 12px -4px rgba(79,70,229,.45)}
+.art-title{font-size:29px;font-weight:900;line-height:1.18;letter-spacing:-.8px;margin-bottom:18px}
+.author-row-wrap{padding-bottom:16px}
+.author-logo{width:42px;height:42px;border:2px solid #fff;box-shadow:0 0 0 1px #e2e8f0}
+.author-name{font-size:14.5px}
+.author-meta{font-size:12.5px;color:#94a3b8;margin-top:1px}
+.follow-author-btn{padding:8px 18px;font-size:13px;box-shadow:0 2px 8px -3px rgba(79,70,229,.35)}
+
+/* action bar: one soft rounded tray instead of two hairlines */
+.action-bar{gap:4px;padding:6px 8px;margin:6px 0 22px;border:none;background:#f6f7fb;border-radius:18px;justify-content:space-between}
+.act-btn{padding:9px 11px;border-radius:12px;transition:color .2s,background .2s,transform .12s}
+.act-btn:hover{background:#eceffd}
+.act-btn:active{transform:scale(.93)}
+.action-bar .act-save{margin-left:0}
+
+.art-hero{height:auto;aspect-ratio:16/9;max-height:400px;border-radius:18px;margin:4px 0 26px;box-shadow:0 14px 32px -16px rgba(15,23,42,.35)}
+
+/* reading typography: slightly larger, more open, comfortable line length */
+.art-body{font-size:17px;line-height:1.85;color:#1f2937;letter-spacing:.005em;word-break:break-word;overflow-wrap:anywhere}
+.art-body p,.art-body div{margin-bottom:22px}
+.art-body>p:first-of-type{font-size:18.5px;line-height:1.75;color:#0f172a}
+.art-body h2{font-size:22px;margin:38px 0 14px;letter-spacing:-.4px;padding-left:14px;position:relative}
+.art-body h2::before{content:'';position:absolute;left:0;top:.15em;bottom:.15em;width:4px;border-radius:4px;background:var(--g)}
+.art-body h3{font-size:18px;margin:28px 0 10px}
+.art-body li{margin-bottom:9px;line-height:1.78}
+.art-body li::marker{color:var(--p);font-weight:800}
+.art-body a{text-decoration-thickness:1.5px;text-underline-offset:3px;text-decoration-color:rgba(79,70,229,.4)}
+.art-body a:hover{text-decoration-color:var(--p)}
+.art-body img{border-radius:16px;margin:24px 0;box-shadow:0 10px 26px -14px rgba(15,23,42,.35)}
+.art-body blockquote,.art-body .pull-quote{background:linear-gradient(90deg,#eef2ff,#f8faff);border-left:4px solid var(--p);border-radius:0 16px 16px 0;padding:18px 20px;margin:28px 0;font-size:17px;line-height:1.7;color:#312e81}
+.art-body hr{border-top:1px solid #e5e9f0;margin:36px auto;width:40%}
+.art-body code{background:#eef2ff;color:#3730a3}
+.art-body ::selection{background:#c7d2fe}
+
+/* more-articles cards */
+.more-section{padding-top:32px;margin-top:28px}
+.more-title{font-size:18px;font-weight:900;letter-spacing:-.3px}
+.more-card{gap:14px;padding:12px;border-radius:16px;box-shadow:0 1px 2px rgba(15,23,42,.04);transition:transform .15s,box-shadow .2s,border-color .2s,background .2s}
+.more-card:hover{background:#f8faff;box-shadow:0 8px 20px -12px rgba(79,70,229,.35)}
+.more-card:active{transform:scale(.985)}
+.more-img{width:84px;height:72px;border-radius:12px}
+.more-ttl{font-size:14px;line-height:1.36}
+
+@media (min-width:720px){
+  .art-wrap{padding-bottom:96px}
+  .art-title{font-size:36px;letter-spacing:-1px}
+  .art-body{font-size:18px}
+  .art-body>p:first-of-type{font-size:20px}
+}
+@media (prefers-reduced-motion:reduce){.act-btn,.more-card{transition:none}}
+
 </style>
 <script src="/article-categories.js"></script>
 </head>
@@ -847,8 +900,9 @@ onAuthStateChanged(auth, async user => {
   const sbInsights = document.getElementById('sbInsightsLink');
   const sbSaved = document.getElementById('sbSavedLink');
   const sbAuthCta = document.getElementById('sidebarAuthCta');
-  if(sbProfile) sbProfile.style.display = isAuth ? 'block' : 'none';
-  if(sbInsights) sbInsights.style.display = isAuth ? 'block' : 'none';
+  // My Profile / My Insights visibility is owned by /sidebar-nav.js (it uses display:flex).
+  // These pages used to set display:'block' here, which stacked the icon above the label
+  // whenever this ran after the sidebar's own toggle — hence the intermittent broken layout.
   if(sbSaved) sbSaved.style.display = isAuth ? 'block' : 'none';
   if(sbAuthCta) sbAuthCta.style.display = isAuth ? 'none' : 'block';
   if(user) notif.initNotifications(user.uid); else notif.clearNotifications();

@@ -129,6 +129,7 @@
     '.sidebar .sb-group{list-style:none;background:var(--card,#fff);border:1px solid var(--border,#e2e8f0);border-radius:16px;overflow:hidden;margin-bottom:16px;box-shadow:0 1px 3px rgba(15,23,42,.04)}' +
     '.sidebar .sb-group li{display:flex;align-items:center;gap:12px;padding:14px 14px;font-weight:600;font-size:14px;color:var(--txt,#0f172a);cursor:pointer;border-bottom:1px solid var(--border,#e2e8f0);-webkit-tap-highlight-color:transparent;transition:background .15s}' +
     '.sidebar .sb-group li:last-child{border-bottom:none}' +
+    '.sidebar .sb-group li[style*="display: block"]{display:flex!important}' + /* safety: a page setting display:block must never stack the icon over the label */
     '.sidebar .sb-group li:active{background:var(--bg,#f8fafc)}' +
     '.sidebar .sb-ico{display:flex;align-items:center;justify-content:center;width:20px;height:20px;flex-shrink:0;color:var(--sub,#6b7280)}' +
     '.sidebar .sb-ico svg{width:19px;height:19px}' +
