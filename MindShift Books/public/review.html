@@ -291,6 +291,87 @@
       text-align: center;
       padding: 18px 0 4px;
     }
+
+    /* ══ Bookstore-standard sections: About / Product details / Ratings & reviews ══ */
+    .bk-section { padding: 22px 0; border-top: 1px solid #e6e9ee; }
+    .bk-h { font-size: 1.1rem; font-weight: 800; color: var(--primary); margin: 0 0 12px; letter-spacing: -0.01em; }
+    .bk-muted { color: #94a3b8; font-size: 0.9rem; }
+
+    /* About */
+    .bk-about { max-width: 720px; color: #334155; font-size: 0.95rem; line-height: 1.7; position: relative; }
+    .bk-about p { margin: 0 0 12px; white-space: pre-line; }
+    .bk-about p:last-child { margin-bottom: 0; }
+    .bk-about .bk-lead { font-weight: 700; color: var(--primary); font-size: 1rem; line-height: 1.5; }
+    .bk-about.is-clamped { max-height: 9.5em; overflow: hidden; }
+    .bk-about.is-clamped::after {
+      content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 3.6em;
+      background: linear-gradient(180deg, rgba(248,250,252,0), #f8fafc 85%); pointer-events: none;
+    }
+    .bk-more {
+      display: inline-flex; align-items: center; gap: 4px; margin-top: 10px; padding: 8px 0;
+      background: none; border: none; cursor: pointer; font: inherit; font-weight: 700; font-size: 0.9rem; color: #4f46e5;
+    }
+    .bk-more svg { transition: transform 0.2s ease; }
+    .bk-more.is-open svg { transform: rotate(180deg); }
+    .bk-more--center {
+      display: inline-flex; justify-content: center; width: 100%; margin-top: 6px; padding: 12px;
+      border: 1.5px solid #e2e8f0; border-radius: 12px; background: #fff;
+    }
+
+    /* Product details */
+    .bk-specs { max-width: 720px; margin: 0; }
+    .bk-spec { display: flex; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid #eef1f5; font-size: 0.92rem; }
+    .bk-spec:last-child { border-bottom: none; }
+    .bk-spec dt { color: #64748b; font-weight: 600; flex-shrink: 0; }
+    .bk-spec dd { margin: 0; color: var(--primary); font-weight: 700; text-align: right; }
+
+    /* Stars */
+    .bk-stars { position: relative; display: inline-block; line-height: 0; white-space: nowrap; vertical-align: middle; }
+    .bk-stars svg { width: var(--sz, 16px); height: var(--sz, 16px); display: inline-block; flex: none; }
+    .bk-stars-bg svg { fill: #e2e8f0; }
+    .bk-stars-fg { position: absolute; left: 0; top: 0; overflow: hidden; white-space: nowrap; }
+    .bk-stars-fg svg { fill: #f59e0b; }
+
+    /* Rating summary */
+    .bk-summary { display: flex; align-items: center; gap: 22px; margin-bottom: 18px; max-width: 520px; }
+    .bk-summary-score { text-align: center; flex-shrink: 0; }
+    .bk-avg { font-size: 2.8rem; font-weight: 800; line-height: 1; color: var(--primary); margin-bottom: 6px; }
+    .bk-count { font-size: 0.78rem; color: #64748b; margin-top: 6px; font-weight: 600; }
+    .bk-bars { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+    .bk-bar-row { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; font-weight: 700; color: #64748b; }
+    .bk-bar-row > span { width: 10px; text-align: center; }
+    .bk-bar { flex: 1; height: 7px; border-radius: 99px; background: #e2e8f0; overflow: hidden; }
+    .bk-bar-fill { height: 100%; border-radius: 99px; background: #f59e0b; }
+    .bk-noratings { margin-bottom: 14px; }
+
+    /* Write a review */
+    .bk-write-btn {
+      display: inline-flex; align-items: center; gap: 8px; padding: 11px 20px; border-radius: 999px;
+      border: 1.5px solid #4f46e5; background: #fff; color: #4f46e5; font: inherit; font-weight: 700; font-size: 0.9rem; cursor: pointer;
+    }
+    .bk-write-btn:hover { background: #eef2ff; }
+    .bk-form { margin-top: 16px; padding: 18px; border-radius: 16px; background: #fff; border: 1px solid #e6e9ee; max-width: 560px; }
+    .bk-form-title { font-weight: 800; font-size: 0.98rem; color: var(--primary); margin-bottom: 10px; }
+    .bk-pick-row { display: flex; gap: 6px; margin-bottom: 12px; }
+    .bk-pick { width: 40px; height: 40px; padding: 5px; border: none; background: none; cursor: pointer; fill: #e2e8f0; transition: transform 0.12s ease; }
+    .bk-pick:active { transform: scale(0.9); }
+    .bk-pick.on { fill: #f59e0b; }
+    .bk-form-err { color: #dc2626; font-size: 0.82rem; font-weight: 600; margin: -4px 0 12px; }
+    .bk-form-actions { display: flex; align-items: center; gap: 14px; }
+    .bk-cancel { background: none; border: none; font: inherit; font-weight: 700; color: #64748b; cursor: pointer; padding: 10px 4px; }
+
+    /* Review list — flat, divided rows (no boxed cards) */
+    .bk-review-list { margin-top: 8px; max-width: 720px; }
+    .bk-review { padding: 18px 0; border-bottom: 1px solid #eef1f5; }
+    .bk-review:last-child { border-bottom: none; }
+    .bk-review-top { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+    .bk-avatar {
+      width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0; color: #fff; font-weight: 800; font-size: 0.9rem;
+      display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #4f46e5, #06b6d4);
+    }
+    .bk-review-name { font-weight: 700; font-size: 0.93rem; color: var(--primary); }
+    .bk-review-meta { display: flex; align-items: center; gap: 8px; font-size: 0.76rem; color: #94a3b8; margin-top: 2px; }
+    .bk-review-text { margin: 0; color: #334155; font-size: 0.93rem; line-height: 1.6; }
   </style>
   <!-- Open Graph / WhatsApp / Twitter -->
   <meta property="og:type" content="website" />
@@ -614,56 +695,132 @@ function formatReviewDate(iso) {
   } catch(e) { return ''; }
 }
 
+const STAR_PATH = 'M12 2.5l2.94 5.96 6.58.96-4.76 4.64 1.12 6.55L12 17.52l-5.88 3.09 1.12-6.55L2.48 9.42l6.58-.96L12 2.5z';
+const STAR_SVG  = `<svg viewBox="0 0 24 24" width="100%" height="100%" aria-hidden="true"><path d="${STAR_PATH}"></path></svg>`;
+
+// value 0–5 (can be fractional) → gold stars over grey stars
+function starsHtml(value, size) {
+  const pct = Math.max(0, Math.min(5, value)) / 5 * 100;
+  const row = Array(5).fill(STAR_SVG).join('');
+  return `<span class="bk-stars" style="--sz:${size || 16}px" role="img" aria-label="${value.toFixed(1)} out of 5 stars">` +
+         `<span class="bk-stars-bg">${row}</span><span class="bk-stars-fg" style="width:${pct}%">${row}</span></span>`;
+}
+
+let _showAllReviews = false;
+
 function renderReviewList(bookId) {
   const listEl = document.getElementById('reviewList');
-  if (!listEl) return;
+  const sumEl  = document.getElementById('bkReviewSummary');
+  const moreEl = document.getElementById('bkAllReviews');
+  if (!listEl || !sumEl) return;
   const reviews = loadReviews(bookId);
+  const rated = reviews.filter(r => Number(r.rating) >= 1 && Number(r.rating) <= 5);
+
+  // Summary: average + distribution (only counts reviews that carry a star rating)
+  if (rated.length) {
+    const avg = rated.reduce((t, r) => t + Number(r.rating), 0) / rated.length;
+    const counts = [5, 4, 3, 2, 1].map(n => rated.filter(r => Math.round(Number(r.rating)) === n).length);
+    sumEl.innerHTML = `
+      <div class="bk-summary">
+        <div class="bk-summary-score">
+          <div class="bk-avg">${avg.toFixed(1)}</div>
+          ${starsHtml(avg, 16)}
+          <div class="bk-count">${rated.length} rating${rated.length !== 1 ? 's' : ''}</div>
+        </div>
+        <div class="bk-bars">
+          ${counts.map((c, i) => `
+            <div class="bk-bar-row"><span>${5 - i}</span>
+              <div class="bk-bar"><div class="bk-bar-fill" style="width:${(c / rated.length) * 100}%"></div></div>
+            </div>`).join('')}
+        </div>
+      </div>`;
+  } else {
+    sumEl.innerHTML = `<div class="bk-muted bk-noratings">No ratings yet — be the first to rate this book.</div>`;
+  }
+
   if (!reviews.length) {
-    listEl.innerHTML = '<div class="review-empty">No reviews yet — be the first to leave one!</div>';
+    listEl.innerHTML = '';
+    moreEl.style.display = 'none';
     return;
   }
-  listEl.innerHTML = reviews.map(r => {
-    const initial = (r.name || '?')[0].toUpperCase();
+
+  const LIMIT = 3;
+  const visible = _showAllReviews ? reviews : reviews.slice(0, LIMIT);
+  listEl.innerHTML = visible.map(r => {
+    const initial = escapeHtml((r.name || '?').trim()[0] || '?').toUpperCase();
+    const hasStars = Number(r.rating) >= 1;
     return `
-      <div class="review-card">
-        <div class="review-card-header">
-          <div class="review-card-name" style="--initial:'${initial}'">${escapeHtml(r.name)}</div>
-          <div class="review-card-date">${formatReviewDate(r.date)}</div>
+      <article class="bk-review">
+        <div class="bk-review-top">
+          <div class="bk-avatar">${initial}</div>
+          <div class="bk-review-who">
+            <div class="bk-review-name">${escapeHtml(r.name)}</div>
+            <div class="bk-review-meta">${hasStars ? starsHtml(Number(r.rating), 13) : ''}<span>${formatReviewDate(r.date)}</span></div>
+          </div>
         </div>
-        <div class="review-card-text">${escapeHtml(r.text)}</div>
-      </div>`;
+        <p class="bk-review-text">${escapeHtml(r.text)}</p>
+      </article>`;
   }).join('');
 
-  // Fix avatar initials via CSS content
-  listEl.querySelectorAll('.review-card-name').forEach(el => {
-    const initial = (el.textContent.trim()[0] || '?').toUpperCase();
-    const before = document.createElement('span');
-    before.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#4f46e5,#06b6d4);color:#fff;font-size:0.75rem;font-weight:800;flex-shrink:0;';
-    before.textContent = initial;
-    el.insertBefore(before, el.firstChild);
-  });
+  if (reviews.length > LIMIT) {
+    moreEl.style.display = 'inline-flex';
+    moreEl.textContent = _showAllReviews ? 'Show fewer reviews' : `See all ${reviews.length} reviews`;
+  } else {
+    moreEl.style.display = 'none';
+  }
 }
 
 function initReviewForm(bookId) {
   const form = document.getElementById('reviewForm');
-  const successMsg = document.getElementById('reviewSuccess');
   if (!form) return;
+  const writeBtn = document.getElementById('bkWriteBtn');
+  const cancelBtn = document.getElementById('bkCancelReview');
+  const successMsg = document.getElementById('reviewSuccess');
+  const pickRow = document.getElementById('bkPickRow');
+  const ratingErr = document.getElementById('bkRatingErr');
+  const allBtn = document.getElementById('bkAllReviews');
+  let rating = 0;
+  _showAllReviews = false;
 
-  form.addEventListener('submit', function(e) {
+  function paintPick() {
+    pickRow.querySelectorAll('.bk-pick').forEach(b => {
+      const v = Number(b.dataset.v);
+      b.classList.toggle('on', v <= rating);
+      b.setAttribute('aria-checked', v === rating ? 'true' : 'false');
+    });
+  }
+  function openForm(open) {
+    form.style.display = open ? 'block' : 'none';
+    writeBtn.style.display = open ? 'none' : 'inline-flex';
+    if (open) form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  writeBtn.addEventListener('click', () => openForm(true));
+  cancelBtn.addEventListener('click', () => openForm(false));
+  pickRow.addEventListener('click', e => {
+    const b = e.target.closest('.bk-pick');
+    if (!b) return;
+    rating = Number(b.dataset.v);
+    ratingErr.style.display = 'none';
+    paintPick();
+  });
+  allBtn.addEventListener('click', () => { _showAllReviews = !_showAllReviews; renderReviewList(bookId); });
+
+  form.addEventListener('submit', function (e) {
     e.preventDefault();
     const nameVal = document.getElementById('reviewName').value.trim();
     const textVal = document.getElementById('reviewText').value.trim();
+    if (!rating) { ratingErr.style.display = 'block'; return; }
     if (!nameVal || !textVal) return;
-
-    saveReview(bookId, { name: nameVal, text: textVal, date: new Date().toISOString() });
-
+    saveReview(bookId, { name: nameVal, text: textVal, rating: rating, date: new Date().toISOString() });
     form.reset();
+    rating = 0; paintPick();
+    openForm(false);
     successMsg.classList.add('show');
     setTimeout(() => successMsg.classList.remove('show'), 3000);
     renderReviewList(bookId);
   });
 }
-
 
 // ═══════════════════════════════════════════════════
 //  BOOK DETAIL RENDERER
@@ -713,6 +870,14 @@ function renderBookDetail(prod) {
   const storedReviews = loadReviews(prod.id || '');
   const reviewCount = storedReviews.length;
 
+  // Description → readable paragraphs (drop a leading line that just repeats the title)
+  let paras = String(prod.description || '').trim().split(/\n\s*\n/).map(t => t.trim()).filter(Boolean);
+  const _norm = t => String(t || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (paras.length > 1 && _norm(paras[0]) === _norm(prod.title)) paras.shift();
+  const aboutHtml = paras.length
+    ? paras.map((t, i) => `<p${i === 0 && t.length < 180 ? ' class="bk-lead"' : ''}>${escapeHtml(t)}</p>`).join('')
+    : '<p class="bk-muted">No description available yet for this book.</p>';
+
   root.innerHTML = `
     <div class="book-hero">
       <img class="book-hero-cover" src="${escapeHtml(prod.cover || '')}" alt="${escapeHtml(prod.title || '')}"/>
@@ -746,107 +911,84 @@ function renderBookDetail(prod) {
       </div>
     </div>
 
-    <div class="book-details-grid">
-      <div class="book-details-item">
-        <div class="bd-icon">${bookIconSvg('author')}</div>
-        <div class="bd-label">Author</div>
-        <div class="bd-value">${escapeHtml(prod.author || 'MindShift Books')}</div>
-      </div>
-      <div class="book-details-item">
-        <div class="bd-icon">${bookIconSvg('format')}</div>
-        <div class="bd-label">Format</div>
-        <div class="bd-value">PDF eBook</div>
-      </div>
-      <div class="book-details-item">
-        <div class="bd-icon">${bookIconSvg('language')}</div>
-        <div class="bd-label">Language</div>
-        <div class="bd-value">${escapeHtml(prod.language || 'English')}</div>
-      </div>
-      <div class="book-details-item">
-        <div class="bd-icon">${bookIconSvg('genre')}</div>
-        <div class="bd-label">Genre</div>
-        <div class="bd-value">${escapeHtml(prod.genre || '—')}</div>
-      </div>
-      ${prod.pages ? `
-      <div class="book-details-item">
-        <div class="bd-icon">${bookIconSvg('pages')}</div>
-        <div class="bd-label">Pages</div>
-        <div class="bd-value">${escapeHtml(String(prod.pages))}</div>
-      </div>` : ''}
-    </div>
+    <!-- ── About this ebook ── -->
+    <section class="bk-section" id="bkAboutSection">
+      <h2 class="bk-h">About this ebook</h2>
+      <div class="bk-about is-clamped" id="bkAbout">${aboutHtml}</div>
+      <button type="button" class="bk-more" id="bkAboutMore" style="display:none;">
+        <span>Read more</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+    </section>
 
-    <div class="book-tabs">
-      <button class="book-tab-btn active" id="tabDescriptionBtn">Description</button>
-      <button class="book-tab-btn" id="tabReviewsBtn">Reviews${reviewCount ? ` (${reviewCount})` : ''}</button>
-    </div>
+    <!-- ── Product details ── -->
+    <section class="bk-section">
+      <h2 class="bk-h">Product details</h2>
+      <dl class="bk-specs">
+        <div class="bk-spec"><dt>Author</dt><dd>${escapeHtml(prod.author || 'MindShift Books')}</dd></div>
+        <div class="bk-spec"><dt>Format</dt><dd>PDF eBook</dd></div>
+        <div class="bk-spec"><dt>Language</dt><dd>${escapeHtml(prod.language || 'English')}</dd></div>
+        ${prod.genre ? `<div class="bk-spec"><dt>Genre</dt><dd>${escapeHtml(prod.genre)}</dd></div>` : ''}
+        ${prod.pages ? `<div class="bk-spec"><dt>Pages</dt><dd>${escapeHtml(String(prod.pages))}</dd></div>` : ''}
+        ${prod.category === 'ours' ? `<div class="bk-spec"><dt>Delivery</dt><dd>Instant, by email</dd></div>` : ''}
+      </dl>
+    </section>
 
-    <div class="book-tab-panel active" id="tabDescriptionPanel">
-      <div class="book-description">${escapeHtml(prod.description || 'No description available yet for this book.')}</div>
-    </div>
+    <!-- ── Ratings & reviews ── -->
+    <section class="bk-section" id="bkReviewsSection">
+      <h2 class="bk-h">Ratings &amp; reviews</h2>
+      <div id="bkReviewSummary"></div>
 
-    <div class="book-tab-panel" id="tabReviewsPanel">
-      <!-- Write a review -->
-      <div class="review-form-section">
-        <h3>Write a Review</h3>
-        <form id="reviewForm" autocomplete="off">
-          <div class="review-field">
-            <label for="reviewName">Your Name</label>
-            <input id="reviewName" type="text" placeholder="e.g. David" maxlength="60" required/>
-          </div>
-          <div class="review-field">
-            <label for="reviewText">Your Review</label>
-            <textarea id="reviewText" rows="4" placeholder="Share what you thought about this book…" maxlength="600" required></textarea>
-          </div>
-          <button type="submit" class="review-submit-btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-            Submit Review
-          </button>
-          <div class="review-success-msg" id="reviewSuccess">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="20 6 9 17 4 12"></polyline></svg>
-            Review posted — thanks!
-          </div>
-        </form>
+      <button type="button" class="bk-write-btn" id="bkWriteBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+        Write a review
+      </button>
+      <div class="review-success-msg" id="reviewSuccess">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        Review posted — thanks!
       </div>
 
-      <hr class="review-divider"/>
+      <form id="reviewForm" class="bk-form" autocomplete="off" style="display:none;">
+        <div class="bk-form-title">Rate this ebook</div>
+        <div class="bk-pick-row" id="bkPickRow" role="radiogroup" aria-label="Your rating">
+          ${[1,2,3,4,5].map(n => `<button type="button" class="bk-pick" data-v="${n}" role="radio" aria-checked="false" aria-label="${n} star${n > 1 ? 's' : ''}">${STAR_SVG}</button>`).join('')}
+        </div>
+        <div class="bk-form-err" id="bkRatingErr" style="display:none;">Tap a star to rate this book.</div>
+        <div class="review-field">
+          <label for="reviewName">Your name</label>
+          <input id="reviewName" type="text" placeholder="e.g. David" maxlength="60" required/>
+        </div>
+        <div class="review-field">
+          <label for="reviewText">Your review</label>
+          <textarea id="reviewText" rows="4" placeholder="What did you think about this book?" maxlength="600" required></textarea>
+        </div>
+        <div class="bk-form-actions">
+          <button type="submit" class="review-submit-btn">Post review</button>
+          <button type="button" class="bk-cancel" id="bkCancelReview">Cancel</button>
+        </div>
+      </form>
 
-      <!-- Existing reviews -->
-      <div class="review-list-heading" id="reviewListHeading">
-        ${reviewCount ? `${reviewCount} Review${reviewCount !== 1 ? 's' : ''}` : 'No reviews yet'}
-      </div>
-      <div class="review-list" id="reviewList"></div>
-    </div>
+      <div class="bk-review-list" id="reviewList"></div>
+      <button type="button" class="bk-more bk-more--center" id="bkAllReviews" style="display:none;"></button>
+    </section>
   `;
 
-  // Tab switching
-  const descBtn = document.getElementById('tabDescriptionBtn');
-  const revBtn  = document.getElementById('tabReviewsBtn');
-  const descPanel = document.getElementById('tabDescriptionPanel');
-  const revPanel  = document.getElementById('tabReviewsPanel');
-
-  descBtn.addEventListener('click', () => {
-    descBtn.classList.add('active'); revBtn.classList.remove('active');
-    descPanel.classList.add('active'); revPanel.classList.remove('active');
+  // ── About: collapse long descriptions with a Read more toggle ──
+  const aboutEl  = document.getElementById('bkAbout');
+  const aboutBtn = document.getElementById('bkAboutMore');
+  requestAnimationFrame(() => {
+    if (aboutEl.scrollHeight > aboutEl.clientHeight + 4) aboutBtn.style.display = 'inline-flex';
+    else aboutEl.classList.remove('is-clamped');
   });
-  revBtn.addEventListener('click', () => {
-    revBtn.classList.add('active'); descBtn.classList.remove('active');
-    revPanel.classList.add('active'); descPanel.classList.remove('active');
+  aboutBtn.addEventListener('click', () => {
+    const open = aboutEl.classList.toggle('is-clamped') === false;
+    aboutBtn.querySelector('span').textContent = open ? 'Show less' : 'Read more';
+    aboutBtn.classList.toggle('is-open', open);
   });
 
-  // Init reviews
+  // ── Reviews ──
   renderReviewList(prod.id || '');
   initReviewForm(prod.id || '');
-
-  // Keep review count in tab button in sync after new submissions
-  const origInit = document.getElementById('reviewForm').onsubmit;
-  document.getElementById('reviewForm').addEventListener('submit', () => {
-    setTimeout(() => {
-      const newCount = loadReviews(prod.id || '').length;
-      revBtn.textContent = `Reviews (${newCount})`;
-      const heading = document.getElementById('reviewListHeading');
-      if (heading) heading.textContent = `${newCount} Review${newCount !== 1 ? 's' : ''}`;
-    }, 50);
-  });
 }
 
 // ── Book detail cache (stale-while-revalidate) ──────────────────────
