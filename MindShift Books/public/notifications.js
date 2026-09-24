@@ -187,7 +187,7 @@ function notifMessage(n) {
     case 'comment_like': return `${name} liked your comment on${title}`;
     case 'new_comment':  return `${name} commented on your ${n.targetType==='post'?'post':'article'}${title}`;
     case 'comment_reply':return `${name} replied to your comment on${title}`;
-    case 'mention':      return `${name} mentioned you in a ${n.targetType==='article'?'article':'post'}${n.targetTitle ? `<span class="notif-snip">: “${nEsc(nTrunc(n.targetTitle, 60))}”</span>` : ''}`;
+    case 'mention':      return `${name} mentioned you in ${n.targetType==='article'?'an article':'a post'}${n.targetTitle ? `<span class="notif-snip">: “${nEsc(nTrunc(n.targetTitle, 60))}”</span>` : ''}`;
     case 'repost':       return `${name} reposted your ${n.targetType==='post'?'post':'article'}${title}`;
     case 'repost_quote': return `${name} reposted your ${n.targetType==='post'?'post':'article'} with a caption${title}`;
     case 'admin_message':    return `<strong>${nEsc(n.title || 'Message from MindShift Books')}</strong>${n.message ? ' — ' + nEsc(n.message) : ''}`;

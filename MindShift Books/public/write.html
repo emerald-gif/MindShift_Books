@@ -309,6 +309,40 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .timeline-sub{font-size:11px;color:var(--mute)}
 .btn-done{width:100%;padding:14px;border-radius:99px;background:var(--g);border:none;
   color:#fff;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit}
+
+/* ── @MENTIONS in the article editor ── */
+.editor-body a.mention{color:#4f46e5;font-weight:700;text-decoration:none}
+::highlight(mention-typing){color:#4f46e5}
+.tb-at{position:relative}
+.tb-new{display:none;position:absolute;top:-5px;right:-8px;background:linear-gradient(135deg,#4f46e5,#06b6d4);color:#fff;font-size:8px;font-weight:800;letter-spacing:.4px;padding:2px 5px;border-radius:99px;line-height:1.2;pointer-events:none;box-shadow:0 2px 6px -1px rgba(79,70,229,.5)}
+.tb-at.fresh .tb-new{display:block;animation:atpulse 2s ease-in-out infinite}
+.tb-at.fresh{color:var(--p)}
+@keyframes atpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+.mention-intro{display:none;align-items:center;gap:12px;margin:0 0 14px;padding:11px 10px 11px 12px;border-radius:16px;background:linear-gradient(135deg,#eef2ff 0%,#ecfeff 100%);border:1px solid #dfe4fb;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .12s}
+.mention-intro.show{display:flex;animation:mpop .25s ease-out}
+.mention-intro:active{transform:scale(.99)}
+.mi-ico{width:34px;height:34px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,#4f46e5,#06b6d4);color:#fff;font-size:17px;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 10px -3px rgba(79,70,229,.5)}
+.mi-txt{flex:1;min-width:0;font-size:12.5px;line-height:1.4;color:#475569}
+.mi-txt b{font-size:13.5px;font-weight:800;color:#312e81}
+.mi-new{display:inline-block;margin-right:7px;vertical-align:1px;background:#4f46e5;color:#fff;font-size:9px;font-weight:800;letter-spacing:.5px;padding:2px 6px;border-radius:99px}
+.mi-x{flex-shrink:0;width:28px;height:28px;border:none;background:rgba(255,255,255,.7);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#64748b}
+.mi-x svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
+
+.mention-pop{position:fixed;z-index:9999;width:min(340px,calc(100vw - 16px));max-height:min(324px,42vh);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:#fff;border:1px solid #e8ecf3;border-radius:16px;box-shadow:0 14px 44px -10px rgba(15,23,42,.32);animation:mpop .14s ease-out}
+.mention-pop.docked{left:0;right:0;width:auto;max-width:none;border:none;border-top:1px solid #eef1f6;border-radius:20px 20px 0 0;box-shadow:0 -12px 32px -14px rgba(15,23,42,.28);padding-bottom:env(safe-area-inset-bottom,0px)}
+@keyframes mpop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.mention-hint{padding:12px 16px 4px;font-size:12px;font-weight:800;letter-spacing:.4px;color:#94a3b8}
+.mention-row{display:flex;align-items:center;gap:12px;padding:8px 16px;min-height:58px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .1s}
+.mention-row.active{background:#f4f6ff}
+.mention-row:active{background:#e9edff}
+.mention-av{width:42px;height:42px;border-radius:50%;flex-shrink:0;overflow:hidden;background:linear-gradient(135deg,#4f46e5,#06b6d4);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800}
+.mention-av img{width:100%;height:100%;object-fit:cover;display:block}
+.mention-txt{min-width:0;flex:1;display:flex;flex-direction:column;gap:1px}
+.mention-name{font-size:15px;font-weight:800;color:#0f172a;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mention-user{font-size:14px;color:#64748b;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mention-flw{flex-shrink:0;font-size:12px;font-weight:700;color:#64748b;background:#f1f5f9;padding:4px 10px;border-radius:99px}
+.mention-empty{padding:18px 16px;font-size:14px;color:#64748b;text-align:center}
+@media (prefers-reduced-motion:reduce){.mention-pop,.mention-intro.show,.tb-at.fresh .tb-new{animation:none}}
 </style>
 <script src="/article-categories.js"></script>
 </head>
@@ -386,6 +420,14 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
     <div style="font-size:11px;color:var(--mute);margin-top:6px;text-align:right" id="briefCount">0 / 160</div>
   </div>
 
+  <div class="mention-intro" id="mentionIntro" role="button" tabindex="0" onmousedown="event.preventDefault()" onclick="insertAtSymbol()">
+    <div class="mi-ico">@</div>
+    <div class="mi-txt"><span class="mi-new">NEW</span><b>Mention your favorite creators</b><br>Tap here or type @ in your article to tag someone.</div>
+    <button type="button" class="mi-x" aria-label="Dismiss" onmousedown="event.preventDefault()" onclick="event.stopPropagation();dismissMentionIntro()">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+
   <!-- EDITOR -->
   <div class="editor-wrap">
     <div class="editor-toolbar" id="toolbar">
@@ -434,6 +476,10 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
       <div class="tb-sep"></div>
       <button class="tb-btn" data-cmd="createLink" title="Link" onclick="toggleLinkPopover(event)">
         <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+      </button>
+      <button class="tb-btn tb-at" id="atBtn" title="Mention someone" aria-label="Mention someone" onmousedown="event.preventDefault()" onclick="insertAtSymbol()">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94"/></svg>
+        <span class="tb-new" id="atNew">NEW</span>
       </button>
       <button class="tb-btn" title="Clear formatting" onclick="fmt('removeFormat')" style="margin-left:auto">
         <svg viewBox="0 0 24 24"><path d="M17 3H7L3 21h4l3-9 3 9h4L13 9l4-6z"/><line x1="18" y1="12" x2="22" y2="16"/><line x1="22" y1="12" x2="18" y2="16"/></svg>
@@ -534,9 +580,10 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
-import { getFirestore, collection, doc, setDoc, getDoc, getDocs, query, where, deleteDoc, serverTimestamp, enableNetwork, disableNetwork }
+import { getFirestore, collection, doc, setDoc, getDoc, getDocs, query, where, orderBy, limit, deleteDoc, serverTimestamp, enableNetwork, disableNetwork }
   from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
 import { createResilient } from '/resilient.js';
+import { sendMentionNotifications } from '/notifications.js';
 
 const fbApp = initializeApp({
   apiKey:"AIzaSyDTn70s1_uIiSOR6lPLY_nKh8Ff1FViFCs",
@@ -1395,13 +1442,301 @@ function loadDraft(){
   }catch{}
 }
 
+/* ── @MENTIONS ──
+   Type @ in the article body → matching usernames appear (people you follow first); tap one and it becomes a
+   link to their profile. On publish: picked chips are validated, hand-typed @handles are verified against
+   usernames/{handle} and linked too, the verified list is saved as article.mentions, and each person is notified. */
+const MENTION_MAX = 10;
+const _mCache = new Map();
+let _mFollowing = null; const _followingIds = new Set();
+let _mSeq = 0, _mTimer = null, _mList = [], _mActive = 0, _mTrig = null;
+const _edEl = () => document.getElementById('editorBody');
+
+function _mentionPopEl(){
+  let el = document.getElementById('mentionPop');
+  if(!el){ el = document.createElement('div'); el.id = 'mentionPop'; el.className = 'mention-pop'; el.setAttribute('role','listbox'); el.style.display = 'none'; document.body.appendChild(el); }
+  return el;
+}
+function hideMentionPop(){
+  const pop = document.getElementById('mentionPop');
+  if(pop){ pop.style.display = 'none'; pop.innerHTML = ''; }
+  _mList = []; _mTrig = null; _mSeq++;
+  setTypingHighlight(null);
+}
+function setTypingHighlight(t){       // colour the "@partial" being typed (browsers that support the Highlight API)
+  try{
+    if(!window.CSS || !CSS.highlights || typeof Highlight === 'undefined') return;
+    if(!t){ CSS.highlights.delete('mention-typing'); return; }
+    const r = document.createRange(); r.setStart(t.node, t.start); r.setEnd(t.node, t.end);
+    CSS.highlights.set('mention-typing', new Highlight(r));
+  }catch(e){}
+}
+// "@partial" that ends exactly at the caret, in plain text (not inside a link or code).
+function mentionTrigger(){
+  const sel = window.getSelection();
+  if(!sel.rangeCount || !sel.isCollapsed) return null;
+  const node = sel.anchorNode, ed = _edEl();
+  if(!node || node.nodeType !== 3 || !ed.contains(node)) return null;
+  if(node.parentElement && node.parentElement.closest('a, code')) return null;
+  const off = sel.anchorOffset;
+  const m = /(^|[\s(\u00a0])@([a-z0-9_]{0,20})$/i.exec(node.nodeValue.slice(0, off));
+  if(!m) return null;
+  const q = m[2].toLowerCase();
+  return { node, start: off - q.length - 1, end: off, q };
+}
+function _triggerRect(t){
+  const r = document.createRange(); r.setStart(t.node, t.start); r.setEnd(t.node, t.end);
+  const rects = r.getClientRects();
+  return rects.length ? rects[0] : r.getBoundingClientRect();
+}
+// Phones: docked right above the keyboard. Desktop: floats just under the "@" being typed.
+function placeMentionPop(){
+  const pop = document.getElementById('mentionPop');
+  if(!pop || pop.style.display === 'none' || !_mTrig || !_mTrig.node.isConnected) return;
+  const vv = window.visualViewport;
+  if(matchMedia('(pointer:coarse)').matches && vv){
+    pop.classList.add('docked'); pop.style.left = pop.style.top = '';
+    pop.style.bottom = Math.max(0, window.innerHeight - (vv.height + vv.offsetTop)) + 'px';
+  } else {
+    pop.classList.remove('docked'); pop.style.bottom = '';
+    const rc = _triggerRect(_mTrig), w = pop.offsetWidth || 340, h = pop.offsetHeight || 200;
+    let left = Math.max(8, Math.min(rc.left, window.innerWidth - w - 8));
+    let top = rc.bottom + 6;
+    if(top + h > window.innerHeight - 8) top = Math.max(8, rc.top - h - 6);   // no room below → flip above
+    pop.style.left = left + 'px'; pop.style.top = top + 'px';
+  }
+}
+if(window.visualViewport){ visualViewport.addEventListener('resize', placeMentionPop); visualViewport.addEventListener('scroll', placeMentionPop); }
+window.addEventListener('scroll', placeMentionPop, true);
+window.addEventListener('resize', placeMentionPop);
+
+function renderMentionPop(items, hint, emptyFor, emptyMsg){
+  const pop = _mentionPopEl();
+  pop.innerHTML = '';
+  if(!items.length){
+    if(!emptyFor && !emptyMsg){ hideMentionPop(); return; }
+    _mList = [];
+    const e = document.createElement('div'); e.className = 'mention-empty'; e.textContent = emptyMsg || ('No one found for “@' + emptyFor + '”');
+    pop.appendChild(e); pop.style.display = 'block'; placeMentionPop();
+    return;
+  }
+  _mList = items; _mActive = 0;
+  if(hint){ const h = document.createElement('div'); h.className = 'mention-hint'; h.textContent = hint; pop.appendChild(h); }
+  items.forEach((u, i) => {
+    const row = document.createElement('div');
+    row.className = 'mention-row' + (i === 0 ? ' active' : '');
+    row.setAttribute('role', 'option');
+    const av = document.createElement('div'); av.className = 'mention-av';
+    const initial = (u.name || u.username || '?').charAt(0).toUpperCase();
+    if(u.photo){ const im = document.createElement('img'); im.src = u.photo; im.alt = ''; im.onerror = () => { im.remove(); av.textContent = initial; }; av.appendChild(im); }
+    else av.textContent = initial;
+    const tx = document.createElement('div'); tx.className = 'mention-txt';
+    const nm = document.createElement('span'); nm.className = 'mention-name'; nm.textContent = u.name || u.username;
+    const un = document.createElement('span'); un.className = 'mention-user'; un.textContent = '@' + u.username;
+    tx.appendChild(nm); tx.appendChild(un); row.appendChild(av); row.appendChild(tx);
+    if(u.following){ const f = document.createElement('span'); f.className = 'mention-flw'; f.textContent = 'Following'; row.appendChild(f); }
+    // pointerdown + preventDefault: picking must not move the caret out of the editor (keyboard would close)
+    row.addEventListener('pointerdown', e => { e.preventDefault(); pickMention(i); });
+    pop.appendChild(row);
+  });
+  pop.style.display = 'block';
+  placeMentionPop();
+}
+
+function _userItem(id, d){ return { uid:id, username:(d.username||'').toLowerCase(), name:d.name||d.displayName||'', photo:d.photo||d.photoURL||'', following:_followingIds.has(id) }; }
+async function followingForMentions(){
+  if(_mFollowing) return _mFollowing;
+  if(!currentUser) return [];
+  const fs = await resilient(() => getDocs(query(collection(db,'follows'), where('followerId','==',currentUser.uid), limit(8))), { tries:1, timeoutMs:6000 });
+  const ids = fs.docs.map(d => d.data().followingId);
+  ids.forEach(id => _followingIds.add(id));
+  const docs = await Promise.all(ids.map(id => getDoc(doc(db,'users',id)).catch(() => null)));
+  _mFollowing = docs.filter(x => x && x.exists() && x.data().username).map(x => _userItem(x.id, x.data()));
+  return _mFollowing;
+}
+async function searchMentionUsers(q){
+  if(_mCache.has(q)) return _mCache.get(q);
+  const [snap] = await Promise.all([
+    resilient(() => getDocs(query(collection(db,'users'), where('username','>=',q), where('username','<=',q+'\uf8ff'), orderBy('username'), limit(8))), { tries:1, timeoutMs:6000 }),
+    followingForMentions().catch(() => null)
+  ]);
+  let out = snap.docs.filter(d => d.id !== (currentUser && currentUser.uid) && d.data().username).map(d => _userItem(d.id, d.data()));
+  out = out.filter(u => u.following).concat(out.filter(u => !u.following)).slice(0, 6);
+  _mCache.set(q, out);
+  return out;
+}
+
+function updateMentionPop(){
+  const trig = mentionTrigger();
+  if(!trig){ hideMentionPop(); return; }
+  _mTrig = trig;
+  setTypingHighlight(trig);
+  const seq = ++_mSeq;
+  clearTimeout(_mTimer);
+  _mTimer = setTimeout(async () => {
+    try{
+      if(trig.q === ''){
+        const items = await followingForMentions();
+        if(seq !== _mSeq) return;
+        if(!items.length){ renderMentionPop([], '', '', 'Type a name to find someone to mention'); return; }
+        renderMentionPop(items, 'People you follow');
+      } else {
+        const items = await searchMentionUsers(trig.q);
+        if(seq !== _mSeq) return;
+        renderMentionPop(items, '', trig.q.length >= 2 ? trig.q : '');
+      }
+    }catch(e){ if(seq === _mSeq) hideMentionPop(); }
+  }, trig.q === '' ? 0 : 140);
+}
+
+function pickMention(i){
+  const u = _mList[i], t = _mTrig;
+  if(!u || !t || !t.node.isConnected) return;
+  if(t.node.nodeValue.slice(t.start, t.end).toLowerCase() !== '@' + t.q){ hideMentionPop(); return; }   // text changed under us
+  const rng = document.createRange();
+  rng.setStart(t.node, t.start); rng.setEnd(t.node, t.end);
+  rng.deleteContents();
+  const a = document.createElement('a');
+  a.href = '/profile/@' + u.username; a.className = 'mention'; a.setAttribute('data-uid', u.uid); a.textContent = '@' + u.username;
+  const sp = document.createTextNode('\u00a0');      // caret lands in normal text after the link, so typing continues outside it
+  rng.insertNode(sp); rng.insertNode(a);
+  const cr = document.createRange(); cr.setStart(sp, sp.length); cr.collapse(true);
+  const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(cr);
+  markMentionIntroSeen();
+  hideMentionPop();
+  _edEl().focus();
+  _edEl().dispatchEvent(new Event('input', { bubbles:true }));   // word count + draft autosave (undo history sees the DOM change itself)
+}
+
+(function wireMentions(){
+  const ed = _edEl();
+  ed.addEventListener('input', updateMentionPop);
+  ed.addEventListener('click', updateMentionPop);
+  ed.addEventListener('keyup', e => { if(!['ArrowDown','ArrowUp','Enter','Tab','Escape'].includes(e.key)) updateMentionPop(); });
+  document.addEventListener('selectionchange', () => { if(document.activeElement === ed && _mTrig) updateMentionPop(); });
+  ed.addEventListener('blur', () => setTimeout(hideMentionPop, 180));
+  // capture phase: while the list is open, Enter/Tab/arrows belong to it, not to the editor's own shortcuts
+  ed.addEventListener('keydown', e => {
+    const pop = document.getElementById('mentionPop');
+    if(!pop || pop.style.display === 'none' || !_mList.length) return;
+    const rows = () => pop.querySelectorAll('.mention-row');
+    const setActive = n => {
+      _mActive = (n + _mList.length) % _mList.length;
+      rows().forEach((r, k) => r.classList.toggle('active', k === _mActive));
+      const cur = rows()[_mActive]; if(cur && cur.scrollIntoView) cur.scrollIntoView({ block:'nearest' });
+    };
+    const eat = () => { e.preventDefault(); e.stopPropagation(); };
+    if(e.key === 'ArrowDown'){ eat(); setActive(_mActive + 1); }
+    else if(e.key === 'ArrowUp'){ eat(); setActive(_mActive - 1); }
+    else if(e.key === 'Enter' || e.key === 'Tab'){ eat(); pickMention(_mActive); }
+    else if(e.key === 'Escape'){ eat(); hideMentionPop(); }
+  }, true);
+})();
+
+/* "NEW: mention creators" intro + toolbar @ button — shown until used once / dismissed */
+const MENTION_INTRO_KEY = 'msb_mention_intro_v1';   // same key as the post composer: seen once, seen everywhere
+function _mentionIntroSeen(){ try{ return !!localStorage.getItem(MENTION_INTRO_KEY); }catch(e){ return false; } }
+function markMentionIntroSeen(){
+  try{ localStorage.setItem(MENTION_INTRO_KEY, '1'); }catch(e){}
+  const box = document.getElementById('mentionIntro'); if(box) box.classList.remove('show');
+  const btn = document.getElementById('atBtn'); if(btn) btn.classList.remove('fresh');
+}
+window.dismissMentionIntro = markMentionIntroSeen;
+if(!_mentionIntroSeen()){
+  document.getElementById('mentionIntro').classList.add('show');
+  document.getElementById('atBtn').classList.add('fresh');
+}
+window.insertAtSymbol = function(){
+  const ed = _edEl();
+  ed.focus();
+  let sel = window.getSelection();
+  if(!sel.rangeCount || !ed.contains(sel.anchorNode)){       // no caret in the editor yet → end of the article
+    const r = document.createRange(); r.selectNodeContents(ed); r.collapse(false);
+    sel.removeAllRanges(); sel.addRange(r);
+  }
+  const node = sel.anchorNode;
+  let needSpace = false;
+  if(node && node.nodeType === 3){
+    const prev = node.nodeValue.slice(0, sel.anchorOffset);
+    needSpace = prev.length > 0 && !/[\s\u00a0]$/.test(prev);    // a mention needs a space (or line start) before it
+  }
+  document.execCommand('insertText', false, (needSpace ? ' ' : '') + '@');   // fires input → opens the list
+  markMentionIntroSeen();
+};
+
+/* Publish-time cleanup, done on a COPY of the editor so the writer's screen is never touched:
+   1) a mention link the writer edited by hand (text no longer matches its @handle) becomes plain text;
+   2) hand-typed @handles that belong to a real user are turned into links;
+   3) the verified list of people mentioned is returned for article.mentions + notifications. */
+async function prepareArticleBody(){
+  const clone = _edEl().cloneNode(true);
+  const me = currentUser && currentUser.uid;
+  const known = new Map();                                     // handle -> uid
+
+  clone.querySelectorAll('a.mention').forEach(a => {
+    const h = (a.textContent || '').replace(/^@/, '').toLowerCase();
+    const ok = /^[a-z0-9_]{3,20}$/.test(h) && a.getAttribute('href') === '/profile/@' + h && a.getAttribute('data-uid');
+    if(!ok){ a.replaceWith(document.createTextNode(a.textContent)); return; }
+    known.set(h, a.getAttribute('data-uid'));
+  });
+
+  const RE = /(^|[^a-z0-9_])@([a-z0-9_]{3,20})(?![a-z0-9_])/gi;
+  const textNodes = [];
+  const walker = document.createTreeWalker(clone, NodeFilter.SHOW_TEXT);
+  for(let n; (n = walker.nextNode());){
+    if(n.parentElement && n.parentElement.closest('a, code')) continue;
+    if(/@[a-z0-9_]{3,}/i.test(n.nodeValue)) textNodes.push(n);
+  }
+  const typed = new Set();
+  textNodes.forEach(n => { for(const m of n.nodeValue.matchAll(RE)){ if(known.size + typed.size < MENTION_MAX) typed.add(m[2].toLowerCase()); } });
+  await Promise.all([...typed].map(async h => {
+    if(known.has(h)) return;
+    try{
+      const s = await resilient(() => getDoc(doc(db,'usernames',h)), { tries:1, timeoutMs:5000 });
+      if(s.exists() && s.data().uid) known.set(h, s.data().uid);
+    }catch(e){}
+  }));
+  textNodes.forEach(n => {
+    const text = n.nodeValue; let last = 0, changed = false;
+    const frag = document.createDocumentFragment();
+    for(const m of text.matchAll(RE)){
+      const h = m[2].toLowerCase();
+      if(!known.has(h)) continue;
+      const at = m.index + m[1].length;                        // index of the "@"
+      frag.appendChild(document.createTextNode(text.slice(last, at)));
+      const a = document.createElement('a');
+      a.href = '/profile/@' + h; a.className = 'mention'; a.setAttribute('data-uid', known.get(h)); a.textContent = '@' + m[2];
+      frag.appendChild(a); last = at + 1 + m[2].length; changed = true;
+    }
+    if(changed){ frag.appendChild(document.createTextNode(text.slice(last))); n.replaceWith(frag); }
+  });
+
+  const mentions = [];
+  clone.querySelectorAll('a.mention').forEach(a => {
+    const uid = a.getAttribute('data-uid'), h = (a.textContent || '').replace(/^@/, '').toLowerCase();
+    if(uid && uid !== me && !mentions.some(x => x.uid === uid)) mentions.push({ uid, username: h });
+  });
+  return { html: clone.innerHTML.trim(), mentions: mentions.slice(0, MENTION_MAX) };
+}
+// Tell each mentioned person (max 4s wait so the redirect can't cut it off; failure never blocks the article).
+async function notifyMentioned(mentions, targetId, title){
+  if(!mentions.length) return;
+  try{
+    const profile = await getUserProfile().catch(() => ({}));
+    await Promise.race([
+      sendMentionNotifications({ db, fs:{ doc, getDoc, setDoc, serverTimestamp }, currentUser, profile, mentions, targetId, targetType:'article', snippet:title }),
+      new Promise(r => setTimeout(r, 4000))
+    ]);
+  }catch(e){ console.warn('mention notify failed:', e); }
+}
+
 /* ── SUBMIT ── */
 window.submitArticle = async function(){
   if(!currentUser) return;
   if(editId && !_editLoaded){ showToast("Your article hasn't loaded yet — tap Try again"); return; }
   const title = document.getElementById('titleInput').value.trim();
   const brief = document.getElementById('briefInput').value.trim();
-  const body  = document.getElementById('editorBody').innerHTML.trim();
+  let body  = document.getElementById('editorBody').innerHTML.trim();
   const cover = document.getElementById('coverUrl').value.trim();
 
   if(!cover){ showToast('Please add a cover image'); return; }
@@ -1416,7 +1751,10 @@ window.submitArticle = async function(){
   btn.disabled = true;
   btn.innerHTML = editId ? '<div class="spinner"></div> Saving…' : '<div class="spinner"></div> Submitting…';
 
+  let mentions = [];
   try{
+    // link + verify @mentions on a copy of the editor; if anything goes wrong, publish the text as written
+    try{ const prep = await prepareArticleBody(); body = prep.html || body; mentions = prep.mentions; }catch(e){ console.warn('mention prep failed:', e); }
     const words = document.getElementById('editorBody').innerText.trim().split(/\s+/).length;
     const readTime = `${Math.max(1,Math.ceil(words/200))} min read`;
 
@@ -1425,10 +1763,11 @@ window.submitArticle = async function(){
       // fields, createdAt and publishedAt (and any commentsOff/hideLikeCount
       // settings) untouched.
       await setDoc(doc(db,'articles',editId),{
-        title, brief, body, cat: selectedCat, subCat: selectedSubCat, cover,
+        title, brief, body, mentions, cat: selectedCat, subCat: selectedSubCat, cover,
         readTime,
         updatedAt: serverTimestamp()
       }, { merge: true });
+      await notifyMentioned(mentions, editId, title);
       localStorage.removeItem('mindshift_draft');
       if(window._cover && window._cover.baseUrl && window._cover.baseUrl !== cover) discardUpload(window._cover.baseUrl);
       flushDiscards(true);
@@ -1446,12 +1785,13 @@ window.submitArticle = async function(){
       authorPhoto: profile.photo || currentUser.photoURL || '',
       authorBio: profile.bio || '',
       authorUsername: profile.username || '',
-      title, brief, body, cat: selectedCat, subCat: selectedSubCat, cover,
+      title, brief, body, mentions, cat: selectedCat, subCat: selectedSubCat, cover,
       readTime,
       status: 'published',
       createdAt: serverTimestamp(),
       publishedAt: serverTimestamp()
     });
+    await notifyMentioned(mentions, id, title);
     // clear draft
     localStorage.removeItem('mindshift_draft');
     if(window._cover && window._cover.baseUrl && window._cover.baseUrl !== cover) discardUpload(window._cover.baseUrl);
