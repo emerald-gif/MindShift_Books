@@ -433,6 +433,22 @@ footer .brand{font-weight:700;font-size:1.1rem;color:#fbbf24}
 .wishlist-heart-btn:hover{ transform:scale(1.08); color:#ef4444; }
 .wishlist-heart-btn.active{ color:#ef4444; background:#fff; }
 
+/* Round cart-icon button — tap to add straight to cart, no details page
+   detour. Turns solid blue once the book is in the cart. */
+.cart-icon-btn{
+  flex:0 0 auto;
+  width:40px;height:40px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:white; border:2px solid rgba(15,23,42,0.06); cursor:pointer;
+  color:var(--primary); padding:0;
+  transition:background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease;
+}
+.cart-icon-btn:hover{ transform:scale(1.06); border-color:#4f46e5; }
+.cart-icon-btn.active{
+  background:linear-gradient(90deg,#4f46e5,#06b6d4);
+  border-color:transparent; color:white;
+}
+
 /* Wishlist button — inline variant used on the book review page */
 .wishlist-inline-btn{
   background:#fff; color:#374151; border:2px solid #e2e8f0 !important;
@@ -991,7 +1007,8 @@ header {
 
 .our-actions {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
   gap: 7px;
   width: 100%;
   margin-top: 10px;
@@ -999,6 +1016,8 @@ header {
 .our-actions .btn {
   font-size: 0.82rem;
   padding: 9px 10px;
+  width: auto;
+  flex: 1;
 }
 
 .our-author { display: none; }

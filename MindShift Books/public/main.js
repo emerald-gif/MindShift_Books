@@ -329,10 +329,23 @@ function productCardInner(p) {
       </div>` : ''}
     </div>
     <div class="our-actions">
-      <button class="btn buy-btn" data-product-id="${escapeHtml(p.id || '')}" data-action="add-to-cart" style="width:100%;">
-        Add to Cart
-      </button>
+      <button class="btn review-btn" data-product-id="${escapeHtml(p.id || '')}" data-action="review">Details</button>
+      ${cartToggleButton(p.id)}
     </div>
+  `;
+}
+
+// Cart icon markup used for the round add/remove-from-cart button on cards
+function cartIconSvg() {
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="17" height="17"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>`;
+}
+
+function cartToggleButton(productId) {
+  const inCart = getCart().includes(productId);
+  return `
+    <button type="button" class="cart-icon-btn${inCart ? ' active' : ''}" data-action="toggle-cart" data-product-id="${escapeHtml(productId || '')}" aria-pressed="${inCart}" aria-label="${inCart ? 'Remove from cart' : 'Add to cart'}">
+      ${cartIconSvg()}
+    </button>
   `;
 }
 
@@ -712,6 +725,7 @@ document.addEventListener('click', function (ev) {
   if (action === 'review') openReview(productId);
   if (action === 'add-to-cart') addToCart(productId);
   if (action === 'remove-from-cart') removeFromCart(productId);
+  if (action === 'toggle-cart') toggleCart(productId);
   if (action === 'toggle-wishlist') toggleWishlist(productId);
 });
 
@@ -739,6 +753,7 @@ function getCart() {
 function saveCart(cartIds) {
   localStorage.setItem(CART_KEY, JSON.stringify(cartIds));
   updateCartBadge();
+  window.dispatchEvent(new CustomEvent('msb-cart-changed', { detail: { ids: cartIds } }));
 }
 
 function updateCartBadge() {
@@ -769,6 +784,22 @@ function removeFromCart(productId) {
   const cart = getCart().filter(id => id !== productId);
   saveCart(cart);
   renderCartOverlay();
+}
+
+// Round cart-icon button on cards: tap to add, tap again to remove —
+// no separate "Details" click needed to get it in the cart.
+function toggleCart(productId) {
+  if (!productId) return;
+  const cart = getCart();
+  const inCart = cart.includes(productId);
+  if (inCart) {
+    saveCart(cart.filter(id => id !== productId));
+    showToast('Removed from cart.', 'info', 2000);
+  } else {
+    cart.push(productId);
+    saveCart(cart);
+    showToast('Added to cart.', 'success');
+  }
 }
 
 // ====================================================================
@@ -1064,6 +1095,19 @@ window.addEventListener('msb-wishlist-changed', () => {
     if (svg) svg.setAttribute('fill', inList ? 'currentColor' : 'none');
     const label = btn.querySelector('.wishlist-inline-label');
     if (label) label.textContent = inList ? 'In Wishlist' : 'Add to Wishlist';
+  });
+});
+
+// Keep every round cart-icon button for a given book in sync after a
+// toggle, so a book added/removed anywhere shows the same blue state
+// wherever its card appears on the page.
+window.addEventListener('msb-cart-changed', () => {
+  document.querySelectorAll('[data-action="toggle-cart"]').forEach(btn => {
+    const id = btn.getAttribute('data-product-id');
+    const inCart = getCart().includes(id);
+    btn.classList.toggle('active', inCart);
+    btn.setAttribute('aria-pressed', String(inCart));
+    btn.setAttribute('aria-label', inCart ? 'Remove from cart' : 'Add to cart');
   });
 });
 
