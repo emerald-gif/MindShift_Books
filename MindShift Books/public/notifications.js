@@ -191,6 +191,8 @@ function notifMessage(n) {
     case 'repost':       return `${name} reposted your ${n.targetType==='post'?'post':'article'}${title}`;
     case 'repost_quote': return `${name} reposted your ${n.targetType==='post'?'post':'article'} with a caption${title}`;
     case 'admin_message':    return `<strong>${nEsc(n.title || 'Message from MindShift Books')}</strong>${n.message ? ' — ' + nEsc(n.message) : ''}`;
+    case 'founding_creator_earned': return `<strong>${nEsc(n.title || 'You earned the Founding Creator badge!')}</strong>${n.message ? ' — ' + nEsc(n.message) : ''}`;
+    case 'ebook_voucher_earned':    return `<strong>${nEsc(n.title || 'Your voucher is ready')}</strong>${n.message ? ' — ' + nEsc(n.message) : ''}`;
     case 'article_approved': return `<strong>${nEsc(n.title || 'Your article was approved!')}</strong>${n.message ? ' — ' + nEsc(n.message) : ''}`;
     case 'article_rejected': return `<strong>${nEsc(n.title || 'Article update')}</strong>${n.message ? ' — ' + nEsc(n.message) : ''}`;
     case 'article_removed': case 'post_removed': return `<strong>${nEsc(n.title || 'Content removed')}</strong>${n.message ? ' — ' + nEsc(n.message) : ''}`;
@@ -216,6 +218,7 @@ function nTypeBadge(type) {
     case 'new_comment': case 'comment_reply': return ['comment', N_ICONS.comment];
     case 'repost': case 'repost_quote':       return ['repost', N_ICONS.repost];
     case 'article_approved':                  return ['ok', N_ICONS.check];
+    case 'founding_creator_earned': case 'ebook_voucher_earned': return ['ok', N_ICONS.check];
     case 'article_rejected': case 'article_removed': case 'post_removed': return ['warn', N_ICONS.alert];
     default:                                  return ['info', N_ICONS.bell];
   }
@@ -461,6 +464,10 @@ export function initNotificationUI({ db, getCurrentUser, getMyProfile, fs }) {
         if (n.articleId) location.href = `/article-read?id=${n.articleId}`; break;
       case 'article_rejected': case 'admin_message': case 'article_removed': case 'post_removed':
         location.href = `/profile`; break;
+      case 'founding_creator_earned':
+        location.href = `/founding-creator`; break;
+      case 'ebook_voucher_earned':
+        location.href = `/books`; break;
     }
   };
   window.markAllRead = async function () {
