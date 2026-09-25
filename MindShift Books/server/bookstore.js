@@ -25,6 +25,27 @@ const { admin, db, PROJECT_ROOT, PAYSTACK_PUBLIC_KEY, PUBLIC_PDF_URL } = require
 
 const router = express.Router();
 
+// ----------------- BOOK PREVIEW HELPERS -----------------
+// One general page (server/preview-template.html) serves every book's free preview,
+// the same way review.html serves every book's details page. Per-book copy
+// (badge, intro, locked-section text, bullets, PDF, page limit) lives in the
+// `preview` block on each product below — no per-book HTML files.
+function publicPreview(p) {
+  const v = p && p.preview;
+  if (!v || !v.pdf) return null;
+  return {
+    pdf: v.pdf,
+    maxPages: v.maxPages || null,
+    badge: v.badge || null,
+    intro: v.intro || null,
+    locked: v.locked || null,
+    bullets: Array.isArray(v.bullets) ? v.bullets : []
+  };
+}
+function previewUrlFor(p) {
+  return publicPreview(p) ? '/preview?id=' + encodeURIComponent(p.id) : null;
+}
+
 // ----------------- PRODUCTS (single source: edit here) -----------------
 // Make sure coverPath starts with /images/... and pdfPath with files/...
 // category: 'ours'     -> shown in the top "Our Books" section
@@ -41,7 +62,19 @@ const PRODUCTS = {
     originalPriceNGN: 12000,
     coverPath: 'tda.jpg',
     pdfPath: 'public/files/The_Discipline_Advantage.pdf',
-    previewUrl: '/tda-preview',
+    // Free preview — rendered by the ONE general page (server/preview-template.html).
+    // To add a preview for another book, just add a block like this.
+    preview: {
+      slug: "tda", // keeps the old /tda-preview URL working
+      pdf: "/tda-preview.pdf",
+      intro: "Read the opening chapter and see the exact system for building follow-through before you buy.",
+      locked: "The rest of the book — the full system for building discipline that runs on autopilot — is waiting for you inside the full version.",
+      bullets: [
+        "The full system for making discipline automatic (remaining chapters)",
+        "How to design your environment so the right action becomes easier",
+        "How to recover after falling off without losing a month",
+      ],
+    },
     reviewImages: [], // no reviews yet, add later
     category: 'ours',
     author: 'MindShift Books',
@@ -85,7 +118,20 @@ START LESS. FINISH MORE. BUILD WHAT LASTS.`
     originalPriceNGN: 15000,
     coverPath: 'gcwa.jpg',
     pdfPath: 'public/files/Getting_Clients_Without_Ads.pdf',
-    previewUrl: '/gcwa-preview',
+    // Free preview — rendered by the ONE general page (server/preview-template.html).
+    preview: {
+      slug: "gcwa", // keeps the old /gcwa-preview URL working
+      pdf: "/gcwa-preview.pdf",
+      maxPages: 15, // only show the first N pages
+      ogImage: "og-gcwa.jpg",
+      intro: "Read the opening chapter. See exactly why this approach works before you buy.",
+      locked: "The rest of the book — the exact strategies, scripts, and step-by-step system — is waiting for you inside the full version.",
+      bullets: [
+        "The full positioning system (Chapter 2–4)",
+        "Word-for-word outreach scripts that actually get replies",
+        "How to close without feeling salesy",
+      ],
+    },
     reviewImages: [], // no reviews yet, add later
     category: 'ours',
     author: 'MindShift Books',
@@ -103,7 +149,19 @@ START LESS. FINISH MORE. BUILD WHAT LASTS.`
     originalPriceNGN: 15000,
     coverPath: 'escape.jpg',
     pdfPath: 'public/files/Escape_Your_Environment_Or_Become_It.pdf',
-    previewUrl: '/escape-preview',
+    // Free preview — rendered by the ONE general page (server/preview-template.html).
+    preview: {
+      slug: "escape", // keeps the old /escape-preview URL working
+      pdf: "/escape-preview.pdf",
+      ogImage: "og-escape.jpg",
+      intro: "Read the opening chapter. See exactly why your environment matters more than your willpower — before you buy.",
+      locked: "The rest of the book — the full framework for auditing and rebuilding the environment around you — is waiting for you inside the full version.",
+      bullets: [
+        "The full framework for auditing your environment (remaining chapters)",
+        "Step-by-step exercises to identify who and what is shaping you",
+        "How to deliberately engineer surroundings that pull you forward",
+      ],
+    },
     reviewImages: [], // no reviews yet, add later
     category: 'ours',
     author: 'MindShift Books',
@@ -184,7 +242,18 @@ Understand Your Environment. Change What Limits You. Become Who You Were Capable
     originalPriceNGN: 12000,
     coverPath: 'mmg.jpg',
     pdfPath: 'public/files/The_Money_Mindset_Gap.pdf',
-    previewUrl: '/mmg-preview',
+    // Free preview — rendered by the ONE general page (server/preview-template.html).
+    preview: {
+      slug: "mmg", // keeps the old /mmg-preview URL working
+      pdf: "/mmg-preview.pdf",
+      intro: "Read the opening chapter and see the money mindset framework for yourself before you buy.",
+      locked: "The rest of the book — the full framework for closing your own money mindset gap — is waiting for you inside the full version.",
+      bullets: [
+        "The full framework for closing your money mindset gap (remaining chapters)",
+        "Step-by-step exercises to identify your own money blocks",
+        "How to rebuild the beliefs that shape your financial decisions",
+      ],
+    },
     reviewImages: [], // no reviews yet, add later
     category: 'ours',
     author: 'MindShift Books',
@@ -295,7 +364,18 @@ Know Your Worth. Charge Your Worth. Keep Your Worth.`
     originalPriceNGN: 2000,
     coverPath: 'bct.jpg',
     pdfPath: 'public/files/Broke_Confused_Trying.pdf',
-    previewUrl: '/bct-preview',
+    // Free preview — rendered by the ONE general page (server/preview-template.html).
+    preview: {
+      slug: "bct", // keeps the old /bct-preview URL working
+      pdf: "/bct-preview.pdf",
+      intro: "Read the opening chapter and see the goal + deadline + plan + action formula for yourself before you buy.",
+      locked: "The remaining 9 situations — and the full goal + deadline + plan + action formula applied to each one — are waiting for you inside the full version.",
+      bullets: [
+        "9 more real situations — JAMB Brain vs Life Brain, Japa or Stay, Broke But Building, and more",
+        "The full goal + deadline + plan + action formula applied to each one",
+        "How to take the smallest useful first step on your own goals",
+      ],
+    },
     reviewImages: [],
     category: 'ours',
     author: 'MindShift Books',
@@ -335,7 +415,19 @@ BROKE. CONFUSED. STILL TRYING. THAT'S ENOUGH TO START.`
     originalPriceNGN: 2000,
     coverPath: 'wgfs.jpg',
     pdfPath: 'public/files/When_God_Feels_Silent.pdf',
-    previewUrl: '/wgfs-preview',
+    // Free preview — rendered by the ONE general page (server/preview-template.html).
+    preview: {
+      slug: "wgfs", // keeps the old /wgfs-preview URL working
+      pdf: "/wgfs-preview.pdf",
+      badge: "📖 Free Preview — Preface & Chapters 1–2",
+      intro: "Read the Preface, Chapter 1, and the start of Chapter 2 — a companion for the seasons when prayer feels like it's hitting a ceiling.",
+      locked: "Chapters 3–8, Final Words, and the full Appendix of verses for hard days are waiting for you inside the complete book.",
+      bullets: [
+        "6 more chapters — doubt, waiting, comparison, and what silence is not",
+        "Final Words, plus four small practices for staying in a season with no end date",
+        "A one-page appendix of verses for hard days",
+      ],
+    },
     reviewImages: [], // no reviews yet, add later
     category: 'ours',
     author: 'MindShift Books',
@@ -581,7 +673,7 @@ router.get('/api/products', (req, res) => {
       originalPriceNGN: p.originalPriceNGN || null,
       cover: p.coverPath,
       reviewImages: p.reviewImages || [],
-      previewUrl: p.previewUrl || null,
+      previewUrl: previewUrlFor(p),
       hasPdf: !!p.pdfPath,
       category: p.category || 'featured',
       author: p.author || null,
@@ -611,7 +703,7 @@ router.get('/api/product/:id', (req, res) => {
       originalPriceNGN: p.originalPriceNGN || null,
       cover: p.coverPath,
       reviewImages: p.reviewImages || [],
-      previewUrl: p.previewUrl || null,
+      previewUrl: previewUrlFor(p),
       hasPdf: !!p.pdfPath,
       category: p.category || 'featured',
       author: p.author || null,
@@ -619,6 +711,7 @@ router.get('/api/product/:id', (req, res) => {
       language: p.language || 'English',
       pages: p.pages || null,
       description: p.description || null,
+      preview: publicPreview(p),
       externalUrl: p.externalUrl || null
     };
     return res.json({ product: out });
@@ -1146,25 +1239,75 @@ router.get('/config', (req, res) => {
   return res.json({ paystackPublicKey: PAYSTACK_PUBLIC_KEY || null, publicPdfUrl: PUBLIC_PDF_URL || null });
 });
 
-// Preview pages — explicit routes so SPA fallback doesn't catch them
-router.get('/gcwa-preview', (req, res) => {
-  res.sendFile(path.join(PROJECT_ROOT, 'public', 'gcwa-preview.html'));
+// ---------------- BOOK PREVIEW PAGE ----------------
+// /preview?id=<productId> — and the old pretty URLs (/gcwa-preview, /tda-preview,
+// …) still work, because a product's preview.slug maps them to the same page.
+// The server drops the book's title/OG tags + data into the template so link
+// previews (WhatsApp, X, Google) stay per-book even though it's one HTML file.
+const PREVIEW_SLUGS = {};
+Object.values(PRODUCTS).forEach(p => {
+  if (p.preview && p.preview.slug) PREVIEW_SLUGS[p.preview.slug] = p.id;
 });
 
-router.get('/escape-preview', (req, res) => {
-  res.sendFile(path.join(PROJECT_ROOT, 'public', 'escape-preview.html'));
-});
+function escAttr(v) {
+  return String(v == null ? '' : v)
+    .replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
 
-router.get('/mmg-preview', (req, res) => {
-  res.sendFile(path.join(PROJECT_ROOT, 'public', 'mmg-preview.html'));
-});
+function servePreviewPage(req, res, id) {
+  const p = PRODUCTS[id];
+  const pub = publicPreview(p);
+  if (!pub) {
+    return res.status(404).sendFile(path.join(PROJECT_ROOT, 'public', '404.html'));
+  }
+  fs.readFile(path.join(PROJECT_ROOT, 'server', 'preview-template.html'), 'utf8', (err, tpl) => {
+    if (err) {
+      console.error('[preview] template read failed:', err.message);
+      return res.status(500).type('text/plain').send('Could not load this preview right now.');
+    }
+    const base = (process.env.PUBLIC_URL || 'https://mindshiftbooks.shop').replace(/\/$/, '');
+    const title = `Preview — ${p.title} | MindShift Books`;
+    const ogTitle = `Free Preview — ${p.title} | MindShift Books`;
+    const desc = pub.intro || `Read a free preview of ${p.title} before you buy.`;
+    const image = p.preview.ogImage || p.coverPath;
+    const imageUrl = image ? `${base}/${encodeURI(image)}` : `${base}/og-image.jpg`;
+    const canonical = p.preview.slug ? `${base}/${p.preview.slug}-preview` : `${base}/preview?id=${encodeURIComponent(p.id)}`;
+    const boot = {
+      id: p.id, title: p.title,
+      priceNGN: p.priceNGN || null, originalPriceNGN: p.originalPriceNGN || null,
+      preview: pub
+    };
+    const head = [
+      `<title>${escAttr(title)}</title>`,
+      `<meta name="description" content="${escAttr(desc)}"/>`,
+      `<meta property="og:type" content="website" />`,
+      `<meta property="og:site_name" content="MindShift Books" />`,
+      `<meta property="og:title" content="${escAttr(ogTitle)}" />`,
+      `<meta property="og:description" content="${escAttr(desc)}" />`,
+      `<meta property="og:url" content="${escAttr(canonical)}" />`,
+      `<meta property="og:image" content="${escAttr(imageUrl)}" />`,
+      p.preview.ogImage ? `<meta property="og:image:width" content="1200" />\n  <meta property="og:image:height" content="630" />` : '',
+      `<meta name="twitter:card" content="summary_large_image" />`,
+      `<meta name="twitter:title" content="${escAttr(ogTitle)}" />`,
+      `<meta name="twitter:description" content="${escAttr(desc)}" />`,
+      `<meta name="twitter:image" content="${escAttr(imageUrl)}" />`,
+      `<link rel="canonical" href="${escAttr(canonical)}" />`,
+      `<script>window.__PREVIEW__ = ${JSON.stringify(boot).replace(/</g, '\\u003c')};</script>`
+    ].filter(Boolean).join('\n  ');
+    res.set('Content-Type', 'text/html; charset=utf-8');
+    res.send(tpl.replace('<!--PREVIEW_HEAD-->', head));
+  });
+}
 
-router.get('/tda-preview', (req, res) => {
-  res.sendFile(path.join(PROJECT_ROOT, 'public', 'tda-preview.html'));
-});
+router.get('/preview', (req, res) => servePreviewPage(req, res, String(req.query.id || '')));
 
-router.get('/wgfs-preview', (req, res) => {
-  res.sendFile(path.join(PROJECT_ROOT, 'public', 'wgfs-preview.html'));
+// Legacy pretty URLs — /gcwa-preview, /escape-preview, /mmg-preview, /tda-preview,
+// /wgfs-preview, /bct-preview. Unknown slugs fall through to the rest of the app.
+router.get('/:slug-preview', (req, res, next) => {
+  const id = PREVIEW_SLUGS[req.params.slug];
+  if (!id) return next();
+  servePreviewPage(req, res, id);
 });
 
 // Structured data endpoint — Google uses this for rich results / image search
