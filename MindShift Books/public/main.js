@@ -1470,6 +1470,154 @@ document.getElementById('suggestionsBox')?.addEventListener('click', function(ev
 });
 
 // performSearch: filters across all products and shows results in the search section
+// ════════════════════════════════════════════════════════════════════
+// FULL-SCREEN SEARCH — replaces the old inline dropdown. Tapping the
+// search bar on any page that includes this file takes over the whole
+// screen: big input, live results with covers as you type, recent
+// searches, and quick category chips when the box is empty.
+// ════════════════════════════════════════════════════════════════════
+const RECENT_SEARCH_KEY = 'msb_recent_searches';
+
+function getRecentSearches() {
+  try { return JSON.parse(localStorage.getItem(RECENT_SEARCH_KEY) || '[]'); } catch (e) { return []; }
+}
+function addRecentSearch(term) {
+  term = (term || '').trim();
+  if (!term) return;
+  let list = getRecentSearches().filter(t => t.toLowerCase() !== term.toLowerCase());
+  list.unshift(term);
+  list = list.slice(0, 8);
+  try { localStorage.setItem(RECENT_SEARCH_KEY, JSON.stringify(list)); } catch (e) {}
+}
+function clearRecentSearches() {
+  try { localStorage.removeItem(RECENT_SEARCH_KEY); } catch (e) {}
+  renderSearchIdle();
+}
+
+function searchResultCard(p) {
+  const price = formatPrice(p);
+  return `
+    <button type="button" class="src-row" data-product-id="${escapeHtml(p.id || '')}">
+      <img src="${escapeHtml(p.cover || '')}" alt="" class="src-row-cover" loading="lazy">
+      <span class="src-row-body">
+        <span class="src-row-title">${escapeHtml(p.title || '')}</span>
+        <span class="src-row-sub">${escapeHtml(p.author || 'MindShift Books')}${p.genre ? ' · ' + escapeHtml(p.genre) : ''}</span>
+      </span>
+      ${price ? `<span class="src-row-price">${price}</span>` : ''}
+    </button>`;
+}
+
+function ensureSearchOverlay() {
+  if (document.getElementById('searchOverlay')) return;
+
+  const cats = (window.MSB_CATEGORIES || []).slice(0, 8);
+  const chipHtml = cats.map(c =>
+    `<button type="button" class="src-chip" data-term="${escapeHtml(c.label.split('&')[0].trim())}">${c.emoji} ${escapeHtml(c.label.split('&')[0].trim())}</button>`
+  ).join('');
+
+  const ov = document.createElement('div');
+  ov.id = 'searchOverlay';
+  ov.className = 'search-overlay';
+  ov.setAttribute('role', 'dialog');
+  ov.setAttribute('aria-modal', 'true');
+  ov.setAttribute('aria-label', 'Search books');
+  ov.innerHTML = `
+    <div class="src-bar">
+      <button type="button" class="src-back" id="srcBack" aria-label="Close search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+      </button>
+      <div class="src-input-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="17" height="17"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input id="srcInput" type="text" placeholder="Search by title, author, topic…" autocomplete="off" enterkeyhint="search">
+        <button type="button" class="src-clear" id="srcClear" aria-label="Clear" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+    </div>
+    <div class="src-body" id="srcBody"></div>
+  `;
+  document.body.appendChild(ov);
+
+  const input = ov.querySelector('#srcInput');
+  const clearBtn = ov.querySelector('#srcClear');
+  const body = ov.querySelector('#srcBody');
+
+  function runSearch(term) {
+    const q = term.toLowerCase();
+    const filtered = (window.MSB_PRODUCTS || PRODUCTS).filter(p =>
+      (p.title || '').toLowerCase().includes(q) ||
+      (p.author || '').toLowerCase().includes(q) ||
+      (p.genre || '').toLowerCase().includes(q)
+    );
+    if (!filtered.length) {
+      body.innerHTML = `
+        <div class="src-empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="42" height="42"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <p>No books found for "<strong>${escapeHtml(term)}</strong>"</p>
+        </div>`;
+      return;
+    }
+    body.innerHTML = `<div class="src-results">${filtered.map(searchResultCard).join('')}</div>`;
+  }
+
+  function renderIdleBody() {
+    const recent = getRecentSearches();
+    body.innerHTML = `
+      ${recent.length ? `
+        <div class="src-section-head">
+          <span>Recent</span>
+          <button type="button" class="src-clear-recent" id="srcClearRecent">Clear</button>
+        </div>
+        <div class="src-chip-row">${recent.map(t => `<button type="button" class="src-chip src-chip--recent" data-term="${escapeHtml(t)}">${escapeHtml(t)}</button>`).join('')}</div>
+      ` : ''}
+      <div class="src-section-head"><span>Browse a topic</span></div>
+      <div class="src-chip-row">${chipHtml}</div>
+    `;
+    body.querySelector('#srcClearRecent')?.addEventListener('click', clearRecentSearches);
+  }
+  window.renderSearchIdle = renderIdleBody;
+
+  input.addEventListener('input', () => {
+    const v = input.value;
+    clearBtn.style.display = v ? 'flex' : 'none';
+    if (!v.trim()) { renderIdleBody(); return; }
+    runSearch(v.trim());
+  });
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && input.value.trim()) addRecentSearch(input.value.trim());
+  });
+  clearBtn.addEventListener('click', () => { input.value = ''; clearBtn.style.display = 'none'; renderIdleBody(); input.focus(); });
+
+  body.addEventListener('click', e => {
+    const chip = e.target.closest('.src-chip');
+    if (chip) { input.value = chip.dataset.term; clearBtn.style.display = 'flex'; runSearch(chip.dataset.term); return; }
+    const row = e.target.closest('.src-row');
+    if (row) {
+      addRecentSearch(input.value.trim());
+      openReview(row.dataset.productId);
+    }
+  });
+
+  function close() {
+    ov.classList.remove('show');
+    document.body.classList.remove('src-lock');
+    setTimeout(() => { input.value = ''; clearBtn.style.display = 'none'; }, 250);
+  }
+  ov.querySelector('#srcBack').addEventListener('click', close);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && ov.classList.contains('show')) close(); });
+  window.closeSearchOverlay = close;
+}
+
+function openSearchOverlay() {
+  ensureSearchOverlay();
+  const ov = document.getElementById('searchOverlay');
+  document.body.classList.add('src-lock');
+  ov.classList.add('show');
+  if (typeof window.renderSearchIdle === 'function') window.renderSearchIdle();
+  requestAnimationFrame(() => setTimeout(() => document.getElementById('srcInput')?.focus(), 220));
+}
+window.openSearchOverlay = openSearchOverlay;
+
 function performSearch() {
   const query = (document.getElementById('searchInput').value || '').trim().toLowerCase();
   const ourSection = document.getElementById('ourBooksSection');
@@ -1555,6 +1703,7 @@ window.proceedCartToPayment = proceedCartToPayment;
 window.openReview = openReview;
 window.showSuggestions = showSuggestions;
 window.performSearch = performSearch;
+window.openSearchOverlay = openSearchOverlay;
 window.openWishlist = openWishlist;
 window.toggleWishlist = toggleWishlist;
 window.isInWishlist = isInWishlist;

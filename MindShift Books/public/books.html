@@ -171,22 +171,19 @@
     </div>
   </div>
 
-  <div class="search-wrapper" role="search" aria-label="Search books">
+  <div class="search-wrapper" role="search" aria-label="Search books" id="searchTrigger" data-src-trigger>
     <svg class="search-icon-prefix" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
     <input
       id="searchInput"
       type="text"
       placeholder="Search books"
-      oninput="showSuggestions()"
-      onkeydown="if(event.key==='Enter'){ performSearch(); }"
-      autocomplete="off"
-      aria-autocomplete="list"
+      readonly
     />
-    <button id="searchBtn" onclick="performSearch()" aria-label="Search">
+    <button id="searchBtn" aria-label="Search" tabindex="-1">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
     </button>
-    <div id="suggestionsBox" class="suggestions" role="listbox" aria-hidden="true"></div>
   </div>
+  <script>document.getElementById('searchTrigger').addEventListener('click', () => window.openSearchOverlay());</script>
 
   <!-- Category pills — same content taxonomy as onboarding/articles (article-categories.js),
        so a reader's picks stay consistent across the whole platform. -->
