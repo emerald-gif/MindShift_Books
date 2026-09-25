@@ -1940,9 +1940,6 @@ function buildAcard(a){
           <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
           <span id="lc-${a.id}"></span>
         </button>
-        <button class="acard-save ${savedSet.has(a.id)?'saved':''}" id="sv-${a.id}" onclick="event.stopPropagation();handleSave('${a.id}')">
-          <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
-        </button>
         <button class="acard-repost" id="rb-${a.id}" onclick="event.stopPropagation();doRepostCard('article','${a.id}')" title="Repost">
           <svg viewBox="0 0 24 24"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
           <span id="rc-${a.id}"></span>
@@ -1972,6 +1969,9 @@ function buildAcard(a){
             </button>
           </div>
         </div>` : ''}
+        <button class="acard-save ${savedSet.has(a.id)?'saved':''}" id="sv-${a.id}" onclick="event.stopPropagation();handleSave('${a.id}')">
+          <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+        </button>
       </div>
     </div>
     <div class="acard-img"><img src="${a.img||a.coverImage||''}" alt="${esc(a.title||'')}" loading="lazy" onerror="this.parentElement.style.background='linear-gradient(135deg,#e0e7ff,#93c5fd)'"></div>
@@ -2435,13 +2435,6 @@ function buildPostCardHtml(p){
           <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
           <span id="lc-${p.id}"></span>
         </button>
-        <button class="acard-save ${savedSet.has(p.id)?'saved':''}" id="sv-${p.id}" onclick="event.stopPropagation();handleSave('${p.id}')" title="Save post">
-          <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
-        </button>
-        <button class="acard-repost" id="rb-${p.id}" onclick="event.stopPropagation();doRepostCard('post','${p.id}')" title="Repost">
-          <svg viewBox="0 0 24 24"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
-          <span id="rc-${p.id}"></span>
-        </button>
         ${p.commentsOff ? `
         <span class="pcard-comment" style="opacity:.4;cursor:default" title="Comments are off" onclick="event.stopPropagation()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
@@ -2450,6 +2443,10 @@ function buildPostCardHtml(p){
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
           <span id="pcc-${p.id}"></span>
         </button>`}
+        <button class="acard-repost" id="rb-${p.id}" onclick="event.stopPropagation();doRepostCard('post','${p.id}')" title="Repost">
+          <svg viewBox="0 0 24 24"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+          <span id="rc-${p.id}"></span>
+        </button>
         <div class="acard-menu-wrap" onclick="event.stopPropagation()">
           <button class="acard-menu-btn" onclick="toggleCardMenu('${p.id}',event)" title="More options">
             <svg fill="currentColor" viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
@@ -2480,6 +2477,9 @@ function buildPostCardHtml(p){
             </button>` : ''}
           </div>
         </div>
+        <button class="acard-save ${savedSet.has(p.id)?'saved':''}" id="sv-${p.id}" onclick="event.stopPropagation();handleSave('${p.id}')" title="Save post">
+          <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+        </button>
       </div>
     </div>
   </div>`;
@@ -2545,14 +2545,11 @@ function buildRepostCardHtml(r){
           <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
           <span id="lc-${tid}"></span>
         </button>
-        <button class="acard-save ${savedSet.has(tid)?'saved':''}" id="sv-${tid}" onclick="event.stopPropagation();handleSave('${tid}')" title="Save">
-          <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
-        </button>
+        ${commentBtn}
         <button class="acard-repost" id="rb-${tid}" onclick="event.stopPropagation();doRepostCard('${ttype}','${tid}')" title="Repost">
           <svg viewBox="0 0 24 24"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
           <span id="rc-${tid}"></span>
         </button>
-        ${commentBtn}
         <div class="acard-menu-wrap" onclick="event.stopPropagation()">
           <button class="acard-menu-btn" onclick="toggleCardMenu('${tid}',event)" title="More options">
             <svg fill="currentColor" viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
@@ -2569,6 +2566,9 @@ function buildRepostCardHtml(r){
             </button>
           </div>
         </div>
+        <button class="acard-save ${savedSet.has(tid)?'saved':''}" id="sv-${tid}" onclick="event.stopPropagation();handleSave('${tid}')" title="Save">
+          <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+        </button>
       </div>
     </div>
   </div>`;
@@ -2660,9 +2660,6 @@ function renderGrid(){
             <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
             <span id="lc-${a.id}"></span>
           </button>
-          <button class="acard-save ${savedSet.has(a.id)?'saved':''}" id="sv-${a.id}" onclick="event.stopPropagation();handleSave('${a.id}')" title="Save article">
-            <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
-          </button>
           <button class="acard-repost" id="rb-${a.id}" onclick="event.stopPropagation();doRepostCard('article','${a.id}')" title="Repost">
             <svg viewBox="0 0 24 24"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
             <span id="rc-${a.id}"></span>
@@ -2697,6 +2694,9 @@ function renderGrid(){
               </button>` : ''}
             </div>
           </div>
+          <button class="acard-save ${savedSet.has(a.id)?'saved':''}" id="sv-${a.id}" onclick="event.stopPropagation();handleSave('${a.id}')" title="Save article">
+            <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+          </button>
         </div>
       </div>
       <div class="acard-img">
