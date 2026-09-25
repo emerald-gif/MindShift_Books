@@ -1860,6 +1860,32 @@ window.confirmDownload=async function(){
 };
 
 /* ── PDF BRAND ASSETS ── */
+// Matches the site's --g brand gradient: linear-gradient(90deg,#4f46e5,#06b6d4)
+const PDF_BRAND_START = '#4f46e5'; // indigo
+const PDF_BRAND_END   = '#06b6d4'; // cyan
+function pdfHexToRgb(hex){
+  const h = hex.replace('#','');
+  return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+}
+function pdfLerpColor(c1, c2, t){
+  const [r1,g1,b1]=pdfHexToRgb(c1), [r2,g2,b2]=pdfHexToRgb(c2);
+  const r=Math.round(r1+(r2-r1)*t), g=Math.round(g1+(g2-g1)*t), b=Math.round(b1+(b2-b1)*t);
+  return '#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
+}
+// pdfMake's canvas supports solid-fill rects natively, unlike its SVG support
+// (which doesn't render <linearGradient> reliably) — so the "gradient" bars
+// below are really a row of thin adjacent rects stepped from indigo to cyan.
+// Reads as a smooth gradient at print/screen resolution.
+function pdfGradientBar(widthPt, heightPt, steps=40){
+  const segW = widthPt/steps;
+  const rects=[];
+  for(let i=0;i<steps;i++){
+    const t = steps===1 ? 0 : i/(steps-1);
+    rects.push({type:'rect', x:i*segW, y:0, w:segW+0.6, h:heightPt, color:pdfLerpColor(PDF_BRAND_START,PDF_BRAND_END,t)});
+  }
+  return {canvas:rects};
+}
+
 async function getLogoBase64(){
   try{
     const res = await fetch('logo.jpg');
@@ -1922,7 +1948,7 @@ function pdfParseBlock(node){
       if(node.classList.contains('pull-quote')){
         return {
           table:{ widths:['*'], body:[[
-            { text:[{text:'\u201C  ',bold:true,fontSize:18,color:'#22d3ee'}, ...pdfInlineRuns(node,{italics:true,color:'#0e7490'})],
+            { text:[{text:'\u201C  ',bold:true,fontSize:18,color:PDF_BRAND_START}, ...pdfInlineRuns(node,{italics:true,color:'#0e7490'})],
               fillColor:'#ecfeff', margin:[12,10,12,10] }
           ]] },
           layout:'noBorders',
@@ -1998,14 +2024,14 @@ async function generateArticlePdf(){
       margin:[40,22,40,0],
       stack:[
         brandStack,
-        {canvas:[{type:'line',x1:0,y1:10,x2:515,y2:10,lineWidth:1,lineColor:'#cffafe'}]}
+        {...pdfGradientBar(515,2), margin:[0,10,0,0]}
       ]
     },
     footer:function(currentPage,pageCount){
       return {
         margin:[40,8,40,0],
         stack:[
-          {canvas:[{type:'line',x1:0,y1:0,x2:515,y2:0,lineWidth:1,lineColor:'#cffafe'}]},
+          {...pdfGradientBar(515,2)},
           {
             columns:[
               {text:'mindshiftbooks.shop', style:'footerText'},
@@ -2020,7 +2046,7 @@ async function generateArticlePdf(){
     content:[
       {
         table:{ widths:['auto'], body:[[
-          {text:((window.msbCatLabel ? window.msbCatLabel(article.cat) : article.cat)||'MindShift').toUpperCase(), style:'catPillText', fillColor:'#06b6d4'}
+          {text:((window.msbCatLabel ? window.msbCatLabel(article.cat) : article.cat)||'MindShift').toUpperCase(), style:'catPillText', fillColor:PDF_BRAND_START}
         ]] },
         layout:'noBorders',
         margin:[0,0,0,10]
@@ -2033,11 +2059,11 @@ async function generateArticlePdf(){
         ],
         margin:[0,4,0,16]
       },
-      {canvas:[{type:'line',x1:0,y1:0,x2:515,y2:0,lineWidth:1,lineColor:'#cffafe'}], margin:[0,0,0,16]},
+      {...pdfGradientBar(515,2), margin:[0,0,0,16]},
       ...bodyContent
     ],
     styles:{
-      brandName:{fontSize:14,bold:true,color:'#06b6d4'},
+      brandName:{fontSize:14,bold:true,color:PDF_BRAND_START},
       brandTag:{fontSize:7,color:'#9ca3af'},
       footerText:{fontSize:8,color:'#9ca3af'},
       footerSub:{fontSize:7,italics:true,color:'#93c5fd'},
@@ -2048,7 +2074,7 @@ async function generateArticlePdf(){
       h3:{fontSize:12.5,bold:true,color:'#0f0e17',margin:[0,12,0,6]},
       body:{fontSize:10.5,color:'#374151',lineHeight:1.45,margin:[0,0,0,10]},
       liText:{fontSize:10.5,color:'#374151',lineHeight:1.4,margin:[0,0,0,4]},
-      keyTitle:{fontSize:8.5,bold:true,color:'#06b6d4',characterSpacing:.5}
+      keyTitle:{fontSize:8.5,bold:true,color:PDF_BRAND_START,characterSpacing:.5}
     },
     defaultStyle:{fontSize:10.5, lineHeight:1.4, color:'#374151'}
   };

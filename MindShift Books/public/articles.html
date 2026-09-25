@@ -356,6 +356,18 @@ main{max-width:1100px;margin:0 auto}
 .invite-card p{font-size:13px;color:var(--sub);line-height:1.6;max-width:280px;margin:0 auto 18px}
 .invite-btn{padding:12px 32px;background:var(--g);color:#fff;border:none;border-radius:99px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(37,99,235,.32);transition:all .18s}
 .invite-btn:active{transform:scale(.97)}
+/* Book promo card (shown inline in feed) — same shell as invite-card, own class
+   so tweaking one visually doesn't silently affect the other. */
+.book-promo-card{position:relative;margin:0;background:#fff;border-top:8px solid #eef2ff;border-bottom:8px solid #eef2ff;padding:28px 20px 26px;text-align:center}
+.book-promo-close{position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:50%;background:#f4f4f6;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--sub)}
+.book-promo-close svg{width:14px;height:14px}
+.book-promo-close:active{background:#e9e9ee}
+.book-promo-icon{width:60px;height:60px;border-radius:50%;background:var(--g);margin:0 auto 16px;display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 6px 16px rgba(37,99,235,.3)}
+.book-promo-icon svg{width:26px;height:26px}
+.book-promo-card h3{font-size:18px;font-weight:800;color:var(--txt);margin-bottom:6px}
+.book-promo-card p{font-size:13px;color:var(--sub);line-height:1.6;max-width:280px;margin:0 auto 18px}
+.book-promo-btn{padding:12px 32px;background:var(--g);color:#fff;border:none;border-radius:99px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(37,99,235,.32);transition:all .18s}
+.book-promo-btn:active{transform:scale(.97)}
 
 /* ── AUTH DRAWER ── */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;opacity:0;pointer-events:none;transition:opacity .25s;backdrop-filter:blur(3px)}
@@ -649,10 +661,6 @@ main{max-width:1100px;margin:0 auto}
     <button class="hero-close" id="heroCloseBtn" type="button" aria-label="Dismiss">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
     </button>
-    <div class="hero-pill">
-      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-      MindShift Reads
-    </div>
     <h1>Ideas Worth<br><span>Thinking About</span></h1>
     <p class="hero-sub">Mindset, money, productivity, relationships, and more — from our writers and yours.</p>
   </div>
@@ -1054,6 +1062,53 @@ window.handleInviteFriends = async function(){
   } else {
     try{ await navigator.clipboard.writeText(shareUrl); toast('Link copied! 🎉'); }catch{ toast('Could not copy link'); }
   }
+};
+
+/* ── BOOK PROMO CARD (shown inline in feed, once per cooldown window) ──
+   Not tied to any person — just a plain "check out the bookstore" nudge,
+   same shell/behavior as the invite card but its own class + cooldown key
+   so the two don't fight over the same slot or reset each other's timer. */
+const BOOK_PROMO_AFTER_INDEX = 7; // appears after the 7th feed item — separate from the invite card's slot at index 3
+const BOOK_PROMO_COOLDOWN_MS = 24 * 60 * 60 * 1000; // once per day
+function bookPromoCardHtml(){
+  return `
+  <div class="book-promo-card" id="bookPromoCard">
+    <button class="book-promo-close" onclick="dismissBookPromoCard()" aria-label="Dismiss">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <div class="book-promo-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path stroke-linecap="round" stroke-linejoin="round" d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+    </div>
+    <h3>Books picked for you</h3>
+    <p>Mindset, money, productivity, and relationship reads — take a look and find your next one.</p>
+    <button class="book-promo-btn" onclick="handleExploreBooks()">Explore Books</button>
+  </div>`;
+}
+function bookPromoLastShownKey(uid){ return `mindshift_bookpromo_lastshown_${uid || 'guest'}`; }
+function shouldShowBookPromo(uid){
+  try{
+    const last = parseInt(localStorage.getItem(bookPromoLastShownKey(uid)) || '0', 10);
+    return (Date.now() - last) >= BOOK_PROMO_COOLDOWN_MS;
+  }catch{ return true; }
+}
+function markBookPromoShown(uid){
+  try{ localStorage.setItem(bookPromoLastShownKey(uid), String(Date.now())); }catch{}
+}
+// Splice the book promo card into an array of card-html strings, right after BOOK_PROMO_AFTER_INDEX items.
+function withBookPromoCard(cardsArr, uid){
+  if(cardsArr.length <= BOOK_PROMO_AFTER_INDEX) return cardsArr;
+  if(!shouldShowBookPromo(uid)) return cardsArr;
+  markBookPromoShown(uid);
+  const out = cardsArr.slice();
+  out.splice(BOOK_PROMO_AFTER_INDEX, 0, bookPromoCardHtml());
+  return out;
+}
+window.dismissBookPromoCard = function(){
+  markBookPromoShown(currentUser ? currentUser.uid : null); // resets the cooldown clock from the moment they close it
+  document.querySelectorAll('#bookPromoCard').forEach(el=>el.remove());
+};
+window.handleExploreBooks = function(){
+  location.href = '/books';
 };
 
 /* ── DATA ── */
@@ -1645,7 +1700,7 @@ async function renderFollowingTab(fresh = false){
     // Render articles + posts
     const grid=document.createElement('div'); grid.className='grid';
     const cardsHtml = feedArts.map(a=> a.type==='post' ? buildPostCardHtml(a) : a.type==='repost' ? buildRepostCardHtml(a) : buildAcard(a));
-    grid.innerHTML = withInviteCard(cardsHtml, currentUser ? currentUser.uid : null).join('');
+    grid.innerHTML = withBookPromoCard(withInviteCard(cardsHtml, currentUser ? currentUser.uid : null), currentUser ? currentUser.uid : null).join('');
     feed.innerHTML=''; feed.appendChild(grid);
     // Splice the "People to follow" row after the 2nd card (skip on very short feeds).
     if(feedArts.length > 2){
@@ -2650,7 +2705,7 @@ function renderGrid(){
     </div>
   `;
   });
-  grid.innerHTML = withInviteCard(cardsHtml, currentUser ? currentUser.uid : null).join('')
+  grid.innerHTML = withBookPromoCard(withInviteCard(cardsHtml, currentUser ? currentUser.uid : null), currentUser ? currentUser.uid : null).join('')
     + '<div id="feedEndSentinel" style="height:1px"></div>';
   // Splice the "People to follow" row after the 2nd card (skip entirely on very short feeds).
   if(list.length > 2){
