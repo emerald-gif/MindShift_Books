@@ -244,7 +244,9 @@ function buildNotifItem(id, n, idx) {
     avHtml = `<div class="notif-av-stack">${shown.map(p => `<div class="notif-av notif-av-stacked"><img src="${nEsc(p)}" alt="" onerror="this.style.display='none'"></div>`).join('')}</div>`;
   } else {
     const init = (n.actorName || 'M').charAt(0).toUpperCase(); // system messages (no actor) show an M for MindShift
-    const avInner = n.actorPhoto ? `<img src="${nEsc(n.actorPhoto)}" alt="" onerror="this.style.display='none'">` : init;
+    const avInner = n.actorPhoto ? `<img src="${nEsc(n.actorPhoto)}" alt="" onerror="this.style.display='none'">`
+      : n.type === 'ebook_voucher_earned' ? `<span style="font-size:20px">🎁</span>`
+      : init;
     avHtml = `<div class="notif-av">${avInner}</div>`;
   }
   const [kind, icon] = nTypeBadge(n.type);
