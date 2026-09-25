@@ -1760,7 +1760,15 @@ async function runRewardNudgeCycle(kind, dayKey) {
   // Voucher reminders can be queried directly. "Hasn't claimed" can't (Firestore
   // != skips docs where the field is missing), so the profile nudge reads all
   // users but only pulls the handful of fields it needs.
-  const fields = ['name', 'email', 'ebookVoucher', 'emailPrefs', 'nudges'];
+  // NOTE: 'profile' also needs photo/cover/bio/categories — this nudge is about
+  // the profile itself being finished, which is NOT the same as ebookVoucher.claimed
+  // (that only flips once the whole checklist — profile + 10 follows + content +
+  // 10 likes — is done). Using the voucher flag here was sending this email to
+  // people whose profile was already complete but hadn't finished the rest of
+  // the checklist yet. See claim-profile-voucher for the matching profileDone logic.
+  const fields = kind === 'profile'
+    ? ['name', 'email', 'ebookVoucher', 'emailPrefs', 'nudges', 'photo', 'cover', 'bio', 'categories']
+    : ['name', 'email', 'ebookVoucher', 'emailPrefs', 'nudges'];
   const base = kind === 'voucher' ? db.collection('users').where('ebookVoucher.claimed', '==', true) : db.collection('users');
   const snap = await base.select(...fields).get();
 
@@ -1770,7 +1778,13 @@ async function runRewardNudgeCycle(kind, dayKey) {
     const u = doc.data();
     if (!u.email) continue;
     const v = u.ebookVoucher;
-    if (kind === 'profile' && v && v.claimed) continue;                 // already earned it
+    if (kind === 'profile') {
+      const hasPhoto = !!u.photo;
+      const hasCover = !!u.cover;
+      const hasBio = !!(u.bio && String(u.bio).trim());
+      const hasCategories = Array.isArray(u.categories) && u.categories.length > 0;
+      if (hasPhoto && hasCover && hasBio && hasCategories) continue;    // profile itself is done — this nudge doesn't apply
+    }
     if (kind === 'voucher' && (!v || !v.claimed || v.used)) continue;   // nothing left to use
     if (u.emailPrefs && u.emailPrefs.activityDigest === false) { skippedOptOut++; continue; }
     const n = u.nudges || {};
@@ -2585,6 +2599,31 @@ app.post('/api/rewards/claim-profile-voucher', requireUser, async (req, res) => 
     const voucher = { amount: PROFILE_VOUCHER_AMOUNT, claimed: true, claimedAt: admin.firestore.Timestamp.now(), used: false, usedAt: null, orderId: null };
     await userRef.set({ ebookVoucher: voucher }, { merge: true });
     const foundingCreator = await grantFoundingCreatorIfNeeded(uid, userRef, u);
+
+    // Two separate in-app notifications for the two separate rewards — each
+    // with its own CTA. The badge one uses the badge artwork itself as the
+    // notif "avatar" (actorPhoto), same field the bell already renders an
+    // image from for people notifications — here it's just a badge instead
+    // of a face. Fire-and-forget: a failed write here shouldn't fail the
+    // claim itself, the voucher/badge are already saved above.
+    const now = admin.firestore.Timestamp.now();
+    await Promise.all([
+      db.collection('notifications').add({
+        recipientUid: uid, type: 'founding_creator_earned',
+        actorUid: 'official', actorName: 'MindShift Books', actorPhoto: `${PUBLIC_SITE_URL}/fcbadge.jpg`, actorUsername: 'official',
+        title: 'You earned the Founding Creator badge! 🏅',
+        message: 'It\'s live on your profile now — hit your weekly goal to keep it glowing.',
+        read: false, createdAt: now, lastAt: now
+      }).catch(() => {}),
+      db.collection('notifications').add({
+        recipientUid: uid, type: 'ebook_voucher_earned',
+        actorUid: 'official', actorName: 'MindShift Books', actorPhoto: '', actorUsername: 'official',
+        title: `Your ${nairaFmt(PROFILE_VOUCHER_AMOUNT)} voucher is ready`,
+        message: 'It\'s applied automatically at checkout — go pick your next book.',
+        read: false, createdAt: now, lastAt: now
+      }).catch(() => {})
+    ]);
+
     return res.json({ ok: true, alreadyClaimed: false, eligible: true, voucher, foundingCreator });
   } catch (err) {
     console.error('/api/rewards/claim-profile-voucher error', err);
