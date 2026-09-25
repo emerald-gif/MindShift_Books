@@ -1225,10 +1225,13 @@ body.src-lock { overflow: hidden; }
 
 .src-chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
 .src-chip {
+  display: inline-flex; align-items: center; gap: 6px;
   padding: 9px 15px; border-radius: 999px; border: 1.5px solid #e2e8f0; background: #fff;
   font: inherit; font-size: 0.85rem; font-weight: 700; color: var(--primary); cursor: pointer;
   transition: transform 0.12s ease, background 0.12s ease;
 }
+.src-chip-icon { display: inline-flex; flex-shrink: 0; color: #4f46e5; }
+.src-chip-icon svg { width: 15px; height: 15px; display: block; }
 .src-chip:active { transform: scale(0.94); }
 .src-chip--recent { background: #f8fafc; border-color: #eef1f5; color: #475569; font-weight: 600; }
 

@@ -1512,7 +1512,7 @@ function ensureSearchOverlay() {
 
   const cats = (window.MSB_CATEGORIES || []).slice(0, 8);
   const chipHtml = cats.map(c =>
-    `<button type="button" class="src-chip" data-term="${escapeHtml(c.label.split('&')[0].trim())}">${c.emoji} ${escapeHtml(c.label.split('&')[0].trim())}</button>`
+    `<button type="button" class="src-chip" data-term="${escapeHtml(c.label.split('&')[0].trim())}"><span class="src-chip-icon">${window.msbCatIconSvg ? window.msbCatIconSvg(c.code) : ''}</span>${escapeHtml(c.label.split('&')[0].trim())}</button>`
   ).join('');
 
   const ov = document.createElement('div');
