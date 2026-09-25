@@ -84,6 +84,32 @@
       padding: 9px 22px; border-radius: 10px; font-weight: 700; font-size: 0.85rem;
       cursor: pointer;
     }
+    /* Details + round cart-icon button, side by side under the price */
+    .ab-row-actions { display: flex; align-items: center; gap: 8px; }
+    .ab-row-details {
+      flex: 1; border: 2px solid rgba(15,23,42,0.06); background: #fff;
+      color: var(--primary); font-weight: 700; font-size: 0.85rem;
+      padding: 9px 10px; border-radius: 10px; cursor: pointer; font-family: inherit;
+    }
+    .ab-row-actions .cart-icon-btn { width: 38px; height: 38px; }
+
+    /* Skeleton rows shown while the first product fetch is in flight, so
+       the page never just sits blank with no feedback. */
+    .ab-skeleton-row { display: flex; gap: 14px; padding: 18px 0; border-bottom: 1px solid rgba(15,23,42,0.06); }
+    .ab-skeleton-row:first-child { padding-top: 4px; }
+    .ab-skel { background: linear-gradient(90deg,#eef2f6 25%,#f6f8fa 37%,#eef2f6 63%); background-size: 400% 100%; animation: ab-shimmer 1.4s ease infinite; border-radius: 8px; }
+    .ab-skeleton-row .ab-skel-cover { width: 84px; aspect-ratio: 2/3; flex-shrink: 0; }
+    .ab-skeleton-row .ab-skel-body { flex: 1; display: flex; flex-direction: column; gap: 10px; padding-top: 4px; }
+    .ab-skeleton-row .ab-skel-line { height: 12px; }
+    @keyframes ab-shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
+
+    .ab-error { padding: 40px 20px; text-align: center; color: #64748b; font-size: 0.92rem; }
+    .ab-error button {
+      margin-top: 12px; background: linear-gradient(90deg,#4f46e5,#06b6d4); color: #fff; border: none;
+      padding: 10px 20px; border-radius: 10px; font-weight: 700; font-size: 0.85rem; cursor: pointer;
+    }
+    .ab-empty { padding: 40px 0; text-align: center; color: #94a3b8; font-size: 0.92rem; }
+
     /* Sticky checkout bar — appears as soon as something is in the cart */
     .ab-cartbar {
       position: fixed; left: 12px; right: 12px; bottom: 14px; z-index: 40;
@@ -100,7 +126,6 @@
       background: #fff; color: #4f46e5; border: none; border-radius: 11px;
       padding: 11px 18px; font-weight: 800; font-size: 0.88rem; cursor: pointer; white-space: nowrap;
     }
-    .ab-empty { padding: 40px 0; text-align: center; color: #94a3b8; font-size: 0.92rem; }
   </style>
 </head>
 <body>
@@ -127,7 +152,13 @@
 
   <div class="msb-cat-bar" id="abCatBar" role="tablist" aria-label="Browse books by category"></div>
 
-  <div id="abList" class="ab-list" aria-live="polite"></div>
+  <div id="abList" class="ab-list" aria-live="polite">
+    <!-- Skeleton placeholder shown until the first product fetch resolves,
+         so this never reads as a broken blank page while it's just loading. -->
+    <div class="ab-skeleton-row"><div class="ab-skel ab-skel-cover"></div><div class="ab-skel-body"><div class="ab-skel ab-skel-line" style="width:70%;"></div><div class="ab-skel ab-skel-line" style="width:40%;"></div><div class="ab-skel ab-skel-line" style="width:30%;height:20px;"></div></div></div>
+    <div class="ab-skeleton-row"><div class="ab-skel ab-skel-cover"></div><div class="ab-skel-body"><div class="ab-skel ab-skel-line" style="width:60%;"></div><div class="ab-skel ab-skel-line" style="width:40%;"></div><div class="ab-skel ab-skel-line" style="width:30%;height:20px;"></div></div></div>
+    <div class="ab-skeleton-row"><div class="ab-skel ab-skel-cover"></div><div class="ab-skel-body"><div class="ab-skel ab-skel-line" style="width:65%;"></div><div class="ab-skel ab-skel-line" style="width:40%;"></div><div class="ab-skel ab-skel-line" style="width:30%;height:20px;"></div></div></div>
+  </div>
   <div id="abEmpty" class="ab-empty" style="display:none;">No books match your search.</div>
 </main>
 
@@ -158,6 +189,7 @@
     var pct = (p.originalPriceNGN && p.priceNGN) ? Math.round((1 - p.priceNGN / p.originalPriceNGN) * 100) : null;
     var cover = esc(p.cover || '');
     var title = esc(p.title || '');
+    var inCart = (typeof getCart === 'function' && getCart().indexOf(p.id) !== -1);
     return (
       '<div class="ab-row" data-msb-cat="' + esc((window.genreToMsbCat && window.genreToMsbCat(p.genre)) || '') + '">' +
         '<img src="' + cover + '" alt="' + title + '" class="ab-row-cover" data-action="review" data-product-id="' + esc(p.id) + '" loading="lazy">' +
@@ -169,7 +201,12 @@
             (orig ? '<span class="ab-row-price-old">' + orig + '</span>' : '') +
             (pct ? '<span class="ab-row-discount">' + pct + '% OFF</span>' : '') +
           '</div>' +
-          '<button type="button" class="ab-row-add" data-action="add-to-cart" data-product-id="' + esc(p.id) + '">Add to Cart</button>' +
+          '<div class="ab-row-actions">' +
+            '<button type="button" class="ab-row-details" data-action="review" data-product-id="' + esc(p.id) + '">Details</button>' +
+            '<button type="button" class="cart-icon-btn' + (inCart ? ' active' : '') + '" data-action="toggle-cart" data-product-id="' + esc(p.id) + '" aria-pressed="' + inCart + '" aria-label="' + (inCart ? 'Remove from cart' : 'Add to cart') + '">' +
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="17" height="17"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>' +
+            '</button>' +
+          '</div>' +
         '</div>' +
       '</div>'
     );
@@ -189,9 +226,16 @@
     empty.style.display = filtered.length ? 'none' : '';
   }
 
-  function initPills() {
+  function initPills(attempt) {
     var bar = document.getElementById('abCatBar');
-    if (!bar || !window.MSB_CATEGORIES) return;
+    if (!bar) return;
+    if (!window.MSB_CATEGORIES) {
+      // article-categories.js can occasionally still be loading (slow
+      // connection) when this first runs — keep checking briefly instead
+      // of giving up and leaving the bar permanently empty.
+      if ((attempt || 0) < 50) setTimeout(function () { initPills((attempt || 0) + 1); }, 100);
+      return;
+    }
     var html = '<button type="button" class="msb-cat-pill is-active" data-cat="ALL" role="tab" aria-selected="true">All</button>';
     html += window.MSB_CATEGORIES.map(function (c) {
       var label = SHORT_LABEL[c.code] || c.label;
@@ -212,17 +256,36 @@
     });
   }
 
+  var productsArrived = false;
   function onProducts() {
+    productsArrived = true;
     var products = window.MSB_PRODUCTS || [];
     allOurBooks = products.filter(function (p) { return p.category === 'ours'; });
     render();
   }
 
-  document.getElementById('abSearch').addEventListener('click', () => window.openSearchOverlay());
-  document.getElementById('abSearch').addEventListener('input', function (e) {
-    searchTerm = e.target.value;
-    render();
-  });
+  // If products genuinely never arrive (fetch failure, dead network), don't
+  // leave the skeleton spinning forever — swap in a retry prompt.
+  setTimeout(function () {
+    if (productsArrived) return;
+    var list = document.getElementById('abList');
+    if (!list) return;
+    list.innerHTML =
+      '<div class="ab-error">Having trouble loading books. Check your connection and try again.' +
+      '<br><button type="button" onclick="window.location.reload()">Retry</button></div>';
+  }, 10000);
+
+  function wireSearch() {
+    var input = document.getElementById('abSearch');
+    if (!input) return;
+    input.addEventListener('click', function () { if (typeof window.openSearchOverlay === 'function') window.openSearchOverlay(); });
+    input.addEventListener('input', function (e) {
+      searchTerm = e.target.value;
+      render();
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wireSearch);
+  else wireSearch();
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initPills);
   else initPills();

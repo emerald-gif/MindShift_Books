@@ -1188,7 +1188,7 @@ header {
 body.src-lock { overflow: hidden; }
 
 .search-overlay {
-  position: fixed; inset: 0; z-index: 200;
+  position: fixed; inset: 0; z-index: 1500;
   background: #f8fafc;
   display: flex; flex-direction: column;
   opacity: 0; visibility: hidden;
