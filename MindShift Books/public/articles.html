@@ -1393,6 +1393,23 @@ async function ensureFeedLoaded(){
 }
 setTimeout(ensureFeedLoaded, 8000);
 
+// Same idea as ensureFeedLoaded above, but for the Following tab — it has its
+// own separate fetch + skeleton (renderFollowingTab), so a stuck/failed load
+// there was never actually caught by the For You watchdog, which only ever
+// looks at #grid. Left alone, switching to Following, backgrounding the tab,
+// and coming back could leave that tab's skeleton up forever.
+let _followingWatchdogRunning = false;
+async function ensureFollowingLoaded(){
+  if(_followingWatchdogRunning || activeFeedTab !== 'following') return;
+  _followingWatchdogRunning = true;
+  try{
+    const feed = document.getElementById('followingFeed');
+    if(!feed || !(feed.querySelector('.skel-card') || feed.querySelector('button[onclick="retryFollowing()"]'))) return; // already loaded fine
+    await reconnectFirestore();
+    await renderFollowingTab(false);
+  } finally { _followingWatchdogRunning = false; }
+}
+
 // Coming back to this tab — whether it's a real bfcache restore or Chrome
 // discarded and reloaded it from scratch — is exactly when a stale
 // Firestore connection or a stuck skeleton is most likely. Check as soon
@@ -1410,8 +1427,25 @@ setTimeout(ensureFeedLoaded, 8000);
 // loadFeedBatch now safely coalesces overlapping calls into one either way,
 // but there's no reason to invite that race in the first place when the
 // normal load path is about to handle it on its own.
-window.addEventListener('pageshow', (e)=>{ if(e.persisted) ensureFeedLoaded(); });
-document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) ensureFeedLoaded(); });
+window.addEventListener('pageshow', (e)=>{ if(e.persisted){ ensureFeedLoaded(); ensureFollowingLoaded(); } });
+
+// Tracks how long the tab was actually hidden, so a quick app-switch (a
+// notification, a copy/paste) doesn't trigger the same recovery work as a
+// tab left backgrounded for an hour. Either way, landing back on this page
+// always leaves it either already-loaded or actively re-loading — never
+// just sitting on a dead skeleton.
+let _feedHiddenAt = 0;
+document.addEventListener('visibilitychange', ()=>{
+  if(document.hidden){ _feedHiddenAt = Date.now(); return; }
+  const away = _feedHiddenAt ? Date.now() - _feedHiddenAt : 0;
+  _feedHiddenAt = 0;
+  ensureFeedLoaded();
+  ensureFollowingLoaded();
+  // Nothing looked stuck above, but a long-idle tab holds a dead Firestore
+  // socket regardless — warm it now so the next read (pagination, a like, a
+  // tab switch) doesn't hang waiting to notice that for itself.
+  if(away > 5*60*1000) reconnectFirestore();
+});
 
 window.retryLoadFeed = function(){
   showSkeletons(4);
@@ -1635,7 +1669,14 @@ async function renderFollowingTab(fresh = false){
         authorUid: x.authorUid||null,
         isMindshift: x.authorUid==='official',
         commentsOff: !!x.commentsOff,
-        hideLikeCount: !!x.hideLikeCount
+        hideLikeCount: !!x.hideLikeCount,
+        // A quote-repost is just a normal post doc with these two fields set —
+        // buildPostCardHtml uses quotedFrom to decide whether to render the
+        // embedded original at all. Missing here meant this tab only ever
+        // showed the caption, never the quoted post/article underneath it.
+        quotedFrom: x.quotedFrom||null,
+        quotedSnapshot: x.quotedSnapshot||null,
+        mentions: Array.isArray(x.mentions) ? x.mentions : []
       };
     });
     let feedArts = [...feedArtsRaw, ...feedPostsRaw].sort((x,y)=>{

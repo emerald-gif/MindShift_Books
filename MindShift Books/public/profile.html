@@ -427,7 +427,9 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
 .delete-warning{font-size:13.5px;color:var(--sub);line-height:1.5;padding:0 10px 12px}
 /* ── POST CARD (text posts) ── */
 .pcard-text{font-size:14.5px;color:var(--txt);line-height:1.5;white-space:pre-wrap;word-break:break-word;
-  display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden}
+  display:-webkit-box;-webkit-line-clamp:15;-webkit-box-orient:vertical;overflow:hidden}
+.pcard-seemore{display:none;margin-top:2px;font-size:13.5px;font-weight:700;color:var(--p);cursor:pointer}
+.pcard-seemore.show{display:inline-block}
 .pcard-single{margin-top:8px;display:flex;justify-content:center}
 .pcard-single img{max-width:100%;max-height:340px;width:auto;height:auto;object-fit:contain;
   border-radius:14px;display:block;cursor:pointer;background:#f1f5f9}
@@ -2026,7 +2028,7 @@ function renderRepostsSection(sec){
           <span class="acard-author-dot">·</span>
           <span class="acard-author-date">${fmtRel(p.publishedAt||p.createdAt)}</span>
         </div>
-        ${p.text ? `<div class="pcard-text">${(window.msbLinkMentions ? msbLinkMentions(esc(p.text), p.mentions) : esc(p.text))}</div>` : ''}
+        ${p.text ? `<div class="pcard-text" id="ptxt-${p.id}">${(window.msbLinkMentions ? msbLinkMentions(esc(p.text), p.mentions) : esc(p.text))}</div><span class="pcard-seemore" id="ptxtmore-${p.id}">See more</span>` : ''}
         ${embed || media}
         <div class="acard-foot">
           <button class="acard-like ${likedSet.has(p.id)?'liked':''}" id="lb-${p.id}" onclick="event.stopPropagation();handleLike('${p.id}')">
@@ -2052,6 +2054,7 @@ function renderRepostsSection(sec){
   const engagementRefs = allReposts.map(r => r.kind==='plain' ? { id:r.targetId } : { id:r.post.id });
   fetchLikeCounts(engagementRefs.map(r=>({ id:r.id, hideLikeCount:false, isOwnerViewing:isOwner })));
   fetchRepostCounts(engagementRefs);
+  markTruncatedPostText();
 }
 
 function renderArticles(){
@@ -2109,7 +2112,7 @@ function renderArticles(){
             <span class="acard-author-date">${fmtRel(s.publishedAt||s.createdAt)}</span>
             ${manageBtnHtml(s)}
           </div>
-          ${s.text ? `<div class="pcard-text">${(window.msbLinkMentions ? msbLinkMentions(esc(s.text), s.mentions) : esc(s.text))}</div>` : ''}
+          ${s.text ? `<div class="pcard-text" id="ptxt-${s.id}">${(window.msbLinkMentions ? msbLinkMentions(esc(s.text), s.mentions) : esc(s.text))}</div><span class="pcard-seemore" id="ptxtmore-${s.id}">See more</span>` : ''}
           ${embed || media}
           ${isOwner ? `<button class="acard-insights" onclick="event.stopPropagation();location.href='/content-insights?id=${s.id}&type=post'">
             <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -2190,6 +2193,7 @@ function renderArticles(){
     : '';
   sec.innerHTML = `<div class="acard-list">${cardsHtml.join('')}</div>${loadMoreHtml}`;
   observeProfileVideos();
+  markTruncatedPostText();
 
   // hideLikeCount hides the number from everyone except the owner
   // (isOwner here already means "this is my own profile", so every item
@@ -2212,6 +2216,18 @@ function fmtRel(ts){
   if(d<86400000) return `${Math.floor(d/3600000)}h ago`;
   if(d<604800000) return `${Math.floor(d/86400000)}d ago`;
   return new Date(ms).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
+
+// Shows a "See more" link under any post caption that's actually clipped at
+// 15 lines (mirrors articles.html). Tapping it, or anywhere on the card,
+// opens the post read screen — the card itself already handles that click.
+function markTruncatedPostText(){
+  document.querySelectorAll('.pcard-text[id^="ptxt-"]').forEach(el=>{
+    if(el.scrollHeight > el.clientHeight + 1){
+      const more = document.getElementById('ptxtmore-' + el.id.slice(5));
+      if(more) more.classList.add('show');
+    }
+  });
 }
 
 /* ── LIKES ── */
