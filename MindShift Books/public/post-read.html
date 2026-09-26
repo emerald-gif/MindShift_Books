@@ -1081,6 +1081,9 @@ async function renderArticle(){
   // Comment data is never deleted when comments are turned off — we just
   // don't query/render it, so re-enabling instantly brings everything back.
   if(!article.commentsOff) loadComments();
+  // Tapping the Comment icon on the feed card links here with ?comment=1 —
+  // jump straight to the drawer instead of making them find the button.
+  if(!article.commentsOff && new URLSearchParams(location.search).get('comment')==='1') openCommentDrawer();
 
   const manageBtn = document.getElementById('hdrManageBtn');
   if(manageBtn) manageBtn.style.display = (currentUser && article.authorUid === currentUser.uid) ? '' : 'none';

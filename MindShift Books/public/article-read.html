@@ -1060,6 +1060,9 @@ async function renderArticle(){
     if(listEl) listEl.innerHTML = `<div class="comments-list-empty" style="padding:24px 0"><div class="comments-list-empty-ico">&#128172;</div><div class="comments-list-empty-txt">Comments are off for this article</div></div>`;
     if(inputEl) inputEl.innerHTML = '';
   }
+  // Tapping the Comment icon on the feed card links here with ?comment=1 —
+  // jump straight to the drawer instead of making them find the button.
+  if(!article.commentsOff && new URLSearchParams(location.search).get('comment')==='1') openCommentDrawer();
   renderDownloadLockBadge();
   const manageBtn = document.getElementById('hdrManageBtn');
   if(manageBtn) manageBtn.style.display = (currentUser && article.authorUid === currentUser.uid) ? '' : 'none';
