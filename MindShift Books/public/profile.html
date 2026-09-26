@@ -356,9 +356,14 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
 .acard-meta{margin-bottom:6px}
 .acard-cat{display:inline-flex;align-items:center;background:rgba(37,99,235,.1);color:var(--p);font-size:9.5px;font-weight:800;padding:3px 9px;border-radius:99px;letter-spacing:.3px;text-transform:uppercase}
 .acard-title{font-size:17px;font-weight:800;color:var(--txt);line-height:1.35;letter-spacing:-.3px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:6px}
-.acard-brief{font-size:13px;color:var(--sub);line-height:1.58;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.acard-img{width:100%;border-radius:14px;overflow:hidden;background:linear-gradient(135deg,#e0e7ff,#eef2ff);margin:8px 0 0}
-.acard-img img{width:100%;height:200px;object-fit:cover;display:block}
+.acard-brief{display:none}
+.acard-img{width:100%;border-radius:14px;overflow:hidden;background:linear-gradient(135deg,#e0e7ff,#eef2ff);margin:8px 0 0;position:relative}
+.acard-img img{width:100%;height:280px;object-fit:cover;display:block}
+.acard-img-ov{position:absolute;left:0;right:0;bottom:0;padding:14px 14px 12px;background:linear-gradient(to top,rgba(0,0,0,.85),rgba(0,0,0,.4) 60%,transparent)}
+.acard-img-meta{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.acard-ov-cat{display:inline-flex;align-items:center;background:rgba(255,255,255,.22);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);color:#fff;font-size:9.5px;font-weight:800;padding:3px 9px;border-radius:99px;letter-spacing:.3px;text-transform:uppercase}
+.acard-ov-read{font-size:11px;font-weight:600;color:rgba(255,255,255,.85)}
+.acard-img-ov .acard-title{color:#fff;margin-bottom:0;text-shadow:0 1px 4px rgba(0,0,0,.45)}
 .acard-foot{display:flex;align-items:center;gap:8px;margin-top:10px}
 .acard-like,.pcard-comment{display:flex;align-items:center;gap:4px;background:none;border:none;cursor:pointer;padding:4px 6px;font-size:12px;font-weight:700;color:var(--mute);transition:color .18s;border-radius:8px;-webkit-tap-highlight-color:transparent}
 .acard-like:hover{color:var(--red);background:#fff1f1}
@@ -2140,15 +2145,24 @@ function renderArticles(){
           <span class="acard-author-date">${fmtRel(s.publishedAt||s.createdAt)}</span>
           ${manageBtnHtml(s)}
         </div>
+        ${s.cover ? `
+        <div class="acard-img">
+          <img src="${s.cover}" alt="${esc(s.title||'')}" loading="lazy" onerror="this.parentElement.style.background='linear-gradient(135deg,#e0e7ff,#93c5fd)'">
+          <div class="acard-img-ov">
+            <div class="acard-img-meta">
+              <span class="acard-ov-cat">${esc(s.cat||'ARTICLE')}</span>
+              <span class="acard-ov-read">${esc(s.readTime||s.read||'5 min read')}</span>
+            </div>
+            <div class="acard-title">${esc(s.title||'Untitled')}</div>
+          </div>
+        </div>` : `
         <div class="acard-meta"><span class="acard-cat">${esc(s.cat||'ARTICLE')}</span></div>
-        <div class="acard-title">${esc(s.title||'Untitled')}</div>
-        <div class="acard-brief">${esc(s.brief||'')}</div>
+        <div class="acard-title">${esc(s.title||'Untitled')}</div>`}
         ${isOwner ? `<button class="acard-insights" onclick="event.stopPropagation();location.href='/content-insights?id=${s.id}&type=article'">
           <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
           <span id="vw-${s.id}">–</span> views
           <span class="acard-insights-cta">View insights</span>
         </button>` : ''}
-        ${s.cover ? `<div class="acard-img"><img src="${s.cover}" alt="${esc(s.title||'')}" loading="lazy" onerror="this.parentElement.style.background='linear-gradient(135deg,#e0e7ff,#93c5fd)'"></div>` : ''}
         <div class="acard-foot">
           <button class="acard-like" id="lb-${s.id}" onclick="event.stopPropagation();handleLike('${s.id}')">
             <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>

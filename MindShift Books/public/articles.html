@@ -148,10 +148,14 @@ main{max-width:1100px;margin:0 auto}
 .acard-author-date{font-size:11.5px;color:var(--mute)}
 .acard-meta{margin-bottom:6px}
 .acard-cat{display:inline-flex;align-items:center;background:rgba(37,99,235,.1);color:var(--p);font-size:9.5px;font-weight:800;padding:3px 9px;border-radius:99px;letter-spacing:.3px;text-transform:uppercase}
-.acard-title{font-size:17px;font-weight:800;color:var(--txt);line-height:1.35;letter-spacing:-.3px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:6px}
-.acard-brief{font-size:13px;color:var(--sub);line-height:1.58;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.acard-img{width:100%;border-radius:14px;overflow:hidden;background:linear-gradient(135deg,#e0e7ff,#eef2ff);margin:8px 0 0}
-.acard-img img{width:100%;height:200px;object-fit:cover;display:block}
+.acard-title{font-size:17px;font-weight:800;color:#fff;line-height:1.35;letter-spacing:-.3px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:0;text-shadow:0 1px 4px rgba(0,0,0,.45)}
+.acard-brief{display:none}
+.acard-img{width:100%;border-radius:14px;overflow:hidden;background:linear-gradient(135deg,#e0e7ff,#eef2ff);margin:8px 0 0;position:relative}
+.acard-img img{width:100%;height:280px;object-fit:cover;display:block}
+.acard-img-ov{position:absolute;left:0;right:0;bottom:0;padding:14px 14px 12px;background:linear-gradient(to top,rgba(0,0,0,.85),rgba(0,0,0,.4) 60%,transparent)}
+.acard-img-meta{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.acard-ov-cat{display:inline-flex;align-items:center;background:rgba(255,255,255,.22);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);color:#fff;font-size:9.5px;font-weight:800;padding:3px 9px;border-radius:99px;letter-spacing:.3px;text-transform:uppercase}
+.acard-ov-read{font-size:11px;font-weight:600;color:rgba(255,255,255,.85)}
 .acard-foot{display:flex;align-items:center;gap:12px;margin-top:12px}
 .acard-read{font-size:11px;color:var(--mute);font-weight:600;white-space:nowrap;margin-right:2px}
 .acard-like{display:flex;align-items:center;gap:6px;background:none;border:none;cursor:pointer;padding:6px 9px;font-size:13.5px;font-weight:700;color:var(--mute);transition:color .18s;border-radius:9px;-webkit-tap-highlight-color:transparent}
@@ -591,12 +595,9 @@ main{max-width:1100px;margin:0 auto}
 .acard-av{width:26px;height:26px;border:2px solid #fff;box-shadow:0 0 0 1px #e6eaf1}
 .acard-author-name{font-size:13px;font-weight:700;color:#0f172a}
 .acard-author-dot,.acard-author-date{font-size:12px;color:#94a3b8}
-.acard-meta{margin-bottom:7px}
-.acard-cat{background:#eef2ff;color:#4338ca;font-size:10px;padding:3px 10px;letter-spacing:.5px}
-.acard-title{font-size:17.5px;line-height:1.32;letter-spacing:-.35px;margin-bottom:7px}
-.acard-brief{font-size:13.5px;line-height:1.55;color:#64748b}
+.acard-title{font-size:17.5px;line-height:1.32;letter-spacing:-.35px;margin-bottom:0}
 .acard-img{width:100%;border-radius:16px;box-shadow:0 6px 16px -8px rgba(15,23,42,.35);margin:10px 0 0}
-.acard-img img{height:200px;transition:transform .35s ease}
+.acard-img img{height:280px;transition:transform .35s ease}
 @media (hover:hover){.acard:hover .acard-img img{transform:scale(1.05)}}
 .acard-foot{margin-top:10px;gap:4px}
 .acard-like,.acard-save,.acard-repost,.acard-comment{border-radius:99px;padding:7px 10px}
@@ -604,7 +605,7 @@ main{max-width:1100px;margin:0 auto}
 .pcard-slide,.pcard-single img,.pcard-video{border-radius:16px}
 @media (min-width:720px){
   .acard{padding:22px 20px}
-  .acard-img img{height:260px}
+  .acard-img img{height:320px}
   .acard-title{font-size:19px}
 }
 @media (prefers-reduced-motion:reduce){.acard-img img{transition:none}}
@@ -1962,10 +1963,16 @@ function buildAcard(a){
           </div>
         </div>` : ''}
       </div>
-      <div class="acard-meta"><span class="acard-cat">${a.cat||a.category||'ARTICLE'}</span></div>
-      <div class="acard-title">${esc(a.title||'')}</div>
-      <div class="acard-brief">${esc(a.brief||a.excerpt||'')}</div>
-      <div class="acard-img"><img src="${a.img||a.coverImage||''}" alt="${esc(a.title||'')}" loading="lazy" onerror="this.parentElement.style.background='linear-gradient(135deg,#e0e7ff,#93c5fd)'"></div>
+      <div class="acard-img">
+        <img src="${a.img||a.coverImage||''}" alt="${esc(a.title||'')}" loading="lazy" onerror="this.parentElement.style.background='linear-gradient(135deg,#e0e7ff,#93c5fd)'">
+        <div class="acard-img-ov">
+          <div class="acard-img-meta">
+            <span class="acard-ov-cat">${esc(a.cat||a.category||'ARTICLE')}</span>
+            <span class="acard-ov-read">${esc(a.readTime||a.read||'5 min read')}</span>
+          </div>
+          <div class="acard-title">${esc(a.title||'')}</div>
+        </div>
+      </div>
       <div class="acard-foot">
         <button class="acard-like" id="lb-${a.id}" onclick="event.stopPropagation();handleLike('${a.id}')">
           <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
@@ -2704,13 +2711,15 @@ function renderGrid(){
             </div>
           </div>
         </div>
-        <div class="acard-meta">
-          <span class="acard-cat">${a.cat}</span>
-        </div>
-        <div class="acard-title">${a.title}</div>
-        <div class="acard-brief">${a.brief}</div>
         <div class="acard-img">
           <img src="${a.img}" alt="${a.title}" loading="lazy" onerror="this.parentElement.style.background='linear-gradient(135deg,#e0e7ff,#93c5fd)'">
+          <div class="acard-img-ov">
+            <div class="acard-img-meta">
+              <span class="acard-ov-cat">${a.cat}</span>
+              <span class="acard-ov-read">${a.readTime||a.read||'5 min read'}</span>
+            </div>
+            <div class="acard-title">${a.title}</div>
+          </div>
         </div>
         <div class="acard-foot">
           <button class="acard-like" id="lb-${a.id}" onclick="event.stopPropagation();handleLike('${a.id}')">
