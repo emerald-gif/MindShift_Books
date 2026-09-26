@@ -357,8 +357,8 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
 .acard-cat{display:inline-flex;align-items:center;background:rgba(37,99,235,.1);color:var(--p);font-size:9.5px;font-weight:800;padding:3px 9px;border-radius:99px;letter-spacing:.3px;text-transform:uppercase}
 .acard-title{font-size:17px;font-weight:800;color:var(--txt);line-height:1.35;letter-spacing:-.3px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:6px}
 .acard-brief{font-size:13px;color:var(--sub);line-height:1.58;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.acard-img{width:110px;height:110px;border-radius:10px;overflow:hidden;flex-shrink:0;background:linear-gradient(135deg,#e0e7ff,#eef2ff);align-self:flex-start;margin-top:2px}
-.acard-img img{width:100%;height:100%;object-fit:cover;display:block}
+.acard-img{width:100%;border-radius:14px;overflow:hidden;background:linear-gradient(135deg,#e0e7ff,#eef2ff);margin:8px 0 0}
+.acard-img img{width:100%;height:200px;object-fit:cover;display:block}
 .acard-foot{display:flex;align-items:center;gap:8px;margin-top:10px}
 .acard-like,.pcard-comment{display:flex;align-items:center;gap:4px;background:none;border:none;cursor:pointer;padding:4px 6px;font-size:12px;font-weight:700;color:var(--mute);transition:color .18s;border-radius:8px;-webkit-tap-highlight-color:transparent}
 .acard-like:hover{color:var(--red);background:#fff1f1}
@@ -366,7 +366,7 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
 .acard-like svg,.pcard-comment svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;transition:all .2s;flex-shrink:0}
 .acard-like.liked{color:var(--red)}
 .acard-like.liked svg{fill:var(--red);stroke:var(--red)}
-.acard-save{background:none;border:none;cursor:pointer;padding:4px 6px;border-radius:8px;color:var(--mute);-webkit-tap-highlight-color:transparent}
+.acard-save{background:none;border:none;cursor:pointer;padding:4px 6px;border-radius:8px;color:var(--mute);-webkit-tap-highlight-color:transparent;margin-left:auto}
 .acard-save svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2}
 .acard-save.saved{color:var(--p)}
 .acard-save.saved svg{fill:var(--p);stroke:var(--p)}
@@ -2148,6 +2148,7 @@ function renderArticles(){
           <span id="vw-${s.id}">–</span> views
           <span class="acard-insights-cta">View insights</span>
         </button>` : ''}
+        ${s.cover ? `<div class="acard-img"><img src="${s.cover}" alt="${esc(s.title||'')}" loading="lazy" onerror="this.parentElement.style.background='linear-gradient(135deg,#e0e7ff,#93c5fd)'"></div>` : ''}
         <div class="acard-foot">
           <button class="acard-like" id="lb-${s.id}" onclick="event.stopPropagation();handleLike('${s.id}')">
             <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
@@ -2158,7 +2159,6 @@ function renderArticles(){
           </button>
         </div>
       </div>
-      ${s.cover ? `<div class="acard-img"><img src="${s.cover}" alt="${esc(s.title||'')}" loading="lazy" onerror="this.parentElement.style.background='linear-gradient(135deg,#e0e7ff,#93c5fd)'"></div>` : ''}
     </div>`;
   };
   const pinLabelHtml = `<div class="pin-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg><span>Pinned</span></div>`;
