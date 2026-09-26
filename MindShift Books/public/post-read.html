@@ -726,6 +726,7 @@ let hasDownloaded = false;
 let downloadUnsub = null;
 let repostCount = 0;
 let isReposted = false;
+let _articleRendered = false; // true once the real content (not the skeleton) is on screen
 
 /* ── INIT ── */
 // Show article skeleton immediately
@@ -794,6 +795,7 @@ async function loadArticleFromFirestore(){
   const box = document.getElementById('artContent');
   if(!artId){ _artLoadState='ok'; box.innerHTML = _notFoundHtml; return; }
   _artLoadState = 'loading';
+  _articleRendered = false;
   box.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--mute)">Loading…</div>';
   {
     try{
@@ -838,17 +840,24 @@ async function loadArticleFromFirestore(){
 window.retryArticleLoad = async function(){ await reconnectFirestore(); loadArticleFromFirestore(); };
 
 // Returning to a long-idle tab / network back / back-forward cache: recover
-// automatically instead of leaving a stuck or errored page.
+// automatically instead of leaving a stuck or errored page. `_articleRendered`
+// (not just `article`) is what we check — if the fetch succeeded but the
+// content was never actually painted (e.g. tab backgrounded mid-render), the
+// old check here (`!article`) would think everything was fine and never retry.
 let _hiddenAt = 0;
 document.addEventListener('visibilitychange', ()=>{
   if(document.hidden){ _hiddenAt = Date.now(); return; }
   const away = _hiddenAt ? Date.now() - _hiddenAt : 0;
   _hiddenAt = 0;
-  if(!article && (_artLoadState==='error' || (_artLoadState==='loading' && away > 5000))) retryArticleLoad();
+  if(!_articleRendered && (_artLoadState==='error' || (_artLoadState==='loading' && away > 5000))) retryArticleLoad();
   else if(away > 5*60*1000) reconnectFirestore();
 });
-window.addEventListener('online', ()=>{ if(!article && _artLoadState==='error') retryArticleLoad(); });
-window.addEventListener('pageshow', e=>{ if(e.persisted && !article && _artLoadState!=='ok') retryArticleLoad(); });
+window.addEventListener('online', ()=>{ if(!_articleRendered && _artLoadState==='error') retryArticleLoad(); });
+// Back-forward cache restore: the whole JS/DOM state was frozen exactly as it
+// was when the tab was left. If that wasn't a fully-rendered post page,
+// don't try to patch a stale in-memory state back to life — just reload for
+// a guaranteed-fresh load, so coming back never requires a manual refresh.
+window.addEventListener('pageshow', e=>{ if(e.persisted && !_articleRendered) location.reload(); });
 
 if(!article){
   loadArticleFromFirestore();
@@ -988,16 +997,16 @@ window.closeImageViewer = function(){
 };
 
 async function renderArticle(){
-  // likeCount and downloadCount come from the onSnapshot first emission — no extra getDoc needed
-  isLiked       = await fetchUserLiked();
-  isSaved       = await fetchUserSaved();
-  isFollowing   = await fetchUserFollowing();
-  hasDownloaded = await fetchUserDownloaded();
-  repostCount   = await repost.getRepostCount(article.id);
-  isReposted    = await repost.isReposted('post', article.id);
+  // The post itself is already loaded at this point — everything below
+  // (liked/saved/following/repost state) is secondary per-user data. It used
+  // to be awaited one-by-one before the skeleton was ever replaced, so a
+  // slow or flaky connection could stack up several sequential round trips
+  // (each individually retried) before anything appeared — easily a minute
+  // or more. Now we show the real content immediately with safe defaults,
+  // then fetch the secondary state in parallel and patch it into the UI
+  // once ready.
   subLives();
   subDownloads();
-
 
   const imgs = article.images || [];
   window.currentPostImages = imgs;
@@ -1029,15 +1038,15 @@ async function renderArticle(){
           </div>
         </div>
         ${(!article.isMindshift && article.authorUid && article.authorUid !== (currentUser&&currentUser.uid)) ? `
-        <button class="follow-author-btn ${isFollowing?'following':''}" id="followAuthorBtn" onclick="doFollow()">
-          ${isFollowing?'Following':'Follow'}
+        <button class="follow-author-btn" id="followAuthorBtn" onclick="doFollow()">
+          Follow
         </button>` : ''}
       </div>
       ${article.text ? `<div class="post-text">${(window.msbLinkMentions ? msbLinkMentions(esc(article.text), article.mentions) : esc(article.text))}</div>` : ''}
       ${article.quotedFrom ? repost.buildEmbedCardHtml(article.quotedSnapshot) : ''}
       ${carouselHtml}
       <div class="action-bar">
-        <button class="act-btn act-like ${isLiked?'liked':''}" id="actLike" onclick="doLike()">
+        <button class="act-btn act-like" id="actLike" onclick="doLike()">
           <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
           <span id="actLikeTxt">${likeCount||0}</span>
         </button>
@@ -1045,14 +1054,14 @@ async function renderArticle(){
           <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
           <span id="actCommentTxt">0</span>
         </button>
-        <button class="act-btn act-repost ${isReposted?'reposted':''}" id="actRepost" onclick="doRepost()" aria-label="Repost">
+        <button class="act-btn act-repost" id="actRepost" onclick="doRepost()" aria-label="Repost">
           <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
-          <span id="actRepostTxt">${repostCount||0}</span>
+          <span id="actRepostTxt">0</span>
         </button>
         <button class="act-btn" onclick="openShare()" aria-label="Share">
           <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
         </button>
-        <button class="act-btn act-save ${isSaved?'saved':''}" id="actSave" onclick="doSave()" aria-label="Save">
+        <button class="act-btn act-save" id="actSave" onclick="doSave()" aria-label="Save">
           <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
         </button>
       </div>
@@ -1072,6 +1081,7 @@ async function renderArticle(){
       </div>`}
     </div>
   `;
+  _articleRendered = true;
 
   window.MSBAuthorLive && window.MSBAuthorLive.refresh(db, { doc, getDoc }, document.getElementById('artContent'));
   syncLikeUI();
@@ -1087,6 +1097,23 @@ async function renderArticle(){
 
   const manageBtn = document.getElementById('hdrManageBtn');
   if(manageBtn) manageBtn.style.display = (currentUser && article.authorUid === currentUser.uid) ? '' : 'none';
+
+  // Secondary per-user engagement state — fetched in parallel (each call is
+  // already individually retried/caught) and patched into the UI once ready,
+  // instead of gating the whole page behind them.
+  const [liked, saved, following, downloaded, rCount, reposted] = await Promise.all([
+    fetchUserLiked(), fetchUserSaved(), fetchUserFollowing(), fetchUserDownloaded(),
+    repost.getRepostCount(article.id), repost.isReposted('post', article.id)
+  ]);
+  isLiked = liked; isSaved = saved; isFollowing = following; hasDownloaded = downloaded;
+  repostCount = rCount; isReposted = reposted;
+  syncLikeUI();
+  syncSaveUI();
+  syncFollowUI();
+  const repostBtn = document.getElementById('actRepost');
+  if(repostBtn) repostBtn.classList.toggle('reposted', isReposted);
+  const repostTxt = document.getElementById('actRepostTxt');
+  if(repostTxt) repostTxt.textContent = repostCount||0;
 }
 
 function esc(str){
