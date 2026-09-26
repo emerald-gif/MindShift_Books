@@ -595,7 +595,7 @@ const fbApp = initializeApp({
   measurementId: "G-CHPJDQ4W08"
 });
 const auth = getAuth(fbApp);
-const db   = getFirestore(fbApp);
+const db   = getFirestore(fbApp, 'default');
 const { resilient, reconnectFirestore } = createResilient({ db, enableNetwork, disableNetwork });
 
 let currentUser = null;
