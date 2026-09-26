@@ -925,7 +925,7 @@ const fbApp = initializeApp({
   measurementId: "G-CHPJDQ4W08"
 });
 const auth = getAuth(fbApp);
-const db   = getFirestore(fbApp, 'default');
+const db   = getFirestore(fbApp);
 // Reads go through resilient(): per-attempt timeout + retry + forced reconnect.
 // Critically, a hung read can no longer pin loadFeedBatch()'s coalesced promise
 // forever (which made every watchdog retry just re-await the same dead request).

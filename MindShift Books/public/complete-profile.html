@@ -150,7 +150,7 @@ const fbApp = initializeApp({
   measurementId: "G-CHPJDQ4W08"
 });
 const auth = getAuth(fbApp);
-const db   = getFirestore(fbApp, 'default');
+const db   = getFirestore(fbApp);
 const { resilient, reconnectFirestore } = createResilient({ db, enableNetwork, disableNetwork });
 
 // Every check below reads live data — nothing here is a stored "completed
