@@ -1901,17 +1901,21 @@ function buildVideoTileHtml(p){
   return `<div class="pcard-video" onclick="event.stopPropagation();openArticle('${p.id}','post')">
     <video class="pcard-video-el" data-post-id="${p.id}" src="${p.videoUrl}" poster="${p.thumbnailUrl||''}" muted loop playsinline preload="metadata"></video>
     <button type="button" class="pcard-video-mute" onclick="event.stopPropagation();toggleFeedVideoMute('${p.id}',event)" title="Unmute">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+      ${MUTE_ICON_ON}
     </button>
     ${p.duration ? `<span class="pcard-video-dur">${fmtDuration(p.duration)}</span>` : ''}
   </div>`;
 }
+const MUTE_ICON_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>';
+const MUTE_ICON_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 010 7.07"/><path d="M19.07 4.93a10 10 0 010 14.14"/></svg>';
 window.toggleFeedVideoMute = function(id, event){
   const btn = event.currentTarget;
   const vid = btn.closest('.pcard-video').querySelector('video');
   if(!vid) return;
   vid.muted = !vid.muted;
   btn.classList.toggle('unmuted', !vid.muted);
+  btn.innerHTML = vid.muted ? MUTE_ICON_ON : MUTE_ICON_OFF;
+  btn.title = vid.muted ? 'Unmute' : 'Mute';
 };
 
 // Autoplay (muted) only while a video card is actually on screen — same
