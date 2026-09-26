@@ -115,6 +115,14 @@
     '</aside>';
 
   var SIDEBAR_CSS =
+    /* Self-contained reset: some host pages (e.g. books.html) don't ship a
+       global *{margin:0;padding:0;box-sizing:border-box} reset the way
+       articles.html/profile.html do. Without this, the browser's default
+       UA margin on <ul> (and default content-box sizing) leaks through and
+       shows up as a gap above "Home" on those pages only. Lower specificity
+       than the rules below, so it never overrides the deliberate
+       paddings/margins already set on .sb-top, .sb-group, .sb-scroll, etc. */
+    '.sidebar,.sidebar *,.sidebar *::before,.sidebar *::after{box-sizing:border-box;margin:0;padding:0}' +
     '.sidebar-overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:1999;opacity:0;pointer-events:none;transition:opacity .28s ease}' +
     '.sidebar-overlay.sb-show{opacity:1;pointer-events:all}' +
     '.sidebar{position:fixed;top:0;left:-300px;width:280px;height:100%;background:var(--card,#fff);transition:left .32s cubic-bezier(.32,0,.15,1);z-index:2000;box-shadow:2px 0 24px rgba(15,23,42,.12);color:var(--txt,#0f172a);display:flex;flex-direction:column;overflow:hidden}' +
