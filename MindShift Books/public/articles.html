@@ -165,7 +165,9 @@ main{max-width:1100px;margin:0 auto}
 .acard-like.liked svg{fill:var(--red);stroke:var(--red);animation:hpop .25s ease}
 /* ── POST CARD ── */
 .pcard-text{font-size:14.5px;color:var(--txt);line-height:1.5;white-space:pre-wrap;word-break:break-word;
-  display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden}
+  display:-webkit-box;-webkit-line-clamp:15;-webkit-box-orient:vertical;overflow:hidden}
+.pcard-seemore{display:none;margin-top:2px;font-size:13.5px;font-weight:700;color:var(--p);cursor:pointer}
+.pcard-seemore.show{display:inline-block}
 /* ── Horizontal peek carousel: images keep their natural aspect ratio, scaled to a shared height ── */
 .pcard-carousel{position:relative;margin-top:8px;max-width:100%;overflow:hidden}
 .pcard-track{display:flex;gap:4px;overflow-x:auto;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;
@@ -589,7 +591,7 @@ main{max-width:1100px;margin:0 auto}
 .fpill:active{transform:scale(.96)}
 .fpill.active{background:var(--g);border-color:transparent;color:#fff;box-shadow:0 4px 12px -3px rgba(79,70,229,.45)}
 
-.acard{padding:18px 16px;gap:16px;border-bottom:1px solid #eef2f7}
+.acard{padding:18px 16px;gap:16px;border-bottom:1px solid #cbd5e1}
 .acard:active:not(:has(button:active,.acard-author:active)){background:#f5f7ff}
 .acard-author{gap:8px;margin-bottom:9px}
 .acard-av{width:26px;height:26px;border:2px solid #fff;box-shadow:0 0 0 1px #e6eaf1}
@@ -1731,6 +1733,7 @@ async function renderFollowingTab(fresh = false){
     // uses, so posts scrolled past in Following register a view too.
     observeFeedPostCards();
     observeFeedVideos();
+    markTruncatedPostText();
 
     // "See more" banner at end
     const banner=document.createElement('div'); banner.className='see-more-banner';
@@ -2114,6 +2117,18 @@ function observeFeedPostCards(){
   document.querySelectorAll('.pcard[data-post-id]').forEach(el=>observer.observe(el));
 }
 
+// Shows a "See more" link under any post caption that's actually clipped at
+// 15 lines. Tapping it (or anywhere on the card) opens the post read screen —
+// no separate click handler needed since the card itself is already clickable.
+function markTruncatedPostText(){
+  document.querySelectorAll('.pcard-text[id^="ptxt-"]').forEach(el=>{
+    if(el.scrollHeight > el.clientHeight + 1){
+      const more = document.getElementById('ptxtmore-' + el.id.slice(5));
+      if(more) more.classList.add('show');
+    }
+  });
+}
+
 /* ── FEED VIDEO AUTOPLAY ──
    Each feed video plays (muted, so autoplay is allowed) only while it's
    actually visible — the moment it scrolls mostly out of view it's paused,
@@ -2484,7 +2499,7 @@ function buildPostCardHtml(p){
           </div>
         </div>
       </div>
-      ${p.text ? `<div class="pcard-text">${(window.msbLinkMentions ? msbLinkMentions(esc(p.text), p.mentions) : esc(p.text))}</div>` : ''}
+      ${p.text ? `<div class="pcard-text" id="ptxt-${p.id}">${(window.msbLinkMentions ? msbLinkMentions(esc(p.text), p.mentions) : esc(p.text))}</div><span class="pcard-seemore" id="ptxtmore-${p.id}">See more</span>` : ''}
       ${embed || carousel}
       <div class="acard-foot">
         <button class="acard-like" id="lb-${p.id}" onclick="event.stopPropagation();handleLike('${p.id}')">
@@ -2765,6 +2780,7 @@ function renderGrid(){
   observeFeedPostCards();
   observeFeedVideos();
   observeLoadMoreSentinel();
+  markTruncatedPostText();
   list.forEach(a=>{
     if(currentUser){
       document.querySelectorAll(`#lb-${a.id}`).forEach(btn=>btn.classList.toggle('liked', likedSet.has(a.id)));
