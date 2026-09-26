@@ -4696,6 +4696,75 @@ app.get('/api/admin/affiliates', async (req, res) => {
   }
 });
 
+// GET /api/admin/founding-creators — every user who has ever qualified for
+// the Founding Creator badge, i.e. finished the complete-profile checklist
+// (photo + cover + bio + categories, 10 follows, 1 post/article, 10 likes)
+// and so had the ₦2,000 ebook voucher + badge auto-granted by
+// claim-profile-voucher. Two cheap indexed queries instead of scanning
+// every user and recomputing the checklist live — foundingCreator.status
+// and ebookVoucher.claimed are already the persisted result of that check.
+// Almost every row will satisfy both queries (the badge is only ever
+// granted alongside the voucher), but a user is still included if they
+// only match one — e.g. a pre-badge voucher claim the migration hasn't
+// reached yet.
+app.get('/api/admin/founding-creators', async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const rows = await cachedAdminRead('founding-creators:all', 3 * 60 * 1000, async () => {
+      const [voucherSnap, fcSnap] = await Promise.all([
+        db.collection('users').where('ebookVoucher.claimed', '==', true).get(),
+        db.collection('users').where('foundingCreator.status', 'in', ['active', 'faded', 'lost']).get()
+      ]);
+      const byUid = new Map();
+      voucherSnap.docs.forEach(d => byUid.set(d.id, d));
+      fcSnap.docs.forEach(d => byUid.set(d.id, d));
+
+      const toIso = ts => ts ? (ts.toDate ? ts.toDate().toISOString() : ts) : null;
+      return Array.from(byUid.values()).map(d => {
+        const u = d.data();
+        const fc = u.foundingCreator || null;
+        const voucher = u.ebookVoucher || null;
+        // 'active' covers both a real tracked week (goal currently met) and
+        // the one-time launch grace period (pendingStart) where there's
+        // nothing to measure yet — split those two apart for the admin
+        // view since "on track, not measured yet" isn't the same claim as
+        // "met this week's target".
+        const goalStatus = !fc ? 'not_tracked'
+          : fc.status === 'active' ? (fc.pendingStart ? 'pending' : 'met')
+          : fc.status; // 'faded' | 'lost'
+        return {
+          uid: d.id,
+          name: u.name || 'Unnamed',
+          email: u.email || '',
+          username: u.username || '',
+          photo: u.photo || '',
+          profileQualified: !!(voucher && voucher.claimed), // completed the checklist that unlocks the badge + voucher
+          voucherClaimed: !!(voucher && voucher.claimed),
+          voucherUsed: !!(voucher && voucher.used),
+          voucherAmount: voucher ? voucher.amount : null,
+          goalStatus,
+          badgeEarnedAt: toIso(fc && fc.earnedAt),
+          voucherClaimedAt: toIso(voucher && voucher.claimedAt)
+        };
+      }).sort((a, b) => new Date(b.voucherClaimedAt || b.badgeEarnedAt || 0) - new Date(a.voucherClaimedAt || a.badgeEarnedAt || 0));
+    });
+
+    const summary = {
+      total: rows.length,
+      profileQualified: rows.filter(r => r.profileQualified).length,
+      goalMet: rows.filter(r => r.goalStatus === 'met').length,
+      goalNotMet: rows.filter(r => r.goalStatus === 'faded' || r.goalStatus === 'lost').length,
+      voucherClaimed: rows.filter(r => r.voucherClaimed).length,
+      voucherUsed: rows.filter(r => r.voucherUsed).length,
+      voucherUnused: rows.filter(r => r.voucherClaimed && !r.voucherUsed).length
+    };
+    return res.json({ rows, summary });
+  } catch (err) {
+    console.error('/api/admin/founding-creators error', err);
+    return res.status(500).json({ error: 'Could not load Founding Creator data' });
+  }
+});
+
 // ---------------- Admin: weekly payout queue ----------------
 
 // GET /api/admin/payouts?status=pending — the Monday payout queue for the
