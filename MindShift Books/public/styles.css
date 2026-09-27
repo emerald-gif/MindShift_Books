@@ -923,7 +923,13 @@ header {
   position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
   z-index: 9999; display: flex; flex-direction: column;
   align-items: center; gap: 10px; pointer-events: none;
-  width: auto; max-width: 90vw;
+  /* width:max-content (not the default "auto") — a fixed-position box with
+     left:50% and no `right` gets its shrink-to-fit available width
+     calculated as (viewport width - left offset), i.e. roughly HALF the
+     screen here, before the translateX(-50%) re-centers it visually. That
+     squeezed the toast text into a narrow, tall, wrapped blob instead of a
+     wide pill. max-content sizes strictly to the content instead. */
+  width: max-content; max-width: 90vw;
 }
 .toast {
   display: flex; align-items: center; gap: 10px;
