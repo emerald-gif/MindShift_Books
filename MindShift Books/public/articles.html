@@ -72,6 +72,13 @@ header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
    every page) instead of being duplicated here. */
 @media (max-width:600px){ .search-wrapper{width:100%!important;max-width:100%!important} header{padding:14px 14px 18px} }
 @media (max-width:450px){ header h1{font-size:1.15rem} .header-icon-group .icon-btn{width:36px;height:36px} }
+/* Slides the whole sticky header off-screen while scrolling down, and back
+   in the instant you scroll up — same hide/reveal pattern used on books.html,
+   so the feed isn't stuck under a header that never moves. transform (not
+   display/height) so it doesn't disturb the --hdr-h-based sticky offsets
+   the guest bar and feed tabs rely on further down the page. */
+header{transition:transform 0.28s ease;will-change:transform}
+header.msb-header-hidden{transform:translateY(-100%)}
 main{max-width:1100px;margin:0 auto}
 /* ── /SHARED HEADER ── */
 
@@ -4050,6 +4057,39 @@ setTimeout(function(){
     if(h) ro.observe(h);
     if(g) ro.observe(g);
   }
+})();
+</script>
+<script>
+// Hide the header on scroll-down, bring it back on scroll-up — same
+// treatment as books.html, so the header scrolls out of the way while
+// reading the feed instead of sitting fixed the whole time. Ignored near
+// the very top so it doesn't flicker in/out from tiny scroll jitter.
+(function () {
+  var header = document.querySelector('header');
+  if (!header) return;
+  var lastY = window.scrollY;
+  var ticking = false;
+  var HIDE_AFTER = 80; // px scrolled down before hiding kicks in at all
+
+  function onScroll() {
+    var y = window.scrollY;
+    if (y <= HIDE_AFTER) {
+      header.classList.remove('msb-header-hidden');
+    } else if (y > lastY) {
+      header.classList.add('msb-header-hidden');    // scrolling down
+    } else if (y < lastY) {
+      header.classList.remove('msb-header-hidden');  // scrolling up
+    }
+    lastY = y;
+    ticking = false;
+  }
+
+  window.addEventListener('scroll', function () {
+    if (!ticking) {
+      requestAnimationFrame(onScroll);
+      ticking = true;
+    }
+  }, { passive: true });
 })();
 </script>
 </body>
