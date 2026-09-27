@@ -1215,6 +1215,33 @@ function renderCartOverlay() {
 // Shows the recipient chip + Proceed to Payment for signed-in users, or the
 // sign-in/sign-up gate for signed-out users. Books are always sent to the
 // signed-in account's own email — nothing to type, nothing to get wrong.
+//
+// The avatar shown here used to always be a plain initial-letter circle —
+// there was no client-side access to the actual profile photo, since it
+// lives in the user's Firestore doc (`photo`), not on the Firebase Auth
+// user object (profile.html only ever calls updateProfile() for
+// displayName, never photoURL, so auth.currentUser.photoURL is never set).
+// Now: the letter shows immediately (so the chip never looks broken/empty),
+// then the real photo is fetched from /api/account and swapped in once it
+// arrives, if the user has one. Cached per uid so reopening the cart later
+// in the same session doesn't refetch every time.
+let _cachedRecipientPhoto = { uid: null, photo: undefined }; // undefined = not fetched yet; null = fetched, no photo
+async function fetchRecipientPhoto(uid) {
+  if (_cachedRecipientPhoto.uid === uid && _cachedRecipientPhoto.photo !== undefined) {
+    return _cachedRecipientPhoto.photo;
+  }
+  try {
+    const token = await window.MSBAuth.getIdToken();
+    const res = await fetch('/api/account', { headers: { Authorization: `Bearer ${token}` } });
+    const data = res.ok ? await res.json() : null;
+    const photo = (data && data.photo) || null;
+    _cachedRecipientPhoto = { uid, photo };
+    return photo;
+  } catch (e) {
+    return null; // stay on the letter avatar — never block checkout over this
+  }
+}
+
 function updateCartCheckoutGate() {
   const signedInBlock = document.getElementById('cartCheckoutSignedIn');
   const signedOutBlock = document.getElementById('cartCheckoutSignedOut');
@@ -1231,7 +1258,18 @@ function updateCartCheckoutGate() {
     const avatarEl = document.getElementById('cartRecipientAvatar');
     if (nameEl) nameEl.textContent = name;
     if (emailEl) emailEl.textContent = email;
-    if (avatarEl) avatarEl.textContent = (name.trim()[0] || '?').toUpperCase();
+    if (avatarEl) {
+      avatarEl.style.background = ''; // reset in case a previous account's photo left this cleared
+      avatarEl.textContent = (name.trim()[0] || '?').toUpperCase(); // instant fallback
+      const requestUid = user.uid;
+      fetchRecipientPhoto(requestUid).then(photo => {
+        // Bail if the cart's been reopened/switched accounts since this fired
+        if (!photo || !document.getElementById('cartRecipientAvatar') || (window.MSBAuth.getUser() || {}).uid !== requestUid) return;
+        avatarEl.textContent = '';
+        avatarEl.style.background = 'none';
+        avatarEl.innerHTML = `<img src="${escapeHtml(photo)}" alt="" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+      });
+    }
   } else {
     signedInBlock.style.display = 'none';
     signedOutBlock.style.display = '';

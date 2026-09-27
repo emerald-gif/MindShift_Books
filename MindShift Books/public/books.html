@@ -53,6 +53,15 @@
     main { padding-top: 200px; }
     @media (max-width: 600px) { main { padding-top: 186px; } }
 
+    /* Slides the whole fixed header off-screen while scrolling down, and
+       back in the instant you scroll up even slightly — same pattern as
+       Twitter/Instagram's mobile header. transform (not display/height)
+       so it doesn't trigger the ResizeObserver that keeps main's
+       padding-top in sync further down the page, and doesn't reflow
+       anything — it just slides over content that's already there. */
+    header { transition: transform 0.28s ease; will-change: transform; }
+    header.msb-header-hidden { transform: translateY(-100%); }
+
     /* ---- Category pill bar ---- */
     .msb-cat-bar {
       display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 4px;
@@ -727,6 +736,39 @@ if ('ResizeObserver' in window) {
 }
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(adjustMainPadding);
 adjustMainPadding();
+
+// Hide the header on scroll-down, bring it back on scroll-up — gives the
+// book grid more room while browsing, without losing quick access back to
+// search/categories (just scroll up a bit). Ignored near the very top so
+// the header doesn't flicker in/out from tiny scroll jitter on page load.
+(function () {
+  const header = document.querySelector('header');
+  if (!header) return;
+  let lastY = window.scrollY;
+  let ticking = false;
+  const HIDE_AFTER = 80; // px scrolled down before hiding kicks in at all
+
+  function onScroll() {
+    const y = window.scrollY;
+    if (y <= HIDE_AFTER) {
+      header.classList.remove('msb-header-hidden');
+    } else if (y > lastY) {
+      header.classList.add('msb-header-hidden');    // scrolling down
+    } else if (y < lastY) {
+      header.classList.remove('msb-header-hidden');  // scrolling up
+    }
+    lastY = y;
+    ticking = false;
+  }
+
+  window.addEventListener('scroll', () => {
+    if (!ticking) {
+      requestAnimationFrame(onScroll);
+      ticking = true;
+    }
+  }, { passive: true });
+})();
+
 // Dismiss the voucher banner for this browser session (voucher still applies at checkout)
 (function () {
   const btn = document.getElementById('voucherBannerClose');
