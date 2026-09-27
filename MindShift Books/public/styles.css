@@ -34,16 +34,16 @@ header h1 img{flex-shrink:0;}
 .suggestions .meta{margin-left:auto;font-size:0.8rem;color:#6b7280}
 .suggestions .item:hover{background:#f1f5f9}
 
-/* Sidebar */
-.sidebar{position:fixed;top:0;left:-300px;width:280px;height:100%;background:#111827;padding-top:84px;padding-bottom:90px;transition:left 0.32s ease;z-index:2000;border-right:1px solid rgba(255,255,255,0.04);color:#fff;overflow-y:auto}
-.sidebar .logo-row{display:flex;align-items:center;gap:12px;padding:18px 20px;position:absolute;top:16px;left:12px}
-.sidebar img{width:36px;height:36px;border-radius:6px}
-.sidebar ul{list-style:none;margin-top:8px}
-.sidebar li{padding:16px 20px;font-weight:600;border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer}
-.sidebar-close-btn{position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.06);color:#fff;font-size:1.15rem;font-weight:800;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:1}
-.sidebar-close-btn:active{background:rgba(255,255,255,0.14)}
-.sidebar li.sidebar-divider{padding:0;margin:8px 0;height:1px;border-bottom:none;background:rgba(255,255,255,0.08);cursor:default}
-.sidebar li.sidebar-logout{color:#f87171}
+/* Sidebar: legacy pre-shared-component rules removed — the real sidebar
+   markup/CSS is now owned entirely by /sidebar-nav.js (injected once, same
+   on every page). The old .sidebar/.logo-row/.sidebar-close-btn rules that
+   used to live here (dark navy theme, position:absolute logo row and close
+   button) were dead weight this page never uses for its own markup, but
+   their position:absolute leaked through onto sidebar-nav.js's real
+   elements (same selectors, and it never re-declares `position`), pulling
+   the logo and close button out of the layout and collapsing the header
+   row — see the "clumped/overlapping sidebar" screenshots. Don't
+   re-add sidebar rules here; edit /sidebar-nav.js instead. */
 
 /* Product grid */
 .product-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
