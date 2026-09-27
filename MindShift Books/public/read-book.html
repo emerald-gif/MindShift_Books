@@ -12,37 +12,101 @@
   --txt:#0f172a;--sub:#6b7280;--mute:#9ca3af;
   --bg:#f1f0f7;--card:#fff;--border:#e5e7eb;--radius:16px;
 }
-body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;transition:background .3s ease}
+body.theme-sepia{background:#f4ecd8}
+body.theme-dark{background:#111318}
 
-/* ── HEADER (matches content-insights.html's back-button header) ── */
+/* ── HEADER (matches content-insights.html's back-button header) ──
+   Slides up out of view for immersive reading — see .chrome-hidden below —
+   same slide pattern used for the site header elsewhere. */
 .hdr{position:sticky;top:0;z-index:100;background:rgba(248,247,255,.95);backdrop-filter:blur(12px);
   border-bottom:1px solid var(--border);padding:0 16px;height:56px;
-  display:flex;align-items:center;justify-content:space-between;gap:8px}
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  transition:transform .28s ease}
 .btn-back,.hdr-open{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--border);
   background:var(--card);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt);flex-shrink:0;text-decoration:none}
 .btn-back svg,.hdr-open svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
 .hdr-open svg{width:16px;height:16px;stroke-width:2}
 .hdr-title{font-size:14.5px;font-weight:800;color:var(--txt);flex:1;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 4px}
 
-.progress-bar-wrap{height:3px;background:var(--border);position:sticky;top:56px;z-index:99}
+.progress-bar-wrap{height:3px;background:var(--border);position:sticky;top:56px;z-index:99;transition:transform .28s ease}
 .progress-bar-fill{height:100%;width:0%;background:var(--g);transition:width .25s}
 
-/* ── PDF VIEWER (technique matches escape-preview.html) ── */
-.pdf-viewer{max-width:700px;margin:0 auto;padding:20px 14px 40px}
+/* Both chrome pieces slide off screen together when reading is toggled
+   into immersive mode. transform (not display) so scroll position and the
+   sticky offsets underneath are undisturbed. */
+body.chrome-hidden .hdr{transform:translateY(-100%)}
+body.chrome-hidden .progress-bar-wrap{transform:translateY(-56px)}
+body.chrome-hidden .reader-bar{transform:translateY(100%)}
+
+/* ── PDF VIEWER (technique matches escape-preview.html) ──
+   The whole viewer (not individual canvases) gets one CSS filter for the
+   day/sepia/dark reading themes, so a rendered page never needs to be
+   redrawn to change how it looks — see applyReaderStyle() below. */
+.pdf-viewer{max-width:700px;margin:0 auto;padding:20px 14px 100px;filter:brightness(1);transition:filter .3s ease}
 .page-wrap{margin-bottom:16px;border-radius:12px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.1);background:#fff;position:relative}
 .page-wrap canvas{display:block;width:100%;height:auto}
-/* Overlay to prevent long-press save on mobile */
-.page-wrap::after{content:'';position:absolute;inset:0;z-index:2;cursor:default}
+/* Overlay to prevent long-press save on mobile — also doubles as the tap
+   target for toggling immersive mode (tapping a page, same as Kobo/Kindle) */
+.page-wrap::after{content:'';position:absolute;inset:0;z-index:2;cursor:pointer}
 
 .loader-wrap{display:flex;flex-direction:column;align-items:center;gap:14px;padding:80px 20px;text-align:center}
 .spinner{width:40px;height:40px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--p);animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .loader-wrap p{color:var(--sub);font-size:.9rem}
 
-.page-pill{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,.88);
+.page-pill{position:fixed;bottom:78px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,.88);
   backdrop-filter:blur(8px);color:#fff;font-size:.8rem;font-weight:600;padding:7px 16px;border-radius:20px;
-  z-index:50;pointer-events:none;opacity:0;transition:opacity .3s;white-space:nowrap}
+  z-index:50;pointer-events:none;opacity:0;transition:opacity .3s,bottom .28s ease;white-space:nowrap}
 .page-pill.visible{opacity:1}
+body.chrome-hidden .page-pill{bottom:20px}
+
+/* ── Kobo-style bottom reader bar: scrub slider + page count + bookmark +
+   "Aa" settings. Fixed at the bottom, slides away with the rest of the
+   chrome in immersive mode. ── */
+.reader-bar{position:fixed;left:0;right:0;bottom:0;z-index:100;
+  background:rgba(248,247,255,.97);backdrop-filter:blur(12px);
+  border-top:1px solid var(--border);padding:10px 16px calc(10px + env(safe-area-inset-bottom));
+  display:flex;flex-direction:column;gap:6px;transition:transform .28s ease}
+.reader-bar-row{display:flex;align-items:center;gap:10px}
+.reader-bar-row input[type=range]{flex:1;accent-color:var(--p);height:20px}
+.reader-page-label{font-size:12px;font-weight:700;color:var(--sub);flex-shrink:0;min-width:52px;text-align:right}
+.reader-icon-btn{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--border);
+  background:var(--card);display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;color:var(--txt)}
+.reader-icon-btn svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.reader-icon-btn.active{background:var(--g);border-color:transparent;color:#fff}
+.reader-icon-btn.active svg{fill:#fff}
+
+/* ── Settings / bookmarks sheet — same slide-up-sheet pattern as the rest
+   of the site's bottom sheets/modals. ── */
+.reader-sheet-scrim{position:fixed;inset:0;background:rgba(15,23,42,.4);z-index:199;opacity:0;pointer-events:none;transition:opacity .25s ease}
+.reader-sheet-scrim.open{opacity:1;pointer-events:all}
+.reader-sheet{position:fixed;left:0;right:0;bottom:0;z-index:200;background:var(--card);
+  border-radius:20px 20px 0 0;padding:10px 20px calc(20px + env(safe-area-inset-bottom));
+  transform:translateY(100%);transition:transform .3s cubic-bezier(.32,0,.15,1);
+  box-shadow:0 -12px 40px rgba(0,0,0,.16);max-height:70vh;overflow-y:auto}
+.reader-sheet.open{transform:translateY(0)}
+.reader-sheet-handle{width:36px;height:4px;border-radius:99px;background:var(--border);margin:0 auto 14px}
+.reader-sheet h3{font-size:15px;font-weight:800;margin-bottom:14px}
+.theme-swatches{display:flex;gap:12px;margin-bottom:20px}
+.theme-swatch{flex:1;border-radius:12px;border:2px solid var(--border);padding:14px 8px;display:flex;
+  flex-direction:column;align-items:center;gap:8px;cursor:pointer;background:none}
+.theme-swatch.active{border-color:var(--p)}
+.theme-swatch-dot{width:28px;height:28px;border-radius:50%;border:1px solid rgba(0,0,0,.08)}
+.theme-swatch-dot.light{background:#fff}
+.theme-swatch-dot.sepia{background:#f4ecd8}
+.theme-swatch-dot.dark{background:#1a1a1f}
+.theme-swatch span{font-size:12px;font-weight:700;color:var(--sub)}
+.brightness-row{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.brightness-row svg{width:18px;height:18px;stroke:var(--sub);fill:none;stroke-width:2;flex-shrink:0}
+.brightness-row input[type=range]{flex:1;accent-color:var(--p)}
+
+.bookmark-empty{text-align:center;padding:28px 10px;color:var(--mute);font-size:13px}
+.bookmark-chip{display:flex;align-items:center;justify-content:space-between;padding:12px 4px;
+  border-bottom:1px solid var(--border);cursor:pointer}
+.bookmark-chip:last-child{border-bottom:none}
+.bookmark-chip span{font-size:13.5px;font-weight:700}
+.bookmark-chip svg{width:15px;height:15px;stroke:var(--mute);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 
 .dl-empty{text-align:center;padding:70px 24px}
 .dl-empty svg{width:40px;height:40px;margin:0 auto 12px;color:#d1d5db;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
@@ -73,6 +137,47 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 
 <div class="page-pill" id="pagePill">Page 1</div>
 
+<!-- Kobo-style bottom bar: scrub slider + bookmark + "Aa" settings -->
+<div class="reader-bar" id="readerBar" style="display:none">
+  <div class="reader-bar-row">
+    <input type="range" id="pageSlider" min="1" max="1" value="1" step="1" aria-label="Jump to page">
+    <span class="reader-page-label" id="readerPageLabel">1 / 1</span>
+  </div>
+  <div class="reader-bar-row">
+    <button class="reader-icon-btn" id="bookmarkBtn" aria-label="Bookmark this page">
+      <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+    </button>
+    <button class="reader-icon-btn" id="bookmarkListBtn" aria-label="View bookmarks">
+      <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+    </button>
+    <span style="flex:1"></span>
+    <button class="reader-icon-btn" id="readerSettingsBtn" aria-label="Reading settings" style="font-size:13px;font-weight:800;border-radius:10px;width:auto;padding:0 12px">Aa</button>
+  </div>
+</div>
+
+<!-- Settings sheet: Light/Sepia/Dark theme + brightness -->
+<div class="reader-sheet-scrim" id="sheetScrim"></div>
+<div class="reader-sheet" id="settingsSheet">
+  <div class="reader-sheet-handle"></div>
+  <h3>Reading settings</h3>
+  <div class="theme-swatches">
+    <button class="theme-swatch" data-theme="light"><span class="theme-swatch-dot light"></span><span>Light</span></button>
+    <button class="theme-swatch" data-theme="sepia"><span class="theme-swatch-dot sepia"></span><span>Sepia</span></button>
+    <button class="theme-swatch" data-theme="dark"><span class="theme-swatch-dot dark"></span><span>Dark</span></button>
+  </div>
+  <div class="brightness-row">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.2" y1="4.2" x2="5.6" y2="5.6"/><line x1="18.4" y1="18.4" x2="19.8" y2="19.8"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.2" y1="19.8" x2="5.6" y2="18.4"/><line x1="18.4" y1="5.6" x2="19.8" y2="4.2"/></svg>
+    <input type="range" id="brightnessSlider" min="60" max="140" value="100" step="5" aria-label="Brightness">
+  </div>
+</div>
+
+<!-- Bookmarks sheet -->
+<div class="reader-sheet" id="bookmarksSheet">
+  <div class="reader-sheet-handle"></div>
+  <h3>Bookmarks</h3>
+  <div id="bookmarksList"></div>
+</div>
+
 <div id="sidebar-slot"></div>
 <script src="/sidebar-nav.js?v=2"></script>
 
@@ -98,6 +203,22 @@ const TITLE   = params.get('title') || 'Your book';
 document.getElementById('hdrTitle').textContent = TITLE;
 document.title = TITLE + ' · MindShift Books';
 document.getElementById('hdrDownload').href = PDF_URL || '#';
+
+// ── Reader preferences (theme + brightness are global, same as Kobo's
+// reading settings; reading position + bookmarks are per-book) ──
+const THEME_KEY      = 'msbReaderTheme';
+const BRIGHTNESS_KEY = 'msbReaderBrightness';
+const progressKey  = PDF_URL ? 'msbReaderProgress:'  + PDF_URL : null;
+const bookmarksKey = PDF_URL ? 'msbReaderBookmarks:' + PDF_URL : null;
+
+function getBookmarks(){
+  if (!bookmarksKey) return [];
+  try { return JSON.parse(localStorage.getItem(bookmarksKey) || '[]'); } catch { return []; }
+}
+function setBookmarks(list){
+  if (!bookmarksKey) return;
+  localStorage.setItem(bookmarksKey, JSON.stringify(list));
+}
 
 onAuthStateChanged(auth, user => {
   if (!user) { window.location.href = '/login?returnTo=' + encodeURIComponent(location.pathname + location.search); return; }
@@ -135,6 +256,98 @@ function showLoadError(){
     </div>`;
 }
 
+// ── Reading theme + brightness — applied as one CSS filter on the whole
+// viewer, so already-rendered canvases restyle instantly with no redraw.
+// Sepia/dark are the classic image-filter trick reader apps use on
+// fixed-layout/scanned pages: invert+hue-rotate turns a white page dark
+// while keeping colours roughly right, rather than true re-themed text. ──
+function applyReaderStyle(){
+  const theme = localStorage.getItem(THEME_KEY) || 'light';
+  const brightness = parseInt(localStorage.getItem(BRIGHTNESS_KEY) || '100', 10) / 100;
+  const viewer = document.getElementById('pdfViewer');
+  let filter = `brightness(${brightness})`;
+  if (theme === 'sepia') filter = `sepia(.35) saturate(1.15) ${filter}`;
+  if (theme === 'dark')  filter = `invert(.9) hue-rotate(180deg) contrast(.92) ${filter}`;
+  viewer.style.filter = filter;
+  document.body.classList.remove('theme-sepia','theme-dark');
+  if (theme === 'sepia') document.body.classList.add('theme-sepia');
+  if (theme === 'dark')  document.body.classList.add('theme-dark');
+  document.querySelectorAll('.theme-swatch').forEach(el => el.classList.toggle('active', el.dataset.theme === theme));
+  document.getElementById('brightnessSlider').value = brightness * 100;
+}
+
+document.querySelectorAll('.theme-swatch').forEach(btn => {
+  btn.addEventListener('click', () => {
+    localStorage.setItem(THEME_KEY, btn.dataset.theme);
+    applyReaderStyle();
+  });
+});
+document.getElementById('brightnessSlider').addEventListener('input', e => {
+  localStorage.setItem(BRIGHTNESS_KEY, e.target.value);
+  applyReaderStyle();
+});
+applyReaderStyle();
+
+// ── Sheets (settings + bookmarks) — only one open at a time, same scrim ──
+const scrim = document.getElementById('sheetScrim');
+const settingsSheet  = document.getElementById('settingsSheet');
+const bookmarksSheet = document.getElementById('bookmarksSheet');
+
+function openSheet(sheet){
+  [settingsSheet, bookmarksSheet].forEach(s => s.classList.remove('open'));
+  sheet.classList.add('open');
+  scrim.classList.add('open');
+}
+function closeSheets(){
+  [settingsSheet, bookmarksSheet].forEach(s => s.classList.remove('open'));
+  scrim.classList.remove('open');
+}
+scrim.addEventListener('click', closeSheets);
+document.getElementById('readerSettingsBtn').addEventListener('click', () => openSheet(settingsSheet));
+document.getElementById('bookmarkListBtn').addEventListener('click', () => { renderBookmarksList(); openSheet(bookmarksSheet); });
+
+function renderBookmarksList(){
+  const list = getBookmarks().sort((a,b) => a - b);
+  const el = document.getElementById('bookmarksList');
+  if (!list.length){
+    el.innerHTML = `<div class="bookmark-empty">No bookmarks yet — tap the ribbon icon while reading to bookmark a page.</div>`;
+    return;
+  }
+  el.innerHTML = list.map(p => `
+    <div class="bookmark-chip" data-page="${p}">
+      <span>Page ${p}</span>
+      <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 18l6-6-6-6"/></svg>
+    </div>`).join('');
+  el.querySelectorAll('.bookmark-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      jumpToPage(parseInt(chip.dataset.page, 10));
+      closeSheets();
+    });
+  });
+}
+
+// ── Immersive mode: tap a page to hide/show header, progress bar and the
+// bottom reader bar — same as tapping the middle of a page in Kobo/Kindle.
+document.getElementById('pdfViewer').addEventListener('click', e => {
+  if (e.target.closest('.page-wrap')) document.body.classList.toggle('chrome-hidden');
+});
+
+let pages = 0;
+let currentPage = 1;
+let jumpToPage; // assigned inside renderPDF, used by bookmark-jump above
+
+function updateBookmarkBtnState(){
+  const btn = document.getElementById('bookmarkBtn');
+  btn.classList.toggle('active', getBookmarks().includes(currentPage));
+}
+document.getElementById('bookmarkBtn').addEventListener('click', () => {
+  const list = getBookmarks();
+  const i = list.indexOf(currentPage);
+  if (i === -1) list.push(currentPage); else list.splice(i, 1);
+  setBookmarks(list);
+  updateBookmarkBtnState();
+});
+
 async function renderPDF(){
   window.pdfjsLib.GlobalWorkerOptions.workerSrc =
     'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -143,6 +356,9 @@ async function renderPDF(){
   const loader = document.getElementById('loaderWrap');
   const fill   = document.getElementById('progressFill');
   const pill   = document.getElementById('pagePill');
+  const bar    = document.getElementById('readerBar');
+  const slider = document.getElementById('pageSlider');
+  const pageLabel = document.getElementById('readerPageLabel');
   let pillTimer = null;
 
   function showPill(text){
@@ -160,9 +376,12 @@ async function renderPDF(){
     return;
   }
 
-  const pages = pdf.numPages;
+  pages = pdf.numPages;
   loader.remove();
   fill.style.width = '0%';
+  bar.style.display = 'flex';
+  slider.max = pages;
+  pageLabel.textContent = `1 / ${pages}`;
 
   const canvases = [];
   // Scale is lower than the marketing preview pages use (2.2) — those are
@@ -197,6 +416,23 @@ async function renderPDF(){
     }
   }
 
+  // Jump to any page: force-renders the target first (if it hasn't been
+  // lazy-rendered yet) so scrubbing the slider never lands on a blank page.
+  jumpToPage = async function(n){
+    n = Math.max(1, Math.min(pages, n));
+    const target = canvases[n - 1];
+    if (!target.canvas.dataset.rendered){
+      target.canvas.dataset.rendered = '1';
+      await target.page.render({ canvasContext: target.canvas.getContext('2d'), viewport: target.viewport }).promise;
+    }
+    target.canvas.closest('.page-wrap').scrollIntoView({ behavior:'smooth', block:'start' });
+  };
+
+  slider.addEventListener('input', e => {
+    pageLabel.textContent = `${e.target.value} / ${pages}`;
+  });
+  slider.addEventListener('change', e => jumpToPage(parseInt(e.target.value, 10)));
+
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (!entry.isIntersecting) return;
@@ -216,12 +452,24 @@ async function renderPDF(){
     entries.forEach(entry => {
       if (entry.isIntersecting){
         const p = parseInt(entry.target.dataset.page);
+        currentPage = p;
         fill.style.width = Math.round((p / pages) * 100) + '%';
         showPill(`Page ${p} of ${pages}`);
+        slider.value = p;
+        pageLabel.textContent = `${p} / ${pages}`;
+        updateBookmarkBtnState();
+        if (progressKey) localStorage.setItem(progressKey, String(p));
       }
     });
   }, { threshold: 0.3 });
   viewer.querySelectorAll('.page-wrap').forEach(w => pageObserver.observe(w));
+
+  // Resume where you left off — layout (canvas width/height) is already
+  // set for every page at this point even though most pixels haven't been
+  // drawn yet, so jumping straight there is safe.
+  const savedPage = progressKey ? parseInt(localStorage.getItem(progressKey) || '0', 10) : 0;
+  if (savedPage > 1 && savedPage <= pages) await jumpToPage(savedPage);
+  updateBookmarkBtnState();
 }
 </script>
 </body>
