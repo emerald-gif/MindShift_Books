@@ -8,6 +8,12 @@
 <title>Insights · MindShift Books</title>
 <meta name="description" content="Get insights into your content, audience, reach, engagement, and profile performance on MindShift Books."/>
 <meta name="robots" content="noindex, nofollow"/>
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin/>
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin/>
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js"/>
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js"/>
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js"/>
+<link rel="modulepreload" href="/resilient.js"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -221,7 +227,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;color:var(--txt);min-height:100
 </div>
 
 <div id="sidebar-slot"></div>
-<script src="/sidebar-nav.js"></script>
+<script defer src="/sidebar-nav.js"></script>
 <script>
   function toggleSidebar(){
     const sidebar = document.getElementById('sidebar');
@@ -1081,6 +1087,6 @@ function nTimeAgo(ts){
   return date.toLocaleDateString('en-US',{month:'short',day:'numeric'});
 }
 </script>
-<script src="/create-picker.js"></script>
+<script defer src="/create-picker.js"></script>
 </body>
 </html>
