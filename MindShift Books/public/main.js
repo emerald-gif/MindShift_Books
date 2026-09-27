@@ -253,13 +253,23 @@ function showToast(msg, type = 'info', duration = 4000) {
     container.id = 'toastContainer';
     document.body.appendChild(container);
   }
-  const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+  // Clean stroke icons (matching the SVG icon style used across the rest of
+  // the site) inside a small gradient circle badge, instead of emoji inside
+  // a flat white card — see the CSS comment above .toast for why this changed.
+  const icons = {
+    success: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+    error:   '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+    warning: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+    info:    '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>'
+  };
   const toast = document.createElement('div');
   toast.className = `toast ${type}`;
   toast.innerHTML = `
-    <span class="toast-icon">${icons[type] || 'ℹ️'}</span>
+    <span class="toast-icon">${icons[type] || icons.info}</span>
     <span class="toast-msg">${msg}</span>
-    <button class="toast-close" onclick="this.closest('.toast').remove()">✕</button>`;
+    <button class="toast-close" onclick="this.closest('.toast').remove()" aria-label="Dismiss">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>`;
   container.appendChild(toast);
   setTimeout(() => {
     toast.classList.add('hiding');
