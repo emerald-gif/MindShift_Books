@@ -10,6 +10,12 @@
   
   <link rel="shortcut icon" href="MINDSHIFT.jpg" type="image/jpg">
 
+<!-- Cold visits pay for gstatic's DNS/TLS handshake right when the parser
+     hits the Firebase script tags at the bottom of the page — starting it
+     now, while the rest of the HTML/CSS is still loading, means that
+     handshake is already done by the time we get there. -->
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin/>
+
   <!-- Fonts & icons -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
@@ -732,12 +738,24 @@ adjustMainPadding();
 })();
 </script>
 
-<!-- Firebase + EmailJS + Main script -->
+<!-- Firebase + Main script.
+     Was: app-compat, firestore-compat, auth-compat, emailjs, then main.js —
+     four full network+parse+exec round trips of classic (non-deferred)
+     scripts had to finish, one after another, before main.js even started —
+     and therefore before fetchProducts() fired and the real book cards
+     could replace the skeleton above. Two of those four were dead weight:
+     firestore-compat's `db` was never actually queried anywhere (products
+     come from /api/products, not a client-side Firestore read), and emailjs
+     is never called anywhere on the site (the current contact flow is just
+     a toast with an email address). Both removed outright.
+     main.js only needs firebase.initializeApp (from app-compat) to run —
+     it gets auth tokens later, lazily, through window.MSBAuth — so it's
+     moved right after app-compat instead of waiting behind auth-compat too.
+     auth.js defensively calls firebase.initializeApp itself if needed, so
+     this ordering doesn't depend on main.js running first either. -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://cdn.emailjs.com/sdk/3.2/email.min.js"></script>
 <script src="/main.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="/auth.js"></script>
 
 <div id="toastContainer"></div>

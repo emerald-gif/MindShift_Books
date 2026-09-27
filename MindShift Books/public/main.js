@@ -53,7 +53,12 @@ const firebaseConfig = {
   measurementId: "G-CHPJDQ4W08"
 };
 firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+// firebase.firestore() used to be initialized here too, but nothing in this
+// file (or auth.js) ever queries it — the bookstore gets its data from
+// /api/products, not a client-side Firestore read. Removed along with the
+// firestore-compat.js script tag in books.html/all-books.html: it was a
+// full extra SDK download+parse+exec sitting in front of fetchProducts()
+// for zero benefit.
 
 // Runtime config
 let PAYSTACK_PUBLIC_KEY = null;

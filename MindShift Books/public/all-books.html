@@ -10,6 +10,8 @@
   <meta name="description" content="Browse every MindShift Books title — psychology, money, and personal-growth eBooks, delivered instantly by email." />
   <link rel="shortcut icon" href="MINDSHIFT.jpg" type="image/jpg">
 
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin/>
+
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
   <link rel="canonical" href="https://mindshiftbooks.shop/books/all" />
@@ -413,12 +415,15 @@
 
 <div id="toastContainer"></div>
 
-<!-- Firebase + Main script (shared cart/products/auth logic) -->
+<!-- Firebase + Main script (shared cart/products/auth logic).
+     Same reordering as books.html: firestore-compat and emailjs were dead
+     weight (nothing on the site ever calls either), and main.js only needs
+     app-compat to run — moving it ahead of auth-compat gets fetchProducts()
+     firing after one script load instead of four. See main.js/books.html
+     for the full explanation. -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://cdn.emailjs.com/sdk/3.2/email.min.js"></script>
 <script src="/main.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="/auth.js"></script>
 
 </body>
