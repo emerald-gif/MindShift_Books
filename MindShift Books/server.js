@@ -2639,6 +2639,7 @@ app.get('/api/account', requireUser, async (req, res) => {
     return res.json({
       email: d.email || req.userEmail,
       name: d.name || req.userName || null,
+      photo: d.photo || null,
       createdAt: d.createdAt ? (d.createdAt.toDate ? d.createdAt.toDate().toISOString() : d.createdAt) : null,
       referredByName: d.referredByName || null,
       // Missing = ON (everyone was already getting the digest before this setting existed)
