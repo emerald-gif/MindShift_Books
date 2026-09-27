@@ -8,17 +8,6 @@
 <title>Profile - MindShift Books</title>
 <meta name="description" content="View and edit your MindShift Books profile."/>
 <meta name="robots" content="noindex, nofollow"/>
-<!-- Cold visits pay for gstatic's DNS/TLS handshake + three separate SDK
-     module downloads one after another. These hints let the browser start
-     all of it in parallel with parsing, instead of only discovering these
-     URLs once it reaches the inline module script far down the page. -->
-<link rel="preconnect" href="https://www.gstatic.com" crossorigin/>
-<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin/>
-<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js"/>
-<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js"/>
-<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js"/>
-<link rel="modulepreload" href="/notifications.js"/>
-<link rel="modulepreload" href="/repost.js"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -568,7 +557,7 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
 .pin-wrap .acard{padding-top:12px}
 
 </style>
-<script defer src="/article-categories.js"></script>
+<script src="/article-categories.js"></script>
 </head>
 <body>
 
@@ -588,8 +577,8 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
 </div>
 
 <div id="sidebar-slot"></div>
-<script defer src="/sidebar-nav.js"></script>
-<script defer src="/share-image.js"></script>
+<script src="/sidebar-nav.js"></script>
+<script src="/share-image.js"></script>
 <script>
   function toggleSidebar(){
     const sidebar = document.getElementById('sidebar');
@@ -951,7 +940,7 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
-<script defer src="/mentions.js"></script>
+<script src="/mentions.js"></script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged, updateProfile } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
@@ -3199,8 +3188,8 @@ window.showToast = function(msg){
 </script>
 
 <!-- Upload modal: shared markup/CSS/logic now lives in image-compress.js + uploader.js -->
-<script defer src="/image-compress.js"></script>
-<script defer src="/uploader.js"></script>
+<script src="/image-compress.js"></script>
+<script src="/uploader.js"></script>
 
 
 <!-- Profile-setup celebration — shown once, the moment all 4 checklist
@@ -3244,17 +3233,11 @@ document.getElementById('fbDrawerOverlay')?.addEventListener('click', (e) => {
 });
 </script>
 
-<!-- Shared MindShift account nav (renders the acct-nav-slot in the header).
-     firestore-compat removed — nothing on this page (or auth.js/create-picker.js)
-     ever queries it; the page's own module above uses the modern v10 SDK for
-     all its Firestore reads. `defer` added to every classic script on this
-     page (including these) so their downloads run in parallel with parsing
-     instead of blocking it — the deferred inline module further up only
-     starts once parsing finishes, so every blocking script anywhere in the
-     document was adding straight to its startup delay. -->
-<script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script defer src="/auth.js"></script>
-<script defer src="/create-picker.js"></script>
+<!-- Shared MindShift account nav (renders the acct-nav-slot in the header) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="/auth.js"></script>
+<script src="/create-picker.js"></script>
 </body>
 </html>
