@@ -179,9 +179,21 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
+// Displays a naira amount in the visitor's chosen currency (₦, or ≈ $ when
+// they're viewing in dollars). Display only — checkout always charges in NGN.
+// currency.js loads before this file; the fallback keeps pages working without it.
+// opts: { exact: true } converts to the cent (for vouchers); { plain: true } drops the leading "≈ ".
+function money(ngn, opts) {
+  const n = Number(ngn) || 0;
+  const usd = window.MSBCurrency && window.MSBCurrency.get() === 'USD';
+  if (!n) return usd ? '$0.00' : '₦0';
+  if (usd) return window.MSBCurrency.fmt(n, opts);
+  return `₦${n.toLocaleString()}`;
+}
+
 // helper to format price — prefers NGN fixed price, falls back to USD
 function formatPrice(p) {
-  if (p.priceNGN) return `₦${Number(p.priceNGN).toLocaleString()}`;
+  if (p.priceNGN) return money(p.priceNGN);
   if (p.priceUSD) return `$${Number(p.priceUSD).toFixed(2)}`;
   return '';
 }
@@ -323,7 +335,7 @@ function productCardInner(p) {
 
   // Our book — no container, just cover + content below
   const price = formatPrice(p);
-  const orig = p.originalPriceNGN ? `₦${Number(p.originalPriceNGN).toLocaleString()}` : null;
+  const orig = p.originalPriceNGN ? money(p.originalPriceNGN) : null;
   const pct  = (p.originalPriceNGN && p.priceNGN) ? Math.round((1 - p.priceNGN / p.originalPriceNGN) * 100) : null;
 
   return `
@@ -1061,8 +1073,7 @@ function updateVoucherBanner() {
   el.style.display = (userVoucher && !dismissed) ? 'flex' : 'none';
   const textEl = document.getElementById('voucherBannerText');
   if (textEl && userVoucher) {
-    const amt = (Number(userVoucher.amount) || 0).toLocaleString();
-    textEl.innerHTML = `<strong>₦${amt} voucher</strong><small>Applied automatically at checkout</small>`;
+    textEl.innerHTML = `<strong>${money(userVoucher.amount, { exact: true })} voucher</strong><small>Applied automatically at checkout</small>`;
   }
 }
 
@@ -1199,12 +1210,12 @@ function renderCartOverlay() {
     if (userVoucher && hasNGN && total >= voucherAmt) {
       voucherRow.style.display = 'flex';
       if (voucherHint) voucherHint.style.display = 'none';
-      document.getElementById('cartVoucherLabel').textContent = `Apply ₦${voucherAmt.toLocaleString()} voucher`;
+      document.getElementById('cartVoucherLabel').textContent = `Apply ${money(voucherAmt, { exact: true })} voucher`;
       const toggle = document.getElementById('cartVoucherToggle');
       if (toggle && toggle.checked !== applyVoucherFlag) toggle.checked = applyVoucherFlag;
       const discount = applyVoucherFlag ? Math.min(voucherAmt, total) : 0;
-      document.getElementById('cartVoucherAmount').textContent = `−₦${discount.toLocaleString()}`;
-      totalEl.textContent = `₦${Math.max(0, total - discount).toLocaleString()}`;
+      document.getElementById('cartVoucherAmount').textContent = `−${money(discount, { exact: true, plain: true })}`;
+      totalEl.textContent = money(Math.max(0, total - discount));
       return;
     }
     voucherRow.style.display = 'none';
@@ -1212,14 +1223,14 @@ function renderCartOverlay() {
       if (userVoucher && hasNGN && total < voucherAmt) {
         voucherHint.style.display = 'flex';
         document.getElementById('cartVoucherHintText').textContent =
-          `Add ₦${(voucherAmt - total).toLocaleString()} more to your cart to use your ₦${voucherAmt.toLocaleString()} voucher`;
+          `Add ${money(voucherAmt - total, { exact: true })} more to your cart to use your ${money(voucherAmt, { exact: true })} voucher`;
       } else {
         voucherHint.style.display = 'none';
       }
     }
   }
 
-  totalEl.textContent = hasNGN ? `₦${total.toLocaleString()}` : `$${total.toFixed(2)}`;
+  totalEl.textContent = hasNGN ? money(total) : `$${total.toFixed(2)}`;
 }
 
 // Shows the recipient chip + Proceed to Payment for signed-in users, or the
@@ -1325,6 +1336,10 @@ window.msbResumeCheckout = function () {
 // ------------------ CART CHECKOUT (one payment for the whole cart) ------------------
 
 async function proceedCartToPayment() {
+  // Viewing in dollars? USD checkout isn't available yet — show the friendly
+  // message (with a one-tap switch to ₦) instead of starting a payment.
+  if (window.MSBCurrency && !window.MSBCurrency.guardCheckout()) return;
+
   // Browsing and cart-building stay open to everyone — only this step (an
   // actual purchase) requires a signed-in account. requireSignIn() redirects
   // to /login and remembers to resume checkout automatically after sign-in
@@ -1810,3 +1825,12 @@ window.openWishlistAuthDrawer = openWishlistAuthDrawer;
 window.closeWishlistAuthDrawer = closeWishlistAuthDrawer;
 window.fetchWishlist = fetchWishlist;
 window.isWishlistFetched = () => wishlistFetched;
+
+// ── Currency switch (₦ ⇄ $) — repaint prices already on screen ───────────────
+if (window.MSBCurrency) {
+  window.MSBCurrency.onChange(function () {
+    try { renderProducts(); } catch (e) {}
+    try { renderCartOverlay(); } catch (e) {}
+    try { updateVoucherBanner(); } catch (e) {}
+  });
+}

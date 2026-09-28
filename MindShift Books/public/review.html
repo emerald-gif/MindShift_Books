@@ -599,7 +599,8 @@ adjustMainPadding();
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="/main.js?v=2"></script>
+<script src="/currency.js?v=2"></script>
+<script src="/main.js?v=4"></script>
 <script src="/auth.js"></script>
 
 <script>
@@ -868,10 +869,10 @@ function renderBookDetail(prod) {
 
   // Price display — prefer NGN fixed price
   const priceDisplay = prod.priceNGN
-    ? `₦${Number(prod.priceNGN).toLocaleString()}`
+    ? money(prod.priceNGN)
     : prod.priceUSD ? `$${Number(prod.priceUSD).toFixed(2)}` : '';
   const originalPriceDisplay = prod.originalPriceNGN
-    ? `₦${Number(prod.originalPriceNGN).toLocaleString()}`
+    ? money(prod.originalPriceNGN)
     : null;
   const discountPct = (prod.originalPriceNGN && prod.priceNGN)
     ? Math.round((1 - prod.priceNGN / prod.originalPriceNGN) * 100)
@@ -899,8 +900,8 @@ function renderBookDetail(prod) {
         <div class="book-hero-author">by <strong>${escapeHtml(prod.author || 'MindShift Books')}</strong></div>
         ${prod.category === 'ours' && priceDisplay ? `
         <div class="book-hero-price-row">
-          <span class="book-hero-price">${priceDisplay}</span>
-          ${originalPriceDisplay ? `<span class="book-hero-price-old">${originalPriceDisplay}</span>` : ''}
+          <span class="book-hero-price"${prod.priceNGN ? ` data-ngn="${Number(prod.priceNGN)}"` : ''}>${priceDisplay}</span>
+          ${originalPriceDisplay ? `<span class="book-hero-price-old" data-ngn="${Number(prod.originalPriceNGN)}">${originalPriceDisplay}</span>` : ''}
           ${discountPct ? `<span class="book-hero-discount-badge">${discountPct}% OFF</span>` : ''}
         </div>` : ''}
         <div class="book-hero-actions">

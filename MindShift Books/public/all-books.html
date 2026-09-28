@@ -182,12 +182,16 @@
     });
   }
 
+  // ₦ or ≈ $ depending on the visitor's currency choice (currency.js); display only
+  function mny(n) {
+    return window.MSBCurrency ? window.MSBCurrency.fmt(n) : ('₦' + Number(n).toLocaleString());
+  }
   function formatPrice(p) {
-    return p.priceNGN ? ('₦' + Number(p.priceNGN).toLocaleString()) : '';
+    return p.priceNGN ? mny(p.priceNGN) : '';
   }
 
   function rowHtml(p) {
-    var orig = p.originalPriceNGN ? ('₦' + Number(p.originalPriceNGN).toLocaleString()) : null;
+    var orig = p.originalPriceNGN ? mny(p.originalPriceNGN) : null;
     var pct = (p.originalPriceNGN && p.priceNGN) ? Math.round((1 - p.priceNGN / p.originalPriceNGN) * 100) : null;
     var cover = esc(p.cover || '');
     var title = esc(p.title || '');
@@ -199,8 +203,8 @@
           '<div class="ab-row-title" data-action="review" data-product-id="' + esc(p.id) + '">' + title + '</div>' +
           '<div class="ab-row-author">MindShift Books</div>' +
           '<div class="ab-row-price-row">' +
-            '<span class="ab-row-price">' + formatPrice(p) + '</span>' +
-            (orig ? '<span class="ab-row-price-old">' + orig + '</span>' : '') +
+            '<span class="ab-row-price"' + (p.priceNGN ? ' data-ngn="' + Number(p.priceNGN) + '"' : '') + '>' + formatPrice(p) + '</span>' +
+            (orig ? '<span class="ab-row-price-old" data-ngn="' + Number(p.originalPriceNGN) + '">' + orig + '</span>' : '') +
             (pct ? '<span class="ab-row-discount">' + pct + '% OFF</span>' : '') +
           '</div>' +
           '<div class="ab-row-actions">' +
@@ -303,7 +307,7 @@
       return sum + (p && p.priceNGN ? Number(p.priceNGN) : 0);
     }, 0);
     document.getElementById('abCartCount').textContent = ids.length + (ids.length === 1 ? ' book' : ' books') + ' in cart';
-    document.getElementById('abCartTotal').textContent = total ? '₦' + total.toLocaleString() : '';
+    document.getElementById('abCartTotal').textContent = total ? mny(total) : '';
     bar.classList.add('show');
   }
   function wireCartBar() {
@@ -320,6 +324,7 @@
   else wireCartBar();
   window.addEventListener('msb-products-ready', updateCartBar);
   window.addEventListener('load', updateCartBar);
+  if (window.MSBCurrency) window.MSBCurrency.onChange(updateCartBar);
 
   if (window.MSB_PRODUCTS && window.MSB_PRODUCTS.length) onProducts();
   window.addEventListener('msb-products-ready', onProducts);
@@ -422,7 +427,8 @@
      firing after one script load instead of four. See main.js/books.html
      for the full explanation. -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="/main.js?v=2"></script>
+<script src="/currency.js?v=2"></script>
+<script src="/main.js?v=4"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="/auth.js"></script>
 
