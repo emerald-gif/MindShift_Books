@@ -107,7 +107,7 @@
     '#msbRateCredit{display:none;text-align:center;padding:12px 0 80px}' +
     '#msbRateCredit.usd{display:block}' +
     '#msbRateCredit a{font-size:10px;color:#6b7280;text-decoration:none}' +
-    '.msb-cs-scrim{position:fixed;inset:0;background:rgba(17,24,39,.5);z-index:2000;display:flex;align-items:flex-end;justify-content:center;animation:msbFade .2s ease}' +
+    '.msb-cs-scrim{position:fixed;inset:0;background:rgba(17,24,39,.5);z-index:8000;display:flex;align-items:flex-end;justify-content:center;animation:msbFade .2s ease}' +
     '.msb-cs{background:#fff;width:100%;max-width:440px;border-radius:20px 20px 0 0;padding:22px 20px calc(20px + env(safe-area-inset-bottom));animation:msbUp .25s ease}' +
     '.msb-cs h3{margin:0 0 8px;font-size:18px;color:#111827}' +
     '.msb-cs p{margin:0 0 18px;font-size:14px;line-height:1.55;color:#4b5563}' +
