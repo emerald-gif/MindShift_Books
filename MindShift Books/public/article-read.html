@@ -9,7 +9,7 @@
 <meta name="description" content="Read career articles and insights from the MindShift Books community."/>
 <meta name="robots" content="noindex, nofollow"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&display=swap"/>
 <style>
 :root{
   --p:#4f46e5;--p2:#06b6d4;--ps:#4338ca;
@@ -188,16 +188,46 @@ header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .more-section{padding:28px 4px 16px;border-top:1px solid #f3f4f6;margin-top:20px}
 .more-title{font-size:16px;font-weight:800;color:var(--txt);margin-bottom:16px}
 .more-list{display:flex;flex-direction:column;gap:12px}
-/* author bio card (end of article) */
-.author-card{margin:34px 0 8px;padding:26px 0 8px;border-top:1px solid #f3f4f6;text-align:center}
-.author-card-photo{width:96px;height:96px;border-radius:50%;object-fit:cover;background:linear-gradient(135deg,#4f46e5,#06b6d4);border:3px solid #fff;box-shadow:0 0 0 1px #e2e8f0,0 8px 20px -10px rgba(15,23,42,.35);cursor:pointer}
-.author-card-name{margin-top:14px;font-size:17px;font-weight:800;color:var(--txt);display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer}
-.author-card-stats{margin-top:3px;font-size:12.5px;color:var(--mute)}
-.author-card-bio{margin:16px auto 0;max-width:520px;font-size:15.5px;line-height:1.7;color:#334155;font-style:italic;text-align:left;font-family:Georgia,'Times New Roman',serif}
-.author-card-bio a{color:inherit;text-decoration:underline}
-.author-card-actions{margin-top:18px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
-.author-card-view{padding:7px 18px;border-radius:99px;border:1.5px solid #e2e8f0;background:#fff;color:var(--txt);font-size:12.5px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif}
-.author-card-view:hover{border-color:var(--p);color:var(--p)}
+/* ── AUTHOR CARD · statesman edition ──
+   Navy panel, brass-gold accents, certificate-style inset frame, seal portrait.
+   Palette: navy #0c1a33 / deep #08122a / brass #c4a35a / pale brass #e6d5a8 / ivory #f4efe2 */
+.ac{--navy:#0c1a33;--deep:#08122a;--brass:#c4a35a;--pale:#e6d5a8;--ivory:#f4efe2;
+  position:relative;margin:40px 0 12px;padding:34px 24px 28px;border-radius:6px;background:var(--navy);color:var(--ivory);
+  border-top:4px solid var(--brass);box-shadow:0 22px 40px -26px rgba(8,18,42,.7)}
+.ac::before{content:"";position:absolute;inset:8px;border:1px solid rgba(196,163,90,.28);border-radius:3px;pointer-events:none}
+.ac-head{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center}
+.ac-seal{position:relative;width:104px;height:104px;border-radius:50%;padding:5px;background:var(--navy);box-shadow:0 0 0 2px var(--brass),0 0 0 6px var(--navy),0 0 0 7px rgba(196,163,90,.55);cursor:pointer;flex-shrink:0}
+.ac-photo{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;background:#1b2c4d}
+.ac-name{margin-top:20px;font-family:'Cormorant Garamond',Georgia,serif;font-size:31px;font-weight:700;line-height:1.1;letter-spacing:.2px;color:#fff;cursor:pointer}
+.ac-role{margin-top:6px;font-size:12.5px;font-weight:500;color:var(--pale);letter-spacing:.3px}
+.ac-rule{width:56px;height:1px;margin:20px auto 18px;background:var(--brass);position:relative}
+.ac-rule::after{content:"";position:absolute;left:50%;top:50%;width:7px;height:7px;background:var(--navy);border:1px solid var(--brass);transform:translate(-50%,-50%) rotate(45deg)}
+.ac-bio{position:relative;margin:0 auto;max-width:34em;font-family:'Cormorant Garamond',Georgia,serif;font-size:20px;line-height:1.55;font-style:italic;font-weight:500;color:var(--ivory);text-align:center;text-wrap:balance}
+.ac-stats{position:relative;display:flex;justify-content:center;gap:0;margin:22px auto 0;max-width:320px}
+.ac-stat{flex:1;text-align:center;padding:2px 12px}
+.ac-stat + .ac-stat{border-left:1px solid rgba(196,163,90,.35)}
+.ac-stat b{display:block;font-family:'Cormorant Garamond',Georgia,serif;font-size:26px;font-weight:700;color:#fff;line-height:1.1}
+.ac-stat span{display:block;margin-top:2px;font-size:11.5px;color:var(--pale);font-weight:500}
+.ac-actions{position:relative;display:flex;justify-content:center;gap:10px;margin-top:24px;flex-wrap:wrap}
+.ac-btn{min-width:132px;padding:11px 24px;border-radius:3px;font-family:'Inter',sans-serif;font-size:13.5px;font-weight:700;letter-spacing:.2px;cursor:pointer;transition:background .2s,color .2s,border-color .2s}
+.ac-follow{background:var(--brass);color:var(--deep);border:1.5px solid var(--brass)}
+.ac-follow:hover{background:var(--pale);border-color:var(--pale)}
+.ac-follow.following{background:transparent;color:var(--pale);border-color:rgba(196,163,90,.6)}
+.ac-follow.following:hover{border-color:var(--pale);color:#fff}
+.ac-view{background:transparent;color:var(--ivory);border:1.5px solid rgba(244,239,226,.35)}
+.ac-view:hover{border-color:var(--ivory);color:#fff}
+.ac-btn:focus-visible,.ac-seal:focus-visible,.ac-name:focus-visible{outline:2px solid var(--pale);outline-offset:3px}
+@media (max-width:420px){.ac{padding:30px 16px 24px}.ac-bio{font-size:18.5px}.ac-btn{flex:1;min-width:0}}
+
+/* matching section headings below the card */
+.art-wrap .more-section{border-top:none;padding-top:34px}
+.art-wrap .more-title{font-family:'Cormorant Garamond',Georgia,serif;font-size:26px;font-weight:700;letter-spacing:.1px;color:#0c1a33;padding-bottom:12px;margin-bottom:18px;border-bottom:1px solid #e5e0d0;position:relative}
+.art-wrap .more-title::after{content:"";position:absolute;left:0;bottom:-1px;width:44px;height:3px;background:#c4a35a}
+.art-wrap .more-card{border-radius:6px;border-color:#e5e0d0}
+.art-wrap .more-card:hover{border-color:#c4a35a;background:#faf7ee}
+.art-wrap .more-img{border-radius:4px}
+.art-wrap .more-cat{color:#8a6d2f}
+.art-wrap .more-ttl{font-family:'Cormorant Garamond',Georgia,serif;font-size:17px;font-weight:700;line-height:1.25;color:#0c1a33}
 
 .more-card{display:flex;gap:12px;align-items:flex-start;cursor:pointer;padding:12px;border-radius:14px;border:1px solid var(--border);background:#fff;transition:all .2s}
 .more-card:hover{border-color:var(--p);background:#ecfeff}
@@ -1165,12 +1195,19 @@ function toMoreCard(d){
   return { id:d.id, cat:x.cat||'CAREERS', title:x.title||'', img:x.cover||x.img||'', read:x.readTime||x.read||'5 min read' };
 }
 
-/* ── AUTHOR BIO CARD ──
-   Substack-style "about the writer" block under the article. Reads the
-   author's CURRENT profile (users/{uid}) so edits show up immediately.
-   Only uses facts we actually have (name, bio, follower count) — when a
-   writer hasn't written a bio yet we fall back to a neutral line instead
-   of inventing credentials. Hidden for official MindShift posts. */
+/* ── AUTHOR CARD ──
+   "About the writer" panel under the article. Reads the author's CURRENT
+   profile (users/{uid}) so edits show up immediately, and only uses facts we
+   actually have (name, bio, follower + article counts) — no invented titles.
+   A one-line bio gets a lead-in sentence; longer bios are shown as written.
+   Hidden for official MindShift posts. */
+let _acFollowers = 0;
+function _acPaintFollowers(){
+  const el=document.getElementById('acFollowers');
+  if(el) el.textContent=Math.max(0,_acFollowers).toLocaleString();
+}
+window.__acBump = function(d){ _acFollowers+=d; _acPaintFollowers(); };
+
 async function loadAuthorCard(){
   const slot = document.getElementById('authorCardSlot');
   if(!slot || !article || !article.authorUid || article.isMindshift || article.authorUid==='official') return;
@@ -1181,34 +1218,44 @@ async function loadAuthorCard(){
   }catch{}
   const name  = u.name || article.author || 'this writer';
   const photo = u.photo || article.avatar || 'logo.jpg';
-  const first = String(name).trim().split(/\s+/)[0] || name;
   let bio = String(u.bio||'').replace(/\s+/g,' ').trim();
   if(bio.length>320) bio = bio.slice(0,317).replace(/\s+\S*$/,'') + '…';
-  // A one-line bio ("Founder. Writer.") reads thin on its own, so give it a
-  // sentence to sit in. Longer bios are shown exactly as the writer wrote them.
   let bioHtml;
-  if(!bio){
-    bioHtml = `${cEsc(name)} writes on MindShift Books. Follow to get their next article as soon as it's published.`;
-  }else if(bio.length<60){
-    bioHtml = `${cEsc(name)} writes on MindShift Books. ${cEsc(bio)}${/[.!?…]$/.test(bio)?'':'.'}`;
-  }else{
-    bioHtml = cEsc(bio);
-  }
-  const followers = Number(u.followerCount)||0;
-  const stats = followers>0 ? `${followers.toLocaleString()} follower${followers===1?'':'s'}` : '';
+  if(!bio) bioHtml = `${cEsc(name)} writes on MindShift Books.`;
+  else if(bio.length<60) bioHtml = `${cEsc(name)} writes on MindShift Books. ${cEsc(bio)}${/[.!?…]$/.test(bio)?'':'.'}`;
+  else bioHtml = cEsc(bio);
+
+  _acFollowers = Number(u.followerCount)||0;
   const isSelf = currentUser && currentUser.uid===article.authorUid;
   slot.innerHTML = `
-    <div class="author-card" data-author-uid="${cEsc(article.authorUid)}">
-      <img class="author-card-photo" data-author-photo src="${cEsc(photo)}" alt="${cEsc(name)}" onclick="goAuthor()" onerror="this.style.opacity='.4'">
-      <div class="author-card-name" onclick="goAuthor()"><span data-author-name>${cEsc(name)}</span></div>
-      ${stats?`<div class="author-card-stats" id="authorCardStats">${stats}</div>`:''}
-      <p class="author-card-bio">${bioHtml}${bio?` Follow ${cEsc(first)} for more.`:''}</p>
-      <div class="author-card-actions">
-        ${isSelf?'':`<button class="follow-author-btn" onclick="doFollow()">${isFollowing?'Following':'Follow'}</button>`}
-        <button class="author-card-view" onclick="goAuthor()">View profile</button>
+    <section class="ac" data-author-uid="${cEsc(article.authorUid)}" aria-label="About ${cEsc(name)}">
+      <div class="ac-head">
+        <div class="ac-seal" onclick="goAuthor()" role="link" tabindex="0" onkeydown="if(event.key==='Enter')goAuthor()">
+          <img class="ac-photo" data-author-photo src="${cEsc(photo)}" alt="${cEsc(name)}" onerror="this.style.opacity='.3'">
+        </div>
+        <div class="ac-name" data-author-name onclick="goAuthor()" role="link" tabindex="0" onkeydown="if(event.key==='Enter')goAuthor()">${cEsc(name)}</div>
+        <div class="ac-role">Writer on MindShift Books</div>
       </div>
-    </div>`;
+      <div class="ac-rule" aria-hidden="true"></div>
+      <p class="ac-bio">${bioHtml}</p>
+      <div class="ac-stats">
+        <div class="ac-stat"><b id="acFollowers">${_acFollowers.toLocaleString()}</b><span>Followers</span></div>
+        <div class="ac-stat" id="acArticlesStat" style="display:none"><b id="acArticles">0</b><span>Articles</span></div>
+      </div>
+      <div class="ac-actions">
+        ${isSelf?'':`<button class="ac-btn ac-follow${isFollowing?' following':''}" onclick="doFollow()">${isFollowing?'Following':'Follow'}</button>`}
+        <button class="ac-btn ac-view" onclick="goAuthor()">View profile</button>
+      </div>
+    </section>`;
   syncFollowUI();
+  try{
+    const c = await getCountFromServer(query(collection(db,'articles'),where('authorUid','==',article.authorUid)));
+    const n = c.data().count||0;
+    if(n>0){
+      document.getElementById('acArticles').textContent = n.toLocaleString();
+      document.getElementById('acArticlesStat').style.display='';
+    }
+  }catch{}
 }
 
 /* ── MORE FROM THIS CREATOR ──
@@ -1299,7 +1346,7 @@ function syncSaveUI(){
   if(st) st.textContent=isSaved?'Saved':'Save';
 }
 function syncFollowUI(){
-  document.querySelectorAll('.follow-author-btn').forEach(btn=>{
+  document.querySelectorAll('.follow-author-btn, .ac-follow').forEach(btn=>{
     btn.classList.toggle('following',isFollowing);
     btn.textContent = isFollowing ? 'Following' : 'Follow';
   });
@@ -2393,6 +2440,7 @@ window.doFollow = async function(){
   const wasFollowing = isFollowing;
   isFollowing = !wasFollowing;
   syncFollowUI();
+  if(window.__acBump) window.__acBump(wasFollowing?-1:1);
   try{
     const followId = `${currentUser.uid}_${article.authorUid}`;
     if(wasFollowing){
@@ -2407,6 +2455,7 @@ window.doFollow = async function(){
   }catch(e){
     isFollowing = wasFollowing;
     syncFollowUI();
+    if(window.__acBump) window.__acBump(wasFollowing?1:-1);
     showToast('Could not update — try again.');
   }
 };
