@@ -697,7 +697,7 @@ body{padding-bottom:64px} /* room for the fixed comment bar on post-read */
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
 import { getFirestore, doc, getDoc, setDoc, deleteDoc, updateDoc, increment, onSnapshot,
-         collection, query, where, orderBy, limit, addDoc, serverTimestamp, getDocs, getCountFromServer, writeBatch, runTransaction, enableNetwork, disableNetwork } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
+         collection, query, where, orderBy, limit, startAfter, addDoc, serverTimestamp, getDocs, getCountFromServer, writeBatch, runTransaction, enableNetwork, disableNetwork } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
 import { createResilient } from '/resilient.js';
 import { initNotificationUI } from '/notifications.js';
 import { initRepost } from '/repost.js';
@@ -1514,6 +1514,13 @@ window.closeAll=function(){
    COMMENTS SYSTEM
    ══════════════════════════════════════ */
 let cList=[],cReplies={},cLikedSet=new Set(),cOpenReplies=new Set(),cActiveReplyId=null,cCommentCount=0;
+const C_PAGE=20; let cCursor=null, cExhausted=false, cLoadingMore=false;
+// Hidden comments (set by the content author in the comment manager) are visible only to the commenter and the content author.
+function cVisible(c){
+  if(c.hidden!==true) return true;
+  if(!currentUser) return false;
+  return c.authorUid===currentUser.uid || (article && article.authorUid===currentUser.uid);
+}
 
 window.loadComments=async function(){
   if(!artId){buildCommentsUI([]);return;}
@@ -1521,9 +1528,10 @@ window.loadComments=async function(){
     const countSnap=await resilient(()=>getDoc(doc(db,'postMeta',artId)),{tries:2});
     cCommentCount=countSnap.exists()?(countSnap.data().commentCount||0):0;
     updateCCount();
-    const q=query(collection(db,'comments'),where('postId','==',artId),where('parentId','==',null),orderBy('createdAt','asc'));
+    const q=query(collection(db,'comments'),where('postId','==',artId),where('parentId','==',null),orderBy('createdAt','asc'),limit(C_PAGE));
     const snap=await resilient(()=>getDocs(q),{tries:2});
-    cList=snap.docs.map(d=>({id:d.id,...d.data()}));
+    cCursor=snap.docs.length?snap.docs[snap.docs.length-1]:null; cExhausted=snap.docs.length<C_PAGE;
+    cList=snap.docs.map(d=>({id:d.id,...d.data()})).filter(cVisible);
     cLikedSet.clear();
     if(currentUser){
       // likedBy is a map field on each comment doc: { uid: true/false }
@@ -1562,8 +1570,35 @@ function buildCommentsUI(comments){
     ?comments.map(c=>buildCHTML(c,false)).join('')
     :`<div class="comments-list-empty"><div class="comments-list-empty-ico">&#128172;</div><div class="comments-list-empty-txt">Be the first to comment</div></div>`;
   listEl.innerHTML=listHTML;
+  renderCMore();
   window.MSBAuthorLive && window.MSBAuthorLive.refresh(db, { doc, getDoc }, listEl);
 }
+
+function renderCMore(){
+  const listEl=document.getElementById('commentsList'); if(!listEl) return;
+  const old=document.getElementById('cMoreWrap'); if(old) old.remove();
+  if(cExhausted||!cCursor) return;
+  listEl.insertAdjacentHTML('afterend','<div id="cMoreWrap" style="text-align:center;padding:10px 0 18px"><button id="cMoreBtn" onclick="loadMoreComments()" style="padding:9px 22px;border-radius:99px;border:1.5px solid var(--border2,#edeef5);background:#fff;font-weight:800;font-size:13px;color:var(--p,#6366f1);cursor:pointer;font-family:inherit">Load more comments</button></div>');
+}
+
+window.loadMoreComments=async function(){
+  if(cLoadingMore||cExhausted||!cCursor) return;
+  cLoadingMore=true;
+  const btn=document.getElementById('cMoreBtn'); if(btn){btn.disabled=true;btn.textContent='Loading…';}
+  try{
+    const q=query(collection(db,'comments'),where('postId','==',artId),where('parentId','==',null),orderBy('createdAt','asc'),startAfter(cCursor),limit(C_PAGE));
+    const snap=await resilient(()=>getDocs(q),{tries:2});
+    cCursor=snap.docs.length?snap.docs[snap.docs.length-1]:cCursor; cExhausted=snap.docs.length<C_PAGE;
+    const more=snap.docs.map(d=>({id:d.id,...d.data()})).filter(cVisible);
+    if(currentUser) more.forEach(c=>{ if(c.likedBy && c.likedBy[currentUser.uid]===true) cLikedSet.add(c.id); });
+    const have=new Set(cList.map(c=>c.id));
+    const fresh=more.filter(c=>!have.has(c.id));
+    cList=cList.concat(fresh);
+    const le=document.getElementById('commentsList');
+    if(le&&fresh.length){le.insertAdjacentHTML('beforeend',fresh.map(c=>buildCHTML(c,false)).join(''));window.MSBAuthorLive && window.MSBAuthorLive.refresh(db, { doc, getDoc }, le);}
+  }catch(e){console.error('loadMoreComments:',e);}
+  finally{cLoadingMore=false;renderCMore();}
+};
 
 function buildCHTML(c,isReply){
   const liked=cLikedSet.has(c.id);
@@ -1608,7 +1643,7 @@ window.submitComment=async function(){
   if(btn){btn.disabled=true;btn.textContent='Posting…';}
   const an=myProfile?.name||'Someone', ap=myProfile?.photo||'', au=myProfile?.username||'';
   try{
-    const ref=await addDoc(collection(db,'comments'),{postId:artId,parentId:null,authorUid:currentUser.uid,authorName:an,authorPhoto:ap,authorUsername:au,text,likeCount:0,replyCount:0,createdAt:serverTimestamp()});
+    const ref=await addDoc(collection(db,'comments'),{postId:artId,parentId:null,authorUid:currentUser.uid,authorName:an,authorPhoto:ap,authorUsername:au,text,likeCount:0,replyCount:0,hidden:false,createdAt:serverTimestamp()});
     try{await updateDoc(doc(db,'postMeta',artId),{commentCount:increment(1)});}catch{await setDoc(doc(db,'postMeta',artId),{commentCount:1},{merge:true});}
     cCommentCount++;updateCCount();
     const nc={id:ref.id,postId:artId,parentId:null,authorUid:currentUser.uid,authorName:an,authorPhoto:ap,authorUsername:au,text,likeCount:0,replyCount:0,createdAt:{toDate:()=>new Date()}};
@@ -1641,7 +1676,7 @@ window.submitReply=async function(parentId){
   if(btn){btn.disabled=true;btn.textContent='Posting…';}
   const an=myProfile?.name||'Someone', ap=myProfile?.photo||'', au=myProfile?.username||'';
   try{
-    const ref=await addDoc(collection(db,'comments'),{postId:artId,parentId,authorUid:currentUser.uid,authorName:an,authorPhoto:ap,authorUsername:au,text,likeCount:0,replyCount:0,createdAt:serverTimestamp()});
+    const ref=await addDoc(collection(db,'comments'),{postId:artId,parentId,authorUid:currentUser.uid,authorName:an,authorPhoto:ap,authorUsername:au,text,likeCount:0,replyCount:0,hidden:false,createdAt:serverTimestamp()});
     try{await updateDoc(doc(db,'comments',parentId),{replyCount:increment(1)});}catch{}
     try{await updateDoc(doc(db,'postMeta',artId),{commentCount:increment(1)});}catch{await setDoc(doc(db,'postMeta',artId),{commentCount:1},{merge:true});}
     cCommentCount++;updateCCount();
@@ -1680,7 +1715,7 @@ window.toggleReplies=async function(cid){
   try{
     const q=query(collection(db,'comments'),where('postId','==',artId),where('parentId','==',cid),orderBy('createdAt','asc'));
     const snap=await resilient(()=>getDocs(q),{tries:2});
-    const replies=snap.docs.map(d=>({id:d.id,...d.data()}));
+    const replies=snap.docs.map(d=>({id:d.id,...d.data()})).filter(cVisible);
     if(currentUser){
       replies.forEach(r=>{
         if(r.likedBy && r.likedBy[currentUser.uid] === true) cLikedSet.add(r.id);

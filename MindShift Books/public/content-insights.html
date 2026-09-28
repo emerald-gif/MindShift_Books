@@ -427,9 +427,9 @@ function renderEngagement(likes, comments, reposts) {
       <div class="metric-label">Likes</div>
       <div class="metric-value">${likes.toLocaleString()}</div>
     </div>
-    <div class="metric-row">
+    <div class="metric-row" style="cursor:pointer" onclick="location.href='/comment-manager?type=${contentType}&id=${encodeURIComponent(contentId)}'">
       <div class="metric-icon comment"><svg viewBox="0 0 24 24">${ICONS.comment}</svg></div>
-      <div class="metric-label">Comments</div>
+      <div class="metric-label">Comments<div style="font-size:11px;font-weight:700;color:var(--p);margin-top:2px">Manage comments &rsaquo;</div></div>
       <div class="metric-value">${comments.toLocaleString()}</div>
     </div>
     <div class="metric-row">

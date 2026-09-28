@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="icon" href="/MINDSHIFT.jpg">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Manage Comments · MindShift Books</title>
+<meta name="robots" content="noindex, nofollow"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --p:#6366f1;--p2:#06b6d4;--p3:#8b5cf6;
+  --g:linear-gradient(135deg,#6366f1 0%,#8b5cf6 55%,#06b6d4 100%);
+  --txt:#0f172a;--sub:#64748b;--mute:#94a3b8;
+  --bg:#f4f4fb;--card:#fff;--border2:#edeef5;
+  --green:#10b981;--red:#ef4444;--amber:#f59e0b;--radius:20px;
+  --shadow:0 1px 2px rgba(15,23,42,.04),0 10px 28px -12px rgba(76,60,190,.16);
+  --shadow-sm:0 1px 2px rgba(15,23,42,.04),0 4px 14px -6px rgba(15,23,42,.08);
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;color:var(--txt);min-height:100vh;
+  background:radial-gradient(circle at 12% 0%, rgba(99,102,241,.10), transparent 42%),
+    radial-gradient(circle at 88% 6%, rgba(6,182,212,.08), transparent 46%),var(--bg);
+  background-attachment:fixed}
+button{font-family:inherit}
+
+.hdr{position:sticky;top:0;z-index:100;background:rgba(248,247,255,.92);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border2);padding:0 16px;height:56px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.hbtn{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--border2);background:var(--card);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt);flex-shrink:0}
+.hbtn svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.hbtn.spin svg{animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.hdr-title{font-size:15px;font-weight:800;flex:1;text-align:center}
+
+.preview{margin:16px;border-radius:16px;background:var(--card);box-shadow:var(--shadow-sm);padding:13px 15px;cursor:pointer}
+.preview-title{font-weight:800;font-size:13.5px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.preview-meta{font-size:11.5px;color:var(--mute);font-weight:600;margin-top:4px}
+
+.pills{display:flex;gap:8px;padding:0 16px 12px;overflow-x:auto}
+.pill{padding:7px 15px;border-radius:99px;border:1.5px solid var(--border2);background:var(--card);
+  font-size:12.5px;font-weight:700;color:var(--sub);cursor:pointer;white-space:nowrap}
+.pill.active{background:var(--txt);color:#fff;border-color:var(--txt)}
+
+.list{padding:0 16px}
+.cm{background:var(--card);border-radius:18px;box-shadow:var(--shadow-sm);padding:14px;margin-bottom:12px}
+.cm.hidden-c{background:#fafaff;border:1.5px dashed #c7d2fe}
+.cm.busy{opacity:.45;pointer-events:none}
+.cm-top{display:flex;gap:10px;align-items:flex-start}
+.av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#e0e7ff,#c7d2fe);color:var(--p);
+  font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0}
+.av img{width:100%;height:100%;object-fit:cover}
+.cm-body{flex:1;min-width:0}
+.cm-name{font-size:13px;font-weight:800}
+.cm-time{font-size:11.5px;color:var(--mute);font-weight:600;margin-left:6px}
+.badge{display:inline-block;font-size:10px;font-weight:800;padding:2px 7px;border-radius:99px;margin-left:6px;vertical-align:middle}
+.badge.h{background:#e0e7ff;color:#4338ca}
+.badge.m{background:#dcfce7;color:#15803d}
+.cm-text{font-size:13.5px;line-height:1.5;margin-top:4px;white-space:pre-wrap;word-break:break-word}
+.acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:11px}
+.act{padding:6px 12px;border-radius:99px;border:1.5px solid var(--border2);background:#fff;font-size:12px;font-weight:700;color:var(--sub);cursor:pointer}
+.act.danger{color:var(--red)}
+.act.primary{color:var(--p);border-color:#c7d2fe}
+.replies{margin:10px 0 0 44px;border-left:2px solid var(--border2);padding-left:12px}
+.rp{padding:9px 0;border-bottom:1px solid var(--border2)}
+.rp:last-child{border-bottom:none}
+.rp.hidden-c .cm-text{opacity:.6}
+.ri-row{display:none;gap:8px;margin-top:10px;align-items:flex-end}
+.ri-row.on{display:flex}
+.ri{flex:1;border:1.5px solid var(--border2);border-radius:14px;padding:9px 12px;font:inherit;font-size:13.5px;resize:none;outline:none;min-height:40px;max-height:120px}
+.ri:focus{border-color:var(--p)}
+.ri-send{padding:9px 15px;border-radius:99px;border:none;background:var(--g);color:#fff;font-weight:800;font-size:12.5px;cursor:pointer}
+.ri-send:disabled{opacity:.45}
+
+.more{display:block;margin:6px auto 0;padding:11px 26px;border-radius:99px;border:1.5px solid var(--border2);background:var(--card);font-weight:800;font-size:13px;color:var(--p);cursor:pointer}
+.note{text-align:center;font-size:12px;color:var(--mute);padding:12px 24px 0}
+.empty{text-align:center;padding:50px 24px;color:var(--mute);font-size:13.5px;line-height:1.6}
+.empty strong{display:block;font-size:15px;color:var(--txt);margin-bottom:6px}
+.empty button{margin-top:14px}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:#0f172a;color:#fff;padding:10px 18px;border-radius:99px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:all .25s;z-index:300}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.skel{background:linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:14px;height:96px;margin-bottom:12px}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <button class="hbtn" onclick="history.back()" aria-label="Back">
+    <svg viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
+  </button>
+  <div class="hdr-title">Manage Comments</div>
+  <button class="hbtn" id="refreshBtn" aria-label="Refresh" onclick="refreshNew()">
+    <svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 11-3-6.7"/><polyline points="21 3 21 9 15 9"/></svg>
+  </button>
+</header>
+
+<div class="preview" id="preview" style="display:none"></div>
+<div class="pills" id="pills" style="display:none">
+  <button class="pill active" data-f="all" onclick="setFilter('all')">All</button>
+  <button class="pill" data-f="unreplied" onclick="setFilter('unreplied')">Unreplied</button>
+  <button class="pill" data-f="hidden" onclick="setFilter('hidden')">Hidden</button>
+</div>
+<div class="list" id="list"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
+<div id="moreWrap"></div>
+<div class="note" id="note"></div>
+<div style="height:40px"></div>
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
+import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
+import { getFirestore, doc, getDoc, updateDoc, deleteDoc, setDoc, increment, collection, query, where, orderBy,
+         limit, startAfter, addDoc, serverTimestamp, getDocs, Timestamp, enableNetwork, disableNetwork }
+  from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
+import { createResilient, isTransient } from '/resilient.js';
+
+const fbApp = initializeApp({
+  apiKey:"AIzaSyDTn70s1_uIiSOR6lPLY_nKh8Ff1FViFCs",
+  authDomain:"mindshiftbooks-c4451.firebaseapp.com",
+  projectId:"mindshiftbooks-c4451",
+  storageBucket:"mindshiftbooks-c4451.firebasestorage.app",
+  messagingSenderId:"388697987853",
+  appId:"1:388697987853:web:f023df9412c22285012e44",
+  measurementId:"G-CHPJDQ4W08"
+});
+const auth = getAuth(fbApp);
+const db   = getFirestore(fbApp, 'default');
+const { resilient, reconnectFirestore } = createResilient({ db, enableNetwork, disableNetwork });
+
+/* ── Which content this page manages (same params as content-insights) ── */
+const params  = new URLSearchParams(location.search);
+const contentId = params.get('id');
+const isPost  = params.get('type') !== 'article';
+const idField = isPost ? 'postId' : 'articleId';
+const contentCol = isPost ? 'posts' : 'articles';
+const metaCol = isPost ? 'postMeta' : 'articleMeta';
+const readHref = isPost ? `/post-read?id=${contentId}` : `/article-read?id=${contentId}`;
+
+const PAGE = 15;               // top-level comments per fetch
+const CACHE_TTL = 10 * 60e3;   // session cache lifetime
+const CACHE_KEY = `cm_${isPost ? 'p' : 'a'}_${contentId}`;
+
+let me = null, myProfile = null, content = null;
+let items = [];                // top-level comments loaded so far (oldest → newest), plain objects
+let replies = {};              // parentId -> array of replies (fetched once per expand)
+let openReplies = new Set();
+let cursorMs = null;           // createdAt (ms) of the last loaded item, for "Load more"
+let newestMs = null;           // createdAt (ms) of the newest loaded item, for "Refresh"
+let exhausted = false;
+let filter = 'all';
+
+/* ── helpers ── */
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('on'); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('on'),2200); }
+function ms(ts){ return ts && ts.toMillis ? ts.toMillis() : (typeof ts === 'number' ? ts : Date.now()); }
+function ago(t){
+  const s = Math.max(1, Math.floor((Date.now() - t) / 1000));
+  if (s < 60) return 'now'; const m = Math.floor(s/60); if (m < 60) return m + 'm';
+  const h = Math.floor(m/60); if (h < 24) return h + 'h'; const d = Math.floor(h/24);
+  if (d < 30) return d + 'd'; return new Date(t).toLocaleDateString(undefined,{month:'short',day:'numeric'});
+}
+// Firestore doc → plain object with createdAt as millis (JSON-safe for the session cache)
+function plain(d){ const x = d.data(); return { id:d.id, parentId:x.parentId||null, authorUid:x.authorUid||'', authorName:x.authorName||'User',
+  authorPhoto:x.authorPhoto||'', authorUsername:x.authorUsername||'', text:x.text||'', likeCount:x.likeCount||0,
+  replyCount:x.replyCount||0, hidden:x.hidden===true, createdAt: ms(x.createdAt) }; }
+
+/* ── session cache: reopening within 10 min costs 0 reads ── */
+function saveCache(){
+  try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ t:Date.now(), items, replies, cursorMs, newestMs, exhausted })); } catch {}
+}
+function loadCache(){
+  try {
+    const c = JSON.parse(sessionStorage.getItem(CACHE_KEY) || 'null');
+    if (!c || Date.now() - c.t > CACHE_TTL) return false;
+    items = c.items || []; replies = c.replies || {}; cursorMs = c.cursorMs; newestMs = c.newestMs; exhausted = !!c.exhausted;
+    return true;
+  } catch { return false; }
+}
+
+/* ── boot ── */
+onAuthStateChanged(auth, async user => {
+  if (!user) { location.href = '/login?redirect=' + encodeURIComponent(location.pathname + location.search); return; }
+  me = user;
+  await boot();
+});
+
+async function boot(){
+  if (!contentId) return showEmpty('Content not found', "We couldn't find this post or article.");
+  try {
+    const snap = await resilient(() => getDoc(doc(db, contentCol, contentId)), { tries: 2 });
+    if (!snap.exists()) return showEmpty('Content not found', 'This may have been deleted.');
+    content = snap.data();
+    if (content.authorUid !== me.uid) return showEmpty('Not available', 'You can only manage comments on your own posts and articles.');
+    renderPreview();
+    $('pills').style.display = '';
+    if (loadCache()) { render(); return; }
+    await fetchPage(true);
+  } catch (e) {
+    console.error('comment-manager boot:', e && e.code, e && e.message);
+    showEmpty('Could not load comments', 'Check your connection and try again.', true);
+  }
+}
+
+function renderPreview(){
+  const title = isPost ? (content.text || 'Post') : (content.title || 'Untitled');
+  const p = $('preview'); p.style.display = '';
+  p.innerHTML = `<div class="preview-title">${esc(title.length > 120 ? title.slice(0,120)+'…' : title)}</div><div class="preview-meta">${isPost ? 'Post' : 'Article'} · tap to open</div>`;
+  p.onclick = () => location.href = readHref;
+}
+
+/* ── data: exactly `PAGE` reads per fetch, cursor-based ── */
+function topQuery(afterMs){
+  const parts = [collection(db,'comments'), where(idField,'==',contentId), where('parentId','==',null), orderBy('createdAt','asc')];
+  if (afterMs != null) parts.push(startAfter(Timestamp.fromMillis(afterMs)));
+  return query(...parts);
+}
+async function fetchPage(first){
+  const q = query(topQuery(first ? null : cursorMs), limit(PAGE));
+  const snap = await resilient(() => getDocs(q), { tries: 2 });
+  const got = snap.docs.map(plain);
+  items = items.concat(got);
+  if (got.length) { cursorMs = got[got.length-1].createdAt; newestMs = Math.max(newestMs || 0, cursorMs); }
+  if (got.length < PAGE) exhausted = true;
+  saveCache(); render();
+}
+window.loadMore = async function(btn){
+  if (btn) { btn.disabled = true; btn.textContent = 'Loading…'; }
+  try { await fetchPage(false); } catch (e) { toast('Could not load more — try again'); render(); }
+};
+// Refresh reads ONLY comments newer than what's cached (1 read if there are none).
+window.refreshNew = async function(){
+  const b = $('refreshBtn'); b.classList.add('spin');
+  try {
+    if (newestMs == null) { items = []; replies = {}; cursorMs = null; exhausted = false; await fetchPage(true); }
+    else {
+      const snap = await resilient(() => getDocs(query(topQuery(newestMs), limit(50))), { tries: 2 });
+      const got = snap.docs.map(plain);
+      if (got.length) {
+        const have = new Set(items.map(i => i.id));
+        got.forEach(g => { if (!have.has(g.id)) items.push(g); });
+        newestMs = got[got.length-1].createdAt;
+        if (exhausted) cursorMs = newestMs;
+      }
+      saveCache(); render();
+      toast(got.length ? `${got.length} new comment${got.length>1?'s':''}` : 'No new comments');
+    }
+  } catch { toast('Could not refresh — try again'); }
+  b.classList.remove('spin');
+};
+
+/* ── render ── */
+window.setFilter = function(f){
+  filter = f;
+  document.querySelectorAll('.pill').forEach(p => p.classList.toggle('active', p.dataset.f === f));
+  render();
+};
+function visible(){
+  if (filter === 'hidden')    return items.filter(c => c.hidden);
+  if (filter === 'unreplied') return items.filter(c => !c.hidden && c.authorUid !== me.uid && (c.replyCount || 0) === 0);
+  return items;
+}
+function avatar(c){
+  const i = esc((c.authorName || 'U').charAt(0).toUpperCase());
+  return `<div class="av">${c.authorPhoto ? `<img src="${esc(c.authorPhoto)}" alt="" onerror="this.remove()">` : i}</div>`;
+}
+function commentHTML(c, isReply){
+  const mine = c.authorUid === me.uid;
+  const badges = (c.hidden ? '<span class="badge h">Hidden</span>' : '') + (mine ? '<span class="badge m">You</span>' : '');
+  const acts = [];
+  if (!isReply) acts.push(`<button class="act primary" onclick="openReply('${c.id}')">Reply</button>`);
+  if (!mine) acts.push(`<button class="act" onclick="toggleHide('${c.id}','${c.parentId||''}')">${c.hidden ? 'Unhide' : 'Hide'}</button>`);
+  acts.push(`<button class="act danger" onclick="delComment('${c.id}','${c.parentId||''}')">Delete</button>`);
+  if (!isReply && c.replyCount > 0) acts.push(`<button class="act" onclick="toggleReplies('${c.id}')">${openReplies.has(c.id) ? 'Hide' : 'View'} ${c.replyCount} ${c.replyCount===1?'reply':'replies'}</button>`);
+  const rep = isReply ? '' : `<div class="replies" id="rep-${c.id}" style="display:${openReplies.has(c.id)?'block':'none'}">${openReplies.has(c.id) ? repliesHTML(c.id) : ''}</div>
+    <div class="ri-row" id="rir-${c.id}"><textarea class="ri" id="ri-${c.id}" rows="1" placeholder="Reply to ${esc(c.authorName)}…" oninput="riInput('${c.id}',this)"></textarea><button class="ri-send" id="ris-${c.id}" onclick="sendReply('${c.id}')" disabled>Send</button></div>`;
+  return `<div class="${isReply ? 'rp' : 'cm'}${c.hidden ? ' hidden-c' : ''}" id="ci-${c.id}">
+    <div class="cm-top">${avatar(c)}<div class="cm-body">
+      <div><span class="cm-name">${esc(c.authorName)}</span><span class="cm-time">${ago(c.createdAt)}</span>${badges}</div>
+      <div class="cm-text">${esc(c.text)}</div>
+      <div class="acts">${acts.join('')}</div>
+    </div></div>${rep}</div>`;
+}
+function repliesHTML(pid){
+  const r = replies[pid];
+  if (!r) return '<div style="padding:8px 0;font-size:12px;color:#94a3b8">Loading…</div>';
+  return r.length ? r.map(x => commentHTML(x, true)).join('') : '<div style="padding:8px 0;font-size:12px;color:#94a3b8">No replies.</div>';
+}
+function render(){
+  const list = visible();
+  const total = items.length;
+  if (!total) {
+    $('list').innerHTML = `<div class="empty"><strong>No comments yet</strong>When people comment, you can reply, hide or delete them here.</div>`;
+    $('moreWrap').innerHTML = ''; $('note').textContent = ''; return;
+  }
+  $('list').innerHTML = list.length ? list.map(c => commentHTML(c, false)).join('')
+    : `<div class="empty"><strong>${filter === 'hidden' ? 'Nothing hidden' : 'All caught up'}</strong>${filter === 'hidden' ? 'Comments you hide will show up here.' : 'No unreplied comments in what\'s loaded.'}</div>`;
+  $('moreWrap').innerHTML = exhausted ? '' : `<button class="more" onclick="loadMore(this)">Load more</button>`;
+  $('note').textContent = filter === 'all' ? '' : 'Filters apply to comments loaded so far' + (exhausted ? '.' : ' — load more to see older ones.');
+}
+function showEmpty(title, sub, retry){
+  $('pills').style.display = 'none'; $('preview').style.display = 'none';
+  $('list').innerHTML = `<div class="empty"><strong>${esc(title)}</strong>${esc(sub)}${retry ? '<br><button class="act primary" onclick="retryBoot()">Try again</button>' : ''}</div>`;
+}
+window.retryBoot = async function(){ await reconnectFirestore(); $('list').innerHTML = '<div class="skel"></div><div class="skel"></div>'; boot(); };
+
+/* ── replies (fetched once per thread, then cached) ── */
+window.toggleReplies = async function(cid){
+  if (openReplies.has(cid)) { openReplies.delete(cid); render(); return; }
+  openReplies.add(cid);
+  if (replies[cid]) { render(); return; }
+  render();
+  try {
+    const q = query(collection(db,'comments'), where(idField,'==',contentId), where('parentId','==',cid), orderBy('createdAt','asc'));
+    const snap = await resilient(() => getDocs(q), { tries: 2 });
+    replies[cid] = snap.docs.map(plain); saveCache(); render();
+  } catch { openReplies.delete(cid); render(); toast('Could not load replies'); }
+};
+
+/* ── actions ── */
+window.riInput = function(cid, el){
+  el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+  $('ris-' + cid).disabled = !el.value.trim();
+};
+window.openReply = function(cid){
+  const row = $('rir-' + cid); if (!row) return;
+  row.classList.toggle('on'); if (row.classList.contains('on')) $('ri-' + cid).focus();
+};
+async function ensureProfile(){
+  if (myProfile) return myProfile;
+  let name = me.displayName || 'Someone', photo = me.photoURL || '', username = '';
+  try {
+    const s = await resilient(() => getDoc(doc(db,'users',me.uid)), { tries: 2 });
+    if (s.exists()) { const u = s.data(); name = u.name || u.displayName || name; photo = u.photo || u.photoURL || photo; username = u.username || ''; }
+  } catch {}
+  return (myProfile = { name, photo, username });
+}
+// Reply = 4 writes: the reply, parent's replyCount, content's commentCount, and one notification.
+window.sendReply = async function(pid){
+  const inp = $('ri-' + pid), btn = $('ris-' + pid);
+  const text = (inp.value || '').trim(); if (!text) return;
+  btn.disabled = true; btn.textContent = '…';
+  try {
+    const p = await ensureProfile();
+    const ref = await addDoc(collection(db,'comments'), { [idField]: contentId, parentId: pid, authorUid: me.uid,
+      authorName: p.name, authorPhoto: p.photo, authorUsername: p.username, text, likeCount: 0, replyCount: 0, hidden: false, createdAt: serverTimestamp() });
+    updateDoc(doc(db,'comments',pid), { replyCount: increment(1) }).catch(() => {});
+    updateDoc(doc(db, metaCol, contentId), { commentCount: increment(1) }).catch(() => setDoc(doc(db, metaCol, contentId), { commentCount: 1 }, { merge: true }).catch(() => {}));
+    const parent = items.find(i => i.id === pid);
+    if (parent) {
+      parent.replyCount = (parent.replyCount || 0) + 1;
+      if (parent.authorUid && parent.authorUid !== me.uid) {
+        addDoc(collection(db,'notifications'), { recipientUid: parent.authorUid, type: 'comment_reply', actorUid: me.uid,
+          actorName: p.name, actorPhoto: p.photo, actorUsername: p.username, targetId: contentId,
+          targetTitle: isPost ? '' : (content.title || ''), commentId: pid, targetType: isPost ? 'post' : 'article',
+          read: false, createdAt: serverTimestamp(), lastAt: serverTimestamp() }).catch(() => {});
+      }
+    }
+    const nr = { id: ref.id, parentId: pid, authorUid: me.uid, authorName: p.name, authorPhoto: p.photo, authorUsername: p.username,
+      text, likeCount: 0, replyCount: 0, hidden: false, createdAt: Date.now() };
+    // Only append locally if that thread's replies were already loaded; otherwise the next expand fetches them fresh.
+    if (replies[pid]) { replies[pid].push(nr); openReplies.add(pid); }
+    saveCache(); render();
+    toast('Reply posted');
+  } catch (e) { console.error('sendReply:', e && e.code); btn.disabled = false; btn.textContent = 'Send'; toast('Could not post reply — try again'); }
+};
+
+// Hide/unhide = 1 write. Deliberately does NOT touch commentCount.
+window.toggleHide = async function(cid, pid){
+  const list = pid ? (replies[pid] || []) : items;
+  const c = list.find(x => x.id === cid); if (!c) return;
+  const next = !c.hidden;
+  const el = $('ci-' + cid); el && el.classList.add('busy');
+  try {
+    await updateDoc(doc(db,'comments',cid), { hidden: next });
+    c.hidden = next; saveCache(); render();
+    toast(next ? 'Comment hidden from readers' : 'Comment visible again');
+  } catch (e) {
+    el && el.classList.remove('busy');
+    console.error('toggleHide:', e && e.code);
+    toast(e && e.code === 'permission-denied' ? 'Not allowed yet — Firestore rules need updating' : 'Could not update — try again');
+  }
+};
+
+// Delete = 1 delete + content commentCount(-1) + parent replyCount(-1 for replies). No cascade.
+window.delComment = async function(cid, pid){
+  const list = pid ? (replies[pid] || []) : items;
+  const c = list.find(x => x.id === cid); if (!c) return;
+  const warn = (!pid && c.replyCount > 0) ? 'Delete this comment? Its replies will no longer be visible.' : 'Delete this comment?';
+  if (!confirm(warn)) return;
+  const el = $('ci-' + cid); el && el.classList.add('busy');
+  try {
+    await deleteDoc(doc(db,'comments',cid));
+    updateDoc(doc(db, metaCol, contentId), { commentCount: increment(-1) }).catch(() => {});
+    if (pid) {
+      updateDoc(doc(db,'comments',pid), { replyCount: increment(-1) }).catch(() => {});
+      replies[pid] = (replies[pid] || []).filter(x => x.id !== cid);
+      const parent = items.find(i => i.id === pid); if (parent) parent.replyCount = Math.max(0, (parent.replyCount || 0) - 1);
+    } else {
+      items = items.filter(x => x.id !== cid); delete replies[cid]; openReplies.delete(cid);
+    }
+    saveCache(); render(); toast('Comment deleted');
+  } catch (e) {
+    el && el.classList.remove('busy');
+    console.error('delComment:', e && e.code);
+    toast(e && e.code === 'permission-denied' ? 'Not allowed yet — Firestore rules need updating' : 'Could not delete — try again');
+  }
+};
+
+window.addEventListener('online', () => { if (!content && me) retryBoot(); });
+</script>
+</body>
+</html>
