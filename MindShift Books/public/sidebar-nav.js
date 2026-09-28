@@ -52,6 +52,7 @@
     help: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 115.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
     shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
     receipt: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2h16v20l-3-2-2 2-2-2-2 2-2-2-2 2-3-2z"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="16" y2="11"/></svg>',
+    currency: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M15 9.5c0-1.4-1.3-2.5-3-2.5s-3 1.1-3 2.5 1.3 2.2 3 2.5 3 1.1 3 2.5-1.3 2.5-3 2.5-3-1.1-3-2.5"/><line x1="12" y1="5" x2="12" y2="7"/><line x1="12" y1="17" x2="12" y2="19"/></svg>',
     chevron: '<svg class="sb-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>'
   };
 
@@ -61,6 +62,20 @@
         '<span class="sb-ico">' + icon + '</span>' +
         '<span class="sb-label">' + label + '</span>' +
         ICONS.chevron +
+      '</li>'
+    );
+  }
+
+  // Currency switch row — a segmented ₦ / $ control instead of a chevron link.
+  function currencyRow() {
+    return (
+      '<li class="sb-cur-row" id="sbCurrencyRow">' +
+        '<span class="sb-ico">' + ICONS.currency + '</span>' +
+        '<span class="sb-label">Currency</span>' +
+        '<span class="sb-cur-seg" role="group" aria-label="Currency">' +
+          '<button type="button" data-cur="NGN" aria-label="Naira">\u20A6</button>' +
+          '<button type="button" data-cur="USD" aria-label="US dollars">$</button>' +
+        '</span>' +
       '</li>'
     );
   }
@@ -101,6 +116,7 @@
         '<div class="sb-section-label">About</div>' +
         '<ul class="sb-group">' +
           item(null, ICONS.gear, 'Settings', "window.location.href='/settings'") +
+          currencyRow() +
           item(null, ICONS.help, 'Support', "window.location.href='/support'") +
           item(null, ICONS.shield, 'Terms &amp; Privacy', "window.location.href='/legal'") +
         '</ul>' +
@@ -143,6 +159,12 @@
     '.sidebar .sb-ico svg{width:19px;height:19px}' +
     '.sidebar .sb-label{flex:1;min-width:0}' +
     '.sidebar .sb-chev{width:15px;height:15px;flex-shrink:0;color:var(--mute,#9ca3af)}' +
+    '.sidebar .sb-group li.sb-cur-row{cursor:default}' +
+    '.sidebar .sb-group li.sb-cur-row:active{background:transparent}' +
+    '.sidebar .sb-cur-seg{display:inline-flex;background:var(--bg,#f1f5f9);border:1px solid var(--border,#e2e8f0);border-radius:999px;padding:2px;flex-shrink:0}' +
+    '.sidebar .sb-cur-seg button{border:0;background:transparent;color:var(--sub,#6b7280);font-family:inherit;font-weight:700;font-size:13px;line-height:1;min-width:36px;height:28px;border-radius:999px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .2s,color .2s}' +
+    '.sidebar .sb-cur-seg button.on{background:linear-gradient(135deg,#4f46e5,#06b6d4);color:#fff}' +
+    '.sidebar .sb-cur-seg button:focus-visible{outline:2px solid #06b6d4;outline-offset:2px}' +
     '.sidebar .sidebar-logout{color:var(--red,#ef4444)}' +
     '.sidebar .sidebar-logout .sb-ico{color:var(--red,#ef4444)}' +
     '.sidebar .sb-section-label{font-size:11.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--mute,#9ca3af);padding:4px 8px 8px}' +
@@ -168,6 +190,43 @@
     // rather than injecting a floating sidebar nobody asked for.
     return;
   }
+
+  // ── Currency switch (₦ / $) ──
+  // Uses window.MSBCurrency (currency.js) when the page has it. currency.js loads near
+  // the bottom of storefront pages, so at this point it usually doesn't exist yet — the
+  // row re-syncs on the 'load' and 'msb-currency-changed' events. On pages without
+  // currency.js the choice is still saved and applies next time a store page opens.
+  function curGet() {
+    if (window.MSBCurrency) return window.MSBCurrency.get();
+    try {
+      var v = localStorage.getItem('msbCurrency') || localStorage.getItem('msbCurrencyAuto');
+      if (v === 'NGN' || v === 'USD') return v;
+      return Intl.DateTimeFormat().resolvedOptions().timeZone === 'Africa/Lagos' ? 'NGN' : 'USD';
+    } catch (e) { return 'NGN'; }
+  }
+  function curSync() {
+    var c = curGet();
+    var btns = document.querySelectorAll('#sbCurrencyRow [data-cur]');
+    for (var i = 0; i < btns.length; i++) {
+      var on = btns[i].getAttribute('data-cur') === c;
+      btns[i].classList.toggle('on', on);
+      btns[i].setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+  }
+  var curRow = document.getElementById('sbCurrencyRow');
+  if (curRow) {
+    curRow.addEventListener('click', function (e) {
+      var b = e.target.closest ? e.target.closest('[data-cur]') : null;
+      if (!b) return;
+      var c = b.getAttribute('data-cur');
+      if (window.MSBCurrency) window.MSBCurrency.set(c);
+      else { try { localStorage.setItem('msbCurrency', c); } catch (err) {} }
+      curSync();
+    });
+  }
+  curSync();
+  window.addEventListener('load', curSync);
+  window.addEventListener('msb-currency-changed', curSync);
 
   // ── Optimistic auth-item display ──
   // This script normally runs near the top of the page, well before auth.js

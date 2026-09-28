@@ -558,8 +558,7 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
 
 </style>
 <script src="/article-categories.js"></script>
-<script>window.MSB_CURRENCY_NO_TOGGLE=true;</script>
-<script src="/currency.js?v=2"></script>
+<script src="/currency.js?v=4"></script>
 </head>
 <body>
 
@@ -579,7 +578,7 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
 </div>
 
 <div id="sidebar-slot"></div>
-<script src="/sidebar-nav.js?v=2"></script>
+<script src="/sidebar-nav.js?v=3"></script>
 <script src="/share-image.js"></script>
 <script>
   function toggleSidebar(){
@@ -636,7 +635,7 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
     </div>
     <div class="setup-banner-txt">
       <div class="setup-banner-title">Finish setting up your profile</div>
-      <div class="setup-banner-sub" id="setupBannerSub">Complete these steps to get <span data-ngn="2000" data-exact>₦2,000</span> free + a badge</div>
+      <div class="setup-banner-sub" id="setupBannerSub">Complete these steps to get <span data-ngn="2000" data-voucher>₦2,000</span> free + a badge</div>
     </div>
     <div class="setup-banner-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
   </button>
@@ -1335,7 +1334,7 @@ function renderSetupBanner(){
 
   const labels = ['your photo, cover, bio & interests','following 10 creators','your first post or article','liking 10 posts/articles'];
   const remaining = labels.filter((_,i)=>!steps[i]);
-  const _v = `<span data-ngn="2000" data-exact>${window.MSBCurrency ? window.MSBCurrency.fmt(2000, { exact: true }) : '₦2,000'}</span>`;
+  const _v = `<span data-ngn="2000" data-voucher>${window.MSBCurrency ? window.MSBCurrency.fmt(2000, { voucher: true }) : '₦2,000'}</span>`;
   document.getElementById('setupBannerSub').innerHTML =
     remaining.length === 1 ? `Just ${remaining[0]} left to get ${_v} free + a badge` : `${4 - doneCount} steps left to get ${_v} free + a badge`;
 }
@@ -3207,7 +3206,7 @@ window.showToast = function(msg){
     <div class="celebrate-confetti">✨ 🎊 ✨ 🎊 ✨ 🎊 ✨ 🎊 ✨</div>
     <div class="celebrate-emoji">🎁</div>
     <h3>You completed it!</h3>
-    <p>Your profile is all set — you've got <b><span data-ngn="2000" data-exact>₦2,000</span> free</b> for your next ebook, plus your <b>Founding Creator badge</b> is live on your profile.</p>
+    <p>Your profile is all set — you've got <b><span data-ngn="2000" data-voucher>₦2,000</span> free</b> for your next ebook, plus your <b>Founding Creator badge</b> is live on your profile.</p>
     <button type="button" class="celebrate-cta" id="celebrateCta">Visit Bookstore</button>
     <button type="button" class="celebrate-cta" id="celebrateBadgeCta" style="background:transparent;color:#fff;text-decoration:underline;box-shadow:none;margin-top:4px">View my badge</button>
   </div>
