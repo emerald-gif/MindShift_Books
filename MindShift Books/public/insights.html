@@ -175,6 +175,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;color:var(--txt);min-height:100
   display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:5px}
 .perf-meta{display:flex;gap:14px}
 .perf-meta-item{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--mute);font-weight:600}
+.perf-pin{margin-left:6px;font-size:11px}
+.perf-nudge{margin-left:auto;font-size:11px;font-weight:800;color:#b45309;background:#fffbeb;border:1px solid #fde68a;padding:2px 8px;border-radius:99px}
 .perf-meta-item svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 
 /* ── ACTIVITY FEED ── */
@@ -603,7 +605,11 @@ async function loadInsights(uid){
       const comments = meta.commentCount||0;
       const views    = meta.viewCount||0;
       const reposts  = repostSnap?.exists() ? (repostSnap.data().count||0) : 0;
-      return {...a, likes, comments, views, reposts, score: views + likes*2 + comments*3 + reposts*3};
+      // Same fields comment-manager.html writes and content-insights.html reads —
+      // carrying them here means the top-level hub reflects pins/reply-rate too.
+      const pinned            = !!meta.pinnedCommentId;
+      const creatorReplyCount = meta.creatorReplyCount || 0;
+      return {...a, likes, comments, views, reposts, pinned, creatorReplyCount, score: views + likes*2 + comments*3 + reposts*3};
     }));
 
     const totalLikes        = enriched.reduce((s,a)=>s+a.likes,0);
@@ -991,16 +997,22 @@ function renderPerfList(items){
     const isPost = a.type==='post';
     const title = isPost ? (a.text ? a.text.slice(0,60) : 'Untitled post') : (a.title||'Untitled');
     const href  = `/content-insights?id=${a.id}&type=${a.type}`;
+    // Pin badge + a nudge when comments are piling up unanswered — the same
+    // pin/reply-rate fields comment-manager.html writes, surfaced at the top level.
+    const pinBadge = a.pinned ? `<span class="perf-pin" title="Has a pinned comment">📌</span>` : '';
+    const unanswered = a.comments - a.creatorReplyCount;
+    const nudge = (unanswered >= 3) ? `<span class="perf-nudge">${unanswered} unanswered</span>` : '';
     return `
     <div class="perf-row" onclick="location.href='${href}'">
       <div class="perf-rank">${i+1}</div>
       <div class="perf-info">
-        <div class="perf-title">${esc(title)}${isPost ? ' <span style="color:var(--mute);font-weight:600;font-size:11px">· Post</span>' : ''}</div>
+        <div class="perf-title">${esc(title)}${isPost ? ' <span style="color:var(--mute);font-weight:600;font-size:11px">· Post</span>' : ''}${pinBadge}</div>
         <div class="perf-meta">
           <span class="perf-meta-item"><svg viewBox="0 0 24 24">${ICONS.eye}</svg>${a.views}</span>
           <span class="perf-meta-item"><svg viewBox="0 0 24 24">${ICONS.heart}</svg>${a.likes}</span>
           <span class="perf-meta-item"><svg viewBox="0 0 24 24">${ICONS.comment}</svg>${a.comments}</span>
           <span class="perf-meta-item"><svg viewBox="0 0 24 24">${ICONS.repost}</svg>${a.reposts||0}</span>
+          ${nudge}
         </div>
       </div>
     </div>

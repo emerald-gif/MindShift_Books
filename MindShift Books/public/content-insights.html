@@ -91,6 +91,20 @@ body{font-family:'Segoe UI',system-ui,sans-serif;color:var(--txt);min-height:100
 .metric-label{flex:1;font-size:13.5px;font-weight:700;color:var(--txt)}
 .metric-value{font-size:15px;font-weight:900;color:var(--txt)}
 
+/* ── COMMENT PULSE ── */
+.pulse-row{padding:14px 16px;border-bottom:1px solid var(--border2)}
+.pulse-row:last-child{border-bottom:none}
+.pulse-pin{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+.pulse-pin-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+.pulse-pin-body{flex:1;min-width:0}
+.pulse-pin-lbl{font-size:11px;font-weight:800;color:var(--p);margin-bottom:2px}
+.pulse-pin-txt{font-size:13px;color:var(--txt);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pulse-reply-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.pulse-reply-lbl{font-size:13.5px;font-weight:700;color:var(--txt)}
+.pulse-reply-val{font-size:12.5px;font-weight:700;color:var(--mute)}
+.pulse-bar-track{height:8px;border-radius:99px;background:var(--border2);overflow:hidden}
+.pulse-bar-fill{height:100%;border-radius:99px;background:var(--g)}
+
 /* ── EMPTY STATE ── */
 .empty-state{text-align:center;padding:60px 24px}
 .empty-state svg{width:42px;height:42px;color:#d1d5db;margin:0 auto 12px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
@@ -179,6 +193,13 @@ body{font-family:'Segoe UI',system-ui,sans-serif;color:var(--txt);min-height:100
       <div class="skel skel-row"></div>
       <div class="skel skel-row"></div>
     </div>
+  </div>
+
+  <!-- COMMENT PULSE: the missing link back from comment-manager -->
+  <div class="section" id="pulseSection" style="display:none">
+    <div class="section-title">Comment Pulse</div>
+    <div class="section-sub">What's happening in your comments, at a glance</div>
+    <div class="metric-list" id="pulseList"></div>
   </div>
 
   <div class="bottom-pad"></div>
@@ -278,11 +299,17 @@ async function loadContentInsights(uid) {
       softGet(doc(db, 'repostCounts', contentId))
     ]);
 
-    const views    = metaSnap && metaSnap.exists() ? (metaSnap.data().viewCount || 0) : 0;
-    const comments = metaSnap && metaSnap.exists() ? (metaSnap.data().commentCount || 0) : 0;
+    const metaData = metaSnap && metaSnap.exists() ? metaSnap.data() : {};
+    const views    = metaData.viewCount || 0;
+    const comments = metaData.commentCount || 0;
     const likes    = likeSnap && likeSnap.exists() ? (likeSnap.data().count || 0) : 0;
     const reposts  = repostSnap && repostSnap.exists() ? (repostSnap.data().count || 0) : 0;
     const dayMap   = viewsSnap && viewsSnap.exists() ? (viewsSnap.data().days || {}) : {};
+    // Written by comment-manager.html when the creator pins a comment or replies —
+    // this is the link back from comments into insights.
+    const pinnedText   = metaData.pinnedCommentText || '';
+    const pinnedAuthor = metaData.pinnedCommentAuthorName || '';
+    const creatorReplyCount = metaData.creatorReplyCount || 0;
 
     renderPreview(content);
     setNum('statViews', views);
@@ -293,6 +320,7 @@ async function loadContentInsights(uid) {
     _dayMap = dayMap;
     renderTrend(_dayMap, currentTrendDays);
     renderEngagement(likes, comments, reposts);
+    renderPulse(comments, creatorReplyCount, pinnedText, pinnedAuthor);
     _ciState = 'ok';
 
   } catch (e) {
@@ -438,6 +466,40 @@ function renderEngagement(likes, comments, reposts) {
       <div class="metric-value">${reposts.toLocaleString()}</div>
     </div>
   `;
+}
+
+function renderPulse(comments, creatorReplyCount, pinnedText, pinnedAuthor) {
+  const section = document.getElementById('pulseSection');
+  const list = document.getElementById('pulseList');
+  const manageHref = `/comment-manager?type=${contentType}&id=${encodeURIComponent(contentId)}`;
+
+  // Nothing to show yet — hide the whole section rather than a hollow empty card.
+  if (!comments && !pinnedText) { section.style.display = 'none'; return; }
+  section.style.display = '';
+
+  const rows = [];
+  if (pinnedText) {
+    rows.push(`
+      <div class="pulse-row pulse-pin" onclick="location.href='${manageHref}'">
+        <div class="pulse-pin-icon">📌</div>
+        <div class="pulse-pin-body">
+          <div class="pulse-pin-lbl">Pinned comment</div>
+          <div class="pulse-pin-txt"><strong>${esc(pinnedAuthor)}:</strong> ${esc(nTrunc(pinnedText, 100))}</div>
+        </div>
+      </div>`);
+  }
+  if (comments > 0) {
+    const pct = Math.max(0, Math.min(100, Math.round((creatorReplyCount / comments) * 100)));
+    rows.push(`
+      <div class="pulse-row" style="cursor:pointer" onclick="location.href='${manageHref}'">
+        <div class="pulse-reply-top">
+          <div class="pulse-reply-lbl">Your reply rate</div>
+          <div class="pulse-reply-val">${creatorReplyCount} of ${comments} (${pct}%)</div>
+        </div>
+        <div class="pulse-bar-track"><div class="pulse-bar-fill" style="width:${pct}%"></div></div>
+      </div>`);
+  }
+  list.innerHTML = rows.join('');
 }
 
 function showEmpty(title, sub, retry) {
