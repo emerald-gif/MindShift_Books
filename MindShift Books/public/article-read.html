@@ -188,6 +188,17 @@ header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .more-section{padding:28px 4px 16px;border-top:1px solid #f3f4f6;margin-top:20px}
 .more-title{font-size:16px;font-weight:800;color:var(--txt);margin-bottom:16px}
 .more-list{display:flex;flex-direction:column;gap:12px}
+/* author bio card (end of article) */
+.author-card{margin:34px 0 8px;padding:26px 0 8px;border-top:1px solid #f3f4f6;text-align:center}
+.author-card-photo{width:96px;height:96px;border-radius:50%;object-fit:cover;background:linear-gradient(135deg,#4f46e5,#06b6d4);border:3px solid #fff;box-shadow:0 0 0 1px #e2e8f0,0 8px 20px -10px rgba(15,23,42,.35);cursor:pointer}
+.author-card-name{margin-top:14px;font-size:17px;font-weight:800;color:var(--txt);display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer}
+.author-card-stats{margin-top:3px;font-size:12.5px;color:var(--mute)}
+.author-card-bio{margin:16px auto 0;max-width:520px;font-size:15.5px;line-height:1.7;color:#334155;font-style:italic;text-align:left;font-family:Georgia,'Times New Roman',serif}
+.author-card-bio a{color:inherit;text-decoration:underline}
+.author-card-actions{margin-top:18px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
+.author-card-view{padding:7px 18px;border-radius:99px;border:1.5px solid #e2e8f0;background:#fff;color:var(--txt);font-size:12.5px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif}
+.author-card-view:hover{border-color:var(--p);color:var(--p)}
+
 .more-card{display:flex;gap:12px;align-items:flex-start;cursor:pointer;padding:12px;border-radius:14px;border:1px solid var(--border);background:#fff;transition:all .2s}
 .more-card:hover{border-color:var(--p);background:#ecfeff}
 .more-img{width:72px;height:64px;border-radius:10px;object-fit:cover;flex-shrink:0;background:linear-gradient(135deg,#cffafe,#ecfeff)}
@@ -1046,6 +1057,7 @@ async function renderArticle(){
       </div>
       <img class="art-hero" src="${article.img}" alt="${article.title}" onclick="openImageViewer(['${article.img}'], 0)" onerror="this.style.display='none'">
       <div class="art-body">${contentHtml}</div>
+      <div id="authorCardSlot"></div>
       <div id="creatorArticlesSlot"></div>
       <div id="moreArticlesSlot"></div>
       <div id="ratingCard" class="rating-card"></div>
@@ -1059,6 +1071,7 @@ async function renderArticle(){
   syncDownloadUI();
   startProgress();
   injectRatingCard();
+  loadAuthorCard();
   loadMoreFromCreator();
   loadMoreArticles();
   // Comment data is never deleted when comments are turned off — we just
@@ -1152,6 +1165,52 @@ function toMoreCard(d){
   return { id:d.id, cat:x.cat||'CAREERS', title:x.title||'', img:x.cover||x.img||'', read:x.readTime||x.read||'5 min read' };
 }
 
+/* ── AUTHOR BIO CARD ──
+   Substack-style "about the writer" block under the article. Reads the
+   author's CURRENT profile (users/{uid}) so edits show up immediately.
+   Only uses facts we actually have (name, bio, follower count) — when a
+   writer hasn't written a bio yet we fall back to a neutral line instead
+   of inventing credentials. Hidden for official MindShift posts. */
+async function loadAuthorCard(){
+  const slot = document.getElementById('authorCardSlot');
+  if(!slot || !article || !article.authorUid || article.isMindshift || article.authorUid==='official') return;
+  let u = {};
+  try{
+    const snap = await getDoc(doc(db,'users',article.authorUid));
+    if(snap.exists()) u = snap.data() || {};
+  }catch{}
+  const name  = u.name || article.author || 'this writer';
+  const photo = u.photo || article.avatar || 'logo.jpg';
+  const first = String(name).trim().split(/\s+/)[0] || name;
+  let bio = String(u.bio||'').replace(/\s+/g,' ').trim();
+  if(bio.length>320) bio = bio.slice(0,317).replace(/\s+\S*$/,'') + '…';
+  // A one-line bio ("Founder. Writer.") reads thin on its own, so give it a
+  // sentence to sit in. Longer bios are shown exactly as the writer wrote them.
+  let bioHtml;
+  if(!bio){
+    bioHtml = `${cEsc(name)} writes on MindShift Books. Follow to get their next article as soon as it's published.`;
+  }else if(bio.length<60){
+    bioHtml = `${cEsc(name)} writes on MindShift Books. ${cEsc(bio)}${/[.!?…]$/.test(bio)?'':'.'}`;
+  }else{
+    bioHtml = cEsc(bio);
+  }
+  const followers = Number(u.followerCount)||0;
+  const stats = followers>0 ? `${followers.toLocaleString()} follower${followers===1?'':'s'}` : '';
+  const isSelf = currentUser && currentUser.uid===article.authorUid;
+  slot.innerHTML = `
+    <div class="author-card" data-author-uid="${cEsc(article.authorUid)}">
+      <img class="author-card-photo" data-author-photo src="${cEsc(photo)}" alt="${cEsc(name)}" onclick="goAuthor()" onerror="this.style.opacity='.4'">
+      <div class="author-card-name" onclick="goAuthor()"><span data-author-name>${cEsc(name)}</span></div>
+      ${stats?`<div class="author-card-stats" id="authorCardStats">${stats}</div>`:''}
+      <p class="author-card-bio">${bioHtml}${bio?` Follow ${cEsc(first)} for more.`:''}</p>
+      <div class="author-card-actions">
+        ${isSelf?'':`<button class="follow-author-btn" onclick="doFollow()">${isFollowing?'Following':'Follow'}</button>`}
+        <button class="author-card-view" onclick="goAuthor()">View profile</button>
+      </div>
+    </div>`;
+  syncFollowUI();
+}
+
 /* ── MORE FROM THIS CREATOR ──
    Same card style as "More Articles" below, but scoped to one author instead
    of one category — shown first, since right after finishing a piece "who
@@ -1240,10 +1299,10 @@ function syncSaveUI(){
   if(st) st.textContent=isSaved?'Saved':'Save';
 }
 function syncFollowUI(){
-  const btn=document.getElementById('followAuthorBtn');
-  if(!btn) return;
-  btn.classList.toggle('following',isFollowing);
-  btn.textContent = isFollowing ? 'Following' : 'Follow';
+  document.querySelectorAll('.follow-author-btn').forEach(btn=>{
+    btn.classList.toggle('following',isFollowing);
+    btn.textContent = isFollowing ? 'Following' : 'Follow';
+  });
 }
 function syncDownloadUI(){
   const el=document.getElementById('actDownload');
