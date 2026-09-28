@@ -149,6 +149,17 @@ function injectPanelOnce() {
   document.body.appendChild(wrap.firstElementChild);
 }
 
+// Notification text is written server-side, so any "₦2,000" in it is plain text.
+// When the visitor is viewing in dollars (currency.js on the page), show the fixed
+// $ voucher amount instead. A no-op on pages without currency.js or in naira mode.
+function nMoney(s) {
+  var C = window.MSBCurrency;
+  if (!C || C.get() !== 'USD' || s == null) return s;
+  return String(s).replace(/\u20A6\s?([\d,]+)/g, function (m, num) {
+    var n = parseInt(num.replace(/,/g, ''), 10);
+    return n ? C.fmt(n, { voucher: true, plain: n === 2000 }) : m;
+  });
+}
 function nEsc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
 function nTrunc(s, n) { return s.length > n ? s.slice(0, n) + '…' : s; }
 function nTimeAgo(ts) {
@@ -190,12 +201,12 @@ function notifMessage(n) {
     case 'mention':      return `${name} mentioned you in ${n.targetType==='article'?'an article':'a post'}${n.targetTitle ? `<span class="notif-snip">: “${nEsc(nTrunc(n.targetTitle, 60))}”</span>` : ''}`;
     case 'repost':       return `${name} reposted your ${n.targetType==='post'?'post':'article'}${title}`;
     case 'repost_quote': return `${name} reposted your ${n.targetType==='post'?'post':'article'} with a caption${title}`;
-    case 'admin_message':    return `<strong>${nEsc(n.title || 'Message from MindShift Books')}</strong>${n.message ? ' — ' + nEsc(n.message) : ''}`;
-    case 'founding_creator_earned': return `<strong>${nEsc(n.title || 'You earned the Founding Creator badge!')}</strong>${n.message ? ' — ' + nEsc(n.message) : ''}`;
-    case 'ebook_voucher_earned':    return `<strong>${nEsc(n.title || 'Your voucher is ready')}</strong>${n.message ? ' — ' + nEsc(n.message) : ''}`;
-    case 'article_approved': return `<strong>${nEsc(n.title || 'Your article was approved!')}</strong>${n.message ? ' — ' + nEsc(n.message) : ''}`;
-    case 'article_rejected': return `<strong>${nEsc(n.title || 'Article update')}</strong>${n.message ? ' — ' + nEsc(n.message) : ''}`;
-    case 'article_removed': case 'post_removed': return `<strong>${nEsc(n.title || 'Content removed')}</strong>${n.message ? ' — ' + nEsc(n.message) : ''}`;
+    case 'admin_message':    return `<strong>${nEsc(nMoney(n.title || 'Message from MindShift Books'))}</strong>${n.message ? ' — ' + nEsc(nMoney(n.message)) : ''}`;
+    case 'founding_creator_earned': return `<strong>${nEsc(nMoney(n.title || 'You earned the Founding Creator badge!'))}</strong>${n.message ? ' — ' + nEsc(nMoney(n.message)) : ''}`;
+    case 'ebook_voucher_earned':    return `<strong>${nEsc(nMoney(n.title || 'Your voucher is ready'))}</strong>${n.message ? ' — ' + nEsc(nMoney(n.message)) : ''}`;
+    case 'article_approved': return `<strong>${nEsc(n.title || 'Your article was approved!')}</strong>${n.message ? ' — ' + nEsc(nMoney(n.message)) : ''}`;
+    case 'article_rejected': return `<strong>${nEsc(n.title || 'Article update')}</strong>${n.message ? ' — ' + nEsc(nMoney(n.message)) : ''}`;
+    case 'article_removed': case 'post_removed': return `<strong>${nEsc(n.title || 'Content removed')}</strong>${n.message ? ' — ' + nEsc(nMoney(n.message)) : ''}`;
     default:              return `${name} interacted with you`;
   }
 }

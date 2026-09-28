@@ -83,6 +83,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:8px}
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 </style>
+<script src="/currency.js?v=5"></script>
 </head>
 <body>
 
@@ -101,7 +102,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 <div class="reward-teaser" id="rewardTeaser">
   <div class="reward-teaser-emoji">🎁</div>
   <div>
-    <div class="reward-teaser-title">Get ₦2,000 free + Founding Creator badge</div>
+    <div class="reward-teaser-title">Get <span data-ngn="2000" data-voucher>₦2,000</span> free + Founding Creator badge</div>
     <div class="reward-teaser-sub">Finish the checklist below to unlock both</div>
   </div>
 </div>
@@ -256,7 +257,7 @@ async function claimVoucherAndReveal(user){
     });
     const data = await resp.json();
     if(resp.ok && data.ok && data.voucher){
-      document.getElementById('finishTitle').textContent = 'You\u2019ve got \u20a62,000 free + a badge! \ud83c\udf89';
+      document.getElementById('finishTitle').innerHTML = 'You\u2019ve got <span data-ngn="2000" data-voucher>' + (window.MSBCurrency ? window.MSBCurrency.fmt(2000, { voucher: true }) : '\u20a62,000') + '</span> free + a badge! \ud83c\udf89';
       document.getElementById('finishSub').textContent = 'A voucher for your next ebook (already applied) plus your Founding Creator badge \u2014 both are live on your profile now.';
       cta.style.display = 'inline-block';
       cta.onclick = () => location.href = '/books';

@@ -69,6 +69,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:8px}
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 </style>
+<script src="/currency.js?v=5"></script>
 </head>
 <body>
 
@@ -166,7 +167,7 @@ function render(data){
 
   if(!data.earned){
     el.innerHTML = `<div class="empty">You haven't earned the Founding Creator badge yet.<br><br>
-      Complete your profile setup to unlock it — plus a ₦2,000 ebook voucher.<br><br>
+      Complete your profile setup to unlock it — plus a <span data-ngn="2000" data-voucher>${window.MSBCurrency ? window.MSBCurrency.fmt(2000, { voucher: true }) : '₦2,000'}</span> ebook voucher.<br><br>
       <a href="/complete-profile">Finish your profile →</a></div>`;
     return;
   }
