@@ -60,6 +60,20 @@ body{font-family:'Segoe UI',system-ui,sans-serif;color:var(--txt);min-height:100
 
 /* ── PROFILE ROW (avatar + name + followers) ── */
 .profile-row{display:flex;align-items:center;gap:12px;padding:16px 16px 4px}
+
+/* ── PERMANENT COMMENT CENTER CARD (always visible, hub-level) ── */
+.cm-center-card{margin:14px 16px 4px;border-radius:20px;background:#fff;
+  box-shadow:0 1px 2px rgba(15,23,42,.04),0 10px 28px -12px rgba(76,60,190,.16);
+  padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer}
+.cm-center-icon{width:38px;height:38px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#fef3c7,#fde68a);color:#d97706}
+.cm-center-icon svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.cm-center-body{flex:1;min-width:0}
+.cm-center-lbl{font-size:11.5px;font-weight:800;color:var(--p,#6366f1);text-transform:uppercase;letter-spacing:.3px;margin-bottom:3px}
+.cm-center-txt{font-size:13.5px;color:#0f172a;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cm-center-txt b{font-weight:800}
+.cm-center-chev{width:18px;height:18px;flex-shrink:0;color:#94a3b8}
+.cm-center-chev svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
 .pr-avatar{width:44px;height:44px;border-radius:50%;object-fit:cover;background:#e0e7ff;flex-shrink:0}
 .pr-info{flex:1;min-width:0}
 .pr-name{font-size:15px;font-weight:900;color:var(--txt)}
@@ -248,6 +262,20 @@ body{font-family:'Segoe UI',system-ui,sans-serif;color:var(--txt);min-height:100
     <div class="pr-name" id="prName"><div class="skel" style="height:15px;width:120px"></div></div>
     <div class="pr-followers" id="prFollowers">—</div>
   </div>
+</div>
+
+<!-- PERMANENT: Comment Center — always visible, points into whichever post/article
+     needs attention most, and into that item's Comment Manager. Same shortcut that
+     lives on content-insights.html, surfaced here at the hub level too. -->
+<div class="cm-center-card" id="cmCenterCard">
+  <div class="cm-center-icon">
+    <svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+  </div>
+  <div class="cm-center-body">
+    <div class="cm-center-lbl">Comment Center</div>
+    <div class="cm-center-txt skel" style="height:13px;width:75%;border-radius:6px"></div>
+  </div>
+  <div class="cm-center-chev"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
 </div>
 
 <!-- FOUNDING CREATOR — weekly progress rings (Facebook-dashboard style) -->
@@ -586,6 +614,7 @@ async function loadInsights(uid){
       );
       setNum('statArticleViews', 0);
       setNum('statEngagement', 0);
+      renderCommentCenter([]);
       return;
     }
 
@@ -623,6 +652,7 @@ async function loadInsights(uid){
     renderBestArticle(enriched);
     renderBreakdown(totalLikes, totalComments, totalReposts);
     renderPerfList(enriched);
+    renderCommentCenter(enriched);
     _insState = 'ok';
 
   }catch(e){
@@ -640,6 +670,9 @@ async function loadInsights(uid){
       emptyState(`<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>`, `Trend data unavailable.`);
     document.getElementById('activityCard').innerHTML =
       emptyState(ICONS.eye, `Activity unavailable.`);
+    const cmCenterBody = document.querySelector('#cmCenterCard .cm-center-body');
+    if (cmCenterBody) cmCenterBody.innerHTML = `<div class="cm-center-lbl">Comment Center</div>
+      <div class="cm-center-txt" style="color:#94a3b8">Could not load — check your connection.</div>`;
     const fcSectionEl = document.getElementById('fcSection');
     if(fcSectionEl) fcSectionEl.style.display = 'none';
   }
@@ -990,6 +1023,36 @@ function renderBreakdown(likes, comments, reposts){
 }
 
 /* ── TOP PERFORMING CONTENT (articles + posts) ── */
+// ── PERMANENT: always renders, picks whichever post/article needs a reply
+// most (or the most active one if you're caught up), and links straight
+// into that item's Comment Manager. ──
+function renderCommentCenter(enriched){
+  const card = document.getElementById('cmCenterCard');
+  const body = card.querySelector('.cm-center-body');
+
+  const withComments = enriched.filter(a => a.comments > 0);
+  if (!withComments.length) {
+    body.innerHTML = `<div class="cm-center-lbl">Comment Center</div>
+      <div class="cm-center-txt" style="color:#94a3b8">No comments yet across your posts and articles.</div>`;
+    card.onclick = null;
+    return;
+  }
+
+  const withUnanswered = withComments
+    .map(a => ({...a, unanswered: a.comments - (a.creatorReplyCount || 0)}))
+    .sort((a,b) => b.unanswered - a.unanswered);
+  const top = withUnanswered[0];
+  const title = top.type === 'post' ? (top.text ? top.text.slice(0,40) : 'your post') : (top.title || 'your article');
+  const href = `/comment-manager?type=${top.type}&id=${top.id}`;
+
+  body.innerHTML = top.unanswered > 0
+    ? `<div class="cm-center-lbl">Comment Center</div>
+       <div class="cm-center-txt"><b>${top.unanswered} unanswered</b> comment${top.unanswered===1?'':'s'} on "${esc(title)}"</div>`
+    : `<div class="cm-center-lbl">Comment Center</div>
+       <div class="cm-center-txt">You're all caught up — ${top.comments} comment${top.comments===1?'':'s'} on "${esc(title)}"</div>`;
+  card.onclick = () => location.href = href;
+}
+
 function renderPerfList(items){
   const sorted = [...items].sort((a,b)=>b.score-a.score).slice(0,5);
   const list = document.getElementById('perfList');
