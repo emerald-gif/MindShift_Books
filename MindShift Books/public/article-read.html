@@ -1641,6 +1641,11 @@ window.submitReply=async function(parentId){
     const ref=await addDoc(collection(db,'comments'),{articleId:artId,parentId,authorUid:currentUser.uid,authorName:an,authorPhoto:ap,authorUsername:au,text,likeCount:0,replyCount:0,hidden:false,createdAt:serverTimestamp()});
     try{await updateDoc(doc(db,'comments',parentId),{replyCount:increment(1)});}catch{}
     try{await updateDoc(doc(db,'articleMeta',artId),{commentCount:increment(1)});}catch{await setDoc(doc(db,'articleMeta',artId),{commentCount:1},{merge:true});}
+    // Same field comment-manager.html bumps — a creator can reply from either
+    // place, and both should count toward the reply-rate stat on Insights.
+    if(article&&article.authorUid&&currentUser.uid===article.authorUid){
+      updateDoc(doc(db,'articleMeta',artId),{creatorReplyCount:increment(1)}).catch(()=>setDoc(doc(db,'articleMeta',artId),{creatorReplyCount:1},{merge:true}).catch(()=>{}));
+    }
     cCommentCount++;updateCCount();
     const nr={id:ref.id,articleId:artId,parentId,authorUid:currentUser.uid,authorName:an,authorPhoto:ap,authorUsername:au,text,likeCount:0,replyCount:0,createdAt:{toDate:()=>new Date()}};
     if(!cReplies[parentId])cReplies[parentId]=[];
