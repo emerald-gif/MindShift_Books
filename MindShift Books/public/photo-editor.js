@@ -298,6 +298,23 @@ window.MindshiftPhotoEditor = (function () {
     });
   }
 
+  // Text is measured with the real font, so wait (briefly) for Inter before the first layout;
+  // otherwise the preview and the exported JPEG could disagree about where a line ends.
+  function fontsReady() {
+    try {
+      if (!document.fonts || !document.fonts.load) return Promise.resolve();
+      var jobs = Promise.all([document.fonts.load('800 32px Inter'), document.fonts.load('700 32px Inter')]).catch(function () {});
+      return Promise.race([jobs, new Promise(function (r) { setTimeout(r, 1500); })]);
+    } catch (_) { return Promise.resolve(); }
+  }
+
+  function withTimeout(promise, ms, msg) {
+    return new Promise(function (resolve, reject) {
+      var t = setTimeout(function () { reject(new Error(msg)); }, ms);
+      promise.then(function (v) { clearTimeout(t); resolve(v); }, function (e) { clearTimeout(t); reject(e); });
+    });
+  }
+
   /* ───────────────────────── UI (built once, reused) ───────────────────────── */
 
   var CSS = '' +
@@ -552,7 +569,11 @@ window.MindshiftPhotoEditor = (function () {
     cropEl.addEventListener('pointerup', endDrag);
     cropEl.addEventListener('pointercancel', endDrag);
 
-    window.addEventListener('resize', function () { if (S) layoutStage(); });
+    window.addEventListener('resize', function () {
+      if (!S) return;
+      layoutStage();
+      if (S.ed) { positionComposer(); layoutComposer(); }
+    });
     document.addEventListener('keydown', function (e) {
       if (!S) return;
       if (S.ed) {                                   // typing screen: Esc / Ctrl+Enter finish, undo belongs to the textarea
@@ -776,10 +797,21 @@ window.MindshiftPhotoEditor = (function () {
     });
   }
 
+  // If the crop was tightened after text was placed, pull any text that ended up outside it back in
+  // (otherwise it would be invisible in the result and impossible to grab).
+  function keepTextsInCrop() {
+    var c = S.crop;
+    S.texts.forEach(function (t) {
+      t.x = clampN(t.x, c.x / S.tw, (c.x + c.w) / S.tw);
+      t.y = clampN(t.y, c.y / S.th, (c.y + c.h) / S.th);
+    });
+  }
+
   function setTab(tab) {
     if (!S) return;
     S.tab = tab;
-    if (tab !== 'text') S.sel = -1;
+    if (tab !== 'text') { S.sel = -1; if (TS.reset) TS.reset(); }
+    else keepTextsInCrop();
     el.className = 'on tab-' + tab;
     if (tab === 'filters') buildThumbs();
     layoutStage();
@@ -791,6 +823,7 @@ window.MindshiftPhotoEditor = (function () {
      While typing, the words are drawn by the SAME drawTextItem the photo uses, and a
      transparent <textarea> sits exactly on top of them to take the typing and show the caret. */
   var TE = {};
+  var TS = {};   // gesture state hooks (reset from outside when the editor closes / changes tab)
 
   function clampN(v, a, b) { return Math.min(Math.max(v, a), b); }
 
@@ -961,6 +994,9 @@ window.MindshiftPhotoEditor = (function () {
   function bindTextStage() {
     var surf = $('pe-txt'), trash = $('pe-trash');
     var ptrs = {}, g = null, wheelT = 0;
+    TS.reset = function () { for (var k in ptrs) delete ptrs[k]; g = null; clearTimeout(wheelT); hideTrash(); };
+    // a bug inside a gesture must never leave the editor stuck half-way through a drag
+    function guarded(fn) { return function (e) { try { fn(e); } catch (err) { TS.reset(); if (window.console) console.error('[photo-editor]', err); } }; }
     function count() { return Object.keys(ptrs).length; }
     function toImg(x, y) {
       var rc = $('pe-wrap').getBoundingClientRect();
@@ -972,8 +1008,9 @@ window.MindshiftPhotoEditor = (function () {
     }
     function hideTrash() { trash.classList.remove('show'); trash.classList.remove('hot'); }
 
-    surf.addEventListener('pointerdown', function (e) {
+    surf.addEventListener('pointerdown', guarded(function (e) {
       if (!S || S.tab !== 'text' || S.ed || !S.view) return;
+      if (count() >= 2) return;                     // a third finger is ignored
       try { surf.setPointerCapture(e.pointerId); } catch (_) {}
       ptrs[e.pointerId] = { x: e.clientX, y: e.clientY };
       e.preventDefault();
@@ -993,9 +1030,9 @@ window.MindshiftPhotoEditor = (function () {
               size0: t.size, rot0: t.rot, edited: !!(g && g.moved) };
         hideTrash();
       }
-    });
+    }));
 
-    surf.addEventListener('pointermove', function (e) {
+    surf.addEventListener('pointermove', guarded(function (e) {
       if (!g || !ptrs[e.pointerId] || !S) return;
       ptrs[e.pointerId] = { x: e.clientX, y: e.clientY };
       if (g.mode === 'pinch') {
@@ -1016,7 +1053,7 @@ window.MindshiftPhotoEditor = (function () {
         trash.classList.toggle('hot', overTrash(e.clientX, e.clientY));
         drawStage();
       }
-    });
+    }));
 
     function end(e) {
       if (!ptrs[e.pointerId]) return;
@@ -1027,7 +1064,7 @@ window.MindshiftPhotoEditor = (function () {
         return;
       }
       if (count() > 0) return;
-      var gg = g, cancelled = e.type === 'pointercancel';
+      var gg = g, cancelled = e.type !== 'pointerup';
       g = null; hideTrash();
       if (gg.mode !== 'drag' || gg.idx < 0) return;
       if (gg.moved) {
@@ -1037,8 +1074,10 @@ window.MindshiftPhotoEditor = (function () {
         openComposer(gg.idx);                       // a plain tap edits the text
       }
     }
-    surf.addEventListener('pointerup', end);
-    surf.addEventListener('pointercancel', end);
+    surf.addEventListener('pointerup', guarded(end));
+    surf.addEventListener('pointercancel', guarded(end));
+    surf.addEventListener('lostpointercapture', guarded(end));
+    surf.addEventListener('contextmenu', function (e) { e.preventDefault(); });   // no long-press menu over the photo
 
     // desktop: scroll wheel resizes the selected text, Shift + wheel rotates it
     surf.addEventListener('wheel', function (e) {
@@ -1110,6 +1149,7 @@ window.MindshiftPhotoEditor = (function () {
     if (S.raf) cancelAnimationFrame(S.raf);
     S = null;
     $('pe-te').classList.remove('on');
+    if (TS.reset) TS.reset();
     el.className = '';
     document.body.style.overflow = S_prevOverflow;
     resolve(result);
@@ -1144,6 +1184,7 @@ window.MindshiftPhotoEditor = (function () {
     }
     var q = 0.9, url = out.toDataURL('image/jpeg', q);
     while (url.length * 0.75 > TARGET_BYTES && q > 0.55) { q -= 0.1; url = out.toDataURL('image/jpeg', q); }
+    if (!url || url.length < 200) throw new Error('canvas export failed');   // some browsers return an empty image when memory runs out
     return url;
   }
 
@@ -1175,6 +1216,7 @@ window.MindshiftPhotoEditor = (function () {
       S_prevOverflow = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
       S = { resolve: resolve, tab: 'crop', rot: 0, flip: false, aspect: 'free', filter: 'none', adj: { b: 0, c: 0, s: 0 }, aspects: opts.aspects || null, texts: [], sel: -1, ed: null };
+      if (TS.reset) TS.reset();
       $('pe-tab-text').style.display = opts.text === false ? 'none' : '';
       $('pe-te').classList.remove('on');
       $('pe-title').textContent = opts.title || 'Edit photo';
@@ -1184,7 +1226,8 @@ window.MindshiftPhotoEditor = (function () {
       $('pe-filters').innerHTML = '';
       el.className = 'on tab-crop';
 
-      loadImage(opts.src).then(function (img) {
+      Promise.all([withTimeout(loadImage(opts.src), 25000, 'Could not open this photo.'), fontsReady()]).then(function (loaded) {
+        var img = loaded[0];
         if (!S) return; // cancelled while loading
         var w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
         var k = Math.min(1, MAX_DIM / Math.max(w, h));
@@ -1220,6 +1263,7 @@ window.MindshiftPhotoEditor = (function () {
         updateHistButtons();
       }).catch(function (err) {
         S = null; el.className = ''; document.body.style.overflow = S_prevOverflow;
+        $('pe-te').classList.remove('on');
         reject(err);
       });
     });
@@ -1227,6 +1271,7 @@ window.MindshiftPhotoEditor = (function () {
 
   return {
     open: open,
+    isOpen: function () { return !!S; },
     // exposed for tests only
     _test: { applyLook: applyLook, dragCrop: dragCrop, fitAspect: fitAspect, clampCrop: clampCrop, lookParams: lookParams, isNeutral: isNeutral,
              turnTexts: turnTexts, mirrorTexts: mirrorTexts, hitTest: hitTest, cleanText: cleanText, contrastOn: contrastOn }
