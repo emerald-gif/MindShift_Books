@@ -4,7 +4,7 @@
 <link rel="icon" href="/MINDSHIFT.jpg">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Manage Comments · MindShift Books</title>
+<title>Comment Manager · MindShift Books</title>
 <meta name="robots" content="noindex, nofollow"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -22,6 +22,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;color:var(--txt);min-height:100
     radial-gradient(circle at 88% 6%, rgba(6,182,212,.08), transparent 46%),var(--bg);
   background-attachment:fixed}
 button{font-family:inherit}
+button:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible{outline:2px solid var(--p);outline-offset:2px}
 
 .hdr{position:sticky;top:0;z-index:100;background:rgba(248,247,255,.92);backdrop-filter:blur(12px);
   border-bottom:1px solid var(--border2);padding:0 16px;height:56px;display:flex;align-items:center;justify-content:space-between;gap:8px}
@@ -34,18 +35,30 @@ button{font-family:inherit}
 .hdr-title{font-size:15px;font-weight:800;flex:1;text-align:center}
 
 .preview{margin:16px;border-radius:16px;background:var(--card);box-shadow:var(--shadow-sm);padding:13px 15px;cursor:pointer}
+.preview.static{cursor:default}
 .preview-title{font-weight:800;font-size:13.5px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .preview-meta{font-size:11.5px;color:var(--mute);font-weight:600;margin-top:4px}
+.allink{display:inline-block;margin-top:9px;font-size:12px;font-weight:800;color:var(--p);text-decoration:none}
 
 .pills{display:flex;gap:8px;padding:0 16px 12px;overflow-x:auto}
 .pill{padding:7px 15px;border-radius:99px;border:1.5px solid var(--border2);background:var(--card);
   font-size:12.5px;font-weight:700;color:var(--sub);cursor:pointer;white-space:nowrap}
 .pill.active{background:var(--txt);color:#fff;border-color:var(--txt)}
 
+.csel-wrap{padding:0 16px 12px}
+.csel{width:100%;padding:10px 12px;border-radius:14px;border:1.5px solid var(--border2);background:#fff;
+  font:inherit;font-size:13px;font-weight:700;color:var(--txt)}
+
+.qa{display:flex;gap:8px;padding:0 16px 12px;overflow-x:auto}
+.qa-btn{padding:9px 14px;border-radius:99px;border:1.5px solid #c7d2fe;background:#fff;color:var(--p);
+  font-size:12.5px;font-weight:800;cursor:pointer;white-space:nowrap}
+.qa-btn.go{background:var(--g);border-color:transparent;color:#fff}
+
 .list{padding:0 16px}
 .cm{background:var(--card);border-radius:18px;box-shadow:var(--shadow-sm);padding:14px;margin-bottom:12px}
 .cm.hidden-c{background:#fafaff;border:1.5px dashed #c7d2fe}
 .cm.busy{opacity:.45;pointer-events:none}
+.cm.picked{box-shadow:0 0 0 2px var(--p),var(--shadow-sm)}
 .cm-top{display:flex;gap:10px;align-items:flex-start}
 .av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#e0e7ff,#c7d2fe);color:var(--p);
   font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0}
@@ -56,37 +69,54 @@ button{font-family:inherit}
 .badge{display:inline-block;font-size:10px;font-weight:800;padding:2px 7px;border-radius:99px;margin-left:6px;vertical-align:middle}
 .badge.h{background:#e0e7ff;color:#4338ca}
 .badge.m{background:#dcfce7;color:#15803d}
-.cm-text{font-size:13.5px;line-height:1.5;margin-top:4px;white-space:pre-wrap;word-break:break-word}
+.badge.pin{background:#fef3c7;color:#b45309}
+.badge.new{background:#fee2e2;color:#b91c1c}
+.cm-on{display:flex;align-items:center;gap:8px;margin-top:5px;min-width:0}
+.cm-on-t{display:flex;align-items:center;gap:6px;min-width:0;cursor:pointer;font-size:11.5px;font-weight:700;color:var(--sub);
+  background:#f4f5fb;border-radius:99px;padding:3px 10px 3px 4px;max-width:100%}
+.cm-on-t span.ttl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tag{font-size:10px;font-weight:800;padding:2px 7px;border-radius:99px;flex-shrink:0}
+.tag.post{background:#cffafe;color:#0e7490}
+.tag.article{background:#ede9fe;color:#6d28d9}
+.cm-on-open{font-size:11.5px;font-weight:800;color:var(--p);text-decoration:none;flex-shrink:0}
+.cm-text{font-size:13.5px;line-height:1.5;margin-top:6px;white-space:pre-wrap;word-break:break-word}
 .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:11px}
 .act{padding:6px 12px;border-radius:99px;border:1.5px solid var(--border2);background:#fff;font-size:12px;font-weight:700;color:var(--sub);cursor:pointer}
 .act.danger{color:var(--red)}
 .act.primary{color:var(--p);border-color:#c7d2fe}
 .act.pinned{color:var(--amber);border-color:#fde68a;background:#fffbeb}
 .act.liked{color:var(--red);border-color:#fecaca;background:#fef2f2}
-.badge.pin{background:#fef3c7;color:#b45309}
 .pinned-card{margin:0 16px 12px;border-radius:16px;background:#fffbeb;border:1.5px solid #fde68a;padding:12px 14px;cursor:pointer}
 .pinned-card-lbl{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:800;color:#b45309;margin-bottom:4px}
 .pinned-card-txt{font-size:13px;color:var(--txt);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.cm.sel-mode .cm-top{padding-left:0}
-.sel-box{width:20px;height:20px;border-radius:6px;border:2px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:6px;cursor:pointer}
+.sel-box{width:22px;height:22px;border-radius:7px;border:2px solid #cbd5e1;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:6px;cursor:pointer}
 .sel-box.on{background:var(--p);border-color:var(--p)}
 .sel-box svg{width:13px;height:13px;stroke:#fff;stroke-width:3;fill:none;display:none}
 .sel-box.on svg{display:block}
-.bulk-bar{position:fixed;left:0;right:0;bottom:0;background:#0f172a;padding:12px 16px;display:none;
-  align-items:center;gap:10px;z-index:200;padding-bottom:calc(12px + env(safe-area-inset-bottom))}
+body.sel-on .acts{display:none}
+body.sel-on .replies{display:none}
+
+.bulk-bar{position:fixed;left:0;right:0;bottom:0;background:#0f172a;padding:12px 16px;display:none;flex-direction:column;
+  gap:10px;z-index:200;padding-bottom:calc(12px + env(safe-area-inset-bottom))}
 .bulk-bar.on{display:flex}
+.bulk-top{display:flex;align-items:center;gap:10px}
 .bulk-count{color:#fff;font-size:13px;font-weight:700;flex:1}
-.bulk-btn{padding:9px 16px;border-radius:99px;border:none;font-size:12.5px;font-weight:800;cursor:pointer}
-.bulk-btn.hide{background:#334155;color:#fff}
-.bulk-btn.del{background:var(--red);color:#fff}
-.bulk-btn.cancel{background:transparent;color:#94a3b8}
+.bulk-row{display:flex;gap:8px}
+.bulk-btn{flex:1;padding:10px 6px;border-radius:99px;border:none;font-size:12.5px;font-weight:800;cursor:pointer;background:#334155;color:#fff}
+.bulk-btn.reply{background:var(--g)}
+.bulk-btn.del{background:var(--red)}
+.bulk-btn:disabled{opacity:.35;cursor:default}
+.bulk-link{background:transparent;border:none;color:#a5b4fc;font-size:12.5px;font-weight:800;cursor:pointer;padding:4px 6px}
+.bulk-link.mute{color:#94a3b8}
+body.sel-on .toast{bottom:150px}
+
 .replies{margin:10px 0 0 44px;border-left:2px solid var(--border2);padding-left:12px}
 .rp{padding:9px 0;border-bottom:1px solid var(--border2)}
 .rp:last-child{border-bottom:none}
 .rp.hidden-c .cm-text{opacity:.6}
 .ri-row{display:none;gap:8px;margin-top:10px;align-items:flex-end}
 .ri-row.on{display:flex}
-.ri{flex:1;border:1.5px solid var(--border2);border-radius:14px;padding:9px 12px;font:inherit;font-size:13.5px;resize:none;outline:none;min-height:40px;max-height:120px}
+.ri{flex:1;border:1.5px solid var(--border2);border-radius:14px;padding:9px 12px;font:inherit;font-size:13.5px;resize:none;outline:none;min-height:40px;max-height:160px;width:100%}
 .ri:focus{border-color:var(--p)}
 .ri-send{padding:9px 15px;border-radius:99px;border:none;background:var(--g);color:#fff;font-weight:800;font-size:12.5px;cursor:pointer}
 .ri-send:disabled{opacity:.45}
@@ -96,10 +126,28 @@ button{font-family:inherit}
 .empty{text-align:center;padding:50px 24px;color:var(--mute);font-size:13.5px;line-height:1.6}
 .empty strong{display:block;font-size:15px;color:var(--txt);margin-bottom:6px}
 .empty button{margin-top:14px}
-.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:#0f172a;color:#fff;padding:10px 18px;border-radius:99px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:all .25s;z-index:300}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:#0f172a;color:#fff;padding:10px 18px;border-radius:99px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:all .25s;z-index:400;max-width:90vw;text-align:center}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
 .skel{background:linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:14px;height:96px;margin-bottom:12px}
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* bulk reply sheet */
+.sheet-bg{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:300;display:none}
+.sheet-bg.on{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:310;background:#fff;border-radius:22px 22px 0 0;padding:10px 16px calc(18px + env(safe-area-inset-bottom));
+  max-height:88vh;overflow-y:auto;transform:translateY(105%);transition:transform .28s ease;box-shadow:0 -12px 40px -12px rgba(15,23,42,.3)}
+.sheet.on{transform:translateY(0)}
+.sheet-grab{width:38px;height:4px;border-radius:99px;background:#e2e8f0;margin:0 auto 14px}
+.sheet-title{font-size:16px;font-weight:800}
+.sheet-sub{font-size:12.5px;color:var(--sub);font-weight:600;margin-top:3px;line-height:1.45}
+.qchips{display:flex;gap:8px;overflow-x:auto;padding:14px 0 10px}
+.qchip{padding:8px 13px;border-radius:99px;border:1.5px solid #c7d2fe;background:#f5f6ff;color:#4338ca;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap}
+.sheet textarea{min-height:92px;font-size:14px}
+.sheet-hint{font-size:11.5px;color:var(--mute);font-weight:600;margin:8px 2px 0;line-height:1.5}
+.sheet-prev{margin-top:10px;background:#f8f8fd;border-radius:14px;padding:10px 12px;font-size:12.5px;line-height:1.5;color:var(--txt);display:none}
+.sheet-prev b{color:var(--sub);font-weight:700}
+.sheet-send{width:100%;margin-top:14px;padding:13px;border-radius:99px;border:none;background:var(--g);color:#fff;font-weight:800;font-size:14px;cursor:pointer}
+.sheet-send:disabled{opacity:.45;cursor:default}
 </style>
 </head>
 <body>
@@ -108,8 +156,8 @@ button{font-family:inherit}
   <button class="hbtn" onclick="history.back()" aria-label="Back">
     <svg viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
   </button>
-  <div class="hdr-title">Manage Comments</div>
-  <button class="hbtn" id="selectBtn" aria-label="Select" onclick="toggleSelectMode()" style="display:none">
+  <div class="hdr-title" id="hdrTitle">Comment Manager</div>
+  <button class="hbtn" id="selectBtn" aria-label="Select comments" onclick="toggleSelectMode()" style="display:none">
     <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
   </button>
   <button class="hbtn" id="refreshBtn" aria-label="Refresh" onclick="refreshNew()">
@@ -119,22 +167,46 @@ button{font-family:inherit}
 
 <div class="preview" id="preview" style="display:none"></div>
 <div class="pinned-card" id="pinnedCard" style="display:none"></div>
+<div class="csel-wrap" id="cselWrap" style="display:none">
+  <select class="csel" id="cSel" onchange="setContentFilter(this.value)" aria-label="Filter by post or article"></select>
+</div>
 <div class="pills" id="pills" style="display:none">
   <button class="pill active" data-f="all" onclick="setFilter('all')">All</button>
   <button class="pill" data-f="unreplied" onclick="setFilter('unreplied')">Unreplied</button>
   <button class="pill" data-f="liked" onclick="setFilter('liked')">Most liked</button>
   <button class="pill" data-f="hidden" onclick="setFilter('hidden')">Hidden</button>
 </div>
+<div class="qa" id="qaStrip" style="display:none"></div>
 <div class="list" id="list"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
 <div id="moreWrap"></div>
 <div class="note" id="note"></div>
-<div style="height:80px"></div>
+<div style="height:150px"></div>
 <div class="toast" id="toast"></div>
+
 <div class="bulk-bar" id="bulkBar">
-  <div class="bulk-count" id="bulkCount">0 selected</div>
-  <button class="bulk-btn hide" onclick="bulkHide()">Hide</button>
-  <button class="bulk-btn del" onclick="bulkDelete()">Delete</button>
-  <button class="bulk-btn cancel" onclick="toggleSelectMode()">Cancel</button>
+  <div class="bulk-top">
+    <div class="bulk-count" id="bulkCount">Select comments</div>
+    <button class="bulk-link" onclick="selectAllVisible()">Select all</button>
+    <button class="bulk-link mute" onclick="toggleSelectMode()">Done</button>
+  </div>
+  <div class="bulk-row">
+    <button class="bulk-btn reply" id="bbReply" onclick="openBulkReply()">Reply</button>
+    <button class="bulk-btn" id="bbLike" onclick="bulkLike()">Like</button>
+    <button class="bulk-btn" id="bbHide" onclick="bulkHide()">Hide</button>
+    <button class="bulk-btn del" id="bbDel" onclick="bulkDelete()">Delete</button>
+  </div>
+</div>
+
+<div class="sheet-bg" id="sheetBg" onclick="closeSheet()"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+  <div class="sheet-grab"></div>
+  <div class="sheet-title" id="sheetTitle">Reply to comments</div>
+  <div class="sheet-sub" id="sheetSub"></div>
+  <div class="qchips" id="qchips"></div>
+  <textarea class="ri" id="bulkText" rows="3" placeholder="Write one reply — it goes to everyone you selected" oninput="bulkInput()"></textarea>
+  <div class="sheet-hint">Use {name} and each person gets their own first name.</div>
+  <div class="sheet-prev" id="bulkPrev"></div>
+  <button class="sheet-send" id="bulkSend" onclick="sendBulkReply()" disabled>Send reply</button>
 </div>
 
 <script type="module">
@@ -158,72 +230,111 @@ const auth = getAuth(fbApp);
 const db   = getFirestore(fbApp, 'default');
 const { resilient, reconnectFirestore } = createResilient({ db, enableNetwork, disableNetwork });
 
-/* ── Which content this page manages (same params as content-insights) ── */
-const params  = new URLSearchParams(location.search);
-const contentId = params.get('id');
-const isPost  = params.get('type') !== 'article';
-const idField = isPost ? 'postId' : 'articleId';
+/* ── Two modes, one page ──
+   /comment-manager                     → INBOX: every comment across ALL your posts + articles
+   /comment-manager?type=post&id=XYZ    → SINGLE: one post/article (the old behaviour, links from Insights still work) */
+const params   = new URLSearchParams(location.search);
+const singleId = params.get('id');
+const INBOX    = !singleId;
+const sType    = params.get('type') === 'article' ? 'article' : 'post';   // single mode only
+const isPost   = sType === 'post';
+const contentId = singleId;
 const contentCol = isPost ? 'posts' : 'articles';
-const metaCol = isPost ? 'postMeta' : 'articleMeta';
-const readHref = isPost ? `/post-read?id=${contentId}` : `/article-read?id=${contentId}`;
 
-const PAGE = 15;               // top-level comments per fetch
-const CACHE_TTL = 10 * 60e3;   // session cache lifetime
-const CACHE_KEY = `cm_${isPost ? 'p' : 'a'}_${contentId}`;
+const PAGE = 15;                // comments per fetch
+const CACHE_TTL = 10 * 60e3;    // session cache lifetime
+const INDEX_TTL = 5 * 60e3;     // how long the "my posts + articles" list is trusted before a refresh re-reads it
+const IN_LIMIT = 30;            // Firestore 'in' operator ceiling
+const BATCH_COMMENTS = 40;      // comments per write batch for bulk reply (3-4 writes each, well under the 500 cap)
 
 let me = null, myProfile = null, content = null;
-let pinnedId = null, pinnedSnapshot = null;   // pinnedSnapshot: cached {text,authorName} for instant paint
+let pinnedId = null, pinnedSnapshot = null;   // single mode only
 let selectMode = false;
 let selected = new Set();
-// Same ordering problem as post-read.html's likeComment: likedBy.{uid} is a
-// plain last-write-wins field while likeCount is a commutative increment —
-// two independent updateDoc calls have no guarantee of arriving in tap order.
 const cmLikeChain = new Map();
-let items = [];                // top-level comments loaded so far (newest → oldest), plain objects
-let replies = {};              // parentId -> array of replies (fetched once per expand)
+let items = [];                // top-level comments loaded so far (newest → oldest)
+let replies = {};              // parentId -> replies (fetched once per expand)
 let openReplies = new Set();
-// Cursors are kept as full {seconds,nanoseconds} pairs, not millisecond numbers.
-// A millisecond-only cursor throws away Firestore's sub-millisecond precision,
-// so startAfter(Timestamp.fromMillis(x)) can land BEFORE the actual last-read
-// document if that document's real timestamp had a nonzero microsecond
-// remainder — which re-fetches that same document on the next page/refresh.
-// Storing the exact {seconds,nanoseconds} and rebuilding a real Timestamp from
-// it removes that gap entirely.
-let oldestCursor = null;       // {seconds,nanoseconds} of the OLDEST loaded item — "Load more" pages further back
-let newestCursor = null;       // {seconds,nanoseconds} of the NEWEST loaded item — "Refresh" checks for anything past this
-let exhausted = false;
+let oldestCursor = null, newestCursor = null, exhausted = false;   // single mode
+let contentIndex = {};         // "post:ID" | "article:ID" -> { type, id, title, text }
+let streams = [];              // inbox mode: one paged query per ≤30 content ids
+let indexT = 0;
 let filter = 'all';
+let cfilter = 'all';           // inbox only: 'all' | 'type:post' | 'type:article' | 'c:post:ID'
+
+const QUICK_REPLIES = [
+  'Thank you {name}! 🙏',
+  'Really appreciate you reading this, {name} ❤️',
+  'Glad this resonated with you, {name}!',
+  'Great point, {name} — thanks for sharing.',
+  'Thanks for the love {name}! More coming soon 🔥'
+];
 
 /* ── helpers ── */
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('on'); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('on'),2200); }
+function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('on'); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('on'),2600); }
 function ms(ts){ return ts && ts.toMillis ? ts.toMillis() : (typeof ts === 'number' ? ts : Date.now()); }
-// Exact {seconds,nanoseconds} pair for a comment's createdAt, used for cursors.
-// Falls back to "now" only in the impossible case a doc is missing createdAt.
 function tsParts(ts){ return ts && typeof ts.seconds === 'number' ? { seconds: ts.seconds, nanoseconds: ts.nanoseconds || 0 } : { seconds: Math.floor(Date.now()/1000), nanoseconds: 0 }; }
 function tsFromParts(p){ return new Timestamp(p.seconds, p.nanoseconds); }
+function cmpParts(a, b){ return (a.seconds - b.seconds) || ((a.nanoseconds || 0) - (b.nanoseconds || 0)); }
 function ago(t){
   const s = Math.max(1, Math.floor((Date.now() - t) / 1000));
   if (s < 60) return 'now'; const m = Math.floor(s/60); if (m < 60) return m + 'm';
   const h = Math.floor(m/60); if (h < 24) return h + 'h'; const d = Math.floor(h/24);
   if (d < 30) return d + 'd'; return new Date(t).toLocaleDateString(undefined,{month:'short',day:'numeric'});
 }
+const trunc = (s, n) => { s = String(s || ''); return s.length > n ? s.slice(0, n).trim() + '…' : s; };
+const ckey = (type, id) => type + ':' + id;
+
+// Every comment knows which post/article it belongs to — that's what lets one page manage many.
+const fieldOf   = c => c.cType === 'post' ? 'postId' : 'articleId';
+const metaColOf = type => type === 'post' ? 'postMeta' : 'articleMeta';
+const contentOf = c => contentIndex[ckey(c.cType, c.cId)] || null;
+function titleOf(c){
+  const ct = contentOf(c);
+  if (c.cType === 'post') return (ct && ct.text) || 'Post';
+  return (ct && ct.title) || 'Untitled article';
+}
+const notifTitleOf = c => c.cType === 'post' ? '' : ((contentOf(c) && contentOf(c).title) || '');
+const readHrefOf   = c => c.cType === 'post' ? `/post-read?id=${c.cId}` : `/article-read?id=${c.cId}`;
+const manageHrefOf = c => `/comment-manager?type=${c.cType}&id=${encodeURIComponent(c.cId)}`;
+const isUnreplied  = c => !c.hidden && c.authorUid !== me.uid && (c.replyCount || 0) === 0;
+function firstName(n){ n = (n || '').trim(); if (!n || n === 'User' || n === 'Someone') return ''; return n.split(/\s+/)[0]; }
+function personalize(tpl, c){
+  return tpl.replace(/\{name\}/gi, firstName(c.authorName)).replace(/\s+([,.!?])/g, '$1').replace(/[ \t]{2,}/g, ' ').replace(/^[,\s]+/, '').trim();
+}
+function slim(type, d){
+  return { type, id: d.id, title: type === 'article' ? trunc(d.title, 200) : '', text: type === 'post' ? trunc(d.text, 200) : '' };
+}
+
 // Firestore doc → plain object with createdAt as millis (JSON-safe for the session cache)
-function plain(d){ const x = d.data(); return { id:d.id, parentId:x.parentId||null, authorUid:x.authorUid||'', authorName:x.authorName||'User',
-  authorPhoto:x.authorPhoto||'', authorUsername:x.authorUsername||'', text:x.text||'', likeCount:x.likeCount||0,
-  liked: !!(x.likedBy && x.likedBy[me.uid] === true),
-  replyCount:x.replyCount||0, hidden:x.hidden===true, createdAt: ms(x.createdAt), createdAtParts: tsParts(x.createdAt) }; }
+function plain(d){
+  const x = d.data();
+  const isP = !!x.postId;
+  return { id:d.id, cType: isP ? 'post' : 'article', cId: isP ? x.postId : (x.articleId || ''),
+    parentId:x.parentId||null, authorUid:x.authorUid||'', authorName:x.authorName||'User',
+    authorPhoto:x.authorPhoto||'', authorUsername:x.authorUsername||'', text:x.text||'', likeCount:x.likeCount||0,
+    liked: !!(x.likedBy && x.likedBy[me.uid] === true),
+    replyCount:x.replyCount||0, hidden:x.hidden===true, createdAt: ms(x.createdAt), createdAtParts: tsParts(x.createdAt) };
+}
+function findComment(cid){
+  return items.find(x => x.id === cid) || Object.values(replies).flat().find(x => x.id === cid) || null;
+}
 
 /* ── session cache: reopening within 10 min costs 0 reads ── */
+const cacheKey = () => INBOX ? `cm_inbox_${me.uid}` : `cm_${isPost ? 'p' : 'a'}_${contentId}`;
 function saveCache(){
-  try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ t:Date.now(), items, replies, oldestCursor, newestCursor, exhausted })); } catch {}
+  try { sessionStorage.setItem(cacheKey(), JSON.stringify({ t:Date.now(), items, replies, oldestCursor, newestCursor, exhausted, contentIndex, streams, indexT })); } catch {}
 }
 function loadCache(){
   try {
-    const c = JSON.parse(sessionStorage.getItem(CACHE_KEY) || 'null');
+    const c = JSON.parse(sessionStorage.getItem(cacheKey()) || 'null');
     if (!c || Date.now() - c.t > CACHE_TTL) return false;
-    items = c.items || []; replies = c.replies || {}; oldestCursor = c.oldestCursor || null; newestCursor = c.newestCursor || null; exhausted = !!c.exhausted;
+    items = c.items || []; replies = c.replies || {}; oldestCursor = c.oldestCursor || null; newestCursor = c.newestCursor || null;
+    exhausted = !!c.exhausted; streams = c.streams || []; indexT = c.indexT || 0;
+    contentIndex = Object.assign({}, contentIndex, c.contentIndex || {});
+    if (INBOX && !streams.length) return false;
     return true;
   } catch { return false; }
 }
@@ -236,19 +347,23 @@ onAuthStateChanged(auth, async user => {
 });
 
 async function boot(){
-  if (!contentId) return showEmpty('Content not found', "We couldn't find this post or article.");
+  $('hdrTitle').textContent = INBOX ? 'Comment Manager' : 'Manage Comments';
+  document.title = (INBOX ? 'Comment Manager' : 'Manage Comments') + ' · MindShift Books';
+  return INBOX ? bootInbox() : bootSingle();
+}
+
+async function bootSingle(){
   try {
     const snap = await resilient(() => getDoc(doc(db, contentCol, contentId)), { tries: 2 });
     if (!snap.exists()) return showEmpty('Content not found', 'This may have been deleted.');
     content = snap.data();
     if (content.authorUid !== me.uid) return showEmpty('Not available', 'You can only manage comments on your own posts and articles.');
+    contentIndex[ckey(sType, contentId)] = slim(sType, { id: contentId, title: content.title, text: content.text });
     renderPreview();
     $('pills').style.display = '';
     $('selectBtn').style.display = '';
-    // Pull the pin + reply-rate fields from the same meta doc content-insights reads —
-    // this is the one place both pages agree on, so a pin made here shows up there instantly.
     try {
-      const metaSnap = await resilient(() => getDoc(doc(db, metaCol, contentId)), { tries: 2 });
+      const metaSnap = await resilient(() => getDoc(doc(db, metaColOf(sType), contentId)), { tries: 2 });
       if (metaSnap.exists()) {
         const m = metaSnap.data();
         pinnedId = m.pinnedCommentId || null;
@@ -264,27 +379,125 @@ async function boot(){
   }
 }
 
-function renderPreview(){
-  const title = isPost ? (content.text || 'Post') : (content.title || 'Untitled');
-  const p = $('preview'); p.style.display = '';
-  p.innerHTML = `<div class="preview-title">${esc(title.length > 120 ? title.slice(0,120)+'…' : title)}</div><div class="preview-meta">${isPost ? 'Post' : 'Article'} · tap to open</div>`;
-  p.onclick = () => location.href = readHref;
+async function bootInbox(){
+  try {
+    $('pills').style.display = '';
+    $('selectBtn').style.display = '';
+    if (loadCache()) { render(); return; }
+    await freshInbox();
+  } catch (e) {
+    console.error('comment-manager inbox boot:', e && e.code, e && e.message);
+    showEmpty('Could not load comments', 'Check your connection and try again.', true);
+  }
 }
 
-/* ── data: exactly `PAGE` reads per fetch, cursor-based, newest-first ──
-   Newest-first (not oldest-first) so the comments that actually need a
-   reply are on page one, not buried behind however many old ones came
-   before them. */
-function topQuery(afterParts){
-  const parts = [collection(db,'comments'), where(idField,'==',contentId), where('parentId','==',null), orderBy('createdAt','desc')];
-  if (afterParts != null) parts.push(startAfter(tsFromParts(afterParts)));
-  return query(...parts);
+async function freshInbox(){
+  items = []; replies = {}; openReplies = new Set(); streams = []; newestCursor = null; oldestCursor = null;
+  await loadContentIndex();
+  if (!Object.keys(contentIndex).length) { saveCache(); render(); return; }
+  buildStreams();
+  await inboxLoad(PAGE);
+  saveCache(); render();
+}
+
+function renderPreview(){
+  const p = $('preview'); p.style.display = '';
+  if (INBOX) { p.classList.add('static'); return; }   // inbox summary is filled in by render()
+  const title = isPost ? (content.text || 'Post') : (content.title || 'Untitled');
+  p.innerHTML = `<div class="preview-title">${esc(title.length > 120 ? title.slice(0,120)+'…' : title)}</div>
+    <div class="preview-meta">${isPost ? 'Post' : 'Article'} · tap to open</div>
+    <a class="allink" href="/comment-manager" onclick="event.stopPropagation()">See comments across all my content ›</a>`;
+  p.onclick = () => location.href = isPost ? `/post-read?id=${contentId}` : `/article-read?id=${contentId}`;
+}
+
+/* ── INBOX data ──
+   Comments don't store who owns the post/article they're on, so we read the creator's own
+   posts + articles once, then page comments with `where(postId|articleId, 'in', <=30 ids>)`.
+   Same composite index the per-content query already uses — no new index needed.
+   Each ≤30-id chunk is its own newest-first stream; streams are merged by time, and a comment is only
+   shown once every stream is known to be loaded at least that far back (so order is never wrong). */
+async function loadContentIndex(){
+  const [pSnap, aSnap] = await Promise.all([
+    resilient(() => getDocs(query(collection(db, 'posts'),    where('authorUid', '==', me.uid))), { tries: 2 }),
+    resilient(() => getDocs(query(collection(db, 'articles'), where('authorUid', '==', me.uid))), { tries: 2 })
+  ]);
+  const idx = {};
+  pSnap.docs.forEach(d => { const x = d.data(); idx[ckey('post', d.id)]    = slim('post',    { id: d.id, text: x.text }); });
+  aSnap.docs.forEach(d => { const x = d.data(); idx[ckey('article', d.id)] = slim('article', { id: d.id, title: x.title }); });
+  contentIndex = idx; indexT = Date.now();
+}
+function chunk(arr, n){ const out = []; for (let i = 0; i < arr.length; i += n) out.push(arr.slice(i, i + n)); return out; }
+function buildStreams(){
+  const posts = [], arts = [];
+  Object.values(contentIndex).forEach(c => (c.type === 'post' ? posts : arts).push(c.id));
+  streams = [
+    ...chunk(posts, IN_LIMIT).map(ids => ({ field: 'postId',    ids, cursor: null, fetched: false, done: false })),
+    ...chunk(arts,  IN_LIMIT).map(ids => ({ field: 'articleId', ids, cursor: null, fetched: false, done: false }))
+  ];
+}
+// Content published since the cache was built: every comment on it is newer than newestCursor,
+// so Refresh will pick them all up — those ids just need to be part of the refresh query.
+function syncStreamsWithIndex(){
+  const covered = new Set(); streams.forEach(s => s.ids.forEach(i => covered.add(s.field + ':' + i)));
+  const np = [], na = [];
+  Object.values(contentIndex).forEach(c => {
+    const f = c.type === 'post' ? 'postId' : 'articleId';
+    if (!covered.has(f + ':' + c.id)) (c.type === 'post' ? np : na).push(c.id);
+  });
+  chunk(np, IN_LIMIT).forEach(ids => streams.push({ field: 'postId',    ids, cursor: null, fetched: true, done: true }));
+  chunk(na, IN_LIMIT).forEach(ids => streams.push({ field: 'articleId', ids, cursor: null, fetched: true, done: true }));
 }
 function mergeNoDupes(got){
   const have = new Set(items.map(i => i.id));
   const fresh = got.filter(g => !have.has(g.id));
   items = items.concat(fresh);
+  items.sort((a, b) => cmpParts(b.createdAtParts, a.createdAtParts));
   return fresh;
+}
+async function fetchStream(s){
+  const parts = [collection(db,'comments'), where(s.field, 'in', s.ids), where('parentId','==',null), orderBy('createdAt','desc')];
+  if (s.cursor) parts.push(startAfter(tsFromParts(s.cursor)));
+  const snap = await resilient(() => getDocs(query(...parts, limit(PAGE))), { tries: 2 });
+  const got = snap.docs.map(plain);
+  mergeNoDupes(got);
+  if (got.length) s.cursor = got[got.length - 1].createdAtParts;
+  s.fetched = true;
+  if (got.length < PAGE) s.done = true;
+}
+// Anything older than this boundary might still be missing from some stream, so it stays buffered.
+function boundary(){
+  let b = null;
+  for (const s of streams) {
+    if (s.done) continue;
+    if (!s.fetched || !s.cursor) return 'all';
+    if (!b || cmpParts(s.cursor, b) > 0) b = s.cursor;
+  }
+  return b;
+}
+function readyList(){
+  const b = boundary();
+  if (b === 'all') return [];
+  return items.filter(c => c.authorUid !== me.uid && (b === null || cmpParts(c.createdAtParts, b) >= 0));
+}
+const allLoaded = () => INBOX ? streams.every(s => s.done) : exhausted;
+async function inboxLoad(target){
+  const fresh = streams.filter(s => !s.fetched);
+  if (fresh.length) await Promise.all(fresh.map(fetchStream));
+  for (let guard = 0; guard < 60; guard++) {
+    const pending = streams.filter(s => !s.done);
+    if (readyList().length >= target || !pending.length) break;
+    // the stream holding the boundary back is the one whose oldest loaded comment is newest
+    let lim = pending[0];
+    pending.forEach(s => { if (cmpParts(s.cursor, lim.cursor) > 0) lim = s; });
+    await fetchStream(lim);
+  }
+}
+
+/* ── SINGLE data: exactly `PAGE` reads per fetch, cursor-based, newest-first ── */
+function topQuery(afterParts){
+  const parts = [collection(db,'comments'), where(isPost ? 'postId' : 'articleId','==',contentId), where('parentId','==',null), orderBy('createdAt','desc')];
+  if (afterParts != null) parts.push(startAfter(tsFromParts(afterParts)));
+  return query(...parts);
 }
 async function fetchPage(first){
   const q = query(topQuery(first ? null : oldestCursor), limit(PAGE));
@@ -300,33 +513,64 @@ async function fetchPage(first){
 }
 window.loadMore = async function(btn){
   if (btn) { btn.disabled = true; btn.textContent = 'Loading…'; }
-  try { await fetchPage(false); } catch (e) { toast('Could not load more — try again'); render(); }
+  try {
+    if (INBOX) { await inboxLoad(readyList().length + PAGE); saveCache(); render(); }
+    else await fetchPage(false);
+  } catch (e) { toast('Could not load more — try again'); render(); }
 };
-// Refresh reads ONLY comments newer than what's cached (1 read if there are none).
-// Ascending + '>' on the newest cursor, then reversed, since the main list is
-// newest-first but "give me everything after X" is naturally an ascending scan.
+// Refresh reads ONLY comments newer than what's cached.
 window.refreshNew = async function(){
   const b = $('refreshBtn'); b.classList.add('spin');
   try {
-    if (newestCursor == null) { items = []; replies = {}; oldestCursor = null; exhausted = false; await fetchPage(true); }
-    else {
-      const q = query(collection(db,'comments'), where(idField,'==',contentId), where('parentId','==',null),
-        where('createdAt','>', tsFromParts(newestCursor)), orderBy('createdAt','asc'), limit(50));
-      const snap = await resilient(() => getDocs(q), { tries: 2 });
-      const got = snap.docs.map(plain).reverse();   // back to newest-first before merging
-      const have = new Set(items.map(i => i.id));
-      const fresh = got.filter(g => !have.has(g.id));
-      if (fresh.length) {
-        items = fresh.concat(items);
-        newestCursor = fresh[0].createdAtParts;
-        if (oldestCursor == null) oldestCursor = items[items.length-1].createdAtParts;
-      }
-      saveCache(); render();
-      toast(fresh.length ? `${fresh.length} new comment${fresh.length>1?'s':''}` : 'No new comments');
-    }
-  } catch { toast('Could not refresh — try again'); }
+    if (INBOX) await refreshInbox(); else await refreshSingle();
+  } catch (e) { console.error('refresh:', e && e.code, e && e.message); toast('Could not refresh — try again'); }
   b.classList.remove('spin');
 };
+async function refreshSingle(){
+  if (newestCursor == null) { items = []; replies = {}; oldestCursor = null; exhausted = false; await fetchPage(true); return; }
+  const q = query(collection(db,'comments'), where(isPost ? 'postId' : 'articleId','==',contentId), where('parentId','==',null),
+    where('createdAt','>', tsFromParts(newestCursor)), orderBy('createdAt','asc'), limit(50));
+  const snap = await resilient(() => getDocs(q), { tries: 2 });
+  const got = snap.docs.map(plain).reverse();
+  const have = new Set(items.map(i => i.id));
+  const fresh = got.filter(g => !have.has(g.id));
+  if (fresh.length) {
+    items = fresh.concat(items);
+    newestCursor = fresh[0].createdAtParts;
+    if (oldestCursor == null) oldestCursor = items[items.length-1].createdAtParts;
+  }
+  saveCache(); render();
+  toast(fresh.length ? `${fresh.length} new comment${fresh.length>1?'s':''}` : 'No new comments');
+}
+async function refreshInbox(){
+  if (newestCursor == null && !items.length) { await freshInbox(); return; }
+  if (Date.now() - indexT > INDEX_TTL) { await loadContentIndex(); syncStreamsWithIndex(); }
+  if (!streams.length) { await freshInbox(); return; }
+  const LIM = 100;
+  const since = newestCursor ? [where('createdAt','>', tsFromParts(newestCursor))] : [];
+  const results = await Promise.all(streams.map(async s => {
+    const q = query(collection(db,'comments'), where(s.field,'in',s.ids), where('parentId','==',null), ...since, orderBy('createdAt','asc'), limit(LIM));
+    const snap = await resilient(() => getDocs(q), { tries: 2 });
+    return { docs: snap.docs.map(plain), capped: snap.size >= LIM };
+  }));
+  // If a stream hit the cap there may be more behind it — only advance the cursor as far as that stream got.
+  let capMin = null, all = [];
+  results.forEach(r => {
+    all = all.concat(r.docs);
+    if (r.capped && r.docs.length) { const last = r.docs[r.docs.length - 1].createdAtParts; if (!capMin || cmpParts(last, capMin) < 0) capMin = last; }
+  });
+  if (capMin) all = all.filter(c => cmpParts(c.createdAtParts, capMin) <= 0);
+  const have = new Set(items.map(i => i.id));
+  const fresh = all.filter(g => !have.has(g.id));
+  if (fresh.length) mergeNoDupes(fresh);
+  if (all.length) {
+    const newest = capMin || all.reduce((m, c) => (!m || cmpParts(c.createdAtParts, m) > 0) ? c.createdAtParts : m, null);
+    if (!newestCursor || cmpParts(newest, newestCursor) > 0) newestCursor = newest;
+  }
+  const mineOnly = fresh.filter(c => c.authorUid !== me.uid).length;
+  saveCache(); render();
+  toast(mineOnly ? `${mineOnly} new comment${mineOnly>1?'s':''}` : 'No new comments');
+}
 
 /* ── render ── */
 window.setFilter = function(f){
@@ -334,21 +578,27 @@ window.setFilter = function(f){
   document.querySelectorAll('.pill').forEach(p => p.classList.toggle('active', p.dataset.f === f));
   render();
 };
+window.setContentFilter = function(v){ cfilter = v || 'all'; render(); };
+window.filterToContent = function(k){ cfilter = 'c:' + k; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+function baseItems(){ return INBOX ? readyList() : items; }
 function visible(){
-  let list = items;
-  if (filter === 'hidden')    list = items.filter(c => c.hidden);
-  else if (filter === 'unreplied') list = items.filter(c => !c.hidden && c.authorUid !== me.uid && (c.replyCount || 0) === 0);
-  else if (filter === 'liked') list = items.slice().sort((a,b) => (b.likeCount||0) - (a.likeCount||0));
+  let list = baseItems();
+  if (INBOX && cfilter !== 'all') {
+    if (cfilter.startsWith('type:')) { const t = cfilter.slice(5); list = list.filter(c => c.cType === t); }
+    else if (cfilter.startsWith('c:')) { const k = cfilter.slice(2); list = list.filter(c => ckey(c.cType, c.cId) === k); }
+  }
+  if (filter === 'hidden')    list = list.filter(c => c.hidden);
+  else if (filter === 'unreplied') list = list.filter(isUnreplied);
+  else if (filter === 'liked') list = list.slice().sort((a,b) => (b.likeCount||0) - (a.likeCount||0));
   return list;
 }
 function avatar(c){
   const i = esc((c.authorName || 'U').charAt(0).toUpperCase());
   return `<div class="av">${c.authorPhoto ? `<img src="${esc(c.authorPhoto)}" alt="" onerror="this.remove()">` : i}</div>`;
 }
-/* ── pinned comment: this is the field content-insights reads to show its "Comment Pulse" card ── */
 function renderPinned(){
   const el = $('pinnedCard');
-  if (!pinnedId || !pinnedSnapshot) { el.style.display = 'none'; return; }
+  if (INBOX || !pinnedId || !pinnedSnapshot) { el.style.display = 'none'; return; }
   el.style.display = '';
   el.innerHTML = `<div class="pinned-card-lbl">📌 Pinned comment</div>
     <div class="pinned-card-txt"><strong>${esc(pinnedSnapshot.authorName)}:</strong> ${esc(pinnedSnapshot.text)}</div>`;
@@ -356,21 +606,27 @@ function renderPinned(){
 }
 function commentHTML(c, isReply){
   const mine = c.authorUid === me.uid;
-  const isPinned = !isReply && c.id === pinnedId;
-  const badges = (c.hidden ? '<span class="badge h">Hidden</span>' : '') + (mine ? '<span class="badge m">You</span>' : '') + (isPinned ? '<span class="badge pin">Pinned</span>' : '');
+  const isPinned = !INBOX && !isReply && c.id === pinnedId;
+  const badges = (c.hidden ? '<span class="badge h">Hidden</span>' : '') + (mine ? '<span class="badge m">You</span>' : '') + (isPinned ? '<span class="badge pin">Pinned</span>' : '')
+    + (!isReply && isUnreplied(c) ? '<span class="badge new">To reply</span>' : '');
   const acts = [];
   if (!isReply) acts.push(`<button class="act primary" onclick="openReply('${c.id}')">Reply</button>`);
   acts.push(`<button class="act${c.liked ? ' liked' : ''}" onclick="toggleCommentLike('${c.id}','${c.authorUid}')">${c.liked ? '♥' : '♡'} ${c.likeCount > 0 ? c.likeCount : 'Like'}</button>`);
-  if (!isReply) acts.push(`<button class="act${isPinned ? ' pinned' : ''}" onclick="togglePin('${c.id}')">${isPinned ? 'Unpin' : 'Pin'}</button>`);
+  if (!INBOX && !isReply) acts.push(`<button class="act${isPinned ? ' pinned' : ''}" onclick="togglePin('${c.id}')">${isPinned ? 'Unpin' : 'Pin'}</button>`);
   if (!mine) acts.push(`<button class="act" onclick="toggleHide('${c.id}','${c.parentId||''}')">${c.hidden ? 'Unhide' : 'Hide'}</button>`);
   acts.push(`<button class="act danger" onclick="delComment('${c.id}','${c.parentId||''}')">Delete</button>`);
   if (!isReply && c.replyCount > 0) acts.push(`<button class="act" onclick="toggleReplies('${c.id}')">${openReplies.has(c.id) ? 'Hide' : 'View'} ${c.replyCount} ${c.replyCount===1?'reply':'replies'}</button>`);
   const rep = isReply ? '' : `<div class="replies" id="rep-${c.id}" style="display:${openReplies.has(c.id)?'block':'none'}">${openReplies.has(c.id) ? repliesHTML(c.id) : ''}</div>
     <div class="ri-row" id="rir-${c.id}"><textarea class="ri" id="ri-${c.id}" rows="1" placeholder="Reply to ${esc(c.authorName)}…" oninput="riInput('${c.id}',this)"></textarea><button class="ri-send" id="ris-${c.id}" onclick="sendReply('${c.id}')" disabled>Send</button></div>`;
-  const checkbox = (!isReply && selectMode) ? `<div class="sel-box${selected.has(c.id) ? ' on' : ''}" onclick="toggleSelect('${c.id}')"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>` : '';
-  return `<div class="${isReply ? 'rp' : 'cm'}${c.hidden ? ' hidden-c' : ''}" id="ci-${c.id}">
+  const on = (INBOX && !isReply) ? `<div class="cm-on">
+      <div class="cm-on-t" onclick="filterToContent('${c.cType}:${c.cId}')" title="Show only this ${c.cType}"><span class="tag ${c.cType}">${c.cType === 'post' ? 'Post' : 'Article'}</span><span class="ttl">${esc(trunc(titleOf(c), 60))}</span></div>
+      <a class="cm-on-open" href="${readHrefOf(c)}">Open</a></div>` : '';
+  const isSel = !isReply && selectMode;
+  const checkbox = isSel ? `<div class="sel-box${selected.has(c.id) ? ' on' : ''}" onclick="toggleSelect('${c.id}')" role="checkbox" aria-checked="${selected.has(c.id)}"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>` : '';
+  return `<div class="${isReply ? 'rp' : 'cm'}${c.hidden ? ' hidden-c' : ''}${isSel && selected.has(c.id) ? ' picked' : ''}" id="ci-${c.id}">
     <div class="cm-top">${checkbox}${avatar(c)}<div class="cm-body">
       <div><span class="cm-name">${esc(c.authorName)}</span><span class="cm-time">${ago(c.createdAt)}</span>${badges}</div>
+      ${on}
       <div class="cm-text">${esc(c.text)}</div>
       <div class="acts">${acts.join('')}</div>
     </div></div>${rep}</div>`;
@@ -380,85 +636,315 @@ function repliesHTML(pid){
   if (!r) return '<div style="padding:8px 0;font-size:12px;color:#94a3b8">Loading…</div>';
   return r.length ? r.map(x => commentHTML(x, true)).join('') : '<div style="padding:8px 0;font-size:12px;color:#94a3b8">No replies.</div>';
 }
+function renderInboxChrome(base){
+  // summary card
+  const unrep = base.filter(isUnreplied);
+  const spread = new Set(unrep.map(c => ckey(c.cType, c.cId))).size;
+  const p = $('preview');
+  p.innerHTML = `<div class="preview-title">${unrep.length ? `${unrep.length} comment${unrep.length===1?'':'s'} waiting for your reply` : 'You\'re all caught up'}</div>
+    <div class="preview-meta">${unrep.length ? `Across ${spread} post${spread===1?'':'s'} & article${spread===1?'':'s'}${allLoaded() ? '' : ' so far'} · reply to them all from here` : `${base.length} comment${base.length===1?'':'s'} across your posts and articles`}</div>`;
+  // content filter
+  const agg = {};
+  base.forEach(c => { const k = ckey(c.cType, c.cId); const a = agg[k] || (agg[k] = { n: 0, u: 0, c }); a.n++; if (isUnreplied(c)) a.u++; });
+  const keys = Object.keys(agg).sort((a, b) => (agg[b].u - agg[a].u) || (agg[b].n - agg[a].n));
+  const opt = (v, label) => `<option value="${esc(v)}"${cfilter === v ? ' selected' : ''}>${esc(label)}</option>`;
+  const group = (label, type) => {
+    const ks = keys.filter(k => agg[k].c.cType === type);
+    return ks.length ? `<optgroup label="${label}">${ks.map(k => opt('c:' + k, `${trunc(titleOf(agg[k].c), 42)} — ${agg[k].u ? agg[k].u + ' to reply' : agg[k].n + ' comment' + (agg[k].n === 1 ? '' : 's')}`)).join('')}</optgroup>` : '';
+  };
+  if (cfilter.startsWith('c:') && !agg[cfilter.slice(2)]) cfilter = 'all';
+  $('cSel').innerHTML = opt('all', 'All posts & articles') + opt('type:post', 'All posts') + opt('type:article', 'All articles') + group('Posts', 'post') + group('Articles', 'article');
+  $('cselWrap').style.display = keys.length ? '' : 'none';
+}
+function renderQuick(list){
+  const el = $('qaStrip');
+  const un = list.filter(isUnreplied);
+  if (selectMode || !un.length) { el.style.display = 'none'; return; }
+  el.style.display = '';
+  el.innerHTML = `<button class="qa-btn go" onclick="replyToAllUnreplied()">Reply to all ${un.length} unreplied</button>
+    <button class="qa-btn" onclick="selectAllUnreplied()">Select unreplied</button>`;
+}
 function render(){
-  const list = visible();
-  const total = items.length;
-  if (!total) {
-    $('list').innerHTML = `<div class="empty"><strong>No comments yet</strong>When people comment, you can reply, hide or delete them here.</div>`;
-    $('moreWrap').innerHTML = ''; $('note').textContent = ''; return;
+  if (INBOX) {
+    $('preview').style.display = '';
+    $('preview').classList.add('static');
   }
+  const base = baseItems();
+  if (INBOX) renderInboxChrome(base);
+  if (!base.length) {
+    const none = INBOX ? 'When people comment on any of your posts or articles, they all show up here.' : 'When people comment, you can reply, hide or delete them here.';
+    $('list').innerHTML = `<div class="empty"><strong>${INBOX && !Object.keys(contentIndex).length ? 'Nothing to manage yet' : 'No comments yet'}</strong>${INBOX && !Object.keys(contentIndex).length ? 'Publish a post or article and its comments will land here.' : none}</div>`;
+    $('moreWrap').innerHTML = allLoaded() ? '' : `<button class="more" onclick="loadMore(this)">Load more</button>`;
+    $('note').textContent = ''; $('qaStrip').style.display = 'none'; updateBulkBar(); return;
+  }
+  const list = visible();
+  renderQuick(list);
   $('list').innerHTML = list.length ? list.map(c => commentHTML(c, false)).join('')
-    : `<div class="empty"><strong>${filter === 'hidden' ? 'Nothing hidden' : 'All caught up'}</strong>${filter === 'hidden' ? 'Comments you hide will show up here.' : 'No unreplied comments in what\'s loaded.'}</div>`;
-  $('moreWrap').innerHTML = exhausted ? '' : `<button class="more" onclick="loadMore(this)">Load more</button>`;
-  $('note').textContent = filter === 'all' ? '' : 'Filters apply to comments loaded so far' + (exhausted ? '.' : ' — load more to see older ones.');
+    : `<div class="empty"><strong>${filter === 'hidden' ? 'Nothing hidden' : (filter === 'unreplied' ? 'All caught up' : 'No comments here')}</strong>${filter === 'hidden' ? 'Comments you hide will show up here.' : (filter === 'unreplied' ? 'No unreplied comments in what\'s loaded.' : 'Try another filter.')}</div>`;
+  $('moreWrap').innerHTML = allLoaded() ? '' : `<button class="more" onclick="loadMore(this)">Load more</button>`;
+  $('note').textContent = (filter === 'all' && cfilter === 'all') ? '' : 'Filters apply to comments loaded so far' + (allLoaded() ? '.' : ' — load more to see older ones.');
+  updateBulkBar();
 }
 
-/* ── select mode: bulk hide / delete across whatever's loaded ── */
+/* ── select mode: bulk reply / like / hide / delete, across every post + article loaded ── */
 window.toggleSelectMode = function(){
   selectMode = !selectMode;
   selected.clear();
   $('selectBtn').classList.toggle('primary', selectMode);
-  updateBulkBar();
   render();
 };
 window.toggleSelect = function(cid){
   if (selected.has(cid)) selected.delete(cid); else selected.add(cid);
-  updateBulkBar(); render();
+  render();
 };
-function updateBulkBar(){
-  $('bulkBar').classList.toggle('on', selectMode && selected.size > 0);
-  $('bulkCount').textContent = `${selected.size} selected`;
+window.selectAllVisible = function(){
+  const list = visible().filter(c => c.authorUid !== me.uid);
+  const all = list.length && list.every(c => selected.has(c.id));
+  list.forEach(c => all ? selected.delete(c.id) : selected.add(c.id));
+  render();
+};
+function enterSelectWith(ids){
+  selectMode = true; selected = new Set(ids);
+  $('selectBtn').classList.add('primary');
+  render();
 }
-window.bulkHide = async function(){
-  const ids = Array.from(selected);
-  for (const cid of ids) {
-    const c = items.find(x => x.id === cid);
-    if (!c || c.hidden) continue;
-    try { await updateDoc(doc(db,'comments',cid), { hidden: true }); c.hidden = true; } catch {}
-  }
-  selected.clear(); selectMode = false; updateBulkBar(); saveCache(); render();
-  toast(`${ids.length} comment${ids.length===1?'':'s'} hidden`);
+window.selectAllUnreplied = function(){ enterSelectWith(visible().filter(isUnreplied).map(c => c.id)); toast('Unreplied comments selected'); };
+window.replyToAllUnreplied = function(){
+  const ids = visible().filter(isUnreplied).map(c => c.id);
+  if (!ids.length) return;
+  enterSelectWith(ids); openBulkReply();
 };
-window.bulkDelete = async function(){
-  const ids = Array.from(selected);
-  if (!confirm(`Delete ${ids.length} comment${ids.length===1?'':'s'}? Any replies on them go too. This can't be undone.`)) return;
-  let totalRemoved = 0;
-  for (const cid of ids) {
+const selectedItems = () => Array.from(selected).map(id => items.find(x => x.id === id)).filter(Boolean);
+function updateBulkBar(){
+  document.body.classList.toggle('sel-on', selectMode);
+  $('bulkBar').classList.toggle('on', selectMode);
+  const sel = selectedItems(), n = sel.length;
+  const spread = new Set(sel.map(c => ckey(c.cType, c.cId))).size;
+  $('bulkCount').textContent = n ? `${n} selected${INBOX && spread > 1 ? ` · ${spread} posts/articles` : ''}` : 'Tap comments to select';
+  ['bbReply','bbLike','bbHide','bbDel'].forEach(id => $(id).disabled = !n);
+  const hideable = sel.filter(c => c.authorUid !== me.uid);
+  $('bbHide').textContent = hideable.length && hideable.every(c => c.hidden) ? 'Unhide' : 'Hide';
+}
+async function inChunks(arr, n, fn){ for (const part of chunk(arr, n)) await fn(part); }
+
+window.bulkHide = async function(){
+  const sel = selectedItems().filter(c => c.authorUid !== me.uid);
+  if (!sel.length) return;
+  const next = !sel.every(c => c.hidden);
+  const todo = sel.filter(c => c.hidden !== next);
+  let ok = 0, bad = 0;
+  await inChunks(todo, 400, async part => {
     try {
-      let replyIds = (replies[cid] || []).map(r => r.id);
-      if (!replies[cid]) {
-        try {
-          const rq = query(collection(db,'comments'), where(idField,'==',contentId), where('parentId','==',cid));
-          const rsnap = await resilient(() => getDocs(rq), { tries: 1 });
-          replyIds = rsnap.docs.map(d => d.id);
-        } catch {}
-      }
-      const batch = writeBatch(db);
-      batch.delete(doc(db,'comments',cid));
-      replyIds.forEach(rid => batch.delete(doc(db,'comments',rid)));
-      await batch.commit();
-      totalRemoved += 1 + replyIds.length;
-      delete replies[cid]; openReplies.delete(cid);
-      if (cid === pinnedId) { pinnedId = null; pinnedSnapshot = null; setDoc(doc(db, metaCol, contentId), { pinnedCommentId: null }, { merge: true }).catch(() => {}); }
-    } catch {}
-  }
-  if (totalRemoved) updateDoc(doc(db, metaCol, contentId), { commentCount: increment(-totalRemoved) }).catch(() => {});
-  items = items.filter(x => !selected.has(x.id));
-  selected.clear(); selectMode = false; updateBulkBar(); saveCache(); render(); renderPinned();
-  toast(`${ids.length} comment${ids.length===1?'':'s'} deleted`);
+      const b = writeBatch(db);
+      part.forEach(c => b.update(doc(db,'comments',c.id), { hidden: next }));
+      await b.commit(); part.forEach(c => c.hidden = next); ok += part.length;
+    } catch {
+      for (const c of part) { try { await updateDoc(doc(db,'comments',c.id), { hidden: next }); c.hidden = next; ok++; } catch { bad++; } }
+    }
+  });
+  selected.clear(); selectMode = false; $('selectBtn').classList.remove('primary'); saveCache(); render();
+  toast(bad ? `${ok} ${next?'hidden':'visible'}, ${bad} failed` : `${ok} comment${ok===1?'':'s'} ${next ? 'hidden from readers' : 'visible again'}`);
 };
 
-/* ── pin: single slot per post/article, written to the SAME meta doc content-insights reads ── */
+/* like: same likedBy/{uid} + likeCount schema post-read.html and article-read.html use */
+function applyLike(c, nowLiked){
+  const wasLiked = !!c.liked;
+  c.liked = nowLiked; c.likeCount = (c.likeCount || 0) + (nowLiked ? 1 : -1);
+  const ref = doc(db, 'comments', c.id);
+  const prior = cmLikeChain.get(c.id) || Promise.resolve();
+  const task = prior.then(() => updateDoc(ref, { [`likedBy.${me.uid}`]: nowLiked, likeCount: increment(nowLiked ? 1 : -1) }))
+    .then(() => {
+      if (nowLiked && c.authorUid && c.authorUid !== me.uid) {
+        ensureProfile().then(p => {
+          setDoc(doc(db, 'notifications', `clike_${me.uid}_${c.id}`), {
+            recipientUid: c.authorUid, type: 'comment_like', actorUid: me.uid,
+            actorName: p.name, actorPhoto: p.photo, actorUsername: p.username,
+            targetId: c.cId, targetTitle: notifTitleOf(c),
+            commentId: c.id, targetType: c.cType,
+            read: false, createdAt: serverTimestamp(), lastAt: serverTimestamp()
+          }).catch(() => {});
+        }).catch(() => {});
+      }
+      return true;
+    })
+    .catch(e => {
+      if (c.liked === nowLiked) { c.liked = wasLiked; c.likeCount = (c.likeCount || 0) + (wasLiked ? 1 : -1); }
+      console.error('like:', e && e.code);
+      return e && e.code === 'permission-denied' ? 'denied' : false;
+    });
+  cmLikeChain.set(c.id, task);
+  return task;
+}
+window.toggleCommentLike = async function(cid){
+  const c = findComment(cid); if (!c) return;
+  const p = applyLike(c, !c.liked);
+  render();
+  const r = await p;
+  if (r === true) saveCache();
+  else { render(); toast(r === 'denied' ? 'Could not like — check Firestore rules' : 'Could not update — try again'); }
+};
+window.bulkLike = async function(){
+  const todo = selectedItems().filter(c => !c.liked);
+  if (!todo.length) { toast('Already liked'); return; }
+  let ok = 0, bad = 0;
+  await inChunks(todo, 15, async part => {
+    const res = await Promise.all(part.map(c => applyLike(c, true)));
+    res.forEach(r => r === true ? ok++ : bad++);
+  });
+  selected.clear(); selectMode = false; $('selectBtn').classList.remove('primary'); saveCache(); render();
+  toast(bad ? `${ok} liked, ${bad} failed` : `Liked ${ok} comment${ok===1?'':'s'}`);
+};
+
+/* ── bulk reply: one message → many comments, across many posts/articles ── */
+window.openBulkReply = function(){
+  const sel = selectedItems();
+  if (!sel.length) return;
+  const spread = new Set(sel.map(c => ckey(c.cType, c.cId))).size;
+  $('sheetTitle').textContent = `Reply to ${sel.length} comment${sel.length===1?'':'s'}`;
+  $('sheetSub').textContent = spread > 1 ? `Sent under ${spread} different posts & articles — each one gets its own reply.` : 'Each comment gets its own reply.';
+  $('qchips').innerHTML = QUICK_REPLIES.map((q, i) => `<button class="qchip" onclick="useQuick(${i})">${esc(q.replace('{name}', 'name'))}</button>`).join('');
+  $('bulkText').value = ''; bulkInput();
+  $('sheetBg').classList.add('on'); $('sheet').classList.add('on');
+  setTimeout(() => $('bulkText').focus(), 250);
+};
+window.closeSheet = function(){ $('sheetBg').classList.remove('on'); $('sheet').classList.remove('on'); };
+window.useQuick = function(i){ $('bulkText').value = QUICK_REPLIES[i]; bulkInput(); $('bulkText').focus(); };
+window.bulkInput = function(){
+  const el = $('bulkText'), v = el.value.trim();
+  $('bulkSend').disabled = !v;
+  const sel = selectedItems();
+  $('bulkSend').textContent = `Send to ${sel.length} comment${sel.length===1?'':'s'}`;
+  const pv = $('bulkPrev');
+  if (v && sel.length) { pv.style.display = 'block'; pv.innerHTML = `<b>Reply to ${esc(sel[0].authorName)}:</b> ${esc(personalize(v, sel[0]))}`; }
+  else pv.style.display = 'none';
+};
+function replyNotif(p, c){
+  return { recipientUid: c.authorUid, type: 'comment_reply', actorUid: me.uid, actorName: p.name, actorPhoto: p.photo, actorUsername: p.username,
+    targetId: c.cId, targetTitle: notifTitleOf(c), commentId: c.id, targetType: c.cType, read: false, createdAt: serverTimestamp(), lastAt: serverTimestamp() };
+}
+function replyDoc(p, c, text){
+  return { [fieldOf(c)]: c.cId, parentId: c.id, authorUid: me.uid, authorName: p.name, authorPhoto: p.photo, authorUsername: p.username,
+    text, likeCount: 0, replyCount: 0, hidden: false, createdAt: serverTimestamp() };
+}
+// One batch: every reply, each parent's replyCount, one notification each, and ONE meta update per post/article
+// (commentCount + creatorReplyCount together, same as single replies — Insights stays consistent).
+async function commitReplyGroup(p, group, tpl){
+  const b = writeBatch(db);
+  const made = [], perContent = {};
+  group.forEach(c => {
+    const text = personalize(tpl, c);
+    const ref = doc(collection(db, 'comments'));
+    b.set(ref, replyDoc(p, c, text));
+    b.update(doc(db, 'comments', c.id), { replyCount: increment(1) });
+    if (c.authorUid && c.authorUid !== me.uid) b.set(doc(collection(db, 'notifications')), replyNotif(p, c));
+    const k = ckey(c.cType, c.cId); perContent[k] = (perContent[k] || 0) + 1;
+    made.push({ c, id: ref.id, text });
+  });
+  Object.keys(perContent).forEach(k => {
+    const [type, ...rest] = k.split(':'); const id = rest.join(':');
+    b.set(doc(db, metaColOf(type), id), { commentCount: increment(perContent[k]), creatorReplyCount: increment(perContent[k]) }, { merge: true });
+  });
+  await b.commit();
+  return made;
+}
+window.sendBulkReply = async function(){
+  const tpl = $('bulkText').value.trim();
+  const sel = selectedItems();
+  if (!tpl || !sel.length) return;
+  const btn = $('bulkSend'); btn.disabled = true;
+  const p = await ensureProfile();
+  let done = 0, bad = 0;
+  await inChunks(sel, BATCH_COMMENTS, async group => {
+    let made = [];
+    try { made = await commitReplyGroup(p, group, tpl); }
+    catch (e) {
+      console.error('bulk reply batch:', e && e.code);
+      for (const c of group) { try { made = made.concat(await commitReplyGroup(p, [c], tpl)); } catch { bad++; } }
+    }
+    made.forEach(m => {
+      m.c.replyCount = (m.c.replyCount || 0) + 1;
+      if (replies[m.c.id]) replies[m.c.id].push({ id: m.id, cType: m.c.cType, cId: m.c.cId, parentId: m.c.id, authorUid: me.uid, authorName: p.name,
+        authorPhoto: p.photo, authorUsername: p.username, text: m.text, likeCount: 0, replyCount: 0, hidden: false, liked: false, createdAt: Date.now(), createdAtParts: tsParts(null) });
+    });
+    done += made.length;
+    btn.textContent = `Sending ${done + bad}/${sel.length}…`;
+  });
+  closeSheet();
+  selected.clear(); selectMode = false; $('selectBtn').classList.remove('primary');
+  saveCache(); render();
+  toast(bad ? `${done} replied, ${bad} failed — try those again` : `Replied to ${done} comment${done===1?'':'s'} ✓`);
+};
+
+/* ── bulk delete ── */
+async function unpinIfDeleted(type, id, deletedIds){
+  try {
+    if (!INBOX) {
+      if (pinnedId && deletedIds.has(pinnedId)) {
+        pinnedId = null; pinnedSnapshot = null; renderPinned();
+        await setDoc(doc(db, metaColOf(type), id), { pinnedCommentId: null, pinnedCommentText: null, pinnedCommentAuthorName: null }, { merge: true });
+      }
+      return;
+    }
+    const s = await getDoc(doc(db, metaColOf(type), id));
+    if (s.exists() && s.data().pinnedCommentId && deletedIds.has(s.data().pinnedCommentId))
+      await setDoc(doc(db, metaColOf(type), id), { pinnedCommentId: null, pinnedCommentText: null, pinnedCommentAuthorName: null }, { merge: true });
+  } catch {}
+}
+async function replyIdsFor(c){
+  if (replies[c.id]) return replies[c.id].map(r => r.id);
+  try {
+    const rs = await resilient(() => getDocs(query(collection(db,'comments'), where(fieldOf(c),'==',c.cId), where('parentId','==',c.id))), { tries: 1 });
+    return rs.docs.map(d => d.id);
+  } catch { return []; }
+}
+window.bulkDelete = async function(){
+  const sel = selectedItems(); if (!sel.length) return;
+  const rc = sel.reduce((s, c) => s + (c.replyCount || 0), 0);
+  if (!confirm(`Delete ${sel.length} comment${sel.length===1?'':'s'}${rc ? ` and ${rc} ${rc===1?'reply':'replies'} on them` : ''}? This can't be undone.`)) return;
+  const plan = await Promise.all(sel.map(async c => ({ c, rids: await replyIdsFor(c) })));
+  const gone = new Set(), dec = {}, deletedByContent = {};
+  let bad = 0;
+  const commitPlan = async part => {
+    const b = writeBatch(db);
+    part.forEach(x => { b.delete(doc(db,'comments',x.c.id)); x.rids.forEach(r => b.delete(doc(db,'comments',r))); });
+    await b.commit();
+  };
+  const markGone = x => {
+    gone.add(x.c.id);
+    const k = ckey(x.c.cType, x.c.cId); dec[k] = (dec[k] || 0) + 1 + x.rids.length;
+    (deletedByContent[k] = deletedByContent[k] || new Set()).add(x.c.id);
+  };
+  // groups capped at ~400 ops so a batch never exceeds Firestore's 500-write limit
+  const groups = []; let cur = [], ops = 0;
+  plan.forEach(x => { const n = 1 + x.rids.length; if (ops + n > 400 && cur.length) { groups.push(cur); cur = []; ops = 0; } cur.push(x); ops += n; });
+  if (cur.length) groups.push(cur);
+  for (const g of groups) {
+    try { await commitPlan(g); g.forEach(markGone); }
+    catch { for (const x of g) { try { await commitPlan([x]); markGone(x); } catch { bad++; } } }
+  }
+  Object.keys(dec).forEach(k => {
+    const [type, ...rest] = k.split(':'); const id = rest.join(':');
+    updateDoc(doc(db, metaColOf(type), id), { commentCount: increment(-dec[k]) }).catch(() => {});
+    unpinIfDeleted(type, id, deletedByContent[k]);
+  });
+  items = items.filter(x => !gone.has(x.id));
+  gone.forEach(id => { delete replies[id]; openReplies.delete(id); });
+  selected.clear(); selectMode = false; $('selectBtn').classList.remove('primary'); saveCache(); render();
+  toast(bad ? `${gone.size} deleted, ${bad} failed` : `${gone.size} comment${gone.size===1?'':'s'} deleted`);
+};
+
+/* ── pin: single mode only (one slot per post/article, so it lives on that item's own manager) ── */
 window.togglePin = async function(cid){
+  if (INBOX) return;
   const c = items.find(x => x.id === cid); if (!c) return;
   const wasPinned = pinnedId === cid;
   try {
     if (wasPinned) {
-      await setDoc(doc(db, metaCol, contentId), { pinnedCommentId: null, pinnedCommentText: null, pinnedCommentAuthorName: null }, { merge: true });
+      await setDoc(doc(db, metaColOf(sType), contentId), { pinnedCommentId: null, pinnedCommentText: null, pinnedCommentAuthorName: null }, { merge: true });
       pinnedId = null; pinnedSnapshot = null;
       toast('Unpinned');
     } else {
-      await setDoc(doc(db, metaCol, contentId), {
+      await setDoc(doc(db, metaColOf(sType), contentId), {
         pinnedCommentId: cid, pinnedCommentText: c.text.slice(0, 200),
         pinnedCommentAuthorName: c.authorName || 'User', pinnedAt: serverTimestamp()
       }, { merge: true });
@@ -471,53 +957,9 @@ window.togglePin = async function(cid){
     toast(e && e.code === 'permission-denied' ? 'Not allowed yet — Firestore rules need updating' : 'Could not update pin — try again');
   }
 };
-/* ── like: same likedBy/{uid} + likeCount schema post-read.html and article-read.html use,
-   so a like from here shows up there and vice versa ── */
-window.toggleCommentLike = async function(cid, authorUid){
-  const list = items.find(x => x.id === cid) ? items : (Object.values(replies).flat());
-  const c = list.find(x => x.id === cid); if (!c) return;
-  const wasLiked = !!c.liked;
-  const nowLiked = !wasLiked;
-  c.liked = nowLiked; c.likeCount = (c.likeCount || 0) + (nowLiked ? 1 : -1);
-  render();
-  const ref = doc(db, 'comments', cid);
-  const prior = cmLikeChain.get(cid) || Promise.resolve();
-  const task = prior.then(() => updateDoc(ref, { [`likedBy.${me.uid}`]: nowLiked, likeCount: increment(nowLiked ? 1 : -1) }))
-    .then(() => {
-      if (nowLiked && authorUid && authorUid !== me.uid) {
-        // Matches notifications.js's notifyComment schema and its dedup pattern for
-        // comment_like specifically: same deterministic doc ID on repeat like/unlike
-        // so it never piles up duplicate "liked your comment" notifications.
-        ensureProfile().then(p => {
-          const dedupId = `clike_${me.uid}_${cid}`;
-          setDoc(doc(db, 'notifications', dedupId), {
-            recipientUid: authorUid, type: 'comment_like', actorUid: me.uid,
-            actorName: p.name, actorPhoto: p.photo, actorUsername: p.username,
-            targetId: contentId, targetTitle: isPost ? '' : (content.title || ''),
-            commentId: cid, targetType: isPost ? 'post' : 'article',
-            read: false, createdAt: serverTimestamp(), lastAt: serverTimestamp()
-          }).catch(() => {});
-        }).catch(() => {});
-      }
-      saveCache();
-    })
-    .catch(e => {
-      // Only roll back if nothing newer has happened to this comment since —
-      // if it was tapped again while this write was in flight, that later
-      // tap's state is the one that should stick.
-      if (c.liked === nowLiked) {
-        c.liked = wasLiked; c.likeCount = (c.likeCount || 0) + (wasLiked ? 1 : -1);
-        render();
-      }
-      console.error('toggleCommentLike:', e && e.code);
-      toast(e && e.code === 'permission-denied' ? 'Could not like — check Firestore rules' : 'Could not update — try again');
-    });
-  cmLikeChain.set(cid, task);
-  await task;
-};
 
 function showEmpty(title, sub, retry){
-  $('pills').style.display = 'none'; $('preview').style.display = 'none';
+  $('pills').style.display = 'none'; $('preview').style.display = 'none'; $('cselWrap').style.display = 'none'; $('qaStrip').style.display = 'none';
   $('list').innerHTML = `<div class="empty"><strong>${esc(title)}</strong>${esc(sub)}${retry ? '<br><button class="act primary" onclick="retryBoot()">Try again</button>' : ''}</div>`;
 }
 window.retryBoot = async function(){ await reconnectFirestore(); $('list').innerHTML = '<div class="skel"></div><div class="skel"></div>'; boot(); };
@@ -525,17 +967,18 @@ window.retryBoot = async function(){ await reconnectFirestore(); $('list').inner
 /* ── replies (fetched once per thread, then cached) ── */
 window.toggleReplies = async function(cid){
   if (openReplies.has(cid)) { openReplies.delete(cid); render(); return; }
+  const parent = items.find(x => x.id === cid); if (!parent) return;
   openReplies.add(cid);
   if (replies[cid]) { render(); return; }
   render();
   try {
-    const q = query(collection(db,'comments'), where(idField,'==',contentId), where('parentId','==',cid), orderBy('createdAt','asc'));
+    const q = query(collection(db,'comments'), where(fieldOf(parent),'==',parent.cId), where('parentId','==',cid), orderBy('createdAt','asc'));
     const snap = await resilient(() => getDocs(q), { tries: 2 });
     replies[cid] = snap.docs.map(plain); saveCache(); render();
   } catch { openReplies.delete(cid); render(); toast('Could not load replies'); }
 };
 
-/* ── actions ── */
+/* ── single-comment actions ── */
 window.riInput = function(cid, el){
   el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px';
   $('ris-' + cid).disabled = !el.value.trim();
@@ -553,37 +996,23 @@ async function ensureProfile(){
   } catch {}
   return (myProfile = { name, photo, username });
 }
-// Reply = 4 writes: the reply, parent's replyCount, content's commentCount, and one notification.
+// Reply = the reply, parent's replyCount, that content's meta (commentCount + creatorReplyCount in ONE write), and a notification.
 window.sendReply = async function(pid){
+  const parent = items.find(i => i.id === pid); if (!parent) return;
   const inp = $('ri-' + pid), btn = $('ris-' + pid);
   const text = (inp.value || '').trim(); if (!text) return;
   btn.disabled = true; btn.textContent = '…';
   try {
     const p = await ensureProfile();
-    const ref = await addDoc(collection(db,'comments'), { [idField]: contentId, parentId: pid, authorUid: me.uid,
-      authorName: p.name, authorPhoto: p.photo, authorUsername: p.username, text, likeCount: 0, replyCount: 0, hidden: false, createdAt: serverTimestamp() });
+    const ref = await addDoc(collection(db,'comments'), replyDoc(p, parent, text));
     updateDoc(doc(db,'comments',pid), { replyCount: increment(1) }).catch(() => {});
-    // Both fields in ONE updateDoc, not two separate fire-and-forget calls —
-    // two independent writes leave a window where Insights could read the doc
-    // after commentCount lands but before creatorReplyCount does, showing
-    // "unanswered" for a reply that was, in fact, just sent. Only the content
-    // owner can reach this page (boot() checks authorUid === me.uid), so every
-    // reply sent here is a creator reply.
-    updateDoc(doc(db, metaCol, contentId), { commentCount: increment(1), creatorReplyCount: increment(1) })
-      .catch(() => setDoc(doc(db, metaCol, contentId), { commentCount: 1, creatorReplyCount: 1 }, { merge: true }).catch(() => {}));
-    const parent = items.find(i => i.id === pid);
-    if (parent) {
-      parent.replyCount = (parent.replyCount || 0) + 1;
-      if (parent.authorUid && parent.authorUid !== me.uid) {
-        addDoc(collection(db,'notifications'), { recipientUid: parent.authorUid, type: 'comment_reply', actorUid: me.uid,
-          actorName: p.name, actorPhoto: p.photo, actorUsername: p.username, targetId: contentId,
-          targetTitle: isPost ? '' : (content.title || ''), commentId: pid, targetType: isPost ? 'post' : 'article',
-          read: false, createdAt: serverTimestamp(), lastAt: serverTimestamp() }).catch(() => {});
-      }
-    }
-    const nr = { id: ref.id, parentId: pid, authorUid: me.uid, authorName: p.name, authorPhoto: p.photo, authorUsername: p.username,
-      text, likeCount: 0, replyCount: 0, hidden: false, createdAt: Date.now() };
-    // Only append locally if that thread's replies were already loaded; otherwise the next expand fetches them fresh.
+    const mref = doc(db, metaColOf(parent.cType), parent.cId);
+    updateDoc(mref, { commentCount: increment(1), creatorReplyCount: increment(1) })
+      .catch(() => setDoc(mref, { commentCount: 1, creatorReplyCount: 1 }, { merge: true }).catch(() => {}));
+    parent.replyCount = (parent.replyCount || 0) + 1;
+    if (parent.authorUid && parent.authorUid !== me.uid) addDoc(collection(db,'notifications'), replyNotif(p, parent)).catch(() => {});
+    const nr = { id: ref.id, cType: parent.cType, cId: parent.cId, parentId: pid, authorUid: me.uid, authorName: p.name, authorPhoto: p.photo, authorUsername: p.username,
+      text, likeCount: 0, replyCount: 0, hidden: false, liked: false, createdAt: Date.now(), createdAtParts: tsParts(null) };
     if (replies[pid]) { replies[pid].push(nr); openReplies.add(pid); }
     saveCache(); render();
     toast('Reply posted');
@@ -607,11 +1036,8 @@ window.toggleHide = async function(cid, pid){
   }
 };
 
-// Delete: for a reply, 1 delete + parent replyCount(-1) + content commentCount(-1).
-// For a top-level comment, its replies are gone too once it's deleted (they'd be
-// orphaned — visible nowhere, replyable to nothing) so this fetches and batch-
-// deletes them along with it, and drops commentCount by 1 + however many replies
-// went with it, not just 1.
+// Delete: a reply = 1 delete + parent replyCount(-1) + content commentCount(-1).
+// A top-level comment takes its replies with it, and commentCount drops by 1 + however many went.
 window.delComment = async function(cid, pid){
   const list = pid ? (replies[pid] || []) : items;
   const c = list.find(x => x.id === cid); if (!c) return;
@@ -626,29 +1052,17 @@ window.delComment = async function(cid, pid){
       replies[pid] = (replies[pid] || []).filter(x => x.id !== cid);
       const parent = items.find(i => i.id === pid); if (parent) parent.replyCount = Math.max(0, (parent.replyCount || 0) - 1);
     } else {
-      // Fetch this comment's replies first so they can be batch-deleted with it —
-      // Firestore batches cap at 500 writes, comfortably above what a single
-      // comment thread here will ever have.
-      let replyIds = (replies[cid] || []).map(r => r.id);
-      if (!replies[cid]) {
-        try {
-          const rq = query(collection(db,'comments'), where(idField,'==',contentId), where('parentId','==',cid));
-          const rsnap = await resilient(() => getDocs(rq), { tries: 2 });
-          replyIds = rsnap.docs.map(d => d.id);
-        } catch {}
-      }
+      const replyIds = await replyIdsFor(c);
       const batch = writeBatch(db);
       batch.delete(doc(db,'comments',cid));
       replyIds.forEach(rid => batch.delete(doc(db,'comments',rid)));
       await batch.commit();
       removedCount = 1 + replyIds.length;
       items = items.filter(x => x.id !== cid); delete replies[cid]; openReplies.delete(cid);
-      if (cid === pinnedId) {
-        pinnedId = null; pinnedSnapshot = null; renderPinned();
-        setDoc(doc(db, metaCol, contentId), { pinnedCommentId: null, pinnedCommentText: null, pinnedCommentAuthorName: null }, { merge: true }).catch(() => {});
-      }
+      unpinIfDeleted(c.cType, c.cId, new Set([cid]));
     }
-    updateDoc(doc(db, metaCol, contentId), { commentCount: increment(-removedCount) }).catch(() => {});
+    updateDoc(doc(db, metaColOf(c.cType), c.cId), { commentCount: increment(-removedCount) }).catch(() => {});
+    selected.delete(cid);
     saveCache(); render();
     toast(removedCount > 1 ? `Comment and ${removedCount-1} ${removedCount-1===1?'reply':'replies'} deleted` : 'Comment deleted');
   } catch (e) {
@@ -658,7 +1072,7 @@ window.delComment = async function(cid, pid){
   }
 };
 
-window.addEventListener('online', () => { if (!content && me) retryBoot(); });
+window.addEventListener('online', () => { if (me && !$('list').children.length) retryBoot(); });
 </script>
 </body>
 </html>
