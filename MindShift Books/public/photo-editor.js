@@ -1,7 +1,9 @@
 // public/photo-editor.js
 //
 // Shared full-screen photo editor — crop (Free / Original / 1:1 / 4:5 / 16:9),
-// rotate + flip, filters, and brightness / contrast / saturation.
+// rotate + flip, filters, brightness / contrast / saturation, and text overlays
+// (Instagram-style: type on the photo, pick a font + colour + background, drag /
+// pinch to place it, drag it to the bin to delete).
 //
 //   <script src="/photo-editor.js"></script>
 //
@@ -10,7 +12,8 @@
 //     state,          // optional: the `state` returned last time, to reopen with edits intact
 //     title,          // optional header text (default "Edit photo")
 //     aspects,        // optional: e.g. ['16:9'] to offer only some crop shapes
-//     aspect          // optional: start with this crop shape, e.g. '16:9' (new edits only)
+//     aspect,         // optional: start with this crop shape, e.g. '16:9' (new edits only)
+//     text            // optional: pass false to hide the Text tab
 //   });
 //   // res === null                      -> cancelled
 //   // res.changed === false             -> back to the untouched original (res.dataUrl is null)
@@ -42,6 +45,19 @@ window.MindshiftPhotoEditor = (function () {
     { id: 'sepia',  name: 'Sepia',  sep: 0.85 },
     { id: 'mono',   name: 'Mono',   sa: 0, co: 1.1 }
   ];
+
+  // Text styles. Canvas can't use CSS classes, so each style is a full font string ({s} = px).
+  var FONTS = [
+    { id: 'classic', name: 'Classic', css: '800 {s}px Inter,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif' },
+    { id: 'script',  name: 'Script',  css: 'italic 400 {s}px "Snell Roundhand","Brush Script MT","Segoe Script","Lucida Handwriting",cursive', sc: 1.18 },
+    { id: 'serif',   name: 'Serif',   css: '700 {s}px Georgia,"Times New Roman",Times,serif' },
+    { id: 'type',    name: 'Typewriter', css: '700 {s}px "Courier New",Courier,"Roboto Mono",monospace', sc: 0.92 },
+    { id: 'poster',  name: 'Poster',  css: '700 {s}px Impact,Haettenschweiler,"Arial Narrow Bold","Roboto Condensed",sans-serif-condensed,"Arial Black",sans-serif', up: true, sc: 1.1 }
+  ];
+  var TEXT_COLORS = ['#ffffff', '#111111', '#4f46e5', '#06b6d4', '#f59e0b', '#ef4444', '#22c55e', '#ec4899'];
+  var TEXT_SIZE_DEFAULT = 0.075;      // fraction of the photo's shorter side
+  var COMPOSER_UNIT = 400;            // px reference while typing (size 0.075 -> 30px)
+  var MAX_TEXTS = 12;
 
   var ASPECTS = [
     { id: 'free', label: 'Free',     ar: null },
@@ -150,6 +166,115 @@ window.MindshiftPhotoEditor = (function () {
     return { x: hx === 1 ? ax : ax - nw2, y: hy === 1 ? ay : ay - nh2, w: nw2, h: nh2 };
   }
 
+  /* ───────────────────────── text helpers ───────────────────────── */
+
+  var _scratch = null;
+  function scratchCtx() {
+    if (!_scratch) _scratch = document.createElement('canvas').getContext('2d');
+    return _scratch;
+  }
+
+  function fontOf(t) { return FONTS[t.font] || FONTS[0]; }
+
+  // Layout of one text item at `unit` px (= the photo's shorter side). Same numbers drive
+  // the preview, the hit-test, the typing box and the export.
+  function measureText(t, unit) {
+    var f = fontOf(t), px = Math.max(4, t.size * unit * (f.sc || 1));
+    var c = scratchCtx();
+    c.font = f.css.replace('{s}', px);
+    var raw = t.text || '';
+    var lines = (f.up ? raw.toUpperCase() : raw).split('\n');
+    var ws = [], tw = 0, lh = px * 1.25;
+    for (var i = 0; i < lines.length; i++) {
+      var w = c.measureText(lines[i] || ' ').width;
+      ws.push(w); if (w > tw) tw = w;
+    }
+    var padX = t.bg ? px * 0.4 : 0, padY = t.bg ? px * 0.12 : 0;
+    return { px: px, font: c.font, lines: lines, ws: ws, lh: lh, tw: tw, padX: padX, padY: padY,
+             w: tw + padX * 2, h: lines.length * lh + padY * 2 };
+  }
+
+  function contrastOn(hex) {
+    var m = /^#?([0-9a-f]{6})$/i.exec(hex || '');
+    if (!m) return '#111111';
+    var n = parseInt(m[1], 16), r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+    return (0.299 * r + 0.587 * g + 0.114 * b) > 150 ? '#111111' : '#ffffff';
+  }
+
+  function rrect(ctx, x, y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  // Draws one text item centred on the current origin (caller sets translate / rotate).
+  function drawTextItem(ctx, t, unit) {
+    if (!t.text || !t.text.trim()) return;
+    var m = measureText(t, unit);
+    var bgCol = null, txtCol = t.color;
+    if (t.bg === 1) { bgCol = t.color; txtCol = contrastOn(t.color); }
+    else if (t.bg === 2) { bgCol = 'rgba(0,0,0,0.55)'; }
+    var top = -m.h / 2 + m.padY;
+    function lineX(i) { return t.align === 'left' ? -m.tw / 2 : t.align === 'right' ? m.tw / 2 - m.ws[i] : -m.ws[i] / 2; }
+    ctx.save();
+    if (bgCol) {
+      ctx.fillStyle = bgCol;
+      for (var i = 0; i < m.lines.length; i++) {
+        if (!m.lines[i].trim()) continue;
+        rrect(ctx, lineX(i) - m.padX, top + i * m.lh, m.ws[i] + m.padX * 2, m.lh, m.px * 0.32);
+        ctx.fill();
+      }
+    } else {
+      ctx.shadowColor = 'rgba(0,0,0,0.38)';
+      ctx.shadowBlur = m.px * 0.14;
+      ctx.shadowOffsetY = m.px * 0.03;
+    }
+    ctx.font = m.font; ctx.textBaseline = 'middle'; ctx.textAlign = 'left'; ctx.fillStyle = txtCol;
+    for (var j = 0; j < m.lines.length; j++) ctx.fillText(m.lines[j], lineX(j), top + j * m.lh + m.lh / 2);
+    ctx.restore();
+  }
+
+  function cloneText(t) {
+    return { text: t.text, font: t.font, color: t.color, bg: t.bg, align: t.align, size: t.size, x: t.x, y: t.y, rot: t.rot };
+  }
+
+  function cleanText(t) {   // trusts nothing from an old saved state
+    t = t || {};
+    var size = Number(t.size); if (!(size > 0)) size = TEXT_SIZE_DEFAULT;
+    return {
+      text: String(t.text == null ? '' : t.text).slice(0, 400),
+      font: Math.min(Math.max(t.font | 0, 0), FONTS.length - 1),
+      color: /^#[0-9a-f]{6}$/i.test(t.color || '') ? t.color : '#ffffff',
+      bg: Math.min(Math.max(t.bg | 0, 0), 2),
+      align: t.align === 'left' || t.align === 'right' ? t.align : 'center',
+      size: Math.min(Math.max(size, 0.02), 0.4),
+      x: isFinite(t.x) ? Number(t.x) : 0.5, y: isFinite(t.y) ? Number(t.y) : 0.5,
+      rot: isFinite(t.rot) ? Number(t.rot) : 0
+    };
+  }
+
+  // Is image-space point (px,py) on text `t`? (`slop` widens it so small text is still easy to grab)
+  function hitTest(t, unit, tw, th, px, py, slop) {
+    var m = measureText(t, unit);
+    var dx = px - t.x * tw, dy = py - t.y * th, a = -t.rot * Math.PI / 180;
+    var lx = dx * Math.cos(a) - dy * Math.sin(a), ly = dx * Math.sin(a) + dy * Math.cos(a);
+    return Math.abs(lx) <= m.w / 2 + slop && Math.abs(ly) <= m.h / 2 + slop;
+  }
+
+  // Keep the text glued to the picture when the picture is turned / mirrored.
+  function turnTexts(texts) {          // 90° clockwise
+    texts.forEach(function (t) { var x = t.x; t.x = 1 - t.y; t.y = x; t.rot = normRot(t.rot + 90); });
+  }
+  function mirrorTexts(texts) {        // horizontal flip — the words themselves stay readable
+    texts.forEach(function (t) { t.x = 1 - t.x; t.rot = normRot(-t.rot); });
+  }
+  function normRot(d) { d = d % 360; if (d > 180) d -= 360; if (d <= -180) d += 360; return d; }
+
   /* ───────────────────────── image loading ───────────────────────── */
 
   function loadImage(src) {
@@ -225,7 +350,47 @@ window.MindshiftPhotoEditor = (function () {
     '#kv-pe .pe-reset{background:none;border:none;color:#818cf8;font-weight:700;font-size:13px;font-family:inherit;padding:2px 0;cursor:pointer}' +
     '#kv-pe .pe-tabs{display:flex;border-top:1px solid rgba(255,255,255,.07)}' +
     '#kv-pe .pe-tab{flex:1;background:none;border:none;color:#7c8497;font-weight:700;font-size:11.5px;font-family:inherit;padding:10px 0 12px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer}' +
-    '#kv-pe.tab-crop .pe-tab[data-tab=crop],#kv-pe.tab-filters .pe-tab[data-tab=filters],#kv-pe.tab-adjust .pe-tab[data-tab=adjust]{color:#fff}';
+    '#kv-pe.tab-crop .pe-tab[data-tab=crop],#kv-pe.tab-filters .pe-tab[data-tab=filters],#kv-pe.tab-adjust .pe-tab[data-tab=adjust],#kv-pe.tab-text .pe-tab[data-tab=text]{color:#fff}' +
+    /* text tab */
+    '#kv-pe.tab-text #pe-t-text{display:block}' +
+    '#kv-pe .pe-txt{position:absolute;inset:0;touch-action:none;display:none}' +
+    '#kv-pe.tab-text .pe-txt{display:block}' +
+    '#kv-pe .pe-hint{font-size:12.5px;color:#7c8497;line-height:1.5;margin-top:12px}' +
+    '#kv-pe .pe-add{background:linear-gradient(135deg,#4f46e5,#06b6d4);color:#fff;font-weight:700}' +
+    '#kv-pe .pe-add b{font-size:17px;font-weight:800;letter-spacing:-.5px}' +
+    '#kv-pe .pe-trash{position:absolute;left:50%;bottom:14px;width:54px;height:54px;margin-left:-27px;border-radius:50%;background:rgba(20,20,31,.92);border:1.5px solid rgba(255,255,255,.35);color:#fff;display:flex;align-items:center;justify-content:center;opacity:0;transform:scale(.7);transition:opacity .15s,transform .15s,background .15s;pointer-events:none;z-index:3}' +
+    '#kv-pe .pe-trash svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}' +
+    '#kv-pe .pe-trash.show{opacity:1;transform:scale(1)}' +
+    '#kv-pe .pe-trash.hot{background:#ef4444;border-color:#ef4444;transform:scale(1.22)}' +
+    /* composer (typing screen) */
+    '#pe-te{position:fixed;left:0;right:0;top:0;bottom:0;z-index:10001;display:none;flex-direction:column;background:rgba(8,8,14,.74);color:#fff;font-family:Inter,system-ui,-apple-system,sans-serif;-webkit-user-select:none;user-select:none}' +
+    '#pe-te.on{display:flex}' +
+    '#kv-pe.composing .pe-hdr,#kv-pe.composing .pe-panel,#kv-pe.composing .pe-trash{visibility:hidden}' +
+    '#pe-te .te-top{display:flex;align-items:center;gap:10px;padding:calc(env(safe-area-inset-top,0px) + 10px) 12px 8px;flex-shrink:0}' +
+    '#pe-te .te-sp{flex:1}' +
+    '#pe-te .te-btn{width:40px;height:40px;border-radius:50%;border:none;background:rgba(255,255,255,.14);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-family:inherit;padding:0;-webkit-tap-highlight-color:transparent}' +
+    '#pe-te .te-btn svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}' +
+    '#pe-te .te-bg span{display:flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;font-weight:800;font-size:14px;line-height:1;border:2px solid #fff;color:#fff;box-sizing:border-box}' +
+    '#pe-te .te-bg.b1 span{background:#fff;color:#111}' +
+    '#pe-te .te-bg.b2 span{background:rgba(255,255,255,.35);border-color:rgba(255,255,255,.35)}' +
+    '#pe-te .te-done{border:none;background:linear-gradient(135deg,#4f46e5,#06b6d4);color:#fff;font-weight:700;font-size:15px;font-family:inherit;padding:9px 20px;border-radius:99px;cursor:pointer}' +
+    '#pe-te .te-mid{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:0 16px}' +
+    '#pe-te .te-box{position:relative;flex:0 0 auto;max-width:100%}' +
+    '#pe-te .te-box canvas{position:absolute;left:0;top:0;pointer-events:none}' +
+    '#pe-te textarea{position:absolute;left:0;top:0;width:100%;height:100%;box-sizing:border-box;margin:0;border:0;outline:0;resize:none;overflow:hidden;white-space:pre;background:transparent;color:transparent;caret-color:#fff;-webkit-user-select:text;user-select:text;font-family:inherit;-webkit-text-fill-color:transparent}' +
+    '#pe-te textarea::placeholder{color:rgba(255,255,255,.55);-webkit-text-fill-color:rgba(255,255,255,.55)}' +
+    '#pe-te .te-bot{flex-shrink:0;padding:6px 0 calc(env(safe-area-inset-bottom,0px) + 8px)}' +
+    '#pe-te .te-row{display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;padding:6px 14px;align-items:center}' +
+    '#pe-te .te-row::-webkit-scrollbar{display:none}' +
+    '#pe-te .te-f{flex:0 0 auto;width:44px;height:44px;border-radius:50%;border:none;background:rgba(255,255,255,.16);color:#fff;font-size:18px;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center}' +
+    '#pe-te .te-f.sel{background:#fff;color:#111}' +
+    '#pe-te .te-c{flex:0 0 auto;width:30px;height:30px;border-radius:50%;border:2.5px solid rgba(255,255,255,.55);cursor:pointer;padding:0;position:relative;box-sizing:border-box}' +
+    '#pe-te .te-c.sel{border-color:#fff;box-shadow:0 0 0 2px rgba(0,0,0,.45),0 0 0 4px #fff}' +
+    '#pe-te .te-c.custom{background:conic-gradient(#ef4444,#f59e0b,#22c55e,#06b6d4,#4f46e5,#ec4899,#ef4444);overflow:hidden}' +
+    '#pe-te .te-c.custom input{position:absolute;inset:-6px;width:44px;height:44px;opacity:0;cursor:pointer;border:0;padding:0}' +
+    '#pe-te .te-sz{display:flex;align-items:center;gap:12px;padding:6px 20px 2px}' +
+    '#pe-te .te-sz input{flex:1;accent-color:#818cf8;height:28px}' +
+    '#pe-te .te-sz i{font-style:normal;font-weight:700;color:#cbd5e1;line-height:1}';
 
   var ICON = {
     rot:  '<svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7"/><polyline points="21 3 21 9 15 9"/></svg>',
@@ -234,7 +399,14 @@ window.MindshiftPhotoEditor = (function () {
     redo: '<svg viewBox="0 0 24 24"><polyline points="17 6 21 10 17 14"/><path d="M21 10H11a5 5 0 0 0-5 5v1a5 5 0 0 0 5 5h4"/></svg>',
     crop: '<svg viewBox="0 0 24 24"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg>',
     fx:   '<svg viewBox="0 0 24 24"><circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/></svg>',
-    adj:  '<svg viewBox="0 0 24 24"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="9" cy="7" r="2.4" fill="#14141f"/><circle cx="15" cy="17" r="2.4" fill="#14141f"/></svg>'
+    adj:  '<svg viewBox="0 0 24 24"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="9" cy="7" r="2.4" fill="#14141f"/><circle cx="15" cy="17" r="2.4" fill="#14141f"/></svg>',
+    txt:  '<svg viewBox="0 0 24 24"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>',
+    bin:  '<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>',
+    al: {
+      left:   '<svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="18" y2="18"/></svg>',
+      center: '<svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="5" y1="18" x2="19" y2="18"/></svg>',
+      right:  '<svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="10" y1="12" x2="20" y2="12"/><line x1="6" y1="18" x2="20" y2="18"/></svg>'
+    }
   };
 
   var el = null;           // root element (built lazily)
@@ -274,7 +446,9 @@ window.MindshiftPhotoEditor = (function () {
               '<div class="pe-h e-w" data-hx="-1" data-hy="0"></div><div class="pe-h e-e" data-hx="1" data-hy="0"></div>' +
             '</div>' +
           '</div>' +
+          '<div class="pe-txt" id="pe-txt"></div>' +
         '</div>' +
+        '<div class="pe-trash" id="pe-trash">' + ICON.bin + '</div>' +
         '<div class="pe-loading" id="pe-loading">Loading photo\u2026</div>' +
       '</div>' +
       '<div class="pe-panel">' +
@@ -284,6 +458,10 @@ window.MindshiftPhotoEditor = (function () {
             '<button type="button" class="pe-tbtn" id="pe-rot">' + ICON.rot + 'Rotate</button>' +
             '<button type="button" class="pe-tbtn" id="pe-flip">' + ICON.flip + 'Flip</button>' +
           '</div>' +
+        '</div>' +
+        '<div class="pe-tool" id="pe-t-text">' +
+          '<div class="pe-row"><button type="button" class="pe-tbtn pe-add" id="pe-addtext"><b>Aa</b>Add text</button></div>' +
+          '<div class="pe-hint">Tap text to edit \u00b7 drag to move \u00b7 pinch to resize and rotate \u00b7 drag to the bin to delete</div>' +
         '</div>' +
         '<div class="pe-tool" id="pe-t-filters"><div class="pe-filters" id="pe-filters"></div></div>' +
         '<div class="pe-tool" id="pe-t-adjust">' +
@@ -296,14 +474,32 @@ window.MindshiftPhotoEditor = (function () {
           '<button type="button" class="pe-tab" data-tab="crop">' + ICON.crop + 'Crop</button>' +
           '<button type="button" class="pe-tab" data-tab="filters">' + ICON.fx + 'Filters</button>' +
           '<button type="button" class="pe-tab" data-tab="adjust">' + ICON.adj + 'Adjust</button>' +
+          '<button type="button" class="pe-tab" data-tab="text" id="pe-tab-text">' + ICON.txt + 'Text</button>' +
+        '</div>' +
+      '</div>' +
+      /* the typing screen: dimmed photo behind, text in the middle, styles above the keyboard */
+      '<div id="pe-te" role="dialog" aria-label="Add text">' +
+        '<div class="te-top">' +
+          '<button type="button" class="te-btn te-bg" id="te-bg" aria-label="Text background"><span>A</span></button>' +
+          '<button type="button" class="te-btn" id="te-al" aria-label="Alignment"></button>' +
+          '<div class="te-sp"></div>' +
+          '<button type="button" class="te-done" id="te-done">Done</button>' +
+        '</div>' +
+        '<div class="te-mid"><div class="te-box" id="te-box"><canvas id="te-cv"></canvas>' +
+          '<textarea id="te-ta" rows="1" placeholder="Type something\u2026" maxlength="400" spellcheck="false" autocapitalize="sentences" aria-label="Text"></textarea></div></div>' +
+        '<div class="te-bot">' +
+          '<div class="te-row" id="te-fonts"></div>' +
+          '<div class="te-row" id="te-colors"></div>' +
+          '<div class="te-sz"><i style="font-size:12px">A</i><input type="range" id="te-size" min="3" max="18" step="0.5" aria-label="Text size"><i style="font-size:22px">A</i></div>' +
         '</div>' +
       '</div>';
     document.body.appendChild(el);
+    buildComposerUI();
 
     $('pe-cancel').onclick = function () { cancel(); };
     $('pe-done').onclick = function () { done(); };
-    $('pe-rot').onclick = function () { if (S) { S.rot = (S.rot + 1) % 4; transformChanged(true); pushHistory(); } };
-    $('pe-flip').onclick = function () { if (S) { S.flip = !S.flip; transformChanged(true); pushHistory(); } };
+    $('pe-rot').onclick = function () { if (S) { S.rot = (S.rot + 1) % 4; turnTexts(S.texts); transformChanged(true); pushHistory(); } };
+    $('pe-flip').onclick = function () { if (S) { S.flip = !S.flip; mirrorTexts(S.texts); transformChanged(true); pushHistory(); } };
     $('pe-reset').onclick = function () {
       if (!S) return;
       S.adj = { b: 0, c: 0, s: 0 };
@@ -314,9 +510,16 @@ window.MindshiftPhotoEditor = (function () {
     $('pe-undo').onclick = function () { undo(); };
     $('pe-redo').onclick = function () { redo(); };
     Array.prototype.forEach.call(el.querySelectorAll('.pe-tab'), function (b) {
-      b.onclick = function () { setTab(b.getAttribute('data-tab')); };
+      b.onclick = function () {
+        var tab = b.getAttribute('data-tab');
+        setTab(tab);
+        // first visit to Text with nothing on the photo yet: go straight to typing, like Instagram
+        if (tab === 'text' && S && S.texts.length === 0 && !S.ed) openComposer(-1);
+      };
     });
-    Array.prototype.forEach.call(el.querySelectorAll('input[type=range]'), function (inp) {
+    $('pe-addtext').onclick = function () { if (S && !S.ed) openComposer(-1); };
+    bindTextStage();
+    Array.prototype.forEach.call(el.querySelectorAll('.pe-sl input[type=range]'), function (inp) {
       inp.addEventListener('input', function () {
         if (!S) return;
         S.adj[inp.getAttribute('data-k')] = Number(inp.value);
@@ -352,7 +555,14 @@ window.MindshiftPhotoEditor = (function () {
     window.addEventListener('resize', function () { if (S) layoutStage(); });
     document.addEventListener('keydown', function (e) {
       if (!S) return;
+      if (S.ed) {                                   // typing screen: Esc / Ctrl+Enter finish, undo belongs to the textarea
+        if (e.key === 'Escape' || ((e.ctrlKey || e.metaKey) && e.key === 'Enter')) { e.preventDefault(); closeComposer(true); }
+        return;
+      }
       if (e.key === 'Escape') { cancel(); return; }
+      if ((e.key === 'Delete' || e.key === 'Backspace') && S.tab === 'text' && S.sel >= 0) {
+        e.preventDefault(); S.texts.splice(S.sel, 1); S.sel = -1; drawStage(); pushHistory(); return;
+      }
       var mod = e.ctrlKey || e.metaKey, k = (e.key || '').toLowerCase();
       if (mod && k === 'z') { e.preventDefault(); if (e.shiftKey) redo(); else undo(); }
       else if (mod && k === 'y') { e.preventDefault(); redo(); }
@@ -374,14 +584,15 @@ window.MindshiftPhotoEditor = (function () {
   function isDefaultState() {
     if (!S) return true;
     var full = Math.abs(S.crop.x) < 1 && Math.abs(S.crop.y) < 1 && Math.abs(S.crop.w - S.tw) < 1 && Math.abs(S.crop.h - S.th) < 1;
-    return S.rot === 0 && !S.flip && S.filter === 'none' && !S.adj.b && !S.adj.c && !S.adj.s && full;
+    return S.rot === 0 && !S.flip && S.filter === 'none' && !S.adj.b && !S.adj.c && !S.adj.s && full && !S.texts.length;
   }
 
   function serialize() {
     return {
       rot: S.rot, flip: S.flip, aspect: S.aspect, filter: S.filter,
       adj: { b: S.adj.b, c: S.adj.c, s: S.adj.s },
-      crop: { x: S.crop.x / S.tw, y: S.crop.y / S.th, w: S.crop.w / S.tw, h: S.crop.h / S.th }
+      crop: { x: S.crop.x / S.tw, y: S.crop.y / S.th, w: S.crop.w / S.tw, h: S.crop.h / S.th },
+      texts: S.texts.map(cloneText)     // positions are fractions of the turned photo, so crop changes never move them
     };
   }
 
@@ -467,6 +678,33 @@ window.MindshiftPhotoEditor = (function () {
     ctx.imageSmoothingQuality = 'high';
     ctx.clearRect(0, 0, cv.width, cv.height);
     ctx.drawImage(S.pvf, r.x * k, r.y * k, r.w * k, r.h * k, 0, 0, cv.width, cv.height);
+    if (S.texts.length) {
+      var f = cv.width / r.w;                       // canvas px per photo px
+      ctx.save();
+      ctx.setTransform(f, 0, 0, f, -r.x * f, -r.y * f);
+      drawTexts(ctx, { k: f, sel: S.tab === 'text' ? S.sel : -1, skip: S.ed ? S.ed.idx : -2 });
+      ctx.restore();
+    }
+  }
+
+  // Draws every text in photo-pixel space (caller has set the transform).
+  function drawTexts(ctx, o) {
+    var unit = Math.min(S.tw, S.th);
+    S.texts.forEach(function (t, i) {
+      if (o.skip === i) return;
+      ctx.save();
+      ctx.translate(t.x * S.tw, t.y * S.th);
+      ctx.rotate(t.rot * Math.PI / 180);
+      drawTextItem(ctx, t, unit);
+      if (o.sel === i && t.text.trim()) {
+        var m = measureText(t, unit), pd = 8 / o.k;
+        ctx.lineWidth = 3 / o.k; ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.setLineDash([]);
+        ctx.strokeRect(-m.w / 2 - pd, -m.h / 2 - pd, m.w + pd * 2, m.h + pd * 2);
+        ctx.lineWidth = 1.5 / o.k; ctx.strokeStyle = '#fff'; ctx.setLineDash([6 / o.k, 4 / o.k]);
+        ctx.strokeRect(-m.w / 2 - pd, -m.h / 2 - pd, m.w + pd * 2, m.h + pd * 2);
+      }
+      ctx.restore();
+    });
   }
 
   function positionBox() {
@@ -532,7 +770,7 @@ window.MindshiftPhotoEditor = (function () {
   }
 
   function syncSliders() {
-    Array.prototype.forEach.call(el.querySelectorAll('input[type=range]'), function (inp) {
+    Array.prototype.forEach.call(el.querySelectorAll('.pe-sl input[type=range]'), function (inp) {
       var v = S.adj[inp.getAttribute('data-k')] || 0;
       inp.value = v; inp.nextElementSibling.textContent = v;
     });
@@ -541,9 +779,278 @@ window.MindshiftPhotoEditor = (function () {
   function setTab(tab) {
     if (!S) return;
     S.tab = tab;
+    if (tab !== 'text') S.sel = -1;
     el.className = 'on tab-' + tab;
     if (tab === 'filters') buildThumbs();
     layoutStage();
+  }
+
+  /* ───────────────────────── text: typing screen ─────────────────────────
+     Opens over the editor (dimmed photo behind), like Instagram: type in the middle, pick a
+     font / colour / background / alignment / size just above the keyboard, tap Done.
+     While typing, the words are drawn by the SAME drawTextItem the photo uses, and a
+     transparent <textarea> sits exactly on top of them to take the typing and show the caret. */
+  var TE = {};
+
+  function clampN(v, a, b) { return Math.min(Math.max(v, a), b); }
+
+  function buildComposerUI() {
+    TE.root = $('pe-te'); TE.ta = $('te-ta'); TE.cv = $('te-cv'); TE.box = $('te-box');
+
+    var fh = $('te-fonts');
+    FONTS.forEach(function (f, i) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'te-f'; b.setAttribute('data-i', i);
+      b.setAttribute('aria-label', f.name + ' font');
+      b.textContent = f.up ? 'AA' : 'Aa';
+      b.style.font = f.css.replace('{s}', '18');
+      b.onclick = function () { if (S && S.ed) { S.ed.t.font = i; composerChanged(); } };
+      fh.appendChild(b);
+    });
+
+    var ch = $('te-colors');
+    TEXT_COLORS.forEach(function (c) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'te-c'; b.setAttribute('data-c', c);
+      b.setAttribute('aria-label', 'Colour ' + c);
+      b.style.background = c;
+      b.onclick = function () { if (S && S.ed) { S.ed.t.color = c; composerChanged(); } };
+      ch.appendChild(b);
+    });
+    var cu = document.createElement('label');
+    cu.className = 'te-c custom'; cu.setAttribute('aria-label', 'Custom colour');
+    cu.innerHTML = '<input type="color" value="#ffffff">';
+    cu.firstChild.addEventListener('input', function () { if (S && S.ed) { S.ed.t.color = this.value; composerChanged(true); } });
+    ch.appendChild(cu);
+
+    $('te-bg').onclick = function () { if (S && S.ed) { S.ed.t.bg = (S.ed.t.bg + 1) % 3; composerChanged(); } };
+    $('te-al').onclick = function () {
+      if (!S || !S.ed) return;
+      var o = ['center', 'left', 'right'];
+      S.ed.t.align = o[(o.indexOf(S.ed.t.align) + 1) % 3];
+      composerChanged();
+    };
+    $('te-size').addEventListener('input', function () { if (S && S.ed) { S.ed.t.size = clampN(Number(this.value) / 100, 0.03, 0.18); layoutComposer(); drawStage(); } });
+    $('te-done').onclick = function () { closeComposer(true); };
+    TE.ta.addEventListener('input', function () {
+      if (!S || !S.ed) return;
+      S.ed.t.text = TE.ta.value;
+      layoutComposer();
+      TE.ta.scrollTop = 0; TE.ta.scrollLeft = 0;
+    });
+    // desktop: clicking a style button must not pull focus (and the caret) out of the text box
+    TE.root.addEventListener('mousedown', function (e) {
+      var tg = e.target;
+      if (tg === TE.ta || (tg.tagName && tg.tagName.toUpperCase() === 'INPUT')) return;
+      e.preventDefault();
+    });
+    // a tap on the empty dimmed area = Done, like Instagram
+    $('te-box').parentNode.addEventListener('click', function (e) { if (e.target === this) closeComposer(true); });
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', positionComposer);
+      window.visualViewport.addEventListener('scroll', positionComposer);
+    }
+  }
+
+  // Keeps the screen exactly as tall as what's visible above the phone keyboard.
+  function positionComposer() {
+    var vv = window.visualViewport, r = TE.root;
+    if (!vv || !r) return;
+    r.style.top = vv.offsetTop + 'px'; r.style.left = vv.offsetLeft + 'px';
+    r.style.width = vv.width + 'px'; r.style.height = vv.height + 'px';
+    r.style.right = 'auto'; r.style.bottom = 'auto';
+  }
+
+  function refocus() {
+    if (TE.ta && document.activeElement !== TE.ta) { try { TE.ta.focus({ preventScroll: true }); } catch (_) { TE.ta.focus(); } }
+  }
+
+  function composerChanged(keepFocus) {
+    syncComposerUI();
+    layoutComposer();
+    drawStage();
+    if (!keepFocus) refocus();
+  }
+
+  function syncComposerUI() {
+    var t = S.ed.t;
+    Array.prototype.forEach.call($('te-fonts').children, function (b) { b.classList.toggle('sel', Number(b.getAttribute('data-i')) === t.font); });
+    var known = false;
+    Array.prototype.forEach.call($('te-colors').children, function (b) {
+      var c = b.getAttribute('data-c');
+      var on = !!c && c.toLowerCase() === t.color.toLowerCase();
+      if (on) known = true;
+      b.classList.toggle('sel', on);
+    });
+    $('te-colors').lastChild.classList.toggle('sel', !known);
+    $('te-bg').className = 'te-btn te-bg b' + t.bg;
+    $('te-al').innerHTML = ICON.al[t.align] || ICON.al.center;
+    $('te-size').value = String(Math.round(t.size * 200) / 2);
+  }
+
+  function layoutComposer() {
+    var t = S.ed.t, unit = COMPOSER_UNIT, m = measureText(t, unit);
+    var maxW = Math.max(120, (TE.root.clientWidth || window.innerWidth) - 32);
+    if (m.w + 6 > maxW) { unit = COMPOSER_UNIT * (maxW - 6) / m.w; m = measureText(t, unit); }   // very long line: shrink to fit while typing
+    var w = Math.min(Math.max(Math.ceil(m.w) + 6, 90), maxW), h = Math.max(m.h, m.lh);
+    TE.box.style.width = w + 'px'; TE.box.style.height = h + 'px';
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    TE.cv.width = Math.round(w * dpr); TE.cv.height = Math.round(Math.ceil(h) * dpr);
+    TE.cv.style.width = w + 'px'; TE.cv.style.height = Math.ceil(h) + 'px';
+    var c = TE.cv.getContext('2d');
+    c.setTransform(1, 0, 0, 1, 0, 0);
+    c.clearRect(0, 0, TE.cv.width, TE.cv.height);
+    c.setTransform(dpr, 0, 0, dpr, w * dpr / 2, h * dpr / 2);
+    drawTextItem(c, t, unit);
+    var ta = TE.ta;
+    ta.style.font = m.font;
+    ta.style.lineHeight = m.lh + 'px';
+    ta.style.padding = m.padY + 'px ' + (m.padX + 3) + 'px';
+    ta.style.textAlign = t.align;
+  }
+
+  function newText() {
+    var last = S.texts.length ? S.texts[S.texts.length - 1] : null;
+    return cleanText({
+      text: '', font: last ? last.font : 0, color: last ? last.color : '#ffffff', bg: last ? last.bg : 0, align: 'center',
+      size: TEXT_SIZE_DEFAULT, x: (S.crop.x + S.crop.w / 2) / S.tw, y: (S.crop.y + S.crop.h / 2) / S.th, rot: 0
+    });
+  }
+
+  function openComposer(idx) {
+    if (!S || S.ed) return;
+    var t;
+    if (idx >= 0 && S.texts[idx]) t = cloneText(S.texts[idx]);
+    else {
+      if (S.texts.length >= MAX_TEXTS) { window.alert('That\u2019s the most text you can put on one photo.'); return; }
+      idx = -1; t = newText();
+    }
+    S.ed = { idx: idx, t: t };
+    S.sel = -1;
+    TE.ta.value = t.text;
+    TE.root.classList.add('on');
+    el.classList.add('composing');
+    positionComposer();
+    syncComposerUI();
+    layoutComposer();
+    drawStage();
+    try { TE.ta.focus({ preventScroll: true }); } catch (_) { TE.ta.focus(); }
+  }
+
+  function closeComposer(commit) {
+    if (!S || !S.ed) return;
+    var ed = S.ed;
+    S.ed = null;
+    TE.root.classList.remove('on');
+    el.classList.remove('composing');
+    TE.ta.blur();
+    if (commit) {
+      var has = ed.t.text.trim().length > 0;
+      if (ed.idx >= 0) {
+        if (has) { S.texts[ed.idx] = ed.t; S.sel = ed.idx; }
+        else { S.texts.splice(ed.idx, 1); S.sel = -1; }
+      } else if (has) { S.texts.push(ed.t); S.sel = S.texts.length - 1; }
+      pushHistory();
+    }
+    drawStage();
+  }
+
+  /* ───────────────────────── text: moving / pinching on the photo ─────────────────────────
+     Tap = edit · one finger = move · two fingers = resize + rotate · drop on the bin = delete. */
+  function bindTextStage() {
+    var surf = $('pe-txt'), trash = $('pe-trash');
+    var ptrs = {}, g = null, wheelT = 0;
+    function count() { return Object.keys(ptrs).length; }
+    function toImg(x, y) {
+      var rc = $('pe-wrap').getBoundingClientRect();
+      return { x: S.view.region.x + (x - rc.left) / S.view.scale, y: S.view.region.y + (y - rc.top) / S.view.scale };
+    }
+    function overTrash(x, y) {
+      var r = trash.getBoundingClientRect(), pad = 18;
+      return x >= r.left - pad && x <= r.right + pad && y >= r.top - pad && y <= r.bottom + pad;
+    }
+    function hideTrash() { trash.classList.remove('show'); trash.classList.remove('hot'); }
+
+    surf.addEventListener('pointerdown', function (e) {
+      if (!S || S.tab !== 'text' || S.ed || !S.view) return;
+      try { surf.setPointerCapture(e.pointerId); } catch (_) {}
+      ptrs[e.pointerId] = { x: e.clientX, y: e.clientY };
+      e.preventDefault();
+      var n = count();
+      if (n === 1) {
+        var p = toImg(e.clientX, e.clientY), unit = Math.min(S.tw, S.th), slop = 14 / S.view.scale, hit = -1;
+        for (var i = S.texts.length - 1; i >= 0; i--) {
+          if (hitTest(S.texts[i], unit, S.tw, S.th, p.x, p.y, slop)) { hit = i; break; }
+        }
+        S.sel = hit;
+        g = { mode: 'drag', idx: hit, sx: e.clientX, sy: e.clientY, moved: false, t0: hit >= 0 ? { x: S.texts[hit].x, y: S.texts[hit].y } : null };
+        drawStage();
+      } else if (n === 2) {
+        var ids = Object.keys(ptrs), a = ptrs[ids[0]], b = ptrs[ids[1]], t = S.sel >= 0 ? S.texts[S.sel] : null;
+        if (!t) { g = { mode: 'none' }; hideTrash(); return; }
+        g = { mode: 'pinch', ids: ids, d0: Math.hypot(b.x - a.x, b.y - a.y) || 1, a0: Math.atan2(b.y - a.y, b.x - a.x),
+              size0: t.size, rot0: t.rot, edited: !!(g && g.moved) };
+        hideTrash();
+      }
+    });
+
+    surf.addEventListener('pointermove', function (e) {
+      if (!g || !ptrs[e.pointerId] || !S) return;
+      ptrs[e.pointerId] = { x: e.clientX, y: e.clientY };
+      if (g.mode === 'pinch') {
+        var a = ptrs[g.ids[0]], b = ptrs[g.ids[1]], t = S.texts[S.sel];
+        if (!a || !b || !t) return;
+        t.size = clampN(g.size0 * Math.hypot(b.x - a.x, b.y - a.y) / g.d0, 0.02, 0.4);
+        t.rot = normRot(g.rot0 + (Math.atan2(b.y - a.y, b.x - a.x) - g.a0) * 180 / Math.PI);
+        g.edited = true;
+        drawStage();
+      } else if (g.mode === 'drag' && g.idx >= 0 && count() === 1) {
+        var dx = e.clientX - g.sx, dy = e.clientY - g.sy;
+        if (!g.moved && Math.hypot(dx, dy) < 6) return;
+        g.moved = true;
+        var tx = S.texts[g.idx], k = S.view.scale, c = S.crop;
+        tx.x = clampN(g.t0.x + dx / k / S.tw, c.x / S.tw, (c.x + c.w) / S.tw);
+        tx.y = clampN(g.t0.y + dy / k / S.th, c.y / S.th, (c.y + c.h) / S.th);
+        trash.classList.add('show');
+        trash.classList.toggle('hot', overTrash(e.clientX, e.clientY));
+        drawStage();
+      }
+    });
+
+    function end(e) {
+      if (!ptrs[e.pointerId]) return;
+      delete ptrs[e.pointerId];
+      if (!g || !S) { if (!count()) g = null; return; }
+      if (g.mode === 'pinch') {
+        if (count() === 0) { var ed = g.edited; g = null; hideTrash(); if (ed) pushHistory(); }
+        return;
+      }
+      if (count() > 0) return;
+      var gg = g, cancelled = e.type === 'pointercancel';
+      g = null; hideTrash();
+      if (gg.mode !== 'drag' || gg.idx < 0) return;
+      if (gg.moved) {
+        if (!cancelled && overTrash(e.clientX, e.clientY)) { S.texts.splice(gg.idx, 1); S.sel = -1; drawStage(); }
+        pushHistory();
+      } else if (!cancelled) {
+        openComposer(gg.idx);                       // a plain tap edits the text
+      }
+    }
+    surf.addEventListener('pointerup', end);
+    surf.addEventListener('pointercancel', end);
+
+    // desktop: scroll wheel resizes the selected text, Shift + wheel rotates it
+    surf.addEventListener('wheel', function (e) {
+      if (!S || S.tab !== 'text' || S.ed || S.sel < 0 || !S.texts[S.sel]) return;
+      e.preventDefault();
+      var t = S.texts[S.sel], up = e.deltaY < 0;
+      if (e.shiftKey) t.rot = normRot(t.rot + (up ? -5 : 5));
+      else t.size = clampN(t.size * (up ? 1.06 : 0.94), 0.02, 0.4);
+      drawStage();
+      clearTimeout(wheelT);
+      wheelT = setTimeout(function () { pushHistory(); }, 400);
+    }, { passive: false });
   }
 
   /* ───────────────────────── undo / redo ─────────────────────────
@@ -555,7 +1062,8 @@ window.MindshiftPhotoEditor = (function () {
   function histKey(st) {
     var c = st.crop;
     return JSON.stringify([st.rot, st.flip, st.aspect, st.filter, st.adj.b, st.adj.c, st.adj.s,
-      Math.round(c.x * 1e4), Math.round(c.y * 1e4), Math.round(c.w * 1e4), Math.round(c.h * 1e4)]);
+      Math.round(c.x * 1e4), Math.round(c.y * 1e4), Math.round(c.w * 1e4), Math.round(c.h * 1e4),
+      (st.texts || []).map(function (t) { return [t.text, t.font, t.color, t.bg, t.align, +t.size.toFixed(4), +t.x.toFixed(4), +t.y.toFixed(4), +t.rot.toFixed(1)]; })]);
   }
 
   function updateHistButtons() {
@@ -580,6 +1088,7 @@ window.MindshiftPhotoEditor = (function () {
     var needT = snap.rot !== S.rot || snap.flip !== S.flip;
     S.rot = snap.rot; S.flip = snap.flip; S.aspect = snap.aspect; S.filter = snap.filter;
     S.adj = { b: snap.adj.b, c: snap.adj.c, s: snap.adj.s };
+    S.texts = (snap.texts || []).map(cloneText); S.sel = -1;
     if (needT) rebuildTransform();
     S.crop = clampCrop({ x: snap.crop.x * S.tw, y: snap.crop.y * S.th, w: snap.crop.w * S.tw, h: snap.crop.h * S.th }, S.tw, S.th);
     S.lookDirty = true;
@@ -600,6 +1109,7 @@ window.MindshiftPhotoEditor = (function () {
     var resolve = S.resolve;
     if (S.raf) cancelAnimationFrame(S.raf);
     S = null;
+    $('pe-te').classList.remove('on');
     el.className = '';
     document.body.style.overflow = S_prevOverflow;
     resolve(result);
@@ -624,6 +1134,13 @@ window.MindshiftPhotoEditor = (function () {
       var id = ctx.getImageData(0, 0, w, h);
       applyLook(id, S.filter, S.adj);
       ctx.putImageData(id, 0, 0);
+    }
+    if (S.texts.length) {                            // text goes on AFTER the look, so filters never tint it
+      ctx.save();
+      ctx.translate(-c.x * (w / c.w), -c.y * (h / c.h));
+      ctx.scale(w / c.w, h / c.h);
+      drawTexts(ctx, { k: 1, sel: -1, skip: -2 });
+      ctx.restore();
     }
     var q = 0.9, url = out.toDataURL('image/jpeg', q);
     while (url.length * 0.75 > TARGET_BYTES && q > 0.55) { q -= 0.1; url = out.toDataURL('image/jpeg', q); }
@@ -657,7 +1174,9 @@ window.MindshiftPhotoEditor = (function () {
     return new Promise(function (resolve, reject) {
       S_prevOverflow = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
-      S = { resolve: resolve, tab: 'crop', rot: 0, flip: false, aspect: 'free', filter: 'none', adj: { b: 0, c: 0, s: 0 }, aspects: opts.aspects || null };
+      S = { resolve: resolve, tab: 'crop', rot: 0, flip: false, aspect: 'free', filter: 'none', adj: { b: 0, c: 0, s: 0 }, aspects: opts.aspects || null, texts: [], sel: -1, ed: null };
+      $('pe-tab-text').style.display = opts.text === false ? 'none' : '';
+      $('pe-te').classList.remove('on');
       $('pe-title').textContent = opts.title || 'Edit photo';
       $('pe-loading').style.display = 'flex';
       $('pe-done').disabled = true;
@@ -681,6 +1200,7 @@ window.MindshiftPhotoEditor = (function () {
           S.rot = st.rot | 0; S.flip = !!st.flip; S.aspect = st.aspect || 'free';
           S.filter = st.filter || 'none';
           S.adj = { b: (st.adj && st.adj.b) || 0, c: (st.adj && st.adj.c) || 0, s: (st.adj && st.adj.s) || 0 };
+          S.texts = (Array.isArray(st.texts) ? st.texts : []).slice(0, MAX_TEXTS).map(cleanText);
         }
         // opts.aspect (e.g. '16:9') = a suggested starting crop shape for a brand-new edit
         if (!st && opts.aspect) {
@@ -708,6 +1228,7 @@ window.MindshiftPhotoEditor = (function () {
   return {
     open: open,
     // exposed for tests only
-    _test: { applyLook: applyLook, dragCrop: dragCrop, fitAspect: fitAspect, clampCrop: clampCrop, lookParams: lookParams, isNeutral: isNeutral }
+    _test: { applyLook: applyLook, dragCrop: dragCrop, fitAspect: fitAspect, clampCrop: clampCrop, lookParams: lookParams, isNeutral: isNeutral,
+             turnTexts: turnTexts, mirrorTexts: mirrorTexts, hitTest: hitTest, cleanText: cleanText, contrastOn: contrastOn }
   };
 })();
