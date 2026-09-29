@@ -589,9 +589,14 @@ document.addEventListener('DOMContentLoaded', loadFreeEbooksSwiper);
     modalReadBtn.href = '#';
 
     try {
-      const res = await fetch('/api/free-ebooks/' + encodeURIComponent(id));
-      const j = await res.json();
-      const b = j.book;
+      // Books loaded live in the browser (free-ebooks page) are already
+      // known client-side — no server lookup needed for those.
+      let b = (window.__feLive && window.__feLive[id]) || null;
+      if (!b) {
+        const res = await fetch('/api/free-ebooks/' + encodeURIComponent(id));
+        const j = await res.json();
+        b = j.book;
+      }
       if (!b) throw new Error('not found');
       modalCover.src = b.cover || placeholderCover(b.title);
       modalTitle.textContent = b.title;

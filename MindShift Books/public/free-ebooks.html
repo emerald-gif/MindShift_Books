@@ -192,14 +192,43 @@
 
 <script>
 (function () {
+  // ---------- LIVE MODE: the visitor's own browser asks Gutendex directly ----------
+  // (Render's server IPs get a Cloudflare 403 from gutendex.com, a visitor's
+  // browser doesn't.) If that ever fails, we fall back to the server's saved
+  // catalog so the page is never empty.
+  var GUTENDEX = 'https://gutendex.com/books';
+  var LIVE_TIMEOUT = 8000;
+  var MIN_DOWNLOADS = 300;
+  var JUNK = /dictionary|catalogue|catalog of|index of|encyclop|magazine|periodical|gazette|proceedings|report of|almanac|hymn|bible|testament|cookbook|cook book|directory|bulletin|journal of|complete works|collected works/i;
+
+  var CATS = [
+    { slug: 'all',           code: null,            label: 'All' },
+    { slug: 'mindset',       code: 'MINDSET',       label: 'Mindset',       topics: ['conduct of life', 'self-help', 'psychology'] },
+    { slug: 'money',         code: 'MONEY',         label: 'Money',         topics: ['wealth', 'business', 'finance'] },
+    { slug: 'productivity',  code: 'PRODUCTIVITY',  label: 'Productivity',  topics: ['success', 'time management', 'efficiency'] },
+    { slug: 'relationships', code: 'RELATIONSHIPS', label: 'Relationships', topics: ['friendship', 'marriage', 'love'] },
+    { slug: 'health',        code: 'HEALTH',        label: 'Health',        topics: ['health', 'hygiene', 'exercise'] },
+    { slug: 'career',        code: 'CAREER',        label: 'Career',        topics: ['leadership', 'salesmanship', 'public speaking'] },
+    { slug: 'education',     code: 'EDUCATION',     label: 'Education',     topics: ['education', 'study', 'memory'] },
+    { slug: 'purpose',       code: 'PURPOSE',       label: 'Purpose',       topics: ['stoics', 'philosophy', 'spiritual life'] },
+    { slug: 'reflective',    code: 'REFLECTIVE',    label: 'Reflective',    topics: ['essays', 'aphorisms', 'meditations'] },
+    { slug: 'fiction',       code: 'FICTION',       label: 'Fiction',       topics: ['allegories', 'parables', 'utopias'] }
+  ];
+  var CAT_LABELS = {};
+  CATS.forEach(function (c) { if (c.code) CAT_LABELS[c.code] = c.label; });
+
   var PAGE = 20;
   var activeCat = 'all';
   var query = '';
-  var loaded = 0;
-  var total = 0;
+  var mode = 'live';           // 'live' | 'server'
+  var sources = [];            // live: [{url, code}] — each source = one Gutendex query
+  var seen = {};               // live: id -> true
+  var loaded = 0, total = 0;   // server mode paging
+  var hasMore = false;
   var loading = false;
   var reqToken = 0;
   var searchDebounce = null;
+  window.__feLive = window.__feLive || {}; // lets the detail drawer open live books without a server lookup
 
   var listEl = document.getElementById('feList');
   var emptyEl = document.getElementById('feEmpty');
@@ -207,14 +236,124 @@
   var catBar = document.getElementById('feCatBar');
   var searchInput = document.getElementById('feSearch');
 
-  var CAT_LABELS = {};
-
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
 
+  // ---------- helpers ----------
+  function fetchJson(url, ms) {
+    var ctrl = ('AbortController' in window) ? new AbortController() : null;
+    var t;
+    var req = fetch(url, ctrl ? { signal: ctrl.signal } : {}).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    });
+    var timeout = new Promise(function (_, rej) {
+      t = setTimeout(function () { if (ctrl) ctrl.abort(); rej(new Error('timeout')); }, ms);
+    });
+    return Promise.race([req, timeout]).then(
+      function (d) { clearTimeout(t); return d; },
+      function (e) { clearTimeout(t); throw e; }
+    );
+  }
+
+  function prettyAuthor(name) {
+    if (!name) return 'Unknown Author';
+    var m = String(name).match(/^([^,]+),\s*(.+)$/);
+    return m ? (m[2].replace(/\s*\(.*?\)\s*/g, ' ').trim() + ' ' + m[1].trim()) : name;
+  }
+
+  function normLive(b, code) {
+    var f = b.formats || {};
+    var readable = Object.keys(f).some(function (k) { return k.indexOf('text/html') === 0 || k.indexOf('text/plain') === 0 || k === 'application/epub+zip'; });
+    if (!readable) return null;
+    if (JUNK.test(b.title || '')) return null;
+    var subjects = (b.subjects || []).map(function (s) { return s.replace(/--.*$/, '').trim(); })
+      .filter(function (s, i, a) { return s && a.indexOf(s) === i; });
+    var author = prettyAuthor(b.authors && b.authors[0] && b.authors[0].name);
+    return {
+      id: b.id,
+      title: (b.title || 'Untitled').replace(/\s+/g, ' ').trim(),
+      author: author,
+      authors: [author],
+      cover: f['image/jpeg'] || ('https://www.gutenberg.org/cache/epub/' + b.id + '/pg' + b.id + '.cover.medium.jpg'),
+      cats: code ? [code] : [],
+      categories: subjects.slice(0, 3),
+      description: subjects.length ? 'Subjects: ' + subjects.slice(0, 6).join(', ') : '',
+      downloadCount: b.download_count || 0,
+      readLink: '/read/' + b.id
+    };
+  }
+
+  function sourceUrl(params) {
+    var p = new URLSearchParams({ languages: 'en', copyright: 'false' });
+    Object.keys(params).forEach(function (k) { p.set(k, params[k]); });
+    return GUTENDEX + '?' + p.toString();
+  }
+
+  function buildSources() {
+    if (query) return [{ url: sourceUrl({ search: query }), code: null, isSearch: true }];
+    if (activeCat === 'all') {
+      // one topic per category so "All" is a real mix of the niche
+      return CATS.filter(function (c) { return c.code; }).map(function (c) {
+        return { url: sourceUrl({ topic: c.topics[0] }), code: c.code };
+      });
+    }
+    var cat = CATS.filter(function (c) { return c.slug === activeCat; })[0] || CATS[1];
+    return cat.topics.map(function (t) { return { url: sourceUrl({ topic: t }), code: cat.code }; });
+  }
+
+  // Pull the next page of every live source, merge, de-dupe, most-read first.
+  function pullLive() {
+    var active = sources.filter(function (s) { return s.url; });
+    return Promise.all(active.map(function (s) {
+      return fetchJson(s.url, LIVE_TIMEOUT).then(function (j) {
+        s.url = j.next ? j.next.replace(/^http:/, 'https:') : null;
+        return { code: s.code, isSearch: s.isSearch, results: j.results || [] };
+      }).catch(function (e) { s.failed = true; s.url = null; return { results: [], err: e }; });
+    })).then(function (batches) {
+      var anyOk = batches.some(function (b) { return !b.err; });
+      if (!anyOk && batches.length) throw new Error('all live sources failed');
+      var out = [];
+      batches.forEach(function (b) {
+        b.results.forEach(function (raw) {
+          if (!b.isSearch && (raw.download_count || 0) < MIN_DOWNLOADS) return;
+          var n = normLive(raw, b.code);
+          if (!n) return;
+          if (seen[n.id]) {
+            var prev = window.__feLive[n.id];
+            if (prev && n.cats[0] && prev.cats.indexOf(n.cats[0]) === -1) prev.cats.push(n.cats[0]);
+            return;
+          }
+          seen[n.id] = true;
+          window.__feLive[n.id] = n;
+          out.push(n);
+        });
+      });
+      out.sort(function (a, b) { return b.downloadCount - a.downloadCount; });
+      hasMore = sources.some(function (s) { return s.url; });
+      return out;
+    });
+  }
+
+  // ---------- server (saved catalog) fallback ----------
+  function pullServer(startIndex) {
+    var p = new URLSearchParams();
+    if (query) p.set('q', query); else p.set('category', activeCat);
+    p.set('startIndex', startIndex);
+    return fetchJson('/api/free-ebooks?' + p.toString(), 10000).then(function (d) {
+      var items = d.items || [];
+      items.forEach(function (b) { window.__feLive[b.id] = b; });
+      total = d.totalItems || items.length;
+      loaded = startIndex + items.length;
+      hasMore = items.length > 0 && loaded < total;
+      return items;
+    });
+  }
+
+  // ---------- rendering ----------
   function rowHtml(b) {
     var id = esc(b.id), title = esc(b.title);
     var tags = (b.cats || []).slice(0, 2).map(function (c) {
@@ -236,7 +375,7 @@
     );
   }
 
-  // Books whose Gutenberg cover 404s get a branded cover instead of a broken image
+  // Books whose cover fails to load get a branded cover instead of a broken image
   listEl.addEventListener('error', function (e) {
     var img = e.target;
     if (!img || img.tagName !== 'IMG' || !img.hasAttribute('data-fe-cover')) return;
@@ -253,18 +392,8 @@
     return one + one + one;
   }
 
-  function fetchBooks(startIndex) {
-    var p = new URLSearchParams();
-    if (query) p.set('q', query); else p.set('category', activeCat);
-    p.set('startIndex', startIndex);
-    return fetch('/api/free-ebooks?' + p.toString()).then(function (r) {
-      if (!r.ok) throw new Error('fetch failed');
-      return r.json();
-    });
-  }
-
   function updateMore() {
-    moreBtn.style.display = (loaded < total) ? '' : 'none';
+    moreBtn.style.display = hasMore ? '' : 'none';
     moreBtn.disabled = false;
     moreBtn.textContent = 'Load more books';
   }
@@ -278,48 +407,52 @@
 
   function loadFresh() {
     var token = ++reqToken;
-    loaded = 0; total = 0; loading = true;
+    loaded = 0; total = 0; seen = {}; hasMore = false; loading = true;
     listEl.innerHTML = skeleton();
     emptyEl.style.display = 'none';
     moreBtn.style.display = 'none';
-    fetchBooks(0).then(function (data) {
+
+    sources = buildSources();
+    mode = 'live';
+    pullLive().catch(function (e) {
+      // Gutendex unreachable from this browser -> saved catalog from our server
+      console.warn('[free-ebooks] live fetch failed, using saved catalog:', e && e.message);
+      mode = 'server';
+      return pullServer(0);
+    }).then(function (items) {
       if (token !== reqToken) return;
-      var items = data.items || [];
-      total = data.totalItems || items.length;
-      loaded = items.length;
       listEl.innerHTML = items.map(rowHtml).join('');
       emptyEl.style.display = items.length ? 'none' : '';
+      // live pages can filter down to few rows — keep pulling until the screen has some
+      if (mode === 'live' && items.length < 8 && hasMore) return loadMore(true);
       updateMore();
     }).catch(function () {
       if (token === reqToken) showError();
     }).then(function () { if (token === reqToken) loading = false; });
   }
 
-  function loadMore() {
-    if (loading) return;
+  function loadMore(auto) {
+    if (loading && !auto) return;
     loading = true;
     var token = reqToken;
-    moreBtn.disabled = true; moreBtn.textContent = 'Loading\u2026';
-    fetchBooks(loaded).then(function (data) {
+    if (!auto) { moreBtn.disabled = true; moreBtn.textContent = 'Loading\u2026'; }
+    var p = (mode === 'live') ? pullLive() : pullServer(loaded);
+    return p.then(function (items) {
       if (token !== reqToken) return;
-      var items = data.items || [];
       listEl.insertAdjacentHTML('beforeend', items.map(rowHtml).join(''));
-      loaded += items.length;
-      total = data.totalItems || total;
-      if (!items.length) total = loaded; // nothing more to fetch
+      emptyEl.style.display = listEl.children.length ? 'none' : '';
+      if (mode === 'live' && items.length < 6 && hasMore && listEl.children.length < 12) return loadMore(true);
       updateMore();
     }).catch(function () {
       moreBtn.disabled = false; moreBtn.textContent = 'Load more books';
-    }).then(function () { loading = false; });
+    }).then(function () { if (!auto) loading = false; });
   }
 
-  function buildPills(cats) {
-    catBar.innerHTML = cats.map(function (c) {
-      CAT_LABELS[c.code] = c.label;
-      var on = c.slug === activeCat;
-      return '<button type="button" class="msb-cat-pill' + (on ? ' is-active' : '') + '" data-cat="' + esc(c.slug) + '" role="tab" aria-selected="' + on + '">' + esc(c.label) + '</button>';
-    }).join('');
-  }
+  // ---------- pills / search ----------
+  catBar.innerHTML = CATS.map(function (c) {
+    var on = c.slug === activeCat;
+    return '<button type="button" class="msb-cat-pill' + (on ? ' is-active' : '') + '" data-cat="' + esc(c.slug) + '" role="tab" aria-selected="' + on + '">' + esc(c.label) + '</button>';
+  }).join('');
 
   catBar.addEventListener('click', function (e) {
     var btn = e.target.closest('.msb-cat-pill');
@@ -346,15 +479,12 @@
         if (cur) cur.classList.add('is-active');
       }
       loadFresh();
-    }, 350);
+    }, 400);
   });
 
-  moreBtn.addEventListener('click', loadMore);
+  moreBtn.addEventListener('click', function () { loadMore(false); });
 
-  fetch('/api/free-ebook-categories').then(function (r) { return r.json(); })
-    .then(function (j) { buildPills((j && j.categories) || []); })
-    .catch(function () { buildPills([{ slug: 'all', label: 'All', code: null }]); })
-    .then(loadFresh);
+  loadFresh();
 })();
 </script>
 
