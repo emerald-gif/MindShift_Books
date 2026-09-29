@@ -998,6 +998,18 @@ router.get('/read/:id', async (req, res) => {
     if (!direct) return res.status(502).send('Could not load this book right now. Please try again.');
     const known = freeCatalog.find(b => b.id === Number(id));
     let title = known ? known.title : null;
+    if (known) {
+      // Sanity check for hand-entered catalog ids: warn (in Render logs) if the
+      // Gutenberg file's own title shares no word with the catalog title.
+      const gm = direct.text.match(/<title>([\s\S]*?)<\/title>/i) || direct.text.match(/^Title:\s*(.+)$/im);
+      if (gm) {
+        const words = known.title.toLowerCase().split(/\W+/).filter(w => w.length > 3);
+        const gt = gm[1].toLowerCase();
+        if (words.length && !words.some(w => gt.includes(w))) {
+          console.warn(`[free-ebooks] CATALOG MISMATCH: id ${id} is "${known.title}" in the catalog but Gutenberg says "${gm[1].replace(/\s+/g, ' ').trim()}" — fix or remove this entry.`);
+        }
+      }
+    }
     if (!title) {
       // Book came from the live Gutendex list, so it isn't in our saved catalog —
       // read the title out of the Gutenberg file itself.
