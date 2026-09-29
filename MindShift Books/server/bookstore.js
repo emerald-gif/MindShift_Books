@@ -860,6 +860,13 @@ router.get('/api/free-ebooks', (req, res) => {
   res.json({ items, totalItems: total });
 });
 
+// Whole catalog in one small response — the page groups it into banner /
+// shelves / filters client-side, so category taps are instant (no per-tap fetch).
+router.get('/api/free-ebooks-all', (req, res) => {
+  res.set('Cache-Control', 'public, max-age=300');
+  res.json({ books: freeCatalog.map(publicBook), totalItems: freeCatalog.length });
+});
+
 // Single-book detail — used by the book detail drawer.
 router.get('/api/free-ebooks/:id', (req, res) => {
   const id = Number(req.params.id);
