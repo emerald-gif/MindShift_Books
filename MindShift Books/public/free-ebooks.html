@@ -117,6 +117,74 @@
     }
     .fe-loadmore-btn:hover { border-color: #4f46e5; color: #4f46e5; }
     .fe-loadmore-btn:disabled { opacity: 0.6; cursor: default; }
+
+    /* ---- Banner carousel ---- */
+    .fe-banner-wrap { position: relative; margin: 2px 0 22px; }
+    .fe-banner {
+      display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 12px;
+      scrollbar-width: none; -ms-overflow-style: none; scroll-behavior: smooth;
+    }
+    .fe-banner::-webkit-scrollbar { display: none; }
+    .fe-slide {
+      flex: 0 0 100%; scroll-snap-align: center; box-sizing: border-box;
+      display: flex; align-items: center; gap: 16px; padding: 20px 18px; border-radius: 20px; color: #fff;
+      min-height: 172px; position: relative; overflow: hidden;
+    }
+    .fe-slide.g0 { background: linear-gradient(120deg,#4f46e5,#06b6d4); }
+    .fe-slide.g1 { background: linear-gradient(120deg,#0f172a,#4f46e5); }
+    .fe-slide.g2 { background: linear-gradient(120deg,#0891b2,#4f46e5); }
+    .fe-slide.g3 { background: linear-gradient(120deg,#312e81,#0ea5e9); }
+    .fe-slide::after {
+      content: ''; position: absolute; right: -40px; top: -40px; width: 160px; height: 160px;
+      border-radius: 50%; background: rgba(255,255,255,0.10); pointer-events: none;
+    }
+    .fe-slide-cover, .fe-slide .fe-cover-fallback {
+      width: 92px; flex-shrink: 0; aspect-ratio: 2/3; object-fit: cover; border-radius: 8px;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.35); cursor: pointer; z-index: 1;
+    }
+    .fe-slide-body { min-width: 0; z-index: 1; }
+    .fe-slide-kicker {
+      display: inline-block; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
+      background: rgba(255,255,255,0.18); padding: 3px 10px; border-radius: 20px; margin-bottom: 8px;
+    }
+    .fe-slide-title {
+      font-size: 1.12rem; font-weight: 800; line-height: 1.25; margin: 0 0 3px;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .fe-slide-author { font-size: 0.8rem; opacity: 0.85; font-weight: 600; margin-bottom: 12px; }
+    .fe-slide-btn {
+      background: #fff; color: #4f46e5; border: none; border-radius: 10px; padding: 9px 18px;
+      font-weight: 800; font-size: 0.84rem; cursor: pointer; font-family: inherit;
+    }
+    .fe-dots { display: flex; justify-content: center; gap: 6px; margin-top: 10px; }
+    .fe-dot { width: 6px; height: 6px; border-radius: 999px; background: #cbd5e1; transition: all 0.2s ease; border: none; padding: 0; cursor: pointer; }
+    .fe-dot.on { width: 18px; background: #4f46e5; }
+
+    /* ---- Shelves (swipers) ---- */
+    .fe-shelf { margin: 0 0 26px; }
+    .fe-shelf-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .fe-shelf-title { font-size: 1.08rem; font-weight: 800; color: var(--primary); margin: 0; }
+    .fe-shelf-all {
+      background: none; border: none; color: #4f46e5; font-weight: 700; font-size: 0.82rem;
+      cursor: pointer; font-family: inherit; padding: 4px 0;
+    }
+    .fe-swiper {
+      display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x proximity;
+      margin: 0 -16px; padding: 2px 16px 8px; scrollbar-width: none; -ms-overflow-style: none;
+    }
+    .fe-swiper::-webkit-scrollbar { display: none; }
+    .fe-card { flex: 0 0 116px; scroll-snap-align: start; cursor: pointer; }
+    .fe-card-cover, .fe-card .fe-cover-fallback {
+      width: 116px; aspect-ratio: 2/3; object-fit: cover; border-radius: 9px; display: block;
+      box-shadow: 0 8px 18px rgba(15,23,42,0.16); background: #eef2f6;
+    }
+    .fe-card .fe-cover-fallback { width: 116px; }
+    .fe-card-title {
+      font-size: 0.82rem; font-weight: 700; color: var(--primary); line-height: 1.25; margin-top: 8px;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .fe-card-author { font-size: 0.72rem; color: #64748b; font-weight: 600; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .fe-section-label { font-size: 1.08rem; font-weight: 800; color: var(--primary); margin: 0 0 6px; }
   </style>
 </head>
 <body>
@@ -144,14 +212,26 @@
 
   <div class="msb-cat-bar" id="feCatBar" role="tablist" aria-label="Browse free eBooks by category"></div>
 
-  <div id="feList" class="fe-list" aria-live="polite">
-    <div class="fe-skeleton-row"><div class="fe-skel fe-skel-cover"></div><div class="fe-skel-body"><div class="fe-skel fe-skel-line" style="width:70%;"></div><div class="fe-skel fe-skel-line" style="width:40%;"></div><div class="fe-skel fe-skel-line" style="width:30%;height:20px;"></div></div></div>
-    <div class="fe-skeleton-row"><div class="fe-skel fe-skel-cover"></div><div class="fe-skel-body"><div class="fe-skel fe-skel-line" style="width:60%;"></div><div class="fe-skel fe-skel-line" style="width:40%;"></div><div class="fe-skel fe-skel-line" style="width:30%;height:20px;"></div></div></div>
-    <div class="fe-skeleton-row"><div class="fe-skel fe-skel-cover"></div><div class="fe-skel-body"><div class="fe-skel fe-skel-line" style="width:65%;"></div><div class="fe-skel fe-skel-line" style="width:40%;"></div><div class="fe-skel fe-skel-line" style="width:30%;height:20px;"></div></div></div>
+  <!-- HOME VIEW: banner + swipers -->
+  <div id="feHome">
+    <div class="fe-banner-wrap" id="feBannerWrap" style="display:none;">
+      <div class="fe-banner" id="feBanner"></div>
+      <div class="fe-dots" id="feDots"></div>
+    </div>
+    <div id="feShelves">
+      <div class="fe-skeleton-row"><div class="fe-skel fe-skel-cover" style="width:100%;aspect-ratio:auto;height:150px;border-radius:20px;"></div></div>
+      <div class="fe-skeleton-row"><div class="fe-skel fe-skel-cover"></div><div class="fe-skel-body"><div class="fe-skel fe-skel-line" style="width:60%;"></div><div class="fe-skel fe-skel-line" style="width:40%;"></div></div></div>
+    </div>
   </div>
-  <div id="feEmpty" class="fe-empty" style="display:none;">No free eBooks match your search.</div>
-  <div class="fe-loadmore-wrap">
-    <button type="button" class="fe-loadmore-btn" id="feLoadMoreBtn" style="display:none;">Load more books</button>
+
+  <!-- LIST VIEW: a category or search results -->
+  <div id="feListView" style="display:none;">
+    <h2 class="fe-section-label" id="feListHeading"></h2>
+    <div id="feList" class="fe-list" aria-live="polite"></div>
+    <div id="feEmpty" class="fe-empty" style="display:none;">No free eBooks match your search.</div>
+    <div class="fe-loadmore-wrap">
+      <button type="button" class="fe-loadmore-btn" id="feLoadMoreBtn" style="display:none;">Load more books</button>
+    </div>
   </div>
 </main>
 
@@ -192,191 +272,52 @@
 
 <script>
 (function () {
-  // ---------- LIVE MODE: the visitor's own browser asks Gutendex directly ----------
-  // (Render's server IPs get a Cloudflare 403 from gutendex.com, a visitor's
-  // browser doesn't.) If that ever fails, we fall back to the server's saved
-  // catalog so the page is never empty.
-  var GUTENDEX = 'https://gutendex.com/books';
-  var LIVE_TIMEOUT = 8000;
-  var MIN_DOWNLOADS = 300;
-  var JUNK = /dictionary|catalogue|catalog of|index of|encyclop|magazine|periodical|gazette|proceedings|report of|almanac|hymn|bible|testament|cookbook|cook book|directory|bulletin|journal of|complete works|collected works/i;
-
+  // The whole catalog loads once from our own server (fast, always works), then
+  // banner / swipers / category filters / search are all instant and client-side.
+  // In the background we also TRY to pull extra books live from Gutendex in the
+  // visitor's browser; if that's blocked it silently does nothing (no waiting).
   var CATS = [
     { slug: 'all',           code: null,            label: 'All' },
-    { slug: 'mindset',       code: 'MINDSET',       label: 'Mindset',       topics: ['conduct of life', 'self-help', 'psychology'] },
-    { slug: 'money',         code: 'MONEY',         label: 'Money',         topics: ['wealth', 'business', 'finance'] },
-    { slug: 'productivity',  code: 'PRODUCTIVITY',  label: 'Productivity',  topics: ['success', 'time management', 'efficiency'] },
-    { slug: 'relationships', code: 'RELATIONSHIPS', label: 'Relationships', topics: ['friendship', 'marriage', 'love'] },
-    { slug: 'health',        code: 'HEALTH',        label: 'Health',        topics: ['health', 'hygiene', 'exercise'] },
-    { slug: 'career',        code: 'CAREER',        label: 'Career',        topics: ['leadership', 'salesmanship', 'public speaking'] },
-    { slug: 'education',     code: 'EDUCATION',     label: 'Education',     topics: ['education', 'study', 'memory'] },
-    { slug: 'purpose',       code: 'PURPOSE',       label: 'Purpose',       topics: ['stoics', 'philosophy', 'spiritual life'] },
-    { slug: 'reflective',    code: 'REFLECTIVE',    label: 'Reflective',    topics: ['essays', 'aphorisms', 'meditations'] },
-    { slug: 'fiction',       code: 'FICTION',       label: 'Fiction',       topics: ['allegories', 'parables', 'utopias'] }
+    { slug: 'mindset',       code: 'MINDSET',       label: 'Mindset',       long: 'Mindset & Growth',       topics: ['conduct of life', 'self-help', 'psychology'] },
+    { slug: 'money',         code: 'MONEY',         label: 'Money',         long: 'Money & Wealth',         topics: ['wealth', 'business', 'finance'] },
+    { slug: 'productivity',  code: 'PRODUCTIVITY',  label: 'Productivity',  long: 'Productivity & Success', topics: ['success', 'time management', 'efficiency'] },
+    { slug: 'relationships', code: 'RELATIONSHIPS', label: 'Relationships', long: 'Relationships',          topics: ['friendship', 'marriage', 'love'] },
+    { slug: 'health',        code: 'HEALTH',        label: 'Health',        long: 'Health & Lifestyle',     topics: ['health', 'hygiene', 'exercise'] },
+    { slug: 'career',        code: 'CAREER',        label: 'Career',        long: 'Career & Leadership',    topics: ['leadership', 'salesmanship', 'public speaking'] },
+    { slug: 'education',     code: 'EDUCATION',     label: 'Education',     long: 'Education & Learning',   topics: ['education', 'study', 'memory'] },
+    { slug: 'purpose',       code: 'PURPOSE',       label: 'Purpose',       long: 'Purpose & Philosophy',   topics: ['stoics', 'philosophy', 'spiritual life'] },
+    { slug: 'reflective',    code: 'REFLECTIVE',    label: 'Reflective',    long: 'Reflective Reads',       topics: ['essays', 'aphorisms', 'meditations'] },
+    { slug: 'fiction',       code: 'FICTION',       label: 'Fiction With Meaning', long: 'Fiction With Meaning', topics: ['allegories', 'parables', 'utopias'] }
   ];
   var CAT_LABELS = {};
   CATS.forEach(function (c) { if (c.code) CAT_LABELS[c.code] = c.label; });
 
-  var PAGE = 20;
+  var BOOKS = [];
   var activeCat = 'all';
   var query = '';
-  var mode = 'live';           // 'live' | 'server'
-  var sources = [];            // live: [{url, code}] — each source = one Gutendex query
-  var seen = {};               // live: id -> true
-  var loaded = 0, total = 0;   // server mode paging
-  var hasMore = false;
-  var loading = false;
-  var reqToken = 0;
+  var shown = 0;
+  var PAGE = 30;
   var searchDebounce = null;
-  window.__feLive = window.__feLive || {}; // lets the detail drawer open live books without a server lookup
+  var bannerTimer = null;
+  window.__feLive = window.__feLive || {};
 
-  var listEl = document.getElementById('feList');
-  var emptyEl = document.getElementById('feEmpty');
-  var moreBtn = document.getElementById('feLoadMoreBtn');
-  var catBar = document.getElementById('feCatBar');
-  var searchInput = document.getElementById('feSearch');
+  var $ = function (id) { return document.getElementById(id); };
+  var homeEl = $('feHome'), listView = $('feListView'), listEl = $('feList'), emptyEl = $('feEmpty');
+  var moreBtn = $('feLoadMoreBtn'), catBar = $('feCatBar'), searchInput = $('feSearch');
+  var shelvesEl = $('feShelves'), bannerWrap = $('feBannerWrap'), bannerEl = $('feBanner'), dotsEl = $('feDots');
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
-
-  // ---------- helpers ----------
-  function fetchJson(url, ms) {
-    var ctrl = ('AbortController' in window) ? new AbortController() : null;
-    var t;
-    var req = fetch(url, ctrl ? { signal: ctrl.signal } : {}).then(function (r) {
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r.json();
-    });
-    var timeout = new Promise(function (_, rej) {
-      t = setTimeout(function () { if (ctrl) ctrl.abort(); rej(new Error('timeout')); }, ms);
-    });
-    return Promise.race([req, timeout]).then(
-      function (d) { clearTimeout(t); return d; },
-      function (e) { clearTimeout(t); throw e; }
-    );
+  function attrs(b) { return 'data-fe-detail="' + esc(b.id) + '" data-fe-title="' + esc(b.title) + '"'; }
+  function coverImg(b, cls) {
+    return '<img src="' + esc(b.cover || '') + '" alt="' + esc(b.title) + '" class="' + cls + '" ' + attrs(b) + ' data-fe-cover loading="lazy">';
   }
 
-  function prettyAuthor(name) {
-    if (!name) return 'Unknown Author';
-    var m = String(name).match(/^([^,]+),\s*(.+)$/);
-    return m ? (m[2].replace(/\s*\(.*?\)\s*/g, ' ').trim() + ' ' + m[1].trim()) : name;
-  }
-
-  function normLive(b, code) {
-    var f = b.formats || {};
-    var readable = Object.keys(f).some(function (k) { return k.indexOf('text/html') === 0 || k.indexOf('text/plain') === 0 || k === 'application/epub+zip'; });
-    if (!readable) return null;
-    if (JUNK.test(b.title || '')) return null;
-    var subjects = (b.subjects || []).map(function (s) { return s.replace(/--.*$/, '').trim(); })
-      .filter(function (s, i, a) { return s && a.indexOf(s) === i; });
-    var author = prettyAuthor(b.authors && b.authors[0] && b.authors[0].name);
-    return {
-      id: b.id,
-      title: (b.title || 'Untitled').replace(/\s+/g, ' ').trim(),
-      author: author,
-      authors: [author],
-      cover: f['image/jpeg'] || ('https://www.gutenberg.org/cache/epub/' + b.id + '/pg' + b.id + '.cover.medium.jpg'),
-      cats: code ? [code] : [],
-      categories: subjects.slice(0, 3),
-      description: subjects.length ? 'Subjects: ' + subjects.slice(0, 6).join(', ') : '',
-      downloadCount: b.download_count || 0,
-      readLink: '/read/' + b.id
-    };
-  }
-
-  function sourceUrl(params) {
-    var p = new URLSearchParams({ languages: 'en', copyright: 'false' });
-    Object.keys(params).forEach(function (k) { p.set(k, params[k]); });
-    return GUTENDEX + '?' + p.toString();
-  }
-
-  function buildSources() {
-    if (query) return [{ url: sourceUrl({ search: query }), code: null, isSearch: true }];
-    if (activeCat === 'all') {
-      // one topic per category so "All" is a real mix of the niche
-      return CATS.filter(function (c) { return c.code; }).map(function (c) {
-        return { url: sourceUrl({ topic: c.topics[0] }), code: c.code };
-      });
-    }
-    var cat = CATS.filter(function (c) { return c.slug === activeCat; })[0] || CATS[1];
-    return cat.topics.map(function (t) { return { url: sourceUrl({ topic: t }), code: cat.code }; });
-  }
-
-  // Pull the next page of every live source, merge, de-dupe, most-read first.
-  function pullLive() {
-    var active = sources.filter(function (s) { return s.url; });
-    return Promise.all(active.map(function (s) {
-      return fetchJson(s.url, LIVE_TIMEOUT).then(function (j) {
-        s.url = j.next ? j.next.replace(/^http:/, 'https:') : null;
-        return { code: s.code, isSearch: s.isSearch, results: j.results || [] };
-      }).catch(function (e) { s.failed = true; s.url = null; return { results: [], err: e }; });
-    })).then(function (batches) {
-      var anyOk = batches.some(function (b) { return !b.err; });
-      if (!anyOk && batches.length) throw new Error('all live sources failed');
-      var out = [];
-      batches.forEach(function (b) {
-        b.results.forEach(function (raw) {
-          if (!b.isSearch && (raw.download_count || 0) < MIN_DOWNLOADS) return;
-          var n = normLive(raw, b.code);
-          if (!n) return;
-          if (seen[n.id]) {
-            var prev = window.__feLive[n.id];
-            if (prev && n.cats[0] && prev.cats.indexOf(n.cats[0]) === -1) prev.cats.push(n.cats[0]);
-            return;
-          }
-          seen[n.id] = true;
-          window.__feLive[n.id] = n;
-          out.push(n);
-        });
-      });
-      out.sort(function (a, b) { return b.downloadCount - a.downloadCount; });
-      hasMore = sources.some(function (s) { return s.url; });
-      return out;
-    });
-  }
-
-  // ---------- server (saved catalog) fallback ----------
-  function pullServer(startIndex) {
-    var p = new URLSearchParams();
-    if (query) p.set('q', query); else p.set('category', activeCat);
-    p.set('startIndex', startIndex);
-    return fetchJson('/api/free-ebooks?' + p.toString(), 10000).then(function (d) {
-      var items = d.items || [];
-      items.forEach(function (b) { window.__feLive[b.id] = b; });
-      total = d.totalItems || items.length;
-      loaded = startIndex + items.length;
-      hasMore = items.length > 0 && loaded < total;
-      return items;
-    });
-  }
-
-  // ---------- rendering ----------
-  function rowHtml(b) {
-    var id = esc(b.id), title = esc(b.title);
-    var tags = (b.cats || []).slice(0, 2).map(function (c) {
-      return CAT_LABELS[c] ? '<span class="fe-cat-pill">' + esc(CAT_LABELS[c]) + '</span>' : '';
-    }).join('');
-    return (
-      '<div class="fe-row">' +
-        '<img src="' + esc(b.cover || '') + '" alt="' + title + '" class="fe-row-cover" data-fe-detail="' + id + '" data-fe-title="' + title + '" data-fe-cover loading="lazy">' +
-        '<div class="fe-row-body">' +
-          '<div class="fe-row-title" data-fe-detail="' + id + '" data-fe-title="' + title + '">' + title + '</div>' +
-          '<div class="fe-row-author">' + esc(b.author || '') + '</div>' +
-          '<div class="fe-row-tags"><span class="fe-free-pill">FREE</span>' + tags + '</div>' +
-          '<div class="fe-row-actions">' +
-            '<button type="button" class="fe-row-details" data-fe-detail="' + id + '" data-fe-title="' + title + '">Details</button>' +
-            '<button type="button" class="fe-row-read" data-fe-detail="' + id + '" data-fe-title="' + title + '">Read Free</button>' +
-          '</div>' +
-        '</div>' +
-      '</div>'
-    );
-  }
-
-  // Books whose cover fails to load get a branded cover instead of a broken image
-  listEl.addEventListener('error', function (e) {
+  // cover fails to load -> branded gradient cover with the title (works anywhere on the page)
+  document.addEventListener('error', function (e) {
     var img = e.target;
     if (!img || img.tagName !== 'IMG' || !img.hasAttribute('data-fe-cover')) return;
     var d = document.createElement('div');
@@ -387,84 +328,145 @@
     img.replaceWith(d);
   }, true);
 
-  function skeleton() {
-    var one = '<div class="fe-skeleton-row"><div class="fe-skel fe-skel-cover"></div><div class="fe-skel-body"><div class="fe-skel fe-skel-line" style="width:65%;"></div><div class="fe-skel fe-skel-line" style="width:40%;"></div><div class="fe-skel fe-skel-line" style="width:30%;height:20px;"></div></div></div>';
-    return one + one + one;
+  function byPopularity(a, b) { return (b.downloadCount || 0) - (a.downloadCount || 0); }
+  function inCat(b, code) { return (b.cats || []).indexOf(code) !== -1; }
+
+  // ---------- pieces ----------
+  function rowHtml(b) {
+    var tags = (b.cats || []).slice(0, 2).map(function (c) {
+      return CAT_LABELS[c] ? '<span class="fe-cat-pill">' + esc(CAT_LABELS[c]) + '</span>' : '';
+    }).join('');
+    return '<div class="fe-row">' + coverImg(b, 'fe-row-cover') +
+      '<div class="fe-row-body">' +
+        '<div class="fe-row-title" ' + attrs(b) + '>' + esc(b.title) + '</div>' +
+        '<div class="fe-row-author">' + esc(b.author || '') + '</div>' +
+        '<div class="fe-row-tags"><span class="fe-free-pill">FREE</span>' + tags + '</div>' +
+        '<div class="fe-row-actions">' +
+          '<button type="button" class="fe-row-details" ' + attrs(b) + '>Details</button>' +
+          '<button type="button" class="fe-row-read" ' + attrs(b) + '>Read Free</button>' +
+        '</div></div></div>';
   }
 
-  function updateMore() {
-    moreBtn.style.display = hasMore ? '' : 'none';
-    moreBtn.disabled = false;
-    moreBtn.textContent = 'Load more books';
+  function cardHtml(b) {
+    return '<div class="fe-card" ' + attrs(b) + '>' + coverImg(b, 'fe-card-cover') +
+      '<div class="fe-card-title" ' + attrs(b) + '>' + esc(b.title) + '</div>' +
+      '<div class="fe-card-author">' + esc(b.author || '') + '</div></div>';
   }
 
-  function showError() {
-    listEl.innerHTML = '<div class="fe-error">Couldn\u2019t load free eBooks right now.<br><button type="button" id="feRetry">Try again</button></div>';
-    var r = document.getElementById('feRetry');
-    if (r) r.addEventListener('click', loadFresh);
-    moreBtn.style.display = 'none';
+  function shelfHtml(title, books, slug) {
+    return '<section class="fe-shelf"><div class="fe-shelf-head"><h2 class="fe-shelf-title">' + esc(title) + '</h2>' +
+      (slug ? '<button type="button" class="fe-shelf-all" data-see-all="' + esc(slug) + '">See all &rsaquo;</button>' : '') +
+      '</div><div class="fe-swiper">' + books.map(cardHtml).join('') + '</div></section>';
   }
 
-  function loadFresh() {
-    var token = ++reqToken;
-    loaded = 0; total = 0; seen = {}; hasMore = false; loading = true;
-    listEl.innerHTML = skeleton();
-    emptyEl.style.display = 'none';
-    moreBtn.style.display = 'none';
-
-    sources = buildSources();
-    mode = 'live';
-    pullLive().catch(function (e) {
-      // Gutendex unreachable from this browser -> saved catalog from our server
-      console.warn('[free-ebooks] live fetch failed, using saved catalog:', e && e.message);
-      mode = 'server';
-      return pullServer(0);
-    }).then(function (items) {
-      if (token !== reqToken) return;
-      listEl.innerHTML = items.map(rowHtml).join('');
-      emptyEl.style.display = items.length ? 'none' : '';
-      // live pages can filter down to few rows — keep pulling until the screen has some
-      if (mode === 'live' && items.length < 8 && hasMore) return loadMore(true);
-      updateMore();
-    }).catch(function () {
-      if (token === reqToken) showError();
-    }).then(function () { if (token === reqToken) loading = false; });
+  function slideHtml(b, i) {
+    var tag = (b.cats && CAT_LABELS[b.cats[0]]) ? CAT_LABELS[b.cats[0]] : 'Free to read';
+    return '<div class="fe-slide g' + (i % 4) + '">' + coverImg(b, 'fe-slide-cover') +
+      '<div class="fe-slide-body"><span class="fe-slide-kicker">Free &middot; ' + esc(tag) + '</span>' +
+      '<div class="fe-slide-title">' + esc(b.title) + '</div>' +
+      '<div class="fe-slide-author">' + esc(b.author || '') + '</div>' +
+      '<button type="button" class="fe-slide-btn" ' + attrs(b) + '>Read Free</button></div></div>';
   }
 
-  function loadMore(auto) {
-    if (loading && !auto) return;
-    loading = true;
-    var token = reqToken;
-    if (!auto) { moreBtn.disabled = true; moreBtn.textContent = 'Loading\u2026'; }
-    var p = (mode === 'live') ? pullLive() : pullServer(loaded);
-    return p.then(function (items) {
-      if (token !== reqToken) return;
-      listEl.insertAdjacentHTML('beforeend', items.map(rowHtml).join(''));
-      emptyEl.style.display = listEl.children.length ? 'none' : '';
-      if (mode === 'live' && items.length < 6 && hasMore && listEl.children.length < 12) return loadMore(true);
-      updateMore();
-    }).catch(function () {
-      moreBtn.disabled = false; moreBtn.textContent = 'Load more books';
-    }).then(function () { if (!auto) loading = false; });
+  // ---------- home (banner + swipers) ----------
+  function renderBanner() {
+    clearInterval(bannerTimer);
+    var picks = BOOKS.slice().sort(byPopularity).slice(0, 5);
+    if (picks.length < 3) { bannerWrap.style.display = 'none'; return; }
+    bannerWrap.style.display = '';
+    bannerEl.innerHTML = picks.map(slideHtml).join('');
+    dotsEl.innerHTML = picks.map(function (_, i) { return '<button type="button" class="fe-dot' + (i === 0 ? ' on' : '') + '" data-dot="' + i + '" aria-label="Slide ' + (i + 1) + '"></button>'; }).join('');
+    bannerEl.scrollLeft = 0;
+    var idx = 0;
+    function go(i) {
+      idx = i;
+      var w = bannerEl.clientWidth + 12;
+      bannerEl.scrollTo({ left: w * i, behavior: 'smooth' });
+    }
+    function syncDots() {
+      var w = bannerEl.clientWidth + 12;
+      var i = Math.round(bannerEl.scrollLeft / w);
+      idx = i;
+      Array.prototype.forEach.call(dotsEl.children, function (d, k) { d.classList.toggle('on', k === i); });
+    }
+    bannerEl.onscroll = syncDots;
+    dotsEl.onclick = function (e) { var d = e.target.closest('[data-dot]'); if (d) go(Number(d.getAttribute('data-dot'))); };
+    bannerTimer = setInterval(function () { go((idx + 1) % picks.length); }, 5000);
+    ['touchstart', 'mousedown'].forEach(function (ev) { bannerEl.addEventListener(ev, function () { clearInterval(bannerTimer); }, { once: true }); });
   }
 
-  // ---------- pills / search ----------
-  catBar.innerHTML = CATS.map(function (c) {
-    var on = c.slug === activeCat;
-    return '<button type="button" class="msb-cat-pill' + (on ? ' is-active' : '') + '" data-cat="' + esc(c.slug) + '" role="tab" aria-selected="' + on + '">' + esc(c.label) + '</button>';
-  }).join('');
+  function renderHome() {
+    homeEl.style.display = '';
+    listView.style.display = 'none';
+    renderBanner();
+    var html = shelfHtml('Trending Now', BOOKS.slice().sort(byPopularity).slice(0, 12), null);
+    CATS.forEach(function (c) {
+      if (!c.code) return;
+      var list = BOOKS.filter(function (b) { return inCat(b, c.code); }).sort(byPopularity);
+      if (list.length >= 2) html += shelfHtml(c.long, list.slice(0, 12), c.slug);
+    });
+    shelvesEl.innerHTML = html;
+  }
 
-  catBar.addEventListener('click', function (e) {
-    var btn = e.target.closest('.msb-cat-pill');
-    if (!btn) return;
+  // ---------- list (category / search) ----------
+  function currentList() {
+    var list = BOOKS.slice().sort(byPopularity);
+    if (query) {
+      var tokens = query.toLowerCase().split(/\s+/).filter(Boolean);
+      list = list.filter(function (b) {
+        var hay = (b.title + ' ' + b.author + ' ' + (b.categories || []).join(' ')).toLowerCase();
+        return tokens.every(function (t) { return hay.indexOf(t) !== -1; });
+      });
+    } else if (activeCat !== 'all') {
+      var cat = CATS.filter(function (c) { return c.slug === activeCat; })[0];
+      list = list.filter(function (b) { return inCat(b, cat.code); });
+    }
+    return list;
+  }
+
+  function renderList(reset) {
+    homeEl.style.display = 'none';
+    clearInterval(bannerTimer);
+    listView.style.display = '';
+    var list = currentList();
+    if (reset) shown = 0;
+    var next = list.slice(shown, shown + PAGE);
+    if (reset) listEl.innerHTML = '';
+    listEl.insertAdjacentHTML('beforeend', next.map(rowHtml).join(''));
+    shown += next.length;
+    emptyEl.style.display = list.length ? 'none' : '';
+    moreBtn.style.display = shown < list.length ? '' : 'none';
+    var cat = CATS.filter(function (c) { return c.slug === activeCat; })[0];
+    $('feListHeading').textContent = query ? ('Results for \u201c' + query + '\u201d') : ((cat && cat.long) || 'All');
+  }
+
+  function render() {
+    if (!BOOKS.length) return;
+    if (!query && activeCat === 'all') renderHome(); else renderList(true);
+  }
+
+  // ---------- events ----------
+  function selectCat(slug) {
+    activeCat = slug; query = ''; searchInput.value = '';
     catBar.querySelectorAll('.msb-cat-pill').forEach(function (b) {
-      var on = b === btn;
+      var on = b.getAttribute('data-cat') === slug;
       b.classList.toggle('is-active', on);
       b.setAttribute('aria-selected', on ? 'true' : 'false');
+      if (on && b.scrollIntoView) b.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
     });
-    activeCat = btn.getAttribute('data-cat');
-    query = ''; searchInput.value = '';
-    loadFresh();
+    render();
+  }
+
+  catBar.innerHTML = CATS.map(function (c) {
+    return '<button type="button" class="msb-cat-pill' + (c.slug === 'all' ? ' is-active' : '') + '" data-cat="' + esc(c.slug) + '" role="tab" aria-selected="' + (c.slug === 'all') + '">' + esc(c.label) + '</button>';
+  }).join('');
+  catBar.addEventListener('click', function (e) {
+    var btn = e.target.closest('.msb-cat-pill');
+    if (btn) selectCat(btn.getAttribute('data-cat'));
+  });
+  document.addEventListener('click', function (e) {
+    var see = e.target.closest('[data-see-all]');
+    if (see) selectCat(see.getAttribute('data-see-all'));
   });
 
   searchInput.addEventListener('input', function () {
@@ -474,17 +476,92 @@
       if (q === query) return;
       query = q;
       if (query) catBar.querySelectorAll('.msb-cat-pill').forEach(function (b) { b.classList.remove('is-active'); });
-      else {
-        var cur = catBar.querySelector('[data-cat="' + activeCat + '"]');
-        if (cur) cur.classList.add('is-active');
-      }
-      loadFresh();
-    }, 400);
+      else { selectCat(activeCat); return; }
+      render();
+    }, 200);
   });
+  moreBtn.addEventListener('click', function () { renderList(false); });
 
-  moreBtn.addEventListener('click', function () { loadMore(false); });
+  // ---------- load catalog ----------
+  function loadCatalog(retry) {
+    fetch('/api/free-ebooks-all').then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    }).then(function (d) {
+      BOOKS = d.books || [];
+      BOOKS.forEach(function (b) { window.__feLive[b.id] = b; });
+      if (!BOOKS.length) throw new Error('empty');
+      render();
+      tryLiveEnrich();
+    }).catch(function () {
+      if (!retry) return loadCatalog(true);
+      shelvesEl.innerHTML = '<div class="fe-error">Couldn\u2019t load free eBooks right now.<br><button type="button" onclick="location.reload()">Try again</button></div>';
+    });
+  }
 
-  loadFresh();
+  // ---------- optional live extras (never blocks the page) ----------
+  function tryLiveEnrich() {
+    var KEY = 'fe_live_dead_until';
+    try { if (Number(localStorage.getItem(KEY) || 0) > Date.now()) return; } catch (e) {}
+    var JUNK = /dictionary|catalogue|catalog of|index of|encyclop|magazine|periodical|gazette|proceedings|report of|almanac|hymn|bible|testament|cookbook|cook book|directory|bulletin|journal of|complete works|collected works/i;
+    function prettyAuthor(n) {
+      if (!n) return 'Unknown Author';
+      var m = String(n).match(/^([^,]+),\s*(.+)$/);
+      return m ? (m[2].replace(/\s*\(.*?\)\s*/g, ' ').trim() + ' ' + m[1].trim()) : n;
+    }
+    function get(url) {
+      var ctrl = ('AbortController' in window) ? new AbortController() : null;
+      var t = setTimeout(function () { if (ctrl) ctrl.abort(); }, 4000);
+      return fetch(url, ctrl ? { signal: ctrl.signal } : {}).then(function (r) {
+        clearTimeout(t);
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      }, function (e) { clearTimeout(t); throw e; });
+    }
+    function url(topic) {
+      return 'https://gutendex.com/books?languages=en&copyright=false&topic=' + encodeURIComponent(topic);
+    }
+    var jobs = [];
+    CATS.forEach(function (c) { if (c.code) jobs.push({ code: c.code, topic: c.topics[0] }); });
+
+    // probe with one request first; if it fails, remember for 6h and stop
+    get(url(jobs[0].topic)).then(function (first) {
+      return Promise.all(jobs.map(function (j, i) {
+        return (i === 0 ? Promise.resolve(first) : get(url(j.topic)).catch(function () { return { results: [] }; }))
+          .then(function (d) { return { code: j.code, results: d.results || [] }; });
+      }));
+    }).then(function (batches) {
+      var have = {}; BOOKS.forEach(function (b) { have[b.id] = b; });
+      var added = 0;
+      batches.forEach(function (b) {
+        b.results.forEach(function (raw) {
+          if ((raw.download_count || 0) < 300 || JUNK.test(raw.title || '')) return;
+          var f = raw.formats || {};
+          var readable = Object.keys(f).some(function (k) { return k.indexOf('text/html') === 0 || k.indexOf('text/plain') === 0; });
+          if (!readable) return;
+          if (have[raw.id]) { if ((have[raw.id].cats || []).indexOf(b.code) === -1) have[raw.id].cats.push(b.code); return; }
+          var author = prettyAuthor(raw.authors && raw.authors[0] && raw.authors[0].name);
+          var subjects = (raw.subjects || []).map(function (s) { return s.replace(/--.*$/, '').trim(); }).filter(function (s, i, a) { return s && a.indexOf(s) === i; });
+          var nb = {
+            id: raw.id, title: (raw.title || 'Untitled').replace(/\s+/g, ' ').trim(), author: author, authors: [author],
+            cover: f['image/jpeg'] || ('https://www.gutenberg.org/cache/epub/' + raw.id + '/pg' + raw.id + '.cover.medium.jpg'),
+            cats: [b.code], categories: subjects.slice(0, 3),
+            description: subjects.length ? 'Subjects: ' + subjects.slice(0, 6).join(', ') : '',
+            downloadCount: raw.download_count || 0, readLink: '/read/' + raw.id
+          };
+          have[raw.id] = nb; BOOKS.push(nb); window.__feLive[nb.id] = nb; added++;
+        });
+      });
+      console.log('[free-ebooks] live extras added:', added);
+      // re-render only if the visitor is still on the plain home view
+      if (added && !query && activeCat === 'all') { var y = window.scrollY; renderHome(); window.scrollTo(0, y); }
+    }).catch(function (e) {
+      console.warn('[free-ebooks] live fetch unavailable, using saved catalog:', e && e.message);
+      try { localStorage.setItem(KEY, String(Date.now() + 6 * 3600 * 1000)); } catch (x) {}
+    });
+  }
+
+  loadCatalog(false);
 })();
 </script>
 
