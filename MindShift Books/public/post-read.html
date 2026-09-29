@@ -414,34 +414,38 @@ body{padding-bottom:64px} /* room for the fixed comment bar on post-read */
 .c-login-cta a{color:var(--p);font-weight:700;text-decoration:none;white-space:nowrap}
 
 /* flat comment item */
-.comment-item{display:flex;gap:10px;margin-bottom:20px;position:relative}
-.c-av{width:34px;height:34px;border-radius:50%;background:var(--g);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0;overflow:hidden;cursor:pointer}
+.comment-item{display:flex;gap:11px;padding:14px 0;position:relative;border-bottom:1px solid #f1f3f8}
+.comment-item:last-child{border-bottom:none}
+.comment-item.reply{padding:10px 0;border-bottom:none}
+.c-av{width:36px;height:36px;border-radius:50%;background:var(--g);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;overflow:hidden;cursor:pointer}
 .c-av img{width:100%;height:100%;object-fit:cover}
 .c-body{flex:1;min-width:0;padding-right:28px;position:relative}
-.c-meta-row{display:flex;align-items:center;gap:6px;margin-bottom:3px;flex-wrap:wrap}
-.c-name{font-size:13px;font-weight:800;color:var(--txt);cursor:pointer;line-height:1}
+.c-meta-row{display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap}
+.c-name{font-size:13.5px;font-weight:800;color:var(--txt);cursor:pointer;line-height:1}
 .c-name:hover{color:var(--p)}
 .c-author-badge{display:inline-flex;align-items:center;gap:3px;background:linear-gradient(135deg,#4f46e518,#06b6d418);color:var(--p);font-size:10px;font-weight:800;padding:2px 7px;border-radius:99px;border:1px solid #bfdbfe;letter-spacing:.1px;flex-shrink:0}
 .c-author-badge svg{width:9px;height:9px;fill:var(--p)}
-.c-text{font-size:14px;color:#374151;line-height:1.65;word-break:break-word;margin-bottom:6px}
+.c-pin-badge{display:inline-flex;align-items:center;gap:3px;background:#fffbeb;color:#b45309;font-size:10px;font-weight:800;padding:2px 7px;border-radius:99px;border:1px solid #fde68a;letter-spacing:.1px;flex-shrink:0}
+.c-text{font-size:14.5px;color:#374151;line-height:1.62;word-break:break-word;margin-bottom:8px}
 .c-foot{display:flex;align-items:center;gap:2px;flex-wrap:wrap}
-.c-time{font-size:11px;color:var(--mute);font-weight:500;padding:3px 4px 3px 0}
+.c-time{font-size:11.5px;color:var(--mute);font-weight:500;padding:4px 6px 4px 0}
 .c-dot{font-size:10px;color:var(--mute);opacity:.5;padding:0 1px}
-.c-like-btn,.c-reply-btn,.c-view-replies-btn{background:none;border:none;cursor:pointer;font-size:12px;font-weight:600;color:var(--mute);padding:3px 6px;border-radius:6px;transition:all .15s;font-family:inherit;display:inline-flex;align-items:center;gap:3px}
+.c-like-btn,.c-reply-btn,.c-view-replies-btn{background:none;border:none;cursor:pointer;font-size:12.5px;font-weight:700;color:var(--mute);padding:5px 9px;border-radius:99px;transition:all .15s;font-family:inherit;display:inline-flex;align-items:center;gap:4px}
 .c-like-btn:hover{color:var(--red);background:var(--red-bg)}
-.c-like-btn.liked{color:var(--red);font-weight:700}
-.c-like-btn svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0;transition:all .15s}
+.c-like-btn.liked{color:var(--red);background:var(--red-bg)}
+.c-like-btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0;transition:all .15s}
 .c-like-btn.liked svg{fill:var(--red);stroke:var(--red)}
-.c-reply-btn:hover{color:var(--p);background:#ecfeff}
-.c-view-replies-btn{color:var(--p);font-size:12px;font-weight:700}
-.c-view-replies-btn:hover{background:#ecfeff}
+.c-reply-btn:hover{color:var(--p);background:#eef0fe}
+.c-view-replies-btn{color:var(--p);background:#eef0fe}
+.c-view-replies-btn:hover{background:#e0e4fd}
+.c-view-replies-btn svg{transition:transform .2s}
+.c-view-replies-btn.open svg{transform:rotate(180deg)}
 
-/* 3-dot menu */
-.c-more-btn{position:absolute;top:0;right:0;width:26px;height:26px;border-radius:50%;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--mute);opacity:0;transition:opacity .15s,background .15s;flex-shrink:0;padding:0}
+.c-more-btn{position:absolute;top:2px;right:0;width:26px;height:26px;border-radius:50%;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--mute);opacity:0;transition:opacity .15s,background .15s;flex-shrink:0;padding:0}
 .comment-item:hover .c-more-btn,.c-more-btn:focus,.c-more-btn.open{opacity:1}
 .c-more-btn:hover{background:#f3f4f6;color:var(--txt)}
 .c-more-btn svg{width:14px;height:14px;pointer-events:none}
-.c-menu{position:absolute;top:24px;right:0;background:#fff;border-radius:14px;border:1.5px solid var(--border);box-shadow:0 6px 28px rgba(37,99,235,.13),0 2px 8px rgba(0,0,0,.07);padding:6px;z-index:400;min-width:150px;opacity:0;transform:translateY(-6px) scale(.96);pointer-events:none;transition:all .18s cubic-bezier(.32,0,.15,1);transform-origin:top right}
+.c-menu{position:absolute;top:26px;right:0;background:#fff;border-radius:14px;border:1.5px solid var(--border);box-shadow:0 6px 28px rgba(37,99,235,.13),0 2px 8px rgba(0,0,0,.07);padding:6px;z-index:400;min-width:150px;opacity:0;transform:translateY(-6px) scale(.96);pointer-events:none;transition:all .18s cubic-bezier(.32,0,.15,1);transform-origin:top right}
 .c-menu.open{opacity:1;transform:translateY(0) scale(1);pointer-events:all}
 .c-menu-item{display:flex;align-items:center;gap:9px;width:100%;padding:9px 12px;border-radius:9px;font-size:13px;font-weight:600;color:var(--txt);background:none;border:none;cursor:pointer;font-family:inherit;transition:background .13s,color .13s;text-align:left;white-space:nowrap}
 .c-menu-item:hover{background:#ecfeff;color:var(--p)}
@@ -450,8 +454,8 @@ body{padding-bottom:64px} /* room for the fixed comment bar on post-read */
 .c-menu-item.danger:hover{background:#fff1f1;color:var(--red)}
 .c-menu-item.danger svg{opacity:.7}
 
-.c-replies-wrap{margin-left:44px;margin-top:2px}
-.reply-input-row{display:flex;gap:8px;margin-top:10px;align-items:flex-start}
+.c-replies-wrap{margin-left:17px;margin-top:6px;padding-left:28px;border-left:2px solid #eef0f4;display:flex;flex-direction:column;gap:2px}
+.reply-input-row{display:flex;gap:8px;margin-top:8px;align-items:flex-start}
 .r-input{flex:1;border:none;border-bottom:1.5px solid var(--border2);padding:6px 0 8px;font-size:13px;font-family:'Inter',sans-serif;color:var(--txt);outline:none;resize:none;min-height:32px;background:transparent;transition:border-color .2s}
 .r-input:focus{border-color:var(--p)}
 .r-post-btn{padding:7px 14px;border-radius:99px;background:var(--g);border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0}
@@ -463,6 +467,10 @@ body{padding-bottom:64px} /* room for the fixed comment bar on post-read */
 .comments-list-empty{text-align:center;padding:36px 16px;color:var(--mute)}
 .comments-list-empty-ico{font-size:32px;margin-bottom:8px;opacity:.5}
 .comments-list-empty-txt{font-size:13px;font-weight:600}
+
+.c-pinned-card{background:linear-gradient(180deg,#fffdf7,#fffbeb);border:1.5px solid #fde68a;border-radius:16px;padding:14px 16px 12px;margin-bottom:16px}
+.c-pinned-card .comment-item{padding:0;border-bottom:none}
+.c-pinned-card .c-more-btn{top:0}
 
 /* ── COMMENT DRAWER ── */
 /* ── INLINE COMMENTS (below the post, no more slide-up sheet) ── */
@@ -1514,6 +1522,7 @@ window.closeAll=function(){
    COMMENTS SYSTEM
    ══════════════════════════════════════ */
 let cList=[],cReplies={},cLikedSet=new Set(),cOpenReplies=new Set(),cActiveReplyId=null,cCommentCount=0;
+let cPinnedId=null,cPinnedComment=null;   // set by the author in comment-manager.html; surfaced above the list here
 const C_PAGE=20; let cCursor=null, cExhausted=false, cLoadingMore=false;
 // Hidden comments (set by the content author in the comment manager) are visible only to the commenter and the content author.
 function cVisible(c){
@@ -1526,7 +1535,9 @@ window.loadComments=async function(){
   if(!artId){buildCommentsUI([]);return;}
   try{
     const countSnap=await resilient(()=>getDoc(doc(db,'postMeta',artId)),{tries:2});
-    cCommentCount=countSnap.exists()?(countSnap.data().commentCount||0):0;
+    const metaData=countSnap.exists()?countSnap.data():{};
+    cCommentCount=metaData.commentCount||0;
+    cPinnedId=metaData.pinnedCommentId||null;
     updateCCount();
     // The content owner can read hidden comments on their own post (matches the
     // Firestore rule), so their query skips the hidden filter entirely and just
@@ -1556,12 +1567,31 @@ window.loadComments=async function(){
       }catch{}
     }
     cLikedSet.clear();
+    // Surface the pinned comment separately from the paginated list — it might
+    // not even be on this page (could be an old comment), so if it's not
+    // already in what we fetched, get it directly by id. A single get() is
+    // unaffected by the hidden-comment list-query restriction, so this works
+    // the same whether or not the pinned comment happens to be hidden to
+    // everyone but its author/the content owner (in which case it just won't
+    // resolve for a random visitor, same as any other hidden comment).
+    cPinnedComment=null;
+    if(cPinnedId){
+      const inList=cList.find(c=>c.id===cPinnedId);
+      if(inList){ cPinnedComment=inList; cList=cList.filter(c=>c.id!==cPinnedId); }
+      else{
+        try{
+          const pinSnap=await resilient(()=>getDoc(doc(db,'comments',cPinnedId)),{tries:1});
+          if(pinSnap.exists()) cPinnedComment={id:pinSnap.id,...pinSnap.data()};
+        }catch{}
+      }
+    }
     if(currentUser){
       // likedBy is a map field on each comment doc: { uid: true/false }
       // No extra reads needed — the data is already in the comment docs we just fetched
       cList.forEach(c=>{
         if(c.likedBy && c.likedBy[currentUser.uid] === true) cLikedSet.add(c.id);
       });
+      if(cPinnedComment && cPinnedComment.likedBy && cPinnedComment.likedBy[currentUser.uid]===true) cLikedSet.add(cPinnedComment.id);
     }
     buildCommentsUI(cList);
   }catch(e){
@@ -1589,10 +1619,11 @@ function buildCommentsUI(comments){
     const redir=encodeURIComponent(location.pathname+location.search);
     inputEl.innerHTML=currentUser?'':`<div class="c-login-cta"><span>Join the conversation</span><a href="/login?redirect=${redir}">Log in</a></div>`;
   }
+  const pinnedHTML = cPinnedComment ? `<div class="c-pinned-card">${buildCHTML(cPinnedComment,false,true)}</div>` : '';
   const listHTML=comments.length
     ?comments.map(c=>buildCHTML(c,false)).join('')
-    :`<div class="comments-list-empty"><div class="comments-list-empty-ico">&#128172;</div><div class="comments-list-empty-txt">Be the first to comment</div></div>`;
-  listEl.innerHTML=listHTML;
+    :(cPinnedComment?'':`<div class="comments-list-empty"><div class="comments-list-empty-ico">&#128172;</div><div class="comments-list-empty-txt">Be the first to comment</div></div>`);
+  listEl.innerHTML=pinnedHTML+listHTML;
   renderCMore();
   window.MSBAuthorLive && window.MSBAuthorLive.refresh(db, { doc, getDoc }, listEl);
 }
@@ -1627,13 +1658,14 @@ window.loadMoreComments=async function(){
   finally{cLoadingMore=false;renderCMore();}
 };
 
-function buildCHTML(c,isReply){
+function buildCHTML(c,isReply,isPinned){
   const liked=cLikedSet.has(c.id);
   const init=(c.authorName||'U').charAt(0).toUpperCase();
   const avIn=`<img data-author-photo src="${c.authorPhoto?cEsc(c.authorPhoto):''}" alt="" style="${c.authorPhoto?'':'display:none'}" onerror="this.style.display='none'"><span class="c-av-init" data-author-photo-fallback${c.authorPhoto?' style="display:none"':''}>${init}</span>`;
   const lc=c.likeCount>0?String(c.likeCount):'';
   const isAuthor=article&&c.authorUid&&c.authorUid===article.authorUid&&!article.isMindshift;
   const authorBadge=isAuthor?`<span class="c-author-badge"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>Author</span>`:'';
+  const pinBadge=isPinned?`<span class="c-pin-badge">📌 Pinned</span>`:'';
   const heart=`<button class="c-like-btn${liked?' liked':''}" id="clb-${c.id}" onclick="likeComment('${c.id}','${cEsc(c.authorUid||'')}')"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg><span id="clc-${c.id}">${lc}</span></button>`;
   const replyBtn=!isReply?`<button class="c-reply-btn" onclick="showRI('${c.id}')">Reply</button>`:'';
   const vrBtn=(!isReply&&c.replyCount>0)?`<button class="c-view-replies-btn" id="vrb-${c.id}" onclick="toggleReplies('${c.id}')"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg> ${c.replyCount} ${c.replyCount===1?'reply':'replies'}</button>`:'';
@@ -1643,7 +1675,7 @@ function buildCHTML(c,isReply){
   const extra=!isReply
     ?`<div class="c-replies-wrap" id="rep-${c.id}" style="display:none"></div><div class="c-replies-wrap" id="ri-wrap-${c.id}" style="display:none"><div class="reply-input-row"><textarea class="r-input" id="ri-${c.id}" placeholder="Write a reply…" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px';document.getElementById('rpb-${c.id}').disabled=!this.value.trim()"></textarea><button class="r-post-btn" id="rpb-${c.id}" onclick="submitReply('${c.id}')" disabled>Post</button><button class="r-cancel-btn" onclick="hideRI('${c.id}')"><svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button></div></div>`
     :'';
-  return `<div class="comment-item${isReply?' reply':''}" id="ci-${c.id}" data-author-uid="${cEsc(c.authorUid||'')}"><div class="c-av" onclick="cGo('${cEsc(c.authorUid||'')}','${cEsc(c.authorUsername||'')}')">${avIn}</div><div class="c-body"><div class="c-meta-row"><span class="c-name" data-author-name onclick="cGo('${cEsc(c.authorUid||'')}','${cEsc(c.authorUsername||'')}')">${cEsc(c.authorName||'User')}</span>${authorBadge}</div><div class="c-text">${cEsc(c.text||'')}</div><div class="c-foot"><span class="c-time">${cTA(c.createdAt)}</span><span class="c-dot">·</span>${heart}${replyBtn}${vrBtn}</div>${extra}</div>${moreBtn}</div>`;
+  return `<div class="comment-item${isReply?' reply':''}" id="ci-${c.id}" data-author-uid="${cEsc(c.authorUid||'')}"><div class="c-av" onclick="cGo('${cEsc(c.authorUid||'')}','${cEsc(c.authorUsername||'')}')">${avIn}</div><div class="c-body"><div class="c-meta-row"><span class="c-name" data-author-name onclick="cGo('${cEsc(c.authorUid||'')}','${cEsc(c.authorUsername||'')}')">${cEsc(c.authorName||'User')}</span>${authorBadge}${pinBadge}</div><div class="c-text">${cEsc(c.text||'')}</div><div class="c-foot"><span class="c-time">${cTA(c.createdAt)}</span><span class="c-dot">·</span>${heart}${replyBtn}${vrBtn}</div>${extra}</div>${moreBtn}</div>`;
 }
 
 window.onCI=function(el){el.style.height='auto';el.style.height=el.scrollHeight+'px';const b=document.getElementById('mainCPost');if(b)b.disabled=!el.value.trim();};
@@ -1740,8 +1772,9 @@ function updVRB(cid,count){
 
 window.toggleReplies=async function(cid){
   const re=document.getElementById('rep-'+cid);if(!re)return;
-  if(cOpenReplies.has(cid)){cOpenReplies.delete(cid);re.style.display='none';return;}
-  cOpenReplies.add(cid);re.style.display='block';
+  const vrb=document.getElementById('vrb-'+cid);
+  if(cOpenReplies.has(cid)){cOpenReplies.delete(cid);re.style.display='none';vrb&&vrb.classList.remove('open');return;}
+  cOpenReplies.add(cid);re.style.display='block';vrb&&vrb.classList.add('open');
   if(cReplies[cid]){re.innerHTML=cReplies[cid].map(r=>buildCHTML(r,true)).join('');window.MSBAuthorLive && window.MSBAuthorLive.refresh(db, { doc, getDoc }, re);return;}
   re.innerHTML='<div style="padding:8px 0;font-size:12px;color:var(--mute)">Loading…</div>';
   try{
