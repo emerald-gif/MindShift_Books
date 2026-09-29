@@ -721,142 +721,95 @@ router.get('/api/product/:id', (req, res) => {
   }
 });
 
-// ---------------- FREE EBOOKS (Gutendex / Project Gutenberg catalog proxy) ----------------
-// Thousands of real, actually-free public-domain books (Pride and Prejudice,
-// Sherlock Holmes, Dracula, Moby Dick, Shakespeare, etc.) shown in our own
-// UI. We never host or redistribute the files — "Read Free eBook" sends the
-// reader straight to Project Gutenberg's own hosted HTML/EPUB/text file for
-// that title. No API key, no approval, no country gating — every format URL
-// is served directly off Gutenberg's own file host.
-const GUTENDEX_API = 'https://gutendex.com/books';
-const GUTENDEX_PAGE_SIZE = 32; // fixed by Gutendex, not configurable
-
-// Narrowed to Mindshift Books' own niche (personal development / business /
-// entrepreneurship) instead of a general-purpose library — every tab here
-// should feel like something a Mindshift Books buyer would actually want.
+// ---------------- FREE EBOOKS (curated Project Gutenberg catalog) ----------------
+// Real, actually-free public-domain books shown in our own UI, curated to
+// MindShift's niche (mindset, money, productivity, purpose...) instead of a
+// general-purpose library. We never host the files — /read/:id fetches the
+// book from gutenberg.org server-side and caches it on our own disk.
+//
+// The catalog itself is a static JSON file (data/free-ebooks-catalog.json)
+// generated OFF Render by scripts/sync-free-ebooks.js. Render's outbound IPs
+// get a Cloudflare 403 from gutendex.com, so the server never calls
+// Gutendex at all — it just reads the JSON at boot and filters it in memory.
 const FREE_EBOOK_CATEGORIES = [
-  { slug: 'all',        label: 'All',                topic: null }, // handled specially — see ALL_MIX_TOPICS below
-  { slug: 'self-help',  label: 'Self-Help',           topic: 'conduct of life' },
-  { slug: 'business',   label: 'Business & Money',    topic: 'business' },
-  { slug: 'psychology', label: 'Psychology',          topic: 'psychology' },
-  { slug: 'success',    label: 'Success & Wealth',    topic: 'success' }
+  { slug: 'all',           label: 'All',           code: null },
+  { slug: 'mindset',       label: 'Mindset',       code: 'MINDSET' },
+  { slug: 'money',         label: 'Money',         code: 'MONEY' },
+  { slug: 'productivity',  label: 'Productivity',  code: 'PRODUCTIVITY' },
+  { slug: 'relationships', label: 'Relationships', code: 'RELATIONSHIPS' },
+  { slug: 'health',        label: 'Health',        code: 'HEALTH' },
+  { slug: 'career',        label: 'Career',        code: 'CAREER' },
+  { slug: 'education',     label: 'Education',     code: 'EDUCATION' },
+  { slug: 'purpose',       label: 'Purpose',       code: 'PURPOSE' },
+  { slug: 'reflective',    label: 'Reflective',    code: 'REFLECTIVE' },
+  { slug: 'fiction',       label: 'Fiction',       code: 'FICTION' }
 ];
+const CAT_LABEL_BY_CODE = FREE_EBOOK_CATEGORIES.reduce((m, c) => { if (c.code) m[c.code] = c.label; return m; }, {});
 
-// "All" rotates through these real topics so browsing stays a genuine mix
-// instead of one giant, ID-ordered dump. Note: Gutendex's own default
-// ordering (no topic/search) is already by popularity/download_count, so
-// this is only needed to keep genre variety on the "All" tab specifically.
-const ALL_MIX_TOPICS = ['conduct of life', 'business', 'psychology', 'success'];
+const FREE_CATALOG_PATH = path.join(PROJECT_ROOT, 'data', 'free-ebooks-catalog.json');
+const FREE_PAGE_SIZE = 20;
 
-// Simple in-memory cache, keyed per Gutendex page (32 books at a time) so
-// repeat browsing doesn't re-hit Gutendex every time. Cleared on restart.
-const freeEbooksCache = new Map();
-const FREE_EBOOKS_CACHE_TTL = 60 * 60 * 1000; // 1 hour
-
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-// Pick the best "read in browser" link and cover image out of Gutendex's
-// `formats` map (a mimetype -> URL dictionary). These are direct links to
-// Gutenberg's own file host — no app, no account, no region check.
-function pickReadLink(formats) {
-  return formats['text/html; charset=utf-8']
-    || formats['text/html']
-    || formats['text/html; charset=us-ascii']
-    || formats['application/epub+zip']
-    || formats['text/plain; charset=utf-8']
-    || formats['text/plain']
-    || null;
-}
-function pickCover(formats) {
-  return formats['image/jpeg'] || null;
-}
-
-function normalizeGutendexBook(item) {
-  const formats = item.formats || {};
-  const authors = (item.authors || []).map(a => a.name).filter(Boolean);
-  return {
-    id: item.id,
-    title: item.title || 'Untitled',
-    authors,
-    author: authors[0] || 'Unknown Author',
-    description: '', // Gutendex has no blurb field — detail panel falls back to subjects below
-    cover: pickCover(formats),
-    categories: (item.subjects || []).slice(0, 3),
-    language: (item.languages && item.languages[0]) || 'en',
-    pageCount: null, // not provided by Gutendex
-    publishedDate: null, // not provided by Gutendex (these are old editions, not new releases)
-    downloadCount: item.download_count || 0,
-    // Stays on our own domain the whole time — /read/:id proxies + caches
-    // the actual Gutenberg file server-side (see below). Download is
-    // intentionally not wired up yet.
-    readLink: `/read/${item.id}`
-  };
-}
-
-// ---------------- Fallback catalog (used only when Gutendex itself is
-// unreachable — e.g. Cloudflare is showing it a bot-challenge page instead
-// of JSON — and we have no cache yet to fall back on). A small, hand-picked
-// set of very well known public-domain titles with verified Gutenberg IDs,
-// so the free eBooks page shows *something* real instead of an error, and
-// "Read" still works because it hits gutenberg.org directly (see
-// fetchGutenbergTextDirect below) instead of round-tripping through the
-// blocked Gutendex API.
+// Only used if the catalog JSON hasn't been generated/deployed yet, so the
+// page still shows something real instead of an empty state.
 const FALLBACK_BOOKS = [
-  { id: 4507, title: 'As a Man Thinketh', author: 'James Allen', topics: ['conduct of life', 'psychology', 'success'] },
-  { id: 59844, title: 'The Science of Getting Rich', author: 'Wallace D. Wattles', topics: ['business', 'success'] },
-  { id: 34258, title: 'Acres of Diamonds', author: 'Russell H. Conwell', topics: ['business', 'success'] },
-  { id: 132, title: 'The Art of War', author: 'Sun Tzu', topics: ['business', 'conduct of life'] },
-  { id: 1232, title: 'The Prince', author: 'Niccolò Machiavelli', topics: ['business', 'conduct of life', 'psychology'] },
-  { id: 2680, title: 'Meditations', author: 'Marcus Aurelius', topics: ['conduct of life', 'psychology'] },
-  { id: 205, title: 'Walden', author: 'Henry David Thoreau', topics: ['conduct of life'] },
-  { id: 148, title: 'The Autobiography of Benjamin Franklin', author: 'Benjamin Franklin', topics: ['business', 'success', 'conduct of life'] }
+  { id: 4507,  title: 'As a Man Thinketh',                      author: 'James Allen',          cats: ['MINDSET', 'PURPOSE'],            downloads: 8 },
+  { id: 59844, title: 'The Science of Getting Rich',            author: 'Wallace D. Wattles',   cats: ['MONEY', 'MINDSET'],              downloads: 7 },
+  { id: 34258, title: 'Acres of Diamonds',                      author: 'Russell H. Conwell',   cats: ['MONEY', 'CAREER'],               downloads: 6 },
+  { id: 132,   title: 'The Art of War',                         author: 'Sun Tzu',              cats: ['CAREER', 'PRODUCTIVITY'],        downloads: 5 },
+  { id: 1232,  title: 'The Prince',                             author: 'Niccolò Machiavelli',  cats: ['CAREER'],                        downloads: 4 },
+  { id: 2680,  title: 'Meditations',                            author: 'Marcus Aurelius',      cats: ['PURPOSE', 'REFLECTIVE'],         downloads: 3 },
+  { id: 205,   title: 'Walden',                                 author: 'Henry David Thoreau',  cats: ['REFLECTIVE', 'PURPOSE'],         downloads: 2 },
+  { id: 148,   title: 'The Autobiography of Benjamin Franklin', author: 'Benjamin Franklin',    cats: ['MONEY', 'PRODUCTIVITY'],         downloads: 1 }
 ];
 
-// Gutendex's own cover convention (Gutenberg's generated cover images) —
-// stable, doesn't require hitting Gutendex at all.
-function fallbackCoverUrl(id) {
+function gutenbergCoverUrl(id) {
   return `https://www.gutenberg.org/cache/epub/${id}/pg${id}.cover.medium.jpg`;
 }
 
-function normalizeFallbackBook(entry) {
+function normalizeCatalogBook(e) {
+  const cats = Array.isArray(e.cats) ? e.cats : [];
+  const subjects = Array.isArray(e.subjects) ? e.subjects : [];
   return {
-    id: entry.id,
-    title: entry.title,
-    authors: [entry.author],
-    author: entry.author,
-    description: '',
-    cover: fallbackCoverUrl(entry.id),
-    categories: entry.topics.slice(0, 3),
+    id: e.id,
+    title: e.title || 'Untitled',
+    authors: [e.author || 'Unknown Author'],
+    author: e.author || 'Unknown Author',
+    description: subjects.length ? `Subjects: ${subjects.slice(0, 6).join(', ')}` : '',
+    cover: gutenbergCoverUrl(e.id),
+    categories: subjects.slice(0, 3),
+    cats,
+    tag: cats.length ? (CAT_LABEL_BY_CODE[cats[0]] || '') : '',
     language: 'en',
     pageCount: null,
     publishedDate: null,
-    downloadCount: 0,
-    readLink: `/read/${entry.id}`
+    downloadCount: e.downloads || 0,
+    readLink: `/read/${e.id}`,
+    _search: `${e.title || ''} ${e.author || ''} ${subjects.join(' ')}`.toLowerCase()
   };
 }
 
-// Same shape as fetchGutendexRange's return value, but served entirely from
-// the hand-picked list above — no network call at all.
-function getFallbackRange(topicOrSearch, isSearch, startIndex, count) {
-  let matches;
-  if (isSearch) {
-    const needle = (topicOrSearch || '').toLowerCase();
-    matches = FALLBACK_BOOKS.filter(b =>
-      b.title.toLowerCase().includes(needle) || b.author.toLowerCase().includes(needle)
-    );
-  } else if (topicOrSearch) {
-    matches = FALLBACK_BOOKS.filter(b => b.topics.includes(topicOrSearch));
-  } else {
-    matches = FALLBACK_BOOKS;
+let freeCatalog = [];
+function loadFreeCatalog() {
+  try {
+    const raw = JSON.parse(fs.readFileSync(FREE_CATALOG_PATH, 'utf8'));
+    const list = Array.isArray(raw) ? raw : raw.books;
+    if (!Array.isArray(list) || !list.length) throw new Error('catalog is empty');
+    freeCatalog = list.filter(b => b && b.id && b.title).map(normalizeCatalogBook);
+    console.log(`[free-ebooks] loaded ${freeCatalog.length} books from catalog`);
+  } catch (e) {
+    freeCatalog = FALLBACK_BOOKS.map(normalizeCatalogBook);
+    console.warn(`[free-ebooks] catalog not available (${e && e.message ? e.message : e}) — using built-in fallback list. Run scripts/sync-free-ebooks.js and commit data/free-ebooks-catalog.json.`);
   }
-  const slice = matches.slice(startIndex, startIndex + count);
-  return { items: slice.map(normalizeFallbackBook), totalItems: matches.length };
+  freeCatalog.sort((a, b) => b.downloadCount - a.downloadCount);
+}
+loadFreeCatalog();
+
+function publicBook(b) {
+  const { _search, ...rest } = b;
+  return rest;
 }
 
-// Fetches a book's plain text straight from gutenberg.org's own predictable
-// file URL (bypassing Gutendex entirely). Used both as the /read/:id
-// fallback when Gutendex's detail lookup fails, and could serve any known
-// Gutenberg id, not just the ones in FALLBACK_BOOKS.
+// Fetches a book's file straight from gutenberg.org's own predictable URLs.
 async function fetchGutenbergTextDirect(id) {
   const candidates = [
     `https://www.gutenberg.org/cache/epub/${id}/pg${id}-images.html`,
@@ -872,193 +825,47 @@ async function fetchGutenbergTextDirect(id) {
   return null;
 }
 
-async function fetchGutendexPageOnce(topicOrSearch, isSearch, page) {
-  const params = new URLSearchParams();
-  if (isSearch) params.set('search', topicOrSearch);
-  else if (topicOrSearch) params.set('topic', topicOrSearch);
-  params.set('languages', 'en'); // English-only — matches our audience and avoids untranslated results
-  params.set('page', String(page));
-
-  const url = `${GUTENDEX_API}?${params.toString()}`;
-  const resp = await fetch(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; MindShiftBooks/1.0; +https://mindshiftbooks.shop)',
-      'Accept': 'application/json'
-    }
-  });
-  if (!resp.ok) {
-    const bodyText = await resp.text().catch(() => '');
-    const err = new Error(`Gutendex API error: ${resp.status} ${resp.statusText} — ${bodyText.slice(0, 300)}`);
-    err.status = resp.status;
-    throw err;
-  }
-  return resp.json();
-}
-
-// Fetches one Gutendex page (32 books), with retry/backoff — Gutendex is a
-// community-run free service and occasionally flakes or times out.
-async function fetchGutendexPage(topicOrSearch, isSearch, page) {
-  const cacheKey = `page::${isSearch ? 'search' : 'topic'}::${topicOrSearch || ''}::${page}`;
-  const cached = freeEbooksCache.get(cacheKey);
-
-  // Stale-while-revalidate: once a page has been fetched once, a visitor
-  // never waits on a live Gutendex round-trip again — expired entries are
-  // served immediately while a background refresh quietly tops up the
-  // cache. Worst case someone sees a list that's a bit older than an hour;
-  // best case (the common case) every request is instant from memory.
-  if (cached) {
-    if (cached.expires <= Date.now() && !cached.refreshing) {
-      cached.refreshing = true;
-      fetchGutendexPageOnce(topicOrSearch, isSearch, page)
-        .then(json => {
-          const data = { results: Array.isArray(json.results) ? json.results : [], count: json.count || 0 };
-          if (data.results.length > 0) {
-            freeEbooksCache.set(cacheKey, { data, expires: Date.now() + FREE_EBOOKS_CACHE_TTL });
-          } else {
-            cached.refreshing = false; // keep serving old data, try again next request
-          }
-        })
-        .catch(e => {
-          cached.refreshing = false; // refresh failed — keep serving stale data, retry next request
-          console.warn(`[free-ebooks] background refresh failed for ${cacheKey}:`, e && e.message ? e.message : e);
-        });
-    }
-    return cached.data;
-  }
-
-  let json;
-  let lastErr;
-  const delays = [500, 1200, 2500];
-  for (let attempt = 0; attempt <= delays.length; attempt++) {
-    try {
-      json = await fetchGutendexPageOnce(topicOrSearch, isSearch, page);
-      lastErr = null;
-      break;
-    } catch (e) {
-      lastErr = e;
-      const retryable = e.status === 429 || (e.status && e.status >= 500) || !e.status;
-      if (!retryable || attempt === delays.length) break;
-      await sleep(delays[attempt]);
-    }
-  }
-  if (lastErr) throw lastErr;
-
-  const data = { results: Array.isArray(json.results) ? json.results : [], count: json.count || 0 };
-  if (data.results.length === 0) {
-    console.warn(`[free-ebooks] topic/search="${topicOrSearch}" page=${page} returned 0 items`);
-    return data; // don't cache empty pages — could be a transient Gutendex hiccup
-  }
-  freeEbooksCache.set(cacheKey, { data, expires: Date.now() + FREE_EBOOKS_CACHE_TTL });
-  return data;
-}
-
-// The front end still speaks in "startIndex" (an item offset) and requests
-// 20 items at a time, so this stitches together however many 32-book
-// Gutendex pages are needed to cover [startIndex, startIndex+20) and slices
-// out exactly the requested window.
-async function fetchGutendexRange(topicOrSearch, isSearch, startIndex, count) {
-  const endIndexExclusive = startIndex + count;
-  const startPage = Math.floor(startIndex / GUTENDEX_PAGE_SIZE) + 1;
-  const endPage = Math.floor((endIndexExclusive - 1) / GUTENDEX_PAGE_SIZE) + 1;
-
-  let stitched = [];
-  let totalCount = 0;
-  try {
-    for (let page = startPage; page <= endPage; page++) {
-      const pageData = await fetchGutendexPage(topicOrSearch, isSearch, page);
-      totalCount = pageData.count;
-      if (pageData.results.length === 0) break; // ran off the end of the catalog for this topic
-      stitched = stitched.concat(pageData.results);
-    }
-  } catch (e) {
-    // Gutendex itself is unreachable (e.g. Cloudflare challenge) and we had
-    // no cached page to fall back on above — serve the static list instead
-    // of surfacing an error to the browse page.
-    console.warn('[free-ebooks] Gutendex unreachable, using fallback catalog:', e && e.message ? e.message : e);
-    return getFallbackRange(topicOrSearch, isSearch, startIndex, count);
-  }
-  const offsetInFirstPage = startIndex - (startPage - 1) * GUTENDEX_PAGE_SIZE;
-  const slice = stitched.slice(offsetInFirstPage, offsetInFirstPage + count);
-  return { items: slice.map(normalizeGutendexBook), totalItems: totalCount };
-}
-
 router.get('/api/free-ebook-categories', (req, res) => {
-  res.json({ categories: FREE_EBOOK_CATEGORIES.map(c => ({ slug: c.slug, label: c.label })) });
+  // Only list categories that actually have books, so no chip leads to an empty page.
+  const counts = {};
+  freeCatalog.forEach(b => b.cats.forEach(c => { counts[c] = (counts[c] || 0) + 1; }));
+  const cats = FREE_EBOOK_CATEGORIES
+    .filter(c => !c.code || counts[c.code])
+    .map(c => ({ slug: c.slug, label: c.label, code: c.code, count: c.code ? counts[c.code] : freeCatalog.length }));
+  res.json({ categories: cats });
 });
 
-// List/browse endpoint — one category (or a free-text search) at a time,
-// paginated via startIndex so the front end can "load more" indefinitely.
-router.get('/api/free-ebooks', async (req, res) => {
-  try {
-    const slug = (req.query.category || 'all').toString();
-    const q = (req.query.q || '').toString().trim();
-    const startIndex = Math.max(0, parseInt(req.query.startIndex, 10) || 0);
-    let data;
-    if (q) {
-      data = await fetchGutendexRange(q, true, startIndex, 20);
-    } else if (slug === 'all') {
-      // Rotate through a different real topic every page of 20, so
-      // "Load more" keeps cycling through a genuine mix.
-      const page = Math.floor(startIndex / 20);
-      const topic = ALL_MIX_TOPICS[page % ALL_MIX_TOPICS.length];
-      const localStart = Math.floor(page / ALL_MIX_TOPICS.length) * 20;
-      const topicData = await fetchGutendexRange(topic, false, localStart, 20);
-      // Report a large-but-plausible total so "load more" keeps working
-      // indefinitely instead of stopping after one topic's count.
-      data = { items: topicData.items, totalItems: Math.max(topicData.totalItems, 1000) };
-    } else {
-      const cat = FREE_EBOOK_CATEGORIES.find(c => c.slug === slug) || FREE_EBOOK_CATEGORIES[1];
-      data = await fetchGutendexRange(cat.topic, false, startIndex, 20);
-    }
-    res.json(data);
-  } catch (e) {
-    console.error('[free-ebooks] list fetch failed:', e && e.message ? e.message : e);
-    res.status(500).json({ error: 'Could not load free eBooks right now.' });
+// List/browse — one category (or a free-text search) at a time, paginated
+// via startIndex. Everything is served from the in-memory catalog.
+router.get('/api/free-ebooks', (req, res) => {
+  const slug = (req.query.category || 'all').toString();
+  const q = (req.query.q || '').toString().trim().toLowerCase();
+  const startIndex = Math.max(0, parseInt(req.query.startIndex, 10) || 0);
+
+  let pool = freeCatalog;
+  if (q) {
+    const tokens = q.split(/\s+/).filter(Boolean);
+    pool = pool.filter(b => tokens.every(t => b._search.includes(t)));
+  } else if (slug !== 'all') {
+    const cat = FREE_EBOOK_CATEGORIES.find(c => c.slug === slug);
+    if (cat && cat.code) pool = pool.filter(b => b.cats.includes(cat.code));
   }
+
+  const total = pool.length;
+  // The homepage / bookstore "Free eBooks" swipers rotate through
+  // startIndex by hour — wrap so a small catalog never returns an empty shelf.
+  let from = startIndex;
+  if (!q && slug === 'all' && total && from >= total) from = (Math.floor(from / FREE_PAGE_SIZE) * FREE_PAGE_SIZE) % total;
+  const items = pool.slice(from, from + FREE_PAGE_SIZE).map(publicBook);
+  res.json({ items, totalItems: total });
 });
 
-// Single-book detail — used by the book detail panel. Gutendex has no
-// dedicated /books/:id/description-style field, so we surface subjects and
-// bookshelves as the "about" text instead of a blurb.
-router.get('/api/free-ebooks/:id', async (req, res) => {
-  try {
-    const id = req.params.id;
-    const cacheKey = `detail::${id}`;
-    const cached = freeEbooksCache.get(cacheKey);
-    if (cached && cached.expires > Date.now()) return res.json(cached.data);
-
-    let resp;
-    try {
-      resp = await fetch(`${GUTENDEX_API}/${encodeURIComponent(id)}`, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; MindShiftBooks/1.0; +https://mindshiftbooks.shop)',
-          'Accept': 'application/json'
-        }
-      });
-    } catch (e) {
-      resp = null; // Gutendex unreachable — fall through to fallback catalog below
-    }
-
-    if (!resp || !resp.ok) {
-      const fallbackEntry = FALLBACK_BOOKS.find(b => b.id === Number(id));
-      if (fallbackEntry) {
-        const data = { book: normalizeFallbackBook(fallbackEntry) };
-        return res.json(data); // not cached — real Gutendex data should win once it's back
-      }
-      return res.status(404).json({ error: 'Book not found' });
-    }
-    const json = await resp.json();
-    const book = normalizeGutendexBook(json);
-    book.description = (json.subjects || []).length
-      ? `Subjects: ${(json.subjects || []).slice(0, 6).join(', ')}`
-      : '';
-    const data = { book };
-    freeEbooksCache.set(cacheKey, { data, expires: Date.now() + FREE_EBOOKS_CACHE_TTL });
-    res.json(data);
-  } catch (e) {
-    console.error('[free-ebooks] detail fetch failed', e);
-    res.status(500).json({ error: 'Could not load this book right now.' });
-  }
+// Single-book detail — used by the book detail drawer.
+router.get('/api/free-ebooks/:id', (req, res) => {
+  const id = Number(req.params.id);
+  const book = freeCatalog.find(b => b.id === id);
+  if (!book) return res.status(404).json({ error: 'Book not found' });
+  res.json({ book: publicBook(book) });
 });
 
 // ---------------- FREE EBOOKS — on-domain reader (/read/:id) ----------------
@@ -1178,48 +985,15 @@ router.get('/read/:id', async (req, res) => {
       return fs.createReadStream(cachePath).pipe(res);
     }
 
-    let detail = null;
-    try {
-      const detailResp = await fetch(`${GUTENDEX_API}/${id}`, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; MindShiftBooks/1.0; +https://mindshiftbooks.shop)',
-          'Accept': 'application/json'
-        }
-      });
-      if (detailResp.ok) detail = await detailResp.json();
-    } catch (e) { /* Gutendex unreachable — fall through to direct fetch below */ }
-
-    let html;
-    if (detail) {
-      const formats = detail.formats || {};
-      const htmlUrl = formats['text/html; charset=utf-8'] || formats['text/html'] || formats['text/html; charset=us-ascii'] || null;
-      const textUrl = formats['text/plain; charset=utf-8'] || formats['text/plain'] || null;
-      const sourceUrl = htmlUrl || textUrl;
-
-      if (!sourceUrl) {
-        return res.status(404).send('This title is only available as a download file, which isn\u2019t supported here yet.');
-      }
-
-      const fileResp = await fetch(sourceUrl, {
-        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; MindShiftBooks/1.0; +https://mindshiftbooks.shop)' }
-      });
-      if (!fileResp.ok) return res.status(502).send('Could not load this book right now. Please try again.');
-      const rawText = await fileResp.text();
-
-      html = htmlUrl
-        ? wrapGutenbergHtml(rawText, sourceUrl, detail.title, id)
-        : wrapPlainTextAsHtml(rawText, detail.title, id);
-    } else {
-      // Gutendex is down (Cloudflare challenge, etc.) — skip it entirely and
-      // hit gutenberg.org's own predictable file URLs directly.
-      const direct = await fetchGutenbergTextDirect(id);
-      if (!direct) return res.status(502).send('Could not load this book right now. Please try again.');
-      const fallbackEntry = FALLBACK_BOOKS.find(b => b.id === Number(id));
-      const title = fallbackEntry ? fallbackEntry.title : `Book #${id}`;
-      html = direct.isHtml
-        ? wrapGutenbergHtml(direct.text, direct.url, title, id)
-        : wrapPlainTextAsHtml(direct.text, title, id);
-    }
+    // No Gutendex here (Render is Cloudflare-blocked from it) — go straight
+    // to gutenberg.org's own file URLs.
+    const direct = await fetchGutenbergTextDirect(id);
+    if (!direct) return res.status(502).send('Could not load this book right now. Please try again.');
+    const known = freeCatalog.find(b => b.id === Number(id));
+    const title = known ? known.title : `Book #${id}`;
+    const html = direct.isHtml
+      ? wrapGutenbergHtml(direct.text, direct.url, title, id)
+      : wrapPlainTextAsHtml(direct.text, title, id);
 
     ensureCacheDir();
     fs.writeFile(cachePath, html, 'utf8', (err) => {
@@ -1343,22 +1117,8 @@ module.exports.PRODUCTS = PRODUCTS;
 module.exports.mintDownloadToken = mintDownloadToken;
 module.exports.validateDownloadToken = validateDownloadToken;
 
-// Called once from server.js's app.listen() callback, right after boot, so
-// the very first visitor doesn't wait on a cold external Gutendex call —
-// warms every category chip's topic, not just "All"'s default. Kept as an
-// exported function (rather than exporting FREE_EBOOK_CATEGORIES and
-// fetchGutendexRange themselves) so the free-ebooks internals stay fully
-// encapsulated in this file.
+// Kept so server.js's existing call still works. Nothing to warm any more —
+// the catalog is loaded from disk at boot and served from memory.
 module.exports.warmupFreeEbooksCache = async function warmupFreeEbooksCache() {
-  const warmupTopics = Array.from(new Set(
-    FREE_EBOOK_CATEGORIES.map(c => c.topic).filter(Boolean)
-  ));
-  await Promise.all(
-    warmupTopics.map(topic =>
-      fetchGutendexRange(topic, false, 0, 20).catch(e =>
-        console.warn(`[free-ebooks] startup warm-up failed for topic "${topic}" (non-fatal):`, e && e.message ? e.message : e)
-      )
-    )
-  );
-  console.log(`[free-ebooks] cache warmed on startup for ${warmupTopics.length} categories`);
+  console.log(`[free-ebooks] ready: ${freeCatalog.length} books in memory`);
 };
