@@ -443,6 +443,318 @@
     "REFLECTIVE"
    ],
    "downloads": 969
+  },
+  {
+   "id": 8581,
+   "title": "The Art of Money Getting",
+   "author": "P. T. Barnum",
+   "subjects": [
+    "Success in business",
+    "Success"
+   ],
+   "cats": [
+    "MONEY",
+    "CAREER",
+    "MINDSET"
+   ],
+   "downloads": 968
+  },
+  {
+   "id": 13142,
+   "title": "Self-Development and the Way to Power",
+   "author": "L. W. Rogers",
+   "subjects": [
+    "Self-help",
+    "Success"
+   ],
+   "cats": [
+    "MINDSET",
+    "PURPOSE"
+   ],
+   "downloads": 967
+  },
+  {
+   "id": 37134,
+   "title": "The Elements of Style",
+   "author": "William Strunk Jr.",
+   "subjects": [
+    "English language",
+    "Style"
+   ],
+   "cats": [
+    "EDUCATION",
+    "PRODUCTIVITY",
+    "CAREER"
+   ],
+   "downloads": 966
+  },
+  {
+   "id": 131,
+   "title": "The Pilgrim's Progress",
+   "author": "John Bunyan",
+   "subjects": [
+    "Allegories",
+    "Christian life"
+   ],
+   "cats": [
+    "FICTION",
+    "PURPOSE"
+   ],
+   "downloads": 965
+  },
+  {
+   "id": 408,
+   "title": "The Souls of Black Folk",
+   "author": "W. E. B. Du Bois",
+   "subjects": [
+    "Essays",
+    "Education"
+   ],
+   "cats": [
+    "EDUCATION",
+    "REFLECTIVE",
+    "PURPOSE"
+   ],
+   "downloads": 964
+  },
+  {
+   "id": 621,
+   "title": "The Varieties of Religious Experience",
+   "author": "William James",
+   "subjects": [
+    "Psychology",
+    "Spiritual life"
+   ],
+   "cats": [
+    "PURPOSE",
+    "MINDSET",
+    "EDUCATION"
+   ],
+   "downloads": 963
+  },
+  {
+   "id": 769,
+   "title": "The Book of Tea",
+   "author": "Kakuzo Okakura",
+   "subjects": [
+    "Tea",
+    "Culture"
+   ],
+   "cats": [
+    "REFLECTIVE",
+    "HEALTH",
+    "PURPOSE"
+   ],
+   "downloads": 962
+  },
+  {
+   "id": 1656,
+   "title": "Apology",
+   "author": "Plato",
+   "subjects": [
+    "Philosophy",
+    "Socrates"
+   ],
+   "cats": [
+    "PURPOSE",
+    "EDUCATION"
+   ],
+   "downloads": 961
+  },
+  {
+   "id": 1600,
+   "title": "Symposium",
+   "author": "Plato",
+   "subjects": [
+    "Love",
+    "Philosophy"
+   ],
+   "cats": [
+    "RELATIONSHIPS",
+    "PURPOSE"
+   ],
+   "downloads": 960
+  },
+  {
+   "id": 1342,
+   "title": "Pride and Prejudice",
+   "author": "Jane Austen",
+   "subjects": [
+    "Love stories",
+    "Fiction"
+   ],
+   "cats": [
+    "FICTION",
+    "RELATIONSHIPS"
+   ],
+   "downloads": 959
+  },
+  {
+   "id": 135,
+   "title": "Les Misérables",
+   "author": "Victor Hugo",
+   "subjects": [
+    "Redemption",
+    "Fiction"
+   ],
+   "cats": [
+    "FICTION",
+    "PURPOSE"
+   ],
+   "downloads": 958
+  },
+  {
+   "id": 71,
+   "title": "On the Duty of Civil Disobedience",
+   "author": "Henry David Thoreau",
+   "subjects": [
+    "Essays",
+    "Ethics"
+   ],
+   "cats": [
+    "REFLECTIVE",
+    "PURPOSE"
+   ],
+   "downloads": 957
+  },
+  {
+   "id": 64317,
+   "title": "The Great Gatsby",
+   "author": "F. Scott Fitzgerald",
+   "subjects": [
+    "Wealth",
+    "Fiction"
+   ],
+   "cats": [
+    "FICTION",
+    "MONEY"
+   ],
+   "downloads": 956
+  },
+  {
+   "id": 5200,
+   "title": "Metamorphosis",
+   "author": "Franz Kafka",
+   "subjects": [
+    "Fiction",
+    "Alienation"
+   ],
+   "cats": [
+    "FICTION",
+    "REFLECTIVE"
+   ],
+   "downloads": 955
+  },
+  {
+   "id": 113,
+   "title": "The Secret Garden",
+   "author": "Frances Hodgson Burnett",
+   "subjects": [
+    "Healing",
+    "Fiction"
+   ],
+   "cats": [
+    "FICTION",
+    "HEALTH",
+    "MINDSET"
+   ],
+   "downloads": 954
+  },
+  {
+   "id": 514,
+   "title": "Little Women",
+   "author": "Louisa May Alcott",
+   "subjects": [
+    "Family",
+    "Fiction"
+   ],
+   "cats": [
+    "FICTION",
+    "RELATIONSHIPS"
+   ],
+   "downloads": 953
+  },
+  {
+   "id": 59,
+   "title": "Discourse on the Method",
+   "author": "René Descartes",
+   "subjects": [
+    "Philosophy",
+    "Reasoning"
+   ],
+   "cats": [
+    "EDUCATION",
+    "MINDSET"
+   ],
+   "downloads": 952
+  },
+  {
+   "id": 34901,
+   "title": "On Liberty",
+   "author": "John Stuart Mill",
+   "subjects": [
+    "Liberty",
+    "Ethics"
+   ],
+   "cats": [
+    "PURPOSE",
+    "EDUCATION"
+   ],
+   "downloads": 951
+  },
+  {
+   "id": 3800,
+   "title": "Ethics",
+   "author": "Baruch Spinoza",
+   "subjects": [
+    "Ethics",
+    "Philosophy"
+   ],
+   "cats": [
+    "PURPOSE",
+    "REFLECTIVE"
+   ],
+   "downloads": 950
+  },
+  {
+   "id": 1653,
+   "title": "The Imitation of Christ",
+   "author": "Thomas à Kempis",
+   "subjects": [
+    "Spiritual life"
+   ],
+   "cats": [
+    "PURPOSE",
+    "REFLECTIVE"
+   ],
+   "downloads": 949
+  },
+  {
+   "id": 1513,
+   "title": "Romeo and Juliet",
+   "author": "William Shakespeare",
+   "subjects": [
+    "Love",
+    "Drama"
+   ],
+   "cats": [
+    "FICTION",
+    "RELATIONSHIPS"
+   ],
+   "downloads": 948
+  },
+  {
+   "id": 1322,
+   "title": "Leaves of Grass",
+   "author": "Walt Whitman",
+   "subjects": [
+    "Poetry"
+   ],
+   "cats": [
+    "REFLECTIVE",
+    "PURPOSE"
+   ],
+   "downloads": 947
   }
  ]
 }
