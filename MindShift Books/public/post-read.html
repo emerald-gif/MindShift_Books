@@ -1528,10 +1528,33 @@ window.loadComments=async function(){
     const countSnap=await resilient(()=>getDoc(doc(db,'postMeta',artId)),{tries:2});
     cCommentCount=countSnap.exists()?(countSnap.data().commentCount||0):0;
     updateCCount();
-    const q=query(collection(db,'comments'),where('postId','==',artId),where('parentId','==',null),orderBy('createdAt','asc'),limit(C_PAGE));
+    // The content owner can read hidden comments on their own post (matches the
+    // Firestore rule), so their query skips the hidden filter entirely and just
+    // sees everything. Everyone else's query must filter hidden==false at the
+    // query level — the rule requires it, since Firestore has to be able to
+    // prove the query only matches documents the requester is allowed to read.
+    const isOwner = !!(currentUser && article && article.authorUid===currentUser.uid);
+    const baseParts=[collection(db,'comments'),where('postId','==',artId),where('parentId','==',null)];
+    if(!isOwner) baseParts.push(where('hidden','==',false));
+    baseParts.push(orderBy('createdAt','asc'),limit(C_PAGE));
+    const q=query(...baseParts);
     const snap=await resilient(()=>getDocs(q),{tries:2});
     cCursor=snap.docs.length?snap.docs[snap.docs.length-1]:null; cExhausted=snap.docs.length<C_PAGE;
     cList=snap.docs.map(d=>({id:d.id,...d.data()})).filter(cVisible);
+    // Non-owners still need to see their OWN hidden comments (so a hidden
+    // comment doesn't just look like it vanished to the person who wrote it) —
+    // that's a second small query rather than widening the main one, since the
+    // main one has to stay hidden==false-filtered for the rule to allow it.
+    if(!isOwner && currentUser){
+      try{
+        const mineQ=query(collection(db,'comments'),where('postId','==',artId),where('parentId','==',null),
+          where('authorUid','==',currentUser.uid),where('hidden','==',true),limit(10));
+        const mineSnap=await resilient(()=>getDocs(mineQ),{tries:1});
+        const have=new Set(cList.map(c=>c.id));
+        mineSnap.docs.forEach(d=>{ if(!have.has(d.id)) cList.push({id:d.id,...d.data()}); });
+        cList.sort((a,b)=>(a.createdAt?.toMillis?a.createdAt.toMillis():0)-(b.createdAt?.toMillis?b.createdAt.toMillis():0));
+      }catch{}
+    }
     cLikedSet.clear();
     if(currentUser){
       // likedBy is a map field on each comment doc: { uid: true/false }
@@ -1586,7 +1609,11 @@ window.loadMoreComments=async function(){
   cLoadingMore=true;
   const btn=document.getElementById('cMoreBtn'); if(btn){btn.disabled=true;btn.textContent='Loading…';}
   try{
-    const q=query(collection(db,'comments'),where('postId','==',artId),where('parentId','==',null),orderBy('createdAt','asc'),startAfter(cCursor),limit(C_PAGE));
+    const isOwner=!!(currentUser && article && article.authorUid===currentUser.uid);
+    const moreParts=[collection(db,'comments'),where('postId','==',artId),where('parentId','==',null)];
+    if(!isOwner) moreParts.push(where('hidden','==',false));
+    moreParts.push(orderBy('createdAt','asc'),startAfter(cCursor),limit(C_PAGE));
+    const q=query(...moreParts);
     const snap=await resilient(()=>getDocs(q),{tries:2});
     cCursor=snap.docs.length?snap.docs[snap.docs.length-1]:cCursor; cExhausted=snap.docs.length<C_PAGE;
     const more=snap.docs.map(d=>({id:d.id,...d.data()})).filter(cVisible);
@@ -1718,7 +1745,11 @@ window.toggleReplies=async function(cid){
   if(cReplies[cid]){re.innerHTML=cReplies[cid].map(r=>buildCHTML(r,true)).join('');window.MSBAuthorLive && window.MSBAuthorLive.refresh(db, { doc, getDoc }, re);return;}
   re.innerHTML='<div style="padding:8px 0;font-size:12px;color:var(--mute)">Loading…</div>';
   try{
-    const q=query(collection(db,'comments'),where('postId','==',artId),where('parentId','==',cid),orderBy('createdAt','asc'));
+    const isOwner=!!(currentUser && article && article.authorUid===currentUser.uid);
+    const repParts=[collection(db,'comments'),where('postId','==',artId),where('parentId','==',cid)];
+    if(!isOwner) repParts.push(where('hidden','==',false));
+    repParts.push(orderBy('createdAt','asc'));
+    const q=query(...repParts);
     const snap=await resilient(()=>getDocs(q),{tries:2});
     const replies=snap.docs.map(d=>({id:d.id,...d.data()})).filter(cVisible);
     if(currentUser){

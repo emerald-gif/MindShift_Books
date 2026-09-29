@@ -62,6 +62,7 @@ button{font-family:inherit}
 .act.danger{color:var(--red)}
 .act.primary{color:var(--p);border-color:#c7d2fe}
 .act.pinned{color:var(--amber);border-color:#fde68a;background:#fffbeb}
+.act.liked{color:var(--red);border-color:#fecaca;background:#fef2f2}
 .badge.pin{background:#fef3c7;color:#b45309}
 .pinned-card{margin:0 16px 12px;border-radius:16px;background:#fffbeb;border:1.5px solid #fde68a;padding:12px 14px;cursor:pointer}
 .pinned-card-lbl{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:800;color:#b45309;margin-bottom:4px}
@@ -140,7 +141,7 @@ button{font-family:inherit}
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
 import { getFirestore, doc, getDoc, updateDoc, deleteDoc, setDoc, increment, collection, query, where, orderBy,
-         limit, startAfter, addDoc, serverTimestamp, getDocs, Timestamp, enableNetwork, disableNetwork }
+         limit, startAfter, addDoc, serverTimestamp, getDocs, Timestamp, writeBatch, enableNetwork, disableNetwork }
   from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
 import { createResilient, isTransient } from '/resilient.js';
 
@@ -174,11 +175,18 @@ let me = null, myProfile = null, content = null;
 let pinnedId = null, pinnedSnapshot = null;   // pinnedSnapshot: cached {text,authorName} for instant paint
 let selectMode = false;
 let selected = new Set();
-let items = [];                // top-level comments loaded so far (oldest → newest), plain objects
+let items = [];                // top-level comments loaded so far (newest → oldest), plain objects
 let replies = {};              // parentId -> array of replies (fetched once per expand)
 let openReplies = new Set();
-let cursorMs = null;           // createdAt (ms) of the last loaded item, for "Load more"
-let newestMs = null;           // createdAt (ms) of the newest loaded item, for "Refresh"
+// Cursors are kept as full {seconds,nanoseconds} pairs, not millisecond numbers.
+// A millisecond-only cursor throws away Firestore's sub-millisecond precision,
+// so startAfter(Timestamp.fromMillis(x)) can land BEFORE the actual last-read
+// document if that document's real timestamp had a nonzero microsecond
+// remainder — which re-fetches that same document on the next page/refresh.
+// Storing the exact {seconds,nanoseconds} and rebuilding a real Timestamp from
+// it removes that gap entirely.
+let oldestCursor = null;       // {seconds,nanoseconds} of the OLDEST loaded item — "Load more" pages further back
+let newestCursor = null;       // {seconds,nanoseconds} of the NEWEST loaded item — "Refresh" checks for anything past this
 let exhausted = false;
 let filter = 'all';
 
@@ -187,6 +195,10 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('on'); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('on'),2200); }
 function ms(ts){ return ts && ts.toMillis ? ts.toMillis() : (typeof ts === 'number' ? ts : Date.now()); }
+// Exact {seconds,nanoseconds} pair for a comment's createdAt, used for cursors.
+// Falls back to "now" only in the impossible case a doc is missing createdAt.
+function tsParts(ts){ return ts && typeof ts.seconds === 'number' ? { seconds: ts.seconds, nanoseconds: ts.nanoseconds || 0 } : { seconds: Math.floor(Date.now()/1000), nanoseconds: 0 }; }
+function tsFromParts(p){ return new Timestamp(p.seconds, p.nanoseconds); }
 function ago(t){
   const s = Math.max(1, Math.floor((Date.now() - t) / 1000));
   if (s < 60) return 'now'; const m = Math.floor(s/60); if (m < 60) return m + 'm';
@@ -196,17 +208,18 @@ function ago(t){
 // Firestore doc → plain object with createdAt as millis (JSON-safe for the session cache)
 function plain(d){ const x = d.data(); return { id:d.id, parentId:x.parentId||null, authorUid:x.authorUid||'', authorName:x.authorName||'User',
   authorPhoto:x.authorPhoto||'', authorUsername:x.authorUsername||'', text:x.text||'', likeCount:x.likeCount||0,
-  replyCount:x.replyCount||0, hidden:x.hidden===true, createdAt: ms(x.createdAt) }; }
+  liked: !!(x.likedBy && x.likedBy[me.uid] === true),
+  replyCount:x.replyCount||0, hidden:x.hidden===true, createdAt: ms(x.createdAt), createdAtParts: tsParts(x.createdAt) }; }
 
 /* ── session cache: reopening within 10 min costs 0 reads ── */
 function saveCache(){
-  try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ t:Date.now(), items, replies, cursorMs, newestMs, exhausted })); } catch {}
+  try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ t:Date.now(), items, replies, oldestCursor, newestCursor, exhausted })); } catch {}
 }
 function loadCache(){
   try {
     const c = JSON.parse(sessionStorage.getItem(CACHE_KEY) || 'null');
     if (!c || Date.now() - c.t > CACHE_TTL) return false;
-    items = c.items || []; replies = c.replies || {}; cursorMs = c.cursorMs; newestMs = c.newestMs; exhausted = !!c.exhausted;
+    items = c.items || []; replies = c.replies || {}; oldestCursor = c.oldestCursor || null; newestCursor = c.newestCursor || null; exhausted = !!c.exhausted;
     return true;
   } catch { return false; }
 }
@@ -254,18 +267,30 @@ function renderPreview(){
   p.onclick = () => location.href = readHref;
 }
 
-/* ── data: exactly `PAGE` reads per fetch, cursor-based ── */
-function topQuery(afterMs){
-  const parts = [collection(db,'comments'), where(idField,'==',contentId), where('parentId','==',null), orderBy('createdAt','asc')];
-  if (afterMs != null) parts.push(startAfter(Timestamp.fromMillis(afterMs)));
+/* ── data: exactly `PAGE` reads per fetch, cursor-based, newest-first ──
+   Newest-first (not oldest-first) so the comments that actually need a
+   reply are on page one, not buried behind however many old ones came
+   before them. */
+function topQuery(afterParts){
+  const parts = [collection(db,'comments'), where(idField,'==',contentId), where('parentId','==',null), orderBy('createdAt','desc')];
+  if (afterParts != null) parts.push(startAfter(tsFromParts(afterParts)));
   return query(...parts);
 }
+function mergeNoDupes(got){
+  const have = new Set(items.map(i => i.id));
+  const fresh = got.filter(g => !have.has(g.id));
+  items = items.concat(fresh);
+  return fresh;
+}
 async function fetchPage(first){
-  const q = query(topQuery(first ? null : cursorMs), limit(PAGE));
+  const q = query(topQuery(first ? null : oldestCursor), limit(PAGE));
   const snap = await resilient(() => getDocs(q), { tries: 2 });
   const got = snap.docs.map(plain);
-  items = items.concat(got);
-  if (got.length) { cursorMs = got[got.length-1].createdAt; newestMs = Math.max(newestMs || 0, cursorMs); }
+  mergeNoDupes(got);
+  if (got.length) {
+    oldestCursor = got[got.length-1].createdAtParts;
+    if (first || newestCursor == null) newestCursor = got[0].createdAtParts;
+  }
   if (got.length < PAGE) exhausted = true;
   saveCache(); render();
 }
@@ -274,21 +299,26 @@ window.loadMore = async function(btn){
   try { await fetchPage(false); } catch (e) { toast('Could not load more — try again'); render(); }
 };
 // Refresh reads ONLY comments newer than what's cached (1 read if there are none).
+// Ascending + '>' on the newest cursor, then reversed, since the main list is
+// newest-first but "give me everything after X" is naturally an ascending scan.
 window.refreshNew = async function(){
   const b = $('refreshBtn'); b.classList.add('spin');
   try {
-    if (newestMs == null) { items = []; replies = {}; cursorMs = null; exhausted = false; await fetchPage(true); }
+    if (newestCursor == null) { items = []; replies = {}; oldestCursor = null; exhausted = false; await fetchPage(true); }
     else {
-      const snap = await resilient(() => getDocs(query(topQuery(newestMs), limit(50))), { tries: 2 });
-      const got = snap.docs.map(plain);
-      if (got.length) {
-        const have = new Set(items.map(i => i.id));
-        got.forEach(g => { if (!have.has(g.id)) items.push(g); });
-        newestMs = got[got.length-1].createdAt;
-        if (exhausted) cursorMs = newestMs;
+      const q = query(collection(db,'comments'), where(idField,'==',contentId), where('parentId','==',null),
+        where('createdAt','>', tsFromParts(newestCursor)), orderBy('createdAt','asc'), limit(50));
+      const snap = await resilient(() => getDocs(q), { tries: 2 });
+      const got = snap.docs.map(plain).reverse();   // back to newest-first before merging
+      const have = new Set(items.map(i => i.id));
+      const fresh = got.filter(g => !have.has(g.id));
+      if (fresh.length) {
+        items = fresh.concat(items);
+        newestCursor = fresh[0].createdAtParts;
+        if (oldestCursor == null) oldestCursor = items[items.length-1].createdAtParts;
       }
       saveCache(); render();
-      toast(got.length ? `${got.length} new comment${got.length>1?'s':''}` : 'No new comments');
+      toast(fresh.length ? `${fresh.length} new comment${fresh.length>1?'s':''}` : 'No new comments');
     }
   } catch { toast('Could not refresh — try again'); }
   b.classList.remove('spin');
@@ -326,6 +356,7 @@ function commentHTML(c, isReply){
   const badges = (c.hidden ? '<span class="badge h">Hidden</span>' : '') + (mine ? '<span class="badge m">You</span>' : '') + (isPinned ? '<span class="badge pin">Pinned</span>' : '');
   const acts = [];
   if (!isReply) acts.push(`<button class="act primary" onclick="openReply('${c.id}')">Reply</button>`);
+  acts.push(`<button class="act${c.liked ? ' liked' : ''}" onclick="toggleCommentLike('${c.id}','${c.authorUid}')">${c.liked ? '♥' : '♡'} ${c.likeCount > 0 ? c.likeCount : 'Like'}</button>`);
   if (!isReply) acts.push(`<button class="act${isPinned ? ' pinned' : ''}" onclick="togglePin('${c.id}')">${isPinned ? 'Unpin' : 'Pin'}</button>`);
   if (!mine) acts.push(`<button class="act" onclick="toggleHide('${c.id}','${c.parentId||''}')">${c.hidden ? 'Unhide' : 'Hide'}</button>`);
   acts.push(`<button class="act danger" onclick="delComment('${c.id}','${c.parentId||''}')">Delete</button>`);
@@ -386,14 +417,28 @@ window.bulkHide = async function(){
 };
 window.bulkDelete = async function(){
   const ids = Array.from(selected);
-  if (!confirm(`Delete ${ids.length} comment${ids.length===1?'':'s'}? This can't be undone.`)) return;
+  if (!confirm(`Delete ${ids.length} comment${ids.length===1?'':'s'}? Any replies on them go too. This can't be undone.`)) return;
+  let totalRemoved = 0;
   for (const cid of ids) {
     try {
-      await deleteDoc(doc(db,'comments',cid));
-      updateDoc(doc(db, metaCol, contentId), { commentCount: increment(-1) }).catch(() => {});
+      let replyIds = (replies[cid] || []).map(r => r.id);
+      if (!replies[cid]) {
+        try {
+          const rq = query(collection(db,'comments'), where(idField,'==',contentId), where('parentId','==',cid));
+          const rsnap = await resilient(() => getDocs(rq), { tries: 1 });
+          replyIds = rsnap.docs.map(d => d.id);
+        } catch {}
+      }
+      const batch = writeBatch(db);
+      batch.delete(doc(db,'comments',cid));
+      replyIds.forEach(rid => batch.delete(doc(db,'comments',rid)));
+      await batch.commit();
+      totalRemoved += 1 + replyIds.length;
+      delete replies[cid]; openReplies.delete(cid);
       if (cid === pinnedId) { pinnedId = null; pinnedSnapshot = null; setDoc(doc(db, metaCol, contentId), { pinnedCommentId: null }, { merge: true }).catch(() => {}); }
     } catch {}
   }
+  if (totalRemoved) updateDoc(doc(db, metaCol, contentId), { commentCount: increment(-totalRemoved) }).catch(() => {});
   items = items.filter(x => !selected.has(x.id));
   selected.clear(); selectMode = false; updateBulkBar(); saveCache(); render(); renderPinned();
   toast(`${ids.length} comment${ids.length===1?'':'s'} deleted`);
@@ -422,6 +467,44 @@ window.togglePin = async function(cid){
     toast(e && e.code === 'permission-denied' ? 'Not allowed yet — Firestore rules need updating' : 'Could not update pin — try again');
   }
 };
+/* ── like: same likedBy/{uid} + likeCount schema post-read.html and article-read.html use,
+   so a like from here shows up there and vice versa ── */
+window.toggleCommentLike = async function(cid, authorUid){
+  const list = items.find(x => x.id === cid) ? items : (Object.values(replies).flat());
+  const c = list.find(x => x.id === cid); if (!c) return;
+  const wasLiked = !!c.liked;
+  c.liked = !wasLiked; c.likeCount = (c.likeCount || 0) + (wasLiked ? -1 : 1);
+  render();
+  try {
+    const ref = doc(db, 'comments', cid);
+    if (wasLiked) {
+      await updateDoc(ref, { [`likedBy.${me.uid}`]: false, likeCount: increment(-1) });
+    } else {
+      await updateDoc(ref, { [`likedBy.${me.uid}`]: true, likeCount: increment(1) });
+      if (authorUid && authorUid !== me.uid) {
+        // Matches notifications.js's notifyComment schema and its dedup pattern for
+        // comment_like specifically: same deterministic doc ID on repeat like/unlike
+        // so it never piles up duplicate "liked your comment" notifications.
+        const p = await ensureProfile();
+        const dedupId = `clike_${me.uid}_${cid}`;
+        setDoc(doc(db, 'notifications', dedupId), {
+          recipientUid: authorUid, type: 'comment_like', actorUid: me.uid,
+          actorName: p.name, actorPhoto: p.photo, actorUsername: p.username,
+          targetId: contentId, targetTitle: isPost ? '' : (content.title || ''),
+          commentId: cid, targetType: isPost ? 'post' : 'article',
+          read: false, createdAt: serverTimestamp(), lastAt: serverTimestamp()
+        }).catch(() => {});
+      }
+    }
+    saveCache();
+  } catch (e) {
+    c.liked = wasLiked; c.likeCount = (c.likeCount || 0) + (wasLiked ? 1 : -1);
+    render();
+    console.error('toggleCommentLike:', e && e.code);
+    toast(e && e.code === 'permission-denied' ? 'Could not like — check Firestore rules' : 'Could not update — try again');
+  }
+};
+
 function showEmpty(title, sub, retry){
   $('pills').style.display = 'none'; $('preview').style.display = 'none';
   $('list').innerHTML = `<div class="empty"><strong>${esc(title)}</strong>${esc(sub)}${retry ? '<br><button class="act primary" onclick="retryBoot()">Try again</button>' : ''}</div>`;
@@ -509,28 +592,50 @@ window.toggleHide = async function(cid, pid){
   }
 };
 
-// Delete = 1 delete + content commentCount(-1) + parent replyCount(-1 for replies). No cascade.
+// Delete: for a reply, 1 delete + parent replyCount(-1) + content commentCount(-1).
+// For a top-level comment, its replies are gone too once it's deleted (they'd be
+// orphaned — visible nowhere, replyable to nothing) so this fetches and batch-
+// deletes them along with it, and drops commentCount by 1 + however many replies
+// went with it, not just 1.
 window.delComment = async function(cid, pid){
   const list = pid ? (replies[pid] || []) : items;
   const c = list.find(x => x.id === cid); if (!c) return;
-  const warn = (!pid && c.replyCount > 0) ? 'Delete this comment? Its replies will no longer be visible.' : 'Delete this comment?';
+  const warn = (!pid && c.replyCount > 0) ? `Delete this comment and its ${c.replyCount} ${c.replyCount===1?'reply':'replies'}?` : 'Delete this comment?';
   if (!confirm(warn)) return;
   const el = $('ci-' + cid); el && el.classList.add('busy');
   try {
-    await deleteDoc(doc(db,'comments',cid));
-    updateDoc(doc(db, metaCol, contentId), { commentCount: increment(-1) }).catch(() => {});
+    let removedCount = 1;
     if (pid) {
+      await deleteDoc(doc(db,'comments',cid));
       updateDoc(doc(db,'comments',pid), { replyCount: increment(-1) }).catch(() => {});
       replies[pid] = (replies[pid] || []).filter(x => x.id !== cid);
       const parent = items.find(i => i.id === pid); if (parent) parent.replyCount = Math.max(0, (parent.replyCount || 0) - 1);
     } else {
+      // Fetch this comment's replies first so they can be batch-deleted with it —
+      // Firestore batches cap at 500 writes, comfortably above what a single
+      // comment thread here will ever have.
+      let replyIds = (replies[cid] || []).map(r => r.id);
+      if (!replies[cid]) {
+        try {
+          const rq = query(collection(db,'comments'), where(idField,'==',contentId), where('parentId','==',cid));
+          const rsnap = await resilient(() => getDocs(rq), { tries: 2 });
+          replyIds = rsnap.docs.map(d => d.id);
+        } catch {}
+      }
+      const batch = writeBatch(db);
+      batch.delete(doc(db,'comments',cid));
+      replyIds.forEach(rid => batch.delete(doc(db,'comments',rid)));
+      await batch.commit();
+      removedCount = 1 + replyIds.length;
       items = items.filter(x => x.id !== cid); delete replies[cid]; openReplies.delete(cid);
       if (cid === pinnedId) {
         pinnedId = null; pinnedSnapshot = null; renderPinned();
         setDoc(doc(db, metaCol, contentId), { pinnedCommentId: null, pinnedCommentText: null, pinnedCommentAuthorName: null }, { merge: true }).catch(() => {});
       }
     }
-    saveCache(); render(); toast('Comment deleted');
+    updateDoc(doc(db, metaCol, contentId), { commentCount: increment(-removedCount) }).catch(() => {});
+    saveCache(); render();
+    toast(removedCount > 1 ? `Comment and ${removedCount-1} ${removedCount-1===1?'reply':'replies'} deleted` : 'Comment deleted');
   } catch (e) {
     el && el.classList.remove('busy');
     console.error('delComment:', e && e.code);
