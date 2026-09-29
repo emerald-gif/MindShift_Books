@@ -990,7 +990,13 @@ router.get('/read/:id', async (req, res) => {
     const direct = await fetchGutenbergTextDirect(id);
     if (!direct) return res.status(502).send('Could not load this book right now. Please try again.');
     const known = freeCatalog.find(b => b.id === Number(id));
-    const title = known ? known.title : `Book #${id}`;
+    let title = known ? known.title : null;
+    if (!title) {
+      // Book came from the live Gutendex list, so it isn't in our saved catalog —
+      // read the title out of the Gutenberg file itself.
+      const tm = direct.text.match(/<title>([\s\S]*?)<\/title>/i) || direct.text.match(/^Title:\s*(.+)$/im);
+      title = tm ? tm[1].replace(/^The Project Gutenberg eBook of\s*/i, '').replace(/\s+/g, ' ').trim() : `Book #${id}`;
+    }
     const html = direct.isHtml
       ? wrapGutenbergHtml(direct.text, direct.url, title, id)
       : wrapPlainTextAsHtml(direct.text, title, id);
