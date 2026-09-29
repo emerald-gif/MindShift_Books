@@ -69,7 +69,8 @@
    "cats": [
     "MONEY",
     "PRODUCTIVITY",
-    "REFLECTIVE"
+    "REFLECTIVE",
+    "HEALTH"
    ],
    "downloads": 996
   },
@@ -191,7 +192,8 @@
    ],
    "cats": [
     "MINDSET",
-    "REFLECTIVE"
+    "REFLECTIVE",
+    "RELATIONSHIPS"
    ],
    "downloads": 987
   },
@@ -205,7 +207,8 @@
    ],
    "cats": [
     "PURPOSE",
-    "EDUCATION"
+    "EDUCATION",
+    "RELATIONSHIPS"
    ],
    "downloads": 986
   },
@@ -290,6 +293,156 @@
     "MINDSET"
    ],
    "downloads": 980
+  },
+  {
+   "id": 2376,
+   "title": "Up From Slavery",
+   "author": "Booker T. Washington",
+   "subjects": [
+    "Autobiography",
+    "Success"
+   ],
+   "cats": [
+    "CAREER",
+    "MINDSET",
+    "EDUCATION"
+   ],
+   "downloads": 979
+  },
+  {
+   "id": 2397,
+   "title": "The Story of My Life",
+   "author": "Helen Keller",
+   "subjects": [
+    "Autobiography",
+    "Perseverance"
+   ],
+   "cats": [
+    "MINDSET",
+    "EDUCATION",
+    "PURPOSE"
+   ],
+   "downloads": 978
+  },
+  {
+   "id": 23,
+   "title": "Narrative of the Life of Frederick Douglass",
+   "author": "Frederick Douglass",
+   "subjects": [
+    "Autobiography"
+   ],
+   "cats": [
+    "PURPOSE",
+    "EDUCATION",
+    "MINDSET"
+   ],
+   "downloads": 977
+  },
+  {
+   "id": 5827,
+   "title": "The Problems of Philosophy",
+   "author": "Bertrand Russell",
+   "subjects": [
+    "Philosophy"
+   ],
+   "cats": [
+    "EDUCATION",
+    "PURPOSE"
+   ],
+   "downloads": 976
+  },
+  {
+   "id": 3600,
+   "title": "The Essays of Montaigne",
+   "author": "Michel de Montaigne",
+   "subjects": [
+    "Essays"
+   ],
+   "cats": [
+    "REFLECTIVE",
+    "PURPOSE"
+   ],
+   "downloads": 975
+  },
+  {
+   "id": 1998,
+   "title": "Thus Spake Zarathustra",
+   "author": "Friedrich Nietzsche",
+   "subjects": [
+    "Philosophy"
+   ],
+   "cats": [
+    "PURPOSE",
+    "REFLECTIVE",
+    "MINDSET"
+   ],
+   "downloads": 974
+  },
+  {
+   "id": 4363,
+   "title": "Beyond Good and Evil",
+   "author": "Friedrich Nietzsche",
+   "subjects": [
+    "Philosophy",
+    "Ethics"
+   ],
+   "cats": [
+    "PURPOSE",
+    "MINDSET"
+   ],
+   "downloads": 973
+  },
+  {
+   "id": 3296,
+   "title": "The Confessions of St. Augustine",
+   "author": "Saint Augustine",
+   "subjects": [
+    "Spiritual life"
+   ],
+   "cats": [
+    "PURPOSE",
+    "REFLECTIVE"
+   ],
+   "downloads": 972
+  },
+  {
+   "id": 2554,
+   "title": "Crime and Punishment",
+   "author": "Fyodor Dostoyevsky",
+   "subjects": [
+    "Psychological fiction"
+   ],
+   "cats": [
+    "FICTION",
+    "PURPOSE"
+   ],
+   "downloads": 971
+  },
+  {
+   "id": 1184,
+   "title": "The Count of Monte Cristo",
+   "author": "Alexandre Dumas",
+   "subjects": [
+    "Adventure fiction"
+   ],
+   "cats": [
+    "FICTION",
+    "MINDSET"
+   ],
+   "downloads": 970
+  },
+  {
+   "id": 174,
+   "title": "The Picture of Dorian Gray",
+   "author": "Oscar Wilde",
+   "subjects": [
+    "Moral fiction"
+   ],
+   "cats": [
+    "FICTION",
+    "REFLECTIVE"
+   ],
+   "downloads": 969
   }
  ]
-  }
+}
