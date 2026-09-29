@@ -1484,6 +1484,11 @@ window.closeAll=function(){
    ══════════════════════════════════════ */
 let cList=[],cReplies={},cLikedSet=new Set(),cOpenReplies=new Set(),cActiveReplyId=null,cCommentCount=0;
 let cPinnedId=null,cPinnedComment=null;   // set by the author in comment-manager.html; surfaced above the list here
+// Per-comment write chain for likes — see post-read.html's likeComment for
+// why this exists: likedBy.{uid} and likeCount are two independent writes
+// with no ordering guarantee, so rapid taps can leave them describing two
+// different final states unless writes are chained in tap order.
+const cLikeChain=new Map();
 const C_PAGE=20; let cCursor=null, cExhausted=false, cLoadingMore=false;
 // Hidden comments (set by the content author in the comment manager) are visible only to the commenter and the content author.
 function cVisible(c){
@@ -1690,12 +1695,15 @@ window.submitReply=async function(parentId){
   try{
     const ref=await addDoc(collection(db,'comments'),{articleId:artId,parentId,authorUid:currentUser.uid,authorName:an,authorPhoto:ap,authorUsername:au,text,likeCount:0,replyCount:0,hidden:false,createdAt:serverTimestamp()});
     try{await updateDoc(doc(db,'comments',parentId),{replyCount:increment(1)});}catch{}
-    try{await updateDoc(doc(db,'articleMeta',artId),{commentCount:increment(1)});}catch{await setDoc(doc(db,'articleMeta',artId),{commentCount:1},{merge:true});}
-    // Same field comment-manager.html bumps — a creator can reply from either
-    // place, and both should count toward the reply-rate stat on Insights.
-    if(article&&article.authorUid&&currentUser.uid===article.authorUid){
-      updateDoc(doc(db,'articleMeta',artId),{creatorReplyCount:increment(1)}).catch(()=>setDoc(doc(db,'articleMeta',artId),{creatorReplyCount:1},{merge:true}).catch(()=>{}));
-    }
+    // commentCount and creatorReplyCount go in ONE updateDoc, not two separate
+    // fire-and-forget calls — two independent writes leave a real window where
+    // Insights could read the doc after the first lands but before the second
+    // does, showing "unanswered" for a reply that was, in fact, just answered.
+    const isReplyingOwner=!!(article && article.authorUid && currentUser.uid===article.authorUid);
+    const metaUpdates={commentCount:increment(1)};
+    if(isReplyingOwner) metaUpdates.creatorReplyCount=increment(1);
+    try{await updateDoc(doc(db,'articleMeta',artId),metaUpdates);}
+    catch{await setDoc(doc(db,'articleMeta',artId),{commentCount:1,...(isReplyingOwner?{creatorReplyCount:1}:{})},{merge:true}).catch(()=>{});}
     cCommentCount++;updateCCount();
     const nr={id:ref.id,articleId:artId,parentId,authorUid:currentUser.uid,authorName:an,authorPhoto:ap,authorUsername:au,text,likeCount:0,replyCount:0,createdAt:{toDate:()=>new Date()}};
     if(!cReplies[parentId])cReplies[parentId]=[];
@@ -1752,33 +1760,31 @@ window.toggleReplies=async function(cid){
 window.likeComment=async function(cid,authorUid){
   if(!currentUser){openAuth();return;}
   const wasLiked=cLikedSet.has(cid);
+  const nowLiked=!wasLiked;
   const btn=document.getElementById('clb-'+cid),cel=document.getElementById('clc-'+cid);
-  if(wasLiked){cLikedSet.delete(cid);if(btn)btn.classList.remove('liked');}
-  else{cLikedSet.add(cid);if(btn)btn.classList.add('liked');}
+  if(nowLiked){cLikedSet.add(cid);if(btn)btn.classList.add('liked');}
+  else{cLikedSet.delete(cid);if(btn)btn.classList.remove('liked');}
   const c=[...cList,...Object.values(cReplies).flat()].find(x=>x.id===cid);
-  if(c){c.likeCount=(c.likeCount||0)+(wasLiked?-1:1);if(cel)cel.textContent=c.likeCount>0?String(c.likeCount):'';}
-  try{
-    const commentRef = doc(db,'comments',cid);
-    if(wasLiked){
-      await updateDoc(commentRef,{
-        [`likedBy.${currentUser.uid}`]: false,
-        likeCount: increment(-1)
-      });
-    } else {
-      await updateDoc(commentRef,{
-        [`likedBy.${currentUser.uid}`]: true,
-        likeCount: increment(1)
-      });
-      if(authorUid&&authorUid!==currentUser.uid) notif.notifyComment({type:'comment_like',recipientUid:authorUid,articleId:artId,articleTitle:article?article.title:'',commentId:cid,contentType:'article'});
-    }
-  }catch(e){
-    if(wasLiked){cLikedSet.add(cid);if(btn)btn.classList.add('liked');}
-    else{cLikedSet.delete(cid);if(btn)btn.classList.remove('liked');}
-    if(c){c.likeCount=(c.likeCount||0)+(wasLiked?1:-1);if(cel)cel.textContent=c.likeCount>0?String(c.likeCount):'';}
-    console.error('likeComment:',e.code,e.message);
-    if(e.code==='permission-denied')showToast('Could not like — check Firestore rules for comment likes.');
-    else showToast('Could not update like — try again.');
-  }
+  if(c){c.likeCount=(c.likeCount||0)+(nowLiked?1:-1);if(cel)cel.textContent=c.likeCount>0?String(c.likeCount):'';}
+  const commentRef=doc(db,'comments',cid);
+  const prior=cLikeChain.get(cid)||Promise.resolve();
+  const task=prior.then(()=>updateDoc(commentRef,{
+      [`likedBy.${currentUser.uid}`]: nowLiked,
+      likeCount: increment(nowLiked?1:-1)
+    })).then(()=>{
+      if(nowLiked&&authorUid&&authorUid!==currentUser.uid) notif.notifyComment({type:'comment_like',recipientUid:authorUid,articleId:artId,articleTitle:article?article.title:'',commentId:cid,contentType:'article'});
+    }).catch(e=>{
+      if(cLikedSet.has(cid)===nowLiked){
+        if(nowLiked){cLikedSet.delete(cid);if(btn)btn.classList.remove('liked');}
+        else{cLikedSet.add(cid);if(btn)btn.classList.add('liked');}
+        if(c){c.likeCount=(c.likeCount||0)+(nowLiked?-1:1);if(cel)cel.textContent=c.likeCount>0?String(c.likeCount):'';}
+      }
+      console.error('likeComment:',e.code,e.message);
+      if(e.code==='permission-denied')showToast('Could not like — check Firestore rules for comment likes.');
+      else showToast('Could not update like — try again.');
+    });
+  cLikeChain.set(cid,task);
+  await task;
 };
 
 window.cGo=function(uid,username){if(!uid)return;if(uid===currentUser?.uid){location.href='/profile';}else{location.href=`/profile?uid=${encodeURIComponent(uid)}`;}};

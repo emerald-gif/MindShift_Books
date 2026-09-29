@@ -175,6 +175,10 @@ let me = null, myProfile = null, content = null;
 let pinnedId = null, pinnedSnapshot = null;   // pinnedSnapshot: cached {text,authorName} for instant paint
 let selectMode = false;
 let selected = new Set();
+// Same ordering problem as post-read.html's likeComment: likedBy.{uid} is a
+// plain last-write-wins field while likeCount is a commutative increment —
+// two independent updateDoc calls have no guarantee of arriving in tap order.
+const cmLikeChain = new Map();
 let items = [];                // top-level comments loaded so far (newest → oldest), plain objects
 let replies = {};              // parentId -> array of replies (fetched once per expand)
 let openReplies = new Set();
@@ -473,36 +477,43 @@ window.toggleCommentLike = async function(cid, authorUid){
   const list = items.find(x => x.id === cid) ? items : (Object.values(replies).flat());
   const c = list.find(x => x.id === cid); if (!c) return;
   const wasLiked = !!c.liked;
-  c.liked = !wasLiked; c.likeCount = (c.likeCount || 0) + (wasLiked ? -1 : 1);
+  const nowLiked = !wasLiked;
+  c.liked = nowLiked; c.likeCount = (c.likeCount || 0) + (nowLiked ? 1 : -1);
   render();
-  try {
-    const ref = doc(db, 'comments', cid);
-    if (wasLiked) {
-      await updateDoc(ref, { [`likedBy.${me.uid}`]: false, likeCount: increment(-1) });
-    } else {
-      await updateDoc(ref, { [`likedBy.${me.uid}`]: true, likeCount: increment(1) });
-      if (authorUid && authorUid !== me.uid) {
+  const ref = doc(db, 'comments', cid);
+  const prior = cmLikeChain.get(cid) || Promise.resolve();
+  const task = prior.then(() => updateDoc(ref, { [`likedBy.${me.uid}`]: nowLiked, likeCount: increment(nowLiked ? 1 : -1) }))
+    .then(() => {
+      if (nowLiked && authorUid && authorUid !== me.uid) {
         // Matches notifications.js's notifyComment schema and its dedup pattern for
         // comment_like specifically: same deterministic doc ID on repeat like/unlike
         // so it never piles up duplicate "liked your comment" notifications.
-        const p = await ensureProfile();
-        const dedupId = `clike_${me.uid}_${cid}`;
-        setDoc(doc(db, 'notifications', dedupId), {
-          recipientUid: authorUid, type: 'comment_like', actorUid: me.uid,
-          actorName: p.name, actorPhoto: p.photo, actorUsername: p.username,
-          targetId: contentId, targetTitle: isPost ? '' : (content.title || ''),
-          commentId: cid, targetType: isPost ? 'post' : 'article',
-          read: false, createdAt: serverTimestamp(), lastAt: serverTimestamp()
+        ensureProfile().then(p => {
+          const dedupId = `clike_${me.uid}_${cid}`;
+          setDoc(doc(db, 'notifications', dedupId), {
+            recipientUid: authorUid, type: 'comment_like', actorUid: me.uid,
+            actorName: p.name, actorPhoto: p.photo, actorUsername: p.username,
+            targetId: contentId, targetTitle: isPost ? '' : (content.title || ''),
+            commentId: cid, targetType: isPost ? 'post' : 'article',
+            read: false, createdAt: serverTimestamp(), lastAt: serverTimestamp()
+          }).catch(() => {});
         }).catch(() => {});
       }
-    }
-    saveCache();
-  } catch (e) {
-    c.liked = wasLiked; c.likeCount = (c.likeCount || 0) + (wasLiked ? 1 : -1);
-    render();
-    console.error('toggleCommentLike:', e && e.code);
-    toast(e && e.code === 'permission-denied' ? 'Could not like — check Firestore rules' : 'Could not update — try again');
-  }
+      saveCache();
+    })
+    .catch(e => {
+      // Only roll back if nothing newer has happened to this comment since —
+      // if it was tapped again while this write was in flight, that later
+      // tap's state is the one that should stick.
+      if (c.liked === nowLiked) {
+        c.liked = wasLiked; c.likeCount = (c.likeCount || 0) + (wasLiked ? 1 : -1);
+        render();
+      }
+      console.error('toggleCommentLike:', e && e.code);
+      toast(e && e.code === 'permission-denied' ? 'Could not like — check Firestore rules' : 'Could not update — try again');
+    });
+  cmLikeChain.set(cid, task);
+  await task;
 };
 
 function showEmpty(title, sub, retry){
@@ -552,10 +563,14 @@ window.sendReply = async function(pid){
     const ref = await addDoc(collection(db,'comments'), { [idField]: contentId, parentId: pid, authorUid: me.uid,
       authorName: p.name, authorPhoto: p.photo, authorUsername: p.username, text, likeCount: 0, replyCount: 0, hidden: false, createdAt: serverTimestamp() });
     updateDoc(doc(db,'comments',pid), { replyCount: increment(1) }).catch(() => {});
-    updateDoc(doc(db, metaCol, contentId), { commentCount: increment(1) }).catch(() => setDoc(doc(db, metaCol, contentId), { commentCount: 1 }, { merge: true }).catch(() => {}));
-    // Only the content owner can reach this page (boot() checks authorUid === me.uid),
-    // so every reply sent here is a creator reply — feeds the reply-rate stat on Insights.
-    updateDoc(doc(db, metaCol, contentId), { creatorReplyCount: increment(1) }).catch(() => setDoc(doc(db, metaCol, contentId), { creatorReplyCount: 1 }, { merge: true }).catch(() => {}));
+    // Both fields in ONE updateDoc, not two separate fire-and-forget calls —
+    // two independent writes leave a window where Insights could read the doc
+    // after commentCount lands but before creatorReplyCount does, showing
+    // "unanswered" for a reply that was, in fact, just sent. Only the content
+    // owner can reach this page (boot() checks authorUid === me.uid), so every
+    // reply sent here is a creator reply.
+    updateDoc(doc(db, metaCol, contentId), { commentCount: increment(1), creatorReplyCount: increment(1) })
+      .catch(() => setDoc(doc(db, metaCol, contentId), { commentCount: 1, creatorReplyCount: 1 }, { merge: true }).catch(() => {}));
     const parent = items.find(i => i.id === pid);
     if (parent) {
       parent.replyCount = (parent.replyCount || 0) + 1;
