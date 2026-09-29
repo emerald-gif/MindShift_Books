@@ -1,0 +1,295 @@
+{
+ "generatedAt": "manual",
+ "books": [
+  {
+   "id": 4507,
+   "title": "As a Man Thinketh",
+   "author": "James Allen",
+   "subjects": [
+    "Conduct of life",
+    "Success"
+   ],
+   "cats": [
+    "MINDSET",
+    "PURPOSE"
+   ],
+   "downloads": 1000
+  },
+  {
+   "id": 59844,
+   "title": "The Science of Getting Rich",
+   "author": "Wallace D. Wattles",
+   "subjects": [
+    "Wealth",
+    "Success"
+   ],
+   "cats": [
+    "MONEY",
+    "MINDSET"
+   ],
+   "downloads": 999
+  },
+  {
+   "id": 34258,
+   "title": "Acres of Diamonds",
+   "author": "Russell H. Conwell",
+   "subjects": [
+    "Success",
+    "Wealth"
+   ],
+   "cats": [
+    "MONEY",
+    "CAREER",
+    "MINDSET"
+   ],
+   "downloads": 998
+  },
+  {
+   "id": 935,
+   "title": "Self-Help",
+   "author": "Samuel Smiles",
+   "subjects": [
+    "Conduct of life"
+   ],
+   "cats": [
+    "MINDSET",
+    "PRODUCTIVITY",
+    "CAREER"
+   ],
+   "downloads": 997
+  },
+  {
+   "id": 148,
+   "title": "The Autobiography of Benjamin Franklin",
+   "author": "Benjamin Franklin",
+   "subjects": [
+    "Success",
+    "Statesmen"
+   ],
+   "cats": [
+    "MONEY",
+    "PRODUCTIVITY",
+    "REFLECTIVE"
+   ],
+   "downloads": 996
+  },
+  {
+   "id": 2680,
+   "title": "Meditations",
+   "author": "Marcus Aurelius",
+   "subjects": [
+    "Stoics",
+    "Conduct of life"
+   ],
+   "cats": [
+    "PURPOSE",
+    "REFLECTIVE",
+    "MINDSET"
+   ],
+   "downloads": 995
+  },
+  {
+   "id": 132,
+   "title": "The Art of War",
+   "author": "Sun Tzu",
+   "subjects": [
+    "Military art and science"
+   ],
+   "cats": [
+    "CAREER",
+    "PRODUCTIVITY"
+   ],
+   "downloads": 994
+  },
+  {
+   "id": 1232,
+   "title": "The Prince",
+   "author": "Niccolò Machiavelli",
+   "subjects": [
+    "Political science"
+   ],
+   "cats": [
+    "CAREER"
+   ],
+   "downloads": 993
+  },
+  {
+   "id": 205,
+   "title": "Walden",
+   "author": "Henry David Thoreau",
+   "subjects": [
+    "Nature",
+    "Simple living"
+   ],
+   "cats": [
+    "REFLECTIVE",
+    "PURPOSE",
+    "HEALTH"
+   ],
+   "downloads": 992
+  },
+  {
+   "id": 45109,
+   "title": "The Enchiridion",
+   "author": "Epictetus",
+   "subjects": [
+    "Stoics",
+    "Conduct of life"
+   ],
+   "cats": [
+    "PURPOSE",
+    "MINDSET"
+   ],
+   "downloads": 991
+  },
+  {
+   "id": 2274,
+   "title": "How to Live on 24 Hours a Day",
+   "author": "Arnold Bennett",
+   "subjects": [
+    "Time management"
+   ],
+   "cats": [
+    "PRODUCTIVITY"
+   ],
+   "downloads": 990
+  },
+  {
+   "id": 6456,
+   "title": "The Art of Public Speaking",
+   "author": "Dale Carnegie and J. Berg Esenwein",
+   "subjects": [
+    "Public speaking"
+   ],
+   "cats": [
+    "CAREER",
+    "EDUCATION"
+   ],
+   "downloads": 989
+  },
+  {
+   "id": 58585,
+   "title": "The Prophet",
+   "author": "Kahlil Gibran",
+   "subjects": [
+    "Prose poems"
+   ],
+   "cats": [
+    "REFLECTIVE",
+    "PURPOSE",
+    "RELATIONSHIPS"
+   ],
+   "downloads": 988
+  },
+  {
+   "id": 2944,
+   "title": "Essays, First Series",
+   "author": "Ralph Waldo Emerson",
+   "subjects": [
+    "Essays",
+    "Self-reliance"
+   ],
+   "cats": [
+    "MINDSET",
+    "REFLECTIVE"
+   ],
+   "downloads": 987
+  },
+  {
+   "id": 8438,
+   "title": "The Ethics of Aristotle",
+   "author": "Aristotle",
+   "subjects": [
+    "Ethics",
+    "Happiness"
+   ],
+   "cats": [
+    "PURPOSE",
+    "EDUCATION"
+   ],
+   "downloads": 986
+  },
+  {
+   "id": 1497,
+   "title": "The Republic",
+   "author": "Plato",
+   "subjects": [
+    "Political science",
+    "Philosophy"
+   ],
+   "cats": [
+    "EDUCATION",
+    "PURPOSE"
+   ],
+   "downloads": 985
+  },
+  {
+   "id": 3300,
+   "title": "The Wealth of Nations",
+   "author": "Adam Smith",
+   "subjects": [
+    "Economics"
+   ],
+   "cats": [
+    "MONEY",
+    "EDUCATION"
+   ],
+   "downloads": 984
+  },
+  {
+   "id": 2130,
+   "title": "Utopia",
+   "author": "Thomas More",
+   "subjects": [
+    "Utopias"
+   ],
+   "cats": [
+    "FICTION",
+    "PURPOSE"
+   ],
+   "downloads": 983
+  },
+  {
+   "id": 2500,
+   "title": "Siddhartha",
+   "author": "Hermann Hesse",
+   "subjects": [
+    "Spiritual life",
+    "Fiction"
+   ],
+   "cats": [
+    "FICTION",
+    "PURPOSE"
+   ],
+   "downloads": 982
+  },
+  {
+   "id": 46,
+   "title": "A Christmas Carol",
+   "author": "Charles Dickens",
+   "subjects": [
+    "Christmas stories",
+    "Fiction"
+   ],
+   "cats": [
+    "FICTION",
+    "REFLECTIVE"
+   ],
+   "downloads": 981
+  },
+  {
+   "id": 14209,
+   "title": "The Kybalion",
+   "author": "Three Initiates",
+   "subjects": [
+    "Hermetism",
+    "Philosophy"
+   ],
+   "cats": [
+    "PURPOSE",
+    "MINDSET"
+   ],
+   "downloads": 980
+  }
+ ]
+  }
