@@ -1023,12 +1023,13 @@ function renderBreakdown(likes, comments, reposts){
 }
 
 /* ── TOP PERFORMING CONTENT (articles + posts) ── */
-// ── PERMANENT: always renders, picks whichever post/article needs a reply
-// most (or the most active one if you're caught up), and links straight
-// into that item's Comment Manager. ──
+// ── PERMANENT: Comment Center is ONE inbox for ALL your content. It adds up the
+// unanswered comments across every post + article and opens the central
+// Comment Manager (/comment-manager, no id) — not any single item's manager. ──
 function renderCommentCenter(enriched){
   const card = document.getElementById('cmCenterCard');
   const body = card.querySelector('.cm-center-body');
+  const href = '/comment-manager';
 
   const withComments = enriched.filter(a => a.comments > 0);
   if (!withComments.length) {
@@ -1038,18 +1039,16 @@ function renderCommentCenter(enriched){
     return;
   }
 
-  const withUnanswered = withComments
-    .map(a => ({...a, unanswered: a.comments - (a.creatorReplyCount || 0)}))
-    .sort((a,b) => b.unanswered - a.unanswered);
-  const top = withUnanswered[0];
-  const title = top.type === 'post' ? (top.text ? top.text.slice(0,40) : 'your post') : (top.title || 'your article');
-  const href = `/comment-manager?type=${top.type}&id=${top.id}`;
+  const perItem = withComments.map(a => ({ ...a, unanswered: Math.max(0, a.comments - (a.creatorReplyCount || 0)) }));
+  const totalUnanswered = perItem.reduce((s, a) => s + a.unanswered, 0);
+  const spread = perItem.filter(a => a.unanswered > 0).length;
+  const totalComments = perItem.reduce((s, a) => s + a.comments, 0);
 
-  body.innerHTML = top.unanswered > 0
+  body.innerHTML = totalUnanswered > 0
     ? `<div class="cm-center-lbl">Comment Center</div>
-       <div class="cm-center-txt"><b>${top.unanswered} unanswered</b> comment${top.unanswered===1?'':'s'} on "${esc(title)}"</div>`
+       <div class="cm-center-txt"><b>${totalUnanswered} unanswered</b> comment${totalUnanswered===1?'':'s'} across ${spread} post${spread===1?'':'s'} &amp; article${spread===1?'':'s'} — reply to all in one place</div>`
     : `<div class="cm-center-lbl">Comment Center</div>
-       <div class="cm-center-txt">You're all caught up — ${top.comments} comment${top.comments===1?'':'s'} on "${esc(title)}"</div>`;
+       <div class="cm-center-txt">You're all caught up — ${totalComments} comment${totalComments===1?'':'s'} across your content</div>`;
   card.onclick = () => location.href = href;
 }
 
