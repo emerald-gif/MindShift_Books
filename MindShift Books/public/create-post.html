@@ -45,8 +45,15 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 
 .composer{background:var(--card);border-radius:var(--radius);border:1px solid var(--border);padding:16px}
 .composer-author{display:flex;align-items:center;gap:10px;margin-bottom:12px}
-.composer-av{width:38px;height:38px;border-radius:50%;object-fit:cover;background:linear-gradient(135deg,#4f46e5,#06b6d4)}
-.composer-name{font-size:14px;font-weight:800;color:var(--txt)}
+.composer-av-wrap{position:relative;flex:0 0 38px;width:38px;height:38px;border-radius:50%;overflow:hidden;background:linear-gradient(135deg,#4f46e5,#06b6d4);
+  color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800}
+.composer-av{position:absolute;inset:0;width:100%;height:100%;border-radius:50%;object-fit:cover;opacity:0;transition:opacity .2s}
+.composer-av.on{opacity:1}
+.composer-name{font-size:14px;font-weight:800;color:var(--txt);min-height:18px}
+.composer-name.skel{width:96px;height:14px;min-height:0;margin:3px 0 4px;border-radius:6px;
+  background:linear-gradient(90deg,#eef0f4 25%,#f6f7fa 50%,#eef0f4 75%);background-size:200% 100%;animation:nameSk 1.2s infinite}
+@keyframes nameSk{to{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){.composer-name.skel{animation:none}.composer-av{transition:none}}
 .composer-sub{font-size:11.5px;color:var(--mute)}
 
 .post-textarea{width:100%;border:none;outline:none;resize:none;font-family:inherit;font-size:16px;line-height:1.55;
@@ -129,12 +136,34 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 <main class="main">
   <div class="composer">
     <div class="composer-author">
-      <img class="composer-av" id="composerAv" src="" alt="">
+      <div class="composer-av-wrap"><span id="composerIni"></span><img class="composer-av" id="composerAv" alt=""></div>
       <div>
-        <div class="composer-name" id="composerName">You</div>
+        <div class="composer-name skel" id="composerName"></div>
         <div class="composer-sub">Posting publicly · goes live immediately</div>
       </div>
     </div>
+    <script>
+    /* The name + photo used to appear only AFTER Firebase signed in and the profile came back from Firestore.
+       Now they are painted right here, at page load, from the copy saved on your last visit; the real profile
+       (loaded below) then quietly replaces it. paintAuthor() is also used by the module script. */
+    var AUTHOR_KEY = 'mindshift_author';
+    window.paintAuthor = function(name, photo){
+      var n = document.getElementById('composerName'), av = document.getElementById('composerAv'), ini = document.getElementById('composerIni');
+      if(!n || !av) return;
+      if(name){ n.textContent = name; n.classList.remove('skel'); if(ini) ini.textContent = (String(name).trim().charAt(0) || '').toUpperCase(); }
+      if(!photo){ av.removeAttribute('src'); av.removeAttribute('data-src'); av.classList.remove('on'); return; }
+      if(av.getAttribute('data-src') === photo) return;          // same photo: don't reload / flicker
+      av.setAttribute('data-src', photo);
+      av.classList.remove('on');
+      av.onload = function(){ av.classList.add('on'); };
+      av.onerror = function(){ av.classList.remove('on'); };      // keep the initial-letter circle instead of a broken-image icon
+      av.src = photo;
+    };
+    try{
+      var _c = JSON.parse(localStorage.getItem(AUTHOR_KEY) || 'null');
+      if(_c && (_c.name || _c.photo)) window.paintAuthor(_c.name, _c.photo);
+    }catch(e){}
+    </script>
     <div class="ta-wrap" id="taWrap">
       <div class="ta-mirror" id="taMirror" aria-hidden="true"></div>
       <div class="ta-mirror ta-probe" id="taProbe" aria-hidden="true"></div>
@@ -339,15 +368,24 @@ onAuthStateChanged(auth, async user => {
   currentUser = user;
   if(!user){ window.location.href = '/login'; return; }
   initDraft(); // instant + local — must not wait on the network profile read below
+  // Show who's posting BEFORE the Firestore read: the copy from the last visit if it's this same account,
+  // otherwise what Firebase Auth already knows. (Never blocks; the real profile replaces it below.)
+  const fallbackName = user.displayName || (user.email||'').split('@')[0] || 'You';
+  let _cached = null;
+  try{ _cached = JSON.parse(localStorage.getItem(AUTHOR_KEY) || 'null'); }catch(e){}
+  if(_cached && _cached.uid === user.uid) paintAuthor(_cached.name || fallbackName, _cached.photo || user.photoURL || '');
+  else paintAuthor(fallbackName, user.photoURL || '');     // different account on this device: drop the old face straight away
   try{
     const s = await resilient(()=>getDoc(doc(db,'users',user.uid)));
     userProfile = s.exists() ? s.data() : {};
     _profileLoaded = true;
   }catch(e){ console.warn('profile load failed:', e && e.code); } // submitPost() retries before publishing
-  document.getElementById('composerName').textContent = userProfile.name || user.displayName || (user.email||'').split('@')[0] || 'You';
-  const av = document.getElementById('composerAv');
-  av.src = userProfile.photo || user.photoURL || '';
-  av.onerror = () => { av.style.background = 'linear-gradient(135deg,#4f46e5,#06b6d4)'; };
+  if(_profileLoaded){                                        // only when the real profile arrived; if it failed, keep what's already shown
+    const shownName = userProfile.name || fallbackName;
+    const shownPhoto = userProfile.photo || user.photoURL || '';
+    paintAuthor(shownName, shownPhoto);
+    try{ localStorage.setItem(AUTHOR_KEY, JSON.stringify({ uid: user.uid, name: shownName, photo: shownPhoto })); }catch(e){}
+  }
   if(editId) loadPostForEdit(editId);
 });
 
