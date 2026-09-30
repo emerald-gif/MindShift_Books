@@ -650,22 +650,6 @@
       </div>
       <div class="broadcast-result" id="cdResult"></div>
     </div>
-  
-    <div class="panel full-panel" style="margin-top:16px;padding-bottom:20px;" id="announceCard">
-      <h2>In-app announcement: Comment Manager</h2>
-      <p class="empty" style="padding-top:0;margin-top:-8px;margin-bottom:14px;">
-        Sends the “Meet the new Comment Manager” card (with the Go to Comment Manager button) to every user's notification bell. Safe to re-run — nobody gets it twice. Try it on your own account first.
-      </p>
-      <div class="field">
-        <label>Test on one account (user UID) — optional</label>
-        <input type="text" id="anTestUid" placeholder="Paste your own Firebase UID to preview it in your bell">
-      </div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;">
-        <button class="btn-secondary" id="anDryBtn" type="button">Count recipients</button>
-        <button class="btn-primary" id="anSendBtn" type="button">Send to everyone</button>
-      </div>
-      <p class="empty" id="anStatus" style="padding:12px 0 0;text-align:left;"></p>
-    </div>
   </div>
 
   <div id="creatorsPage" style="display:none;">
@@ -3420,37 +3404,6 @@ ${ctaBlock}${captionBlock}${assetsBlock}${affiliateLinkBlock}
     }
   });
 
-
-  // ── In-app announcement sender ──
-  (function () {
-    const st = document.getElementById('anStatus');
-    async function run(dryRun) {
-      const uid = document.getElementById('anTestUid').value.trim();
-      if (!dryRun && !uid && !confirm('Send the Comment Manager announcement to EVERY user?')) return;
-      st.textContent = dryRun ? 'Counting…' : 'Sending…';
-      try {
-        const res = await fetch('/api/admin/announcements/comment-manager/send', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ dryRun, testUid: uid || undefined, force: !!uid })
-        });
-        let j = null;
-        try { j = await res.json(); } catch (_) {}
-        if (!j) {
-          st.textContent = res.status === 404
-            ? 'The server does not have this endpoint yet — deploy the updated server.js, then try again.'
-            : `Unexpected response from the server (${res.status}). Check the server logs.`;
-          return;
-        }
-        if (res.status === 401) { st.textContent = 'Your admin session expired — log in again.'; return; }
-        if (!res.ok) { st.textContent = j.error || 'Failed'; return; }
-        st.textContent = dryRun
-          ? `${j.created} user${j.created === 1 ? '' : 's'} would get it (${j.alreadyHadIt} already have it, ${j.scanned} checked).`
-          : `Done — sent to ${j.created} user${j.created === 1 ? '' : 's'} (${j.alreadyHadIt} already had it).`;
-      } catch (e) { st.textContent = 'Network error — try again.'; }
-    }
-    document.getElementById('anDryBtn').addEventListener('click', () => run(true));
-    document.getElementById('anSendBtn').addEventListener('click', () => run(false));
-  })();
 </script>
 
 <!-- Terminal-style activity log overlay — shows every automatic and manual
