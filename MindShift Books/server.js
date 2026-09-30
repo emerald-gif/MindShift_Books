@@ -4982,6 +4982,88 @@ app.post('/api/admin/notifications/backfill-lastat', requireAdminApi, async (req
   } catch (err) {
     console.error('/api/admin/notifications/backfill-lastat error', err);
     return res.status(500).json({ error: 'Migration failed' });
+
+// ── In-app feature announcements ────────────────────────────────────────────
+// One rich card in every user's bell ("New creator tool — Go to Comment Manager").
+// Content lives here, keyed by name, so the next launch is just a new entry.
+// notifications.js renders type 'feature_announcement' as the card; ctaUrl must
+// be a same-site path. The doc id is deterministic (announce_<key>_<uid>), so
+// re-running a send never gives anyone a second copy.
+const IN_APP_ANNOUNCEMENTS = {
+  'comment-manager': {
+    type: 'feature_announcement',
+    badgeLabel: 'New creator tool',
+    title: 'Meet the new Comment Manager',
+    message: 'Been away for a few hours? Catch up on every comment from all your posts and articles in one place.',
+    bullets: [
+      'See comments from all your content in one inbox',
+      'Reply to many people at once, each by first name',
+      'Like, hide or delete in bulk'
+    ],
+    ctaLabel: 'Go to Comment Manager',
+    ctaUrl: '/comment-manager'
+  }
+};
+
+// POST /api/admin/announcements/:key/send
+//   body (all optional): { testUid, force, dryRun }
+//   testUid → send to just that one account first (add force:true to re-send it)
+//   dryRun  → count who would get it, write nothing
+app.post('/api/admin/announcements/:key/send', requireAdminApi, async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const def = IN_APP_ANNOUNCEMENTS[req.params.key];
+    if (!def) return res.status(404).json({ error: 'Unknown announcement' });
+    const { testUid, force, dryRun } = req.body || {};
+    const key = req.params.key;
+    const idFor = uid => `announce_${key}_${uid}`;
+    const now = admin.firestore.Timestamp.now();
+    const doc = uid => ({
+      recipientUid: uid, type: def.type,
+      actorUid: 'official', actorName: 'MindShift Books', actorPhoto: '', actorUsername: 'official',
+      badgeLabel: def.badgeLabel, title: def.title, message: def.message, bullets: def.bullets,
+      ctaLabel: def.ctaLabel, ctaUrl: def.ctaUrl, announcementKey: key,
+      read: false, createdAt: now, lastAt: now
+    });
+
+    let created = 0, skipped = 0, scanned = 0;
+    const writeChunk = async uids => {
+      const refs = uids.map(u => db.collection('notifications').doc(idFor(u)));
+      const existing = force ? [] : await db.getAll(...refs);
+      const have = new Set(existing.filter(d => d.exists).map(d => d.id));
+      const todo = uids.filter(u => !have.has(idFor(u)));
+      skipped += uids.length - todo.length;
+      if (dryRun || !todo.length) { if (dryRun) created += todo.length; return; }
+      const batch = db.batch();
+      todo.forEach(u => batch.set(db.collection('notifications').doc(idFor(u)), doc(u)));
+      await batch.commit();
+      created += todo.length;
+    };
+
+    if (testUid) {
+      scanned = 1;
+      await writeChunk([String(testUid)]);
+    } else {
+      // Page through every user by document id (ids only — no user fields are read).
+      let last = null;
+      for (;;) {
+        let q = db.collection('users').orderBy('__name__').select().limit(300);
+        if (last) q = q.startAfter(last);
+        const snap = await q.get();
+        if (snap.empty) break;
+        scanned += snap.size;
+        await writeChunk(snap.docs.map(d => d.id));
+        last = snap.docs[snap.docs.length - 1];
+        if (snap.size < 300) break;
+      }
+    }
+    console.log(`Announcement "${key}" by ${ADMIN_USER}: ${dryRun ? 'dry run ' : ''}created ${created}, already had ${skipped}, scanned ${scanned}`);
+    return res.json({ ok: true, dryRun: !!dryRun, scanned, created, alreadyHadIt: skipped });
+  } catch (err) {
+    console.error('/api/admin/announcements send error', err);
+    return res.status(500).json({ error: 'Could not send announcement' });
+  }
+});
   }
 });
 
