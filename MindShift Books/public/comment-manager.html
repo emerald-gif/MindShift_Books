@@ -335,7 +335,7 @@ const PAGE = 15;                // comments per fetch
 const CACHE_TTL = 10 * 60e3;    // session cache lifetime
 const INDEX_TTL = 5 * 60e3;     // how long the "my posts + articles" list is trusted before a refresh re-reads it
 const IN_LIMIT = 30;            // Firestore 'in' operator ceiling
-const BATCH_COMMENTS = 40;      // comments per write batch for bulk reply (3-4 writes each, well under the 500 cap)
+const BATCH_COMMENTS = 10;      // comments per write batch for bulk reply (3-4 writes each, well under the 500 cap)
 
 let me = null, myProfile = null, content = null;
 let pinnedId = null, pinnedSnapshot = null;   // single mode only
@@ -388,6 +388,8 @@ function titleOf(c){
   if (c.cType === 'post') return (ct && ct.text) || 'Post';
   return (ct && ct.title) || 'Untitled article';
 }
+const isOff = c => !!(contentOf(c) && contentOf(c).off);   // comments turned off on that post/article
+const replyableItems = () => selectedItems().filter(c => !isOff(c));
 const notifTitleOf = c => c.cType === 'post' ? '' : ((contentOf(c) && contentOf(c).title) || '');
 const readHrefOf   = c => c.cType === 'post' ? `/post-read?id=${c.cId}` : `/article-read?id=${c.cId}`;
 const manageHrefOf = c => `/comment-manager?type=${c.cType}&id=${encodeURIComponent(c.cId)}`;
@@ -397,7 +399,7 @@ function personalize(tpl, c){
   return tpl.replace(/\{name\}/gi, firstName(c.authorName)).replace(/\s+([,.!?])/g, '$1').replace(/[ \t]{2,}/g, ' ').replace(/^[,\s]+/, '').trim();
 }
 function slim(type, d){
-  return { type, id: d.id, title: type === 'article' ? trunc(d.title, 200) : '', text: type === 'post' ? trunc(d.text, 200) : '' };
+  return { type, id: d.id, title: type === 'article' ? trunc(d.title, 200) : '', text: type === 'post' ? trunc(d.text, 200) : '', off: !!d.commentsOff };
 }
 
 // Firestore doc → plain object with createdAt as millis (JSON-safe for the session cache)
@@ -415,7 +417,7 @@ function findComment(cid){
 }
 
 /* ── session cache: reopening within 10 min costs 0 reads ── */
-const cacheKey = () => INBOX ? `cm_inbox_${me.uid}` : `cm_${isPost ? 'p' : 'a'}_${contentId}`;
+const cacheKey = () => INBOX ? `cm2_inbox_${me.uid}` : `cm2_${isPost ? 'p' : 'a'}_${contentId}`;
 function saveCache(){
   try { sessionStorage.setItem(cacheKey(), JSON.stringify({ t:Date.now(), items, replies, oldestCursor, newestCursor, exhausted, contentIndex, streams, indexT })); } catch {}
 }
@@ -451,7 +453,7 @@ async function bootSingle(){
     if (!snap.exists()) return showEmpty('Content not found', 'This may have been deleted.');
     content = snap.data();
     if (content.authorUid !== me.uid) return showEmpty('Not available', 'You can only manage comments on your own posts and articles.');
-    contentIndex[ckey(sType, contentId)] = slim(sType, { id: contentId, title: content.title, text: content.text });
+    contentIndex[ckey(sType, contentId)] = slim(sType, { id: contentId, title: content.title, text: content.text, commentsOff: content.commentsOff });
     renderPreview();
     $('pills').style.display = '';
     $('selectBtn').style.display = '';
@@ -500,6 +502,7 @@ function renderPreview(){
   p.innerHTML = `<div class="preview-lbl">You're viewing comments on your ${isPost ? 'post' : 'article'}</div>
     <div class="preview-title">${esc(title.length > 120 ? title.slice(0,120)+'…' : title)}</div>
     <div class="preview-meta">Tap here to open the ${isPost ? 'post' : 'article'}</div>
+    <div class="preview-meta" id="cmStats" style="font-weight:700"></div>
     <a class="allink" href="/comment-manager" onclick="event.stopPropagation()">‹ See comments from all my posts &amp; articles</a>`;
   p.onclick = () => location.href = isPost ? `/post-read?id=${contentId}` : `/article-read?id=${contentId}`;
 }
@@ -516,8 +519,8 @@ async function loadContentIndex(){
     resilient(() => getDocs(query(collection(db, 'articles'), where('authorUid', '==', me.uid))), { tries: 2 })
   ]);
   const idx = {};
-  pSnap.docs.forEach(d => { const x = d.data(); idx[ckey('post', d.id)]    = slim('post',    { id: d.id, text: x.text }); });
-  aSnap.docs.forEach(d => { const x = d.data(); idx[ckey('article', d.id)] = slim('article', { id: d.id, title: x.title }); });
+  pSnap.docs.forEach(d => { const x = d.data(); idx[ckey('post', d.id)]    = slim('post',    { id: d.id, text: x.text, commentsOff: x.commentsOff }); });
+  aSnap.docs.forEach(d => { const x = d.data(); idx[ckey('article', d.id)] = slim('article', { id: d.id, title: x.title, commentsOff: x.commentsOff }); });
   contentIndex = idx; indexT = Date.now();
 }
 function chunk(arr, n){ const out = []; for (let i = 0; i < arr.length; i += n) out.push(arr.slice(i, i + n)); return out; }
@@ -774,7 +777,8 @@ function commentHTML(c, isReply){
     + (!isReply && isUnreplied(c) ? '<span class="badge new">Needs reply</span>' : '');
 
   const acts = [];
-  if (!isReply) acts.push(`<button class="act primary" onclick="openReply('${c.id}')">${IC.reply}Reply</button>`);
+  const off = isOff(c);
+  if (!isReply && !off) acts.push(`<button class="act primary" onclick="openReply('${c.id}')">${IC.reply}Reply</button>`);
   acts.push(`<button class="act${c.liked ? ' liked' : ''}" onclick="toggleCommentLike('${c.id}','${c.authorUid}')">${c.liked ? '♥' : '♡'} ${c.likeCount > 0 ? c.likeCount : 'Like'}</button>`);
   acts.push(`<button class="act" id="mb-${c.id}" onclick="toggleMore('${c.id}')" aria-expanded="false" aria-controls="mp-${c.id}">More <span class="chev">▾</span></button>`);
 
@@ -791,8 +795,8 @@ function commentHTML(c, isReply){
   const repBtn = (!isReply && c.replyCount > 0)
     ? `<button class="rep-link" onclick="toggleReplies('${c.id}')">${openReplies.has(c.id) ? 'Collapse replies' : `Show ${c.replyCount} ${c.replyCount===1?'reply':'replies'}`}</button>` : '';
 
-  const rep = isReply ? '' : `<div class="replies" id="rep-${c.id}" style="display:${openReplies.has(c.id)?'block':'none'}">${openReplies.has(c.id) ? repliesHTML(c.id) : ''}</div>
-    <div class="ri-row" id="rir-${c.id}"><textarea class="ri" id="ri-${c.id}" rows="2" placeholder="Write your reply to ${esc(c.authorName)}…" oninput="riInput('${c.id}',this)"></textarea>
+  const rep = isReply ? '' : `${off ? '<div class="hid-note" style="margin-top:8px">Comments are off on this '+c.cType+', so new replies are paused.</div>' : ''}<div class="replies" id="rep-${c.id}" style="display:${openReplies.has(c.id)?'block':'none'}">${openReplies.has(c.id) ? repliesHTML(c.id) : ''}</div>
+    <div class="ri-row" id="rir-${c.id}" ${off ? 'hidden' : ''}><textarea class="ri" id="ri-${c.id}" rows="2" placeholder="Write your reply to ${esc(c.authorName)}…" oninput="riInput('${c.id}',this)"></textarea>
       <div class="ri-actions"><button class="ri-cancel" onclick="openReply('${c.id}')">Cancel</button><button class="ri-send" id="ris-${c.id}" onclick="sendReply('${c.id}')" disabled>Post reply</button></div></div>`;
 
   const on = (INBOX && !isReply) ? `<div class="cm-on">
@@ -818,6 +822,12 @@ function repliesHTML(pid){
   if (!r) return '<div style="padding:8px 0;font-size:13px;color:#64748b">Loading replies…</div>';
   return r.length ? r.map(x => commentHTML(x, true)).join('') : '<div style="padding:8px 0;font-size:13px;color:#64748b">No replies yet.</div>';
 }
+function statsLine(list, partial){
+  // ONE definition everywhere: top-level comments written by other people (your own and replies are not counted)
+  const others = list.filter(c => c.authorUid !== me.uid);
+  const need = others.filter(isUnreplied).length, hid = others.filter(c => c.hidden).length;
+  return `${others.length} comment${others.length===1?'':'s'} from readers · ${need} need a reply · ${hid} hidden${partial ? ' (loaded so far)' : ''}`;
+}
 function renderInboxChrome(base){
   // summary card
   const unrep = base.filter(isUnreplied);
@@ -825,7 +835,8 @@ function renderInboxChrome(base){
   const p = $('preview');
   p.innerHTML = `<div class="preview-lbl">Your comments</div>
     <div class="preview-title">${unrep.length ? `${unrep.length} comment${unrep.length===1?'':'s'} waiting for your reply` : "You're all caught up 🎉"}</div>
-    <div class="preview-meta">${unrep.length ? `From ${spread} of your posts &amp; articles${allLoaded() ? '' : ' so far'}. Tap <b>Reply</b> on a comment, or use the buttons below to answer many at once.` : `${base.length} comment${base.length===1?'':'s'} on your posts and articles, and none need a reply.`}</div>`;
+    <div class="preview-meta">${unrep.length ? `From ${spread} of your posts &amp; articles${allLoaded() ? '' : ' so far'}. Tap <b>Reply</b> on a comment, or use the buttons below to answer many at once.` : `${base.length} comment${base.length===1?'':'s'} on your posts and articles, and none need a reply.`}</div>
+    <div class="preview-meta" style="font-weight:700">${statsLine(base, !allLoaded())}</div>`;
   // content filter
   const agg = {};
   base.forEach(c => { const k = ckey(c.cType, c.cId); const a = agg[k] || (agg[k] = { n: 0, u: 0, c }); a.n++; if (isUnreplied(c)) a.u++; });
@@ -841,7 +852,7 @@ function renderInboxChrome(base){
 }
 function renderQuick(list){
   const el = $('qaStrip');
-  const un = list.filter(isUnreplied);
+  const un = list.filter(c => isUnreplied(c) && !isOff(c));
   if (selectMode || !un.length) { el.style.display = 'none'; return; }
   el.style.display = '';
   el.innerHTML = `<button class="qa-btn go" onclick="replyToAllUnreplied()">Reply to all ${un.length} that need a reply</button>
@@ -855,6 +866,7 @@ function render(){
   }
   const base = baseItems();
   if (INBOX) renderInboxChrome(base);
+  else if ($('cmStats')) $('cmStats').textContent = statsLine(base, !allLoaded());
   $('fdesc').textContent = FDESC[filter] || '';
   if (!base.length) {
     const noContent = INBOX && !Object.keys(contentIndex).length;
@@ -897,9 +909,9 @@ function enterSelectWith(ids){
   $('selectBtn').classList.add('primary');
   render();
 }
-window.selectAllUnreplied = function(){ enterSelectWith(visible().filter(isUnreplied).map(c => c.id)); toast('Comments that need a reply are selected'); };
+window.selectAllUnreplied = function(){ enterSelectWith(visible().filter(c => isUnreplied(c) && !isOff(c)).map(c => c.id)); toast('Comments that need a reply are selected'); };
 window.replyToAllUnreplied = function(){
-  const ids = visible().filter(isUnreplied).map(c => c.id);
+  const ids = visible().filter(c => isUnreplied(c) && !isOff(c)).map(c => c.id);
   if (!ids.length) return;
   enterSelectWith(ids); openBulkReply();
 };
@@ -924,7 +936,7 @@ window.bulkHide = async function(){
   const next = !sel.every(c => c.hidden);
   const todo = sel.filter(c => c.hidden !== next);
   let ok = 0, bad = 0;
-  await inChunks(todo, 400, async part => {
+  await inChunks(todo, 10, async part => {
     try {
       const b = writeBatch(db);
       part.forEach(c => b.update(doc(db,'comments',c.id), { hidden: next }));
@@ -988,8 +1000,8 @@ window.bulkLike = async function(){
 
 /* ── bulk reply: one message → many comments, across many posts/articles ── */
 window.openBulkReply = function(){
-  const sel = selectedItems();
-  if (!sel.length) return;
+  const sel = replyableItems();
+  if (!sel.length) { if (selectedItems().length) toast('Comments are off on the selected posts/articles'); return; }
   const spread = new Set(sel.map(c => ckey(c.cType, c.cId))).size;
   $('sheetTitle').textContent = `Reply to ${sel.length} comment${sel.length===1?'':'s'}`;
   $('sheetSub').textContent = spread > 1
@@ -1013,7 +1025,7 @@ window.insertName = function(){
 window.bulkInput = function(){
   const el = $('bulkText'), v = el.value.trim();
   $('bulkSend').disabled = !v;
-  const sel = selectedItems();
+  const sel = replyableItems();
   $('bulkSend').textContent = `Send to ${sel.length} comment${sel.length===1?'':'s'}`;
   const pv = $('bulkPrev');
   if (v && sel.length) { pv.style.display = 'block'; pv.innerHTML = `<b>Preview — what ${esc(firstName(sel[0].authorName) || sel[0].authorName)} will see:</b><br>${esc(personalize(v, sel[0]))}`; }
@@ -1050,7 +1062,7 @@ async function commitReplyGroup(p, group, tpl){
 }
 window.sendBulkReply = async function(){
   const tpl = $('bulkText').value.trim();
-  const sel = selectedItems();
+  const sel = replyableItems();
   if (!tpl || !sel.length) return;
   const btn = $('bulkSend'); btn.disabled = true;
   const p = await ensureProfile();
@@ -1119,9 +1131,9 @@ window.bulkDelete = async function(){
     const k = ckey(x.c.cType, x.c.cId); dec[k] = (dec[k] || 0) + 1 + x.rids.length;
     (deletedByContent[k] = deletedByContent[k] || new Set()).add(x.c.id);
   };
-  // groups capped at ~400 ops so a batch never exceeds Firestore's 500-write limit
+  // groups capped at ~10 deletes: each delete makes a rules lookup and Firestore limits lookups per batch
   const groups = []; let cur = [], ops = 0;
-  plan.forEach(x => { const n = 1 + x.rids.length; if (ops + n > 400 && cur.length) { groups.push(cur); cur = []; ops = 0; } cur.push(x); ops += n; });
+  plan.forEach(x => { const n = 1 + x.rids.length; if (ops + n > 10 && cur.length) { groups.push(cur); cur = []; ops = 0; } cur.push(x); ops += n; });
   if (cur.length) groups.push(cur);
   for (const g of groups) {
     try { await commitPlan(g); g.forEach(markGone); }
@@ -1204,6 +1216,7 @@ async function ensureProfile(){
 // Reply = the reply, parent's replyCount, that content's meta (commentCount + creatorReplyCount in ONE write), and a notification.
 window.sendReply = async function(pid){
   const parent = items.find(i => i.id === pid); if (!parent) return;
+  if (isOff(parent)) { toast('Comments are off, so replies are paused'); return; }
   const inp = $('ri-' + pid), btn = $('ris-' + pid);
   const text = (inp.value || '').trim(); if (!text) return;
   btn.disabled = true; btn.textContent = '…';
@@ -1224,6 +1237,35 @@ window.sendReply = async function(pid){
   } catch (e) { console.error('sendReply:', e && e.code); btn.disabled = false; btn.textContent = 'Post reply'; toast("Couldn't post your reply. Please try again."); }
 };
 
+/* Shown only when Firestore answers permission-denied: reads back the facts the security rules look at,
+   so the exact reason can be seen on a phone without opening dev tools. */
+async function diagDenied(action, cid){
+  const out = ['Action: ' + action, 'Signed-in uid: ' + (auth.currentUser ? auth.currentUser.uid : 'NONE'), 'Comment id: ' + cid];
+  try {
+    const cs = await getDoc(doc(db, 'comments', cid));
+    if (!cs.exists()) out.push('Comment doc: NOT FOUND');
+    else {
+      const d = cs.data();
+      out.push('comment.postId: ' + JSON.stringify(d.postId), 'comment.articleId: ' + JSON.stringify(d.articleId),
+        'comment.parentId: ' + JSON.stringify(d.parentId), 'comment.authorUid: ' + d.authorUid, 'comment.hidden: ' + JSON.stringify(d.hidden));
+      for (const [col, f] of [['posts', 'postId'], ['articles', 'articleId']]) {
+        if (typeof d[f] === 'string') {
+          const ps = await getDoc(doc(db, col, d[f]));
+          out.push(col + '/' + d[f] + ': ' + (ps.exists() ? 'exists, authorUid=' + ps.data().authorUid : 'NOT FOUND'));
+        }
+      }
+    }
+  } catch (e) { out.push('Diagnostic read failed: ' + (e && e.code)); }
+  const txt = out.join('\n');
+  const box = document.createElement('div');
+  box.style.cssText = 'position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#0f172a;color:#e2e8f0;border-radius:14px;padding:14px;font:12px/1.5 monospace;max-height:55vh;overflow:auto;white-space:pre-wrap;word-break:break-all';
+  box.textContent = 'PERMISSION DENIED — screenshot this and send it\n\n' + txt + '\n\n';
+  const b = document.createElement('button');
+  b.textContent = 'Close'; b.style.cssText = 'padding:8px 16px;border-radius:10px;border:0;font-weight:700';
+  b.onclick = () => box.remove(); box.appendChild(b);
+  document.body.appendChild(box);
+}
+
 // Hide/unhide = 1 write. Deliberately does NOT touch commentCount.
 window.toggleHide = async function(cid, pid){
   const list = pid ? (replies[pid] || []) : items;
@@ -1237,6 +1279,7 @@ window.toggleHide = async function(cid, pid){
   } catch (e) {
     el && el.classList.remove('busy');
     console.error('toggleHide:', e && e.code);
+    if (e && e.code === 'permission-denied') diagDenied('hide', cid);
     toast(e && e.code === 'permission-denied' ? "That didn't go through. Please try again in a moment." : "Couldn't update that. Please try again.");
   }
 };
@@ -1278,6 +1321,7 @@ window.delComment = async function(cid, pid){
   } catch (e) {
     el && el.classList.remove('busy');
     console.error('delComment:', e && e.code);
+    if (e && e.code === 'permission-denied') diagDenied('delete', cid);
     toast(e && e.code === 'permission-denied' ? "That didn't go through. Please try again in a moment." : "Couldn't delete that. Please try again.");
   }
 };
