@@ -5005,6 +5005,14 @@ const IN_APP_ANNOUNCEMENTS = {
   }
 };
 
+// GET /api/admin/announcements/ping — open this in the browser (while logged in to the
+// admin dashboard) to confirm the server that is actually running has the announcement code.
+// JSON back = new code is live. A "page not found" page = the server still runs old code (restart/redeploy it).
+app.get('/api/admin/announcements/ping', requireAdminApi, (req, res) => {
+  res.json({ ok: true, announcements: Object.keys(IN_APP_ANNOUNCEMENTS), usersCollection: !!db });
+});
+console.log('[announcements] in-app announcement endpoints registered:', Object.keys(IN_APP_ANNOUNCEMENTS).join(', '));
+
 // POST /api/admin/announcements/:key/send
 //   body (all optional): { testUid, force, dryRun }
 //   testUid → send to just that one account first (add force:true to re-send it)
