@@ -769,6 +769,9 @@ app.post('/api/session/clear', requireUser, async (req, res) => {
 // the Affiliates tab) stays below for now.
 app.use(require('./server/affiliate'));
 
+// Link previews for the post composer (server-side fetch of a URL's title / image — see server/link-preview.js)
+app.use(require('./server/link-preview'));
+
 /**
  * Get USD -> NGN exchange rate
  * Priority:
