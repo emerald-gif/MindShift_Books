@@ -240,21 +240,35 @@ function cacheSet(k, data, ttl) {
   cache.set(k, { at: Date.now(), ttl, data });
 }
 
+const FALLBACK_CODES = /^(ECONNREFUSED|ECONNRESET|EPIPE|EPROTO|ERR_SSL|ERR_TLS|ERR_OSSL|CERT_|DEPTH_ZERO|SELF_SIGNED|UNABLE_TO_|HPE_)/;
+function isConnectOrTlsError(err) {
+  const code = String((err && (err.code || (err.cause && err.cause.code))) || '');
+  return FALLBACK_CODES.test(code) || /wrong version number|ssl|tls|certificate/i.test(String(err && err.message));
+}
+
 async function getPreview(rawUrl, opts) {
   const allowPrivate = !!(opts && opts.allowPrivate);
   const u = parseSafeUrl(rawUrl, allowPrivate);          // throws on anything unsafe
   const key = u.href;
   const hit = cacheGet(key);
   if (hit !== undefined) return hit;
-  try {
-    const { buf, type, finalUrl } = await fetchHtml(key, allowPrivate);
-    const preview = buildPreview(decodeBuffer(buf, type), finalUrl, key);
-    cacheSet(key, preview, preview ? OK_TTL_MS : FAIL_TTL_MS);
-    return preview;
-  } catch (err) {
-    cacheSet(key, null, FAIL_TTL_MS);
-    return null;
+  async function attempt(target) {
+    const { buf, type, finalUrl } = await fetchHtml(target, allowPrivate);
+    return buildPreview(decodeBuffer(buf, type), finalUrl, target);
   }
+  let preview = null;
+  try {
+    preview = await attempt(key);
+  } catch (err) {
+    // People often type a bare "example.com" and the composer assumes https. If the site has no working
+    // HTTPS (refused / TLS error), quietly try plain http once. Any other failure just means no card.
+    if (u.protocol === 'https:' && isConnectOrTlsError(err)) {
+      try { const h = new URL(key); h.protocol = 'http:'; preview = await attempt(h.href); }
+      catch (_) { preview = null; }
+    }
+  }
+  cacheSet(key, preview, preview ? OK_TTL_MS : FAIL_TTL_MS);
+  return preview;
 }
 
 const router = express.Router();
@@ -280,4 +294,4 @@ router.get('/api/link-preview', limiter, requireUser, async (req, res) => {
 });
 
 module.exports = router;
-module.exports._internals = { makeSafeLookup, fetchHtml, isPrivateIp, parseSafeUrl, parseMeta, buildPreview, decodeEntities, clean, getPreview, cache };
+module.exports._internals = { isConnectOrTlsError, makeSafeLookup, fetchHtml, isPrivateIp, parseSafeUrl, parseMeta, buildPreview, decodeEntities, clean, getPreview, cache };
