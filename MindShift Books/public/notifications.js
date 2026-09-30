@@ -120,31 +120,6 @@ function injectStylesOnce() {
 @media (min-width:720px){
   .notif-sheet{left:auto;width:440px;box-shadow:-12px 0 40px rgba(15,23,42,.14)}
 }
-
-/* ── Feature announcement card (new creator tools etc.) ── */
-.notif-item.notif-announce{display:block;padding:0;overflow:hidden;border:1px solid rgba(99,102,241,.22);background:linear-gradient(160deg,#ffffff 0%,#f3f4ff 55%,#ecfbff 100%);box-shadow:0 6px 22px -10px rgba(79,70,229,.35)}
-.notif-item.notif-announce:active{transform:scale(.99);background:linear-gradient(160deg,#ffffff 0%,#f3f4ff 55%,#ecfbff 100%)}
-.notif-item.notif-announce.unread::before{display:none}
-.notif-item.notif-announce .notif-unread-dot{top:15px;right:15px}
-.na-top{display:flex;gap:13px;align-items:center;padding:16px 16px 4px}
-.na-av{position:relative;width:54px;height:54px;flex-shrink:0}
-.na-av svg.na-art{width:54px;height:54px;display:block;filter:drop-shadow(0 6px 10px rgba(79,70,229,.35))}
-.na-av .na-spark{position:absolute;top:-3px;right:-4px;width:20px;height:20px;border-radius:50%;background:#fff;border:2px solid #eef0ff;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(79,70,229,.25)}
-.na-av .na-spark svg{width:11px;height:11px;fill:#f59e0b;stroke:none}
-.na-head{min-width:0;padding-right:18px}
-.na-chip{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:800;color:#4338ca;background:#e0e7ff;border-radius:99px;padding:3px 9px;margin-bottom:5px}
-.na-chip i{width:5px;height:5px;border-radius:50%;background:#6366f1;display:block}
-.na-title{font-size:15.5px;font-weight:900;color:var(--txt,#0f172a);line-height:1.25;letter-spacing:-.2px}
-.na-body{padding:6px 16px 0;font-size:13.5px;line-height:1.55;color:#475569}
-.na-list{list-style:none;padding:10px 16px 0;display:flex;flex-direction:column;gap:7px}
-.na-list li{display:flex;gap:9px;align-items:flex-start;font-size:13px;line-height:1.4;color:#334155;font-weight:600}
-.na-list li svg{width:16px;height:16px;flex-shrink:0;margin-top:1px;stroke:#6366f1;fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
-.na-foot{display:flex;align-items:center;gap:12px;padding:14px 16px 15px}
-.na-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;border:none;border-radius:99px;padding:12px 16px;font:inherit;font-size:13.5px;font-weight:800;color:#fff;cursor:pointer;background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 55%,#06b6d4 100%);box-shadow:0 8px 18px -8px rgba(79,70,229,.7)}
-.na-btn svg{width:15px;height:15px;fill:none;stroke:#fff;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
-.na-btn:focus-visible{outline:2px solid #4f46e5;outline-offset:2px}
-.na-time{font-size:11.5px;font-weight:700;color:var(--mute,#94a3b8);flex-shrink:0}
-.notif-item.unread .na-time{color:var(--p,#4f46e5)}
 @media (prefers-reduced-motion:reduce){
   .notif-item,.notif-badge{animation:none}
   .notif-sheet{transition:none}
@@ -226,7 +201,6 @@ function notifMessage(n) {
     case 'mention':      return `${name} mentioned you in ${n.targetType==='article'?'an article':'a post'}${n.targetTitle ? `<span class="notif-snip">: “${nEsc(nTrunc(n.targetTitle, 60))}”</span>` : ''}`;
     case 'repost':       return `${name} reposted your ${n.targetType==='post'?'post':'article'}${title}`;
     case 'repost_quote': return `${name} reposted your ${n.targetType==='post'?'post':'article'} with a caption${title}`;
-    case 'feature_announcement': return `<strong>${nEsc(n.title || 'What\u2019s new on MindShift Books')}</strong>${n.message ? ' — ' + nEsc(n.message) : ''}`;
     case 'admin_message':    return `<strong>${nEsc(nMoney(n.title || 'Message from MindShift Books'))}</strong>${n.message ? ' — ' + nEsc(nMoney(n.message)) : ''}`;
     case 'founding_creator_earned': return `<strong>${nEsc(nMoney(n.title || 'You earned the Founding Creator badge!'))}</strong>${n.message ? ' — ' + nEsc(nMoney(n.message)) : ''}`;
     case 'ebook_voucher_earned':    return `<strong>${nEsc(nMoney(n.title || 'Your voucher is ready'))}</strong>${n.message ? ' — ' + nEsc(nMoney(n.message)) : ''}`;
@@ -270,32 +244,7 @@ function nGroupLabel(ts) {
   if (diffDays <= 7) return 'This week';
   return 'Earlier';
 }
-
-// ── Feature announcement: a richer card than a normal one-line notification.
-// Driven entirely by the notification doc, so the next launch needs no code change:
-//   type:'feature_announcement', title, message, bullets:[..], ctaLabel, ctaUrl, badgeLabel
-const NA_ART = '<svg class="na-art" viewBox="0 0 56 56" aria-hidden="true"><defs><linearGradient id="naG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4f46e5"/><stop offset=".55" stop-color="#7c3aed"/><stop offset="1" stop-color="#06b6d4"/></linearGradient></defs><circle cx="28" cy="28" r="28" fill="url(#naG)"/><circle cx="28" cy="28" r="27" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="1.2"/><path d="M13 19.5a4.5 4.5 0 0 1 4.5-4.5h17a4.5 4.5 0 0 1 4.5 4.5v9a4.5 4.5 0 0 1-4.5 4.5H24l-6 5v-5h-.5A4.5 4.5 0 0 1 13 28.5z" fill="#fff" opacity=".95"/><path d="M27 33.5v2a3.5 3.5 0 0 0 3.5 3.5H37l5 4v-4h.5a3.5 3.5 0 0 0 3.5-3.5v-7a3.5 3.5 0 0 0-3.5-3.5H41" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" opacity=".85"/><circle cx="20" cy="24" r="1.7" fill="#6366f1"/><circle cx="26" cy="24" r="1.7" fill="#7c3aed"/><circle cx="32" cy="24" r="1.7" fill="#06b6d4"/></svg>';
-const NA_STAR = '<svg viewBox="0 0 24 24"><path d="M12 2l2.6 6.4L21 9.3l-5 4.4 1.5 6.6L12 16.9 6.5 20.3 8 13.7 3 9.3l6.4-.9z"/></svg>';
-const NA_CHECK = '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>';
-const NA_ARROW = '<svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
-function buildAnnounceItem(id, n, idx) {
-  const unread = !n.read, time = nTimeAgo(n.lastAt || n.createdAt);
-  const delay = Math.min(idx || 0, 12) * 25;
-  const bullets = (Array.isArray(n.bullets) ? n.bullets : []).filter(b => typeof b === 'string' && b.trim()).slice(0, 4);
-  const art = n.actorPhoto
-    ? `<div class="notif-av" style="width:54px;height:54px"><img src="${nEsc(n.actorPhoto)}" alt="" onerror="this.style.display='none'"></div>`
-    : NA_ART;
-  return `<div class="notif-item notif-announce ${unread ? 'unread' : ''}" style="animation-delay:${delay}ms" onclick="handleNotifTap('${nEsc(id)}')">`
-    + `<span class="notif-unread-dot ${unread ? '' : 'invisible'}"></span>`
-    + `<div class="na-top"><div class="na-av">${art}<span class="na-spark">${NA_STAR}</span></div>`
-    + `<div class="na-head"><div class="na-chip"><i></i>${nEsc(n.badgeLabel || 'New creator tool')}</div><div class="na-title">${nEsc(n.title || 'What\u2019s new on MindShift Books')}</div></div></div>`
-    + (n.message ? `<div class="na-body">${nEsc(n.message)}</div>` : '')
-    + (bullets.length ? `<ul class="na-list">${bullets.map(b => `<li>${NA_CHECK}<span>${nEsc(b)}</span></li>`).join('')}</ul>` : '')
-    + `<div class="na-foot"><button type="button" class="na-btn" onclick="event.stopPropagation();handleNotifTap('${nEsc(id)}')">${nEsc(n.ctaLabel || 'Take a look')}${NA_ARROW}</button><span class="na-time">${time}</span></div>`
-    + `</div>`;
-}
 function buildNotifItem(id, n, idx) {
-  if (n.type === 'feature_announcement') return buildAnnounceItem(id, n, idx);
   const unread = !n.read, msg = notifMessage(n), time = nTimeAgo(n.lastAt || n.createdAt);
   const photos = Array.isArray(n.actorPhotos) ? n.actorPhotos.filter(Boolean) : [];
   let avHtml;
@@ -532,12 +481,6 @@ export function initNotificationUI({ db, getCurrentUser, getMyProfile, fs }) {
         location.href = `/founding-creator`; break;
       case 'ebook_voucher_earned':
         location.href = `/books`; break;
-      case 'feature_announcement': {
-        // Same-site paths only — never follow an arbitrary URL out of a notification doc.
-        const u = typeof n.ctaUrl === 'string' ? n.ctaUrl : '';
-        if (u.startsWith('/') && !u.startsWith('//')) location.href = u;
-        break;
-      }
     }
   };
   window.markAllRead = async function () {
