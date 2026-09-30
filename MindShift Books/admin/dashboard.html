@@ -3433,7 +3433,15 @@ ${ctaBlock}${captionBlock}${assetsBlock}${affiliateLinkBlock}
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ dryRun, testUid: uid || undefined, force: !!uid })
         });
-        const j = await res.json();
+        let j = null;
+        try { j = await res.json(); } catch (_) {}
+        if (!j) {
+          st.textContent = res.status === 404
+            ? 'The server does not have this endpoint yet — deploy the updated server.js, then try again.'
+            : `Unexpected response from the server (${res.status}). Check the server logs.`;
+          return;
+        }
+        if (res.status === 401) { st.textContent = 'Your admin session expired — log in again.'; return; }
         if (!res.ok) { st.textContent = j.error || 'Failed'; return; }
         st.textContent = dryRun
           ? `${j.created} user${j.created === 1 ? '' : 's'} would get it (${j.alreadyHadIt} already have it, ${j.scanned} checked).`
