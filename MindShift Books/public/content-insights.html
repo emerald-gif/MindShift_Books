@@ -528,11 +528,21 @@ async function renderLatestCommentCard() {
     }
 
     const isReply = !!top.parentId;
+    // Personalise: your own latest comment reads "You replied", and anyone else is shown
+    // under their CURRENT profile name (comments only store the name they had when posting).
+    const mine = !!(top.authorUid && top.authorUid === _ciUid);
+    let who = top.authorName || 'Someone';
+    if (!mine && top.authorUid) {
+      try {
+        const us = await resilient(() => getDoc(doc(db, 'users', top.authorUid)), { tries: 1 });
+        if (us.exists() && us.data().name) who = us.data().name;
+      } catch (e) { /* keep the stored name */ }
+    }
     card.querySelector('.cm-link-body').innerHTML = `
       <div class="cm-link-top">
         <span class="cm-link-lbl">Comment Manager</span><span class="cm-link-dot"></span>
       </div>
-      <div class="cm-link-txt"><b>${esc(top.authorName || 'Someone')}</b> ${isReply ? 'replied' : 'commented'}: ${esc(nTrunc(top.text || '', 80))}</div>
+      <div class="cm-link-txt"><b>${mine ? 'You' : esc(who)}</b> ${isReply ? 'replied' : 'commented'}: ${esc(nTrunc(top.text || '', 80))}</div>
       <div class="cm-link-time">${ago(top.createdAt)}</div>`;
   } catch (e) {
     // Permanent card degrades to a plain link rather than disappearing.
