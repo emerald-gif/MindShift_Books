@@ -616,7 +616,7 @@ async function loadInsights(uid){
       );
       setNum('statArticleViews', 0);
       setNum('statEngagement', 0);
-      renderCommentCenter([]);
+      renderCommentCenter([], {});
       return;
     }
 
@@ -653,8 +653,10 @@ async function loadInsights(uid){
 
     renderBestArticle(enriched);
     renderBreakdown(totalLikes, totalComments, totalReposts);
+    const needs = await loadNeedsReply(content);
+    if (needs) enriched.forEach(a => { a.needsReply = needs[a.id] || 0; });
     renderPerfList(enriched);
-    renderCommentCenter(enriched);
+    renderCommentCenter(enriched, needs);
     _insState = 'ok';
 
   }catch(e){
@@ -1028,31 +1030,55 @@ function renderBreakdown(likes, comments, reposts){
 // ── PERMANENT: Comment Center is ONE inbox for ALL your content. It adds up the
 // unanswered comments across every post + article and opens the central
 // Comment Manager (/comment-manager, no id) — not any single item's manager. ──
-function renderCommentCenter(enriched){
+// Counts REAL comments the same way the comment manager does (top-level, not yours, not hidden,
+// no reply yet — a missing replyCount counts as 0) so this card and the manager agree.
+// Equality-only filters -> no new index.
+// Returns { [contentId]: n } or null if it can't be read (so we never show a fake number).
+async function loadNeedsReply(content){
+  try {
+    const chunks = (ids)=>{ const o=[]; for(let i=0;i<ids.length;i+=30) o.push(ids.slice(i,i+30)); return o; };
+    const jobs = [];
+    [['postId','post'],['articleId','article']].forEach(([field,type])=>{
+      const ids = content.filter(c=>c.type===type).map(c=>c.id);
+      chunks(ids).forEach(part => jobs.push(
+        resilient(()=>getDocs(query(collection(db,'comments'),
+          where(field,'in',part), where('parentId','==',null), limit(300))), {tries:2})
+          .then(snap => snap.docs.map(d=>({ cid: d.data()[field], a: d.data().authorUid, h: d.data().hidden===true, r: d.data().replyCount||0 })))
+      ));
+    });
+    const rows = (await Promise.all(jobs)).flat();
+    const out = {};
+    rows.forEach(r => { if (r.a !== _insUid && !r.h && r.r === 0) out[r.cid] = (out[r.cid]||0) + 1; });
+    return out;
+  } catch(e){ console.error('needs-reply count failed:', e?.code, e?.message); return null; }
+}
+function renderCommentCenter(enriched, needs){
   const card = document.getElementById('cmCenterCard');
   const body = card.querySelector('.cm-center-body');
   const href = '/comment-manager';
 
-  const withComments = enriched.filter(a => a.comments > 0);
-  if (!withComments.length) {
+  if (!enriched.length) {
     body.innerHTML = `<div class="cm-center-lbl">Your comments</div>
       <div class="cm-center-txt" style="color:#94a3b8">No comments yet. When someone comments on your posts or articles, you'll see it here.</div>`;
     card.onclick = null;
     return;
   }
-
-  const perItem = withComments.map(a => ({ ...a, unanswered: Math.max(0, a.comments - (a.creatorReplyCount || 0)) }));
-  const totalUnanswered = perItem.reduce((s, a) => s + a.unanswered, 0);
-  const spread = perItem.filter(a => a.unanswered > 0).length;
-  const totalComments = perItem.reduce((s, a) => s + a.comments, 0);
-
+  if (!needs) {   // couldn't read comments — don't guess
+    body.innerHTML = `<div class="cm-center-lbl">Your comments</div>
+      <div class="cm-center-txt big">Open your comments</div>
+      <div class="cm-center-sub">Read and reply to what people wrote · Tap to open</div>`;
+    card.onclick = () => location.href = href;
+    return;
+  }
+  const totalUnanswered = Object.values(needs).reduce((s, n) => s + n, 0);
+  const spread = Object.keys(needs).length;
   body.innerHTML = totalUnanswered > 0
     ? `<div class="cm-center-lbl">Your comments</div>
        <div class="cm-center-txt big">${totalUnanswered} comment${totalUnanswered===1?'':'s'} ${totalUnanswered===1?'needs':'need'} your reply</div>
        <div class="cm-center-sub">${spread===1?'On 1 of your posts or articles':`Across ${spread} of your posts &amp; articles`} · Tap to reply</div>`
     : `<div class="cm-center-lbl">Your comments</div>
        <div class="cm-center-txt big">You're all caught up 🎉</div>
-       <div class="cm-center-sub">${totalComments} comment${totalComments===1?'':'s'} so far, and all replied to · Tap to view</div>`;
+       <div class="cm-center-sub">No comments are waiting for a reply · Tap to view</div>`;
   card.onclick = () => location.href = href;
 }
 
@@ -1066,7 +1092,7 @@ function renderPerfList(items){
     // Pin badge + a nudge when comments are piling up unanswered — the same
     // pin/reply-rate fields comment-manager.html writes, surfaced at the top level.
     const pinBadge = a.pinned ? `<span class="perf-pin" title="Has a pinned comment">📌</span>` : '';
-    const unanswered = a.comments - a.creatorReplyCount;
+    const unanswered = (a.needsReply != null) ? a.needsReply : 0;
     const nudge = (unanswered >= 3) ? `<span class="perf-nudge">${unanswered} need a reply</span>` : '';
     return `
     <div class="perf-row" onclick="location.href='${href}'">
