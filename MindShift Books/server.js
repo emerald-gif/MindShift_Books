@@ -5609,6 +5609,81 @@ app.post('/api/admin/customer-broadcast/send', async (req, res) => {
 });
 
 
+// ── One-time in-app announcements (auto-send on deploy) ─────────────────────
+// Add an entry to ANNOUNCEMENTS and redeploy: on boot the server drops one
+// in-app notification (the same docs the bell reads) into EVERY user's
+// notification list. Safe to redeploy again and again — it never sends twice:
+//   1. meta/announcement_<id> is set to done once the whole broadcast finishes,
+//      so later boots skip it instantly.
+//   2. Each notification has a fixed doc id (announce_<id>_<uid>) and is written
+//      with create(), so if a boot dies halfway (or two instances boot at the
+//      same time) nobody ever gets it twice and the rest still get filled in.
+// To send a NEW announcement later, add a new entry with a NEW id. Old ones
+// stay in the list harmlessly (they're marked done). Remove an entry only after
+// it has gone out.
+const ANNOUNCEMENTS = [
+  {
+    id: 'comment-manager-launch-2026-09',
+    title: 'Introducing Comment Manager ✨',
+    message: 'A new creator tool — you can now manage all your comments from one place. Reply, pin and hide comments across your posts and articles.',
+    ctaLabel: 'Open Comment Manager',
+    ctaUrl: '/comment-manager'
+  }
+];
+
+async function runAnnouncementBroadcast(a) {
+  if (!db) return;
+  const stateRef = db.collection('meta').doc(`announcement_${a.id}`);
+  try {
+    const state = await stateRef.get();
+    if (state.exists && state.data().done) return;   // already fully sent
+
+    let sent = 0, skipped = 0, last = null;
+    const PAGE = 500;
+    const writer = db.bulkWriter();
+    // Existing notification => ALREADY_EXISTS (gRPC code 6): that user already has it, not an error.
+    writer.onWriteError(err => { if (err.code === 6) { skipped++; return false; } return err.failedAttempts < 5; });
+
+    for (;;) {
+      let q = db.collection('users').orderBy(admin.firestore.FieldPath.documentId()).select().limit(PAGE);
+      if (last) q = q.startAfter(last);
+      const snap = await q.get();
+      if (snap.empty) break;
+      const now = admin.firestore.Timestamp.now();
+      for (const u of snap.docs) {
+        writer.create(db.collection('notifications').doc(`announce_${a.id}_${u.id}`), {
+          recipientUid: u.id,
+          type: 'feature_announcement',
+          actorUid: 'official', actorName: 'MindShift Books', actorPhoto: `${PUBLIC_SITE_URL}/MINDSHIFT.jpg`, actorUsername: 'official',
+          title: a.title, message: a.message,
+          ctaLabel: a.ctaLabel || '', ctaUrl: a.ctaUrl || '',
+          announcementId: a.id,
+          read: false, createdAt: now, lastAt: now
+        }).then(() => { sent++; }).catch(() => {});
+      }
+      last = snap.docs[snap.docs.length - 1];
+      if (snap.size < PAGE) break;
+    }
+    await writer.close();   // waits for every queued write to finish
+
+    await stateRef.set({ done: true, doneAt: admin.firestore.Timestamp.now(), sent, alreadyHad: skipped }, { merge: true });
+    console.log(`[announcements] "${a.id}" delivered: ${sent} new, ${skipped} already had it`);
+  } catch (err) {
+    // Not marked done, so the next boot picks up where this one stopped.
+    console.error(`[announcements] "${a.id}" failed`, err);
+  }
+}
+
+async function runAnnouncements() {
+  for (const a of ANNOUNCEMENTS) await runAnnouncementBroadcast(a);
+}
+
+if (db) {
+  // Small delay so boot/health checks finish first, then fire-and-forget.
+  setTimeout(() => { runAnnouncements(); }, 15 * 1000);
+}
+
+
 // 404 handler — must be last, after all other routes
 app.use((req, res) => {
   res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
