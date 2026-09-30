@@ -977,6 +977,7 @@ main{max-width:1100px;margin:0 auto}
 <div class="toast" id="toast"></div>
 
 <script src="/mentions.js"></script>
+<script src="/link-card.js"></script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
@@ -1750,7 +1751,8 @@ async function renderFollowingTab(fresh = false){
         // showed the caption, never the quoted post/article underneath it.
         quotedFrom: x.quotedFrom||null,
         quotedSnapshot: x.quotedSnapshot||null,
-        mentions: Array.isArray(x.mentions) ? x.mentions : []
+        mentions: Array.isArray(x.mentions) ? x.mentions : [],
+        linkPreview: x.linkPreview||null
       };
     });
     let feedArts = [...feedArtsRaw, ...feedPostsRaw].sort((x,y)=>{
@@ -2616,6 +2618,7 @@ function buildPostCardHtml(p){
       </div>
       ${p.text ? `<div class="pcard-text" id="ptxt-${p.id}">${(window.msbLinkMentions ? msbLinkMentions(esc(p.text), p.mentions) : esc(p.text))}</div><span class="pcard-seemore" id="ptxtmore-${p.id}">See more</span>` : ''}
       ${embed || carousel}
+      ${(!embed && !p.videoUrl && !(p.images && p.images.length) && p.linkPreview && window.msbLinkCard) ? msbLinkCard(p.linkPreview) : ''}
       <div class="acard-foot">
         <button class="acard-like" id="lb-${p.id}" onclick="event.stopPropagation();handleLike('${p.id}')">
           <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
@@ -3441,7 +3444,8 @@ async function loadPublishedPosts(){
         hideLikeCount: !!x.hideLikeCount,
         quotedFrom: x.quotedFrom||null,
         quotedSnapshot: x.quotedSnapshot||null,
-        mentions: Array.isArray(x.mentions) ? x.mentions : []
+        mentions: Array.isArray(x.mentions) ? x.mentions : [],
+        linkPreview: x.linkPreview||null
       };
     });
     if(!_suppressAutoRender){ rebuildMergedFeedOrder(); renderGrid(); }

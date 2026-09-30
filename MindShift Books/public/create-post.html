@@ -164,6 +164,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
     </div>
     <div class="pv" id="imgGrid" style="display:none"></div>
     <div class="video-tile" id="videoTile" style="display:none"></div>
+    <div id="linkPrev" style="display:none"></div>
     <div class="composer-media-hints" id="composerMediaHints">
       <button type="button" class="img-hint" id="imgHint" onclick="openImagePicker()">
         <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
@@ -257,6 +258,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 
 <script src="/image-compress.js"></script>
 <script src="/photo-editor.js"></script>
+<script src="/link-card.js"></script>
 <script src="/upload-cleanup.js"></script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
@@ -284,6 +286,15 @@ let userProfile = {};
 // Each item: {url, uploading} — url filled in once /api/upload-image responds
 let images = [];
 const MAX_IMAGES = 5;
+
+/* ── LINK PREVIEW STATE (logic lives in the LINK PREVIEW block above SUBMIT) ── */
+let linkPrev = null;            // { url, title, description, image, siteName, domain } shown under the text
+let linkLoading = false;        // a lookup is in flight (skeleton card)
+let linkTarget = '';            // the URL that lookup is for
+let linkSeq = 0;                // bumped whenever the text changes the answer, so a stale reply is ignored
+let linkTimer = null;
+let linkPromise = null;
+let linkOff = new Set();        // links the writer removed the card for — never offered again on this post
 
 /* ── DRAFT STATE (logic lives in the DRAFTS block above SUBMIT) ── */
 const DRAFT_KEY = 'mindshift_post_draft';
@@ -351,6 +362,8 @@ async function loadPostForEdit(id){
     document.getElementById('postText').value = p.text||'';
     resetTextHistory();
     images = (p.images||[]).map(url=>({ url, uploading:false }));
+    linkPrev = cleanLink(p.linkPreview);
+    if(!linkPrev){ const u0 = firstUrl(p.text||''); if(u0) linkOff.add(u0); }   // old post: don't surprise-add a card on save
     if(p.videoUrl){
       video = { url: p.videoUrl, thumbnailUrl: p.thumbnailUrl||'', duration: p.duration||0, publicId: p.cloudinaryPublicId||'', uploading:false };
     }
@@ -438,6 +451,7 @@ function updatePostBtn(){
   const stillUploading = images.some(i => i.uploading) || (video && video.uploading);
   document.getElementById('postBtn').disabled = (!val && !images.length && !video) || stillUploading;
   scheduleAutosave(); // text, photo and video changes all pass through here
+  scheduleLinkCheck();
 }
 
 /* ── IMAGES ──
@@ -766,7 +780,9 @@ function draftSnapshot(){
     uid: currentUser ? currentUser.uid : '',
     text: document.getElementById('postText').value,
     images: images.filter(i => i.url && !i.uploading).map(i => i.url),
-    video: vid
+    video: vid,
+    link: linkPrev,
+    linkOff: Array.from(linkOff).slice(0, 20)
   };
 }
 function draftIsEmpty(d){ return !d.text.trim() && !d.images.length && !d.video; }
@@ -836,6 +852,8 @@ function initDraft(){
     if(d && (!d.uid || d.uid === currentUser.uid) && ((d.text || '').trim() || (d.images || []).length || d.video)){
       document.getElementById('postText').value = d.text || '';
       resetTextHistory();
+      linkPrev = cleanLink(d.link);
+      linkOff = new Set(Array.isArray(d.linkOff) ? d.linkOff.slice(0, 20) : []);
       if(d.video && d.video.url){
         // one video OR photos, never both
         video = { url: d.video.url, thumbnailUrl: d.video.thumbnailUrl || '', duration: d.video.duration || 0, publicId: d.video.publicId || '', uploading: false };
@@ -1118,6 +1136,107 @@ async function resolveMentions(text){
   return out.filter(Boolean);
 }
 
+/* ── LINK PREVIEW ──
+   Paste a link in the text → after a short pause the server reads the page's title / image
+   (/api/link-preview) and a card appears under the text. ✕ removes it. The card is saved WITH the
+   post (a snapshot), so feeds never have to fetch anything. Photos or a video replace the card. */
+function firstUrl(text){
+  const m = /(?:https?:\/\/|www\.)[^\s<>"'`]+/i.exec(text || '');
+  if(!m) return '';
+  let u = m[0];
+  for(;;){                                              // trailing punctuation belongs to the sentence, not the link
+    const c = u[u.length-1];
+    if('.,;:!?\'"\u201d\u2019]}'.includes(c)) u = u.slice(0,-1);
+    else if(c === ')' && (u.match(/\(/g)||[]).length < (u.match(/\)/g)||[]).length) u = u.slice(0,-1);   // keep Wikipedia_(film)
+    else break;
+  }
+  if(/^www\./i.test(u)) u = 'https://' + u;
+  try{
+    const x = new URL(u);
+    if(x.protocol !== 'http:' && x.protocol !== 'https:') return '';
+    if(!x.hostname.includes('.')) return '';
+    x.hash = '';                                        // same normalisation the server applies
+    return x.href;
+  }catch(e){ return ''; }
+}
+
+function cleanLink(p){                                  // trusts nothing — drafts / old posts / the server reply all pass through here
+  if(!p || typeof p !== 'object') return null;
+  const t = (v,n) => String(v == null ? '' : v).slice(0,n);
+  const url = t(p.url,2000), title = t(p.title,200), img = t(p.image,2000);
+  if(!/^https?:\/\//i.test(url) || !title.trim()) return null;
+  return { url, title, description: t(p.description,300), image: /^https:\/\//i.test(img) ? img : '', siteName: t(p.siteName,80), domain: t(p.domain,120) };
+}
+
+function hasMediaNow(){ return images.length > 0 || !!video; }
+
+function renderLink(){
+  const box = document.getElementById('linkPrev');
+  if(!box) return;
+  const show = !hasMediaNow();
+  let html = '';
+  if(show && linkLoading && window.msbLinkCardSkeleton) html = msbLinkCardSkeleton();
+  else if(show && linkPrev && window.msbLinkCard) html = msbLinkCard(linkPrev, { removeJs: 'removeLinkPreview()' });
+  box.innerHTML = html;
+  box.style.display = html ? '' : 'none';
+}
+
+function scheduleLinkCheck(){ clearTimeout(linkTimer); linkTimer = setTimeout(checkLink, 600); }
+
+function checkLink(){
+  clearTimeout(linkTimer);
+  if(!currentUser) return;
+  const url = firstUrl(document.getElementById('postText').value);
+  if(!url || linkOff.has(url)){                         // link deleted from the text (or its card was dismissed)
+    const had = !!linkPrev || linkLoading;
+    linkPrev = null; linkLoading = false; linkSeq++;
+    renderLink();
+    if(had) scheduleAutosave();
+    return;
+  }
+  if(linkPrev && linkPrev.url === url){ renderLink(); return; }   // already have it
+  if(hasMediaNow()){ renderLink(); return; }                       // photos / video win: no card, no lookup
+  if(linkLoading && linkTarget === url) return;                    // that lookup is already running
+  linkPrev = null;                                                 // the writer switched to a different link
+  fetchLink(url);
+}
+
+function fetchLink(url){
+  const seq = ++linkSeq;
+  linkLoading = true; linkTarget = url;
+  renderLink();
+  linkPromise = (async () => {
+    let prev = null;
+    try{
+      const token = await currentUser.getIdToken();
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 10000);
+      const r = await fetch('/api/link-preview?url=' + encodeURIComponent(url), { headers:{ 'Authorization':'Bearer '+token }, signal: ctrl.signal });
+      clearTimeout(timer);
+      if(r.ok){ const j = await r.json(); prev = cleanLink(j && j.preview); }
+    }catch(e){ /* offline / slow site — simply no card; the post still works */ }
+    if(seq !== linkSeq) return;                         // text changed while we waited — a newer lookup owns the card now
+    linkLoading = false;
+    linkPrev = (prev && prev.url === url) ? prev : null;
+    renderLink();
+    scheduleAutosave();
+  })();
+}
+
+window.removeLinkPreview = function(){
+  if(linkPrev) linkOff.add(linkPrev.url);
+  linkPrev = null; linkSeq++; linkLoading = false;
+  renderLink();
+  scheduleAutosave();
+};
+
+// Post pressed a moment after pasting a link: let the lookup finish (max 2.5s) so the card isn't lost.
+async function settleLink(){
+  clearTimeout(linkTimer);
+  checkLink();
+  if(linkLoading && linkPromise) await Promise.race([linkPromise, new Promise(r => setTimeout(r, 2500))]);
+}
+
 /* ── SUBMIT ── */
 window.submitPost = async function(){
   if(!currentUser) return;
@@ -1132,6 +1251,8 @@ window.submitPost = async function(){
   btn.textContent = editId ? 'Saving…' : 'Posting…';
   let mentions = [];
   try{ mentions = await resolveMentions(text); }catch(e){ mentions = []; }
+  try{ await settleLink(); }catch(e){}
+  const linkPreview = (linkPrev && !urls.length && !hasVideo && firstUrl(text) === linkPrev.url) ? cleanLink(linkPrev) : null;
 
   // videoFields per the Firebase/Firestore data model in the video spec —
   // Firebase stores the reference (URL/duration/publicId), never the binary.
@@ -1149,6 +1270,7 @@ window.submitPost = async function(){
       // any commentsOff/hideLikeCount settings untouched.
       await setDoc(doc(db,'posts',editId),{
         text, mentions, images: urls, ...videoFields,
+        linkPreview,                       // null clears it when the link was removed / replaced by media
         updatedAt: serverTimestamp()
       }, { merge: true });
       await notifyMentioned(mentions, editId, text);
@@ -1172,6 +1294,7 @@ window.submitPost = async function(){
       authorPhoto: userProfile.photo || currentUser.photoURL || '',
       authorUsername: userProfile.username || '',
       text, mentions, images: urls, ...videoFields,
+      ...(linkPreview ? { linkPreview } : {}),
       status: 'published',
       likeCount: 0, commentCount: 0, saveCount: 0,
       createdAt: serverTimestamp(),

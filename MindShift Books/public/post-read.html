@@ -701,6 +701,7 @@ body{padding-bottom:64px} /* room for the fixed comment bar on post-read */
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
 <script src="/mentions.js"></script>
+<script src="/link-card.js"></script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
@@ -845,7 +846,8 @@ async function loadArticleFromFirestore(){
           hideLikeCount: !!x.hideLikeCount,
           quotedFrom: x.quotedFrom||null,
           quotedSnapshot: x.quotedSnapshot||null,
-          mentions: Array.isArray(x.mentions) ? x.mentions : []
+          mentions: Array.isArray(x.mentions) ? x.mentions : [],
+          linkPreview: x.linkPreview||null
         };
         document.title = (article.text ? article.text.slice(0,60) : 'Post') + ' · MindShift Books';
         document.getElementById('hdrTitle').textContent = 'Post';
@@ -1083,6 +1085,7 @@ async function renderArticle(){
       ${article.text ? `<div class="post-text">${(window.msbLinkMentions ? msbLinkMentions(esc(article.text), article.mentions) : esc(article.text))}</div>` : ''}
       ${article.quotedFrom ? repost.buildEmbedCardHtml(article.quotedSnapshot) : ''}
       ${carouselHtml}
+      ${(!article.quotedFrom && !article.videoUrl && !imgs.length && article.linkPreview && window.msbLinkCard) ? msbLinkCard(article.linkPreview) : ''}
       <div class="action-bar">
         <button class="act-btn act-like" id="actLike" onclick="doLike()">
           <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
