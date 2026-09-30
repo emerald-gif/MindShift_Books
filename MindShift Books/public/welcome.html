@@ -77,7 +77,6 @@ h1 .accent{ color:var(--indigo); }
 .browse-btn:disabled{ opacity:.5; cursor:not-allowed; box-shadow:none; }
 .browse-btn:hover:not(:disabled){ filter:brightness(1.05); }
 
-.skip-link{ display:block; margin-top:14px; font-size:12.5px; color:#94a3b8; text-decoration:underline; cursor:pointer; background:none; border:none; font-family:inherit; }
 
 .footer-links{ margin-top:26px; font-size:0.82rem; color:#94a3b8; }
 .footer-links a{ color:#64748b; text-decoration:underline; }
@@ -105,7 +104,7 @@ h1 .accent{ color:var(--indigo); }
     <p class="subtext">Pick what fits — we'll use it to shape your <b>For You</b> feed and recommend books that match.</p>
 
     <div class="cat-pills" id="onboardCatPills"></div>
-    <div class="cat-hint">Pick as many as you like — you can change these anytime in Settings.</div>
+    <div class="cat-hint">Pick at least one — you can pick as many as you like and change them anytime in Settings.</div>
 
     <div class="uname-row" id="unameRow" style="display:none">
       Your username is <b id="unameDisplay"></b>
@@ -118,7 +117,6 @@ h1 .accent{ color:var(--indigo); }
     </div>
 
     <button class="browse-btn" id="continueBtn" disabled>Continue</button>
-    <button class="skip-link" id="skipBtn" type="button">Skip for now</button>
   </div>
 
   <!-- STEP 2: DONE -->
@@ -222,7 +220,7 @@ h1 .accent{ color:var(--indigo); }
     }
   });
 
-  // ── Advance to step 2, saving categories (or skipping) on the way ──
+  // ── Advance to step 2, saving categories on the way ──
   async function goToStepDone(){
     document.getElementById('stepInterests').classList.remove('active');
     document.getElementById('stepDone').classList.add('active');
@@ -254,11 +252,11 @@ h1 .accent{ color:var(--indigo); }
   }
 
   continueBtn.addEventListener('click', () => {
+    if (!selected.length) return; // picking at least one category is required
     continueBtn.disabled = true;
     continueBtn.textContent = 'Saving…';
     saveCategoriesAndAdvance();
   });
-  document.getElementById('skipBtn').addEventListener('click', goToStepDone);
 </script>
 
 </body>
