@@ -104,6 +104,8 @@ function injectStylesOnce() {
 .notif-item.unread .notif-msg{color:var(--txt,#0f172a)}
 .notif-time{font-size:11.5px;color:var(--mute,#94a3b8);margin-top:4px;font-weight:700}
 .notif-item.unread .notif-time{color:var(--p,#4f46e5)}
+.notif-cta{display:inline-block;margin-top:9px;background:linear-gradient(135deg,#4f46e5,#6366f1);color:#fff;border:none;padding:8px 16px;border-radius:99px;font-size:12.5px;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(79,70,229,.28);font-family:inherit}
+.notif-cta:active{transform:scale(.97)}
 
 .notif-spinner-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px;gap:12px;color:var(--mute,#9ca3af);font-size:13px;font-weight:600}
 .notif-spinner{width:26px;height:26px;border:3px solid var(--border2,#e2e8f0);border-top-color:var(--p,#4f46e5);border-radius:50%;animation:nspin .7s linear infinite}
@@ -189,6 +191,10 @@ function actorListText(n) {
   const others = total - 2;
   return `<strong>${nEsc(names[0])}</strong>, <strong>${nEsc(names[1] || names[0])}</strong> and ${others} other${others === 1 ? '' : 's'}`;
 }
+// Only allow same-site relative paths ("/comment-manager"), never "//evil.com" or "javascript:".
+function nSafeCtaUrl(u) {
+  return (typeof u === 'string' && u.charAt(0) === '/' && u.charAt(1) !== '/' && u.indexOf('\\') === -1) ? u : '';
+}
 function notifMessage(n) {
   const name = actorListText(n);
   const title = n.targetTitle ? ` <strong>${nEsc(nTrunc(n.targetTitle, 45))}</strong>` : '';
@@ -204,6 +210,7 @@ function notifMessage(n) {
     case 'admin_message':    return `<strong>${nEsc(nMoney(n.title || 'Message from MindShift Books'))}</strong>${n.message ? ' — ' + nEsc(nMoney(n.message)) : ''}`;
     case 'founding_creator_earned': return `<strong>${nEsc(nMoney(n.title || 'You earned the Founding Creator badge!'))}</strong>${n.message ? ' — ' + nEsc(nMoney(n.message)) : ''}`;
     case 'ebook_voucher_earned':    return `<strong>${nEsc(nMoney(n.title || 'Your voucher is ready'))}</strong>${n.message ? ' — ' + nEsc(nMoney(n.message)) : ''}`;
+    case 'feature_announcement':    return `<strong>${nEsc(n.title || 'New on MindShift Books')}</strong>${n.message ? ' — ' + nEsc(n.message) : ''}`;
     case 'article_approved': return `<strong>${nEsc(n.title || 'Your article was approved!')}</strong>${n.message ? ' — ' + nEsc(nMoney(n.message)) : ''}`;
     case 'article_rejected': return `<strong>${nEsc(n.title || 'Article update')}</strong>${n.message ? ' — ' + nEsc(nMoney(n.message)) : ''}`;
     case 'article_removed': case 'post_removed': return `<strong>${nEsc(n.title || 'Content removed')}</strong>${n.message ? ' — ' + nEsc(nMoney(n.message)) : ''}`;
@@ -257,12 +264,16 @@ function buildNotifItem(id, n, idx) {
     const init = (n.actorName || 'M').charAt(0).toUpperCase(); // system messages (no actor) show an M for MindShift
     const avInner = n.actorPhoto ? `<img src="${nEsc(n.actorPhoto)}" alt="" onerror="this.style.display='none'">`
       : n.type === 'ebook_voucher_earned' ? `<span style="font-size:20px">🎁</span>`
+      : n.type === 'feature_announcement' ? `<span style="font-size:20px">✨</span>`
       : init;
     avHtml = `<div class="notif-av">${avInner}</div>`;
   }
   const [kind, icon] = nTypeBadge(n.type);
+  // Optional call-to-action button (feature announcements). Only same-site paths are allowed.
+  const ctaHtml = (n.ctaLabel && nSafeCtaUrl(n.ctaUrl))
+    ? `<button type="button" class="notif-cta" onclick="event.stopPropagation();handleNotifTap('${nEsc(id)}')">${nEsc(n.ctaLabel)}</button>` : '';
   const delay = Math.min(idx || 0, 12) * 25;
-  return `<div class="notif-item ${unread ? 'unread' : ''}" style="animation-delay:${delay}ms" onclick="handleNotifTap('${nEsc(id)}')"><span class="notif-unread-dot ${unread ? '' : 'invisible'}"></span><div class="notif-lead">${avHtml}<span class="notif-type ${kind}">${icon}</span></div><div class="notif-body"><div class="notif-msg">${msg}</div><div class="notif-time">${time}</div></div></div>`;
+  return `<div class="notif-item ${unread ? 'unread' : ''}" style="animation-delay:${delay}ms" onclick="handleNotifTap('${nEsc(id)}')"><span class="notif-unread-dot ${unread ? '' : 'invisible'}"></span><div class="notif-lead">${avHtml}<span class="notif-type ${kind}">${icon}</span></div><div class="notif-body"><div class="notif-msg">${msg}</div>${ctaHtml}<div class="notif-time">${time}</div></div></div>`;
 }
 function buildNotifList(docs) {
   let last = '', idx = 0;
@@ -481,6 +492,11 @@ export function initNotificationUI({ db, getCurrentUser, getMyProfile, fs }) {
         location.href = `/founding-creator`; break;
       case 'ebook_voucher_earned':
         location.href = `/books`; break;
+      case 'feature_announcement': {
+        const dest = nSafeCtaUrl(n.ctaUrl);
+        if (dest) location.href = dest;
+        break;
+      }
     }
   };
   window.markAllRead = async function () {
