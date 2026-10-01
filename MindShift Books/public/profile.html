@@ -370,17 +370,49 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
 .loc-open-link{display:block;text-align:center;margin-top:14px;padding:12px;border-radius:12px;border:1.5px solid var(--border,#e5e7eb);
   color:#4f46e5;font-size:13.5px;font-weight:800;text-decoration:none}
 .loc-open-link[hidden]{display:none}
-.loc-marker{position:relative;width:44px;height:44px}
+.loc-marker{position:relative;width:40px;height:40px}
 .loc-pulse{position:absolute;inset:0;border-radius:50%;background:rgba(79,70,229,.28);animation:locPulse 2.2s ease-out infinite}
 @keyframes locPulse{0%{transform:scale(.45);opacity:.9}100%{transform:scale(1.25);opacity:0}}
-.loc-dot{position:absolute;left:5px;top:5px;width:34px;height:34px;border-radius:50%;border:3px solid #fff;
+.loc-dot{position:absolute;left:5px;top:5px;width:30px;height:30px;border-radius:50%;border:3px solid #fff;
   background:linear-gradient(135deg,#4f46e5,#06b6d4);box-shadow:0 4px 12px rgba(79,70,229,.45);display:flex;align-items:center;justify-content:center}
-.loc-dot svg{width:15px;height:15px;fill:none;stroke:#fff;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.loc-dot svg{width:14px;height:14px;fill:none;stroke:#fff;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
 @media (prefers-reduced-motion:reduce){.loc-pulse{animation:none;opacity:.5;transform:scale(.9)}.loc-spin{animation-duration:1.6s}}
 .loc-detect-btn{display:inline-flex;align-items:center;gap:7px;margin-top:9px;padding:8px 14px;border-radius:99px;
   border:1.5px solid var(--border);background:var(--card);color:var(--p);font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer}
 .loc-detect-btn svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .loc-detect-btn:disabled{opacity:.6;cursor:default}
+/* "Use my current location": radar scan on a mini map, then fly to the city and drop the pin */
+.loc-detect-map{position:relative;height:0;margin-top:0;border:0 solid var(--border);border-radius:16px;overflow:hidden;background:#eff2fc;
+  transition:height .45s cubic-bezier(.22,1,.36,1),margin-top .45s cubic-bezier(.22,1,.36,1)}
+.loc-detect-map.open{height:190px;margin-top:12px;border-width:1.5px}
+#locDetectMap{position:absolute;inset:0;font-family:inherit}
+#locDetectMap .maplibregl-ctrl-attrib{font-size:9px;background:rgba(255,255,255,.78);border-radius:8px 0 0 0}
+.loc-radar{position:absolute;inset:0;z-index:5;pointer-events:none;transition:opacity .5s}
+.loc-radar.hide{opacity:0}
+.loc-radar i{position:absolute;left:50%;top:50%;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;
+  border:2px solid rgba(79,70,229,.55);animation:locRing 2.1s ease-out infinite}
+.loc-radar i:nth-child(2){animation-delay:.7s}
+.loc-radar i:nth-child(3){animation-delay:1.4s}
+@keyframes locRing{0%{transform:scale(.4);opacity:.9}100%{transform:scale(4.2);opacity:0}}
+.loc-radar b{position:absolute;left:50%;top:50%;width:230px;height:230px;margin:-115px 0 0 -115px;border-radius:50%;
+  background:conic-gradient(from 0deg,rgba(79,70,229,0) 0deg,rgba(6,182,212,.34) 75deg,rgba(79,70,229,0) 76deg);
+  -webkit-mask:radial-gradient(circle,#000 0,#000 55%,transparent 100%);mask:radial-gradient(circle,#000 0,#000 55%,transparent 100%);
+  animation:locSweep 1.7s linear infinite}
+@keyframes locSweep{to{transform:rotate(360deg)}}
+.loc-radar em{position:absolute;left:50%;top:50%;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;border:3px solid #fff;
+  background:linear-gradient(135deg,#4f46e5,#06b6d4);box-shadow:0 2px 8px rgba(79,70,229,.5)}
+.loc-detect-chip{position:absolute;z-index:6;left:50%;bottom:12px;transform:translateX(-50%);display:flex;align-items:center;gap:8px;
+  max-width:calc(100% - 24px);padding:7px 14px 7px 10px;border-radius:99px;background:#fff;box-shadow:0 4px 14px rgba(15,23,42,.16);
+  font-size:12.5px;font-weight:700;color:#312e81;white-space:nowrap}
+.loc-detect-chip .chip-text{overflow:hidden;text-overflow:ellipsis}
+.chip-spin{width:14px;height:14px;border-radius:50%;border:2.5px solid #e0e7ff;border-top-color:#4f46e5;animation:locSpin .8s linear infinite;flex-shrink:0}
+.chip-check{display:none;width:16px;height:16px;flex-shrink:0;fill:none;stroke:#10b981;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.loc-detect-chip.found .chip-spin{display:none}
+.loc-detect-chip.found .chip-check{display:block;animation:locPop .35s cubic-bezier(.34,1.56,.64,1)}
+@keyframes locPop{0%{transform:scale(0)}100%{transform:scale(1)}}
+.loc-marker.drop .loc-dot{animation:locDrop .6s cubic-bezier(.34,1.3,.64,1) both}
+@keyframes locDrop{0%{transform:translateY(-70px) scale(.6);opacity:0}55%{opacity:1}100%{transform:translateY(0) scale(1);opacity:1}}
+@media (prefers-reduced-motion:reduce){.loc-radar i,.loc-radar b{animation:none}.loc-marker.drop .loc-dot{animation:none}.loc-detect-map{transition:none}}
 .acard-author{display:flex;align-items:center;gap:7px;margin-bottom:7px;width:fit-content;border-radius:6px;padding:2px 0}
 .acard-av{width:24px;height:24px;border-radius:50%;object-fit:cover;flex-shrink:0;background:var(--g);border:1.5px solid var(--border)}
 .acard-author-name{font-size:12.5px;font-weight:700;color:var(--txt)}
@@ -788,11 +820,20 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
     </div>
     <div class="field">
       <label>Location</label>
-      <input id="eLocation" type="text" maxlength="60" placeholder="e.g. Lagos, Nigeria" oninput="window._pendingGeo=null">
+      <input id="eLocation" type="text" maxlength="60" placeholder="e.g. Lagos, Nigeria" oninput="window._pendingGeo=null;window.closeDetectPreview&&window.closeDetectPreview()">
       <button type="button" class="loc-detect-btn" id="locDetectBtn" onclick="detectMyLocation()">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
         <span id="locDetectLabel">Use my current location</span>
       </button>
+      <div class="loc-detect-map" id="locDetectWrap" aria-live="polite">
+        <div id="locDetectMap"></div>
+        <div class="loc-radar" id="locRadar"><b></b><i></i><i></i><i></i><em></em></div>
+        <div class="loc-detect-chip" id="locDetectChip">
+          <span class="chip-spin"></span>
+          <svg class="chip-check" viewBox="0 0 24 24" aria-hidden="true"><polyline points="5 12.5 10 17.5 19 7.5"/></svg>
+          <span class="chip-text" id="locDetectChipText">Finding you…</span>
+        </div>
+      </div>
       <div class="field-hint">People can tap your location to see it on a map. Only the city is shown, never your exact position.</div>
     </div>
     <div class="field">
@@ -1438,6 +1479,7 @@ const MSB_MAP = {
   land:'#eff2fc', landAlt:'#e8ecfa', green:'#d6f0e3', water:'#bfe8f4', waterLine:'#a3dbec',
   building:'#e1e6fa', road:'#ffffff', casing:'#dbe0f5', highway:'#dfe6ff', highwayCasing:'#b9c3f3',
   rail:'#d3d9f4', path:'#e1e6fa', boundary:'#b9c3f3',
+  poiEdu:'#6366f1', poiWorship:'#06b6d4', poiHealth:'#f43f5e', poiLodging:'#ec4899', poiFood:'#f59e0b', poiOther:'#64748b',
   label:'#312e81', labelSoft:'#5b5fa8', waterLabel:'#0e7490', halo:'#eff2fc'
 };
 let _mapLibrePromise = null, _locMap = null, _locMarker = null, _styleText = null, _locSeq = 0;
@@ -1461,6 +1503,18 @@ function loadMapLibre(){
   return _mapLibrePromise;
 }
 
+// Scale a text-size value (number, legacy {stops}, or interpolate/step expression)
+function scaleSize(v, f){
+  if(typeof v === 'number') return +(v * f).toFixed(2);
+  if(Array.isArray(v)){
+    if(/^interpolate/.test(v[0])) return v.map((x,i) => (i >= 4 && i % 2 === 0) ? scaleSize(x,f) : x);
+    if(v[0] === 'step')          return v.map((x,i) => (i >= 2 && i % 2 === 0) ? scaleSize(x,f) : x);
+    return v;
+  }
+  if(v && Array.isArray(v.stops)) return Object.assign({}, v, { stops: v.stops.map(([z,sz]) => [z, scaleSize(sz,f)]) });
+  return v;
+}
+
 // Repaint a base style with the MindShift palette. Works on OpenMapTiles
 // source-layer names, so it doesn't depend on any one style's layer ids.
 function brandStyle(st){
@@ -1474,6 +1528,7 @@ function brandStyle(st){
       if(/^(poi|housenumber|mountain_peak|aerodrome_label)$/.test(sl)){ l.layout.visibility = 'none'; return; }
       p['text-color'] = sl === 'water_name' ? C.waterLabel : (sl === 'transportation_name' ? C.labelSoft : C.label);
       p['text-halo-color'] = C.halo; p['text-halo-width'] = 1.4;
+      if(l.layout['text-size'] !== undefined) l.layout['text-size'] = scaleSize(l.layout['text-size'], .88);
       return;
     }
     if(l.type === 'fill'){
@@ -1496,6 +1551,45 @@ function brandStyle(st){
       }
     }
   });
+}
+
+// Google-style coloured dots + names for schools, worship, hospitals, hotels and food.
+// Drawn as plain circles (no dependency on the base style's sprite icons) and added after
+// the map loads, inside try/catch — if anything about them is rejected, the map still shows.
+function addPoiLayers(map){
+  try{
+    if(map.getLayer('msb-poi-dot')) return;
+    const C = MSB_MAP, st = map.getStyle();
+    const vsrc = Object.keys(st.sources || {}).find(k => st.sources[k].type === 'vector');
+    if(!vsrc) return;
+    const fontLayer = (st.layers || []).find(l => l.type === 'symbol' && l.layout && l.layout['text-font']);
+    const classes = ['school','college','library','museum','place_of_worship','hospital','police','lodging','restaurant','fast_food','cafe','bar'];
+    const filter = ['all', ['in', ['get','class'], ['literal', classes]], ['<=', ['coalesce', ['get','rank'], 1], 10]];
+    map.addLayer({
+      id:'msb-poi-dot', type:'circle', source:vsrc, 'source-layer':'poi', minzoom:12, filter,
+      paint:{
+        'circle-radius':4.5, 'circle-stroke-color':'#ffffff', 'circle-stroke-width':1.5,
+        'circle-color':['match', ['get','class'],
+          ['school','college','library','museum'], C.poiEdu,
+          ['place_of_worship'], C.poiWorship,
+          ['hospital','police'], C.poiHealth,
+          ['lodging'], C.poiLodging,
+          ['restaurant','fast_food','cafe','bar'], C.poiFood,
+          C.poiOther]
+      }
+    });
+    if(fontLayer){
+      map.addLayer({
+        id:'msb-poi-name', type:'symbol', source:vsrc, 'source-layer':'poi', minzoom:12.5, filter,
+        layout:{
+          'text-field':['coalesce', ['get','name:latin'], ['get','name']],
+          'text-font': fontLayer.layout['text-font'], 'text-size':10.5,
+          'text-anchor':'top', 'text-offset':[0,.8], 'text-max-width':7, 'text-padding':2
+        },
+        paint:{ 'text-color':C.labelSoft, 'text-halo-color':C.halo, 'text-halo-width':1.3 }
+      });
+    }
+  }catch(e){ console.warn('[location] place dots skipped:', e.message); }
 }
 
 async function getBrandStyleText(){
@@ -1577,6 +1671,21 @@ function setLocState(kind){
   }
 }
 
+// Soft "approximate area" circle, slotted under the first label layer so names stay readable
+function putArea(map, id, data, show){
+  const src = map.getSource(id);
+  if(src){ src.setData(data); }
+  else {
+    map.addSource(id, { type:'geojson', data });
+    const before = ((map.getStyle().layers || []).find(l => l.type === 'symbol') || {}).id;
+    map.addLayer({ id: id + '-fill', type:'fill', source:id, paint:{ 'fill-color':'#4f46e5', 'fill-opacity':.09 } }, before);
+    map.addLayer({ id: id + '-line', type:'line', source:id, paint:{ 'line-color':'#4f46e5', 'line-opacity':.45, 'line-width':1.5 } }, before);
+  }
+  const vis = show ? 'visible' : 'none';
+  map.setLayoutProperty(id + '-fill', 'visibility', vis);
+  map.setLayoutProperty(id + '-line', 'visibility', vis);
+}
+
 function setOpenLink(geo){
   const link = document.getElementById('locOpenLink');
   if(link){ link.href = 'https://www.google.com/maps/search/?api=1&query=' + geo.lat + ',' + geo.lng; link.hidden = false; }
@@ -1585,21 +1694,12 @@ function setOpenLink(geo){
 function renderLocMap(geo, styleText){
   const el = document.getElementById('locMap');
   const ll = [geo.lng, geo.lat];
-  const zoom = Math.max(1, geo.zoom - 1);       // MapLibre zoom runs one below the 256px-tile scale used when we saved it
-  const area = circleGeoJSON(geo.lng, geo.lat, 4.5);
-  const showArea = geo.zoom >= 9;
-  const applyArea = () => {
-    const src = _locMap.getSource('loc-area');
-    if(src){ src.setData(area); }
-    else {
-      _locMap.addSource('loc-area', { type:'geojson', data: area });
-      _locMap.addLayer({ id:'loc-area-fill', type:'fill', source:'loc-area', paint:{ 'fill-color':'#4f46e5', 'fill-opacity':.1 } });
-      _locMap.addLayer({ id:'loc-area-line', type:'line', source:'loc-area', paint:{ 'line-color':'#4f46e5', 'line-opacity':.5, 'line-width':1.5 } });
-    }
-    const vis = showArea ? 'visible' : 'none';
-    _locMap.setLayoutProperty('loc-area-fill','visibility',vis);
-    _locMap.setLayoutProperty('loc-area-line','visibility',vis);
-  };
+  // City/town pins open at district level (street names + places); bigger areas (state, country) stay wide.
+  // MapLibre zoom runs one below the 256px-tile scale used when we saved it.
+  const zoom = geo.zoom >= 11 ? 12.5 : Math.max(1, geo.zoom - 1);
+  const area = circleGeoJSON(geo.lng, geo.lat, 1.5);
+  const showArea = geo.zoom >= 11;
+  const applyArea = () => { putArea(_locMap, 'loc-area', area, showArea); addPoiLayers(_locMap); };
   if(!_locMap){
     _locMap = new maplibregl.Map({
       container: el, style: JSON.parse(styleText), center: ll, zoom,
@@ -1665,41 +1765,118 @@ document.addEventListener('keydown', e => { if(e.key === 'Escape') window.closeL
   });
 }
 
-// "Use my current location" in Edit Profile. Reverse-geocodes the device position
-// to a "City, Country" label and keeps the CITY's centre point — the device's own
+// "Use my current location" in Edit Profile — plays as a little scene on a mini map:
+// a radar sweep while it waits for the phone, then the map flies to the city, the pin
+// drops and the chip turns into a check. It reverse-geocodes the device position to a
+// "City, Country" label and keeps the CITY's centre point — the device's own
 // coordinates are never saved.
-window.detectMyLocation = function(){
+let _detectMap = null, _detectMarker = null, _detectRun = 0;
+const _prefersReduced = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function setDetectChip(text, found){
+  const chip = document.getElementById('locDetectChip');
+  document.getElementById('locDetectChipText').textContent = text;
+  chip.classList.toggle('found', !!found);
+}
+function openDetectPreview(){
+  document.getElementById('locDetectWrap').classList.add('open');
+  document.getElementById('locRadar').classList.remove('hide');
+  setDetectChip('Finding you…', false);
+  if(_detectMarker){ _detectMarker.remove(); _detectMarker = null; }
+  setTimeout(() => { if(_detectMap) _detectMap.resize(); }, 480);
+}
+window.closeDetectPreview = function(){
+  _detectRun++;                                    // cancels any scan still in flight
+  document.getElementById('locDetectWrap')?.classList.remove('open');
+  const btn = document.getElementById('locDetectBtn'), label = document.getElementById('locDetectLabel');
+  if(btn){ btn.disabled = false; }
+  if(label){ label.textContent = 'Use my current location'; }
+};
+async function ensureDetectMap(){
+  await loadMapLibre();
+  const styleText = await getBrandStyleText();
+  if(_detectMap){ _detectMap.resize(); return _detectMap; }
+  _detectMap = new maplibregl.Map({
+    container: document.getElementById('locDetectMap'), style: JSON.parse(styleText),
+    center: [10, 6], zoom: 2.4, interactive: false, attributionControl: false, fadeDuration: 0
+  });
+  _detectMap.addControl(new maplibregl.AttributionControl({ compact:true }), 'bottom-right');
+  _detectMap.on('load', () => addPoiLayers(_detectMap));
+  return _detectMap;
+}
+function flyToCity(map, ll){
+  return new Promise(resolve => {
+    let done = false;
+    const fin = () => { if(!done){ done = true; resolve(); } };
+    map.once('moveend', fin);
+    setTimeout(fin, 4500);
+    if(_prefersReduced()) map.jumpTo({ center: ll, zoom: 11.5 });
+    else map.flyTo({ center: ll, zoom: 11.5, duration: 2600, curve: 1.6, essential: true });
+  });
+}
+function dropDetectPin(map, ll){
+  const pin = document.createElement('div');
+  pin.innerHTML = '<div class="loc-marker drop"><span class="loc-pulse"></span><span class="loc-dot"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg></span></div>';
+  _detectMarker = new maplibregl.Marker({ element: pin.firstChild, anchor:'center' }).setLngLat(ll).addTo(map);
+  try{ putArea(map, 'detect-area', circleGeoJSON(ll[0], ll[1], 1.5), true); }catch(e){}
+}
+
+window.detectMyLocation = async function(){
   const btn = document.getElementById('locDetectBtn');
   const label = document.getElementById('locDetectLabel');
   if(!navigator.geolocation){ showToast('This browser can\'t share your location — type your city instead'); return; }
-  const setBusy = busy => { btn.disabled = busy; label.textContent = busy ? 'Finding you…' : 'Use my current location'; };
-  setBusy(true);
-  navigator.geolocation.getCurrentPosition(async pos => {
-    try{
-      const dLat = pos.coords.latitude, dLng = pos.coords.longitude;
-      const r = await fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=10&addressdetails=1&accept-language=en&lat=' + dLat + '&lon=' + dLng);
-      if(!r.ok) throw new Error('reverse ' + r.status);
-      const j = await r.json();
-      const a = j.address || {};
-      const place = a.city || a.town || a.village || a.municipality || a.county || a.state_district || a.state || '';
-      let text = [place, a.country].filter(Boolean).join(', ').slice(0, 60);
-      if(!text) throw new Error('no place name');
-      const cLat = parseFloat(j.lat), cLng = parseFloat(j.lon);
-      const lat = isFinite(cLat) ? _round2(cLat) : Math.round(dLat * 10) / 10;
-      const lng = isFinite(cLng) ? _round2(cLng) : Math.round(dLng * 10) / 10;
-      document.getElementById('eLocation').value = text;
-      window._pendingGeo = { text, lat, lng, zoom: 11 };
-      showToast('Location set to ' + text);
-    }catch(e){
-      console.warn('[location] detect failed:', e.message);
-      showToast('Couldn\'t work out your city — type it instead');
-    }finally{ setBusy(false); }
-  }, err => {
-    setBusy(false);
-    showToast(err && err.code === 1
+  const run = ++_detectRun;
+  const stale = () => run !== _detectRun;
+  btn.disabled = true; label.textContent = 'Finding you…';
+  openDetectPreview();
+  // warm up the map while the phone works out where it is
+  const mapReady = ensureDetectMap().catch(e => { console.warn('[location] preview map failed:', e.message); return null; });
+  const got = await new Promise(res => navigator.geolocation.getCurrentPosition(
+    pos => res({ pos }), err => res({ err }), { enableHighAccuracy:false, timeout:10000, maximumAge:600000 }));
+  if(stale()) return;
+  if(got.err){
+    window.closeDetectPreview();
+    showToast(got.err.code === 1
       ? 'Location access is off — allow it in your browser settings, or type your city'
       : 'Couldn\'t get your location — type your city instead');
-  }, { enableHighAccuracy:false, timeout:10000, maximumAge:600000 });
+    return;
+  }
+  try{
+    setDetectChip('Locating your city…', false);
+    const dLat = got.pos.coords.latitude, dLng = got.pos.coords.longitude;
+    const r = await fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=10&addressdetails=1&accept-language=en&lat=' + dLat + '&lon=' + dLng);
+    if(!r.ok) throw new Error('reverse ' + r.status);
+    const j = await r.json();
+    const a = j.address || {};
+    const place = a.city || a.town || a.village || a.municipality || a.county || a.state_district || a.state || '';
+    const text = [place, a.country].filter(Boolean).join(', ').slice(0, 60);
+    if(!text) throw new Error('no place name');
+    const cLat = parseFloat(j.lat), cLng = parseFloat(j.lon);
+    const lat = isFinite(cLat) ? _round2(cLat) : Math.round(dLat * 10) / 10;
+    const lng = isFinite(cLng) ? _round2(cLng) : Math.round(dLng * 10) / 10;
+    if(stale()) return;
+    const map = await mapReady;
+    if(stale()) return;
+    if(map){
+      document.getElementById('locRadar').classList.add('hide');
+      await flyToCity(map, [lng, lat]);
+      if(stale()) return;
+      dropDetectPin(map, [lng, lat]);
+    } else {
+      document.getElementById('locRadar').classList.add('hide');   // map couldn't load — still finish gracefully
+    }
+    setDetectChip('Found you in ' + text, true);
+    if(navigator.vibrate) navigator.vibrate(15);
+    document.getElementById('eLocation').value = text;
+    window._pendingGeo = { text, lat, lng, zoom: 11 };
+    label.textContent = 'Location found';
+    setTimeout(() => { if(!stale()){ btn.disabled = false; label.textContent = 'Use my current location'; } }, 1800);
+  }catch(e){
+    console.warn('[location] detect failed:', e.message);
+    if(stale()) return;
+    window.closeDetectPreview();
+    showToast('Couldn\'t work out your city — type it instead');
+  }
 };
 
 function openFounderDrawer(){
@@ -3174,6 +3351,7 @@ window.openEditSheet = function(){
   updateBioCount();
   document.getElementById('eLocation').value = profileData.location||'';
   window._pendingGeo = null;
+  window.closeDetectPreview && window.closeDetectPreview();
   document.getElementById('eContactEmail').value = profileData.contactEmail || currentUser?.email || '';
   document.getElementById('eContactPhone').value = profileData.contactPhone || '';
   document.getElementById('eContactVisible').checked = !!profileData.contactVisible;
