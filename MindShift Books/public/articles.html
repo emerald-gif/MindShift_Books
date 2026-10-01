@@ -225,6 +225,18 @@ main{max-width:1100px;margin:0 auto}
 
 /* ── CARD 3-DOT MENU ── */
 .acard-menu-wrap{position:relative;margin-left:auto}
+/* Follow pill in the card header (sits just left of the ⋯ menu) */
+.acard-follow{flex:0 0 auto;margin-left:auto;align-self:center;height:26px;padding:0 12px;border-radius:99px;border:1.5px solid var(--p);background:transparent;color:var(--p);
+  font-family:inherit;font-size:12px;font-weight:700;line-height:1;cursor:pointer;white-space:nowrap;-webkit-tap-highlight-color:transparent;
+  transition:background .15s,color .15s,border-color .15s,opacity .3s,transform .12s}
+.acard-follow:active{transform:scale(.95);background:#eef2ff}
+.acard-follow.done{background:#eef2ff;border-color:transparent;color:var(--ps);pointer-events:none}
+.acard-follow.fading{opacity:0}
+.acard-follow + .acard-menu-wrap{margin-left:0}
+.acard-head .acard-author{flex:0 1 auto;min-width:0}
+.acard-head .acard-author-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acard-head .acard-author-dot,.acard-head .acard-author-date{white-space:nowrap}
+@media (hover:hover){.acard-follow:hover{background:#eef2ff}}
 .acard-menu-btn{display:flex;align-items:center;justify-content:center;padding:6px 9px;background:none;border:none;cursor:pointer;color:var(--mute);transition:color .18s;border-radius:9px;-webkit-tap-highlight-color:transparent}
 .acard-menu-btn:hover{color:var(--p);background:#eef2ff}
 .acard-menu-btn svg{width:19px;height:19px}
@@ -1349,6 +1361,9 @@ onAuthStateChanged(auth, async user => {
   const seq = ++authCallSeq; // ignore stale work if a newer auth event supersedes this one
   currentUser = user;
   const isAuth = !!user;
+  // Header "Follow" pills need to know who you follow: fetch the list once, then reveal / hide the pills.
+  if(user){ getMyFollowingUids().then(()=>{ if(seq === authCallSeq) syncFollowPills(); }); }
+  else { _myFollowingCache = null; syncFollowPills(); }
   try{
     localStorage.setItem(HERO_LASTUID_KEY, user ? user.uid : 'guest');
     setHeroVisible(!isHeroDismissed(user ? user.uid : null));
@@ -2593,6 +2608,7 @@ function buildPostCardHtml(p){
           <span class="acard-author-dot">·</span>
           <span class="acard-author-date">${fmtRel(p.publishedAt)}</span>
         </div>
+        ${followPillHtml(p.authorUid, p.author, p.isMindshift)}
         <div class="acard-menu-wrap" onclick="event.stopPropagation()">
           <button class="acard-menu-btn" onclick="toggleCardMenu('${p.id}',event)" title="More options">
             <svg fill="currentColor" viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
@@ -2616,11 +2632,6 @@ function buildPostCardHtml(p){
               <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
               Share as Image
             </button>
-            ${!p.isMindshift && p.authorUid && p.authorUid !== (currentUser&&currentUser.uid) ? `
-            <button class="acard-menu-item" id="cfbtn-${p.id}" onclick="followFromMenu('${p.authorUid||''}','${p.author||''}','${p.id}')">
-              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path stroke-linecap="round" d="M22 11v6m-3-3h6"/></svg>
-              Follow
-            </button>` : ''}
           </div>
         </div>
       </div>
@@ -2825,6 +2836,7 @@ function renderGrid(){
             <span class="acard-author-dot">·</span>
             <span class="acard-author-date">${fmtRel(a.publishedAt||a.createdAt)}</span>
           </div>
+          ${followPillHtml(a.authorUid, a.author, a.isMindshift)}
           <div class="acard-menu-wrap" onclick="event.stopPropagation()">
             <button class="acard-menu-btn" onclick="toggleCardMenu('${a.id}',event)" title="More options">
               <svg fill="currentColor" viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
@@ -2848,11 +2860,6 @@ function renderGrid(){
                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
                 Share as Image
               </button>
-              ${!a.isMindshift && a.authorUid && a.authorUid !== (currentUser&&currentUser.uid) ? `
-              <button class="acard-menu-item" id="cfbtn-${a.id}" onclick="followFromMenu('${a.authorUid||''}','${a.author||''}','${a.id}')">
-                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path stroke-linecap="round" d="M22 11v6m-3-3h6"/></svg>
-                Follow
-              </button>` : ''}
             </div>
           </div>
         </div>
@@ -3142,19 +3149,6 @@ window.toggleCardMenu = function(id, event){
     openCardMenuId = id;
     openCardMenuEl = drop;
     _cardMenuOpenScrollY = window.scrollY;
-    // Update follow button label based on real-time state — scoped to
-    // *this* drop, not a global id lookup, so it can't touch the hidden copy.
-    const item = ARTICLES.find(a=>a.id===id) || POSTS.find(p=>p.id===id);
-    const fbtn = drop.querySelector(`#cfbtn-${id}`);
-    if(fbtn && item && item.authorUid && currentUser){
-      (async()=>{
-        try{
-          const s = await rgetDoc(doc(db,'follows',`${currentUser.uid}_${item.authorUid}`));
-          const svgEl = fbtn.querySelector('svg');
-          fbtn.childNodes[fbtn.childNodes.length-1].textContent = s.exists() ? ' Following' : ' Follow';
-        }catch{}
-      })();
-    }
   }
 };
 let _cardMenuOpenScrollY = 0;
@@ -3280,31 +3274,60 @@ function collectArticleCommentIds(list){
   return ids;
 }
 
-window.followFromMenu = async function(authorUid, authorName, cardId){
-  closeOpenCardMenu();
+/* ── FOLLOW PILL (card header) ──────────────────────────────────────────────
+   Shown on cards by people you don't follow yet (everyone, when logged out — tapping asks you to sign in).
+   Once you follow, the pill fades away. (Unfollowing happens on the person's profile.) */
+// (try/catch: an early cached-feed render can run before the `let` below is initialised further down the file)
+function followCache(){ try{ return _myFollowingCache; }catch(e){ return null; } }
+function isFollowingUid(uid){ const c = followCache(); return !!(c && c.has(uid)); }
+function probablySignedIn(){
+  if(currentUser) return true;
+  try{ const v = localStorage.getItem(HERO_LASTUID_KEY); return !!v && v !== 'guest'; }catch(e){ return false; }
+}
+
+function followPillHtml(uid, name, isMindshift){
+  if(!uid || isMindshift || (currentUser && uid === currentUser.uid)) return '';
+  // Signed in (or probably, before Firebase answers) but the follow list isn't loaded yet → start hidden;
+  // syncFollowPills() reveals it once we know, so people you already follow never see a flash of "Follow".
+  const c = followCache();
+  const show = probablySignedIn() ? (!!c && !c.has(uid)) : true;
+  return `<button type="button" class="acard-follow" data-pill-uid="${uid}" data-name="${esc(name||'')}" style="${show?'':'display:none'}" onclick="followFromHeader('${uid}',this.dataset.name,event)">Follow</button>`;
+}
+
+// Reveal / hide every pill to match who you actually follow. Safe to call any time.
+window.syncFollowPills = function(){
+  document.querySelectorAll('.acard-follow[data-pill-uid]').forEach(b=>{
+    const following = !!currentUser && isFollowingUid(b.dataset.pillUid);
+    if(following){ b.style.display = 'none'; }
+    else if(!b.classList.contains('done')){ b.style.display = ''; b.textContent = 'Follow'; b.classList.remove('fading'); }
+  });
+};
+
+window.followFromHeader = async function(uid, name, ev){
+  if(ev){ ev.stopPropagation(); ev.preventDefault(); }
   if(!currentUser){ openAuth(); return; }
-  if(!authorUid) return;
+  if(!uid || uid === currentUser.uid) return;
+  const btns = document.querySelectorAll(`.acard-follow[data-pill-uid="${uid}"]`);
+  if(!btns.length || btns[0].dataset.busy) return;               // double-tap guard
+  btns.forEach(b=>{ b.dataset.busy = '1'; b.classList.add('done'); b.textContent = 'Following'; });   // instant feedback
   try{
-    const followDocId = `${currentUser.uid}_${authorUid}`;
-    const s = await rgetDoc(doc(db,'follows',followDocId));
-    const isFollowing = s.exists();
-    if(isFollowing){
-      await deleteDoc(doc(db,'follows',followDocId));
-      updateDoc(doc(db,'users',authorUid),{followerCount:increment(-1)}).catch(()=>{});
-      updateDoc(doc(db,'users',currentUser.uid),{followingCount:increment(-1)}).catch(()=>{});
-    }else{
-      await setDoc(doc(db,'follows',followDocId),{followerId:currentUser.uid,followingId:authorUid,createdAt:serverTimestamp()});
-      updateDoc(doc(db,'users',authorUid),{followerCount:increment(1)}).catch(()=>{});
-      updateDoc(doc(db,'users',currentUser.uid),{followingCount:increment(1)}).catch(()=>{});
-      notif.notifyFollow(authorUid);
-    }
-    toast(isFollowing ? 'Unfollowed' : `Following ${authorName||'author'} ✅`);
-    // Update the button label inside the card menu — every copy, since the
-    // same card can exist in both the For You and Following DOM at once.
-    document.querySelectorAll(`#cfbtn-${cardId}`).forEach(fbtn=>{
-      fbtn.childNodes[fbtn.childNodes.length-1].textContent = isFollowing ? ' Follow' : ' Following';
+    await setDoc(doc(db,'follows',`${currentUser.uid}_${uid}`),{followerId:currentUser.uid,followingId:uid,createdAt:serverTimestamp()});
+    updateDoc(doc(db,'users',uid),{followerCount:increment(1)}).catch(()=>{});
+    updateDoc(doc(db,'users',currentUser.uid),{followingCount:increment(1)}).catch(()=>{});
+    notif.notifyFollow(uid);
+    toast(`Following ${name||'author'} ✅`);
+    // keep the suggestion lists in step, exactly like the suggestion Follow buttons do
+    _dismissedUids.add(uid); _ptfDismissed.add(uid);
+    document.querySelectorAll(`[data-card-uid="${uid}"]`).forEach(card=>{
+      card.style.transition='all .2s'; card.style.opacity='0'; card.style.transform='translateX(10px)'; setTimeout(()=>card.remove(),200);
     });
-  }catch(e){ toast('Could not update — try again'); }
+    if(_myFollowingCache) _myFollowingCache.add(uid);
+    btns.forEach(b=>b.classList.add('fading'));                   // let "Following" show for a beat, then fade away
+    setTimeout(()=>{ if(isFollowingUid(uid)) btns.forEach(b=>{ b.style.display='none'; }); }, 320);
+  }catch(e){
+    btns.forEach(b=>{ delete b.dataset.busy; b.classList.remove('done','fading'); b.textContent = 'Follow'; });
+    toast('Could not update — try again');
+  }
 };
 
 /* writeFollowNotif moved to /notifications.js — see notif.notifyFollow() */
