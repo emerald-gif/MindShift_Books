@@ -1,0 +1,2530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="icon" href="/MINDSHIFT.jpg">
+
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<title>Article · MindShift Books</title>
+<meta name="description" content="Read career articles and insights from the MindShift Books community."/>
+<meta name="robots" content="noindex, nofollow"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"/>
+<style>
+:root{
+  --p:#4f46e5;--p2:#06b6d4;--ps:#4338ca;
+  --g:linear-gradient(135deg,#4f46e5,#06b6d4);
+  --bg:#fff;--border:#e2e8f0;--border2:#e2e8f0;
+  --txt:#0f172a;--sub:#6b7280;--mute:#9ca3af;
+  --red:#ef4444;--red-bg:#fff1f1;
+  --primary:#0f172a;--accent:#06b6d4;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',system-ui,sans-serif;background:#fff;color:var(--txt);-webkit-font-smoothing:antialiased}
+
+/* ── SHARED MINDSHIFT HEADER / SEARCH / SIDEBAR (copied verbatim from styles.css — see the same
+   block in articles.html; keep both in sync if styles.css changes) ── */
+header{position:relative;left:0;right:0;background:white;z-index:1000;display:flex;flex-direction:column;gap:10px;padding:16px 20px 18px;box-shadow:0 2px 12px rgba(0,0,0,0.06)}
+.header-top{display:flex;align-items:center;justify-content:space-between;width:100%;flex-wrap:nowrap;gap:8px}
+header h1{font-size:1.45rem;font-weight:700;display:flex;align-items:center;gap:10px;min-width:0;overflow:hidden}
+header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.header-icon-group{display:flex;align-items:center;gap:4px;flex-shrink:0}
+.icon-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;border:none;background:transparent;color:#1e293b;cursor:pointer;transition:background-color 150ms ease,color 150ms ease;padding:0}
+.icon-btn:hover{background-color:#f1f5f9;color:#4f46e5}
+.icon-btn:active{background-color:#e6e9ee}
+.search-wrapper{position:relative;display:flex;align-items:center;gap:8px;background:#eef2f6;padding:6px 8px;border-radius:12px;width:420px;max-width:calc(100% - 40px);margin:0 auto;box-shadow:0 6px 18px rgba(2,6,23,0.04)}
+.search-wrapper input{flex:1;border:none;outline:none;background:transparent;font-size:0.95rem;padding:6px 8px;color:var(--primary)}
+.search-wrapper button{display:inline-flex;align-items:center;justify-content:center;background:linear-gradient(90deg,#4f46e5,#06b6d4);border:none;color:#fff;padding:8px 10px;border-radius:10px;cursor:pointer;box-shadow:0 8px 20px rgba(79,70,229,0.12)}
+.search-wrapper .search-icon-prefix{width:16px;height:16px;color:#94a3b8;flex-shrink:0}
+/* Sidebar styles now live in /sidebar-nav.js (injected once, shared across
+   every page) instead of being duplicated here. */
+@media (max-width:600px){ .search-wrapper{width:100%!important;max-width:100%!important} header{padding:14px 14px 18px} }
+@media (max-width:450px){ header h1{font-size:1.15rem} .header-icon-group .icon-btn{width:36px;height:36px} }
+/* ── /SHARED HEADER ── */
+
+/* ── READING BAR (page-specific: back button + scroll-linked title/avatar, sits directly
+   under the shared header above) ── */
+.hdr{position:relative;z-index:99;background:rgba(255,255,255,.96);border-bottom:1px solid var(--border);padding:0 16px;height:52px;display:flex;flex-direction:row;align-items:center;gap:12px;box-shadow:none}
+.sticky-header-stack{position:sticky;top:0;z-index:1000}
+.back-btn{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--border2);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all .18s;color:var(--txt)}
+.back-btn:hover{border-color:var(--p);color:var(--p)}
+.back-btn svg{width:16px;height:16px}
+.hdr-title{flex:1;font-size:14px;font-weight:700;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:0;transition:opacity .25s}
+.hdr-title.show{opacity:1}
+.hdr-av{width:32px;height:32px;border-radius:50%;background:var(--g);display:none;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;border:2px solid var(--border);cursor:pointer;background-size:cover;background-position:center;flex-shrink:0}
+
+/* ── RATING SECTION ──
+   Was a big animated card (giant glowing stars, bouncing emoji, confetti,
+   particle bursts) that only revealed the average rating AFTER you rated.
+   Replaced with a calmer, standard pattern (average shown up front, like
+   an app-store listing; small flat stars; a plain "Rated" confirmation) —
+   still writes to the same userRatings/articleRatings docs, nothing about
+   the data model changed, just how it looks. */
+.rating-card{
+  margin:24px 0 0;
+  background:var(--card,#fff);
+  border-radius:16px;
+  border:1.5px solid var(--border);
+  padding:20px;
+}
+
+.rating-summary{display:flex;align-items:center;gap:14px;margin-bottom:2px}
+.rating-summary-num{font-size:30px;font-weight:800;color:var(--txt);line-height:1}
+.rating-summary-stars{display:flex;gap:2px;margin:4px 0 3px}
+.rating-summary-stars svg{width:15px;height:15px}
+.rating-summary-count{font-size:12.5px;color:var(--sub)}
+.rating-summary-empty{font-size:13.5px;color:var(--sub)}
+
+.rating-divider{height:1px;background:var(--border);margin:16px 0}
+
+.rating-title{font-size:13.5px;font-weight:700;color:var(--txt);margin-bottom:10px}
+
+.stars-row{display:flex;gap:6px;margin-bottom:4px}
+.star-btn{background:none;border:none;cursor:pointer;padding:2px;
+  -webkit-tap-highlight-color:transparent}
+.star-btn:active{transform:scale(.92)}
+.star-btn svg{width:26px;height:26px;display:block;transition:transform .12s}
+
+.rating-label{font-size:12.5px;color:var(--sub);min-height:16px;margin-bottom:14px}
+
+/* rated confirmation — replaces the old confetti "done" card */
+.rating-rated-row{display:none;align-items:center;gap:8px;font-size:13.5px;color:var(--txt);font-weight:600}
+.rating-rated-row.show{display:flex}
+.rating-rated-row svg{width:15px;height:15px;color:#10b981;flex-shrink:0}
+.rating-form.hide{display:none}
+
+/* rating submit btn */
+.rating-submit{padding:9px 22px;border-radius:99px;background:var(--p);border:none;color:#fff;
+  font-size:13.5px;font-weight:700;cursor:pointer}
+.rating-submit:disabled{opacity:.4;cursor:not-allowed}
+
+
+/* ── HERO IMG ── */
+.art-hero{width:100%;height:220px;object-fit:cover;display:block;background:linear-gradient(135deg,#cffafe,#ecfeff);border-radius:14px;margin:2px 0 22px}
+
+/* ── ARTICLE ── */
+.art-wrap{max-width:680px;margin:0 auto;padding:0 20px 60px}
+
+/* author row wrapper */
+.author-row-wrap{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:16px;border-bottom:1px solid #f3f4f6;margin-bottom:0}
+.author-row{display:flex;align-items:center;gap:10px;cursor:pointer;width:fit-content;border-bottom:none;padding-bottom:0}
+.author-row:hover .author-name{color:var(--p)}
+/* follow button */
+.follow-author-btn{padding:7px 18px;border-radius:99px;border:1.5px solid var(--p);background:#fff;color:var(--p);font-size:12.5px;font-weight:700;cursor:pointer;transition:all .2s;flex-shrink:0;font-family:'Inter',sans-serif;white-space:nowrap}
+.follow-author-btn:hover{background:var(--p);color:#fff}
+.follow-author-btn.following{background:var(--p);color:#fff;border-color:var(--p)}
+.follow-author-btn.following:hover{background:#0e7490;border-color:#0e7490}
+
+.art-cat{display:inline-block;background:var(--g);color:#fff;font-size:10px;font-weight:800;padding:4px 11px;border-radius:99px;letter-spacing:.4px;text-transform:uppercase;margin:20px 0 12px}
+
+.art-title{font-size:26px;font-weight:900;line-height:1.22;letter-spacing:-.5px;color:var(--txt);margin-bottom:16px}
+
+/* author name */
+.author-logo{width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--border);flex-shrink:0;background:var(--g)}
+.author-name{font-size:14px;font-weight:700;color:var(--txt);display:flex;align-items:center;gap:5px}
+.author-name svg{width:15px;height:15px;fill:var(--p)}
+.author-meta{font-size:12px;color:var(--mute)}
+
+/* action bar */
+.action-bar{display:flex;align-items:center;gap:26px;padding:14px 2px 16px;border-bottom:1px solid #f3f4f6;margin-bottom:22px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.action-bar .act-save{margin-left:auto}
+.action-bar::-webkit-scrollbar{display:none}
+.act-btn{display:flex;align-items:center;gap:6px;padding:4px 2px;border:none;background:transparent;font-size:13px;font-weight:700;color:var(--sub);cursor:pointer;transition:color .2s;white-space:nowrap;flex-shrink:0;position:relative}
+.act-btn svg{width:16px;height:16px;flex-shrink:0}
+.act-btn:hover{color:var(--p)}
+.act-download-locked{opacity:.75}
+.act-lock-badge{position:absolute;top:-6px;right:-6px;font-size:9px;background:linear-gradient(135deg,#4f46e5,#06b6d4);color:#fff;border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(37,99,235,.4)}
+.act-like.liked{color:var(--red)}
+.act-like.liked svg{fill:var(--red);stroke:var(--red);animation:hpop .25s ease}
+.act-like svg{fill:none;stroke:currentColor;stroke-width:2;transition:all .2s}
+@keyframes hpop{0%{transform:scale(1)}50%{transform:scale(1.45)}100%{transform:scale(1)}}
+.act-save.saved{color:var(--p)}
+.act-save svg{fill:none;stroke:currentColor;stroke-width:2;transition:all .2s}
+.act-save.saved svg{fill:var(--p);stroke:var(--p)}
+
+/* article body */
+.art-body{font-size:16px;line-height:1.8;color:#374151}
+.art-body p{margin-bottom:18px}
+.art-body div{margin-bottom:18px} /* safety net for articles written before write.html forced <p> wrapping */
+.art-body h2{font-size:20px;font-weight:900;color:var(--txt);line-height:1.3;margin:30px 0 12px;letter-spacing:-.3px}
+.art-body h3{font-size:17px;font-weight:800;color:var(--txt);margin:22px 0 8px}
+.art-body ul,.art-body ol{padding-left:22px;margin-bottom:16px}
+.art-body li{margin-bottom:7px;line-height:1.72}
+.art-body strong{color:var(--txt);font-weight:800}
+.art-body hr{border:none;border-top:2px solid #f3f4f6;margin:28px 0}
+.art-body .pull-quote{background:#eef2ff;border-left:4px solid var(--p);border-radius:0 12px 12px 0;padding:16px 18px;margin:22px 0;font-size:15px;font-style:italic;color:var(--ps);line-height:1.7}
+.art-body .pull-quote::before{content:'\201C';font-size:42px;color:var(--p);line-height:0;vertical-align:-14px;margin-right:4px;font-family:Georgia,serif}
+.art-body .key-box{background:#ecfeff;border:1.5px solid var(--border2);border-radius:14px;padding:16px 18px;margin:18px 0}
+.art-body .key-box-title{font-size:11px;font-weight:800;color:var(--p);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+.art-body code{font-size:13px;background:#f1f5f9;padding:2px 7px;border-radius:5px;font-family:monospace;color:#0f172a}
+.art-body em{font-style:italic;color:var(--sub)}
+.art-body img{max-width:100%;height:auto;border-radius:12px;margin:18px 0;display:block}
+.art-body blockquote{background:#ecfeff;border-left:4px solid var(--p);border-radius:0 12px 12px 0;
+  padding:14px 18px;margin:18px 0;font-style:italic;color:var(--ps)}
+.art-body a{color:var(--p);text-decoration:underline;font-weight:600}
+.art-body s{color:var(--sub)}
+
+/* auth gate */
+/* ── PAYWALL GATE — was a flat card with a giant lock emoji floating on a
+   pale gradient. Now: an icon badge, tighter copy width so it doesn't run
+   edge-to-edge, a clearer primary/secondary button pair, and a small trust
+   line under the buttons (a standard signup-conversion pattern). ── */
+.art-gate{background:var(--card,#fff);border:1.5px solid var(--border);border-radius:20px;padding:36px 24px 28px;text-align:center;margin:28px 0;box-shadow:0 1px 2px rgba(15,23,42,.04),0 12px 32px -16px rgba(15,23,42,.12)}
+.art-gate-ico{width:52px;height:52px;border-radius:50%;background:var(--g);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;box-shadow:0 6px 16px -4px rgba(37,99,235,.4)}
+.art-gate-ico svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.art-gate h3{font-size:19px;font-weight:900;color:var(--txt);margin-bottom:8px;letter-spacing:-.3px}
+.art-gate p{font-size:13.5px;color:var(--sub);line-height:1.6;margin:0 auto 22px;max-width:300px}
+.art-gate-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.art-gate-btns a{display:inline-flex;align-items:center;gap:6px;padding:13px 26px;border-radius:99px;font-size:14px;font-weight:700;text-decoration:none;transition:all .2s}
+.gate-li{background:transparent;border:1.5px solid var(--border2);color:var(--txt)}
+.gate-li:hover{background:var(--bg)}
+.gate-su{background:var(--g);color:#fff;box-shadow:0 4px 14px -2px rgba(37,99,235,.35)}
+.gate-su:hover{opacity:.92}
+.art-gate-note{font-size:11.5px;color:var(--mute);margin-top:16px;letter-spacing:.1px}
+.art-fade{height:80px;background:linear-gradient(to bottom,transparent,#fff);margin-bottom:-4px;pointer-events:none}
+
+/* ── MORE ARTICLES ── */
+.more-section{padding:28px 4px 16px;border-top:1px solid #f3f4f6;margin-top:20px}
+.more-title{font-size:16px;font-weight:800;color:var(--txt);margin-bottom:16px}
+.more-list{display:flex;flex-direction:column;gap:12px}
+/* author bio card (end of article) */
+.author-card{margin:34px 0 8px;padding:26px 0 8px;border-top:1px solid #f3f4f6;text-align:center}
+.author-card-photo{width:96px;height:96px;border-radius:50%;object-fit:cover;background:linear-gradient(135deg,#4f46e5,#06b6d4);border:3px solid #fff;box-shadow:0 0 0 1px #e2e8f0,0 8px 20px -10px rgba(15,23,42,.35);cursor:pointer}
+.author-card-name{margin-top:14px;font-size:17px;font-weight:800;color:var(--txt);display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer}
+.author-card-stats{margin-top:3px;font-size:12.5px;color:var(--mute)}
+.author-card-bio{margin:16px auto 0;max-width:520px;font-size:15.5px;line-height:1.7;color:#334155;font-style:italic;text-align:left;font-family:Georgia,'Times New Roman',serif}
+.author-card-bio a{color:inherit;text-decoration:underline}
+.author-card-actions{margin-top:18px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
+.author-card-view{padding:7px 18px;border-radius:99px;border:1.5px solid #e2e8f0;background:#fff;color:var(--txt);font-size:12.5px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif}
+.author-card-view:hover{border-color:var(--p);color:var(--p)}
+
+.more-card{display:flex;gap:12px;align-items:flex-start;cursor:pointer;padding:12px;border-radius:14px;border:1px solid var(--border);background:#fff;transition:all .2s}
+.more-card:hover{border-color:var(--p);background:#ecfeff}
+.more-img{width:72px;height:64px;border-radius:10px;object-fit:cover;flex-shrink:0;background:linear-gradient(135deg,#cffafe,#ecfeff)}
+.more-body{flex:1;min-width:0}
+.more-cat{font-size:10px;font-weight:800;color:var(--p);text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}
+.more-ttl{font-size:13px;font-weight:700;color:var(--txt);line-height:1.38;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.more-meta{font-size:11px;color:var(--mute);margin-top:4px;font-weight:600}
+.more-see-all{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-top:14px;padding:13px;border-radius:99px;border:1.5px solid var(--border2);background:#fff;color:var(--p);font-size:14px;font-weight:800;text-decoration:none;transition:all .2s}
+.more-see-all svg{width:15px;height:15px;transition:transform .2s}
+.more-see-all:hover{background:var(--g);color:#fff;border-color:transparent;box-shadow:0 4px 16px rgba(37,99,235,.28)}
+.more-see-all:hover svg{transform:translateX(3px)}
+
+/* ── AUTH SHEET ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;opacity:0;pointer-events:none;transition:opacity .25s;backdrop-filter:blur(3px)}
+.overlay.on{opacity:1;pointer-events:all}
+.auth-sheet{position:fixed;left:0;right:0;bottom:0;z-index:301;background:#fff;border-radius:24px 24px 0 0;padding:20px 20px 44px;transform:translateY(100%);transition:transform .32s cubic-bezier(.32,0,.15,1)}
+.auth-sheet.on{transform:none}
+.sheet-bar{width:36px;height:4px;background:#e5e7eb;border-radius:99px;margin:0 auto 20px}
+/* ── MANAGE ARTICLE SHEET ── */
+.manage-hdr{display:flex;align-items:center;justify-content:space-between;padding:0 8px}
+.manage-close{background:none;border:none;cursor:pointer;padding:6px;border-radius:50%;color:var(--mute);
+  display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
+.manage-close:hover{background:#f1f5f9}
+.manage-close svg{width:18px;height:18px;stroke-width:2.3}
+.manage-body{padding:6px 4px 0}
+.manage-row{display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;cursor:pointer;
+  padding:13px 10px;border-radius:12px;font-size:14.5px;font-weight:600;color:var(--txt);text-align:left;
+  -webkit-tap-highlight-color:transparent}
+.manage-row:hover{background:#f8fafc}
+.manage-row svg{width:19px;height:19px;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:2;color:var(--mute)}
+.manage-row-danger{color:#ef4444}
+.manage-row-danger svg{color:#ef4444}
+.manage-toggle-row{cursor:default}
+.manage-toggle-row:hover{background:none}
+.manage-toggle-row span:first-of-type{flex:1}
+.manage-switch{position:relative;display:inline-block;width:42px;height:24px;flex-shrink:0}
+.manage-switch input{opacity:0;width:0;height:0}
+.manage-switch-track{position:absolute;cursor:pointer;inset:0;background:#e2e8f0;border-radius:99px;transition:.2s}
+.manage-switch-track::before{content:'';position:absolute;height:18px;width:18px;left:3px;top:3px;
+  background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.manage-switch input:checked + .manage-switch-track{background:var(--p, #4f46e5)}
+.manage-switch input:checked + .manage-switch-track::before{transform:translateX(18px)}
+.auth-sheet h3{font-size:22px;font-weight:900;text-align:center;margin-bottom:6px}
+.auth-sheet p{font-size:13.5px;color:var(--sub);text-align:center;line-height:1.6;margin-bottom:22px}
+.auth-sheet-btns{display:flex;flex-direction:column;gap:10px}
+.auth-sheet-btns a{display:flex;align-items:center;justify-content:center;padding:15px;border-radius:14px;font-size:15px;font-weight:700;text-decoration:none;transition:opacity .18s}
+.ash-su{background:var(--g);color:#fff;box-shadow:0 4px 16px rgba(37,99,235,.28)}
+.ash-li{background:#fff;border:1.5px solid var(--border2);color:var(--txt)}
+.auth-cancel{display:block;text-align:center;margin-top:14px;font-size:13px;color:var(--mute);cursor:pointer;font-weight:600}
+
+/* ── SHARE SHEET ── */
+.share-sheet{position:fixed;left:0;right:0;bottom:0;z-index:302;background:#fff;border-radius:24px 24px 0 0;padding:18px 20px 44px;transform:translateY(100%);transition:transform .3s cubic-bezier(.32,0,.15,1)}
+.share-sheet.on{transform:none}
+.share-sheet h4{font-size:15px;font-weight:800;text-align:center;margin-bottom:16px}
+.share-opts{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.s-opt{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;transition:transform .15s}
+.s-opt:active{transform:scale(.93)}
+.s-ico{width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center}
+.s-lbl{font-size:10.5px;font-weight:600;color:var(--sub)}
+.copy-row{background:#ecfeff;border:1.5px solid var(--border2);border-radius:11px;display:flex;align-items:center;gap:8px;padding:10px 12px;cursor:pointer}
+.copy-url{font-size:12px;color:var(--sub);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.copy-lbl{font-size:12px;font-weight:700;color:var(--p);flex-shrink:0}
+.share-cancel{display:block;text-align:center;margin-top:14px;font-size:13px;color:var(--mute);cursor:pointer;font-weight:600}
+
+/* ── DOWNLOAD SHEET ── */
+.download-sheet{position:fixed;left:0;right:0;bottom:0;z-index:302;background:#fff;border-radius:24px 24px 0 0;padding:18px 20px 40px;transform:translateY(100%);transition:transform .3s cubic-bezier(.32,0,.15,1)}
+.download-sheet.on{transform:none}
+.dl-preview{background:linear-gradient(160deg,#ecfeff,#fff);border:1.5px solid var(--border2);border-radius:18px;padding:18px;margin-bottom:14px}
+.dl-preview-top{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.dl-preview-badge{display:inline-flex;align-items:center;gap:5px;background:var(--g);color:#fff;font-size:10px;font-weight:800;padding:4px 10px;border-radius:99px;letter-spacing:.5px}
+.dl-preview-badge svg{width:11px;height:11px}
+.dl-preview-cat{font-size:10px;font-weight:800;color:var(--p);text-transform:uppercase;letter-spacing:.4px}
+.dl-preview-title{font-size:15px;font-weight:900;color:var(--txt);line-height:1.35;margin-bottom:6px}
+.dl-preview-meta{font-size:12px;color:var(--mute);font-weight:600}
+.dl-stats{display:flex;align-items:center;justify-content:center;gap:6px;font-size:13px;color:var(--sub);font-weight:600;margin-bottom:16px}
+.dl-stats svg{width:14px;height:14px;stroke:var(--p)}
+.dl-stats b{color:var(--p);font-weight:800}
+.dl-confirm-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:15px;border-radius:14px;border:none;background:var(--g);color:#fff;font-size:15px;font-weight:800;cursor:pointer;transition:opacity .18s;box-shadow:0 4px 16px rgba(37,99,235,.28);font-family:'Inter',sans-serif}
+.dl-confirm-btn:hover{opacity:.92}
+.dl-confirm-btn:disabled{opacity:.6;cursor:wait}
+.dl-confirm-btn svg{width:17px;height:17px;flex-shrink:0}
+.dl-note{text-align:center;font-size:11.5px;color:var(--mute);margin-top:10px;line-height:1.5}
+
+/* download action button + count */
+.act-download.downloaded{color:var(--p)}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(8px);background:#111;color:#fff;font-size:13px;font-weight:600;padding:10px 20px;border-radius:99px;z-index:500;opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── HAMBURGER MENU ── */
+.hamburger-wrap{position:relative}
+.hbg-btn{width:36px;height:36px;border-radius:12px;border:1.5px solid var(--border2);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;color:var(--txt);flex-shrink:0;padding:0}
+.hbg-btn:hover{border-color:var(--p);color:var(--p);background:#ecfeff}
+.hbg-btn svg{width:17px;height:17px;transition:all .22s}
+.hbg-drop{position:absolute;top:calc(100% + 10px);right:0;width:210px;background:#fff;border-radius:18px;border:1.5px solid var(--border);box-shadow:0 8px 40px rgba(37,99,235,.16),0 2px 12px rgba(0,0,0,.08);padding:8px;z-index:200;opacity:0;transform:translateY(-6px) scale(.97);pointer-events:none;transition:all .22s cubic-bezier(.32,0,.15,1);transform-origin:top right}
+.hbg-drop.open{opacity:1;transform:translateY(0) scale(1);pointer-events:all}
+.hbg-item{display:flex;align-items:center;gap:10px;width:100%;padding:11px 13px;border-radius:11px;font-size:13.5px;font-weight:600;color:var(--txt);text-decoration:none;border:none;background:none;cursor:pointer;transition:background .15s,color .15s;text-align:left}
+.hbg-item:hover{background:#ecfeff;color:var(--p)}
+.hbg-item svg{width:16px;height:16px;flex-shrink:0;opacity:.7}
+.hbg-div{height:1px;background:var(--border);margin:4px 6px}
+.hbg-signup{background:var(--g);color:#fff !important;margin-top:2px}
+.hbg-signup:hover{opacity:.88;background:var(--g) !important;color:#fff !important}
+.hbg-signout{color:var(--red) !important}
+.hbg-signout:hover{background:#fff1f1 !important;color:var(--red) !important}
+
+/* ── VERIFIED BADGE (brand standard) ── */
+.vbadge{display:inline-flex;align-items:center;justify-content:center;
+  width:18px;height:18px;border-radius:50%;background:var(--g);flex-shrink:0;
+  box-shadow:0 1px 6px rgba(37,99,235,.35)}
+.vbadge svg{width:10px;height:10px;fill:none;stroke:#fff;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+
+/* ── SKELETON ── */
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+.skel{background:linear-gradient(90deg,#f1f0f9 25%,#e0ecff 50%,#f1f0f9 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:8px}
+.skel-hero{width:100%;height:220px;border-radius:14px}
+.skel-art-wrap{max-width:680px;margin:0 auto;padding:24px 20px;display:flex;flex-direction:column;gap:14px}
+.skel-author-row{display:flex;align-items:center;gap:10px;margin:4px 0 8px}
+.skel-av{width:38px;height:38px;border-radius:50%;flex-shrink:0}
+.skel-body-line{height:15px;width:100%}
+.skel-body-line.short{width:65%}
+.skel-body-line.med{width:82%}
+
+
+
+/* ── WELCOME NUDGE ── */
+.welcome-nudge{position:fixed;bottom:0;left:0;right:0;z-index:400;background:linear-gradient(135deg,#4f46e5,#06b6d4);color:#fff;padding:16px 20px 36px;transform:translateY(100%);transition:transform .38s cubic-bezier(.32,0,.15,1);display:flex;align-items:center;gap:14px}
+.welcome-nudge.on{transform:none}
+.welcome-nudge-ico{font-size:28px;flex-shrink:0;line-height:1}
+.welcome-nudge-txt{flex:1;min-width:0}
+.welcome-nudge-txt strong{display:block;font-size:14px;font-weight:800;margin-bottom:3px}
+.welcome-nudge-txt span{font-size:12px;opacity:.85;line-height:1.4;display:block}
+.welcome-nudge-cta{flex-shrink:0;background:#fff;color:#4f46e5;font-size:12px;font-weight:800;border:none;border-radius:99px;padding:9px 14px;cursor:pointer;white-space:nowrap}
+.welcome-nudge-close{position:absolute;top:10px;right:14px;background:none;border:none;color:rgba(255,255,255,.7);font-size:18px;cursor:pointer;padding:4px;line-height:1}
+
+/* ── COMMENTS SECTION ── */
+.comments-sec{padding:28px 20px 8px;border-top:2px solid var(--border);margin-top:4px}
+.comments-sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.comments-sec-title{font-size:16px;font-weight:900;color:var(--txt)}
+.comments-count-badge{font-size:13px;font-weight:700;color:var(--mute);margin-left:6px}
+.add-comment-row{display:flex;gap:10px;align-items:flex-start;margin-bottom:8px}
+.c-user-av{width:34px;height:34px;border-radius:50%;background:var(--g);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;overflow:hidden}
+.c-user-av img{width:100%;height:100%;object-fit:cover}
+.c-input-wrap{flex:1}
+.c-input{width:100%;border:none;border-bottom:1.5px solid var(--border2);padding:8px 0 10px;font-size:14px;font-family:'Inter',sans-serif;color:var(--txt);outline:none;resize:none;min-height:36px;max-height:140px;transition:border-color .2s;background:transparent}
+.c-input:focus{border-color:var(--p)}
+.c-input-actions{display:none;justify-content:flex-end;gap:8px;margin-top:10px}
+.c-input-actions.show{display:flex}
+.c-cancel-btn{padding:7px 14px;border-radius:99px;border:1.5px solid var(--border2);background:#fff;font-size:12.5px;font-weight:600;color:var(--sub);cursor:pointer;font-family:inherit}
+.c-post-btn{padding:7px 20px;border-radius:99px;background:var(--g);border:none;color:#fff;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;transition:opacity .2s}
+.c-post-btn:disabled{opacity:.4;cursor:not-allowed}
+.c-login-cta{background:#ecfeff;border:1.5px solid var(--border2);border-radius:14px;padding:14px 16px;font-size:13px;color:var(--sub);display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px}
+.c-login-cta span{line-height:1.5}
+.c-login-cta a{color:var(--p);font-weight:700;text-decoration:none;white-space:nowrap}
+
+/* flat comment item */
+.comment-item{display:flex;gap:11px;padding:14px 0;position:relative;border-bottom:1px solid #f1f3f8}
+.comment-item:last-child{border-bottom:none}
+.comment-item.reply{padding:10px 0;border-bottom:none}
+.c-av{width:36px;height:36px;border-radius:50%;background:var(--g);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;overflow:hidden;cursor:pointer}
+.c-av img{width:100%;height:100%;object-fit:cover}
+.c-body{flex:1;min-width:0;padding-right:28px;position:relative}
+.c-meta-row{display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap}
+.c-name{font-size:13.5px;font-weight:800;color:var(--txt);cursor:pointer;line-height:1}
+.c-name:hover{color:var(--p)}
+.c-author-badge{display:inline-flex;align-items:center;gap:3px;background:linear-gradient(135deg,#4f46e518,#06b6d418);color:var(--p);font-size:10px;font-weight:800;padding:2px 7px;border-radius:99px;border:1px solid #bfdbfe;letter-spacing:.1px;flex-shrink:0}
+.c-author-badge svg{width:9px;height:9px;fill:var(--p)}
+.c-pin-badge{display:inline-flex;align-items:center;gap:3px;background:#fffbeb;color:#b45309;font-size:10px;font-weight:800;padding:2px 7px;border-radius:99px;border:1px solid #fde68a;letter-spacing:.1px;flex-shrink:0}
+.c-text{font-size:14.5px;color:#374151;line-height:1.62;word-break:break-word;margin-bottom:8px}
+.c-foot{display:flex;align-items:center;gap:2px;flex-wrap:wrap}
+.c-time{font-size:11.5px;color:var(--mute);font-weight:500;padding:4px 6px 4px 0}
+.c-dot{font-size:10px;color:var(--mute);opacity:.5;padding:0 1px}
+.c-like-btn,.c-reply-btn,.c-view-replies-btn{background:none;border:none;cursor:pointer;font-size:12.5px;font-weight:700;color:var(--mute);padding:5px 9px;border-radius:99px;transition:all .15s;font-family:inherit;display:inline-flex;align-items:center;gap:4px}
+.c-like-btn:hover{color:var(--red);background:var(--red-bg)}
+.c-like-btn.liked{color:var(--red);background:var(--red-bg)}
+.c-like-btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0;transition:all .15s}
+.c-like-btn.liked svg{fill:var(--red);stroke:var(--red)}
+.c-reply-btn:hover{color:var(--p);background:#eef0fe}
+.c-view-replies-btn{color:var(--p);background:#eef0fe}
+.c-view-replies-btn:hover{background:#e0e4fd}
+.c-view-replies-btn svg{transition:transform .2s}
+.c-view-replies-btn.open svg{transform:rotate(180deg)}
+
+/* 3-dot menu */
+.c-more-btn{position:absolute;top:2px;right:0;width:26px;height:26px;border-radius:50%;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--mute);opacity:0;transition:opacity .15s,background .15s;flex-shrink:0;padding:0}
+.comment-item:hover .c-more-btn,.c-more-btn:focus,.c-more-btn.open{opacity:1}
+.c-more-btn:hover{background:#f3f4f6;color:var(--txt)}
+.c-more-btn svg{width:14px;height:14px;pointer-events:none}
+.c-menu{position:absolute;top:26px;right:0;background:#fff;border-radius:14px;border:1.5px solid var(--border);box-shadow:0 6px 28px rgba(37,99,235,.13),0 2px 8px rgba(0,0,0,.07);padding:6px;z-index:400;min-width:150px;opacity:0;transform:translateY(-6px) scale(.96);pointer-events:none;transition:all .18s cubic-bezier(.32,0,.15,1);transform-origin:top right}
+.c-menu.open{opacity:1;transform:translateY(0) scale(1);pointer-events:all}
+.c-menu-item{display:flex;align-items:center;gap:9px;width:100%;padding:9px 12px;border-radius:9px;font-size:13px;font-weight:600;color:var(--txt);background:none;border:none;cursor:pointer;font-family:inherit;transition:background .13s,color .13s;text-align:left;white-space:nowrap}
+.c-menu-item:hover{background:#ecfeff;color:var(--p)}
+.c-menu-item svg{width:14px;height:14px;flex-shrink:0;opacity:.7}
+.c-menu-item.danger{color:var(--red)}
+.c-menu-item.danger:hover{background:#fff1f1;color:var(--red)}
+.c-menu-item.danger svg{opacity:.7}
+
+.c-replies-wrap{margin-left:17px;margin-top:6px;padding-left:28px;border-left:2px solid #eef0f4;display:flex;flex-direction:column;gap:2px}
+.reply-input-row{display:flex;gap:8px;margin-top:8px;align-items:flex-start}
+.r-input{flex:1;border:none;border-bottom:1.5px solid var(--border2);padding:6px 0 8px;font-size:13px;font-family:'Inter',sans-serif;color:var(--txt);outline:none;resize:none;min-height:32px;background:transparent;transition:border-color .2s}
+.r-input:focus{border-color:var(--p)}
+.r-post-btn{padding:7px 14px;border-radius:99px;background:var(--g);border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0}
+.r-post-btn:disabled{opacity:.4}
+.r-cancel-btn{padding:7px 8px;background:none;border:none;cursor:pointer;font-size:15px;color:var(--mute);flex-shrink:0;line-height:1}
+.comment-item.reply .c-av{width:28px;height:28px;font-size:11px}
+.comment-item.reply .c-name{font-size:12.5px}
+.comment-item.reply .c-text{font-size:13px}
+.comments-list-empty{text-align:center;padding:36px 16px;color:var(--mute)}
+.comments-list-empty-ico{font-size:32px;margin-bottom:8px;opacity:.5}
+.comments-list-empty-txt{font-size:13px;font-weight:600}
+
+.c-pinned-card{background:linear-gradient(180deg,#fffdf7,#fffbeb);border:1.5px solid #fde68a;border-radius:16px;padding:14px 16px 12px;margin-bottom:16px}
+.c-pinned-card .comment-item{padding:0;border-bottom:none}
+.c-pinned-card .c-more-btn{top:0}
+
+/* ── COMMENT DRAWER ── */
+.comment-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:310;opacity:0;pointer-events:none;transition:opacity .25s;backdrop-filter:blur(3px)}
+.comment-overlay.on{opacity:1;pointer-events:all}
+.comment-sheet{position:fixed;left:0;right:0;bottom:0;z-index:311;background:#fff;border-radius:24px 24px 0 0;max-height:88vh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .34s cubic-bezier(.32,0,.15,1)}
+.comment-sheet.on{transform:none}
+.comment-sheet-top{display:flex;align-items:center;gap:12px;padding:14px 20px 12px;flex-shrink:0;border-bottom:1px solid var(--border)}
+.comment-sheet-title{flex:1;font-size:15px;font-weight:900;color:var(--txt)}
+.comment-sheet-close{width:30px;height:30px;border-radius:50%;background:#f3f4f6;border:none;cursor:pointer;color:var(--sub);display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;transition:all .15s}
+.comment-sheet-close:hover{background:#e5e7eb;color:var(--txt)}
+.comment-sheet-close svg{width:14px;height:14px}
+.comment-sheet-list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 16px 0}
+.comment-sheet-input-wrap{padding:10px 16px 28px;border-top:1px solid var(--border);flex-shrink:0;background:#fff}
+.sb-comment{display:flex;align-items:center;gap:7px;padding:10px 18px;border-radius:99px;border:1.5px solid var(--border2);background:#fff;font-size:14px;font-weight:700;color:var(--sub);cursor:pointer;transition:all .2s;flex:1;justify-content:center}
+.sb-comment svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2}
+.sb-comment:hover{border-color:var(--p);color:var(--p)}
+/* ── IMAGE VIEWER (tap the cover photo to view full-size) — same pattern
+   used for the profile picture / cover banner on the profile page ── */
+.img-viewer-bg{position:fixed;inset:0;background:rgba(10,8,20,.92);z-index:2200;
+  opacity:0;pointer-events:none;transition:opacity .2s}
+.img-viewer-bg.show{opacity:1;pointer-events:all}
+.img-viewer-close{position:absolute;top:18px;right:18px;width:40px;height:40px;border-radius:50%;
+  background:rgba(0,0,0,.55);border:none;color:#fff;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;z-index:2201}
+.img-viewer-close svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.img-viewer-count{position:absolute;top:22px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.55);
+  color:#fff;font-size:12.5px;font-weight:700;padding:5px 13px;border-radius:99px;z-index:2201;letter-spacing:.2px}
+.img-viewer-track{display:flex;width:100vw;height:100vh;overflow-x:auto;scroll-snap-type:x mandatory;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none}
+.img-viewer-track::-webkit-scrollbar{display:none}
+.img-viewer-slide{flex:0 0 100vw;scroll-snap-align:center;display:flex;align-items:center;justify-content:center}
+.img-viewer-slide img{max-width:92vw;max-height:85vh;object-fit:contain;border-radius:8px}
+.art-hero{cursor:pointer}
+/* ══ WEEKLY UI POLISH — article reader (CSS only: no markup, script or behaviour changes) ══ */
+.art-wrap{padding:0 20px 72px}
+.art-cat{margin:22px 0 14px;padding:5px 12px;font-size:10.5px;letter-spacing:.6px;box-shadow:0 4px 12px -4px rgba(79,70,229,.45)}
+.art-title{font-size:29px;font-weight:900;line-height:1.18;letter-spacing:-.8px;margin-bottom:18px}
+.author-row-wrap{padding-bottom:16px}
+.author-logo{width:42px;height:42px;border:2px solid #fff;box-shadow:0 0 0 1px #e2e8f0}
+.author-name{font-size:14.5px}
+.author-meta{font-size:12.5px;color:#94a3b8;margin-top:1px}
+.follow-author-btn{padding:8px 18px;font-size:13px;box-shadow:0 2px 8px -3px rgba(79,70,229,.35)}
+
+/* action bar: one soft rounded tray instead of two hairlines */
+.action-bar{gap:4px;padding:6px 8px;margin:6px 0 22px;border:none;background:#f6f7fb;border-radius:18px;justify-content:space-between}
+.act-btn{padding:9px 11px;border-radius:12px;transition:color .2s,background .2s,transform .12s}
+.act-btn:hover{background:#eceffd}
+.act-btn:active{transform:scale(.93)}
+.action-bar .act-save{margin-left:0}
+
+.art-hero{height:auto;aspect-ratio:16/9;max-height:400px;border-radius:18px;margin:4px 0 26px;box-shadow:0 14px 32px -16px rgba(15,23,42,.35)}
+
+/* reading typography: slightly larger, more open, comfortable line length */
+.art-body{font-size:17px;line-height:1.85;color:#1f2937;letter-spacing:.005em;word-break:break-word;overflow-wrap:anywhere}
+.art-body p,.art-body div{margin-bottom:22px}
+.art-body>p:first-of-type{font-size:18.5px;line-height:1.75;color:#0f172a}
+.art-body h2{font-size:22px;margin:38px 0 14px;letter-spacing:-.4px;padding-left:14px;position:relative}
+.art-body h2::before{content:'';position:absolute;left:0;top:.15em;bottom:.15em;width:4px;border-radius:4px;background:var(--g)}
+.art-body h3{font-size:18px;margin:28px 0 10px}
+.art-body li{margin-bottom:9px;line-height:1.78}
+.art-body li::marker{color:var(--p);font-weight:800}
+.art-body a{text-decoration-thickness:1.5px;text-underline-offset:3px;text-decoration-color:rgba(79,70,229,.4)}
+.art-body a:hover{text-decoration-color:var(--p)}
+.art-body img{border-radius:16px;margin:24px 0;box-shadow:0 10px 26px -14px rgba(15,23,42,.35)}
+.art-body blockquote,.art-body .pull-quote{background:linear-gradient(90deg,#eef2ff,#f8faff);border-left:4px solid var(--p);border-radius:0 16px 16px 0;padding:18px 20px;margin:28px 0;font-size:17px;line-height:1.7;color:#312e81}
+.art-body hr{border-top:1px solid #e5e9f0;margin:36px auto;width:40%}
+.art-body code{background:#eef2ff;color:#3730a3}
+.art-body ::selection{background:#c7d2fe}
+
+/* more-articles cards */
+.more-section{padding-top:32px;margin-top:28px}
+.more-title{font-size:18px;font-weight:900;letter-spacing:-.3px}
+.more-card{gap:14px;padding:12px;border-radius:16px;box-shadow:0 1px 2px rgba(15,23,42,.04);transition:transform .15s,box-shadow .2s,border-color .2s,background .2s}
+.more-card:hover{background:#f8faff;box-shadow:0 8px 20px -12px rgba(79,70,229,.35)}
+.more-card:active{transform:scale(.985)}
+.more-img{width:84px;height:72px;border-radius:12px}
+.more-ttl{font-size:14px;line-height:1.36}
+
+@media (min-width:720px){
+  .art-wrap{padding-bottom:96px}
+  .art-title{font-size:36px;letter-spacing:-1px}
+  .art-body{font-size:18px}
+  .art-body>p:first-of-type{font-size:20px}
+}
+@media (prefers-reduced-motion:reduce){.act-btn,.more-card{transition:none}}
+
+/* @mentions inside article text */
+.art-body a.mention{color:var(--p);font-weight:700;text-decoration:none}
+.art-body a.mention:hover{text-decoration:underline}
+</style>
+<script src="/article-categories.js"></script>
+</head>
+<body>
+
+<!-- HEADER -->
+<!-- ══ SHARED MINDSHIFT HEADER + SIDEBAR (matches articles.html / index.html) ══ -->
+<div class="sticky-header-stack">
+<header class="hdr">
+  <button class="back-btn" onclick="history.back()">
+    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+  </button>
+  <div class="hdr-title" id="hdrTitle"></div>
+  <button class="back-btn" id="hdrManageBtn" style="display:none;margin-left:auto" onclick="openManageSheet()" aria-label="Manage article">
+    <svg fill="currentColor" viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+  </button>
+</header>
+</div>
+
+<!-- MANAGE SHEET (owner only) -->
+<div class="overlay" id="manageOverlay" onclick="closeManageSheet()"></div>
+<div class="share-sheet" id="manageSheet" style="padding:6px 20px 28px">
+  <div class="sheet-bar"></div>
+  <div class="manage-hdr">
+    <h4 style="margin:0 0 4px;padding:0 8px">Manage article</h4>
+    <button class="manage-close" onclick="closeManageSheet()" aria-label="Close">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="manage-body">
+    <button class="manage-row" onclick="location.href='/write?edit='+article.id">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4z"/></svg>
+      <span>Edit</span>
+    </button>
+    <div class="manage-row manage-toggle-row">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+      <span>Turn off commenting</span>
+      <label class="manage-switch">
+        <input type="checkbox" id="manageCommentsToggle" onchange="onManageCommentsToggle(this.checked)">
+        <span class="manage-switch-track"></span>
+      </label>
+    </div>
+    <div class="manage-row manage-toggle-row">
+      <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+      <span>Hide like count</span>
+      <label class="manage-switch">
+        <input type="checkbox" id="manageLikeCountToggle" onchange="onManageLikeCountToggle(this.checked)">
+        <span class="manage-switch-track"></span>
+      </label>
+    </div>
+    <button class="manage-row" onclick="closeManageSheet();copyLink()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+      <span>Copy link</span>
+    </button>
+    <button class="manage-row manage-row-danger" onclick="confirmDeletePost()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+      <span>Delete</span>
+    </button>
+  </div>
+</div>
+
+<!-- DELETE CONFIRM SHEET -->
+<div class="overlay" id="deleteOverlay" onclick="closeDeleteConfirm()"></div>
+<div class="share-sheet" id="deleteSheet" style="padding:6px 20px 28px">
+  <div class="sheet-bar"></div>
+  <div class="manage-hdr">
+    <h4 style="margin:0 0 4px;padding:0 8px">Delete this article?</h4>
+    <button class="manage-close" onclick="closeDeleteConfirm()" aria-label="Close">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="manage-body">
+    <p style="font-size:13.5px;color:var(--mute);line-height:1.5;padding:0 10px 12px">This can't be undone. Likes and comments on it will be gone for good.</p>
+    <button class="manage-row manage-row-danger" onclick="doDeletePost()"><span>Delete</span></button>
+    <button class="manage-row" onclick="closeDeleteConfirm()"><span>Cancel</span></button>
+  </div>
+</div>
+
+<!-- IMAGE VIEWER (tap the cover photo to view full-size) -->
+<div class="img-viewer-bg" id="imgViewerBg" onclick="closeImageViewer()">
+  <button class="img-viewer-close" onclick="closeImageViewer()" aria-label="Close">
+    <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+  </button>
+  <div class="img-viewer-count" id="imgViewerCount"></div>
+  <div class="img-viewer-track" id="imgViewerTrack" onscroll="onImgViewerScroll()"></div>
+</div>
+
+<div id="sidebar-slot"></div>
+<script src="/sidebar-nav.js?v=3"></script>
+<script src="/author-live.js"></script>
+<script src="/share-image.js"></script>
+<script>
+  function toggleSidebar(){
+    const sidebar = document.getElementById('sidebar');
+    const open = sidebar.getAttribute('data-open') === 'true';
+    sidebar.setAttribute('data-open', open ? 'false' : 'true');
+    sidebar.style.left = open ? '-300px' : '0px';
+    sidebar.setAttribute('aria-hidden', open ? 'true' : 'false');
+  }
+</script>
+<!-- ══ /SHARED HEADER + SIDEBAR ══ -->
+
+<!-- PROGRESS -->
+<div class="prog" id="prog"></div>
+
+<!-- CONTENT -->
+<div id="artContent"></div>
+
+<!-- WELCOME NUDGE (shown once to users who signed up from this article) -->
+<div class="welcome-nudge" id="welcomeNudge">
+  <button class="welcome-nudge-close" onclick="dismissWelcome()" aria-label="Close">×</button>
+  <div class="welcome-nudge-ico">🚀</div>
+  <div class="welcome-nudge-txt">
+    <strong>Welcome to MindShift Books!</strong>
+    <span>You've got a personalized feed now — articles picked for what you're into.</span>
+  </div>
+  <button class="welcome-nudge-cta" onclick="goToFeed()">See my feed →</button>
+</div>
+
+<!-- AUTH SHEET -->
+<div class="overlay" id="authOverlay" onclick="closeAll()"></div>
+<div class="auth-sheet" id="authSheet">
+  <div class="sheet-bar"></div>
+  <h3>Join MindShift Books Free 🚀</h3>
+  <p>Create a free account to like and save articles, follow your favorite authors, and get a feed picked just for you.</p>
+  <div class="auth-sheet-btns">
+    <a href="/signup" class="ash-su" id="authSignupBtn">✨ Create free account</a>
+    <a href="/login" class="ash-li" id="authLoginBtn">I already have an account</a>
+  </div>
+  <span class="auth-cancel" onclick="closeAll()">Maybe later</span>
+</div>
+
+<!-- SHARE SHEET -->
+<div class="share-sheet" id="shareSheet">
+  <div class="sheet-bar"></div>
+  <h4>Share this article</h4>
+  <div class="share-opts">
+    <div class="s-opt" onclick="doShare('whatsapp')">
+      <div class="s-ico" style="background:#dcfce7"><svg width="22" height="22" viewBox="0 0 24 24" fill="#16a34a"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.121 1.534 5.852L.057 23.213a.75.75 0 00.918.918l5.42-1.464A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22a9.95 9.95 0 01-5.193-1.456l-.371-.221-3.857 1.042 1.063-3.748-.242-.385A9.951 9.951 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg></div>
+      <span class="s-lbl">WhatsApp</span>
+    </div>
+    <div class="s-opt" onclick="doShare('twitter')">
+      <div class="s-ico" style="background:#e0f2fe"><svg width="18" height="18" viewBox="0 0 24 24" fill="#0284c7"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.402 6.231H2.74l7.73-8.835L1.254 2.25H8.08l4.265 5.638 5.899-5.638zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></div>
+      <span class="s-lbl">X / Twitter</span>
+    </div>
+    <div class="s-opt" onclick="doShare('linkedin')">
+      <div class="s-ico" style="background:#cffafe"><svg width="18" height="18" viewBox="0 0 24 24" fill="#0891b2"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></div>
+      <span class="s-lbl">LinkedIn</span>
+    </div>
+    <div class="s-opt" onclick="doShare('copy')">
+      <div class="s-ico" style="background:#f1f5f9"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#64748b" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path stroke-linecap="round" d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></div>
+      <span class="s-lbl">Copy link</span>
+    </div>
+    <div class="s-opt" onclick="closeShare();openShareAsImageFromArticle()">
+      <div class="s-ico" style="background:#ede9fe"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>
+      <span class="s-lbl">Image</span>
+    </div>
+  </div>
+  <div class="copy-row" onclick="doShare('copy')">
+    <span class="copy-url" id="copyUrl"></span>
+    <span class="copy-lbl">Copy</span>
+  </div>
+  <span class="share-cancel" onclick="closeShare()">Cancel</span>
+</div>
+
+<!-- DOWNLOAD SHEET -->
+<div class="download-sheet" id="downloadSheet">
+  <div class="sheet-bar"></div>
+  <div class="dl-preview">
+    <div class="dl-preview-top">
+      <span class="dl-preview-badge">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path stroke-linecap="round" stroke-linejoin="round" d="M14 2v6h6"/></svg>
+        MindShift Books PDF
+      </span>
+      <span class="dl-preview-cat" id="dlCat"></span>
+    </div>
+    <div class="dl-preview-title" id="dlTitle"></div>
+    <div class="dl-preview-meta" id="dlMeta"></div>
+  </div>
+  <div class="dl-stats">
+    <svg fill="none" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
+    <span><b id="dlCount">0</b> downloads</span>
+  </div>
+  <button class="dl-confirm-btn" id="dlConfirmBtn" onclick="confirmDownload()">
+    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
+    Download PDF
+  </button>
+  <div class="dl-note">A nicely formatted PDF of this article will be saved to your device.</div>
+  <span class="share-cancel" onclick="closeDownload()">Cancel</span>
+</div>
+
+<!-- COMMENT OVERLAY -->
+<div class="comment-overlay" id="commentOverlay" onclick="closeCommentDrawer()"></div>
+<!-- COMMENT SHEET -->
+<div class="comment-sheet" id="commentSheet">
+  <div class="sheet-bar" style="margin:12px auto 0;flex-shrink:0"></div>
+  <div class="comment-sheet-top">
+    <span class="comment-sheet-title">Comments <span id="commentSheetCount" style="font-size:13px;font-weight:600;color:var(--mute)"></span></span>
+    <button class="comment-sheet-close" onclick="closeCommentDrawer()" aria-label="Close">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="comment-sheet-list" id="commentsList">
+    <div class="comments-list-empty"><div class="comments-list-empty-ico">&#128172;</div><div class="comments-list-empty-txt">Be the first to comment</div></div>
+  </div>
+  <div class="comment-sheet-input-wrap" id="commentSheetInput"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
+import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
+import { getFirestore, doc, getDoc, setDoc, deleteDoc, updateDoc, increment, onSnapshot,
+         collection, query, where, orderBy, limit, startAfter, addDoc, serverTimestamp, getDocs, getCountFromServer, writeBatch, runTransaction, enableNetwork, disableNetwork } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
+import { createResilient } from '/resilient.js';
+import { initNotificationUI } from '/notifications.js';
+import { initRepost } from '/repost.js';
+
+const fbApp = initializeApp({
+  apiKey:"AIzaSyDTn70s1_uIiSOR6lPLY_nKh8Ff1FViFCs",
+  authDomain:"mindshiftbooks-c4451.firebaseapp.com",
+  projectId:"mindshiftbooks-c4451",
+  storageBucket:"mindshiftbooks-c4451.firebasestorage.app",
+  messagingSenderId:"388697987853",
+  appId: "1:388697987853:web:f023df9412c22285012e44",
+  measurementId: "G-CHPJDQ4W08"
+});
+const auth = getAuth(fbApp);
+const db   = getFirestore(fbApp, 'default');
+const { resilient, reconnectFirestore } = createResilient({ db, enableNetwork, disableNetwork });
+const notif = initNotificationUI({
+  db, getCurrentUser: () => currentUser, getMyProfile: () => myProfile,
+  fs: { collection, query, where, onSnapshot, getDocs, getCountFromServer, orderBy, limit, addDoc, writeBatch, serverTimestamp, doc, getDoc, setDoc, increment, runTransaction }
+});
+const repost = initRepost({
+  db, getCurrentUser: () => currentUser, getMyProfile: () => myProfile, notif,
+  openAuth: () => window.openAuth && window.openAuth(),
+  showToast: (m) => window.showToast && window.showToast(m),
+  fs: { doc, getDoc, setDoc, deleteDoc, addDoc, collection, updateDoc, increment, serverTimestamp }
+});
+
+/* ── ARTICLE DATA ── */
+// Real articles are fetched from Firestore by id below — no hardcoded fallback content
+const ARTICLES = [];
+
+/* ── STATE ── */
+let currentUser = null;
+let myProfile = null; // {name, photo} — cached from users doc + Google fallback
+let artId = null;
+let article = null;
+let likeCount = 0;
+let isLiked = false;
+let isSaved = false;
+let isFollowing = false;
+let likeUnsub = null;
+let downloadCount = 0;
+let repostCount = 0;
+let isReposted = false;
+let hasDownloaded = false;
+let downloadUnsub = null;
+let _articleRendered = false; // true once the real content (not the skeleton) is on screen
+
+/* ── INIT ── */
+// Show article skeleton immediately
+document.getElementById('artContent').innerHTML = `
+  <div class="skel-art-wrap">
+    <div class="skel" style="height:12px;width:70px;border-radius:99px"></div>
+    <div class="skel" style="height:26px;width:90%"></div>
+    <div class="skel" style="height:22px;width:65%"></div>
+    <div class="skel-author-row">
+      <div class="skel skel-av"></div>
+      <div style="display:flex;flex-direction:column;gap:6px;flex:1">
+        <div class="skel" style="height:13px;width:120px"></div>
+        <div class="skel" style="height:11px;width:80px"></div>
+      </div>
+    </div>
+    <div class="skel skel-hero"></div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px">
+      <div class="skel skel-body-line"></div>
+      <div class="skel skel-body-line med"></div>
+      <div class="skel skel-body-line"></div>
+      <div class="skel skel-body-line short"></div>
+      <div class="skel skel-body-line med"></div>
+      <div class="skel skel-body-line"></div>
+      <div class="skel skel-body-line short"></div>
+      <div class="skel skel-body-line"></div>
+      <div class="skel skel-body-line med"></div>
+    </div>
+  </div>
+`;
+
+const params = new URLSearchParams(location.search);
+artId = params.get('id');
+article = ARTICLES.find(a=>a.id===artId);
+
+/* ── VIEW TRACKING (once per device per calendar day per article) ──
+   Was once-per-session (sessionStorage), which resets the moment a tab
+   closes or a new tab is opened — so someone hitting refresh, or opening
+   the link a few times in the same day, could rack up several counted
+   views. This keys off the local calendar date in localStorage instead,
+   so the same device only ever adds +1 to an article's view count per
+   day, no matter how many times it's opened that day — and it counts
+   again the next day, same as normal analytics. */
+(function trackArticleView(){
+  if(!artId) return;
+  const now=new Date();
+  const today=`${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`;
+  const key=`viewed_${artId}_${today}`;
+  try{
+    if(localStorage.getItem(key)) return;
+    localStorage.setItem(key,'1');
+  }catch(e){ /* storage blocked (private mode etc.) — fall through, count once */ }
+  updateDoc(doc(db,'articleMeta',artId),{viewCount:increment(1)})
+    .catch(()=>setDoc(doc(db,'articleMeta',artId),{viewCount:1},{merge:true}).catch(()=>{}));
+  // Day-bucketed view count, for the "views over time" trend chart on this
+  // article's Insights screen (articleViews/{id}.days.<Y-M-D>). Same gate as
+  // viewCount above (once per device per day), so the two never drift apart.
+  updateDoc(doc(db,'articleViews',artId),{[`days.${today}`]:increment(1)})
+    .catch(()=>setDoc(doc(db,'articleViews',artId),{days:{[today]:1}},{merge:true}).catch(()=>{}));
+})();
+
+// Loads the doc from Firestore (user-submitted content isn't in the hardcoded
+// array). A network failure is NOT "not found": retry, then offer Try again.
+let _artLoadState = 'idle'; // 'loading' | 'ok' | 'error'
+const _notFoundHtml = `<div style="text-align:center;padding:60px 20px"><h2>Article not found</h2><a href="/articles" style="color:var(--p)">← Back</a></div>`;
+async function loadArticleFromFirestore(){
+  const box = document.getElementById('artContent');
+  if(!artId){ _artLoadState='ok'; box.innerHTML = _notFoundHtml; return; }
+  _artLoadState = 'loading';
+  _articleRendered = false;
+  box.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--mute)">Loading…</div>';
+  {
+    try{
+      const snap = await resilient(()=>getDoc(doc(db,'articles',artId)));
+      if(snap.exists()){
+        const x = snap.data();
+        article = {
+          id: snap.id,
+          cat: x.cat||'CAREERS',
+          title: x.title||'',
+          brief: x.brief||'',
+          img: x.cover||x.img||'',
+          read: x.readTime||x.read||'5 min read',
+          publishedAt: x.publishedAt||x.createdAt||null,
+          author: x.authorName||'MindShift Books',
+          avatar: x.authorPhoto||'logo.jpg',
+          authorUid: x.authorUid||x.userId||null,
+          authorUsername: x.authorUsername||'',
+          isMindshift: x.userId==='official'||x.isMindshift,
+          content: x.body||'',
+          commentsOff: !!x.commentsOff,
+          hideLikeCount: !!x.hideLikeCount
+        };
+        document.title = article.title + ' · MindShift Books';
+        document.getElementById('hdrTitle').textContent = article.title;
+        document.getElementById('copyUrl').textContent = location.href;
+        _artLoadState = 'ok';
+        renderArticle();
+      } else {
+        _artLoadState = 'ok';
+        box.innerHTML = _notFoundHtml;
+      }
+    }catch(e){
+      console.error('article load failed:', e && e.code, e && e.message);
+      _artLoadState = 'error';
+      box.innerHTML = `<div style="text-align:center;padding:60px 20px"><h2>Could not load this article</h2><p style="color:var(--mute);margin:8px 0 18px">Check your connection and try again.</p><button onclick="retryArticleLoad()" style="background:var(--p);color:#fff;border:none;padding:10px 22px;border-radius:99px;font-size:14px;font-weight:700;cursor:pointer">Try again</button><div style="margin-top:14px"><a href="/articles" style="color:var(--p)">← Back</a></div></div>`;
+    }
+  }
+}
+window.retryArticleLoad = async function(){ await reconnectFirestore(); loadArticleFromFirestore(); };
+
+// Returning to a long-idle tab / network back / back-forward cache: recover
+// automatically instead of leaving a stuck or errored page. `_articleRendered`
+// (not just `article`) is what we check — if the fetch succeeded but the
+// content was never actually painted (e.g. tab backgrounded mid-render), the
+// old check here (`!article`) would think everything was fine and never retry.
+let _hiddenAt = 0;
+document.addEventListener('visibilitychange', ()=>{
+  if(document.hidden){ _hiddenAt = Date.now(); return; }
+  const away = _hiddenAt ? Date.now() - _hiddenAt : 0;
+  _hiddenAt = 0;
+  if(!_articleRendered && (_artLoadState==='error' || (_artLoadState==='loading' && away > 5000))) retryArticleLoad();
+  else if(away > 5*60*1000) reconnectFirestore();
+});
+window.addEventListener('online', ()=>{ if(!_articleRendered && _artLoadState==='error') retryArticleLoad(); });
+// Back-forward cache restore: the whole JS/DOM state was frozen exactly as it
+// was when the tab was left. If that wasn't a fully-rendered article page,
+// don't try to patch a stale in-memory state back to life — just reload for
+// a guaranteed-fresh load, so coming back never requires a manual refresh.
+window.addEventListener('pageshow', e=>{ if(e.persisted && !_articleRendered) location.reload(); });
+
+if(!article){
+  loadArticleFromFirestore();
+} else {
+  document.title = article.title + ' · MindShift Books';
+  document.getElementById('hdrTitle').textContent = article.title;
+  document.getElementById('copyUrl').textContent = location.href;
+}
+
+/* ── MY PROFILE CACHE ── */
+async function loadMyProfile(){
+  if(!currentUser){ myProfile=null; return; }
+  const fallbackName  = currentUser.displayName || 'Someone';
+  const fallbackPhoto = currentUser.photoURL    || '';
+  try{
+    const s = await resilient(()=>getDoc(doc(db,'users',currentUser.uid)), {tries:2});
+    if(s.exists()){
+      const ud = s.data();
+      myProfile = {
+        name:     ud.name  || ud.displayName  || fallbackName,
+        photo:    ud.photo || ud.photoURL     || fallbackPhoto,
+        username: ud.username || ''
+      };
+    } else {
+      myProfile = { name: fallbackName, photo: fallbackPhoto };
+    }
+  }catch{ myProfile = { name: fallbackName, photo: fallbackPhoto }; }
+}
+
+/* ── AUTH ── */
+onAuthStateChanged(auth, async user => {
+  currentUser = user;
+  const isAuth = !!user;
+  const sbProfile = document.getElementById('sbProfileLink');
+  const sbInsights = document.getElementById('sbInsightsLink');
+  const sbSaved = document.getElementById('sbSavedLink');
+  const sbAuthCta = document.getElementById('sidebarAuthCta');
+  // My Profile / My Insights visibility is owned by /sidebar-nav.js (it uses display:flex).
+  // These pages used to set display:'block' here, which stacked the icon above the label
+  // whenever this ran after the sidebar's own toggle — hence the intermittent broken layout.
+  if(sbSaved) sbSaved.style.display = isAuth ? 'block' : 'none';
+  if(sbAuthCta) sbAuthCta.style.display = isAuth ? 'none' : 'block';
+  if(user) notif.initNotifications(user.uid); else notif.clearNotifications();
+  await loadMyProfile();
+  if(article) renderArticle();
+});
+
+// One-time check (not tied to the frequent download-count snapshot listener)
+// that adds a small "🔒 Premium" badge on the download button for free users.
+async function renderDownloadLockBadge(){
+  const btn = document.getElementById('actDownload');
+  if(!btn || !currentUser) return;
+  const allowed = await checkArticleDownloadAllowed();
+  btn.classList.toggle('act-download-locked', !allowed);
+  let badge = btn.querySelector('.act-lock-badge');
+  if(!allowed && !badge){
+    badge = document.createElement('span');
+    badge.className = 'act-lock-badge';
+    badge.textContent = '🔒';
+    btn.appendChild(badge);
+  } else if(allowed && badge){
+    badge.remove();
+  }
+}
+
+/* ── FIRESTORE ── */
+async function fetchUserLiked(){
+  if(!currentUser) return false;
+  try{ const s=await resilient(()=>getDoc(doc(db,'userLikes',currentUser.uid)),{tries:2}); return s.exists()&&!!s.data()[artId]; }catch{ return false; }
+}
+async function fetchUserSaved(){
+  if(!currentUser) return false;
+  try{ const s=await resilient(()=>getDoc(doc(db,'userSaves',currentUser.uid)),{tries:2}); return s.exists()&&!!s.data()[artId]; }catch{ return false; }
+}
+// Who the Follow button follows: the writer, or the MindShift Books account ('official') for its own articles.
+function followTargetUid(){
+  if(!article) return '';
+  return (article.isMindshift || !article.authorUid) ? 'official' : article.authorUid;
+}
+async function fetchUserFollowing(){
+  if(!currentUser||!article) return false;
+  const target = followTargetUid();
+  try{ const s=await resilient(()=>getDoc(doc(db,'follows',`${currentUser.uid}_${target}`)),{tries:2}); return s.exists(); }catch{ return false; }
+}
+async function fetchUserDownloaded(){
+  if(!currentUser) return false;
+  try{ const s=await resilient(()=>getDoc(doc(db,'userDownloads',currentUser.uid)),{tries:2}); return s.exists()&&!!s.data()[artId]; }catch{ return false; }
+}
+
+function subDownloads(){
+  if(downloadUnsub) downloadUnsub();
+  downloadUnsub = onSnapshot(doc(db,'articleDownloads',artId), snap=>{
+    downloadCount = snap.exists()?(snap.data().count||0):0;
+    syncDownloadUI();
+  });
+}
+
+function subLives(){
+  if(likeUnsub) likeUnsub();
+  likeUnsub = onSnapshot(doc(db,'articleLikes',artId), snap=>{
+    likeCount = snap.exists()?(snap.data().count||0):0;
+    syncLikeUI();
+  });
+}
+
+/* ── RENDER ── */
+function fmtRel(ts){
+  if(!ts) return '';
+  const ms=ts.seconds?ts.seconds*1000:ts;
+  const d=Date.now()-ms;
+  if(d<3600000) return `${Math.floor(d/60000)||1}m ago`;
+  if(d<86400000) return `${Math.floor(d/3600000)}h ago`;
+  if(d<604800000) return `${Math.floor(d/86400000)}d ago`;
+  return new Date(ms).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
+
+async function renderArticle(){
+  // The article itself is already loaded at this point — everything below
+  // (liked/saved/following/downloaded/repost state) is secondary per-user
+  // data. It used to be awaited one-by-one before the skeleton was ever
+  // replaced, so a slow or flaky connection could stack up six sequential
+  // round trips (each individually retried) before anything appeared —
+  // easily a minute or more. Now we show the real content immediately with
+  // safe defaults, then fetch the secondary state in parallel and patch it
+  // into the UI as soon as it arrives.
+  subLives();
+  subDownloads();
+
+  const isAuth = !!currentUser;
+  const contentHtml = isAuth ? article.content : getGatedContent(article.content);
+
+  document.getElementById('artContent').innerHTML = `
+    <div class="art-wrap">
+      <span class="art-cat">${window.msbCatLabel ? window.msbCatLabel(article.cat) : article.cat}</span>
+      <h1 class="art-title">${article.title}</h1>
+      <div class="author-row-wrap">
+        <div class="author-row" data-author-uid="${article.authorUid||''}" onclick="goAuthor()" style="cursor:pointer">
+          <img class="author-logo" data-author-photo src="${article.avatar||'logo.jpg'}" alt="${cEsc(article.author||'MindShift Books')}" onerror="this.style.background='linear-gradient(135deg,#4f46e5,#06b6d4)'">
+          <div>
+            <div class="author-name">
+              <span data-author-name>${cEsc(article.author||'MindShift Books')}</span>
+              ${(article.isMindshift||!article.authorUid) ? `<span class="vbadge"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>` : ''}
+            </div>
+            <div class="author-meta">${article.read}${article.publishedAt||article.createdAt ? ` · ${fmtRel(article.publishedAt||article.createdAt)}` : ''}</div>
+          </div>
+        </div>
+        ${(followTargetUid() !== (currentUser&&currentUser.uid)) ? `
+        <button class="follow-author-btn" id="followAuthorBtn" onclick="doFollow()">
+          Follow
+        </button>` : ''}
+      </div>
+      <div class="action-bar">
+        <button class="act-btn act-like" id="actLike" onclick="doLike()">
+          <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+          <span id="actLikeTxt">${likeCount||0}</span>
+        </button>
+        <button class="act-btn" id="actComment" onclick="openCommentDrawer()" style="gap:5px${article.commentsOff?';opacity:.45':''}" ${article.commentsOff?'title="Comments are off"':''}>
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          <span id="actCommentTxt">0</span>
+        </button>
+        <button class="act-btn act-repost" id="actRepost" onclick="doRepost()" aria-label="Repost">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+          <span id="actRepostTxt">0</span>
+        </button>
+        <button class="act-btn" onclick="openShare()" aria-label="Share">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        </button>
+        <button class="act-btn act-download" id="actDownload" onclick="openDownloadSheet()">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
+          <span id="actDownloadTxt">${downloadCount||0}</span>
+        </button>
+        <button class="act-btn act-save" id="actSave" onclick="doSave()" aria-label="Save">
+          <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+        </button>
+      </div>
+      <img class="art-hero" src="${article.img}" alt="${article.title}" onclick="openImageViewer(['${article.img}'], 0)" onerror="this.style.display='none'">
+      <div class="art-body">${contentHtml}</div>
+      <div id="authorCardSlot"></div>
+      <div id="creatorArticlesSlot"></div>
+      <div id="moreArticlesSlot"></div>
+      <div id="ratingCard" class="rating-card"></div>
+    </div>
+  `;
+  _articleRendered = true;
+
+  window.MSBAuthorLive && window.MSBAuthorLive.refresh(db, { doc, getDoc }, document.getElementById('artContent'));
+  syncLikeUI();
+  syncSaveUI();
+  syncDownloadUI();
+  startProgress();
+  injectRatingCard();
+  loadAuthorCard();
+  loadMoreFromCreator();
+  loadMoreArticles();
+  // Comment data is never deleted when comments are turned off — we just
+  // don't query/render it, so re-enabling instantly brings everything back.
+  if(!article.commentsOff) loadComments();
+  else {
+    const listEl=document.getElementById('commentsList');
+    const inputEl=document.getElementById('commentSheetInput');
+    if(listEl) listEl.innerHTML = `<div class="comments-list-empty" style="padding:24px 0"><div class="comments-list-empty-ico">&#128172;</div><div class="comments-list-empty-txt">Comments are off for this article</div></div>`;
+    if(inputEl) inputEl.innerHTML = '';
+  }
+  // Tapping the Comment icon on the feed card links here with ?comment=1 —
+  // jump straight to the drawer instead of making them find the button.
+  if(!article.commentsOff && new URLSearchParams(location.search).get('comment')==='1') openCommentDrawer();
+  renderDownloadLockBadge();
+  const manageBtn = document.getElementById('hdrManageBtn');
+  if(manageBtn) manageBtn.style.display = (currentUser && article.authorUid === currentUser.uid) ? '' : 'none';
+
+  // Secondary per-user engagement state — fetched in parallel (each call is
+  // already individually retried/caught) and patched into the UI once ready,
+  // instead of gating the whole page behind them.
+  const [liked, saved, following, downloaded, rCount, reposted] = await Promise.all([
+    fetchUserLiked(), fetchUserSaved(), fetchUserFollowing(), fetchUserDownloaded(),
+    repost.getRepostCount(article.id), repost.isReposted('article', article.id)
+  ]);
+  isLiked = liked; isSaved = saved; isFollowing = following; hasDownloaded = downloaded;
+  repostCount = rCount; isReposted = reposted;
+  syncLikeUI();
+  syncSaveUI();
+  syncDownloadUI();
+  syncFollowUI();
+  const repostBtn = document.getElementById('actRepost');
+  if(repostBtn) repostBtn.classList.toggle('reposted', isReposted);
+  const repostTxt = document.getElementById('actRepostTxt');
+  if(repostTxt) repostTxt.textContent = repostCount||0;
+}
+
+function getGatedContent(html){
+  const split = html.split('</p>');
+  const preview = split.slice(0,2).join('</p>') + '</p>';
+  const redirect = encodeURIComponent(location.pathname + location.search);
+  return `
+    ${preview}
+    <div class="art-fade"></div>
+    <div class="art-gate">
+      <div class="art-gate-ico"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+      <h3>Continue Reading Free</h3>
+      <p>Create a free MindShift Books account to read the full article, like posts, save articles, and get a feed picked for you.</p>
+      <div class="art-gate-btns">
+        <a href="/login?redirect=${redirect}" class="gate-li">Log in</a>
+        <a href="/signup?redirect=${redirect}" class="gate-su">✨ Sign up free</a>
+      </div>
+      <div class="art-gate-note">Free forever · No card required</div>
+    </div>
+  `;
+}
+
+/* ── MORE ARTICLES (smart) ──
+   Old version filtered a hardcoded ARTICLES array that was declared empty
+   and never populated — this block never actually showed anything. Now it
+   does a real fetch: same-category articles first (most relevant), topped
+   up with the most recent articles overall if the category doesn't have
+   enough, current article and duplicates always excluded. */
+function renderMoreCards(list){
+  if(!list.length) return '';
+  return `
+    <div class="more-section">
+      <div class="more-title">More Articles</div>
+      <div class="more-list">
+        ${list.map(a=>`
+          <div class="more-card" onclick="location.href='/article-read?id=${a.id}'">
+            <img class="more-img" src="${a.img}" alt="${cEsc(a.title)}" loading="lazy" onerror="this.style.background='linear-gradient(135deg,#cffafe,#93c5fd)'">
+            <div class="more-body">
+              <div class="more-cat">${window.msbCatLabel ? window.msbCatLabel(a.cat) : a.cat}</div>
+              <div class="more-ttl">${cEsc(a.title)}</div>
+              <div class="more-meta">${a.read}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+      <a class="more-see-all" href="/articles">
+        See more articles
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </a>
+    </div>
+  `;
+}
+
+function toMoreCard(d){
+  const x = d.data();
+  return { id:d.id, cat:x.cat||'CAREERS', title:x.title||'', img:x.cover||x.img||'', read:x.readTime||x.read||'5 min read' };
+}
+
+/* ── AUTHOR BIO CARD ──
+   Substack-style "about the writer" block under the article. Reads the
+   author's CURRENT profile (users/{uid}) so edits show up immediately.
+   Only uses facts we actually have (name, bio, follower count) — when a
+   writer hasn't written a bio yet we fall back to a neutral line instead
+   of inventing credentials. Hidden for official MindShift posts. */
+async function loadAuthorCard(){
+  const slot = document.getElementById('authorCardSlot');
+  if(!slot || !article || !article.authorUid || article.isMindshift || article.authorUid==='official') return;
+  let u = {};
+  try{
+    const snap = await getDoc(doc(db,'users',article.authorUid));
+    if(snap.exists()) u = snap.data() || {};
+  }catch{}
+  const name  = u.name || article.author || 'this writer';
+  const photo = u.photo || article.avatar || 'logo.jpg';
+  const first = String(name).trim().split(/\s+/)[0] || name;
+  let bio = String(u.bio||'').replace(/\s+/g,' ').trim();
+  if(bio.length>320) bio = bio.slice(0,317).replace(/\s+\S*$/,'') + '…';
+  // A one-line bio ("Founder. Writer.") reads thin on its own, so give it a
+  // sentence to sit in. Longer bios are shown exactly as the writer wrote them.
+  let bioHtml;
+  if(!bio){
+    bioHtml = `${cEsc(name)} writes on MindShift Books. Follow to get their next article as soon as it's published.`;
+  }else if(bio.length<60){
+    bioHtml = `${cEsc(name)} writes on MindShift Books. ${cEsc(bio)}${/[.!?…]$/.test(bio)?'':'.'}`;
+  }else{
+    bioHtml = cEsc(bio);
+  }
+  const followers = Number(u.followerCount)||0;
+  const stats = followers>0 ? `${followers.toLocaleString()} follower${followers===1?'':'s'}` : '';
+  const isSelf = currentUser && currentUser.uid===article.authorUid;
+  slot.innerHTML = `
+    <div class="author-card" data-author-uid="${cEsc(article.authorUid)}">
+      <img class="author-card-photo" data-author-photo src="${cEsc(photo)}" alt="${cEsc(name)}" onclick="goAuthor()" onerror="this.style.opacity='.4'">
+      <div class="author-card-name" onclick="goAuthor()"><span data-author-name>${cEsc(name)}</span></div>
+      ${stats?`<div class="author-card-stats" id="authorCardStats">${stats}</div>`:''}
+      <p class="author-card-bio">${bioHtml}${bio?` Follow ${cEsc(first)} for more.`:''}</p>
+      <div class="author-card-actions">
+        ${isSelf?'':`<button class="follow-author-btn" onclick="doFollow()">${isFollowing?'Following':'Follow'}</button>`}
+        <button class="author-card-view" onclick="goAuthor()">View profile</button>
+      </div>
+    </div>`;
+  syncFollowUI();
+}
+
+/* ── MORE FROM THIS CREATOR ──
+   Same card style as "More Articles" below, but scoped to one author instead
+   of one category — shown first, since right after finishing a piece "who
+   wrote this" is usually the stronger pull than "what's this about". Hidden
+   entirely (not shown empty) for MindShift's own official posts, or for a
+   creator who doesn't have anything else published yet. */
+async function loadMoreFromCreator(){
+  const slot = document.getElementById('creatorArticlesSlot');
+  if(!slot || !article || !article.authorUid || article.isMindshift) return;
+  try{
+    const snap = await getDocs(query(collection(db,'articles'),
+      where('authorUid','==',article.authorUid), orderBy('publishedAt','desc'), limit(4)));
+    const picked = [];
+    snap.forEach(d=>{
+      if(picked.length>=3 || d.id===artId) return;
+      picked.push(toMoreCard(d));
+    });
+    if(!picked.length) return; // nothing else from them yet — say nothing, don't show an empty section
+    slot.innerHTML = `
+      <div class="more-section">
+        <div class="more-title">More from ${cEsc(article.author||'this creator')}</div>
+        <div class="more-list">
+          ${picked.map(a=>`
+            <div class="more-card" onclick="location.href='/article-read?id=${a.id}'">
+              <img class="more-img" src="${a.img}" alt="${cEsc(a.title)}" loading="lazy" onerror="this.style.background='linear-gradient(135deg,#cffafe,#93c5fd)'">
+              <div class="more-body">
+                <div class="more-cat">${window.msbCatLabel ? window.msbCatLabel(a.cat) : a.cat}</div>
+                <div class="more-ttl">${cEsc(a.title)}</div>
+                <div class="more-meta">${a.read}</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }catch(e){ /* nice-to-have, never block the page on this */ }
+}
+
+async function loadMoreArticles(){
+  const slot = document.getElementById('moreArticlesSlot');
+  if(!slot || !article) return;
+  try{
+    const picked = [];
+    const seen = new Set([artId]);
+
+    // 1) same category, most recent first — the actually-relevant ones
+    try{
+      const catSnap = await getDocs(query(collection(db,'articles'),
+        where('cat','==',article.cat), orderBy('publishedAt','desc'), limit(6)));
+      catSnap.forEach(d=>{
+        if(picked.length>=3 || seen.has(d.id)) return;
+        seen.add(d.id); picked.push(toMoreCard(d));
+      });
+    }catch{}
+
+    // 2) not enough in that category — fill with the most recent articles overall
+    if(picked.length<3){
+      try{
+        const recentSnap = await getDocs(query(collection(db,'articles'),
+          orderBy('publishedAt','desc'), limit(6+picked.length)));
+        recentSnap.forEach(d=>{
+          if(picked.length>=3 || seen.has(d.id)) return;
+          seen.add(d.id); picked.push(toMoreCard(d));
+        });
+      }catch{}
+    }
+
+    slot.innerHTML = renderMoreCards(picked);
+  }catch(e){ /* related articles are a nice-to-have, never block the page on this */ }
+}
+
+/* ── SYNC UI ── */
+/* ── SYNC UI ── */
+function syncLikeUI(){
+  const el=document.getElementById('actLike');
+  if(el) el.classList.toggle('liked',isLiked);
+  const txt=document.getElementById('actLikeTxt');
+  if(!txt) return;
+  const hide = article && article.hideLikeCount && !(currentUser && article.authorUid===currentUser.uid);
+  txt.textContent = hide ? '' : (likeCount||0);
+}
+function syncSaveUI(){
+  const el=document.getElementById('actSave');
+  if(el) el.classList.toggle('saved',isSaved);
+  const st=document.getElementById('actSaveTxt');
+  if(st) st.textContent=isSaved?'Saved':'Save';
+}
+function syncFollowUI(){
+  document.querySelectorAll('.follow-author-btn').forEach(btn=>{
+    btn.classList.toggle('following',isFollowing);
+    btn.textContent = isFollowing ? 'Following' : 'Follow';
+  });
+}
+function syncDownloadUI(){
+  const el=document.getElementById('actDownload');
+  if(el) el.classList.toggle('downloaded',hasDownloaded);
+  const txt=document.getElementById('actDownloadTxt');
+  if(txt) txt.textContent = downloadCount||0;
+  const dlc=document.getElementById('dlCount');
+  if(dlc) dlc.textContent = downloadCount||0;
+}
+
+/* ── LIKE ── */
+/* ── LIKE ── */
+/* ── REPOST ── */
+window.doRepost = function(){
+  if(!currentUser){ openAuth(); return; }
+  if(!article) return;
+  const snapshot = {
+    type: 'article', id: article.id, title: article.title, author: article.author,
+    avatar: article.avatar, authorUid: article.authorUid, img: article.img
+  };
+  repost.open({
+    targetType: 'article', targetId: article.id, snapshot, recipientUid: article.authorUid,
+    onSuccess: ({ kind, reposted }) => {
+      if(kind==='plain'){
+        isReposted = reposted;
+        repostCount = Math.max(0, repostCount + (reposted ? 1 : -1));
+      } else if(kind==='quote'){
+        repostCount = repostCount + 1;
+      }
+      const btn = document.getElementById('actRepost');
+      if(btn) btn.classList.toggle('reposted', isReposted);
+      const txt = document.getElementById('actRepostTxt');
+      if(txt) txt.textContent = repostCount;
+    }
+  });
+};
+
+window.doLike = function(){
+  if(!currentUser){ openAuth(); return; }
+
+  const wasLiked = isLiked;
+  isLiked = !wasLiked;
+  // only toggle heart instantly — count comes from onSnapshot, no double update
+  syncLikeUI();
+
+  (async () => {
+    try {
+      // Same fix as articles.html's toggleLike: a transaction reads the
+      // CURRENT server state and decides the direction itself, instead of
+      // trusting `wasLiked` (which can be stale if you liked this from the
+      // feed a moment ago and that write hadn't landed yet when this page
+      // loaded) — that staleness is exactly what caused double-likes.
+      const userRef = doc(db,'userLikes',currentUser.uid);
+      const cRef = doc(db,'articleLikes',artId);
+      const nowLiked = await runTransaction(db, async (tx)=>{
+        const userSnap = await tx.get(userRef);
+        const alreadyLiked = !!(userSnap.exists() && userSnap.data()[artId]);
+        const countSnap = await tx.get(cRef);
+        const curCount = countSnap.exists() ? (countSnap.data().count||0) : 0;
+        const nextLiked = !alreadyLiked;
+        tx.set(userRef, {[artId]: nextLiked}, {merge:true});
+        tx.set(cRef, {count: Math.max(0, curCount + (nextLiked?1:-1))}, {merge:true});
+        return nextLiked;
+      });
+      if(nowLiked !== isLiked){
+        // Our optimistic guess didn't match reality (a race with another
+        // tab/page) — resync to what actually happened instead of leaving
+        // the heart showing the wrong thing.
+        isLiked = nowLiked;
+        syncLikeUI();
+      }
+      if(nowLiked) notif.notifyArticleLike(article, 'article'); // notify article author
+    } catch(e) {
+      // revert heart on failure
+      isLiked = wasLiked;
+      syncLikeUI();
+      console.error('Like error:', e.code, e.message);
+      showToast('Could not update like — try again.');
+    }
+  })();
+};
+
+/* ── SAVE ── */
+window.doSave = function(){
+  if(!currentUser){ openAuth(); return; }
+
+  const wasSaved = isSaved;
+  isSaved = !wasSaved;
+  syncSaveUI();
+  showToast(isSaved ? 'Article saved 🔖 — view in Saved' : 'Removed from saves');
+
+  (async () => {
+    try {
+      await setDoc(doc(db,'userSaves',currentUser.uid),{[artId]:!wasSaved},{merge:true});
+      const sRef = doc(db,'articleSaves',artId);
+      if(wasSaved){
+        try{ await updateDoc(sRef,{count:increment(-1)}); }catch{ await setDoc(sRef,{count:0},{merge:true}); }
+      } else {
+        try{ await updateDoc(sRef,{count:increment(1)}); }catch{ await setDoc(sRef,{count:1},{merge:true}); }
+      }
+    } catch(e) {
+      isSaved = wasSaved;
+      syncSaveUI();
+      console.error('Save error:', e.code, e.message);
+      showToast('Could not save article — try again.');
+    }
+  })();
+};
+
+/* ── PROGRESS BAR ── */
+function startProgress(){
+  const prog=document.getElementById('prog');
+  const hdr=document.getElementById('hdrTitle');
+  window.addEventListener('scroll',()=>{
+    const el=document.getElementById('artContent');
+    if(!el) return;
+    const h=el.scrollHeight-window.innerHeight;
+    const pct=Math.min(100,Math.round((window.scrollY/h)*100));
+    prog.style.width=pct+'%';
+    if(window.scrollY>200) hdr.classList.add('show');
+    else hdr.classList.remove('show');
+  },{passive:true});
+}
+
+/* ── AUTH SHEET ── */
+/* Nav chrome (profile link, sign out, menu) now lives in the shared MindShift
+   header/sidebar + auth.js — no per-page hamburger menu needed here. */
+
+window.goAuthor = function(){
+  if(!article) return;
+  if(article.isMindshift || article.authorUid === 'official' || !article.authorUid){
+    location.href = '/mindshift-profile';
+  } else {
+    // authorUid never changes; authorUsername was snapshotted at publish
+    // time and breaks if the author later renames (old @handle reservation
+    // gets deleted), so uid is the reliable route.
+    location.href = `/profile?uid=${encodeURIComponent(article.authorUid)}`;
+  }
+};
+
+window.openAuth=function(){
+  // Set redirect links so user returns to this article after login/signup
+  const redirect = encodeURIComponent(location.pathname + location.search);
+  const loginBtn = document.getElementById('authLoginBtn');
+  const signupBtn = document.getElementById('authSignupBtn');
+  if(loginBtn) loginBtn.href = '/login?redirect=' + redirect;
+  if(signupBtn) signupBtn.href = '/signup?redirect=' + redirect;
+  document.getElementById('authOverlay').classList.add('on');
+  document.getElementById('authSheet').classList.add('on');
+  document.body.style.overflow='hidden';
+};
+window.closeAuth=function(){
+  document.getElementById('authSheet').classList.remove('on');
+  document.getElementById('authOverlay').classList.remove('on');
+  document.body.style.overflow='';
+};
+window.closeAll=function(){
+  document.getElementById('authOverlay').classList.remove('on');
+  document.getElementById('authSheet').classList.remove('on');
+  document.getElementById('shareSheet').classList.remove('on');
+  document.getElementById('downloadSheet').classList.remove('on');
+  closeCommentDrawer();
+  document.body.style.overflow='';
+};
+
+
+
+/* ══════════════════════════════════════
+   COMMENTS SYSTEM
+   ══════════════════════════════════════ */
+let cList=[],cReplies={},cLikedSet=new Set(),cOpenReplies=new Set(),cActiveReplyId=null,cCommentCount=0;
+let cPinnedId=null,cPinnedComment=null;   // set by the author in comment-manager.html; surfaced above the list here
+// Per-comment write chain for likes — see post-read.html's likeComment for
+// why this exists: likedBy.{uid} and likeCount are two independent writes
+// with no ordering guarantee, so rapid taps can leave them describing two
+// different final states unless writes are chained in tap order.
+const cLikeChain=new Map();
+const C_PAGE=20; let cCursor=null, cExhausted=false, cLoadingMore=false;
+// Hidden comments (set by the content author in the comment manager) are visible only to the commenter and the content author.
+function cVisible(c){
+  if(c.hidden!==true) return true;
+  if(!currentUser) return false;
+  return c.authorUid===currentUser.uid || (article && article.authorUid===currentUser.uid);
+}
+
+window.loadComments=async function(){
+  if(!artId){buildCommentsUI([]);return;}
+  try{
+    const countSnap=await resilient(()=>getDoc(doc(db,'articleMeta',artId)),{tries:2});
+    const metaData=countSnap.exists()?countSnap.data():{};
+    cCommentCount=metaData.commentCount||0;
+    cPinnedId=metaData.pinnedCommentId||null;
+    updateCCount();
+    // See post-read.html's loadComments for why this branches on ownership:
+    // the Firestore rule only allows a public (non-owner) query to include
+    // hidden comments if it's filtered to hidden==false at the query level.
+    const isOwner=!!(currentUser && article && article.authorUid===currentUser.uid);
+    const baseParts=[collection(db,'comments'),where('articleId','==',artId),where('parentId','==',null)];
+    if(!isOwner) baseParts.push(where('hidden','==',false));
+    baseParts.push(orderBy('createdAt','asc'),limit(C_PAGE));
+    const q=query(...baseParts);
+    const snap=await resilient(()=>getDocs(q),{tries:2});
+    cCursor=snap.docs.length?snap.docs[snap.docs.length-1]:null; cExhausted=snap.docs.length<C_PAGE;
+    cList=snap.docs.map(d=>({id:d.id,...d.data()})).filter(cVisible);
+    if(!isOwner && currentUser){
+      try{
+        const mineQ=query(collection(db,'comments'),where('articleId','==',artId),where('parentId','==',null),
+          where('authorUid','==',currentUser.uid),where('hidden','==',true),limit(10));
+        const mineSnap=await resilient(()=>getDocs(mineQ),{tries:1});
+        const have=new Set(cList.map(c=>c.id));
+        mineSnap.docs.forEach(d=>{ if(!have.has(d.id)) cList.push({id:d.id,...d.data()}); });
+        cList.sort((a,b)=>(a.createdAt?.toMillis?a.createdAt.toMillis():0)-(b.createdAt?.toMillis?b.createdAt.toMillis():0));
+      }catch{}
+    }
+    cLikedSet.clear();
+    // Surface the pinned comment separately from the paginated list — see
+    // post-read.html's loadComments for the full reasoning (single get() by
+    // id, unaffected by the hidden-comment list-query restriction).
+    cPinnedComment=null;
+    if(cPinnedId){
+      const inList=cList.find(c=>c.id===cPinnedId);
+      if(inList){ cPinnedComment=inList; cList=cList.filter(c=>c.id!==cPinnedId); }
+      else{
+        try{
+          const pinSnap=await resilient(()=>getDoc(doc(db,'comments',cPinnedId)),{tries:1});
+          if(pinSnap.exists()) cPinnedComment={id:pinSnap.id,...pinSnap.data()};
+        }catch{}
+      }
+    }
+    if(currentUser){
+      // likedBy is a map field on each comment doc: { uid: true/false }
+      // No extra reads needed — the data is already in the comment docs we just fetched
+      cList.forEach(c=>{
+        if(c.likedBy && c.likedBy[currentUser.uid] === true) cLikedSet.add(c.id);
+      });
+      if(cPinnedComment && cPinnedComment.likedBy && cPinnedComment.likedBy[currentUser.uid]===true) cLikedSet.add(cPinnedComment.id);
+    }
+    buildCommentsUI(cList);
+  }catch(e){
+    console.error('loadComments:',e);
+    buildCommentsUI([]);
+    const le=document.getElementById('commentsList');
+    if(le) le.innerHTML='<div style="padding:16px 0;text-align:center;font-size:13px;color:var(--mute)">Could not load comments. <a href="#" onclick="loadComments();return false" style="color:var(--p);font-weight:700">Try again</a></div>';
+  }
+};
+
+function updateCCount(){
+  const el=document.getElementById('actCommentTxt');if(el)el.textContent=cCommentCount||0;
+  const sb=document.getElementById('sbCommentTxt');if(sb)sb.textContent=cCommentCount||0;
+  const sc=document.getElementById('commentSheetCount');if(sc)sc.textContent=cCommentCount>0?cCommentCount:'';
+  const b=document.getElementById('commentCountBadge');if(b)b.textContent=cCommentCount||0;
+}
+
+function buildCommentsUI(comments){
+  const inputEl=document.getElementById('commentSheetInput');
+  const listEl=document.getElementById('commentsList');
+  if(!inputEl||!listEl) return;
+  let avIn='';
+  if(currentUser){
+    const ph=myProfile?.photo||'',nm=myProfile?.name||currentUser.displayName||'';
+    avIn=ph?`<div class="c-user-av"><img src="${cEsc(ph)}" alt="" onerror="this.style.display='none'"></div>`:`<div class="c-user-av">${(nm||'U').charAt(0).toUpperCase()}</div>`;
+  }
+  const redir=encodeURIComponent(location.pathname+location.search);
+  const inputArea=currentUser
+    ?`<div class="add-comment-row">${avIn}<div class="c-input-wrap"><textarea class="c-input" id="mainCI" placeholder="Add a comment…" rows="1" oninput="onCI(this)" onfocus="document.getElementById('mainCA').classList.add('show')"></textarea><div class="c-input-actions" id="mainCA"><button class="c-cancel-btn" onclick="cancelCI()">Cancel</button><button class="c-post-btn" id="mainCPost" onclick="submitComment()" disabled>Post</button></div></div></div>`
+    :`<div class="c-login-cta"><span>Join the conversation</span><a href="/login?redirect=${redir}">Log in</a></div>`;
+  inputEl.innerHTML=inputArea;
+  const pinnedHTML = cPinnedComment ? `<div class="c-pinned-card">${buildCHTML(cPinnedComment,false,true)}</div>` : '';
+  const listHTML=comments.length
+    ?comments.map(c=>buildCHTML(c,false)).join('')
+    :(cPinnedComment?'':`<div class="comments-list-empty"><div class="comments-list-empty-ico">&#128172;</div><div class="comments-list-empty-txt">Be the first to comment</div></div>`);
+  listEl.innerHTML=pinnedHTML+listHTML;
+  renderCMore();
+  window.MSBAuthorLive && window.MSBAuthorLive.refresh(db, { doc, getDoc }, listEl);
+}
+
+function renderCMore(){
+  const listEl=document.getElementById('commentsList'); if(!listEl) return;
+  const old=document.getElementById('cMoreWrap'); if(old) old.remove();
+  if(cExhausted||!cCursor) return;
+  listEl.insertAdjacentHTML('afterend','<div id="cMoreWrap" style="text-align:center;padding:10px 0 18px"><button id="cMoreBtn" onclick="loadMoreComments()" style="padding:9px 22px;border-radius:99px;border:1.5px solid var(--border2,#edeef5);background:#fff;font-weight:800;font-size:13px;color:var(--p,#6366f1);cursor:pointer;font-family:inherit">Load more comments</button></div>');
+}
+
+window.loadMoreComments=async function(){
+  if(cLoadingMore||cExhausted||!cCursor) return;
+  cLoadingMore=true;
+  const btn=document.getElementById('cMoreBtn'); if(btn){btn.disabled=true;btn.textContent='Loading…';}
+  try{
+    const isOwner=!!(currentUser && article && article.authorUid===currentUser.uid);
+    const moreParts=[collection(db,'comments'),where('articleId','==',artId),where('parentId','==',null)];
+    if(!isOwner) moreParts.push(where('hidden','==',false));
+    moreParts.push(orderBy('createdAt','asc'),startAfter(cCursor),limit(C_PAGE));
+    const q=query(...moreParts);
+    const snap=await resilient(()=>getDocs(q),{tries:2});
+    cCursor=snap.docs.length?snap.docs[snap.docs.length-1]:cCursor; cExhausted=snap.docs.length<C_PAGE;
+    const more=snap.docs.map(d=>({id:d.id,...d.data()})).filter(cVisible);
+    if(currentUser) more.forEach(c=>{ if(c.likedBy && c.likedBy[currentUser.uid]===true) cLikedSet.add(c.id); });
+    const have=new Set(cList.map(c=>c.id));
+    const fresh=more.filter(c=>!have.has(c.id));
+    cList=cList.concat(fresh);
+    const le=document.getElementById('commentsList');
+    if(le&&fresh.length){le.insertAdjacentHTML('beforeend',fresh.map(c=>buildCHTML(c,false)).join(''));window.MSBAuthorLive && window.MSBAuthorLive.refresh(db, { doc, getDoc }, le);}
+  }catch(e){console.error('loadMoreComments:',e);}
+  finally{cLoadingMore=false;renderCMore();}
+};
+
+function buildCHTML(c,isReply,isPinned){
+  const liked=cLikedSet.has(c.id);
+  const init=(c.authorName||'U').charAt(0).toUpperCase();
+  const avIn=`<img data-author-photo src="${c.authorPhoto?cEsc(c.authorPhoto):''}" alt="" style="${c.authorPhoto?'':'display:none'}" onerror="this.style.display='none'"><span class="c-av-init" data-author-photo-fallback${c.authorPhoto?' style="display:none"':''}>${init}</span>`;
+  const lc=c.likeCount>0?String(c.likeCount):'';
+  const isAuthor=article&&c.authorUid&&c.authorUid===article.authorUid&&!article.isMindshift;
+  const authorBadge=isAuthor?`<span class="c-author-badge"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>Author</span>`:'';
+  const pinBadge=isPinned?`<span class="c-pin-badge">📌 Pinned</span>`:'';
+  const heart=`<button class="c-like-btn${liked?' liked':''}" id="clb-${c.id}" onclick="likeComment('${c.id}','${cEsc(c.authorUid||'')}')"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg><span id="clc-${c.id}">${lc}</span></button>`;
+  const replyBtn=!isReply?`<button class="c-reply-btn" onclick="showRI('${c.id}')">Reply</button>`:'';
+  const vrBtn=(!isReply&&c.replyCount>0)?`<button class="c-view-replies-btn" id="vrb-${c.id}" onclick="toggleReplies('${c.id}')"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg> ${c.replyCount} ${c.replyCount===1?'reply':'replies'}</button>`:'';
+  const isOwn=currentUser&&c.authorUid===currentUser.uid;
+  const deleteItem=isOwn?`<button class="c-menu-item danger" onclick="deleteComment('${c.id}','${cEsc(c.parentId||'')}')"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path stroke-linecap="round" d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path stroke-linecap="round" d="M10 11v6m4-6v6"/><path stroke-linecap="round" d="M9 6V4h6v2"/></svg>Delete</button>`:'';
+  const moreBtn=`<button class="c-more-btn" id="mbtn-${c.id}" onclick="toggleCMenu(event,'${c.id}')" aria-label="More"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></button><div class="c-menu" id="cmenu-${c.id}"><button class="c-menu-item" onclick="shareComment('${c.id}')"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path stroke-linecap="round" d="M8.59 13.51l6.83 3.98m-.01-10.98L8.59 10.49"/></svg>Share comment</button>${deleteItem}</div>`;
+  const extra=!isReply
+    ?`<div class="c-replies-wrap" id="rep-${c.id}" style="display:none"></div><div class="c-replies-wrap" id="ri-wrap-${c.id}" style="display:none"><div class="reply-input-row"><textarea class="r-input" id="ri-${c.id}" placeholder="Write a reply…" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px';document.getElementById('rpb-${c.id}').disabled=!this.value.trim()"></textarea><button class="r-post-btn" id="rpb-${c.id}" onclick="submitReply('${c.id}')" disabled>Post</button><button class="r-cancel-btn" onclick="hideRI('${c.id}')"><svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button></div></div>`
+    :'';
+  return `<div class="comment-item${isReply?' reply':''}" id="ci-${c.id}" data-author-uid="${cEsc(c.authorUid||'')}"><div class="c-av" onclick="cGo('${cEsc(c.authorUid||'')}','${cEsc(c.authorUsername||'')}')">${avIn}</div><div class="c-body"><div class="c-meta-row"><span class="c-name" data-author-name onclick="cGo('${cEsc(c.authorUid||'')}','${cEsc(c.authorUsername||'')}')">${cEsc(c.authorName||'User')}</span>${authorBadge}${pinBadge}</div><div class="c-text">${cEsc(c.text||'')}</div><div class="c-foot"><span class="c-time">${cTA(c.createdAt)}</span><span class="c-dot">·</span>${heart}${replyBtn}${vrBtn}</div>${extra}</div>${moreBtn}</div>`;
+}
+
+window.onCI=function(el){el.style.height='auto';el.style.height=el.scrollHeight+'px';const b=document.getElementById('mainCPost');if(b)b.disabled=!el.value.trim();};
+window.cancelCI=function(){const i=document.getElementById('mainCI'),a=document.getElementById('mainCA'),b=document.getElementById('mainCPost');if(i){i.value='';i.style.height='auto';}if(a)a.classList.remove('show');if(b)b.disabled=true;};
+window.openCommentDrawer=function(){
+  document.getElementById('commentOverlay').classList.add('on');
+  document.getElementById('commentSheet').classList.add('on');
+  document.body.style.overflow='hidden';
+};
+window.closeCommentDrawer=function(){
+  document.getElementById('commentOverlay').classList.remove('on');
+  document.getElementById('commentSheet').classList.remove('on');
+  document.body.style.overflow='';
+};
+window.scrollToComments=window.openCommentDrawer;
+
+window.submitComment=async function(){
+  if(!currentUser){openAuth();return;}
+  const inp=document.getElementById('mainCI');
+  const text=(inp&&inp.value||'').trim();if(!text)return;
+  const btn=document.getElementById('mainCPost');
+  if(btn){btn.disabled=true;btn.textContent='Posting…';}
+  const an=myProfile?.name||'Someone', ap=myProfile?.photo||'', au=myProfile?.username||'';
+  try{
+    const ref=await addDoc(collection(db,'comments'),{articleId:artId,parentId:null,authorUid:currentUser.uid,authorName:an,authorPhoto:ap,authorUsername:au,text,likeCount:0,replyCount:0,hidden:false,createdAt:serverTimestamp()});
+    try{await updateDoc(doc(db,'articleMeta',artId),{commentCount:increment(1)});}catch{await setDoc(doc(db,'articleMeta',artId),{commentCount:1},{merge:true});}
+    cCommentCount++;updateCCount();
+    const nc={id:ref.id,articleId:artId,parentId:null,authorUid:currentUser.uid,authorName:an,authorPhoto:ap,authorUsername:au,text,likeCount:0,replyCount:0,createdAt:{toDate:()=>new Date()}};
+    cList.push(nc);
+    const le=document.getElementById('commentsList');
+    if(le){const em=le.querySelector('.comments-list-empty');if(em)le.innerHTML='';le.insertAdjacentHTML('beforeend',buildCHTML(nc,false));}
+    cancelCI();
+    if(article&&article.authorUid&&article.authorUid!==currentUser.uid&&!article.isMindshift)notif.notifyComment({type:'new_comment',recipientUid:article.authorUid,articleId:artId,articleTitle:article.title,contentType:'article'});
+  }catch(e){console.error('submitComment:',e);}
+  finally{if(btn){btn.disabled=false;btn.textContent='Post';}}
+};
+
+window.showRI=function(cid){
+  if(cActiveReplyId&&cActiveReplyId!==cid)hideRI(cActiveReplyId);
+  cActiveReplyId=cid;
+  const w=document.getElementById('ri-wrap-'+cid);if(w){w.style.display='block';const i=document.getElementById('ri-'+cid);if(i)i.focus();}
+};
+window.hideRI=function(cid){
+  const w=document.getElementById('ri-wrap-'+cid);if(w)w.style.display='none';
+  const i=document.getElementById('ri-'+cid);if(i){i.value='';i.style.height='auto';}
+  const b=document.getElementById('rpb-'+cid);if(b)b.disabled=true;
+  if(cActiveReplyId===cid)cActiveReplyId=null;
+};
+
+window.submitReply=async function(parentId){
+  if(!currentUser){openAuth();return;}
+  const inp=document.getElementById('ri-'+parentId);
+  const text=(inp&&inp.value||'').trim();if(!text)return;
+  const btn=document.getElementById('rpb-'+parentId);
+  if(btn){btn.disabled=true;btn.textContent='Posting…';}
+  const an=myProfile?.name||'Someone', ap=myProfile?.photo||'', au=myProfile?.username||'';
+  try{
+    const ref=await addDoc(collection(db,'comments'),{articleId:artId,parentId,authorUid:currentUser.uid,authorName:an,authorPhoto:ap,authorUsername:au,text,likeCount:0,replyCount:0,hidden:false,createdAt:serverTimestamp()});
+    try{await updateDoc(doc(db,'comments',parentId),{replyCount:increment(1)});}catch{}
+    // commentCount and creatorReplyCount go in ONE updateDoc, not two separate
+    // fire-and-forget calls — two independent writes leave a real window where
+    // Insights could read the doc after the first lands but before the second
+    // does, showing "unanswered" for a reply that was, in fact, just answered.
+    const isReplyingOwner=!!(article && article.authorUid && currentUser.uid===article.authorUid);
+    const metaUpdates={commentCount:increment(1)};
+    if(isReplyingOwner) metaUpdates.creatorReplyCount=increment(1);
+    try{await updateDoc(doc(db,'articleMeta',artId),metaUpdates);}
+    catch{await setDoc(doc(db,'articleMeta',artId),{commentCount:1,...(isReplyingOwner?{creatorReplyCount:1}:{})},{merge:true}).catch(()=>{});}
+    cCommentCount++;updateCCount();
+    const nr={id:ref.id,articleId:artId,parentId,authorUid:currentUser.uid,authorName:an,authorPhoto:ap,authorUsername:au,text,likeCount:0,replyCount:0,createdAt:{toDate:()=>new Date()}};
+    if(!cReplies[parentId])cReplies[parentId]=[];
+    cReplies[parentId].push(nr);
+    const re=document.getElementById('rep-'+parentId);
+    if(re){if(re.style.display==='none')re.style.display='block';re.insertAdjacentHTML('beforeend',buildCHTML(nr,true));}
+    const pc=cList.find(c=>c.id===parentId);
+    if(pc){pc.replyCount=(pc.replyCount||0)+1;updVRB(parentId,pc.replyCount);}
+    hideRI(parentId);
+    if(pc&&pc.authorUid&&pc.authorUid!==currentUser.uid)notif.notifyComment({type:'comment_reply',recipientUid:pc.authorUid,articleId:artId,articleTitle:article?article.title:'',commentId:parentId,contentType:'article'});
+    if(article&&article.authorUid&&article.authorUid!==currentUser.uid&&!article.isMindshift){
+      if(!pc||pc.authorUid!==article.authorUid)notif.notifyComment({type:'new_comment',recipientUid:article.authorUid,articleId:artId,articleTitle:article.title,contentType:'article'});
+    }
+  }catch(e){console.error('submitReply:',e);}
+  finally{if(btn){btn.disabled=false;btn.textContent='Post';}}
+};
+
+function updVRB(cid,count){
+  const btn=document.getElementById('vrb-'+cid);
+  if(!btn){
+    const foot=document.querySelector('#ci-'+cid+' .c-foot');
+    if(foot)foot.insertAdjacentHTML('beforeend',`<button class="c-view-replies-btn" id="vrb-${cid}" onclick="toggleReplies('${cid}')"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg> ${count} ${count===1?'reply':'replies'}</button>`);
+    return;
+  }
+  btn.innerHTML=`<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg> ${count} ${count===1?'reply':'replies'}`;
+}
+
+window.toggleReplies=async function(cid){
+  const re=document.getElementById('rep-'+cid);if(!re)return;
+  const vrb=document.getElementById('vrb-'+cid);
+  if(cOpenReplies.has(cid)){cOpenReplies.delete(cid);re.style.display='none';vrb&&vrb.classList.remove('open');return;}
+  cOpenReplies.add(cid);re.style.display='block';vrb&&vrb.classList.add('open');
+  if(cReplies[cid]){re.innerHTML=cReplies[cid].map(r=>buildCHTML(r,true)).join('');window.MSBAuthorLive && window.MSBAuthorLive.refresh(db, { doc, getDoc }, re);return;}
+  re.innerHTML='<div style="padding:8px 0;font-size:12px;color:var(--mute)">Loading…</div>';
+  try{
+    const isOwner=!!(currentUser && article && article.authorUid===currentUser.uid);
+    const repParts=[collection(db,'comments'),where('articleId','==',artId),where('parentId','==',cid)];
+    if(!isOwner) repParts.push(where('hidden','==',false));
+    repParts.push(orderBy('createdAt','asc'));
+    const q=query(...repParts);
+    const snap=await resilient(()=>getDocs(q),{tries:2});
+    const replies=snap.docs.map(d=>({id:d.id,...d.data()})).filter(cVisible);
+    if(currentUser){
+      replies.forEach(r=>{
+        if(r.likedBy && r.likedBy[currentUser.uid] === true) cLikedSet.add(r.id);
+      });
+    }
+    cReplies[cid]=replies;
+    re.innerHTML=replies.length?replies.map(r=>buildCHTML(r,true)).join(''):'<div style="padding:8px 0;font-size:12px;color:var(--mute)">No replies yet.</div>';
+    window.MSBAuthorLive && window.MSBAuthorLive.refresh(db, { doc, getDoc }, re);
+  }catch(e){cOpenReplies.delete(cid);re.innerHTML='<div style="padding:8px 0;font-size:12px;color:var(--red)">Could not load — tap replies to try again.</div>';}
+};
+
+window.likeComment=async function(cid,authorUid){
+  if(!currentUser){openAuth();return;}
+  const wasLiked=cLikedSet.has(cid);
+  const nowLiked=!wasLiked;
+  const btn=document.getElementById('clb-'+cid),cel=document.getElementById('clc-'+cid);
+  if(nowLiked){cLikedSet.add(cid);if(btn)btn.classList.add('liked');}
+  else{cLikedSet.delete(cid);if(btn)btn.classList.remove('liked');}
+  const c=[...cList,...Object.values(cReplies).flat()].find(x=>x.id===cid);
+  if(c){c.likeCount=(c.likeCount||0)+(nowLiked?1:-1);if(cel)cel.textContent=c.likeCount>0?String(c.likeCount):'';}
+  const commentRef=doc(db,'comments',cid);
+  const prior=cLikeChain.get(cid)||Promise.resolve();
+  const task=prior.then(()=>updateDoc(commentRef,{
+      [`likedBy.${currentUser.uid}`]: nowLiked,
+      likeCount: increment(nowLiked?1:-1)
+    })).then(()=>{
+      if(nowLiked&&authorUid&&authorUid!==currentUser.uid) notif.notifyComment({type:'comment_like',recipientUid:authorUid,articleId:artId,articleTitle:article?article.title:'',commentId:cid,contentType:'article'});
+    }).catch(e=>{
+      if(cLikedSet.has(cid)===nowLiked){
+        if(nowLiked){cLikedSet.delete(cid);if(btn)btn.classList.remove('liked');}
+        else{cLikedSet.add(cid);if(btn)btn.classList.add('liked');}
+        if(c){c.likeCount=(c.likeCount||0)+(nowLiked?-1:1);if(cel)cel.textContent=c.likeCount>0?String(c.likeCount):'';}
+      }
+      console.error('likeComment:',e.code,e.message);
+      if(e.code==='permission-denied')showToast('Could not like — check Firestore rules for comment likes.');
+      else showToast('Could not update like — try again.');
+    });
+  cLikeChain.set(cid,task);
+  await task;
+};
+
+window.cGo=function(uid,username){if(!uid)return;if(uid===currentUser?.uid){location.href='/profile';}else{location.href=`/profile?uid=${encodeURIComponent(uid)}`;}};
+
+/* ── 3-DOT COMMENT MENU ── */
+let openMenuId=null;
+window.toggleCMenu=function(e,cid){
+  e.stopPropagation();
+  const menu=document.getElementById('cmenu-'+cid);
+  const btn=document.getElementById('mbtn-'+cid);
+  if(!menu)return;
+  const isOpen=menu.classList.contains('open');
+  closeAllCMenus();
+  if(!isOpen){menu.classList.add('open');if(btn)btn.classList.add('open');openMenuId=cid;}
+};
+function closeAllCMenus(){
+  if(openMenuId){
+    const m=document.getElementById('cmenu-'+openMenuId);if(m)m.classList.remove('open');
+    const b=document.getElementById('mbtn-'+openMenuId);if(b)b.classList.remove('open');
+    openMenuId=null;
+  }
+}
+document.addEventListener('click',()=>closeAllCMenus());
+
+/* ── SHARE COMMENT ── */
+window.shareComment=function(cid){
+  closeAllCMenus();
+  const url=`${location.origin}${location.pathname}${location.search}#c-${cid}`;
+  if(navigator.share){navigator.share({title:'Comment on '+document.title,url}).catch(()=>{});}
+  else{navigator.clipboard.writeText(url).then(()=>showToast('Comment link copied ✅')).catch(()=>showToast('Could not copy link'));}
+};
+
+/* ── DELETE COMMENT ── */
+window.deleteComment=async function(cid,parentId){
+  closeAllCMenus();
+  if(!currentUser)return;
+  if(!confirm('Delete this comment?'))return;
+  const el=document.getElementById('ci-'+cid);
+  if(el){el.style.opacity='.4';el.style.pointerEvents='none';}
+  try{
+    await deleteDoc(doc(db,'comments',cid));
+    // decrement counts
+    try{await updateDoc(doc(db,'articleMeta',artId),{commentCount:increment(-1)});}catch{}
+    if(parentId){try{await updateDoc(doc(db,'comments',parentId),{replyCount:increment(-1)});}catch{}}
+    if(el)el.remove();
+    cCommentCount=Math.max(0,cCommentCount-1);updateCCount();
+    // remove from local lists
+    if(parentId){if(cReplies[parentId])cReplies[parentId]=cReplies[parentId].filter(r=>r.id!==cid);}
+    else{cList=cList.filter(c=>c.id!==cid);}
+    showToast('Comment deleted');
+  }catch(e){
+    if(el){el.style.opacity='';el.style.pointerEvents='';}
+    showToast('Could not delete — try again');
+  }
+};
+/* writeComNotif moved to /notifications.js — see notif.notifyComment() */
+
+function cEsc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function cTA(ts){
+  if(!ts)return'';
+  const date=ts.toDate?ts.toDate():new Date(ts);
+  const sec=(Date.now()-date.getTime())/1000;
+  if(sec<60)return'just now';if(sec<3600)return Math.floor(sec/60)+'m ago';
+  if(sec<86400)return Math.floor(sec/3600)+'h ago';if(sec<604800)return Math.floor(sec/86400)+'d ago';
+  return date.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
+
+/* ══════════════════════════════════════
+   NOTIFICATION WRITER
+   ══════════════════════════════════════ */
+
+/* writeNotification (article_like) moved to /notifications.js — see notif.notifyArticleLike().
+   Comment notifications (new_comment/comment_reply/comment_like) also moved —
+   see notif.notifyComment() below, at the actual submitComment/submitReply/like sites. */
+
+/* ── SHARE ── */
+window.openShare=function(){
+  document.getElementById('authOverlay').classList.add('on');
+  document.getElementById('shareSheet').classList.add('on');
+  document.body.style.overflow='hidden';
+};
+window.closeShare=function(){
+  document.getElementById('authOverlay').classList.remove('on');
+  document.getElementById('shareSheet').classList.remove('on');
+  document.body.style.overflow='';
+};
+window.doShare=function(platform){
+  const url=encodeURIComponent(location.href);
+  const txt=encodeURIComponent((article?article.title:'Article')+' — MindShift Books');
+  if(artId){
+    const shRef=doc(db,'articleShares',artId);
+    updateDoc(shRef,{count:increment(1)}).catch(()=>setDoc(shRef,{count:1},{merge:true}).catch(()=>{}));
+  }
+  if(platform==='whatsapp') window.open(`https://wa.me/?text=${txt}%20${url}`,'_blank');
+  else if(platform==='twitter') window.open(`https://twitter.com/intent/tweet?text=${txt}&url=${url}`,'_blank');
+  else if(platform==='linkedin') window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`,'_blank');
+  else if(platform==='copy'){
+    navigator.clipboard.writeText(location.href).then(()=>showToast('Link copied! 🎉')).catch(()=>showToast('Copy failed'));
+    closeShare(); return;
+  }
+  closeShare();
+};
+
+/* ── MANAGE SHEET (owner only — the "⋯" in the header) ── */
+window.copyLink=function(){
+  navigator.clipboard.writeText(location.href).then(()=>showToast('Link copied! 🎉')).catch(()=>showToast('Copy failed'));
+};
+
+window.openShareAsImageFromArticle=function(){
+  if(!article || typeof openShareImageCard!=='function') return;
+  openShareImageCard({
+    type: 'article', id: article.id,
+    author: article.author, avatar: article.avatar, publishedAt: article.publishedAt,
+    title: article.title, brief: article.brief,
+    image: article.img
+  });
+};
+
+window.openManageSheet=function(){
+  if(!article || !currentUser || article.authorUid!==currentUser.uid) return;
+  document.getElementById('manageCommentsToggle').checked = !!article.commentsOff;
+  document.getElementById('manageLikeCountToggle').checked = !!article.hideLikeCount;
+  document.getElementById('manageOverlay').classList.add('on');
+  document.getElementById('manageSheet').classList.add('on');
+  document.body.style.overflow='hidden';
+};
+window.closeManageSheet=function(){
+  document.getElementById('manageOverlay').classList.remove('on');
+  document.getElementById('manageSheet').classList.remove('on');
+  document.body.style.overflow='';
+};
+
+window.onManageCommentsToggle=async function(checked){
+  if(!article) return;
+  try{
+    await updateDoc(doc(db,'articles',article.id),{ commentsOff: checked });
+    article.commentsOff = checked;
+    showToast(checked ? 'Comments turned off' : 'Comments turned back on');
+    renderArticle();
+  }catch(e){
+    console.error('toggle commentsOff failed:', e);
+    document.getElementById('manageCommentsToggle').checked = !checked;
+    showToast('Could not update — try again');
+  }
+};
+
+window.onManageLikeCountToggle=async function(checked){
+  if(!article) return;
+  try{
+    await updateDoc(doc(db,'articles',article.id),{ hideLikeCount: checked });
+    article.hideLikeCount = checked;
+    showToast(checked ? 'Like count hidden from others' : 'Like count is visible again');
+    syncLikeUI();
+  }catch(e){
+    console.error('toggle hideLikeCount failed:', e);
+    document.getElementById('manageLikeCountToggle').checked = !checked;
+    showToast('Could not update — try again');
+  }
+};
+
+window.confirmDeletePost=function(){
+  closeManageSheet();
+  document.getElementById('deleteOverlay').classList.add('on');
+  document.getElementById('deleteSheet').classList.add('on');
+  document.body.style.overflow='hidden';
+};
+window.closeDeleteConfirm=function(){
+  document.getElementById('deleteOverlay').classList.remove('on');
+  document.getElementById('deleteSheet').classList.remove('on');
+  document.body.style.overflow='';
+};
+window.doDeletePost=async function(){
+  if(!article) return;
+  const id = article.id;
+  try{
+    await deleteDoc(doc(db,'articles',id));
+    deleteDoc(doc(db,'articleLikes',id)).catch(()=>{});
+    deleteDoc(doc(db,'articleMeta',id)).catch(()=>{});
+    deleteDoc(doc(db,'articleViews',id)).catch(()=>{});
+    showToast('Deleted');
+    setTimeout(()=>{ location.href='/profile'; }, 600);
+  }catch(e){
+    console.error('doDeletePost failed:', e);
+    showToast('Could not delete — try again');
+    closeDeleteConfirm();
+  }
+};
+// Article downloads aren't gated behind a paid plan right now — everything
+// is free while there's no premium tier live. (This used to call a
+// /api/plan-config endpoint that was never actually built on the server,
+// so it silently failed closed and blocked downloads for everyone —
+// unlocked here instead of leaving that dead, broken check in place.)
+async function checkArticleDownloadAllowed() {
+  return true;
+}
+
+
+window.openDownloadSheet=async function(){
+  if(!currentUser){ openAuth(); return; }
+  if(!article) return;
+  const allowed = await checkArticleDownloadAllowed();
+  if (!allowed) {
+    let msg = 'Downloading articles needs a paid plan — Pro or Premier both unlock it.';
+    try {
+      const token = await currentUser.getIdToken();
+      const res   = await fetch('/api/upgrade-message?feature=articleDownload', { headers: { 'Authorization': `Bearer ${token}` } });
+      const data  = await res.json();
+      if (data && data.message) msg = data.message;
+    } catch (e) { /* use default */ }
+    showToast('🔒 ' + msg);
+    return;
+  }
+  document.getElementById('dlCat').textContent  = (window.msbCatLabel ? window.msbCatLabel(article.cat) : article.cat) || '';
+  document.getElementById('dlTitle').textContent = article.title||'';
+  document.getElementById('dlMeta').textContent  = `by ${article.author||'MindShift Books'} · ${article.read||''}`;
+  document.getElementById('dlCount').textContent = downloadCount||0;
+  document.getElementById('authOverlay').classList.add('on');
+  document.getElementById('downloadSheet').classList.add('on');
+  document.body.style.overflow='hidden';
+};
+window.closeDownload=function(){
+  document.getElementById('authOverlay').classList.remove('on');
+  document.getElementById('downloadSheet').classList.remove('on');
+  document.body.style.overflow='';
+};
+
+window.confirmDownload=async function(){
+  if(!currentUser){ openAuth(); return; }
+  if(!article) return;
+  const allowed = await checkArticleDownloadAllowed();
+  if (!allowed) {
+    closeDownload();
+    showToast('🔒 Downloading articles needs a paid plan — Pro or Premier both unlock it.');
+    return;
+  }
+  const btn=document.getElementById('dlConfirmBtn');
+  const origHtml=btn.innerHTML;
+  btn.disabled=true;
+  btn.innerHTML='Preparing your PDF…';
+
+  try{
+    await generateArticlePdf();
+    closeDownload();
+    showToast('PDF downloaded ✅');
+
+    // record unique download (count only on first download per user)
+    if(!hasDownloaded){
+      hasDownloaded = true;
+      syncDownloadUI();
+      try{
+        await setDoc(doc(db,'userDownloads',currentUser.uid),{[artId]:true},{merge:true});
+        const cRef = doc(db,'articleDownloads',artId);
+        try{ await updateDoc(cRef,{count:increment(1)}); }
+        catch{ await setDoc(cRef,{count:1},{merge:true}); }
+      }catch(e){ console.error('download count error:', e); }
+    }
+  }catch(e){
+    console.error('PDF generation error:', e);
+    showToast('Could not generate PDF — try again.');
+  }finally{
+    btn.disabled=false;
+    btn.innerHTML=origHtml;
+  }
+};
+
+/* ── PDF BRAND ASSETS ── */
+// Matches the site's --g brand gradient: linear-gradient(90deg,#4f46e5,#06b6d4)
+const PDF_BRAND_START = '#4f46e5'; // indigo
+const PDF_BRAND_END   = '#06b6d4'; // cyan
+function pdfHexToRgb(hex){
+  const h = hex.replace('#','');
+  return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+}
+function pdfLerpColor(c1, c2, t){
+  const [r1,g1,b1]=pdfHexToRgb(c1), [r2,g2,b2]=pdfHexToRgb(c2);
+  const r=Math.round(r1+(r2-r1)*t), g=Math.round(g1+(g2-g1)*t), b=Math.round(b1+(b2-b1)*t);
+  return '#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
+}
+// pdfMake's canvas supports solid-fill rects natively, unlike its SVG support
+// (which doesn't render <linearGradient> reliably) — so the "gradient" bars
+// below are really a row of thin adjacent rects stepped from indigo to cyan.
+// Reads as a smooth gradient at print/screen resolution.
+function pdfGradientBar(widthPt, heightPt, steps=40){
+  const segW = widthPt/steps;
+  const rects=[];
+  for(let i=0;i<steps;i++){
+    const t = steps===1 ? 0 : i/(steps-1);
+    rects.push({type:'rect', x:i*segW, y:0, w:segW+0.6, h:heightPt, color:pdfLerpColor(PDF_BRAND_START,PDF_BRAND_END,t)});
+  }
+  return {canvas:rects};
+}
+
+async function getLogoBase64(){
+  try{
+    const res = await fetch('logo.jpg');
+    if(!res.ok) return null;
+    const blob = await res.blob();
+    return await new Promise((resolve)=>{
+      const reader = new FileReader();
+      reader.onloadend = ()=>resolve(reader.result);
+      reader.onerror   = ()=>resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  }catch{ return null; }
+}
+
+/* ── HTML → pdfMake CONTENT CONVERTER ── */
+function pdfInlineRuns(node, baseStyle={}){
+  let runs=[];
+  node.childNodes.forEach(child=>{
+    if(child.nodeType===3){
+      const t=child.textContent;
+      if(t && t.trim()!=='') runs.push(Object.assign({text:t},baseStyle));
+      else if(t==' ') runs.push(Object.assign({text:' '},baseStyle));
+    } else if(child.nodeType===1){
+      const tag=child.tagName.toLowerCase();
+      let style={...baseStyle};
+      if(tag==='strong'||tag==='b') style.bold=true;
+      if(tag==='em'||tag==='i') style.italics=true;
+      if(tag==='code'){ style.font='Courier'; style.color='#0f172a'; style.fontSize=9.5; }
+      runs = runs.concat(pdfInlineRuns(child, style));
+    }
+  });
+  if(!runs.length) runs.push(Object.assign({text:node.textContent||''},baseStyle));
+  return runs;
+}
+
+function pdfParseBlock(node){
+  if(node.nodeType===3){
+    const t=node.textContent.trim();
+    return t ? {text:t, style:'body'} : null;
+  }
+  if(node.nodeType!==1) return null;
+  const tag=node.tagName.toLowerCase();
+
+  switch(tag){
+    case 'p':{
+      const runs=pdfInlineRuns(node);
+      return {text:runs, style:'body'};
+    }
+    case 'h2':
+      return {text:node.textContent.trim(), style:'h2'};
+    case 'h3':
+      return {text:node.textContent.trim(), style:'h3'};
+    case 'ul':
+      return {ul: Array.from(node.children).map(li=>({text:pdfInlineRuns(li), style:'liText'})), margin:[0,0,0,12]};
+    case 'ol':
+      return {ol: Array.from(node.children).map(li=>({text:pdfInlineRuns(li), style:'liText'})), margin:[0,0,0,12]};
+    case 'hr':
+      return {canvas:[{type:'line',x1:0,y1:0,x2:515,y2:0,lineWidth:1,lineColor:'#f3f4f6'}], margin:[0,8,0,16]};
+    case 'div':{
+      if(node.classList.contains('pull-quote')){
+        return {
+          table:{ widths:['*'], body:[[
+            { text:[{text:'\u201C  ',bold:true,fontSize:18,color:PDF_BRAND_START}, ...pdfInlineRuns(node,{italics:true,color:'#0e7490'})],
+              fillColor:'#ecfeff', margin:[12,10,12,10] }
+          ]] },
+          layout:'noBorders',
+          margin:[0,12,0,16]
+        };
+      }
+      if(node.classList.contains('key-box')){
+        const titleEl=node.querySelector('.key-box-title');
+        const listEl=node.querySelector('ul,ol');
+        const stack=[];
+        if(titleEl) stack.push({text:titleEl.textContent.trim().toUpperCase(), style:'keyTitle', margin:[0,0,0,6]});
+        if(listEl){
+          const tag2=listEl.tagName.toLowerCase();
+          const items=Array.from(listEl.children).map(li=>({text:pdfInlineRuns(li), style:'liText'}));
+          stack.push(tag2==='ol' ? {ol:items} : {ul:items});
+        }
+        return {
+          table:{ widths:['*'], body:[[ { stack, fillColor:'#ecfeff', margin:[12,12,12,12] } ]] },
+          layout:'noBorders',
+          margin:[0,8,0,16]
+        };
+      }
+      // generic div: recurse into children
+      const inner=[];
+      node.childNodes.forEach(c=>{
+        const b=pdfParseBlock(c);
+        if(b) inner.push(b);
+      });
+      return inner.length ? inner : null;
+    }
+    default:
+      return null;
+  }
+}
+
+function htmlToPdfContent(html){
+  const parsed = new DOMParser().parseFromString(html,'text/html');
+  const out=[];
+  parsed.body.childNodes.forEach(node=>{
+    const block=pdfParseBlock(node);
+    if(!block) return;
+    if(Array.isArray(block)) out.push(...block);
+    else out.push(block);
+  });
+  return out;
+}
+
+/* ── BUILD & DOWNLOAD PDF ── */
+async function generateArticlePdf(){
+  const logoData = await getLogoBase64();
+  const dateStr = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const bodyContent = htmlToPdfContent(article.content);
+
+  const brandStack = {
+    columns:[
+      logoData ? {image:'mindshiftLogo', width:26, height:26, margin:[0,1,0,0]} : {text:''},
+      {
+        stack:[
+          {text:'MindShift Books', style:'brandName'},
+          {text:'Ideas Worth Thinking About', style:'brandTag'}
+        ],
+        margin:[logoData?8:0,0,0,0]
+      }
+    ],
+    columnGap:0
+  };
+
+  const docDefinition = {
+    pageSize:'A4',
+    pageMargins:[40,86,40,64],
+    images: logoData ? {mindshiftLogo:logoData} : {},
+    header:{
+      margin:[40,22,40,0],
+      stack:[
+        brandStack,
+        {...pdfGradientBar(515,2), margin:[0,10,0,0]}
+      ]
+    },
+    footer:function(currentPage,pageCount){
+      return {
+        margin:[40,8,40,0],
+        stack:[
+          {...pdfGradientBar(515,2)},
+          {
+            columns:[
+              {text:'mindshiftbooks.shop', style:'footerText'},
+              {text:`Page ${currentPage} of ${pageCount}`, style:'footerText', alignment:'right'}
+            ],
+            margin:[0,6,0,0]
+          },
+          {text:`Generated ${dateStr}  ·  © MindShift Books`, style:'footerSub', margin:[0,2,0,0]}
+        ]
+      };
+    },
+    content:[
+      {
+        table:{ widths:['auto'], body:[[
+          {text:((window.msbCatLabel ? window.msbCatLabel(article.cat) : article.cat)||'MindShift').toUpperCase(), style:'catPillText', fillColor:PDF_BRAND_START}
+        ]] },
+        layout:'noBorders',
+        margin:[0,0,0,10]
+      },
+      {text:article.title||'', style:'docTitle'},
+      {
+        columns:[
+          {text:`By ${article.author||'MindShift Books'}`, style:'byline'},
+          {text:article.read||'', style:'byline', alignment:'right'}
+        ],
+        margin:[0,4,0,16]
+      },
+      {...pdfGradientBar(515,2), margin:[0,0,0,16]},
+      ...bodyContent
+    ],
+    styles:{
+      brandName:{fontSize:14,bold:true,color:PDF_BRAND_START},
+      brandTag:{fontSize:7,color:'#9ca3af'},
+      footerText:{fontSize:8,color:'#9ca3af'},
+      footerSub:{fontSize:7,italics:true,color:'#93c5fd'},
+      catPillText:{fontSize:8,bold:true,color:'#ffffff',characterSpacing:1},
+      docTitle:{fontSize:21,bold:true,color:'#0f0e17',lineHeight:1.2},
+      byline:{fontSize:9,color:'#9ca3af',bold:true},
+      h2:{fontSize:14.5,bold:true,color:'#0f0e17',margin:[0,16,0,8]},
+      h3:{fontSize:12.5,bold:true,color:'#0f0e17',margin:[0,12,0,6]},
+      body:{fontSize:10.5,color:'#374151',lineHeight:1.45,margin:[0,0,0,10]},
+      liText:{fontSize:10.5,color:'#374151',lineHeight:1.4,margin:[0,0,0,4]},
+      keyTitle:{fontSize:8.5,bold:true,color:PDF_BRAND_START,characterSpacing:.5}
+    },
+    defaultStyle:{fontSize:10.5, lineHeight:1.4, color:'#374151'}
+  };
+
+  const safeName=(article.title||'mindshift-article').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'').slice(0,60);
+  pdfMake.createPdf(docDefinition).download(`${safeName}.pdf`);
+}
+
+
+
+/* ── RATING STATE ── */
+window.MSB_RATING_NOUN = 'article';
+let userRating = 0;
+let hoveredRating = 0;
+let ratingSubmitted = false;
+const RATING_LABELS = ['','Terrible 😣','Not good 😕','Okay 👍','Great! 🔥','Mind-blowing! 🤯'];
+const RATING_EMOJIS = ['🤔','😣','😕','👍','🔥','🤯'];
+
+/* ── INJECT RATING CARD ── */
+/* ── IMAGE VIEWER (tap the cover photo to view full-size) ── */
+let imgViewerCount = 0;
+window.openImageViewer = function(list, startIndex){
+  if(!list || !list.length) return;
+  imgViewerCount = list.length;
+  const track = document.getElementById('imgViewerTrack');
+  track.innerHTML = list.map(src=>`<div class="img-viewer-slide"><img src="${src}" alt="" onclick="event.stopPropagation()"></div>`).join('');
+  const countEl = document.getElementById('imgViewerCount');
+  countEl.style.display = imgViewerCount>1 ? '' : 'none';
+  document.getElementById('imgViewerBg').classList.add('show');
+  document.body.style.overflow='hidden';
+  track.scrollLeft = (startIndex||0) * track.clientWidth;
+  updateImgViewerCount();
+};
+window.onImgViewerScroll = function(){ updateImgViewerCount(); };
+function updateImgViewerCount(){
+  const track = document.getElementById('imgViewerTrack');
+  if(!track || !imgViewerCount) return;
+  const idx = Math.round(track.scrollLeft / track.clientWidth);
+  document.getElementById('imgViewerCount').textContent = `${idx+1}/${imgViewerCount}`;
+}
+window.closeImageViewer = function(){
+  document.getElementById('imgViewerBg').classList.remove('show');
+  document.body.style.overflow='';
+};
+
+function injectRatingCard(){
+  const card = document.getElementById('ratingCard');
+  if(!card) return;
+  card.innerHTML = `
+    <div id="ratingSummary" class="rating-summary">
+      <div class="rating-summary-empty">Loading rating…</div>
+    </div>
+    <div class="rating-divider"></div>
+    <div class="rating-title">Rate this ${window.MSB_RATING_NOUN||'article'}</div>
+    <div class="rating-form" id="ratingForm">
+      <div class="stars-row" id="starsRow">
+        ${[1,2,3,4,5].map(i=>`
+          <button class="star-btn" id="star${i}"
+            onmouseenter="hoverStar(${i})"
+            onmouseleave="unhoverStar()"
+            onclick="selectStar(${i})">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.6">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            </svg>
+          </button>
+        `).join('')}
+      </div>
+      <div id="ratingLabel" class="rating-label"></div>
+      <button class="rating-submit" id="ratingSubmit" onclick="submitRating()" disabled>Submit</button>
+    </div>
+    <div class="rating-rated-row" id="ratingRatedRow">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      <span id="ratingRatedText"></span>
+    </div>
+  `;
+  loadRatingSummary();
+  loadUserRating();
+}
+
+/* ── AVERAGE RATING (shown to everyone, not just after you rate) ── */
+async function loadRatingSummary(){
+  const el = document.getElementById('ratingSummary');
+  if(!el) return;
+  try{
+    const s = await getDoc(doc(db,'articleRatings',artId));
+    if(s.exists() && s.data().count){
+      const {total,count} = s.data();
+      const avg = total/count;
+      el.innerHTML = `
+        <div class="rating-summary-num">${avg.toFixed(1)}</div>
+        <div>
+          <div class="rating-summary-stars">${[1,2,3,4,5].map(i=>`
+            <svg viewBox="0 0 24 24" fill="${i<=Math.round(avg)?'#f59e0b':'none'}" stroke="${i<=Math.round(avg)?'#f59e0b':'#cbd5e1'}" stroke-width="1.6"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          `).join('')}</div>
+          <div class="rating-summary-count">${count} rating${count===1?'':'s'}</div>
+        </div>
+      `;
+    } else {
+      el.innerHTML = `<div class="rating-summary-empty">No ratings yet — be the first</div>`;
+    }
+  }catch{
+    el.innerHTML = `<div class="rating-summary-empty">Rating unavailable</div>`;
+  }
+}
+
+/* ── LOAD USER RATING ── */
+async function loadUserRating(){
+  if(!currentUser) return;
+  try{
+    const s = await getDoc(doc(db,'userRatings',currentUser.uid));
+    if(s.exists() && s.data()[artId]){
+      userRating = s.data()[artId];
+      ratingSubmitted = true;
+      updateStarVisuals(userRating);
+      showRated(userRating);
+    }
+  }catch{}
+}
+
+/* ── STAR HOVER ── */
+window.hoverStar = function(n){
+  if(ratingSubmitted) return;
+  hoveredRating = n;
+  updateStarVisuals(n);
+  document.getElementById('ratingLabel').textContent = RATING_LABELS[n];
+};
+window.unhoverStar = function(){
+  if(ratingSubmitted) return;
+  hoveredRating = 0;
+  updateStarVisuals(userRating);
+  document.getElementById('ratingLabel').textContent = userRating ? RATING_LABELS[userRating] : '';
+};
+
+/* ── STAR SELECT ── */
+window.selectStar = function(n){
+  if(ratingSubmitted) return;
+  userRating = n;
+  updateStarVisuals(n);
+  document.getElementById('ratingLabel').textContent = RATING_LABELS[n];
+  document.getElementById('ratingSubmit').disabled = false;
+};
+
+/* ── UPDATE STAR VISUALS ── */
+function updateStarVisuals(n){
+  for(let i=1;i<=5;i++){
+    const btn = document.getElementById(`star${i}`);
+    if(!btn) continue;
+    const svg = btn.querySelector('svg');
+    const lit = i<=n;
+    svg.setAttribute('fill', lit?'#f59e0b':'none');
+    svg.setAttribute('stroke', lit?'#f59e0b':'#cbd5e1');
+  }
+}
+
+/* ── SUBMIT RATING ── */
+window.submitRating = async function(){
+  if(!currentUser){ openAuth(); return; }
+  if(!userRating || ratingSubmitted) return;
+  ratingSubmitted = true;
+  const btn = document.getElementById('ratingSubmit');
+  btn.textContent = 'Submitting…';
+  btn.disabled = true;
+  try{
+    await setDoc(doc(db,'userRatings',currentUser.uid),{[artId]:userRating},{merge:true});
+    const rRef = doc(db,'articleRatings',artId);
+    try{ await updateDoc(rRef,{total:increment(userRating),count:increment(1)}); }
+    catch{ await setDoc(rRef,{total:userRating,count:1}); }
+    showRated(userRating);
+    loadRatingSummary();
+  }catch(e){
+    ratingSubmitted=false;
+    btn.textContent='Submit';
+    btn.disabled=false;
+    showToast('Could not submit — try again');
+  }
+};
+
+/* ── SHOW RATED STATE (replaces the old confetti "done" card) ── */
+function showRated(n){
+  document.getElementById('ratingForm').classList.add('hide');
+  const row = document.getElementById('ratingRatedRow');
+  row.classList.add('show');
+  document.getElementById('ratingRatedText').textContent = `You rated this ${n} star${n===1?'':'s'}`;
+}
+
+/* ── FOLLOW ── */
+/* ── FOLLOW ── */
+window.doFollow = async function(){
+  if(!currentUser){ openAuth(); return; }
+  if(!article) return;
+  const target = followTargetUid();
+  const wasFollowing = isFollowing;
+  isFollowing = !wasFollowing;
+  syncFollowUI();
+  try{
+    const followId = `${currentUser.uid}_${target}`;
+    if(wasFollowing){
+      await deleteDoc(doc(db,'follows',followId));
+      updateDoc(doc(db,'users',target),{followerCount:increment(-1)}).catch(()=>{});
+    }else{
+      await setDoc(doc(db,'follows',followId),{followerId:currentUser.uid,followingId:target,createdAt:serverTimestamp()});
+      updateDoc(doc(db,'users',target),{followerCount:increment(1)}).catch(()=>{});
+      notif.notifyFollow(target);
+    }
+    showToast(wasFollowing ? 'Unfollowed' : `Following ${article.author||'author'} ✅`);
+  }catch(e){
+    isFollowing = wasFollowing;
+    syncFollowUI();
+    showToast('Could not update — try again.');
+  }
+};
+
+/* writeFollowNotif moved to /notifications.js — see notif.notifyFollow() */
+
+/* ── TOAST ── */
+window.showToast=function(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('on');
+  setTimeout(()=>t.classList.remove('on'),2800);
+};
+/* ── WELCOME NUDGE ── */
+(function(){
+  const params = new URLSearchParams(location.search);
+  if(params.get('welcome')==='1' && !sessionStorage.getItem('rsmk_welcomed')){
+    sessionStorage.setItem('rsmk_welcomed','1');
+    // Clean ?welcome=1 from the URL without reloading
+    params.delete('welcome');
+    const clean = location.pathname + (params.toString() ? '?'+params.toString() : '');
+    history.replaceState(null,'',clean);
+    // Show nudge after a short delay so the article renders first
+    setTimeout(()=>{
+      const el = document.getElementById('welcomeNudge');
+      if(el) el.classList.add('on');
+    }, 1200);
+    // Auto-dismiss after 8 seconds
+    setTimeout(()=>dismissWelcome(), 9200);
+  }
+})();
+window.dismissWelcome=function(){
+  const el=document.getElementById('welcomeNudge');
+  if(el){ el.classList.remove('on'); }
+};
+window.goToFeed=function(){
+  dismissWelcome();
+  window.location.href='/';
+};
+
+</script>
+<!-- Shared MindShift account nav (renders the acct-nav-slot in the header) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="/auth.js"></script>
+<script src="/create-picker.js"></script>
+</body>
+</html>
