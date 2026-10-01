@@ -348,6 +348,39 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
 .fb-drawer-manage{width:100%;margin-top:16px;padding:13px;border-radius:12px;border:none;
   background:linear-gradient(90deg,#4f46e5,#06b6d4);color:#fff;font-size:14px;font-weight:800;
   font-family:inherit;cursor:pointer}
+/* ── Location → map drawer ── */
+.profile-location.tappable{cursor:pointer;width:fit-content;border-radius:8px;padding:3px 6px 3px 0;-webkit-tap-highlight-color:transparent;transition:opacity .15s}
+.profile-location.tappable:active{opacity:.55}
+.profile-location.tappable:focus-visible{outline:2px solid var(--p);outline-offset:2px}
+.profile-location.tappable .loc-chev{width:12px;height:12px;margin-left:-1px;opacity:.55}
+.loc-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.loc-map-wrap{position:relative;height:250px;border-radius:16px;overflow:hidden;background:#eef2ff;border:1.5px solid var(--border,#e5e7eb);margin-top:6px}
+#locMap{position:absolute;inset:0;z-index:1;background:#eff2fc;font-family:inherit}
+#locMap .maplibregl-ctrl-attrib{font-size:9.5px;background:rgba(255,255,255,.78);border-radius:8px 0 0 0}
+#locMap .maplibregl-ctrl-attrib a{color:#4f46e5}
+#locMap .maplibregl-canvas{outline:none}
+.loc-map-state{position:absolute;inset:0;z-index:500;display:none;flex-direction:column;align-items:center;justify-content:center;
+  gap:10px;text-align:center;padding:24px;background:#f5f7ff;color:#6b7280;font-size:13px;line-height:1.5}
+.loc-map-state.show{display:flex}
+.loc-map-state strong{color:#0f172a;font-size:14px;font-weight:800}
+.loc-map-state svg{width:30px;height:30px;fill:none;stroke:#818cf8;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.loc-spin{width:26px;height:26px;border-radius:50%;border:3px solid #e0e7ff;border-top-color:#4f46e5;animation:locSpin .8s linear infinite}
+@keyframes locSpin{to{transform:rotate(360deg)}}
+.loc-retry{padding:8px 18px;border-radius:99px;border:none;background:linear-gradient(90deg,#4f46e5,#06b6d4);color:#fff;font-size:12.5px;font-weight:800;font-family:inherit;cursor:pointer}
+.loc-open-link{display:block;text-align:center;margin-top:14px;padding:12px;border-radius:12px;border:1.5px solid var(--border,#e5e7eb);
+  color:#4f46e5;font-size:13.5px;font-weight:800;text-decoration:none}
+.loc-open-link[hidden]{display:none}
+.loc-marker{position:relative;width:44px;height:44px}
+.loc-pulse{position:absolute;inset:0;border-radius:50%;background:rgba(79,70,229,.28);animation:locPulse 2.2s ease-out infinite}
+@keyframes locPulse{0%{transform:scale(.45);opacity:.9}100%{transform:scale(1.25);opacity:0}}
+.loc-dot{position:absolute;left:5px;top:5px;width:34px;height:34px;border-radius:50%;border:3px solid #fff;
+  background:linear-gradient(135deg,#4f46e5,#06b6d4);box-shadow:0 4px 12px rgba(79,70,229,.45);display:flex;align-items:center;justify-content:center}
+.loc-dot svg{width:15px;height:15px;fill:none;stroke:#fff;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+@media (prefers-reduced-motion:reduce){.loc-pulse{animation:none;opacity:.5;transform:scale(.9)}.loc-spin{animation-duration:1.6s}}
+.loc-detect-btn{display:inline-flex;align-items:center;gap:7px;margin-top:9px;padding:8px 14px;border-radius:99px;
+  border:1.5px solid var(--border);background:var(--card);color:var(--p);font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer}
+.loc-detect-btn svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.loc-detect-btn:disabled{opacity:.6;cursor:default}
 .acard-author{display:flex;align-items:center;gap:7px;margin-bottom:7px;width:fit-content;border-radius:6px;padding:2px 0}
 .acard-av{width:24px;height:24px;border-radius:50%;object-fit:cover;flex-shrink:0;background:var(--g);border:1.5px solid var(--border)}
 .acard-author-name{font-size:12.5px;font-weight:700;color:var(--txt)}
@@ -644,6 +677,7 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
   <div id="profileLocation" class="profile-location" style="display:none">
     <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
     <span id="profileLocationText"></span>
+    <svg class="loc-chev" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
   </div>
   <div id="profileContact" class="profile-location" style="display:none;gap:14px"></div>
   <div id="founderBadgeWrap" class="founder-badge-wrap" style="display:none"></div>
@@ -752,7 +786,15 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
       <textarea id="eBio" rows="3" maxlength="160" placeholder="Tell the community about yourself…" oninput="updateBioCount()"></textarea>
       <div class="char-count" id="bioCharCount">0 / 160</div>
     </div>
-    <div class="field"><label>Location</label><input id="eLocation" type="text" maxlength="60" placeholder="e.g. Lagos, Nigeria"></div>
+    <div class="field">
+      <label>Location</label>
+      <input id="eLocation" type="text" maxlength="60" placeholder="e.g. Lagos, Nigeria" oninput="window._pendingGeo=null">
+      <button type="button" class="loc-detect-btn" id="locDetectBtn" onclick="detectMyLocation()">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+        <span id="locDetectLabel">Use my current location</span>
+      </button>
+      <div class="field-hint">People can tap your location to see it on a map. Only the city is shown, never your exact position.</div>
+    </div>
     <div class="field">
       <label>Contact Info</label>
       <input id="eContactEmail" type="email" maxlength="100" placeholder="Contact email (optional)" style="margin-bottom:10px">
@@ -1382,6 +1424,284 @@ function renderFounderBadge(){
   document.getElementById('badgeRowBtn')?.addEventListener('click', openFounderDrawer);
   document.getElementById('badgesManageBtn')?.addEventListener('click', (e) => { e.stopPropagation(); location.href = '/founding-creator'; });
 }
+// ── Location → map drawer ───────────────────────────────────────────────────
+// Tapping the location line opens a bottom drawer with a small MindShift-styled map.
+// The map is MapLibre GL (vector tiles from OpenFreeMap — free, no API key). Like
+// Google's "styled maps", we take a base style and repaint every feature class with
+// the MindShift palette (see brandStyle) — water, parks, roads, labels, all of it.
+// MapLibre is lazy-loaded on the first tap so it costs the page nothing otherwise.
+// The place text is geocoded once (Nominatim) and the city-level result is cached
+// on the user doc (locationLat/Lng/Zoom + locationGeoFor), so repeat opens cost no
+// lookups and no extra Firestore reads.
+const LOC_STYLE_URL = 'https://tiles.openfreemap.org/styles/positron';
+const MSB_MAP = {
+  land:'#eff2fc', landAlt:'#e8ecfa', green:'#d6f0e3', water:'#bfe8f4', waterLine:'#a3dbec',
+  building:'#e1e6fa', road:'#ffffff', casing:'#dbe0f5', highway:'#dfe6ff', highwayCasing:'#b9c3f3',
+  rail:'#d3d9f4', path:'#e1e6fa', boundary:'#b9c3f3',
+  label:'#312e81', labelSoft:'#5b5fa8', waterLabel:'#0e7490', halo:'#eff2fc'
+};
+let _mapLibrePromise = null, _locMap = null, _locMarker = null, _styleText = null, _locSeq = 0;
+const _geoMem = {};
+const _round2 = n => Math.round(n * 100) / 100;
+
+function loadMapLibre(){
+  if(window.maplibregl) return Promise.resolve();
+  if(_mapLibrePromise) return _mapLibrePromise;
+  _mapLibrePromise = new Promise((resolve, reject) => {
+    const css = document.createElement('link');
+    css.rel = 'stylesheet';
+    css.href = 'https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css';
+    document.head.appendChild(css);
+    const js = document.createElement('script');
+    js.src = 'https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js';
+    js.onload = () => resolve();
+    js.onerror = () => { _mapLibrePromise = null; js.remove(); reject(new Error('maplibre failed to load')); };
+    document.head.appendChild(js);
+  });
+  return _mapLibrePromise;
+}
+
+// Repaint a base style with the MindShift palette. Works on OpenMapTiles
+// source-layer names, so it doesn't depend on any one style's layer ids.
+function brandStyle(st){
+  const C = MSB_MAP;
+  (st.layers || []).forEach(l => {
+    const sl = l['source-layer'] || '', id = l.id || '';
+    l.paint = l.paint || {}; l.layout = l.layout || {};
+    const p = l.paint;
+    if(l.type === 'background'){ p['background-color'] = C.land; return; }
+    if(l.type === 'symbol'){
+      if(/^(poi|housenumber|mountain_peak|aerodrome_label)$/.test(sl)){ l.layout.visibility = 'none'; return; }
+      p['text-color'] = sl === 'water_name' ? C.waterLabel : (sl === 'transportation_name' ? C.labelSoft : C.label);
+      p['text-halo-color'] = C.halo; p['text-halo-width'] = 1.4;
+      return;
+    }
+    if(l.type === 'fill'){
+      if(sl === 'water') p['fill-color'] = C.water;
+      else if(sl === 'park' || /park|wood|forest|grass|green|nature|cemetery|golf|pitch/.test(id)) p['fill-color'] = C.green;
+      else if(sl === 'building'){ p['fill-color'] = C.building; delete p['fill-outline-color']; }
+      else if(/^(landuse|landcover|aeroway|transportation)$/.test(sl)) p['fill-color'] = C.landAlt;
+      return;
+    }
+    if(l.type === 'fill-extrusion'){ p['fill-extrusion-color'] = C.building; return; }
+    if(l.type === 'line'){
+      if(sl === 'waterway') p['line-color'] = C.waterLine;
+      else if(sl === 'boundary') p['line-color'] = C.boundary;
+      else if(sl === 'transportation'){
+        const casing = /casing|case/.test(id), major = /motorway|trunk/.test(id);
+        if(/rail|transit|ferry/.test(id)) p['line-color'] = C.rail;
+        else if(/path|track|pedestrian|footway|cycleway/.test(id)) p['line-color'] = C.path;
+        else if(casing) p['line-color'] = major ? C.highwayCasing : C.casing;
+        else p['line-color'] = major ? C.highway : C.road;
+      }
+    }
+  });
+}
+
+async function getBrandStyleText(){
+  if(_styleText) return _styleText;
+  const r = await fetch(LOC_STYLE_URL);
+  if(!r.ok) throw new Error('style ' + r.status);
+  const st = await r.json();
+  brandStyle(st);
+  return (_styleText = JSON.stringify(st));
+}
+
+// Soft circle (km radius) marking the approximate area, as a GeoJSON polygon
+function circleGeoJSON(lng, lat, km){
+  const pts = [], dLat = km / 110.574, dLng = km / (111.32 * Math.cos(lat * Math.PI / 180));
+  for(let i = 0; i <= 64; i++){ const t = i / 64 * 2 * Math.PI; pts.push([lng + dLng * Math.cos(t), lat + dLat * Math.sin(t)]); }
+  return { type:'Feature', geometry:{ type:'Polygon', coordinates:[pts] } };
+}
+
+function _zoomForType(t){
+  return ({country:5, state:7, region:7, province:7, county:9, state_district:9})[t] || 11;
+}
+
+async function geocodePlace(text){
+  const key = text.toLowerCase();
+  if(_geoMem[key]) return _geoMem[key];
+  const r = await fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&accept-language=en&q=' + encodeURIComponent(text));
+  if(!r.ok) throw new Error('geocode ' + r.status);
+  const arr = await r.json();
+  if(!arr.length) return null;
+  const hit = arr[0];
+  const lat = parseFloat(hit.lat), lng = parseFloat(hit.lon);
+  if(!isFinite(lat) || !isFinite(lng)) return null;
+  return (_geoMem[key] = { lat: _round2(lat), lng: _round2(lng), zoom: _zoomForType(hit.addresstype || hit.type) });
+}
+
+async function cacheGeo(text, g){
+  if(!isOwner || !currentUser || profileData.uid !== currentUser.uid) return;
+  const patch = { locationLat: g.lat, locationLng: g.lng, locationZoom: g.zoom, locationGeoFor: text };
+  try{
+    await setDoc(doc(db,'users',currentUser.uid), patch, {merge:true});
+    Object.assign(profileData, patch);
+  }catch(e){ console.warn('[location] could not cache map pin:', e.message); }
+}
+
+async function resolveProfileGeo(){
+  const text = (profileData.location || '').trim();
+  if(!text) return null;
+  if(profileData.locationGeoFor === text && typeof profileData.locationLat === 'number' && typeof profileData.locationLng === 'number'){
+    return { lat: profileData.locationLat, lng: profileData.locationLng, zoom: Number(profileData.locationZoom) || 11 };
+  }
+  const g = await geocodePlace(text);
+  if(g) cacheGeo(text, g);
+  return g;
+}
+
+function setLocState(kind){
+  const box = document.getElementById('locMapState');
+  const link = document.getElementById('locOpenLink');
+  if(!box) return;
+  box.replaceChildren();
+  const add = (tag, txt, cls) => { const el = document.createElement(tag); if(cls) el.className = cls; if(txt) el.textContent = txt; box.appendChild(el); return el; };
+  if(kind === 'ready'){ box.classList.remove('show'); return; }
+  if(link) link.hidden = true;
+  box.classList.add('show');
+  if(kind === 'loading'){
+    add('div', '', 'loc-spin');
+    add('span', 'Finding this place…');
+  } else if(kind === 'nowebgl'){
+    add('strong', 'This device can\'t show the map here');
+    add('span', 'You can still open the place in Google Maps below.');
+  } else if(kind === 'notfound'){
+    box.insertAdjacentHTML('beforeend', '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>');
+    add('strong', 'We couldn\'t find this on the map');
+    add('span', isOwner ? 'Edit your profile and try a city and country, like Lagos, Nigeria.' : 'This location can\'t be shown on a map.');
+  } else {
+    add('strong', 'The map didn\'t load');
+    add('span', 'Check your connection and try again.');
+    add('button', 'Try again', 'loc-retry').addEventListener('click', () => window.openLocationDrawer());
+  }
+}
+
+function setOpenLink(geo){
+  const link = document.getElementById('locOpenLink');
+  if(link){ link.href = 'https://www.google.com/maps/search/?api=1&query=' + geo.lat + ',' + geo.lng; link.hidden = false; }
+}
+
+function renderLocMap(geo, styleText){
+  const el = document.getElementById('locMap');
+  const ll = [geo.lng, geo.lat];
+  const zoom = Math.max(1, geo.zoom - 1);       // MapLibre zoom runs one below the 256px-tile scale used when we saved it
+  const area = circleGeoJSON(geo.lng, geo.lat, 4.5);
+  const showArea = geo.zoom >= 9;
+  const applyArea = () => {
+    const src = _locMap.getSource('loc-area');
+    if(src){ src.setData(area); }
+    else {
+      _locMap.addSource('loc-area', { type:'geojson', data: area });
+      _locMap.addLayer({ id:'loc-area-fill', type:'fill', source:'loc-area', paint:{ 'fill-color':'#4f46e5', 'fill-opacity':.1 } });
+      _locMap.addLayer({ id:'loc-area-line', type:'line', source:'loc-area', paint:{ 'line-color':'#4f46e5', 'line-opacity':.5, 'line-width':1.5 } });
+    }
+    const vis = showArea ? 'visible' : 'none';
+    _locMap.setLayoutProperty('loc-area-fill','visibility',vis);
+    _locMap.setLayoutProperty('loc-area-line','visibility',vis);
+  };
+  if(!_locMap){
+    _locMap = new maplibregl.Map({
+      container: el, style: JSON.parse(styleText), center: ll, zoom,
+      attributionControl: false, dragRotate: false, pitchWithRotate: false, scrollZoom: false, fadeDuration: 0
+    });
+    _locMap.addControl(new maplibregl.AttributionControl({ compact:true }), 'bottom-right');
+    _locMap.touchZoomRotate.disableRotation();
+    _locMap.on('load', applyArea);
+    const pin = document.createElement('div');
+    pin.innerHTML = '<div class="loc-marker"><span class="loc-pulse"></span><span class="loc-dot"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg></span></div>';
+    _locMarker = new maplibregl.Marker({ element: pin.firstChild, anchor:'center' }).setLngLat(ll).addTo(_locMap);
+  } else {
+    _locMarker.setLngLat(ll);
+    _locMap.jumpTo({ center: ll, zoom });
+    if(_locMap.isStyleLoaded()) applyArea(); else _locMap.once('load', applyArea);
+  }
+  setLocState('ready');
+  setOpenLink(geo);
+  // The drawer is mid slide-up while the map is created, so re-measure once it settles.
+  setTimeout(() => { if(_locMap){ _locMap.resize(); _locMap.jumpTo({ center: ll, zoom }); } }, 280);
+}
+
+window.openLocationDrawer = async function(){
+  const text = (profileData.location || '').trim();
+  const overlay = document.getElementById('locDrawerOverlay');
+  if(!text || !overlay) return;
+  document.getElementById('locDrawerTitle').textContent = text;
+  setLocState('loading');
+  overlay.classList.add('show');
+  overlay.setAttribute('aria-hidden','false');
+  const seq = ++_locSeq;
+  try{
+    const [geo, , styleText] = await Promise.all([resolveProfileGeo(), loadMapLibre(), getBrandStyleText()]);
+    if(seq !== _locSeq) return;               // closed or reopened while loading
+    if(!geo){ setLocState('notfound'); return; }
+    try{ renderLocMap(geo, styleText); }
+    catch(err){                               // no WebGL (very old/low-end device)
+      console.warn('[location] map render failed:', err.message);
+      setLocState('nowebgl'); setOpenLink(geo);
+    }
+  }catch(e){
+    console.warn('[location] map failed:', e.message);
+    if(seq === _locSeq) setLocState('error');
+  }
+};
+
+window.closeLocationDrawer = function(){
+  _locSeq++;
+  const overlay = document.getElementById('locDrawerOverlay');
+  overlay?.classList.remove('show');
+  overlay?.setAttribute('aria-hidden','true');
+};
+
+document.getElementById('locDrawerOverlay')?.addEventListener('click', e => {
+  if(e.target.id === 'locDrawerOverlay') window.closeLocationDrawer();
+});
+document.addEventListener('keydown', e => { if(e.key === 'Escape') window.closeLocationDrawer(); });
+{
+  const locEl = document.getElementById('profileLocation');
+  locEl?.addEventListener('click', () => window.openLocationDrawer());
+  locEl?.addEventListener('keydown', e => {
+    if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); window.openLocationDrawer(); }
+  });
+}
+
+// "Use my current location" in Edit Profile. Reverse-geocodes the device position
+// to a "City, Country" label and keeps the CITY's centre point — the device's own
+// coordinates are never saved.
+window.detectMyLocation = function(){
+  const btn = document.getElementById('locDetectBtn');
+  const label = document.getElementById('locDetectLabel');
+  if(!navigator.geolocation){ showToast('This browser can\'t share your location — type your city instead'); return; }
+  const setBusy = busy => { btn.disabled = busy; label.textContent = busy ? 'Finding you…' : 'Use my current location'; };
+  setBusy(true);
+  navigator.geolocation.getCurrentPosition(async pos => {
+    try{
+      const dLat = pos.coords.latitude, dLng = pos.coords.longitude;
+      const r = await fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=10&addressdetails=1&accept-language=en&lat=' + dLat + '&lon=' + dLng);
+      if(!r.ok) throw new Error('reverse ' + r.status);
+      const j = await r.json();
+      const a = j.address || {};
+      const place = a.city || a.town || a.village || a.municipality || a.county || a.state_district || a.state || '';
+      let text = [place, a.country].filter(Boolean).join(', ').slice(0, 60);
+      if(!text) throw new Error('no place name');
+      const cLat = parseFloat(j.lat), cLng = parseFloat(j.lon);
+      const lat = isFinite(cLat) ? _round2(cLat) : Math.round(dLat * 10) / 10;
+      const lng = isFinite(cLng) ? _round2(cLng) : Math.round(dLng * 10) / 10;
+      document.getElementById('eLocation').value = text;
+      window._pendingGeo = { text, lat, lng, zoom: 11 };
+      showToast('Location set to ' + text);
+    }catch(e){
+      console.warn('[location] detect failed:', e.message);
+      showToast('Couldn\'t work out your city — type it instead');
+    }finally{ setBusy(false); }
+  }, err => {
+    setBusy(false);
+    showToast(err && err.code === 1
+      ? 'Location access is off — allow it in your browser settings, or type your city'
+      : 'Couldn\'t get your location — type your city instead');
+  }, { enableHighAccuracy:false, timeout:10000, maximumAge:600000 });
+};
+
 function openFounderDrawer(){
   try{
     const fc = profileData.foundingCreator;
@@ -1486,9 +1806,18 @@ function renderProfileHeader(){
     document.getElementById('profileBio').style.display='block';
   }
   // location
-  if(profileData.location){
-    document.getElementById('profileLocationText').textContent = profileData.location;
-    document.getElementById('profileLocation').style.display='flex';
+  {
+    const locEl = document.getElementById('profileLocation');
+    if(profileData.location){
+      document.getElementById('profileLocationText').textContent = profileData.location;
+      locEl.style.display='flex';
+      locEl.classList.add('tappable');
+      locEl.setAttribute('role','button');
+      locEl.setAttribute('tabindex','0');
+      locEl.setAttribute('aria-label','Show '+profileData.location+' on the map');
+    } else {
+      locEl.style.display='none';
+    }
   }
   // contact info — shown to visitors only if the owner opted in; the owner
   // always sees their own (with a note), so they know it saved even when
@@ -2844,6 +3173,7 @@ window.openEditSheet = function(){
   document.getElementById('eBio').value = profileData.bio||'';
   updateBioCount();
   document.getElementById('eLocation').value = profileData.location||'';
+  window._pendingGeo = null;
   document.getElementById('eContactEmail').value = profileData.contactEmail || currentUser?.email || '';
   document.getElementById('eContactPhone').value = profileData.contactPhone || '';
   document.getElementById('eContactVisible').checked = !!profileData.contactVisible;
@@ -2998,6 +3328,18 @@ window.saveProfile = async function(){
     updatedAt: serverTimestamp()
   };
 
+  // ── Map pin for the location line. Cached coordinates are only kept while they
+  // still describe the saved location text; if the text changed (or was never
+  // geocoded) they're cleared here and re-resolved right after saving. ──
+  {
+    const pg = window._pendingGeo;
+    if(data.location && pg && pg.text === data.location){
+      data.locationLat = pg.lat; data.locationLng = pg.lng; data.locationZoom = pg.zoom; data.locationGeoFor = data.location;
+    } else if(!(data.location && data.location === (profileData.locationGeoFor||''))){
+      data.locationLat = null; data.locationLng = null; data.locationZoom = null; data.locationGeoFor = null;
+    }
+  }
+
   // Light validation — don't block saving the rest of the form over a
   // typo'd contact field, just refuse to save something obviously wrong.
   if(data.contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.contactEmail)){
@@ -3050,8 +3392,11 @@ window.saveProfile = async function(){
     })();
 
     Object.assign(profileData, data);
+    window._pendingGeo = null;
     closeEditSheet();
     renderProfileHeader();
+    // Resolve + cache the map pin in the background so visitors never have to geocode
+    if(data.location && typeof data.locationLat !== 'number'){ resolveProfileGeo().catch(()=>{}); }
 
     // ── Sync categories to localStorage (same key articles.html reads for "For You") ──
     if(newCategories.length){
@@ -3237,6 +3582,27 @@ document.getElementById('fbDrawerOverlay')?.addEventListener('click', (e) => {
   if(e.target.id === 'fbDrawerOverlay') e.currentTarget.classList.remove('show');
 });
 </script>
+
+<!-- Location map drawer — opened by tapping the location line under the bio -->
+<div class="fb-drawer-overlay" id="locDrawerOverlay" aria-hidden="true">
+  <div class="fb-drawer" role="dialog" aria-modal="true" aria-labelledby="locDrawerTitle">
+    <div class="fb-drawer-handle"></div>
+    <div class="fb-drawer-head">
+      <div class="fb-drawer-icon" style="background:linear-gradient(135deg,#4f46e5,#06b6d4)">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      </div>
+      <div style="min-width:0;flex:1">
+        <div class="fb-drawer-title loc-title" id="locDrawerTitle"></div>
+        <div class="fb-drawer-sub">Approximate area</div>
+      </div>
+    </div>
+    <div class="loc-map-wrap">
+      <div id="locMap"></div>
+      <div class="loc-map-state show" id="locMapState"></div>
+    </div>
+    <a class="loc-open-link" id="locOpenLink" href="#" target="_blank" rel="noopener" hidden>Open in Google Maps</a>
+  </div>
+</div>
 
 <!-- Shared MindShift account nav (renders the acct-nav-slot in the header) -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
