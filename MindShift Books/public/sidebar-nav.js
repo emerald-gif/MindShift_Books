@@ -336,3 +336,72 @@
     })();
   }
 })();
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   NIGERIA INDEPENDENCE DAY — 1 October 2026 ONLY
+   ──────────────────────────────────────────────────────────────────────
+   Two touches, both injected from this shared file so every page gets them:
+     • a small Nigerian flag next to the page title in the header
+     • a "Happy 66th Independence Day" card at the top of the side menu
+       (no close button — it simply stays up for the day)
+   It matches that exact date in Lagos time, so it switches itself off on
+   2 October and does NOT come back next year — swap in a new idea then.
+   No Firestore reads, no server calls.
+   ══════════════════════════════════════════════════════════════════════ */
+(function () {
+  try {
+    if (window.top !== window) return;                           // not inside iframes/embeds
+    var lagosDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Lagos' }).format(new Date());
+    if (lagosDate !== '2026-10-01') return;
+
+    var FLAG =
+      '<svg viewBox="0 0 30 20" width="100%" height="100%" preserveAspectRatio="none" aria-hidden="true">' +
+        '<rect width="10" height="20" fill="#008751"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#008751"/>' +
+      '</svg>';
+
+    var css = document.createElement('style');
+    css.textContent =
+      '.ng-flag{display:inline-flex;flex-shrink:0;width:24px;height:16px;border-radius:3px;overflow:hidden;font-style:normal;' +
+        'box-shadow:0 0 0 1px rgba(15,23,42,.16),0 1px 3px rgba(15,23,42,.12)}' +
+      '.ng-flag.big{width:34px;height:23px;border-radius:4px}' +
+      '.ng-side{display:flex;align-items:center;gap:12px;margin:0 0 14px;padding:12px 14px;border-radius:14px;' +
+        'background:linear-gradient(135deg,#e8f7ef,#fff);border:1.5px solid rgba(0,135,81,.28)}' +
+      '.ng-side .ng-t{font-size:13.5px;font-weight:800;color:#006b40;line-height:1.25}' +
+      '.ng-side .ng-s{font-size:12px;color:#4b5563;margin-top:2px}';
+    document.head.appendChild(css);
+
+    function ordinal(n) {
+      var s = (n % 100 >= 11 && n % 100 <= 13) ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] || 'th');
+      return n + s;
+    }
+
+    function mount() {
+      // Header: flag after the page title
+      var titles = document.querySelectorAll('header .header-top h1');
+      for (var i = 0; i < titles.length; i++) {
+        if (titles[i].querySelector('.ng-flag')) continue;
+        var f = document.createElement('i');
+        f.className = 'ng-flag';
+        f.setAttribute('role', 'img');
+        f.setAttribute('aria-label', 'Nigerian flag');
+        f.innerHTML = FLAG;
+        titles[i].appendChild(f);
+      }
+      // Side menu: greeting card at the top of the list (not dismissible)
+      var scroll = document.querySelector('#sidebar .sb-scroll');
+      if (scroll && !scroll.querySelector('.ng-side')) {
+        var card = document.createElement('div');
+        card.className = 'ng-side';
+        card.setAttribute('role', 'note');
+        card.innerHTML =
+          '<i class="ng-flag big" aria-hidden="true">' + FLAG + '</i>' +
+          '<div><div class="ng-t">Happy ' + ordinal(2026 - 1960) + ' Independence Day, Nigeria!</div>' +
+          '<div class="ng-s">Proudly Nigerian \u00B7 1 October 2026</div></div>';
+        scroll.insertBefore(card, scroll.firstChild);
+      }
+    }
+    mount();
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount);
+  } catch (e) { /* a seasonal touch must never break a page */ }
+})();
