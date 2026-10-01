@@ -1582,10 +1582,14 @@ function shuffleArray(arr){
 async function refreshForYou(){
   showSkeletons(4);
   try{
+    // Capped at one page (same size as the normal feed load) — this used to
+    // fetch EVERY published article on each re-tap, so its read cost grew
+    // with every article published. Older ones still arrive via infinite scroll.
     const q = query(
       collection(db,'articles'),
       where('status','==','published'),
-      orderBy('publishedAt','desc')
+      orderBy('publishedAt','desc'),
+      limit(ARTICLES_PAGE_SIZE)
     );
     // No `kind` filter here either — same reasoning as loadRecentReposts:
     // filtering client-side avoids needing a composite index.
@@ -1611,6 +1615,10 @@ async function refreshForYou(){
         };
       });
       ARTICLES = shuffleArray(fresh);
+      // Reset the infinite-scroll cursor to match what we just loaded —
+      // otherwise load-more would resume from the previous page's cursor.
+      _articlesLastDoc = snap.docs[snap.docs.length-1];
+      _articlesExhausted = snap.docs.length < ARTICLES_PAGE_SIZE;
     } else {
       // No new data — just shuffle what we already have
       ARTICLES = shuffleArray(ARTICLES);
