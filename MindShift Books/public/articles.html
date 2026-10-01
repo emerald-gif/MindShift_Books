@@ -99,18 +99,6 @@ main{max-width:1100px;margin:0 auto}
 .hbg-signout{color:var(--red) !important}
 .hbg-signout:hover{background:#fff1f1 !important;color:var(--red) !important}
 
-/* ── HERO ── */
-.hero{background:#fff;padding:28px 16px 0;border-bottom:1px solid var(--border);position:relative;transition:opacity .25s ease, max-height .25s ease;overflow:hidden}
-.hero.hero-hidden{opacity:0;max-height:0;padding-top:0;padding-bottom:0;border-bottom:none;pointer-events:none}
-.hero-inner{max-width:480px;margin:0 auto;position:relative}
-.hero-close{position:absolute;top:0;right:0;width:28px;height:28px;border-radius:50%;background:#f4f4f6;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--sub);z-index:2}
-.hero-close svg{width:14px;height:14px}
-.hero-close:active{background:#e9e9ee}
-.hero-pill{display:inline-flex;align-items:center;gap:5px;background:rgba(37,99,235,.1);color:var(--p);font-size:11px;font-weight:800;padding:4px 11px;border-radius:99px;letter-spacing:.4px;margin-bottom:12px}
-.hero-pill svg{width:12px;height:12px}
-.hero h1{font-size:26px;font-weight:900;line-height:1.2;letter-spacing:-.5px;margin-bottom:8px}
-.hero h1 span{color:var(--p)}
-.hero-sub{font-size:13.5px;color:var(--sub);line-height:1.65;margin-bottom:20px}
 .search-row{display:flex;gap:8px;margin-bottom:0}
 .search-wrap{flex:1;position:relative}
 .search-ico{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--mute)}
@@ -203,11 +191,18 @@ main{max-width:1100px;margin:0 auto}
 /* ── SKELETON ── */
 @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
 .skel{background:linear-gradient(90deg,#eef2ff 25%,#e0e7ff 50%,#eef2ff 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:8px}
-.skel-card{display:flex;flex-direction:row;align-items:flex-start;gap:14px;background:#fff;padding:20px 16px;border-bottom:1px solid var(--border)}
-.skel-card-body{flex:1;display:flex;flex-direction:column;gap:10px}
-.skel-av{width:28px;height:28px;border-radius:50%;flex-shrink:0}
-.skel-author-row{display:flex;align-items:center;gap:8px}
-.skel-img{width:88px;height:88px;border-radius:10px;flex-shrink:0}
+.skel-card{display:flex;flex-direction:column;background:#fff;padding:20px 16px;border-bottom:1px solid var(--border);pointer-events:none}
+.skel-head{display:flex;align-items:center;gap:7px}
+.skel-av{width:24px;height:24px;border-radius:50%;flex-shrink:0}
+.skel-sp{flex:1}
+.skel-hero{position:relative;width:100%;aspect-ratio:16/9;border-radius:14px;margin-top:10px;overflow:hidden}
+.skel-hero-ov{position:absolute;left:0;right:0;bottom:0;padding:14px 14px 12px;display:flex;flex-direction:column;gap:8px}
+.skel-hero-meta{display:flex;align-items:center;gap:8px}
+.skel-hero .skel-on{background:rgba(255,255,255,.7);border-radius:99px;animation:skelPulse 1.4s ease-in-out infinite}
+.skel-hero .skel-on.ln{border-radius:6px}
+@keyframes skelPulse{0%,100%{opacity:.55}50%{opacity:.95}}
+.skel-foot{display:flex;align-items:center;gap:18px;margin-top:14px;padding-left:2px}
+.skel-ic{width:18px;height:18px;border-radius:6px;flex-shrink:0}
 
 @keyframes hpop{0%{transform:scale(1)}50%{transform:scale(1.45)}100%{transform:scale(1)}}
 .acard-save{display:flex;align-items:center;gap:6px;padding:6px 9px;background:none;border:none;cursor:pointer;color:var(--mute);transition:color .18s;border-radius:9px;font-size:13.5px;font-weight:700;-webkit-tap-highlight-color:transparent;margin-left:auto}
@@ -651,8 +646,8 @@ main{max-width:1100px;margin:0 auto}
       <button type="button" class="icon-btn" onclick="openSearchScreen()" aria-label="Search">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       </button>
-      <div class="notif-wrap" id="notifWrap" style="display:none">
-        <button type="button" class="icon-btn" id="notifBtn" onclick="openNotifPanel()" aria-label="Notifications">
+      <div class="notif-wrap" id="notifWrap">
+        <button type="button" class="icon-btn" id="notifBtn" onclick="handleBellClick()" aria-label="Notifications">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
           <span class="notif-badge" id="notifBadge" style="display:none;position:absolute;top:2px;right:2px;background:#ef4444;color:#fff;font-size:10px;font-weight:800;min-width:16px;height:16px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;">0</span>
         </button>
@@ -679,42 +674,6 @@ main{max-width:1100px;margin:0 auto}
 </script>
 <!-- ══ /SHARED HEADER + SIDEBAR ══ -->
 
-<!-- HERO -->
-<div class="hero" id="heroBanner">
-  <div class="hero-inner">
-    <button class="hero-close" id="heroCloseBtn" type="button" aria-label="Dismiss">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
-    </button>
-    <h1>Ideas Worth<br><span>Thinking About</span></h1>
-    <p class="hero-sub">Mindset, money, productivity, relationships, and more — from our writers and yours.</p>
-  </div>
-</div>
-<script>
-  /* Hide the hero banner (if this account already dismissed it) BEFORE the
-     rest of the page loads — synchronously, right here, not inside the
-     type="module" script further down. Module scripts are always deferred
-     until after the whole document has parsed, so the old version of this
-     check ran too late: the banner would flash on screen for a moment on
-     every reload before JS caught up and hid it again. Doing it here, in a
-     plain blocking <script> right next to the markup it affects, closes
-     that gap. The type="module" block below still runs its own version
-     after Firebase confirms who's actually logged in — that's still needed
-     to correct things if the cached account differs from the real one —
-     this is just the instant, no-flash version for the common case. */
-  (function(){
-    try{
-      var lastUid = localStorage.getItem('mindshift_hero_last_uid');
-      if(lastUid !== null){
-        var key = 'mindshift_hero_dismissed_' + (lastUid === 'guest' ? 'guest' : lastUid);
-        if(localStorage.getItem(key) === '1'){
-          var hero = document.getElementById('heroBanner');
-          if(hero) hero.classList.add('hero-hidden');
-        }
-      }
-    }catch(e){}
-  })();
-</script>
-
 <!-- FILTER PILLS (rendered from window.MSB_CATEGORIES — see renderFilterPills()) -->
 <div class="filter-row" id="filterRow" style="display:none">
   <span class="fpill active" data-cat="all">All</span>
@@ -732,15 +691,15 @@ main{max-width:1100px;margin:0 auto}
   </div>
 </div>
 <script>
-  /* Same fix as the hero banner above, same reason: hide this BEFORE the
+  /* Hide this BEFORE the
      rest of the page loads if we already know (from last time) that the
      visitor is logged in — synchronously, right here, not inside the
      type="module" script further down. Without this, the bar has no
      default `display:none`, so it's visible in the very first paint for
      every returning logged-in user and only gets hidden a beat later once
      Firebase confirms the session — that's the flash the module-script
-     version runs too late to prevent. mindshift_hero_last_uid already
-     tracks the last known uid (or 'guest') from the hero fix; reuse it
+     version runs too late to prevent. mindshift_hero_last_uid
+     tracks the last known uid (or 'guest') on this browser; reuse it
      here rather than adding a second cache. The module script below still
      re-checks the real auth state and corrects this if it's wrong (e.g. a
      different account logged in since, or the cache is stale). */
@@ -799,56 +758,70 @@ main{max-width:1100px;margin:0 auto}
        so a cold visit (or a slow connection) never shows blank white space
        while the module script downloads/parses/kicks off its fetches. -->
   <div class="skel-card">
-    <div class="skel-card-body">
-      <div class="skel-author-row">
-        <div class="skel skel-av"></div>
-        <div class="skel" style="width:90px;height:12px"></div>
-        <div class="skel" style="width:40px;height:12px;margin-left:4px"></div>
-      </div>
-      <div class="skel" style="height:16px;width:90%"></div>
-      <div class="skel" style="height:14px;width:75%"></div>
-      <div class="skel" style="height:12px;width:50%;margin-top:4px"></div>
+    <div class="skel-head">
+      <div class="skel skel-av"></div>
+      <div class="skel" style="width:96px;height:11px"></div>
+      <div class="skel" style="width:34px;height:11px"></div>
+      <div class="skel-sp"></div>
+      <div class="skel" style="width:54px;height:24px;border-radius:99px"></div>
+      <div class="skel" style="width:18px;height:18px;border-radius:50%"></div>
     </div>
-    <div class="skel skel-img"></div>
+    <div class="skel skel-hero">
+      <div class="skel-hero-ov">
+        <div class="skel-hero-meta"><div class="skel-on" style="width:58px;height:16px"></div><div class="skel-on" style="width:48px;height:10px"></div></div>
+        <div class="skel-on ln" style="width:92%;height:15px"></div>
+        <div class="skel-on ln" style="width:64%;height:15px"></div>
+      </div>
+    </div>
+    <div class="skel-foot">
+      <div class="skel skel-ic"></div><div class="skel skel-ic"></div><div class="skel skel-ic"></div>
+      <div class="skel-sp"></div>
+      <div class="skel skel-ic"></div><div class="skel skel-ic"></div>
+    </div>
   </div>
   <div class="skel-card">
-    <div class="skel-card-body">
-      <div class="skel-author-row">
-        <div class="skel skel-av"></div>
-        <div class="skel" style="width:90px;height:12px"></div>
-        <div class="skel" style="width:40px;height:12px;margin-left:4px"></div>
-      </div>
-      <div class="skel" style="height:16px;width:90%"></div>
-      <div class="skel" style="height:14px;width:75%"></div>
-      <div class="skel" style="height:12px;width:50%;margin-top:4px"></div>
+    <div class="skel-head">
+      <div class="skel skel-av"></div>
+      <div class="skel" style="width:96px;height:11px"></div>
+      <div class="skel" style="width:34px;height:11px"></div>
+      <div class="skel-sp"></div>
+      <div class="skel" style="width:54px;height:24px;border-radius:99px"></div>
+      <div class="skel" style="width:18px;height:18px;border-radius:50%"></div>
     </div>
-    <div class="skel skel-img"></div>
+    <div class="skel skel-hero">
+      <div class="skel-hero-ov">
+        <div class="skel-hero-meta"><div class="skel-on" style="width:58px;height:16px"></div><div class="skel-on" style="width:48px;height:10px"></div></div>
+        <div class="skel-on ln" style="width:92%;height:15px"></div>
+        <div class="skel-on ln" style="width:64%;height:15px"></div>
+      </div>
+    </div>
+    <div class="skel-foot">
+      <div class="skel skel-ic"></div><div class="skel skel-ic"></div><div class="skel skel-ic"></div>
+      <div class="skel-sp"></div>
+      <div class="skel skel-ic"></div><div class="skel skel-ic"></div>
+    </div>
   </div>
   <div class="skel-card">
-    <div class="skel-card-body">
-      <div class="skel-author-row">
-        <div class="skel skel-av"></div>
-        <div class="skel" style="width:90px;height:12px"></div>
-        <div class="skel" style="width:40px;height:12px;margin-left:4px"></div>
-      </div>
-      <div class="skel" style="height:16px;width:90%"></div>
-      <div class="skel" style="height:14px;width:75%"></div>
-      <div class="skel" style="height:12px;width:50%;margin-top:4px"></div>
+    <div class="skel-head">
+      <div class="skel skel-av"></div>
+      <div class="skel" style="width:96px;height:11px"></div>
+      <div class="skel" style="width:34px;height:11px"></div>
+      <div class="skel-sp"></div>
+      <div class="skel" style="width:54px;height:24px;border-radius:99px"></div>
+      <div class="skel" style="width:18px;height:18px;border-radius:50%"></div>
     </div>
-    <div class="skel skel-img"></div>
-  </div>
-  <div class="skel-card">
-    <div class="skel-card-body">
-      <div class="skel-author-row">
-        <div class="skel skel-av"></div>
-        <div class="skel" style="width:90px;height:12px"></div>
-        <div class="skel" style="width:40px;height:12px;margin-left:4px"></div>
+    <div class="skel skel-hero">
+      <div class="skel-hero-ov">
+        <div class="skel-hero-meta"><div class="skel-on" style="width:58px;height:16px"></div><div class="skel-on" style="width:48px;height:10px"></div></div>
+        <div class="skel-on ln" style="width:92%;height:15px"></div>
+        <div class="skel-on ln" style="width:64%;height:15px"></div>
       </div>
-      <div class="skel" style="height:16px;width:90%"></div>
-      <div class="skel" style="height:14px;width:75%"></div>
-      <div class="skel" style="height:12px;width:50%;margin-top:4px"></div>
     </div>
-    <div class="skel skel-img"></div>
+    <div class="skel-foot">
+      <div class="skel skel-ic"></div><div class="skel skel-ic"></div><div class="skel skel-ic"></div>
+      <div class="skel-sp"></div>
+      <div class="skel skel-ic"></div><div class="skel skel-ic"></div>
+    </div>
   </div>
 </div>
 <div class="no-res" id="noRes">
@@ -1026,16 +999,8 @@ const repost = initRepost({
   fs: { doc, getDoc, setDoc, deleteDoc, addDoc, collection, updateDoc, increment, serverTimestamp }
 });
 
-/* ── HERO BANNER DISMISS (per-account, persists across reloads) ── */
+/* ── LAST KNOWN ACCOUNT (used to avoid first-paint flashes for returning users) ── */
 const HERO_LASTUID_KEY = 'mindshift_hero_last_uid';
-function dismissKeyFor(feature, uid){ return `mindshift_${feature}_dismissed_${uid || 'guest'}`; }
-function isDismissed(feature, uid){
-  try{ return localStorage.getItem(dismissKeyFor(feature, uid)) === '1'; }catch{ return false; }
-}
-function markDismissed(feature, uid){
-  try{ localStorage.setItem(dismissKeyFor(feature, uid), '1'); }catch{}
-}
-function isHeroDismissed(uid){ return isDismissed('hero', uid); }
 
 // ── VISITOR PROMO POPUP (guests only) ───────────────────────────────────
 // Shows once per calendar day per browser. Closing it (X or overlay tap)
@@ -1060,25 +1025,6 @@ window.closeVisitorPromo = function(){
   if(overlay) overlay.classList.remove('show');
   if(card) card.classList.remove('show');
 };
-function markHeroDismissed(uid){ markDismissed('hero', uid); }
-function setHeroVisible(visible){
-  const hero = document.getElementById('heroBanner');
-  if(hero) hero.classList.toggle('hero-hidden', !visible);
-}
-// Best-effort early hide using the last-known account on this browser, so returning
-// users don't see a flash of the banner before auth resolves.
-try{
-  const lastUid = localStorage.getItem(HERO_LASTUID_KEY);
-  if(lastUid !== null){
-    const uidForCheck = lastUid === 'guest' ? null : lastUid;
-    if(isHeroDismissed(uidForCheck)) setHeroVisible(false);
-  }
-}catch{}
-document.getElementById('heroCloseBtn')?.addEventListener('click', ()=>{
-  markHeroDismissed(currentUser ? currentUser.uid : null);
-  setHeroVisible(false);
-});
-
 /* ── FILTER PILLS (from window.MSB_CATEGORIES, article-categories.js) ── */
 function renderFilterPills(){
   const row = document.getElementById('filterRow');
@@ -1100,7 +1046,10 @@ window.handleArticleSearchInput = function(val){
 
 /* ── INVITE FRIENDS CARD (shown inline in feed, once per cooldown window) ── */
 const INVITE_AFTER_INDEX = 3; // appears after the 3rd article in the feed
-const INVITE_COOLDOWN_MS = 24 * 60 * 60 * 1000; // once per day. Set to 48*60*60*1000 for once every 2 days.
+// Shown once per calendar day: first visit of each day gets it, and it stays put through this page
+// visit's re-renders (filters, likes, late-loading feeds) until dismissed. Next day it comes back.
+let _inviteActive = false;   // true once it has been placed this page visit
+let _inviteDismissed = false;
 function inviteCardHtml(){
   return `
   <div class="invite-card" id="inviteCard">
@@ -1115,28 +1064,34 @@ function inviteCardHtml(){
     <button class="invite-btn" onclick="handleInviteFriends()">Invite Friends</button>
   </div>`;
 }
-function inviteLastShownKey(uid){ return `mindshift_invite_lastshown_${uid || 'guest'}`; }
+// One marker per browser (not per account): the first render of a visit can happen before sign-in resolves,
+// so keying by uid would let the same card appear a second time after logging in.
+function inviteLastShownKey(uid){ return 'mindshift_invite_lastshown_day'; }
 function shouldShowInvite(uid){
-  try{
-    const last = parseInt(localStorage.getItem(inviteLastShownKey(uid)) || '0', 10);
-    return (Date.now() - last) >= INVITE_COOLDOWN_MS;
-  }catch{ return true; }
+  try{ return localStorage.getItem(inviteLastShownKey(uid)) !== new Date().toDateString(); }
+  catch{ return true; }
 }
 function markInviteShown(uid){
-  try{ localStorage.setItem(inviteLastShownKey(uid), String(Date.now())); }catch{}
+  try{ localStorage.setItem(inviteLastShownKey(uid), new Date().toDateString()); }catch{}
 }
 // Splice the invite card into an array of card-html strings, right after INVITE_AFTER_INDEX items.
-// Only included once per cooldown window (shared across For You + Following), and only if the feed is long enough.
+// Today's first render decides (and records) whether it shows; later re-renders on the same page
+// visit keep it in place instead of dropping it, and a dismissed card stays dismissed.
 function withInviteCard(cardsArr, uid){
+  if(_inviteDismissed) return cardsArr;
   if(cardsArr.length <= INVITE_AFTER_INDEX) return cardsArr;
-  if(!shouldShowInvite(uid)) return cardsArr;
-  markInviteShown(uid);
+  if(!_inviteActive){
+    if(!shouldShowInvite(uid)) return cardsArr;
+    _inviteActive = true;
+    markInviteShown(uid);
+  }
   const out = cardsArr.slice();
   out.splice(INVITE_AFTER_INDEX, 0, inviteCardHtml());
   return out;
 }
 window.dismissInviteCard = function(){
-  markInviteShown(currentUser ? currentUser.uid : null); // resets the cooldown clock from the moment they close it
+  _inviteDismissed = true;
+  markInviteShown(currentUser ? currentUser.uid : null);
   document.querySelectorAll('#inviteCard').forEach(el=>el.remove());
 };
 window.handleInviteFriends = async function(){
@@ -1154,7 +1109,9 @@ window.handleInviteFriends = async function(){
    same shell/behavior as the invite card but its own class + cooldown key
    so the two don't fight over the same slot or reset each other's timer. */
 const BOOK_PROMO_AFTER_INDEX = 7; // appears after the 7th feed item — separate from the invite card's slot at index 3
-const BOOK_PROMO_COOLDOWN_MS = 24 * 60 * 60 * 1000; // once per day
+// Same once-per-calendar-day behaviour as the invite card (see above).
+let _bookPromoActive = false;
+let _bookPromoDismissed = false;
 function bookPromoCardHtml(){
   return `
   <div class="book-promo-card" id="bookPromoCard">
@@ -1169,27 +1126,30 @@ function bookPromoCardHtml(){
     <button class="book-promo-btn" onclick="handleExploreBooks()">Explore Books</button>
   </div>`;
 }
-function bookPromoLastShownKey(uid){ return `mindshift_bookpromo_lastshown_${uid || 'guest'}`; }
+function bookPromoLastShownKey(uid){ return 'mindshift_bookpromo_lastshown_day'; }
 function shouldShowBookPromo(uid){
-  try{
-    const last = parseInt(localStorage.getItem(bookPromoLastShownKey(uid)) || '0', 10);
-    return (Date.now() - last) >= BOOK_PROMO_COOLDOWN_MS;
-  }catch{ return true; }
+  try{ return localStorage.getItem(bookPromoLastShownKey(uid)) !== new Date().toDateString(); }
+  catch{ return true; }
 }
 function markBookPromoShown(uid){
-  try{ localStorage.setItem(bookPromoLastShownKey(uid), String(Date.now())); }catch{}
+  try{ localStorage.setItem(bookPromoLastShownKey(uid), new Date().toDateString()); }catch{}
 }
 // Splice the book promo card into an array of card-html strings, right after BOOK_PROMO_AFTER_INDEX items.
 function withBookPromoCard(cardsArr, uid){
+  if(_bookPromoDismissed) return cardsArr;
   if(cardsArr.length <= BOOK_PROMO_AFTER_INDEX) return cardsArr;
-  if(!shouldShowBookPromo(uid)) return cardsArr;
-  markBookPromoShown(uid);
+  if(!_bookPromoActive){
+    if(!shouldShowBookPromo(uid)) return cardsArr;
+    _bookPromoActive = true;
+    markBookPromoShown(uid);
+  }
   const out = cardsArr.slice();
   out.splice(BOOK_PROMO_AFTER_INDEX, 0, bookPromoCardHtml());
   return out;
 }
 window.dismissBookPromoCard = function(){
-  markBookPromoShown(currentUser ? currentUser.uid : null); // resets the cooldown clock from the moment they close it
+  _bookPromoDismissed = true;
+  markBookPromoShown(currentUser ? currentUser.uid : null);
   document.querySelectorAll('#bookPromoCard').forEach(el=>el.remove());
 };
 window.handleExploreBooks = function(){
@@ -1249,18 +1209,88 @@ function esc(str){
 }
 
 /* ── AUTH ── */
+// Shared skeleton card (mirrors a real article card). Must be defined BEFORE the first showSkeletons() call below.
+const SKEL_CARD_HTML = `
+    <div class="skel-card">
+      <div class="skel-head">
+        <div class="skel skel-av"></div>
+        <div class="skel" style="width:96px;height:11px"></div>
+        <div class="skel" style="width:34px;height:11px"></div>
+        <div class="skel-sp"></div>
+        <div class="skel" style="width:54px;height:24px;border-radius:99px"></div>
+        <div class="skel" style="width:18px;height:18px;border-radius:50%"></div>
+      </div>
+      <div class="skel skel-hero">
+        <div class="skel-hero-ov">
+          <div class="skel-hero-meta"><div class="skel-on" style="width:58px;height:16px"></div><div class="skel-on" style="width:48px;height:10px"></div></div>
+          <div class="skel-on ln" style="width:92%;height:15px"></div>
+          <div class="skel-on ln" style="width:64%;height:15px"></div>
+        </div>
+      </div>
+      <div class="skel-foot">
+        <div class="skel skel-ic"></div><div class="skel skel-ic"></div><div class="skel skel-ic"></div>
+        <div class="skel-sp"></div>
+        <div class="skel skel-ic"></div><div class="skel skel-ic"></div>
+      </div>
+    </div>`;
 // Show skeleton immediately while auth + data loads
 showSkeletons();
 window.__msbBooted = true; // lets the safety net at the bottom of the page know this script actually ran
+try{ sessionStorage.removeItem('msb_boot_reload'); }catch(e){}
 
 // Start fetching the feed right away. Articles/posts are public-read, so there is
 // no reason to wait for Firebase Auth (which can be slow on a cold visit) — and,
 // for signed-in users, no reason to wait for their saved/liked/profile reads
 // either. onAuthStateChanged below re-renders once those arrive.
 let _feedKickedOff = false;
+// ── INSTANT FEED (stale-while-revalidate) ───────────────────────────────
+// The last feed that loaded successfully is kept in localStorage. On the next visit — and above all
+// when coming back after a long time away, when the connection is cold — it's painted immediately
+// while the real fetch runs in the background, so the page never waits on the network to show
+// something. When fresh data lands it's merged in WITHOUT reshuffling what's already on screen
+// (new items go to the top; see stableMergeOrder).
+const FEED_CACHE_KEY = 'msb_feed_cache_v1';
+let _feedKeepOrder = false;   // next fresh load should merge into the current order instead of reshuffling
+function saveFeedCache(){
+  try{
+    const payload = { t: Date.now(), a: ARTICLES.slice(0,20), p: POSTS.slice(0,20), r: REPOSTS.slice(0,12) };
+    const str = JSON.stringify(payload);
+    if(str.length < 600000) localStorage.setItem(FEED_CACHE_KEY, str);
+  }catch(e){}
+}
+function restoreFeedFromCache(){
+  if(ARTICLES.length || POSTS.length || REPOSTS.length) return false;
+  try{
+    const raw = localStorage.getItem(FEED_CACHE_KEY);
+    if(!raw) return false;
+    const c = JSON.parse(raw);
+    if(!c || !c.t || Date.now() - c.t > 7*24*60*60*1000) return false;
+    const a = Array.isArray(c.a) ? c.a : [], p = Array.isArray(c.p) ? c.p : [], r = Array.isArray(c.r) ? c.r : [];
+    if(!a.length && !p.length && !r.length) return false;
+    ARTICLES = a; POSTS = p; REPOSTS = r;
+    _feedKeepOrder = true;
+    rebuildMergedFeedOrder();
+    renderGrid();
+    return true;
+  }catch(e){ return false; }
+}
+// Fresh items keep the position they already have on screen; anything new goes on top
+// (or at the end if the reader has already scrolled down); anything gone from the server drops out.
+function stableMergeOrder(oldOrder){
+  const fresh = [...getFiltered().map(a=>({...a, type:'article'})), ...POSTS, ...REPOSTS];
+  const byKey = new Map(fresh.map(x=>[x.type+':'+x.id, x]));
+  const kept = [];
+  oldOrder.forEach(o=>{
+    const k = o.type+':'+o.id, f = byKey.get(k);
+    if(f){ kept.push(f); byKey.delete(k); }
+  });
+  const added = [...byKey.values()].sort((a,b)=>_feedItemTime(b)-_feedItemTime(a));
+  return window.scrollY > 200 ? [...kept, ...added] : [...added, ...kept];
+}
 function kickOffFeed(){
   if(_feedKickedOff) return;
   _feedKickedOff = true;
+  restoreFeedFromCache();
   loadFeedBatch([loadPublishedArticles, loadPublishedPosts, loadRecentReposts]);
 }
 setTimeout(kickOffFeed, 0); // after the module finishes evaluating, so every `let` below is initialised
@@ -1366,7 +1396,6 @@ onAuthStateChanged(auth, async user => {
   else { _myFollowingCache = null; syncFollowPills(); }
   try{
     localStorage.setItem(HERO_LASTUID_KEY, user ? user.uid : 'guest');
-    setHeroVisible(!isHeroDismissed(user ? user.uid : null));
   }catch{}
   // Sidebar auth-only / guest-only sections (My Insights, Saved Articles, sign-up CTA)
   const sbProfile = document.getElementById('sbProfileLink');
@@ -1415,7 +1444,7 @@ onAuthStateChanged(auth, async user => {
     }
   } else {
     if(gBar) gBar.style.display='flex';
-    if(nw) nw.style.display='none';
+    if(nw) nw.style.display='block';   // bell stays visible for guests — tapping it asks them to log in / sign up
     savedSet.clear(); likedSet.clear();
     notif.clearNotifications();
     userCategories = [];
@@ -1531,11 +1560,27 @@ document.addEventListener('visibilitychange', ()=>{
   _feedHiddenAt = 0;
   ensureFeedLoaded();
   ensureFollowingLoaded();
-  // Nothing looked stuck above, but a long-idle tab holds a dead Firestore
-  // socket regardless — warm it now so the next read (pagination, a like, a
-  // tab switch) doesn't hang waiting to notice that for itself.
-  if(away > 5*60*1000) reconnectFirestore();
+  // Whatever is on screen stays put. A tab that's been away holds a dead Firestore socket, so
+  // reconnect in the background (and quietly pull anything new after a longer absence).
+  if(away > 30*1000) softRefreshFeed(away);
 });
+window.addEventListener('online', ()=>{ ensureFeedLoaded(); ensureFollowingLoaded(); });
+
+let _softRefreshing = false;
+async function softRefreshFeed(away){
+  if(_softRefreshing) return;
+  _softRefreshing = true;
+  try{
+    // Reconnect first, but never let a hung reconnect hold things up for more than 4s.
+    await Promise.race([Promise.resolve(reconnectFirestore()), new Promise(r=>setTimeout(r, 4000))]);
+    if(away < 2*60*1000) return;                                   // short absence: reconnecting was enough
+    if(ARTICLES.length > ARTICLES_PAGE_SIZE) return;               // reader has paged deep — don't pull the list out from under them
+    const grid = document.getElementById('grid');
+    if(!grid || grid.querySelector('.skel-card') || grid.querySelector('.no-res')) return; // the watchdog owns that case
+    _feedKeepOrder = true;                                         // merge new items in, no reshuffle
+    await loadFeedBatch([loadPublishedArticles, loadPublishedPosts, loadRecentReposts]);
+  }catch(e){} finally{ _softRefreshing = false; }
+}
 
 window.retryLoadFeed = function(){
   showSkeletons(4);
@@ -1680,12 +1725,7 @@ async function renderFollowingTab(fresh = false){
   }
   // Show skeleton only on first load, not on pull-to-refresh
   if(!fresh){
-    feed.innerHTML=`<div style="padding:16px 16px">${Array(3).fill(0).map(()=>`
-      <div class="skel-card" style="margin-bottom:1px;padding:20px 0"><div class="skel-card-body">
-        <div class="skel-author-row"><div class="skel skel-av"></div><div class="skel" style="width:120px;height:12px"></div></div>
-        <div class="skel" style="height:16px;width:88%;margin-top:10px"></div>
-        <div class="skel" style="height:13px;width:68%;margin-top:7px"></div>
-      </div><div class="skel skel-img"></div></div>`).join('')}</div>`;
+    feed.innerHTML = SKEL_CARD_HTML.repeat(3);
   }
 
   try{
@@ -2465,21 +2505,7 @@ function getFiltered(){
 function showSkeletons(count=4){
   const grid = document.getElementById('grid');
   if(!grid) return;
-  grid.innerHTML = Array.from({length:count}).map(()=>`
-    <div class="skel-card">
-      <div class="skel-card-body">
-        <div class="skel-author-row">
-          <div class="skel skel-av"></div>
-          <div class="skel" style="width:90px;height:12px"></div>
-          <div class="skel" style="width:40px;height:12px;margin-left:4px"></div>
-        </div>
-        <div class="skel" style="height:16px;width:90%"></div>
-        <div class="skel" style="height:14px;width:75%"></div>
-        <div class="skel" style="height:12px;width:50%;margin-top:4px"></div>
-      </div>
-      <div class="skel skel-img"></div>
-    </div>
-  `).join('');
+  grid.innerHTML = SKEL_CARD_HTML.repeat(count);
 }
 
 // The actual on-screen order for the unfiltered "All" feed. Kept as its own
@@ -3286,7 +3312,9 @@ function probablySignedIn(){
 }
 
 function followPillHtml(uid, name, isMindshift){
-  if(!uid || isMindshift || (currentUser && uid === currentUser.uid)) return '';
+  // MindShift Books' own content is followable too — its account id is 'official'.
+  if(isMindshift) uid = 'official';
+  if(!uid || (currentUser && uid === currentUser.uid)) return '';
   // Signed in (or probably, before Firebase answers) but the follow list isn't loaded yet → start hidden;
   // syncFollowPills() reveals it once we know, so people you already follow never see a flash of "Follow".
   const c = followCache();
@@ -3387,8 +3415,8 @@ async function loadPublishedArticles(){
       orderBy('publishedAt','desc'),
       limit(ARTICLES_PAGE_SIZE)
     );
-    const snap = await rgetDocs(q, { tries: 1, timeoutMs: 12000 });
-    if(snap.empty) return true; // nothing published yet — empty state from initial renderGrid() stays up; a real, successful "nothing" is not a failure
+    const snap = await rgetDocs(q, { tries: 2, timeoutMs: 7000 });
+    if(snap.empty){ ARTICLES = []; return true; } // genuinely nothing published — also clears anything painted from the cache
     // Fully replace with Firestore data — what admin approves is what shows
     ARTICLES = snap.docs.map(mapArticleDoc);
     _articlesLastDoc = snap.docs[snap.docs.length-1];
@@ -3455,7 +3483,7 @@ async function loadPublishedPosts(){
       orderBy('publishedAt','desc'),
       limit(60)
     );
-    const snap = await rgetDocs(q, { tries: 1, timeoutMs: 12000 });
+    const snap = await rgetDocs(q, { tries: 2, timeoutMs: 7000 });
     POSTS = snap.docs.map(d=>{
       const x = d.data();
       return {
@@ -3498,7 +3526,7 @@ async function loadRecentReposts(){
       orderBy('createdAt','desc'),
       limit(60)
     );
-    const snap = await rgetDocs(q, { tries: 1, timeoutMs: 12000 });
+    const snap = await rgetDocs(q, { tries: 2, timeoutMs: 7000 });
     REPOSTS = snap.docs
       .map(d=>({ id:d.id, ...d.data() }))
       .filter(x=>x.kind==='plain')
@@ -3548,9 +3576,30 @@ async function loadFeedBatch(loaders){
     } finally {
       _suppressAutoRender = false;
     }
-    rebuildMergedFeedOrder();
+    const out = results.map(r => r.status==='fulfilled' ? r.value : false);
+    const anyData = ARTICLES.length || POSTS.length || REPOSTS.length;
+    // Every load failed or timed out: never repaint over what's on screen (cached or already loaded).
+    // With nothing on screen, rendering would paint a false "No articles found" (renderGrid shows that
+    // whenever the list is empty) which the watchdog can't see — so keep the skeleton up and hand over
+    // to the watchdog, which retries and finally shows "Could not load the feed — Retry".
+    if(!out.some(Boolean)){
+      if(!anyData){
+        const g = document.getElementById('grid');
+        if(g && !g.querySelector('.skel-card')) showSkeletons(4);
+        const nr = document.getElementById('noRes'); if(nr) nr.style.display = 'none';
+        setTimeout(ensureFeedLoaded, 0); // no-op if the watchdog is already running
+      }
+      return out;
+    }
+    if(_feedKeepOrder && activeFilter==='all' && !searchQuery && mergedFeedOrder.length){
+      mergedFeedOrder = stableMergeOrder(mergedFeedOrder);
+    } else {
+      rebuildMergedFeedOrder();
+    }
+    _feedKeepOrder = false;
     renderGrid();
-    return results.map(r => r.status==='fulfilled' ? r.value : false);
+    saveFeedCache();
+    return out;
   })();
   try{
     return await _feedBatchPromise;
@@ -3917,7 +3966,17 @@ window.closeAll = function(){
 };
 
 /* ── AUTH SHEET ── */
+let _authCopy = null;          // one-shot custom headline/text for the next openAuth() call
+let _authDefaultCopy = null;   // the sheet's original wording, captured the first time we touch it
 window.openAuth = function(redirectHint){
+  const sheetH = document.querySelector('#authSheet h3');
+  const sheetP = document.querySelector('#authSheet p');
+  if(sheetH && sheetP){
+    if(!_authDefaultCopy) _authDefaultCopy = { title: sheetH.textContent, text: sheetP.textContent };
+    const c = _authCopy || _authDefaultCopy;
+    sheetH.textContent = c.title; sheetP.textContent = c.text;
+  }
+  _authCopy = null;
   // Pass current page as redirect so user returns after login
   const redirect = encodeURIComponent(redirectHint || (location.pathname + location.search));
   const loginBtn = document.getElementById('authLoginBtn');
@@ -3927,6 +3986,21 @@ window.openAuth = function(redirectHint){
   document.getElementById('authOverlay').classList.add('on');
   document.getElementById('authSheet').classList.add('on');
   document.body.style.overflow='hidden';
+};
+
+/* ── NOTIFICATION BELL ──
+   Logged in: opens the notification panel (from /notifications.js).
+   Logged out: the bell is still shown, and tapping it asks them to log in or sign up. */
+window.handleBellClick = function(){
+  if(!currentUser){
+    _authCopy = {
+      title: 'Don\u2019t miss a thing \uD83D\uDD14',
+      text: 'Log in or create a free account to see likes, comments, new followers and updates from the writers you follow.'
+    };
+    openAuth();
+    return;
+  }
+  openNotifPanel();
 };
 
 /* ── SHARE ── */
@@ -4066,9 +4140,12 @@ window.goToFeed=function(){
    After 15s with no sign of life, say so and offer a reload instead of a blank page. */
 setTimeout(function(){
   if(window.__msbBooted) return;
+  // The module (Firebase / app scripts) didn't load — usually a flaky connection on the first try.
+  // Reload once automatically; only show the error card if that doesn't fix it.
+  try{ if(!sessionStorage.getItem('msb_boot_reload')){ sessionStorage.setItem('msb_boot_reload','1'); location.reload(); return; } }catch(e){}
   var g=document.getElementById('grid'); if(!g) return;
   g.innerHTML='<div style="text-align:center;padding:60px 20px"><h3 style="margin:0 0 8px">Couldn\'t load the feed</h3><p style="color:#94a3b8;margin:0 0 16px">Check your connection and try again.</p><button onclick="location.reload()" style="background:#4f46e5;color:#fff;border:none;padding:10px 22px;border-radius:99px;font-size:14px;font-weight:700;cursor:pointer">Reload</button></div>';
-}, 15000);
+}, 10000);
 </script>
 <script>
 /* Keeps the sticky stack (header → guest bar → feed tabs) aligned: publishes

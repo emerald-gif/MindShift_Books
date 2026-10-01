@@ -969,9 +969,15 @@ async function fetchUserSaved(){
   if(!currentUser) return false;
   try{ const s=await resilient(()=>getDoc(doc(db,'userSaves',currentUser.uid)),{tries:2}); return s.exists()&&!!s.data()[artId]; }catch{ return false; }
 }
+// Who the Follow button follows: the writer, or the MindShift Books account ('official') for its own articles.
+function followTargetUid(){
+  if(!article) return '';
+  return (article.isMindshift || !article.authorUid) ? 'official' : article.authorUid;
+}
 async function fetchUserFollowing(){
-  if(!currentUser||!article||!article.authorUid) return false;
-  try{ const s=await resilient(()=>getDoc(doc(db,'follows',`${currentUser.uid}_${article.authorUid}`)),{tries:2}); return s.exists(); }catch{ return false; }
+  if(!currentUser||!article) return false;
+  const target = followTargetUid();
+  try{ const s=await resilient(()=>getDoc(doc(db,'follows',`${currentUser.uid}_${target}`)),{tries:2}); return s.exists(); }catch{ return false; }
 }
 async function fetchUserDownloaded(){
   if(!currentUser) return false;
@@ -1035,7 +1041,7 @@ async function renderArticle(){
             <div class="author-meta">${article.read}${article.publishedAt||article.createdAt ? ` · ${fmtRel(article.publishedAt||article.createdAt)}` : ''}</div>
           </div>
         </div>
-        ${(!article.isMindshift && article.authorUid && article.authorUid !== (currentUser&&currentUser.uid)) ? `
+        ${(followTargetUid() !== (currentUser&&currentUser.uid)) ? `
         <button class="follow-author-btn" id="followAuthorBtn" onclick="doFollow()">
           Follow
         </button>` : ''}
@@ -2455,19 +2461,20 @@ function showRated(n){
 /* ── FOLLOW ── */
 window.doFollow = async function(){
   if(!currentUser){ openAuth(); return; }
-  if(!article||!article.authorUid) return;
+  if(!article) return;
+  const target = followTargetUid();
   const wasFollowing = isFollowing;
   isFollowing = !wasFollowing;
   syncFollowUI();
   try{
-    const followId = `${currentUser.uid}_${article.authorUid}`;
+    const followId = `${currentUser.uid}_${target}`;
     if(wasFollowing){
       await deleteDoc(doc(db,'follows',followId));
-      updateDoc(doc(db,'users',article.authorUid),{followerCount:increment(-1)}).catch(()=>{});
+      updateDoc(doc(db,'users',target),{followerCount:increment(-1)}).catch(()=>{});
     }else{
-      await setDoc(doc(db,'follows',followId),{followerId:currentUser.uid,followingId:article.authorUid,createdAt:serverTimestamp()});
-      updateDoc(doc(db,'users',article.authorUid),{followerCount:increment(1)}).catch(()=>{});
-      notif.notifyFollow(article.authorUid);
+      await setDoc(doc(db,'follows',followId),{followerId:currentUser.uid,followingId:target,createdAt:serverTimestamp()});
+      updateDoc(doc(db,'users',target),{followerCount:increment(1)}).catch(()=>{});
+      notif.notifyFollow(target);
     }
     showToast(wasFollowing ? 'Unfollowed' : `Following ${article.author||'author'} ✅`);
   }catch(e){
