@@ -2167,6 +2167,13 @@ let _dismissedUids = new Set();
 // existing one — surfacing as the generic "Could not update — try again"
 // toast. Filtering them out here removes the button entirely, so that
 // path can't be hit from this row again.
+// For a returning, signed-in user whose session is still being restored, currentUser is null for a moment —
+// and getMyFollowingUids() then answers "follows nobody", so suggestion rows briefly list people they ALREADY
+// follow, then rebuild without them once sign-in lands (the "appears then disappears" effect). Suggestion
+// builders call this first so they only ever work from the real answer.
+async function whenAuthSettled(){
+  if(!authResolved && probablySignedIn()) await waitForAuth(6000);
+}
 let _myFollowingCache = null; // Set|null — null means "not fetched yet"
 async function getMyFollowingUids(){
   if(!currentUser) return new Set();
@@ -2181,6 +2188,8 @@ async function loadSugList(excludeUids=[]){
   const list=document.getElementById('suggestedList');
   if(!list) return;
   try{
+    await whenAuthSettled();
+    if(!list.isConnected) return;
     const myFollowing = await getMyFollowingUids();
     let q; const cat=userCategories[0];
     if(cat){ q=query(collection(db,'users'),where('categories','array-contains',cat),limit(10)); }
@@ -2275,25 +2284,37 @@ function ptfRowHtml(idSuffix){
   </div>`;
 }
 
+let _ptfRawCache = null;   // { key, users, at } — candidate people fetched recently (saves re-reading on every re-render)
 async function loadPtfRow(idSuffix, excludeUids=[]){
   const scroll = document.getElementById(`ptfScroll-${idSuffix}`);
   const wrap = document.getElementById(`ptfWrap-${idSuffix}`);
   if(!scroll) return;
+  if(wrap) wrap.style.display='none';          // stays hidden until there is a real, final list to show
   try{
+    await whenAuthSettled();
+    if(!scroll.isConnected) return;            // this row was replaced by a newer render while we waited
     const myFollowing = await getMyFollowingUids();
-    let q; const cat=userCategories[0];
-    if(cat){ q=query(collection(db,'users'),where('categories','array-contains',cat),limit(12)); }
-    else    { q=query(collection(db,'users'),limit(12)); }
-    const snap=await rgetDocs(q);
-    let users=snap.docs.map(d=>({uid:d.id,...d.data()}))
-      .filter(u=>u.uid!==currentUser?.uid && !_ptfDismissed.has(u.uid) && !excludeUids.includes(u.uid) && !myFollowing.has(u.uid));
+    const cat=userCategories[0], key=cat||'all';
+    let raw;
+    if(_ptfRawCache && _ptfRawCache.key===key && Date.now()-_ptfRawCache.at < 5*60*1000){
+      raw = _ptfRawCache.users;
+    } else {
+      const q = cat ? query(collection(db,'users'),where('categories','array-contains',cat),limit(12))
+                    : query(collection(db,'users'),limit(12));
+      const snap = await rgetDocs(q);
+      raw = snap.docs.map(d=>({uid:d.id,...d.data()}));
+      _ptfRawCache = { key, users: raw, at: Date.now() };
+    }
+    const keep = u => u.uid!==currentUser?.uid && !_ptfDismissed.has(u.uid) && !excludeUids.includes(u.uid) && !myFollowing.has(u.uid);
+    let users = raw.filter(keep);
     if(!users.length && cat){
       const fb=await rgetDocs(query(collection(db,'users'),limit(12)));
-      users=fb.docs.map(d=>({uid:d.id,...d.data()})).filter(u=>u.uid!==currentUser?.uid && !_ptfDismissed.has(u.uid) && !excludeUids.includes(u.uid) && !myFollowing.has(u.uid));
+      users=fb.docs.map(d=>({uid:d.id,...d.data()})).filter(keep);
     }
+    if(!scroll.isConnected) return;
     if(!users.length){ if(wrap) wrap.style.display='none'; return; }
-    if(wrap) wrap.style.display='';
     renderPtfRow(users.slice(0,10), scroll);
+    if(wrap) wrap.style.display='';
   }catch(e){ if(wrap) wrap.style.display='none'; }
 }
 
@@ -4266,19 +4287,39 @@ function openAuthNow(redirectHint){
 window.openAuthNow = openAuthNow;
 
 /* ── NOTIFICATION BELL ──
-   Logged in: opens the notification panel (from /notifications.js).
-   Logged out: the bell is still shown, and tapping it asks them to log in or sign up. */
-window.handleBellClick = async function(){
-  if(!currentUser && !authResolved && probablySignedIn()) await waitForAuth(3000);
-  if(!currentUser){
-    _authCopy = {
-      title: 'Don\u2019t miss a thing \uD83D\uDD14',
-      text: 'Log in or create a free account to see likes, comments, new followers and updates from the writers you follow.'
-    };
-    openAuth();
+   Signed in            → panel opens, shows its own loading skeleton while the list loads.
+   Still working out who you are (returning user, session being restored)
+                        → panel opens INSTANTLY with a loading skeleton inside; once the answer is in it
+                          loads your notifications — or, if you turn out to be signed out, swaps to the
+                          log in / sign up prompt.
+   Signed out           → log in / sign up prompt. */
+const NOTIF_PENDING_SKEL = Array(5).fill(
+  '<div class="notif-skel"><div class="notif-skel-av"></div><div class="notif-skel-lines"><div class="notif-skel-l1"></div><div class="notif-skel-l2"></div></div></div>'
+).join('');
+function showBellLogin(){
+  _authCopy = {
+    title: 'Don\u2019t miss a thing \uD83D\uDD14',
+    text: 'Log in or create a free account to see likes, comments, new followers and updates from the writers you follow.'
+  };
+  openAuth();
+}
+function _notifPanelOpen(){ const sh = document.getElementById('notifSheet'); return !!(sh && sh.classList.contains('on')); }
+window.handleBellClick = function(){
+  if(currentUser){ openNotifPanel(); return; }
+  if(!authResolved && probablySignedIn()){
+    openNotifPanel();                                     // open right away — no waiting on a blank screen
+    const list = document.getElementById('notifList');
+    if(list) list.innerHTML = NOTIF_PENDING_SKEL;         // loading state inside the panel
+    waitForAuth(8000).then(()=>{
+      if(!_notifPanelOpen()) return;                      // they closed it meanwhile
+      if(currentUser){ openNotifPanel(); return; }        // signed in → load the real list
+      if(authResolved){ closeNotifPanel(); showBellLogin(); return; }   // turned out to be signed out
+      // still no answer after 8s (bad connection) — say so instead of spinning forever
+      if(list) list.innerHTML = '<div class="notif-empty"><div class="notif-empty-ttl">Still connecting\u2026</div><div class="notif-empty-sub">Check your connection and try again.</div></div>';
+    });
     return;
   }
-  openNotifPanel();
+  showBellLogin();                                        // genuinely signed out
 };
 
 /* ── SHARE ── */
