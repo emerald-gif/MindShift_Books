@@ -39,6 +39,18 @@
 <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js"/>
 <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js"/>
 <script>
+/* Signed-in returning visitor with nothing remembered about their likes/saves yet (first visit on this
+   device, or cleared data): the heart / repost / bookmark icons shimmer until the app has confirmed who
+   they are and loaded their likes. If their likes ARE remembered, nothing shimmers — hearts are already right. */
+(function(){
+  try{
+    var u = localStorage.getItem('mindshift_hero_last_uid');
+    if(u && u !== 'guest' && !localStorage.getItem('msb_engage_v1_' + u)) document.documentElement.classList.add('engage-pending');
+    setTimeout(function(){ document.documentElement.classList.remove('engage-pending'); }, 9000); // never shimmer forever
+  }catch(e){}
+})();
+</script>
+<script>
 /* Early feed prefetch. The Firestore SDK is large and slow to open its connection on a cold visit, so the
    three public feed queries are fired here — straight over HTTPS, in parallel with the SDK download — and
    the app picks the results up the moment it starts. Anything going wrong resolves to null and the app
@@ -115,6 +127,10 @@ header h1{font-size:1.45rem;font-weight:700;display:flex;align-items:center;gap:
 header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .header-icon-group{display:flex;align-items:center;gap:4px;flex-shrink:0}
 #notifWrap{display:block!important}#notifBtn{display:inline-flex!important}
+@keyframes engagePulse{0%,100%{opacity:.25}50%{opacity:.6}}
+html.engage-pending .acard-like svg,html.engage-pending .acard-save svg,html.engage-pending .acard-repost svg{animation:engagePulse 1.1s ease-in-out infinite}
+.acard-like.pend,.acard-save.pend,.acard-repost.pend{opacity:.55}
+@media (prefers-reduced-motion:reduce){html.engage-pending .acard-like svg,html.engage-pending .acard-save svg,html.engage-pending .acard-repost svg{animation:none;opacity:.4}}
 .icon-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;border:none;background:transparent;color:#1e293b;cursor:pointer;transition:background-color 150ms ease,color 150ms ease;padding:0}
 .icon-btn:hover{background-color:#f1f5f9;color:#4f46e5}
 .icon-btn:active{background-color:#e6e9ee}
@@ -1329,8 +1345,48 @@ let shareId = null;
 let likeSubs = {};
 let likeCountCache = {};
 let repostCountCache = {};
-let savedSet = new Set();
-let likedSet = new Set();
+// Liked / saved ids are remembered per account on this device, so a returning user's hearts and bookmarks are
+// already right the moment cards appear (the app still re-checks with the server right after sign-in).
+const ENGAGE_PREFIX = 'msb_engage_v1_';
+let _engageSaveTimer = null;
+function _engageUid(){
+  if(currentUser) return currentUser.uid;
+  try{ const v = localStorage.getItem(HERO_LASTUID_KEY); return v && v !== 'guest' ? v : null; }catch(e){ return null; }
+}
+function _engageDirty(){
+  clearTimeout(_engageSaveTimer);
+  _engageSaveTimer = setTimeout(()=>{
+    const uid = _engageUid(); if(!uid) return;
+    try{ localStorage.setItem(ENGAGE_PREFIX+uid, JSON.stringify({ t:Date.now(), l:[...likedSet], s:[...savedSet] })); }catch(e){}
+  }, 400);
+}
+class TrackedSet extends Set{
+  add(v){ const r = super.add(v); _engageDirty(); return r; }
+  delete(v){ const r = super.delete(v); _engageDirty(); return r; }
+  clear(){ super.clear(); _engageDirty(); }
+}
+let savedSet = new TrackedSet();
+let likedSet = new TrackedSet();
+let _engageCached = false;      // likedSet/savedSet were filled from the remembered copy (not yet confirmed by the server)
+let _engageCachedUid = null;
+let engageReady = false;        // the server-confirmed liked/saved lists have loaded (or the visitor is signed out)
+const _engageWaiters = [];
+function setEngageReady(){ engageReady = true; while(_engageWaiters.length){ try{ _engageWaiters.shift()(); }catch(e){} } document.documentElement.classList.remove('engage-pending'); }
+function waitForEngage(ms){
+  if(engageReady) return Promise.resolve();
+  return new Promise(res=>{ const t = setTimeout(res, ms); _engageWaiters.push(()=>{ clearTimeout(t); res(); }); });
+}
+(function hydrateEngageFromCache(){
+  try{
+    const uid = localStorage.getItem(HERO_LASTUID_KEY);
+    if(!uid || uid === 'guest') return;
+    const c = JSON.parse(localStorage.getItem(ENGAGE_PREFIX+uid));
+    if(!c || !c.t || Date.now() - c.t > 30*24*60*60*1000) return;
+    (c.l||[]).forEach(id=>Set.prototype.add.call(likedSet, id));
+    (c.s||[]).forEach(id=>Set.prototype.add.call(savedSet, id));
+    _engageCached = true; _engageCachedUid = uid;
+  }catch(e){}
+})();
 let activeFeedTab = 'for-you';
 let userCategories = [];      // from onboarding / profile — array of MSB_CATEGORIES codes
 let dismissedSuggestions = new Set(); // UIDs dismissed from suggested list
@@ -1562,7 +1618,13 @@ onAuthStateChanged(auth, async user => {
     // checking for unread notifications. Firing it here means the badge shows
     // up as soon as its own read resolves, independent of the others.
     notif.initNotifications(user.uid);
+    if(_engageCached && _engageCachedUid !== user.uid){   // different account than the remembered copy — drop it
+      likedSet.clear(); savedSet.clear(); _engageCached = false; syncEngagementState();
+    }
     await Promise.all([loadSavedSet(), loadLikedSet(), loadMyProfile()]);
+    _engageCached = false;   // from here on the sets are server-confirmed
+    setEngageReady();
+    syncEngagementState();   // cards painted before sign-in finished (cached / prefetched feed) pick up hearts + bookmarks now
     checkFeedProfileSetup(user); // not awaited — nice-to-have, shouldn't block the feed rendering below
     // Load user's onboarding categories — array of MSB_CATEGORIES codes, used for "For You" + Following.
     // Falls back to a legacy singular `category` string (pre-taxonomy accounts) wrapped in an array.
@@ -1588,7 +1650,11 @@ onAuthStateChanged(auth, async user => {
   } else {
     if(gBar) gBar.style.display='flex';
     if(nw) nw.style.display='block';   // bell stays visible for guests — tapping it asks them to log in / sign up
-    savedSet.clear(); likedSet.clear();
+    savedSet.clear(); likedSet.clear(); _engageCached = false;
+    try{ Object.keys(localStorage).filter(k=>k.startsWith(ENGAGE_PREFIX)).forEach(k=>localStorage.removeItem(k)); }catch(e){}
+    document.querySelectorAll('.acard-like.liked').forEach(b=>b.classList.remove('liked'));
+    document.querySelectorAll('.acard-save.saved').forEach(b=>b.classList.remove('saved'));
+    setEngageReady();
     notif.clearNotifications();
     userCategories = [];
     const fsb = document.getElementById('feedSetupBanner');
@@ -1705,7 +1771,7 @@ document.addEventListener('visibilitychange', ()=>{
   ensureFollowingLoaded();
   // Whatever is on screen stays put. A tab that's been away holds a dead Firestore socket, so
   // reconnect in the background (and quietly pull anything new after a longer absence).
-  if(away > 30*1000) softRefreshFeed(away);
+  if(away > 30*1000){ refreshUserEngagementState(); softRefreshFeed(away); }
 });
 window.addEventListener('online', ()=>{ ensureFeedLoaded(); ensureFollowingLoaded(); });
 
@@ -2040,7 +2106,7 @@ async function renderFollowingTab(fresh = false){
       loadPtfRow('following', followedUids);
     }
     window.MSBAuthorLive && window.MSBAuthorLive.refresh(db, { doc, getDoc }, grid);
-    feedArts.forEach(a=>{ if(currentUser){document.querySelectorAll(`#lb-${a.id}`).forEach(b=>b.classList.toggle('liked',likedSet.has(a.id)));} });
+    syncEngagementState();
     // Repost cards show the TARGET's own counts (per spec, a plain repost
     // has no reactions of its own) — map each repost item to its target id
     // rather than excluding it, so those counts get fetched too.
@@ -2355,6 +2421,24 @@ function updateSavesBadge(){
   else badge.classList.remove('on');
 }
 
+/* A tap on like / save / repost before the app knows who you are (or what you've already liked) must neither
+   pop the login sheet at a signed-in user nor flip the wrong way (liking something already liked would UN-like it).
+   Returns true if it took over (queued the tap, or opened login for a genuinely signed-out visitor). */
+let _gateBypass = false;
+function gateEngage(retry, el){
+  if(_gateBypass){ _gateBypass = false; return false; }                  // queued tap that waited long enough — just go
+  const maybeSignedIn = !authResolved && probablySignedIn();
+  if(!currentUser && !maybeSignedIn){ openAuth(); return true; }          // really signed out
+  if(currentUser && (engageReady || _engageCached)) return false;        // ready — carry on
+  if(el) el.classList.add('pend');
+  waitForAuth(6000).then(()=>waitForEngage(6000)).then(()=>{
+    if(el) el.classList.remove('pend');
+    if(currentUser){ _gateBypass = true; retry(); _gateBypass = false; }
+    else openAuth();
+  });
+  return true;
+}
+
 /* ── LOAD ALL LIKES ── */
 async function loadLikedSet(){
   if(!currentUser) return;
@@ -2366,6 +2450,22 @@ async function loadLikedSet(){
       Object.keys(data).forEach(id=>{ if(data[id]) likedSet.add(id); });
     }
   }catch(e){}
+}
+
+/* Apply the signed-in user's liked / saved state to EVERY action button currently in the DOM, keyed by the
+   button's own id (lb-<id> / sv-<id>). The old per-item loops looked buttons up by the feed item's id, which
+   for a repost card is the repost's own id — but its buttons use the TARGET's id — so repost cards never got
+   their heart or bookmark filled in after the sets finished loading. This covers every card type. */
+function syncEngagementState(){
+  if(!currentUser && !_engageCached) return;
+  document.querySelectorAll('.acard-like[id^="lb-"]').forEach(b=>b.classList.toggle('liked', likedSet.has(b.id.slice(3))));
+  document.querySelectorAll('.acard-save[id^="sv-"]').forEach(b=>b.classList.toggle('saved', savedSet.has(b.id.slice(3))));
+}
+// Re-read the user's liked + saved lists (2 reads) and re-apply — used when coming back to a long-open tab.
+async function refreshUserEngagementState(){
+  if(!currentUser) return;
+  await Promise.all([loadSavedSet(), loadLikedSet()]);
+  syncEngagementState();
 }
 
 /* ── SHARED VIEW RECORDER (once per device per calendar day per item) ──
@@ -3087,11 +3187,7 @@ function renderGrid(){
   observeFeedVideos();
   observeLoadMoreSentinel();
   markTruncatedPostText();
-  list.forEach(a=>{
-    if(currentUser){
-      document.querySelectorAll(`#lb-${a.id}`).forEach(btn=>btn.classList.toggle('liked', likedSet.has(a.id)));
-    }
-  });
+  syncEngagementState();
   // One parallel batch for all like counts — no per-card listeners
   const engagementRefs2 = list.map(a => a.type==='repost'
     ? { id:a.targetId, hideLikeCount:false, authorUid:a.targetSnapshot?.authorUid||null }
@@ -3106,7 +3202,7 @@ function renderGrid(){
 
 /* ── LIKE ── */
 window.handleLike = function(id){
-  if(!currentUser){ openAuth(); return; }
+  if(gateEngage(()=>window.handleLike(id), document.querySelector(`#lb-${id}`))) return;
   // Same id can exist in both the For You and Following DOM at once — update
   // every copy so the tab you're actually looking at reflects the tap.
   const btns = document.querySelectorAll(`#lb-${id}`);
@@ -3164,7 +3260,7 @@ window.handleLike = function(id){
 
 /* ── SAVE ── */
 window.handleSave = function(id){
-  if(!currentUser){ openAuth(); return; }
+  if(gateEngage(()=>window.handleSave(id), document.querySelector(`#sv-${id}`))) return;
   const wasSaved = savedSet.has(id);
 
   // Optimistic update instantly
@@ -3190,7 +3286,7 @@ window.handleSave = function(id){
 
 /* ── REPOST (feed card) ── */
 window.doRepostCard = function(type, id){
-  if(!currentUser){ openAuth(); return; }
+  if(gateEngage(()=>window.doRepostCard(type, id), document.querySelector(`#rb-${id}`))) return;
   const item = type==='article' ? ARTICLES.find(a=>a.id===id) : POSTS.find(p=>p.id===id);
   if(!item) return;
   const snapshot = type==='article'
