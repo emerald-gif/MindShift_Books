@@ -1648,7 +1648,7 @@ onAuthStateChanged(auth, async user => {
       }catch(e){}
     }
   } else {
-    if(gBar) gBar.style.display='flex';
+    if(gBar) gBar.style.display='';   // back to the stylesheet default (block) — 'flex' made the wrapper shrink-wrap the bar to its content
     if(nw) nw.style.display='block';   // bell stays visible for guests — tapping it asks them to log in / sign up
     savedSet.clear(); likedSet.clear(); _engageCached = false;
     try{ Object.keys(localStorage).filter(k=>k.startsWith(ENGAGE_PREFIX)).forEach(k=>localStorage.removeItem(k)); }catch(e){}
@@ -2284,6 +2284,16 @@ function ptfRowHtml(idSuffix){
   </div>`;
 }
 
+// Suggestions favour accounts that look real and established: a profile photo, cover, bio, categories and a
+// username each count; people with at least two of those qualify, best-completed and most-followed first.
+function profileScore(u){
+  return ((u.photo||u.photoURL)?1:0) + (u.cover?1:0) + ((u.bio && String(u.bio).trim())?1:0)
+       + ((Array.isArray(u.categories) && u.categories.length)?1:0) + (u.username?1:0);
+}
+function rankPeople(list, minScore){
+  return list.filter(u=>profileScore(u) >= minScore)
+    .sort((a,b)=> profileScore(b)-profileScore(a) || (b.followerCount||0)-(a.followerCount||0));
+}
 let _ptfRawCache = null;   // { key, users, at } — candidate people fetched recently (saves re-reading on every re-render)
 async function loadPtfRow(idSuffix, excludeUids=[]){
   const scroll = document.getElementById(`ptfScroll-${idSuffix}`);
@@ -2299,17 +2309,23 @@ async function loadPtfRow(idSuffix, excludeUids=[]){
     if(_ptfRawCache && _ptfRawCache.key===key && Date.now()-_ptfRawCache.at < 5*60*1000){
       raw = _ptfRawCache.users;
     } else {
-      const q = cat ? query(collection(db,'users'),where('categories','array-contains',cat),limit(12))
-                    : query(collection(db,'users'),limit(12));
-      const snap = await rgetDocs(q);
+      let snap;
+      if(cat){
+        snap = await rgetDocs(query(collection(db,'users'),where('categories','array-contains',cat),limit(20)));
+      } else {
+        // No category known (e.g. signed-out visitors): start from the most-followed accounts.
+        try{ snap = await rgetDocs(query(collection(db,'users'),orderBy('followerCount','desc'),limit(24))); }catch(e){ snap = null; }
+        if(!snap || snap.empty) snap = await rgetDocs(query(collection(db,'users'),limit(24)));
+      }
       raw = snap.docs.map(d=>({uid:d.id,...d.data()}));
       _ptfRawCache = { key, users: raw, at: Date.now() };
     }
     const keep = u => u.uid!==currentUser?.uid && !_ptfDismissed.has(u.uid) && !excludeUids.includes(u.uid) && !myFollowing.has(u.uid);
-    let users = raw.filter(keep);
+    let users = rankPeople(raw.filter(keep), 2);
+    if(!users.length) users = rankPeople(raw.filter(keep), 1);          // sparse data: relax a little rather than show nothing
     if(!users.length && cat){
-      const fb=await rgetDocs(query(collection(db,'users'),limit(12)));
-      users=fb.docs.map(d=>({uid:d.id,...d.data()})).filter(keep);
+      const fb=await rgetDocs(query(collection(db,'users'),limit(24)));
+      users = rankPeople(fb.docs.map(d=>({uid:d.id,...d.data()})).filter(keep), 1);
     }
     if(!scroll.isConnected) return;
     if(!users.length){ if(wrap) wrap.style.display='none'; return; }
