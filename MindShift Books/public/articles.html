@@ -83,6 +83,7 @@
         })
         .catch(function(){ clearTimeout(t); return null; });
     }
+    window.__msbDV=dv;
     var a=run('articles',true,'publishedAt',60);
     window.__msbPF={articles:a, posts:run('posts',true,'publishedAt',60), reposts:run('reposts',false,'createdAt',60)};
     window.__msbPFok=false;
@@ -1050,6 +1051,73 @@ function takePrefetch(name){
   return Promise.race([p, new Promise(r => setTimeout(() => r(null), 3000))])
     .then(sn => (sn && !sn.empty) ? sn : null).catch(() => null);
 }
+
+// ── ENGAGEMENT COUNTS: one request + remembered numbers ─────────────────────
+// Counts used to be fetched with one SDK read PER card (likes, comments and reposts, ~180 reads for a
+// full feed) through a connection that is cold after time away — so cards sat without numbers for a while.
+// Now: (1) the last known numbers are painted the instant cards exist, (2) fresh ones come back in ONE
+// batched request per collection, (3) if that request fails it falls back to the old per-doc reads.
+const COUNTS_KEY = 'msb_counts_v1';
+let _countsCache = null, _countsTimer = null;
+function _loadCounts(){
+  if(_countsCache) return _countsCache;
+  try{ _countsCache = JSON.parse(localStorage.getItem(COUNTS_KEY)) || {}; }catch(e){ _countsCache = {}; }
+  return _countsCache;
+}
+function setCountCache(prefix, id, n){
+  const c = _loadCounts(); c[prefix+':'+id] = n;
+  clearTimeout(_countsTimer);
+  _countsTimer = setTimeout(()=>{
+    try{
+      const keys = Object.keys(c);
+      if(keys.length > 900) keys.slice(0, keys.length-700).forEach(k=>delete c[k]);
+      localStorage.setItem(COUNTS_KEY, JSON.stringify(c));
+    }catch(e){}
+  }, 800);
+}
+// Paint remembered numbers into cards that don't have one yet (never overwrites a number already shown).
+function paintCachedCounts(prefix, ids){
+  const c = _loadCounts();
+  ids.forEach(id=>{
+    const n = c[prefix+':'+id];
+    if(!(n > 0)) return;
+    document.querySelectorAll('#'+prefix+'-'+id).forEach(el=>{ if(!el.textContent) el.textContent = n; });
+  });
+}
+async function getCountDocs(coll, ids){
+  const out = new Array(ids.length).fill(null);
+  try{
+    const dv = window.__msbDV;
+    if(!dv) throw new Error('no decoder');
+    const base = 'projects/mindshiftbooks-c4451/databases/default/documents/';
+    const byId = new Map();
+    for(let i=0; i<ids.length; i+=100){
+      const chunk = ids.slice(i, i+100);
+      const ctl = window.AbortController ? new AbortController() : null;
+      const t = setTimeout(()=>{ if(ctl) ctl.abort(); }, 6000);
+      let res;
+      try{
+        res = await fetch('https://firestore.googleapis.com/v1/'+base.slice(0,-1)+':batchGet?key=AIzaSyDTn70s1_uIiSOR6lPLY_nKh8Ff1FViFCs', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ documents: chunk.map(id => base+coll+'/'+id) }),
+          signal: ctl ? ctl.signal : undefined
+        });
+      } finally { clearTimeout(t); }
+      if(!res.ok) throw new Error('http '+res.status);
+      (await res.json()).forEach(r=>{
+        if(r && r.found){
+          const o = {}, f = r.found.fields || {};
+          for(const k in f) o[k] = dv(f[k]);
+          byId.set(r.found.name.split('/').pop(), o);
+        }
+      });
+    }
+    return ids.map(id => { const o = byId.get(id); return { exists: () => !!o, data: () => o || {} }; });
+  }catch(e){
+    // Fallback: the original one-read-per-card behaviour.
+    return Promise.all(ids.map(id => getDoc(doc(db, coll, id)).catch(() => null)));
+  }
+}
 const notif = initNotificationUI({
   db, getCurrentUser: () => currentUser, getMyProfile: () => myProfile,
   fs: { collection, query, where, onSnapshot, getDocs, getCountFromServer, orderBy, limit, addDoc, writeBatch, serverTimestamp, doc, getDoc, setDoc, increment, runTransaction }
@@ -1452,8 +1520,18 @@ async function checkFeedProfileSetup(user){
 }
 
 let authCallSeq = 0;
+// Firebase takes a moment to restore a saved session (longer after time away). Until then currentUser is
+// null, which used to make the page behave like a logged-out visitor — login prompts on taps, etc.
+let authResolved = false;
+const _authWaiters = [];
+function waitForAuth(ms){
+  if(authResolved) return Promise.resolve();
+  return new Promise(res => { const t = setTimeout(res, ms); _authWaiters.push(() => { clearTimeout(t); res(); }); });
+}
 onAuthStateChanged(auth, async user => {
   const seq = ++authCallSeq; // ignore stale work if a newer auth event supersedes this one
+  authResolved = true;
+  while(_authWaiters.length) { try{ _authWaiters.shift()(); }catch(e){} }
   currentUser = user;
   const isAuth = !!user;
   // Header "Follow" pills need to know who you follow: fetch the list once, then reveal / hide the pills.
@@ -2479,15 +2557,17 @@ async function toggleLike(id, wasLikedHint){
 async function fetchLikeCounts(items){
   if(!items.length) return;
   const ids = items.map(it => typeof it==='string' ? it : it.id);
+  // remembered numbers first (skipping any whose count is hidden from this viewer)
+  paintCachedCounts('lc', ids.filter((id,i)=>{ const it = items[i]; return !(typeof it==='object' && it.hideLikeCount && !(currentUser && it.authorUid===currentUser.uid)); }));
   try{
-    const results = await Promise.all(
-      ids.map(id => getDoc(doc(db,'articleLikes',id)).catch(()=>null))
-    );
+    const results = await getCountDocs('articleLikes', ids);
     results.forEach((snap,i)=>{
       const it = items[i];
       const id = ids[i];
-      const c = snap&&snap.exists() ? (snap.data().count||0) : 0;
+      if(!snap) return;   // read failed — leave whatever is showing
+      const c = snap.exists() ? (snap.data().count||0) : 0;
       likeCountCache[id] = c;
+      setCountCache('lc', id, c);
       // Same article/post can be rendered in BOTH the For You and Following
       // tabs at once (one just hidden via display:none) — they share the
       // same element id. getElementById only ever returns the first match,
@@ -2506,14 +2586,15 @@ async function fetchLikeCounts(items){
 async function fetchRepostCounts(items){
   if(!items.length) return;
   const ids = items.map(it => typeof it==='string' ? it : it.id);
+  paintCachedCounts('rc', ids);
   try{
-    const results = await Promise.all(
-      ids.map(id => getDoc(doc(db,'repostCounts',id)).catch(()=>null))
-    );
+    const results = await getCountDocs('repostCounts', ids);
     results.forEach((snap,i)=>{
       const id = ids[i];
-      const c = snap&&snap.exists() ? (snap.data().count||0) : 0;
+      if(!snap) return;
+      const c = snap.exists() ? (snap.data().count||0) : 0;
       repostCountCache[id] = c;
+      setCountCache('rc', id, c);
       document.querySelectorAll(`#rc-${id}`).forEach(el=>{ el.textContent = c > 0 ? c : ''; });
     });
   }catch(e){}
@@ -3322,13 +3403,14 @@ window.goPostReadComment = function(id){ location.href=`/post-read?id=${id}&comm
 /* ── POST COMMENT COUNTS (postMeta/{id}.commentCount) ── */
 async function fetchPostCommentCounts(ids){
   if(!ids.length) return;
+  paintCachedCounts('pcc', ids);
   try{
-    const results = await Promise.all(
-      ids.map(id => getDoc(doc(db,'postMeta',id)).catch(()=>null))
-    );
+    const results = await getCountDocs('postMeta', ids);
     results.forEach((snap,i)=>{
       const id = ids[i];
-      const c = snap&&snap.exists() ? (snap.data().commentCount||0) : 0;
+      if(!snap) return;
+      const c = snap.exists() ? (snap.data().commentCount||0) : 0;
+      setCountCache('pcc', id, c);
       // See the note in fetchLikeCounts — same card can exist twice in the
       // DOM (For You + Following), so update every copy, not just the first.
       document.querySelectorAll(`#pcc-${id}`).forEach(el=>{ el.textContent = c > 0 ? c : ''; });
@@ -3339,13 +3421,14 @@ async function fetchPostCommentCounts(ids){
 /* ── ARTICLE COMMENT COUNTS (articleMeta/{id}.commentCount) ── */
 async function fetchArticleCommentCounts(ids){
   if(!ids.length) return;
+  paintCachedCounts('acc', ids);
   try{
-    const results = await Promise.all(
-      ids.map(id => getDoc(doc(db,'articleMeta',id)).catch(()=>null))
-    );
+    const results = await getCountDocs('articleMeta', ids);
     results.forEach((snap,i)=>{
       const id = ids[i];
-      const c = snap&&snap.exists() ? (snap.data().commentCount||0) : 0;
+      if(!snap) return;
+      const c = snap.exists() ? (snap.data().commentCount||0) : 0;
+      setCountCache('acc', id, c);
       document.querySelectorAll(`#acc-${id}`).forEach(el=>{ el.textContent = c > 0 ? c : ''; });
     });
   }catch(e){}
@@ -4054,6 +4137,18 @@ window.closeAll = function(){
 let _authCopy = null;          // one-shot custom headline/text for the next openAuth() call
 let _authDefaultCopy = null;   // the sheet's original wording, captured the first time we touch it
 window.openAuth = function(redirectHint){
+  // A returning, signed-in user who taps before Firebase has restored their session must not get a
+  // login prompt: wait for the answer, and only open the sheet if they really are signed out.
+  if(!authResolved && probablySignedIn()){
+    waitForAuth(4000).then(()=>{
+      if(!currentUser) openAuthNow(redirectHint);
+      else toast('You\u2019re signed in \u2014 tap again');
+    });
+    return;
+  }
+  openAuthNow(redirectHint);
+};
+function openAuthNow(redirectHint){
   const sheetH = document.querySelector('#authSheet h3');
   const sheetP = document.querySelector('#authSheet p');
   if(sheetH && sheetP){
@@ -4071,12 +4166,14 @@ window.openAuth = function(redirectHint){
   document.getElementById('authOverlay').classList.add('on');
   document.getElementById('authSheet').classList.add('on');
   document.body.style.overflow='hidden';
-};
+}
+window.openAuthNow = openAuthNow;
 
 /* ── NOTIFICATION BELL ──
    Logged in: opens the notification panel (from /notifications.js).
    Logged out: the bell is still shown, and tapping it asks them to log in or sign up. */
-window.handleBellClick = function(){
+window.handleBellClick = async function(){
+  if(!currentUser && !authResolved && probablySignedIn()) await waitForAuth(3000);
   if(!currentUser){
     _authCopy = {
       title: 'Don\u2019t miss a thing \uD83D\uDD14',
