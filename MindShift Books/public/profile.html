@@ -206,21 +206,14 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
 .setup-banner-arrow svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
 
 /* ── PUBLISH-YOUR-BOOK TEASER (owner-only, "coming soon" — links to /publish) ── */
-.publish-banner{display:flex;align-items:center;gap:12px;width:100%;text-align:left;
-  background:linear-gradient(135deg,#eef2ff,#ecfeff);border:1.5px solid #c7d2fe;border-radius:var(--radius);
-  padding:12px 14px;margin-bottom:14px;cursor:pointer;font-family:inherit;
-  box-shadow:0 2px 10px rgba(79,70,229,.10)}
+.publish-banner{display:block;position:relative;overflow:hidden;width:100%;text-align:left;min-height:118px;
+  background:#e6f1ff;border:none;border-radius:12px;padding:20px 18px;margin-bottom:14px;cursor:pointer;font-family:inherit}
 .publish-banner:focus-visible{outline:2px solid var(--p);outline-offset:2px}
-.publish-banner-icon{width:40px;height:40px;border-radius:12px;flex-shrink:0;background:var(--g);
-  display:flex;align-items:center;justify-content:center}
-.publish-banner-icon svg{width:20px;height:20px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.publish-banner-txt{flex:1;min-width:0}
-.publish-banner-title{font-size:13.5px;font-weight:800;color:#312e81;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.publish-banner-pill{font-size:9.5px;font-weight:800;color:var(--p);background:#fff;border:1px solid #c7d2fe;
-  padding:2px 7px;border-radius:99px;white-space:nowrap}
-.publish-banner-sub{font-size:11.5px;color:#4338ca;margin-top:2px;opacity:.85}
-.publish-banner-arrow{color:#818cf8;flex-shrink:0}
-.publish-banner-arrow svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.publish-banner-txt{position:relative;z-index:1;max-width:58%}
+.publish-banner-title{font-size:16px;line-height:1.3;font-weight:800;color:#1b1f2a}
+.publish-banner-link{display:inline-flex;align-items:center;gap:5px;margin-top:12px;font-size:13.5px;font-weight:600;color:#1b1f2a}
+.publish-banner-link svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.publish-banner-art{position:absolute;overflow:visible;right:8px;top:50%;transform:translateY(-50%);height:150%;width:auto;aspect-ratio:160/144;pointer-events:none}
 
 /* ── PROFILE-SETUP CELEBRATION (one-time, fires the moment 4/4 is hit) ── */
 .celebrate-overlay{position:fixed;inset:0;z-index:2000;background:rgba(15,23,42,.55);backdrop-filter:blur(2px);
@@ -724,12 +717,16 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
 
   <!-- PUBLISH-YOUR-BOOK TEASER — owner-only "coming soon", shown by the isOwner block in the profile loader -->
   <button type="button" class="publish-banner" id="publishBanner" style="display:none" onclick="location.href='/publish'">
-    <div class="publish-banner-icon"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></div>
     <div class="publish-banner-txt">
-      <div class="publish-banner-title">Publish your book to a growing community <span class="publish-banner-pill">Coming soon</span></div>
-      <div class="publish-banner-sub">Be ready to reach readers on MindShift Books</div>
+      <div class="publish-banner-title">Publish your book to a growing community</div>
+      <div class="publish-banner-link">Coming soon <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="13 6 19 12 13 18"/></svg></div>
     </div>
-    <div class="publish-banner-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+    <svg class="publish-banner-art" viewBox="0 0 160 144" aria-hidden="true">
+      <path d="M188.6,72.0 L188.0,76.4 L187.0,80.7 L185.7,84.9 L184.1,89.0 L182.3,93.0 L180.2,96.8 L178.0,100.4 L175.6,103.9 L173.1,107.2 L170.5,110.4 L167.9,113.5 L165.1,116.4 L162.4,119.3 L159.5,122.0 L156.7,124.7 L153.8,127.3 L150.9,129.9 L147.9,132.4 L144.8,134.9 L141.7,137.3 L138.5,139.7 L135.1,142.0 L131.7,144.2 L128.1,146.3 L124.4,148.3 L120.6,150.1 L116.6,151.7 L112.5,153.1 L108.3,154.3 L104.0,155.2 L99.6,155.7 L95.2,156.0 L90.7,155.9 L86.3,155.4 L81.9,154.6 L77.5,153.4 L73.3,151.9 L69.3,150.0 L65.4,147.8 L61.7,145.3 L58.2,142.5 L55.0,139.5 L52.0,136.3 L49.2,132.8 L46.7,129.3 L44.4,125.6 L42.4,121.9 L40.6,118.1 L38.9,114.3 L37.5,110.4 L36.1,106.6 L35.0,102.7 L33.9,98.9 L32.9,95.1 L32.0,91.3 L31.2,87.5 L30.5,83.6 L29.8,79.8 L29.2,75.9 L28.6,72.0 L28.2,68.0 L27.8,64.0 L27.6,59.9 L27.6,55.8 L27.7,51.6 L28.1,47.3 L28.6,43.1 L29.5,38.8 L30.6,34.6 L32.0,30.4 L33.7,26.3 L35.7,22.4 L38.0,18.6 L40.6,14.9 L43.5,11.5 L46.7,8.4 L50.2,5.5 L53.8,2.9 L57.7,0.7 L61.7,-1.3 L65.8,-2.9 L70.1,-4.2 L74.4,-5.2 L78.7,-5.9 L83.0,-6.3 L87.3,-6.4 L91.6,-6.3 L95.8,-6.0 L99.9,-5.5 L104.0,-4.8 L108.0,-4.0 L111.9,-3.2 L115.7,-2.2 L119.5,-1.1 L123.3,0.0 L127.0,1.2 L130.7,2.5 L134.4,3.8 L138.0,5.2 L141.7,6.7 L145.4,8.3 L149.0,10.0 L152.7,11.9 L156.3,13.9 L159.8,16.2 L163.3,18.6 L166.7,21.2 L170.0,24.0 L173.1,27.1 L176.0,30.4 L178.7,33.9 L181.1,37.7 L183.3,41.6 L185.1,45.6 L186.6,49.9 L187.7,54.2 L188.5,58.6 L188.9,63.1 L188.9,67.5Z" fill="#d3e3ff"/>
+      <path d="M169.2,70.0 L168.5,73.0 L167.5,75.8 L166.5,78.6 L165.3,81.3 L164.1,83.9 L162.8,86.5 L161.5,89.0 L160.2,91.5 L158.9,93.9 L157.6,96.3 L156.3,98.8 L155.0,101.3 L153.7,103.7 L152.2,106.2 L150.7,108.7 L149.1,111.2 L147.3,113.6 L145.4,116.0 L143.3,118.2 L141.1,120.3 L138.6,122.2 L136.0,123.9 L133.2,125.3 L130.3,126.4 L127.4,127.3 L124.3,127.8 L121.2,128.1 L118.1,128.1 L115.0,127.8 L112.0,127.2 L109.0,126.5 L106.2,125.5 L103.4,124.5 L100.7,123.3 L98.1,122.1 L95.5,120.8 L93.0,119.5 L90.5,118.2 L88.1,116.9 L85.7,115.6 L83.2,114.3 L80.7,113.0 L78.3,111.7 L75.8,110.2 L73.3,108.7 L70.8,107.1 L68.4,105.3 L66.0,103.4 L63.8,101.3 L61.7,99.1 L59.8,96.6 L58.1,94.0 L56.7,91.2 L55.6,88.3 L54.7,85.4 L54.2,82.3 L53.9,79.2 L53.9,76.1 L54.2,73.0 L54.8,70.0 L55.5,67.0 L56.5,64.2 L57.5,61.4 L58.7,58.7 L59.9,56.1 L61.2,53.5 L62.5,51.0 L63.8,48.5 L65.1,46.1 L66.4,43.7 L67.7,41.2 L69.0,38.7 L70.3,36.3 L71.8,33.8 L73.3,31.3 L74.9,28.8 L76.7,26.4 L78.6,24.0 L80.7,21.8 L82.9,19.7 L85.4,17.8 L88.0,16.1 L90.8,14.7 L93.7,13.6 L96.6,12.7 L99.7,12.2 L102.8,11.9 L105.9,11.9 L109.0,12.2 L112.0,12.8 L115.0,13.5 L117.8,14.5 L120.6,15.5 L123.3,16.7 L125.9,17.9 L128.5,19.2 L131.0,20.5 L133.5,21.8 L135.9,23.1 L138.3,24.4 L140.8,25.7 L143.3,27.0 L145.7,28.3 L148.2,29.8 L150.7,31.3 L153.2,32.9 L155.6,34.7 L158.0,36.6 L160.2,38.7 L162.3,40.9 L164.2,43.4 L165.9,46.0 L167.3,48.8 L168.4,51.7 L169.3,54.6 L169.8,57.7 L170.1,60.8 L170.1,63.9 L169.8,67.0Z" fill="#b9d1ff"/>
+      <path d="M146.9,70.0 L146.6,71.8 L145.7,73.5 L144.5,75.1 L143.0,76.6 L141.5,77.9 L140.2,79.2 L139.2,80.5 L138.7,81.9 L138.4,83.5 L138.5,85.3 L138.6,87.3 L138.6,89.3 L138.4,91.4 L137.7,93.2 L136.7,94.7 L135.2,95.7 L133.4,96.4 L131.3,96.6 L129.3,96.6 L127.3,96.5 L125.5,96.4 L123.9,96.7 L122.5,97.2 L121.2,98.2 L119.9,99.5 L118.6,101.0 L117.1,102.5 L115.5,103.7 L113.8,104.6 L112.0,104.9 L110.2,104.6 L108.5,103.7 L106.9,102.5 L105.4,101.0 L104.1,99.5 L102.8,98.2 L101.5,97.2 L100.1,96.7 L98.5,96.4 L96.7,96.5 L94.7,96.6 L92.7,96.6 L90.6,96.4 L88.8,95.7 L87.3,94.7 L86.3,93.2 L85.6,91.4 L85.4,89.3 L85.4,87.3 L85.5,85.3 L85.6,83.5 L85.3,81.9 L84.8,80.5 L83.8,79.2 L82.5,77.9 L81.0,76.6 L79.5,75.1 L78.3,73.5 L77.4,71.8 L77.1,70.0 L77.4,68.2 L78.3,66.5 L79.5,64.9 L81.0,63.4 L82.5,62.1 L83.8,60.8 L84.8,59.5 L85.3,58.1 L85.6,56.5 L85.5,54.7 L85.4,52.7 L85.4,50.7 L85.6,48.6 L86.3,46.8 L87.3,45.3 L88.8,44.3 L90.6,43.6 L92.7,43.4 L94.7,43.4 L96.7,43.5 L98.5,43.6 L100.1,43.3 L101.5,42.8 L102.8,41.8 L104.1,40.5 L105.4,39.0 L106.9,37.5 L108.5,36.3 L110.2,35.4 L112.0,35.1 L113.8,35.4 L115.5,36.3 L117.1,37.5 L118.6,39.0 L119.9,40.5 L121.2,41.8 L122.5,42.8 L123.9,43.3 L125.5,43.6 L127.3,43.5 L129.3,43.4 L131.3,43.4 L133.4,43.6 L135.2,44.3 L136.7,45.3 L137.7,46.8 L138.4,48.6 L138.6,50.7 L138.6,52.7 L138.5,54.7 L138.4,56.5 L138.7,58.1 L139.2,59.5 L140.2,60.8 L141.5,62.1 L143.0,63.4 L144.5,64.9 L145.7,66.5 L146.6,68.2Z" fill="#4f7cff"/>
+      <g transform="translate(112 70)" fill="#fff"><path d="M-1.5 -9 Q-8 -14 -16 -11 V11 Q-8 8 -1.5 13Z"/><path d="M1.5 -9 Q8 -14 16 -11 V11 Q8 8 1.5 13Z"/></g>
+    </svg>
   </button>
 
   <div id="profileBio" class="profile-bio" style="display:none"></div>
