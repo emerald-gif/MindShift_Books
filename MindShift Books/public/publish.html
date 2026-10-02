@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Publish your book · MindShift Books</title>
+<meta name="description" content="Publishing on MindShift Books is coming soon."/>
+<meta name="robots" content="noindex, nofollow"/>
+<link rel="icon" href="/MINDSHIFT.jpg">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --p:#4f46e5;--navy:#312e81;--p2:#06b6d4;--amber:#fff;--amber-d:#4f46e5;
+  --txt:#0f172a;--sub:#5b6472;--bg:#fff;--soft:#f3f4f6;--border:#e2e5ea;--radius:12px;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;padding-bottom:40px}
+
+/* top bar */
+.hdr{position:sticky;top:0;z-index:100;background:var(--navy);padding:0 16px;height:56px;display:flex;align-items:center;gap:12px}
+.btn-back{width:36px;height:36px;border-radius:50%;border:1.5px solid rgba(255,255,255,.25);background:transparent;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;flex-shrink:0}
+.btn-back:focus-visible,.cta:focus-visible,summary:focus-visible{outline:2px solid #a5b4fc;outline-offset:2px}
+.btn-back svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.hdr-logo{display:flex;flex-shrink:0}
+.hdr-logo img{width:32px;height:32px;border-radius:6px;display:block}
+.hdr-title{font-size:15px;font-weight:800;color:#fff;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hdr-tag{font-size:11px;font-weight:800;color:var(--p);background:#fff;padding:3px 9px;border-radius:99px}
+
+/* hero */
+.hero{background:linear-gradient(135deg,#312e81 0%,#4f46e5 60%,#0891b2 100%);color:#fff;padding:36px 22px 40px}
+.hero .hdr-tag{display:inline-block;margin-bottom:14px}
+.hero h1{font-size:30px;line-height:1.15;font-weight:900;margin-bottom:12px;max-width:16ch}
+.hero p{font-size:15px;line-height:1.6;color:#e0e7ff;max-width:44ch;margin-bottom:22px}
+.cta{display:block;width:100%;max-width:340px;padding:14px;border-radius:10px;border:none;background:#fff;
+  color:var(--p);font:inherit;font-size:15px;font-weight:800;text-align:center;cursor:not-allowed;opacity:.92}
+.hero-note{font-size:12px;color:#c7d2fe;margin-top:10px}
+
+/* features */
+.section{padding:30px 20px 0}
+.section h2{font-size:20px;font-weight:900;margin-bottom:6px}
+.section-lead{font-size:13.5px;color:var(--sub);line-height:1.55;margin-bottom:18px}
+.feats{display:grid;gap:14px}
+.feat{display:flex;gap:14px;align-items:flex-start;padding:16px;border:1px solid var(--border);border-radius:var(--radius)}
+.feat-icon{width:40px;height:40px;border-radius:10px;background:#eef2ff;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.feat-icon svg{width:20px;height:20px;fill:none;stroke:var(--amber-d);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.feat b{display:block;font-size:14.5px;margin-bottom:3px}
+.feat span{font-size:13px;color:var(--sub);line-height:1.55}
+
+/* steps (a real sequence, so numbered) */
+.steps{background:#eef2ff;margin-top:32px;padding:30px 20px}
+.step-list{list-style:none;display:grid;gap:0;position:relative}
+.step{display:flex;gap:14px;padding-bottom:20px;position:relative}
+.step:last-child{padding-bottom:0}
+.step:not(:last-child)::before{content:'';position:absolute;left:15px;top:32px;bottom:2px;width:2px;background:#c7d2fe}
+.step-n{width:32px;height:32px;border-radius:50%;background:var(--navy);color:#fff;font-size:14px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.step b{display:block;font-size:14.5px;margin:4px 0 2px}
+.step span{font-size:13px;color:var(--sub);line-height:1.5}
+
+/* faq */
+details{border-bottom:1px solid var(--border)}
+summary{list-style:none;cursor:pointer;padding:15px 0;font-size:14px;font-weight:700;display:flex;justify-content:space-between;gap:12px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:'+';font-size:20px;line-height:1;color:var(--sub);font-weight:400}
+details[open] summary::after{content:'–'}
+details p{font-size:13px;color:var(--sub);line-height:1.6;padding:0 0 15px}
+
+.back{display:block;margin:28px 20px 0;padding:13px;border-radius:10px;border:1.5px solid var(--border);color:var(--txt);
+  font-size:14px;font-weight:800;text-align:center;text-decoration:none}
+.back:focus-visible{outline:2px solid var(--p);outline-offset:2px}
+@media(min-width:720px){
+  body{max-width:720px;margin:0 auto}
+  .feats{grid-template-columns:repeat(3,1fr)}
+  .feat{flex-direction:column}
+}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <button class="btn-back" onclick="history.length>1?history.back():location.href='/profile'" aria-label="Back">
+    <svg viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
+  </button>
+  <a class="hdr-logo" href="/" aria-label="MindShift Books home"><img src="/MINDSHIFT.jpg" alt="MindShift Books logo"></a>
+  <div class="hdr-title">Publish on MindShift Books</div>
+</header>
+
+<section class="hero">
+  <span class="hdr-tag">Coming soon</span>
+  <h1>Publish your book to a growing community</h1>
+  <p>Turn your manuscript into a book readers can find, follow, and talk about, right where they already read on MindShift Books.</p>
+  <button class="cta" type="button" disabled aria-disabled="true">Publishing opens soon</button>
+  <div class="hero-note">We haven't set an opening date yet.</div>
+</section>
+
+<section class="section">
+  <h2>Why publish here</h2>
+  <p class="section-lead">What we're building for writers.</p>
+  <div class="feats">
+    <div class="feat">
+      <span class="feat-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></span>
+      <div><b>Readers already here</b><span>Your book sits next to the articles and posts people read every day.</span></div>
+    </div>
+    <div class="feat">
+      <span class="feat-icon"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg></span>
+      <div><b>You stay in control</b><span>You choose the title, cover, description, and price of your book.</span></div>
+    </div>
+    <div class="feat">
+      <span class="feat-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></span>
+      <div><b>Feedback from readers</b><span>Likes, comments, and reposts work on your book like they do on your posts.</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="steps">
+  <h2>How publishing will work</h2>
+  <p class="section-lead">Four steps from manuscript to bookshelf.</p>
+  <ol class="step-list">
+    <li class="step"><span class="step-n">1</span><div><b>Add your manuscript</b><span>Upload the finished book.</span></div></li>
+    <li class="step"><span class="step-n">2</span><div><b>Add your cover and details</b><span>Title, description, and category.</span></div></li>
+    <li class="step"><span class="step-n">3</span><div><b>Set your price</b><span>Choose what readers pay.</span></div></li>
+    <li class="step"><span class="step-n">4</span><div><b>Publish</b><span>Your book goes live for the community.</span></div></li>
+  </ol>
+</section>
+
+<section class="section">
+  <h2>Questions</h2>
+  <div style="margin-top:10px">
+    <details><summary>When can I publish my book?</summary><p>Publishing isn't open yet and we haven't set a date. This page will update when it is.</p></details>
+    <details><summary>Does it cost anything?</summary><p>Pricing and fees haven't been decided yet. We'll share the details before publishing opens.</p></details>
+    <details><summary>What should I do in the meantime?</summary><p>Keep posting and writing articles. Your profile is where readers will find your book once publishing opens.</p></details>
+  </div>
+</section>
+
+<a class="back" href="/profile">Back to my profile</a>
+
+</body>
+</html>

@@ -205,6 +205,23 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
 .setup-banner-arrow{color:#fb923c;flex-shrink:0}
 .setup-banner-arrow svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
 
+/* ── PUBLISH-YOUR-BOOK TEASER (owner-only, "coming soon" — links to /publish) ── */
+.publish-banner{display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+  background:linear-gradient(135deg,#eef2ff,#ecfeff);border:1.5px solid #c7d2fe;border-radius:var(--radius);
+  padding:12px 14px;margin-bottom:14px;cursor:pointer;font-family:inherit;
+  box-shadow:0 2px 10px rgba(79,70,229,.10)}
+.publish-banner:focus-visible{outline:2px solid var(--p);outline-offset:2px}
+.publish-banner-icon{width:40px;height:40px;border-radius:12px;flex-shrink:0;background:var(--g);
+  display:flex;align-items:center;justify-content:center}
+.publish-banner-icon svg{width:20px;height:20px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.publish-banner-txt{flex:1;min-width:0}
+.publish-banner-title{font-size:13.5px;font-weight:800;color:#312e81;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.publish-banner-pill{font-size:9.5px;font-weight:800;color:var(--p);background:#fff;border:1px solid #c7d2fe;
+  padding:2px 7px;border-radius:99px;white-space:nowrap}
+.publish-banner-sub{font-size:11.5px;color:#4338ca;margin-top:2px;opacity:.85}
+.publish-banner-arrow{color:#818cf8;flex-shrink:0}
+.publish-banner-arrow svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+
 /* ── PROFILE-SETUP CELEBRATION (one-time, fires the moment 4/4 is hit) ── */
 .celebrate-overlay{position:fixed;inset:0;z-index:2000;background:rgba(15,23,42,.55);backdrop-filter:blur(2px);
   display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .25s ease}
@@ -703,6 +720,16 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
       <div class="setup-banner-sub" id="setupBannerSub">Complete these steps to get <span data-ngn="2000" data-voucher>₦2,000</span> free + a badge</div>
     </div>
     <div class="setup-banner-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+  </button>
+
+  <!-- PUBLISH-YOUR-BOOK TEASER — owner-only "coming soon", shown by the isOwner block in the profile loader -->
+  <button type="button" class="publish-banner" id="publishBanner" style="display:none" onclick="location.href='/publish'">
+    <div class="publish-banner-icon"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></div>
+    <div class="publish-banner-txt">
+      <div class="publish-banner-title">Publish your book to a growing community <span class="publish-banner-pill">Coming soon</span></div>
+      <div class="publish-banner-sub">Be ready to reach readers on MindShift Books</div>
+    </div>
+    <div class="publish-banner-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
   </button>
 
   <div id="profileBio" class="profile-bio" style="display:none"></div>
@@ -1371,7 +1398,7 @@ async function loadProfile(uid){
   // since most profile visits never touch it.
   const [gridOk] = await Promise.all([loadArticles(), statsPromise, loadFollowState()]);
   if(!gridOk) return false;
-  if(isOwner) renderSetupBanner();
+  if(isOwner){ renderSetupBanner(); const pb = document.getElementById('publishBanner'); if(pb) pb.style.display = 'flex'; }
   // Track this as a profile view for Insights — analytics only, never a
   // bell notification to the profile owner.
   if(!isOwner) notif.trackProfileView(profileData.uid);
