@@ -38,6 +38,58 @@
 <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js"/>
 <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js"/>
 <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js"/>
+<script>
+/* Early feed prefetch. The Firestore SDK is large and slow to open its connection on a cold visit, so the
+   three public feed queries are fired here — straight over HTTPS, in parallel with the SDK download — and
+   the app picks the results up the moment it starts. Anything going wrong resolves to null and the app
+   falls back to the normal SDK queries, so this can only ever make things faster. */
+(function(){
+  try{
+    var URL_='https://firestore.googleapis.com/v1/projects/mindshiftbooks-c4451/databases/default/documents:runQuery?key=AIzaSyDTn70s1_uIiSOR6lPLY_nKh8Ff1FViFCs';
+    function ts(iso){
+      var ms=Date.parse(iso); if(isNaN(ms)) return null;
+      return {seconds:Math.floor(ms/1000), nanoseconds:(ms%1000)*1e6, toMillis:function(){return ms}, toDate:function(){return new Date(ms)}};
+    }
+    function dv(v){
+      if(!v) return null;
+      if('stringValue' in v) return v.stringValue;
+      if('integerValue' in v) return Number(v.integerValue);
+      if('doubleValue' in v) return v.doubleValue;
+      if('booleanValue' in v) return v.booleanValue;
+      if('timestampValue' in v) return ts(v.timestampValue);
+      if('arrayValue' in v) return (v.arrayValue.values||[]).map(dv);
+      if('mapValue' in v){ var o={},f=v.mapValue.fields||{}; for(var k in f) o[k]=dv(f[k]); return o; }
+      if('referenceValue' in v) return v.referenceValue;
+      if('geoPointValue' in v) return v.geoPointValue;
+      return null;
+    }
+    function run(coll, published, orderField, limit){
+      var sq={from:[{collectionId:coll}],orderBy:[{field:{fieldPath:orderField},direction:'DESCENDING'}],limit:limit};
+      if(published) sq.where={fieldFilter:{field:{fieldPath:'status'},op:'EQUAL',value:{stringValue:'published'}}};
+      var ctl=window.AbortController?new AbortController():null;
+      var t=setTimeout(function(){ if(ctl) ctl.abort(); },6000);
+      return fetch(URL_,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({structuredQuery:sq}),signal:ctl?ctl.signal:undefined})
+        .then(function(r){ if(!r.ok) throw new Error('http '+r.status); return r.json(); })
+        .then(function(rows){
+          clearTimeout(t);
+          var docs=[];
+          (rows||[]).forEach(function(row){
+            if(!row||!row.document) return;
+            var d=row.document, f=d.fields||{}, o={};
+            for(var k in f) o[k]=dv(f[k]);
+            docs.push({id:d.name.split('/').pop(), data:function(){ return o; }});
+          });
+          return {docs:docs, empty:!docs.length, __rest:true};
+        })
+        .catch(function(){ clearTimeout(t); return null; });
+    }
+    var a=run('articles',true,'publishedAt',60);
+    window.__msbPF={articles:a, posts:run('posts',true,'publishedAt',60), reposts:run('reposts',false,'createdAt',60)};
+    window.__msbPFok=false;
+    a.then(function(s){ if(s && !s.empty) window.__msbPFok=true; });
+  }catch(e){}
+})();
+</script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"/>
 <style>
 :root{
@@ -61,6 +113,7 @@ header{position:sticky;top:0;left:0;right:0;background:white;z-index:1000;displa
 header h1{font-size:1.45rem;font-weight:700;display:flex;align-items:center;gap:10px;min-width:0;overflow:hidden}
 header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .header-icon-group{display:flex;align-items:center;gap:4px;flex-shrink:0}
+#notifWrap{display:block!important}#notifBtn{display:inline-flex!important}
 .icon-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;border:none;background:transparent;color:#1e293b;cursor:pointer;transition:background-color 150ms ease,color 150ms ease;padding:0}
 .icon-btn:hover{background-color:#f1f5f9;color:#4f46e5}
 .icon-btn:active{background-color:#e6e9ee}
@@ -988,6 +1041,15 @@ const db   = getFirestore(fbApp, 'default');
 const { resilient, reconnectFirestore } = createResilient({ db, enableNetwork, disableNetwork });
 const rgetDoc  = (ref, o) => resilient(() => getDoc(ref),  { tries: 2, timeoutMs: 10000, ...o });
 const rgetDocs = (q,   o) => resilient(() => getDocs(q),   { tries: 2, timeoutMs: 10000, ...o });
+// One-shot pickup of the early prefetch started in <head>. Resolves to a snapshot-shaped object, or null
+// (not ready within 3s / failed / came back empty) — callers then run the normal SDK query instead.
+function takePrefetch(name){
+  const pf = window.__msbPF, p = pf && pf[name];
+  if(!p) return Promise.resolve(null);
+  pf[name] = null;
+  return Promise.race([p, new Promise(r => setTimeout(() => r(null), 3000))])
+    .then(sn => (sn && !sn.empty) ? sn : null).catch(() => null);
+}
 const notif = initNotificationUI({
   db, getCurrentUser: () => currentUser, getMyProfile: () => myProfile,
   fs: { collection, query, where, onSnapshot, getDocs, getCountFromServer, orderBy, limit, addDoc, writeBatch, serverTimestamp, doc, getDoc, setDoc, increment, runTransaction }
@@ -1186,6 +1248,7 @@ let _suppressAutoRender = false;
    many reads happen behind it. */
 const ARTICLES_PAGE_SIZE = 60;
 let _articlesLastDoc = null;
+let _articlesLastId = null;   // set instead of _articlesLastDoc when the first page came from the early prefetch
 let _articlesExhausted = false;
 let _articlesLoadingMore = false;
 
@@ -1250,7 +1313,9 @@ let _feedKickedOff = false;
 // something. When fresh data lands it's merged in WITHOUT reshuffling what's already on screen
 // (new items go to the top; see stableMergeOrder).
 const FEED_CACHE_KEY = 'msb_feed_cache_v1';
-let _feedKeepOrder = false;   // next fresh load should merge into the current order instead of reshuffling
+let _feedKeepOrder = false;     // next fresh load should merge into the current order instead of reshuffling (silent background refresh)
+let _paintedFromCache = false;  // the screen is currently showing the saved copy; the first real load replaces it with a fresh feed
+let _feedGen = 0;               // bumped by every manual refresh, so an older in-flight load can never overwrite a newer one
 function saveFeedCache(){
   try{
     const payload = { t: Date.now(), a: ARTICLES.slice(0,20), p: POSTS.slice(0,20), r: REPOSTS.slice(0,12) };
@@ -1268,7 +1333,7 @@ function restoreFeedFromCache(){
     const a = Array.isArray(c.a) ? c.a : [], p = Array.isArray(c.p) ? c.p : [], r = Array.isArray(c.r) ? c.r : [];
     if(!a.length && !p.length && !r.length) return false;
     ARTICLES = a; POSTS = p; REPOSTS = r;
-    _feedKeepOrder = true;
+    _paintedFromCache = true;
     rebuildMergedFeedOrder();
     renderGrid();
     return true;
@@ -1290,7 +1355,7 @@ function stableMergeOrder(oldOrder){
 function kickOffFeed(){
   if(_feedKickedOff) return;
   _feedKickedOff = true;
-  restoreFeedFromCache();
+  if(!window.__msbPFok) restoreFeedFromCache();   // fresh data already in hand → go straight to it, no flash of the old copy
   loadFeedBatch([loadPublishedArticles, loadPublishedPosts, loadRecentReposts]);
 }
 setTimeout(kickOffFeed, 0); // after the module finishes evaluating, so every `let` below is initialised
@@ -1640,6 +1705,7 @@ function shuffleArray(arr){
 }
 
 async function refreshForYou(){
+  _feedGen++; _paintedFromCache = false; _feedKeepOrder = false;
   showSkeletons(4);
   try{
     // Capped at one page (same size as the normal feed load) — this used to
@@ -3415,11 +3481,13 @@ async function loadPublishedArticles(){
       orderBy('publishedAt','desc'),
       limit(ARTICLES_PAGE_SIZE)
     );
-    const snap = await rgetDocs(q, { tries: 2, timeoutMs: 7000 });
+    const snap = (await takePrefetch('articles')) || await rgetDocs(q, { tries: 2, timeoutMs: 7000 });
     if(snap.empty){ ARTICLES = []; return true; } // genuinely nothing published — also clears anything painted from the cache
     // Fully replace with Firestore data — what admin approves is what shows
     ARTICLES = snap.docs.map(mapArticleDoc);
-    _articlesLastDoc = snap.docs[snap.docs.length-1];
+    const _lastSnapDoc = snap.docs[snap.docs.length-1];
+    if(snap.__rest){ _articlesLastDoc = null; _articlesLastId = _lastSnapDoc.id; } // prefetched rows aren't real snapshots — fetched lazily when paging
+    else { _articlesLastDoc = _lastSnapDoc; _articlesLastId = null; }
     _articlesExhausted = snap.docs.length < ARTICLES_PAGE_SIZE;
     if(!_suppressAutoRender){ rebuildMergedFeedOrder(); renderGrid(); }
     _xDiscoverBuilt = false;
@@ -3431,7 +3499,14 @@ async function loadPublishedArticles(){
 // filter-tab handler when a category's client-side filter comes up thin.
 // Returns the number of new articles added (0 if exhausted or already loading).
 async function loadMoreArticles(){
-  if(_articlesLoadingMore || _articlesExhausted || !_articlesLastDoc) return 0;
+  if(_articlesLoadingMore || _articlesExhausted) return 0;
+  if(!_articlesLastDoc && _articlesLastId){
+    // First page came from the early prefetch, so there's no snapshot to page from yet — fetch just that one doc.
+    _articlesLoadingMore = true;
+    try{ const ls = await rgetDoc(doc(db,'articles',_articlesLastId)); if(ls.exists()) _articlesLastDoc = ls; }
+    catch(e){} finally{ _articlesLoadingMore = false; }
+  }
+  if(!_articlesLastDoc) return 0;
   _articlesLoadingMore = true;
   try{
     const q = query(
@@ -3483,7 +3558,7 @@ async function loadPublishedPosts(){
       orderBy('publishedAt','desc'),
       limit(60)
     );
-    const snap = await rgetDocs(q, { tries: 2, timeoutMs: 7000 });
+    const snap = (await takePrefetch('posts')) || await rgetDocs(q, { tries: 2, timeoutMs: 7000 });
     POSTS = snap.docs.map(d=>{
       const x = d.data();
       return {
@@ -3526,7 +3601,7 @@ async function loadRecentReposts(){
       orderBy('createdAt','desc'),
       limit(60)
     );
-    const snap = await rgetDocs(q, { tries: 2, timeoutMs: 7000 });
+    const snap = (await takePrefetch('reposts')) || await rgetDocs(q, { tries: 2, timeoutMs: 7000 });
     REPOSTS = snap.docs
       .map(d=>({ id:d.id, ...d.data() }))
       .filter(x=>x.kind==='plain')
@@ -3569,6 +3644,7 @@ let _feedBatchPromise = null;
 async function loadFeedBatch(loaders){
   if(_feedBatchPromise) return _feedBatchPromise;
   _feedBatchPromise = (async () => {
+    const myGen = _feedGen;
     _suppressAutoRender = true;
     let results;
     try{
@@ -3591,11 +3667,20 @@ async function loadFeedBatch(loaders){
       }
       return out;
     }
-    if(_feedKeepOrder && activeFilter==='all' && !searchQuery && mergedFeedOrder.length){
+    // The reader pulled / tapped to refresh while this load was in flight — their newer feed is already
+    // on screen, so this older result must not paint over it.
+    if(myGen !== _feedGen){ _paintedFromCache = false; _feedKeepOrder = false; saveFeedCache(); return out; }
+    const canMerge = activeFilter==='all' && !searchQuery && mergedFeedOrder.length;
+    if(_paintedFromCache && window.scrollY < 150 || !canMerge){
+      // First real load after the saved copy was shown, reader still at the top: this IS the new feed.
+      rebuildMergedFeedOrder();
+    } else if((_paintedFromCache || _feedKeepOrder) && canMerge){
+      // Already scrolling, or a silent refresh on return — fold new items in, don't move what they're reading.
       mergedFeedOrder = stableMergeOrder(mergedFeedOrder);
     } else {
       rebuildMergedFeedOrder();
     }
+    _paintedFromCache = false;
     _feedKeepOrder = false;
     renderGrid();
     saveFeedCache();
