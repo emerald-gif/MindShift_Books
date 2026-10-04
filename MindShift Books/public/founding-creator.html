@@ -123,7 +123,7 @@ function daysLeft(weekEndsAt){
 }
 
 function fmtDate(iso){
-  return new Date(iso).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+  return new Date(iso).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', timeZone: 'Africa/Lagos' });
 }
 
 function completionPct(progress, target){

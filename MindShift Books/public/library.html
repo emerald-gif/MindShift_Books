@@ -135,6 +135,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 <div id="sidebar-slot"></div>
 <script src="/sidebar-nav.js?v=3"></script>
 <script src="/create-picker.js"></script>
+<script src="/currency.js?v=5"></script>
 
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
@@ -289,7 +290,7 @@ async function loadWishlist(){
         </button>
         <div class="book-card-body">
           <div class="book-card-title">${esc(p.title||'Untitled')}</div>
-          <div class="book-card-price">${p.priceNGN ? '₦'+Number(p.priceNGN).toLocaleString() : ''}</div>
+          <div class="book-card-price"${p.priceNGN ? ` data-ngn="${Number(p.priceNGN)}"` : ''}>${p.priceNGN ? '₦'+Number(p.priceNGN).toLocaleString() : ''}</div>
           <div class="book-card-row"><a class="book-card-btn" href="/books">View in store</a></div>
         </div>
       </div>`).join('');

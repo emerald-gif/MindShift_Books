@@ -869,9 +869,9 @@ function renderFcRings(data){
     card.className = 'rings-card prompt';
     sub.textContent = 'Tracking starts soon';
     const startDate = data.trackingStartsAt
-      ? new Date(data.trackingStartsAt).toLocaleDateString('en-US', { weekday:'long', month:'short', day:'numeric' })
+      ? new Date(data.trackingStartsAt).toLocaleDateString('en-US', { weekday:'long', month:'short', day:'numeric', timeZone:'Africa/Lagos' })
       : 'next week';
-    card.innerHTML = `This badge just launched, so this week doesn't count against you — your real tracking starts ${startDate}. Tap to see what you'll need.`;
+    card.innerHTML = `Your badge is live. This week doesn't count against you — your goal starts ${startDate}. Tap to see what you'll need.`;
     return;
   }
 
