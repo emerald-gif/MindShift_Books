@@ -1854,7 +1854,21 @@ async function runFoundingCreatorWeeklyCycle() {
     checked++;
     // Still waiting on the launch grace period (see
     // maybeActivatePendingFoundingCreators) — nothing to evaluate yet.
-    if (fc.pendingStart) { active++; continue; }
+    if (fc.pendingStart) {
+      const startsMs = fc.weekStart && fc.weekStart.toMillis ? fc.weekStart.toMillis() : 0;
+      if (startsMs && now.getTime() >= startsMs) {
+        try {
+          const totals = await currentContentTotals(doc.id);
+          await doc.ref.update({
+            'foundingCreator.pendingStart': false,
+            'foundingCreator.snapshot': totals,
+            'foundingCreator.weekStart': admin.firestore.Timestamp.fromDate(mondayStartOfWeek(now)),
+            'foundingCreator.lastCheckedWeek': thisWeekKey
+          });
+        } catch (err) { console.error('[founding-creator] start-tracking failed for', doc.id, err); }
+      }
+      active++; continue;
+    }
     // Someone who earned the badge THIS week (e.g. mid-week, via
     // claim-profile-voucher) already has lastCheckedWeek === thisWeekKey —
     // their first tracked week isn't over yet, so leave them alone.
@@ -2062,6 +2076,50 @@ async function realignExistingFoundingCreatorsToGrace() {
   }
 }
 if (db) realignExistingFoundingCreatorsToGrace();
+
+// One-time: badges earned Wednesday→now of the CURRENT week (before this
+// late-week rule existed) get the same treatment new late-week grants get
+// now — badge stays live, goal starts next Monday instead of being judged
+// on a few days. Only touches active, still-tracked badges granted this
+// week; anyone already evaluated by a Monday run is left alone. Must be
+// deployed before Monday's weekly check to have any effect.
+async function realignLateWeekFoundingCreators() {
+  if (!db) return;
+  try {
+    const flagRef = db.collection('meta').doc('foundingCreatorLateWeekRealign');
+    const flag = await flagRef.get();
+    if (flag.exists && flag.data().done) return;
+    const now = lagosNow();
+    const monday = mondayStartOfWeek(now); // Lagos-shifted clock, same convention as everywhere else
+    const thisWeekKey = weekMondayKey(now);
+    const nextMondayMs = monday.getTime() + 7 * 24 * 60 * 60 * 1000;
+    // Wednesday 00:00 Lagos as a real instant (shifted clock runs 1h ahead of real time).
+    const wedCutoffMs = monday.getTime() + 2 * 24 * 60 * 60 * 1000 - 60 * 60 * 1000;
+    const snap = await db.collection('users')
+      .where('foundingCreator.earnedAt', '>=', admin.firestore.Timestamp.fromMillis(wedCutoffMs)).get();
+    let moved = 0;
+    for (const doc of snap.docs) {
+      const fc = doc.data().foundingCreator;
+      if (!fc || fc.status !== 'active' || fc.pendingStart) continue;
+      if (fc.lastCheckedWeek !== thisWeekKey) continue; // not granted this week, or already evaluated
+      try {
+        await doc.ref.update({
+          'foundingCreator.pendingStart': true,
+          'foundingCreator.weekStart': admin.firestore.Timestamp.fromMillis(nextMondayMs),
+          'foundingCreator.snapshot': null,
+          'foundingCreator.lastCheckedWeek': null,
+          'foundingCreator.missedAt': null
+        });
+        moved++;
+      } catch (err) { console.error('[founding-creator] late-week realign failed for', doc.id, err); }
+    }
+    await flagRef.set({ done: true, doneAt: admin.firestore.Timestamp.now(), moved }, { merge: true });
+    console.log('[founding-creator] late-week realign: moved', moved, 'badges to start next Monday');
+  } catch (err) {
+    console.error('[founding-creator] late-week realign run failed', err);
+  }
+}
+if (db) realignLateWeekFoundingCreators();
 
 app.post('/api/track', (req, res) => {
   // Always respond fast; analytics must never slow down or break the page.
@@ -2484,6 +2542,23 @@ async function buildFoundingCreatorRecord(uid, now) {
       status: 'active',
       earnedAt: admin.firestore.Timestamp.now(),
       weekStart: admin.firestore.Timestamp.fromMillis(graceUntilMs),
+      snapshot: null,
+      pendingStart: true,
+      lastCheckedWeek: null,
+      missedAt: null
+    };
+  }
+  // Earned late in the week (Wed–Sun, Lagos time): the badge is live and
+  // visible right away, but the weekly goal only starts NEXT Monday — too
+  // few days left this week to fairly judge. Parked in the same pending
+  // state as the launch grace; the Monday weekly cycle starts real tracking.
+  // Earned Mon/Tue: falls through to a normal tracked week starting now.
+  const dow = now.getUTCDay(); // 0=Sun..6=Sat
+  if (dow === 0 || dow >= 3) {
+    return {
+      status: 'active',
+      earnedAt: admin.firestore.Timestamp.now(),
+      weekStart: admin.firestore.Timestamp.fromMillis(mondayStartOfWeek(now).getTime() + 7 * 24 * 60 * 60 * 1000),
       snapshot: null,
       pendingStart: true,
       lastCheckedWeek: null,
