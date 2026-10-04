@@ -1345,6 +1345,10 @@ let shareId = null;
 let likeSubs = {};
 let likeCountCache = {};
 let repostCountCache = {};
+// LAZY_COUNTS: on the For You feed, fetch counts + live author info only for cards that are on screen (or
+// within ~600px of it) instead of all ~180 cards at once. Set to false to restore the old fetch-everything behaviour.
+const LAZY_COUNTS = true;
+let _lazyObs = null, _lazyTimer = null, _lazyBatch = [];
 // Liked / saved ids are remembered per account on this device, so a returning user's hearts and bookmarks are
 // already right the moment cards appear (the app still re-checks with the server right after sign-in).
 const ENGAGE_PREFIX = 'msb_engage_v1_';
@@ -3125,6 +3129,60 @@ window.onPostScroll = function(id){
   if(countEl) countEl.textContent = `${idx+1}/${track.children.length}`;
 };
 
+function engagementRefOf(a){
+  return a.type==='repost'
+    ? { id:a.targetId, hideLikeCount:false, authorUid:a.targetSnapshot?.authorUid||null }
+    : { id:a.id, hideLikeCount:!!a.hideLikeCount, authorUid:a.authorUid };
+}
+// Fetches counts + live author name/photo for the cards that just came into view — same functions, same
+// inputs as before, just for a handful of cards at a time.
+function flushLazyBatch(){
+  const batch = _lazyBatch; _lazyBatch = [];
+  if(!batch.length) return;
+  const items = batch.map(b=>b.a);
+  if(window.MSBAuthorLive) batch.forEach(b=>window.MSBAuthorLive.refresh(db, { doc, getDoc }, b.el));
+  const refs = items.map(engagementRefOf);
+  fetchLikeCounts(refs);
+  fetchRepostCounts(refs);
+  const postIds = items.filter(a=>a.type==='post').map(a=>a.id);
+  if(postIds.length) fetchPostCommentCounts(postIds);
+  const articleCommentIds = collectArticleCommentIds(items);
+  if(articleCommentIds.length) fetchArticleCommentCounts(articleCommentIds);
+}
+function lazyHydrateFeed(grid, list){
+  if(_lazyObs){ _lazyObs.disconnect(); _lazyObs = null; }
+  clearTimeout(_lazyTimer); _lazyBatch = [];
+  // 1) Remembered numbers go onto EVERY card straight away (no network), and seed the baselines the
+  //    like/repost buttons count from — exactly what the fetch functions already do once numbers arrive.
+  const cc = _loadCounts();
+  const refs = list.map(engagementRefOf);
+  refs.forEach(r=>{
+    if(likeCountCache[r.id]===undefined && cc['lc:'+r.id]!==undefined) likeCountCache[r.id] = cc['lc:'+r.id];
+    if(repostCountCache[r.id]===undefined && cc['rc:'+r.id]!==undefined) repostCountCache[r.id] = cc['rc:'+r.id];
+  });
+  paintCachedCounts('lc', refs.filter(r=>!(r.hideLikeCount && !(currentUser && r.authorUid===currentUser.uid))).map(r=>r.id));
+  paintCachedCounts('rc', refs.map(r=>r.id));
+  paintCachedCounts('pcc', list.filter(a=>a.type==='post').map(a=>a.id));
+  paintCachedCounts('acc', collectArticleCommentIds(list));
+  // 2) Fresh numbers + live author info only as cards approach the screen.
+  const byKey = new Map();
+  list.forEach(a=>byKey.set((a.type==='repost' ? 'rep:' : a.type==='post' ? 'post:' : 'art:') + a.id, a));
+  _lazyObs = new IntersectionObserver((entries)=>{
+    entries.forEach(en=>{
+      if(!en.isIntersecting) return;
+      const el = en.target;
+      if(_lazyObs) _lazyObs.unobserve(el);
+      let key;
+      if(el.dataset.repostId) key = 'rep:' + el.dataset.repostId;
+      else key = (el.classList.contains('pcard') ? 'post:' : 'art:') + el.dataset.postId;
+      const a = byKey.get(key);
+      if(a) _lazyBatch.push({ a, el });
+    });
+    if(_lazyBatch.length){ clearTimeout(_lazyTimer); _lazyTimer = setTimeout(flushLazyBatch, 80); }
+  }, { rootMargin: '600px 0px' });
+  grid.querySelectorAll('.acard[data-post-id], .acard[data-repost-id]').forEach(el=>_lazyObs.observe(el));
+}
+
 function renderGrid(){
   const grid = document.getElementById('grid');
   const noRes = document.getElementById('noRes');
@@ -3219,12 +3277,14 @@ function renderGrid(){
     else grid.insertAdjacentElement('afterbegin', rowEl.firstElementChild);
     loadPtfRow('forYou');
   }
-  window.MSBAuthorLive && window.MSBAuthorLive.refresh(db, { doc, getDoc }, grid);
+  const _lazy = LAZY_COUNTS && typeof IntersectionObserver !== 'undefined';
+  if(!_lazy) window.MSBAuthorLive && window.MSBAuthorLive.refresh(db, { doc, getDoc }, grid);
   observeFeedPostCards();
   observeFeedVideos();
   observeLoadMoreSentinel();
   markTruncatedPostText();
   syncEngagementState();
+  if(_lazy){ lazyHydrateFeed(grid, list); return; }
   // One parallel batch for all like counts — no per-card listeners
   const engagementRefs2 = list.map(a => a.type==='repost'
     ? { id:a.targetId, hideLikeCount:false, authorUid:a.targetSnapshot?.authorUid||null }
