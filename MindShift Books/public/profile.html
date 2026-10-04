@@ -1515,7 +1515,7 @@ function renderFounderBadge(){
         <div class="badge-row-icon${faded ? ' faded' : ''}"><img src="/fcbadge.jpg" alt="Founding Creator badge"></div>
         <div class="badge-row-text">
           <span class="badge-row-label">Founding Creator</span>
-          ${isOwner ? `<span class="badge-row-sub${faded ? '' : ' ok'}">${faded ? 'At risk — tap to see why' : 'Active this week'}</span>` : ''}
+          ${isOwner ? `<span class="badge-row-sub${faded ? '' : ' ok'}">${faded ? 'At risk — tap to see why' : (fc.pendingStart ? 'Live — goal starts Monday' : 'Active this week')}</span>` : ''}
         </div>
       </div>
     </div>`;
