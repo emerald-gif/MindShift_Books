@@ -475,8 +475,27 @@
   // Fire-and-forget; nothing on this page waits on it.
   function syncCrossDomainSession(user) {
     user.getIdToken()
-      .then(token => fetch('/api/session/sync', { method: 'POST', headers: { Authorization: `Bearer ${token}` } }))
+      .then(token => {
+        syncTimezone(user, token);
+        return fetch('/api/session/sync', { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+      })
       .catch(() => {});
+  }
+
+  // Tells the server this account's timezone once per device, so scheduled
+  // emails can skip the person's night. Silent; failure just retries next visit.
+  function syncTimezone(user, token) {
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (!tz) return;
+      const flag = 'msbTzSent:' + user.uid;
+      if (localStorage.getItem(flag) === tz) return;
+      fetch('/api/me/timezone', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ tz })
+      }).then(r => { if (r.ok) localStorage.setItem(flag, tz); }).catch(() => {});
+    } catch (e) {}
   }
 
   // Called on sign-out. Clears the relay cookie server-side and revokes the
