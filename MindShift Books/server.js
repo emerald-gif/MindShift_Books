@@ -729,6 +729,20 @@ function validateUserSession(token) {
 
 // Called by auth.js right after a real sign-in resolves on either origin —
 // plants/refreshes the relay cookie so the other origin knows this uid is signed in.
+// Records the user's IANA timezone (e.g. 'America/New_York') so scheduled
+// emails can avoid their night. Sent by auth.js once per device+account.
+app.post('/api/me/timezone', requireUser, async (req, res) => {
+  try {
+    const tz = String((req.body && req.body.tz) || '');
+    if (!validTimeZone(tz)) return res.status(400).json({ error: 'Invalid timezone' });
+    await db.collection('users').doc(req.uid).set({ tz }, { merge: true });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('/api/me/timezone error', err);
+    res.status(500).json({ error: 'Could not save timezone.' });
+  }
+});
+
 app.post('/api/session/sync', requireUser, (req, res) => {
   const token = mintUserSession(req.uid);
   res.setHeader('Set-Cookie', `ms_user=${token}; Domain=${USER_SESSION_COOKIE_DOMAIN}; HttpOnly; Secure; SameSite=Lax; Max-Age=${USER_SESSION_MAX_AGE}; Path=/`);
@@ -1598,7 +1612,7 @@ async function runProfileDigestCycle(windowStartMs) {
     docNames.forEach(name => { if (bucket.names.length < NAME_CAP) bucket.names.push(name); });
   });
 
-  let emailsSent = 0;
+  let emailsSent = 0, skippedQuiet = 0;
   for (const [uid, groups] of byRecipient.entries()) {
     try {
       const userSnap = await db.collection('users').doc(uid).get();
@@ -1608,6 +1622,9 @@ async function runProfileDigestCycle(windowStartMs) {
       // Last-moment safety check: they may have switched it off while this
       // cycle was already running.
       if (user.emailPrefs && user.emailPrefs.activityDigest === false) continue;
+      // In their night → skip this slot (the notifications are still in the
+      // app; the view baseline isn't advanced, so nothing is double-counted).
+      if (isQuietHourFor(user.tz)) { skippedQuiet++; continue; }
 
       const currentViews = await currentTotalViews(uid);
       const viewDelta = Math.max(0, currentViews - (user.lastDigestViewTotal || 0));
@@ -1624,7 +1641,7 @@ async function runProfileDigestCycle(windowStartMs) {
     }
   }
 
-  return { emailsSent, recipientsChecked: byRecipient.size, skippedOptOut: skippedOptOut.size };
+  return { emailsSent, recipientsChecked: byRecipient.size, skippedOptOut: skippedOptOut.size, skippedQuiet };
 }
 
 // Hourly check, same guard pattern as the other scheduled jobs — a
@@ -1770,8 +1787,8 @@ async function runRewardNudgeCycle(kind, dayKey) {
   // people whose profile was already complete but hadn't finished the rest of
   // the checklist yet. See claim-profile-voucher for the matching profileDone logic.
   const fields = kind === 'profile'
-    ? ['name', 'email', 'ebookVoucher', 'emailPrefs', 'nudges', 'photo', 'cover', 'bio', 'categories']
-    : ['name', 'email', 'ebookVoucher', 'emailPrefs', 'nudges'];
+    ? ['name', 'email', 'ebookVoucher', 'emailPrefs', 'nudges', 'tz', 'photo', 'cover', 'bio', 'categories']
+    : ['name', 'email', 'ebookVoucher', 'emailPrefs', 'nudges', 'tz'];
   const base = kind === 'voucher' ? db.collection('users').where('ebookVoucher.claimed', '==', true) : db.collection('users');
   const snap = await base.select(...fields).get();
 
@@ -1790,6 +1807,7 @@ async function runRewardNudgeCycle(kind, dayKey) {
     }
     if (kind === 'voucher' && (!v || !v.claimed || v.used)) continue;   // nothing left to use
     if (u.emailPrefs && u.emailPrefs.activityDigest === false) { skippedOptOut++; continue; }
+    if (isQuietHourFor(u.tz)) continue; // their night — try again next Mon/Wed/Fri
     const n = u.nudges || {};
     if (n[kind] && n[kind].lastDay === dayKey) continue;                // already sent today
     if (kind === 'voucher' && n.profile && n.profile.lastDay === dayKey) continue; // just got the 3 PM one
@@ -1843,7 +1861,7 @@ if (db) {
 // badge and decides who stays, who fades, and who loses it for good.
 async function runFoundingCreatorWeeklyCycle() {
   if (!db) return { checked: 0, active: 0, faded: 0, lost: 0 };
-  const now = lagosNow();
+  const now = fcNow(); // badge-week clock: week turns over Monday 12:00 UTC
   const thisWeekKey = weekMondayKey(now);
   const snap = await db.collection('users').where('foundingCreator.status', 'in', ['active', 'faded']).get();
 
@@ -1932,12 +1950,14 @@ async function runFoundingCreatorWeeklyCycle() {
 async function maybeRunFoundingCreatorCheck() {
   if (!db) return;
   try {
-    const now = lagosNow();
+    const now = fcNow();
     const thisWeekKey = weekMondayKey(now);
     const stateRef = db.collection('meta').doc('foundingCreatorSchedule');
     const stateDoc = await stateRef.get();
     const prev = stateDoc.exists ? stateDoc.data() : null;
-    if (prev && prev.lastRunWeek === thisWeekKey) return;
+    // '>=' (not '===') so switching the week boundary can never re-run a week
+    // an earlier boundary already processed. ISO date keys compare correctly as strings.
+    if (prev && prev.lastRunWeek && prev.lastRunWeek >= thisWeekKey) return;
 
     const result = await runFoundingCreatorWeeklyCycle();
     await stateRef.set({ lastRunWeek: thisWeekKey, lastRunAt: admin.firestore.Timestamp.now(), lastRunResult: result }, { merge: true });
@@ -2089,12 +2109,12 @@ async function realignLateWeekFoundingCreators() {
     const flagRef = db.collection('meta').doc('foundingCreatorLateWeekRealign');
     const flag = await flagRef.get();
     if (flag.exists && flag.data().done) return;
-    const now = lagosNow();
-    const monday = mondayStartOfWeek(now); // Lagos-shifted clock, same convention as everywhere else
+    const now = fcNow();
+    const monday = mondayStartOfWeek(now); // badge-week clock (see fcNow)
     const thisWeekKey = weekMondayKey(now);
     const nextMondayMs = monday.getTime() + 7 * 24 * 60 * 60 * 1000;
-    // Wednesday 00:00 Lagos as a real instant (shifted clock runs 1h ahead of real time).
-    const wedCutoffMs = monday.getTime() + 2 * 24 * 60 * 60 * 1000 - 60 * 60 * 1000;
+    // Wednesday 00:00 UTC as a real instant = badge-week start (Mon 12:00 UTC) + 36h.
+    const wedCutoffMs = monday.getTime() + 12 * 60 * 60 * 1000 + 36 * 60 * 60 * 1000;
     const snap = await db.collection('users')
       .where('foundingCreator.earnedAt', '>=', admin.firestore.Timestamp.fromMillis(wedCutoffMs)).get();
     let moved = 0;
@@ -2497,6 +2517,34 @@ function weekMondayKey(date) {
   return mondayStartOfWeek(date).toISOString().slice(0, 10);
 }
 
+// ── Badge-week clock + user timezone helpers ────────────────────────────────
+// The Founding Creator week runs Monday 12:00 UTC → next Monday 12:00 UTC,
+// i.e. it ends when Sunday has ended ANYWHERE on Earth ("Anywhere on Earth"
+// deadline), so nobody loses part of their Sunday to a Lagos-only cutoff.
+// fcNow() is a shifted clock (real time − 12h), used exactly like lagosNow()
+// with mondayStartOfWeek()/weekMondayKey(): its "Monday 00:00" is real
+// Monday 12:00 UTC. Everything else (payouts, digests) stays on Lagos time.
+function fcNow() { return new Date(Date.now() - 12 * 60 * 60 * 1000); }
+
+// Timezone helpers for "don't email people in the middle of their night".
+// Users' IANA timezone is stored on users/{uid}.tz by /api/me/timezone.
+// No tz stored → treated as "unknown": behaviour is exactly as before.
+function validTimeZone(tz) {
+  if (typeof tz !== 'string' || !tz || tz.length > 64) return false;
+  try { new Intl.DateTimeFormat('en-US', { timeZone: tz }); return true; } catch (e) { return false; }
+}
+function localHourIn(tz, ms) {
+  localHourIn.cache = localHourIn.cache || new Map();
+  let f = localHourIn.cache.get(tz);
+  if (!f) { f = new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', hourCycle: 'h23' }); localHourIn.cache.set(tz, f); }
+  return Number(f.format(ms === undefined ? Date.now() : ms));
+}
+// Quiet hours = 22:00–06:59 local. Unknown/invalid tz → never quiet.
+function isQuietHourFor(tz, ms) {
+  if (!tz) return false;
+  try { const h = localHourIn(tz, ms); return h >= 22 || h < 7; } catch (e) { return false; }
+}
+
 // Calendar-day key (Lagos time), e.g. "2026-09-18" — used to dedupe
 // profile views per viewer per DAY (not per viewer forever), so someone
 // revisiting a profile tomorrow counts as a new view, same as LinkedIn's
@@ -2548,17 +2596,18 @@ async function buildFoundingCreatorRecord(uid, now) {
       missedAt: null
     };
   }
-  // Earned late in the week (Wed–Sun, Lagos time): the badge is live and
-  // visible right away, but the weekly goal only starts NEXT Monday — too
-  // few days left this week to fairly judge. Parked in the same pending
-  // state as the launch grace; the Monday weekly cycle starts real tracking.
-  // Earned Mon/Tue: falls through to a normal tracked week starting now.
-  const dow = now.getUTCDay(); // 0=Sun..6=Sat
-  if (dow === 0 || dow >= 3) {
+  // Earned late in the badge week (from Wednesday 00:00 UTC onward): the badge
+  // is live and visible right away, but the weekly goal only starts at the
+  // NEXT week boundary — too few days left to fairly judge. Parked in the same
+  // pending state as the launch grace; the weekly cycle starts real tracking.
+  // Earned earlier in the week: falls through to a normal tracked week.
+  const fnow = fcNow(); // badge-week clock: weeks turn over Monday 12:00 UTC
+  const weekStartReal = mondayStartOfWeek(fnow).getTime() + 12 * 60 * 60 * 1000;
+  if (Date.now() - weekStartReal >= 36 * 60 * 60 * 1000) {
     return {
       status: 'active',
       earnedAt: admin.firestore.Timestamp.now(),
-      weekStart: admin.firestore.Timestamp.fromMillis(mondayStartOfWeek(now).getTime() + 7 * 24 * 60 * 60 * 1000),
+      weekStart: admin.firestore.Timestamp.fromMillis(mondayStartOfWeek(fnow).getTime() + 7 * 24 * 60 * 60 * 1000),
       snapshot: null,
       pendingStart: true,
       lastCheckedWeek: null,
@@ -2569,10 +2618,10 @@ async function buildFoundingCreatorRecord(uid, now) {
   return {
     status: 'active',
     earnedAt: admin.firestore.Timestamp.now(),
-    weekStart: admin.firestore.Timestamp.fromDate(mondayStartOfWeek(now)),
+    weekStart: admin.firestore.Timestamp.fromDate(mondayStartOfWeek(fnow)),
     snapshot: totals,
     pendingStart: false,
-    lastCheckedWeek: weekMondayKey(now),
+    lastCheckedWeek: weekMondayKey(fnow),
     missedAt: null
   };
 }
@@ -2783,7 +2832,7 @@ app.get('/api/founding-creator/status', requireUser, async (req, res) => {
     // happened to be granted. (The stored weekStart is only used internally
     // by the weekly evaluator to reset the snapshot; it's not the source of
     // truth for what the user sees here.)
-    const weekEndsAt = new Date(mondayStartOfWeek(lagosNow()).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    const weekEndsAt = new Date(mondayStartOfWeek(fcNow()).getTime() + 7 * 24 * 60 * 60 * 1000 + 12 * 60 * 60 * 1000).toISOString(); // real instant: Monday 12:00 UTC
 
     return res.json({
       earned: true,
@@ -2916,7 +2965,7 @@ async function sendFoundingCreatorEmail(user, stage, { progress } = {}) {
   const copy = FC_EMAIL_COPY[stage];
   if (!copy) return { ok: false, error: 'unknown stage: ' + stage };
 
-  const now = lagosNow();
+  const now = fcNow();
   const firstName = String(user.name || 'there').split(' ')[0].replace(/[<>&"]/g, '') || 'there';
   const weekEnd = new Date(mondayStartOfWeek(now).getTime() + 7 * FC_DAY_MS); // next Monday 00:00, Lagos-shifted clock
   const daysLeft = Math.max(1, Math.ceil((weekEnd.getTime() - now.getTime()) / FC_DAY_MS));
@@ -3067,9 +3116,18 @@ async function queueFoundingCreatorNudges(now) {
 
 async function flushFoundingCreatorEmails() {
   const snap = await db.collection('users').where('foundingCreator.emailQueue.stage', 'in', FC_EMAIL_STAGES).get();
-  let sent = 0, failed = 0, skipped = 0;
+  let sent = 0, failed = 0, skipped = 0, deferred = 0;
+  const lagosHourNow = lagosNow().getUTCHours();
   for (const doc of snap.docs) {
     const ref = doc.ref;
+    // Only email during the recipient's own daytime (09:00–20:59 local). No
+    // stored timezone → the old Lagos window. Not their time yet → leave it
+    // queued; a later hourly tick picks it up.
+    const userTz = doc.get('tz');
+    let okNow;
+    if (userTz && validTimeZone(userTz)) { const h = localHourIn(userTz); okNow = h >= 9 && h < 21; }
+    else okNow = lagosHourNow >= FC_EMAIL_START_HOUR && lagosHourNow < FC_EMAIL_END_HOUR;
+    if (!okNow) { deferred++; continue; }
     try {
       // Claim it first (at-most-once): whoever clears the queue entry owns the send.
       const claimed = await db.runTransaction(async (tx) => {
@@ -3113,7 +3171,7 @@ async function flushFoundingCreatorEmails() {
       console.error('[founding-creator] flush failed for', doc.id, err);
     }
   }
-  return { queued: snap.size, sent, failed, skipped };
+  return { queued: snap.size, sent, failed, skipped, deferred };
 }
 
 let fcEmailTickRunning = false;
@@ -3123,10 +3181,16 @@ async function maybeRunFoundingCreatorEmails() {
   try {
     const now = lagosNow();
     const hour = now.getUTCHours(); // Lagos-shifted clock, same convention as the digest
-    if (hour < FC_EMAIL_START_HOUR || hour >= FC_EMAIL_END_HOUR) return;
+    // Queueing stays inside the Lagos window (bounds Firestore reads). Flushing
+    // happens on every tick, but each queued user is only emailed during THEIR
+    // own daytime (see flushFoundingCreatorEmails), so people abroad aren't
+    // woken up and people in far timezones aren't starved by the Lagos window.
+    const inLagosWindow = hour >= FC_EMAIL_START_HOUR && hour < FC_EMAIL_END_HOUR;
+    if (inLagosWindow) {
     await queueFoundingCreatorLiveEmails(now);
     await queueFoundingCreatorLiveResend(now);
-    await queueFoundingCreatorNudges(now);
+    await queueFoundingCreatorNudges(fcNow());
+    }
     const result = await flushFoundingCreatorEmails();
     if (result.queued) console.log('[founding-creator] email flush:', result);
   } catch (err) {
