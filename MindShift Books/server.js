@@ -735,7 +735,20 @@ app.post('/api/me/timezone', requireUser, async (req, res) => {
   try {
     const tz = String((req.body && req.body.tz) || '');
     if (!validTimeZone(tz)) return res.status(400).json({ error: 'Invalid timezone' });
-    await db.collection('users').doc(req.uid).set({ tz }, { merge: true });
+    const uref = db.collection('users').doc(req.uid);
+    await uref.set({ tz }, { merge: true });
+    // A creator whose badge is already scheduled moves to THEIR Monday in the newly saved timezone.
+    // Only a still-upcoming schedule is moved — an overdue one is left to run, never skipped.
+    try {
+      const cur = await uref.get();
+      const fc = cur.exists ? cur.get('foundingCreator') : null;
+      if (fc && (fc.status === 'active' || fc.status === 'faded') && fc.nextEvalAt && fc.nextEvalAt.toMillis() > Date.now()) {
+        let ts;
+        if (fc.pendingStart) { const k = fcPendingStartKey(fc); ts = k ? zonedMidnightFromKeyMs(tz, k) : nextLocalMondayMs(tz, Date.now()); }
+        else ts = nextLocalMondayMs(tz, Date.now());
+        await uref.update({ 'foundingCreator.nextEvalAt': admin.firestore.Timestamp.fromMillis(ts) });
+      }
+    } catch (e) { /* best effort — the weekly safety net still covers it */ }
     res.json({ ok: true });
   } catch (err) {
     console.error('/api/me/timezone error', err);
@@ -1861,36 +1874,49 @@ if (db) {
 // badge and decides who stays, who fades, and who loses it for good.
 async function runFoundingCreatorWeeklyCycle() {
   if (!db) return { checked: 0, active: 0, faded: 0, lost: 0 };
-  const now = fcNow(); // badge-week clock: week turns over Monday 12:00 UTC
-  const thisWeekKey = weekMondayKey(now);
-  const snap = await db.collection('users').where('foundingCreator.status', 'in', ['active', 'faded']).get();
+  const nowMs = Date.now();
+  // Only badges whose owner's Monday has arrived (nextEvalAt <= now) — usually none, so this is ~1 read.
+  const snap = await db.collection('users')
+    .where('foundingCreator.nextEvalAt', '<=', admin.firestore.Timestamp.fromMillis(nowMs)).get();
 
   let checked = 0, active = 0, faded = 0, lost = 0;
   for (const doc of snap.docs) {
     const u = doc.data();
     const fc = u.foundingCreator;
+    if (!fc || (fc.status !== 'active' && fc.status !== 'faded')) {
+      // Nothing left to evaluate (lost / malformed) — stop scheduling it.
+      await doc.ref.update({ 'foundingCreator.nextEvalAt': admin.firestore.FieldValue.delete() }).catch(() => null);
+      continue;
+    }
     checked++;
-    // Still waiting on the launch grace period (see
-    // maybeActivatePendingFoundingCreators) — nothing to evaluate yet.
+    const tz = fcUserTz(u);
+    const thisWeekKey = localWeekKey(tz, nowMs);                                    // this creator's own Monday
+    const nextEvalTs = admin.firestore.Timestamp.fromMillis(nextLocalMondayMs(tz, nowMs));
+    const weekStartTs = admin.firestore.Timestamp.fromMillis(localMondayStartMs(tz, nowMs));
+
+    // Still waiting for the Monday their tracking starts (launch grace / late-week earners).
     if (fc.pendingStart) {
-      const startsMs = fc.weekStart && fc.weekStart.toMillis ? fc.weekStart.toMillis() : 0;
-      if (startsMs && now.getTime() >= startsMs) {
-        try {
+      const startKey = fcPendingStartKey(fc);
+      try {
+        if (startKey && thisWeekKey >= startKey) {
           const totals = await currentContentTotals(doc.id);
           await doc.ref.update({
             'foundingCreator.pendingStart': false,
             'foundingCreator.snapshot': totals,
-            'foundingCreator.weekStart': admin.firestore.Timestamp.fromDate(mondayStartOfWeek(now)),
-            'foundingCreator.lastCheckedWeek': thisWeekKey
+            'foundingCreator.weekStart': weekStartTs,
+            'foundingCreator.lastCheckedWeek': thisWeekKey,
+            'foundingCreator.nextEvalAt': nextEvalTs
           });
-        } catch (err) { console.error('[founding-creator] start-tracking failed for', doc.id, err); }
-      }
+        } else {
+          await doc.ref.update({ 'foundingCreator.nextEvalAt': admin.firestore.Timestamp.fromMillis(startKey ? zonedMidnightFromKeyMs(tz, startKey) : nextLocalMondayMs(tz, nowMs)) });
+        }
+      } catch (err) { console.error('[founding-creator] start-tracking failed for', doc.id, err); }
       active++; continue;
     }
-    // Someone who earned the badge THIS week (e.g. mid-week, via
-    // claim-profile-voucher) already has lastCheckedWeek === thisWeekKey —
-    // their first tracked week isn't over yet, so leave them alone.
-    if (fc.lastCheckedWeek === thisWeekKey) {
+    // Already judged for this local week (or earned this week — their first tracked week isn't over):
+    // nothing to judge, just line up the next Monday.
+    if (fc.lastCheckedWeek && fc.lastCheckedWeek >= thisWeekKey) {
+      try { await doc.ref.update({ 'foundingCreator.nextEvalAt': nextEvalTs }); } catch (err) { console.error('[founding-creator] reschedule failed for', doc.id, err); }
       if (fc.status === 'active') active++; else faded++;
       continue;
     }
@@ -1924,19 +1950,19 @@ async function runFoundingCreatorWeeklyCycle() {
         'foundingCreator.missedAt': missedAt
       };
       // Emails ride along in the same write as the status change (queued, not
-      // sent here — see the Founding Creator emails block further down).
-      // Every user evaluated on a Monday gets exactly one email describing where
-      // they now stand: still active → newWeek, just went inactive → faded,
-      // restored → welcomeBack, lost → removed.
+      // sent here — see the Founding Creator emails block further down; they go out
+      // in the creator's own daytime).
       if (fc.status === 'faded' && newStatus === 'active') update['foundingCreator.emailQueue'] = fcQueuedEmail('welcomeBack');
       else if (newStatus === 'lost') update['foundingCreator.emailQueue'] = fcQueuedEmail('removed');
       else if (fc.status === 'active' && newStatus === 'faded') update['foundingCreator.emailQueue'] = fcQueuedEmail('faded');
       else if (fc.status === 'active' && newStatus === 'active') update['foundingCreator.emailQueue'] = fcQueuedEmail('newWeek');
-      // A lost badge stops being tracked — no reason to keep rolling its
-      // snapshot forward every week after it's gone for good.
+      // A lost badge stops being tracked and scheduled.
       if (newStatus !== 'lost') {
         update['foundingCreator.snapshot'] = totals;
-        update['foundingCreator.weekStart'] = admin.firestore.Timestamp.fromDate(mondayStartOfWeek(now));
+        update['foundingCreator.weekStart'] = weekStartTs;
+        update['foundingCreator.nextEvalAt'] = nextEvalTs;
+      } else {
+        update['foundingCreator.nextEvalAt'] = admin.firestore.FieldValue.delete();
       }
       await doc.ref.update(update);
       if (newStatus === 'active') active++; else if (newStatus === 'faded') faded++; else lost++;
@@ -1947,21 +1973,50 @@ async function runFoundingCreatorWeeklyCycle() {
   return { checked, active, faded, lost };
 }
 
+// Gives every tracked badge that has no nextEvalAt yet one, so the hourly tick can find it. Runs on the first
+// tick after deploy and then once per badge-week as a safety net for any badge created without one. Badge
+// holders are few, so the scan is cheap; the hourly path never scans.
+let fcAdoptSweepKey = null;
+async function adoptFoundingCreatorSchedules() {
+  if (!db) return;
+  const sweepKey = weekMondayKey(fcNow());
+  if (fcAdoptSweepKey === sweepKey) return;
+  const stateRef = db.collection('meta').doc('foundingCreatorLocalSchedule');
+  const st = await stateRef.get();
+  if (st.exists && st.data().lastSweepKey && st.data().lastSweepKey >= sweepKey) { fcAdoptSweepKey = sweepKey; return; }
+  const nowMs = Date.now();
+  const snap = await db.collection('users').where('foundingCreator.status', 'in', ['active', 'faded']).get();
+  let adopted = 0;
+  for (const doc of snap.docs) {
+    const u = doc.data(), fc = u.foundingCreator;
+    if (!fc || fc.nextEvalAt) continue;
+    const tz = fcUserTz(u);
+    let ts;
+    if (fc.pendingStart) {
+      const startKey = fcPendingStartKey(fc);
+      ts = startKey ? zonedMidnightFromKeyMs(tz, startKey) : nextLocalMondayMs(tz, nowMs);
+    } else {
+      // Judged already for this creator's current local week → wait for the next Monday; otherwise their
+      // Monday has already arrived and they're due now.
+      ts = (fc.lastCheckedWeek && fc.lastCheckedWeek >= localWeekKey(tz, nowMs)) ? nextLocalMondayMs(tz, nowMs) : localMondayStartMs(tz, nowMs);
+    }
+    try { await doc.ref.update({ 'foundingCreator.nextEvalAt': admin.firestore.Timestamp.fromMillis(ts) }); adopted++; }
+    catch (err) { console.error('[founding-creator] adopt schedule failed for', doc.id, err); }
+  }
+  await stateRef.set({ lastSweepKey: sweepKey, lastSweepAt: admin.firestore.Timestamp.now(), adopted }, { merge: true });
+  fcAdoptSweepKey = sweepKey;
+  if (adopted) console.log('[founding-creator] scheduled', adopted, 'badges on their own Monday');
+}
+
 async function maybeRunFoundingCreatorCheck() {
   if (!db) return;
   try {
-    const now = fcNow();
-    const thisWeekKey = weekMondayKey(now);
-    const stateRef = db.collection('meta').doc('foundingCreatorSchedule');
-    const stateDoc = await stateRef.get();
-    const prev = stateDoc.exists ? stateDoc.data() : null;
-    // '>=' (not '===') so switching the week boundary can never re-run a week
-    // an earlier boundary already processed. ISO date keys compare correctly as strings.
-    if (prev && prev.lastRunWeek && prev.lastRunWeek >= thisWeekKey) return;
-
+    await adoptFoundingCreatorSchedules();
     const result = await runFoundingCreatorWeeklyCycle();
-    await stateRef.set({ lastRunWeek: thisWeekKey, lastRunAt: admin.firestore.Timestamp.now(), lastRunResult: result }, { merge: true });
-    console.log('[founding-creator] weekly run:', thisWeekKey, result);
+    if (result.checked) {
+      await db.collection('meta').doc('foundingCreatorSchedule').set({ lastRunAt: admin.firestore.Timestamp.now(), lastRunResult: result }, { merge: true });
+      console.log('[founding-creator] per-creator Monday run:', result);
+    }
   } catch (err) {
     console.error('[founding-creator] weekly run failed', err);
   }
@@ -1994,7 +2049,8 @@ async function maybeActivatePendingFoundingCreators() {
           'foundingCreator.pendingStart': false,
           'foundingCreator.snapshot': totals,
           'foundingCreator.weekStart': admin.firestore.Timestamp.fromDate(mondayStartOfWeek(now)),
-          'foundingCreator.lastCheckedWeek': weekMondayKey(now)
+          'foundingCreator.lastCheckedWeek': weekMondayKey(now),
+          'foundingCreator.nextEvalAt': admin.firestore.Timestamp.fromMillis(nextLocalMondayMs(fcUserTz(doc.data()), Date.now()))
         });
         activated++;
       } catch (err) { console.error('[founding-creator] activate-pending failed for', doc.id, err); }
@@ -2128,7 +2184,8 @@ async function realignLateWeekFoundingCreators() {
           'foundingCreator.weekStart': admin.firestore.Timestamp.fromMillis(nextMondayMs),
           'foundingCreator.snapshot': null,
           'foundingCreator.lastCheckedWeek': null,
-          'foundingCreator.missedAt': null
+          'foundingCreator.missedAt': null,
+          'foundingCreator.nextEvalAt': admin.firestore.Timestamp.fromMillis(zonedMidnightFromKeyMs(fcUserTz(doc.data()), new Date(nextMondayMs).toISOString().slice(0, 10)))
         });
         moved++;
       } catch (err) { console.error('[founding-creator] late-week realign failed for', doc.id, err); }
@@ -2526,6 +2583,59 @@ function weekMondayKey(date) {
 // Monday 12:00 UTC. Everything else (payouts, digests) stays on Lagos time.
 function fcNow() { return new Date(Date.now() - 12 * 60 * 60 * 1000); }
 
+// ── Per-creator Monday ──────────────────────────────────────────────────────
+// Each creator is judged the moment THEIR OWN Monday begins (00:00 in their saved timezone, Lagos if none is
+// saved), not at one global instant. A creator's "week" is simply the stretch between their judgements (the
+// snapshot diff), so nothing else about tracking changes. Every tracked badge carries
+// foundingCreator.nextEvalAt (the UTC instant of its owner's next Monday 00:00); the hourly tick only reads
+// badges whose nextEvalAt has passed, so cost stays tiny however many badges exist.
+const FC_DEFAULT_TZ = 'Africa/Lagos';
+function fcUserTz(u) { const tz = u && u.tz; return (tz && validTimeZone(tz)) ? tz : FC_DEFAULT_TZ; }
+function tzOffsetMs(tz, ms) {
+  let f = tzOffsetMs.cache.get(tz);
+  if (!f) {
+    f = new Intl.DateTimeFormat('en-US', { timeZone: tz, hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' });
+    tzOffsetMs.cache.set(tz, f);
+  }
+  const p = {};
+  f.formatToParts(new Date(ms)).forEach(x => { if (x.type !== 'literal') p[x.type] = Number(x.value); });
+  return Date.UTC(p.year, p.month - 1, p.day, p.hour === 24 ? 0 : p.hour, p.minute, p.second) - Math.floor(ms / 1000) * 1000;
+}
+tzOffsetMs.cache = new Map();
+function zonedMidnightMs(tz, y, m, d) {           // UTC instant of local 00:00 on that local date (m = 1..12)
+  const guess = Date.UTC(y, m - 1, d, 0, 0, 0);
+  let t = guess - tzOffsetMs(tz, guess);
+  t = guess - tzOffsetMs(tz, t);                   // second pass settles daylight-saving edges
+  return t;
+}
+function zonedMondayParts(tz, ms) {                // the local calendar date of that week's Monday
+  const d = new Date(ms + tzOffsetMs(tz, ms));
+  const dow = d.getUTCDay();
+  const back = dow === 0 ? 6 : dow - 1;
+  const mon = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - back));
+  return { y: mon.getUTCFullYear(), m: mon.getUTCMonth() + 1, d: mon.getUTCDate() };
+}
+function localWeekKey(tz, ms) {                    // 'YYYY-MM-DD' of the local Monday (same key shape as weekMondayKey)
+  const { y, m, d } = zonedMondayParts(tz, ms);
+  return new Date(Date.UTC(y, m - 1, d)).toISOString().slice(0, 10);
+}
+function localMondayStartMs(tz, ms) { const { y, m, d } = zonedMondayParts(tz, ms); return zonedMidnightMs(tz, y, m, d); }
+function nextLocalMondayMs(tz, ms) {
+  const { y, m, d } = zonedMondayParts(tz, ms);
+  const nxt = new Date(Date.UTC(y, m - 1, d + 7));
+  return zonedMidnightMs(tz, nxt.getUTCFullYear(), nxt.getUTCMonth() + 1, nxt.getUTCDate());
+}
+function zonedMidnightFromKeyMs(tz, key) { const [y, m, d] = key.split('-').map(Number); return zonedMidnightMs(tz, y, m, d); }
+// A pending badge's weekStart holds the Monday its tracking begins (stored as that date at 00:00 UTC).
+function fcPendingStartKey(fc) {
+  const ms = fc && fc.weekStart && fc.weekStart.toMillis ? fc.weekStart.toMillis() : 0;
+  return ms ? new Date(ms).toISOString().slice(0, 10) : null;
+}
+async function fcTzForUid(uid) {
+  try { const d = await db.collection('users').doc(uid).get(); return fcUserTz(d.exists ? d.data() : null); }
+  catch (e) { return FC_DEFAULT_TZ; }
+}
+
 // Timezone helpers for "don't email people in the middle of their night".
 // Users' IANA timezone is stored on users/{uid}.tz by /api/me/timezone.
 // No tz stored → treated as "unknown": behaviour is exactly as before.
@@ -2584,6 +2694,7 @@ async function foundingCreatorGraceUntil() {
 // immediate real week (normal case) and a pending/deferred week (only
 // while the launch grace period above is still open).
 async function buildFoundingCreatorRecord(uid, now) {
+  const tz = await fcTzForUid(uid);   // the creator's own timezone decides when their Monday is
   const graceUntilMs = await foundingCreatorGraceUntil();
   if (graceUntilMs && now.getTime() < graceUntilMs) {
     return {
@@ -2593,7 +2704,8 @@ async function buildFoundingCreatorRecord(uid, now) {
       snapshot: null,
       pendingStart: true,
       lastCheckedWeek: null,
-      missedAt: null
+      missedAt: null,
+      nextEvalAt: admin.firestore.Timestamp.fromMillis(zonedMidnightFromKeyMs(tz, new Date(graceUntilMs).toISOString().slice(0, 10)))
     };
   }
   // Earned late in the badge week (from Wednesday 00:00 UTC onward): the badge
@@ -2604,14 +2716,16 @@ async function buildFoundingCreatorRecord(uid, now) {
   const fnow = fcNow(); // badge-week clock: weeks turn over Monday 12:00 UTC
   const weekStartReal = mondayStartOfWeek(fnow).getTime() + 12 * 60 * 60 * 1000;
   if (Date.now() - weekStartReal >= 36 * 60 * 60 * 1000) {
+    const startMs = mondayStartOfWeek(fnow).getTime() + 7 * 24 * 60 * 60 * 1000;
     return {
       status: 'active',
       earnedAt: admin.firestore.Timestamp.now(),
-      weekStart: admin.firestore.Timestamp.fromMillis(mondayStartOfWeek(fnow).getTime() + 7 * 24 * 60 * 60 * 1000),
+      weekStart: admin.firestore.Timestamp.fromMillis(startMs),
       snapshot: null,
       pendingStart: true,
       lastCheckedWeek: null,
-      missedAt: null
+      missedAt: null,
+      nextEvalAt: admin.firestore.Timestamp.fromMillis(zonedMidnightFromKeyMs(tz, new Date(startMs).toISOString().slice(0, 10)))
     };
   }
   const totals = await currentContentTotals(uid);
@@ -2622,7 +2736,8 @@ async function buildFoundingCreatorRecord(uid, now) {
     snapshot: totals,
     pendingStart: false,
     lastCheckedWeek: weekMondayKey(fnow),
-    missedAt: null
+    missedAt: null,
+    nextEvalAt: admin.firestore.Timestamp.fromMillis(nextLocalMondayMs(tz, Date.now()))
   };
 }
 
@@ -2832,7 +2947,7 @@ app.get('/api/founding-creator/status', requireUser, async (req, res) => {
     // happened to be granted. (The stored weekStart is only used internally
     // by the weekly evaluator to reset the snapshot; it's not the source of
     // truth for what the user sees here.)
-    const weekEndsAt = new Date(mondayStartOfWeek(fcNow()).getTime() + 7 * 24 * 60 * 60 * 1000 + 12 * 60 * 60 * 1000).toISOString(); // real instant: Monday 12:00 UTC
+    const weekEndsAt = new Date(nextLocalMondayMs(fcUserTz(u), Date.now())).toISOString(); // the creator's own next Monday 00:00
 
     return res.json({
       earned: true,
@@ -2965,11 +3080,12 @@ async function sendFoundingCreatorEmail(user, stage, { progress } = {}) {
   const copy = FC_EMAIL_COPY[stage];
   if (!copy) return { ok: false, error: 'unknown stage: ' + stage };
 
-  const now = fcNow();
   const firstName = String(user.name || 'there').split(' ')[0].replace(/[<>&"]/g, '') || 'there';
-  const weekEnd = new Date(mondayStartOfWeek(now).getTime() + 7 * FC_DAY_MS); // next Monday 00:00, Lagos-shifted clock
-  const daysLeft = Math.max(1, Math.ceil((weekEnd.getTime() - now.getTime()) / FC_DAY_MS));
-  const weekEndsLabel = new Date(weekEnd.getTime() - FC_DAY_MS).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
+  const fcTz = fcUserTz(user);                                  // the creator's own Monday ends their week
+  const nowMs = Date.now();
+  const weekEndMs = nextLocalMondayMs(fcTz, nowMs);
+  const daysLeft = Math.max(1, Math.ceil((weekEndMs - nowMs) / FC_DAY_MS));
+  const weekEndsLabel = new Date(weekEndMs - 12 * 60 * 60 * 1000).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: fcTz });  // the Sunday before
   const T = FOUNDING_CREATOR_TARGET;
   const showBars = (stage === 'atRisk' || stage === 'finalWarning') && !!progress;
 
