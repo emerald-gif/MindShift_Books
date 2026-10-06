@@ -518,6 +518,12 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
 .manage-switch input:checked + .manage-switch-track::before{transform:translateX(18px)}
 .delete-warning{font-size:13.5px;color:var(--sub);line-height:1.5;padding:0 10px 12px}
 /* ── POST CARD (text posts) ── */
+.rp-by{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--sub);margin:0 0 8px}
+.rp-by svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.rp-by b{font-weight:700;color:var(--sub)}
+.rp-by-when{font-weight:500;color:var(--mute)}
+.rp-title{font-size:17px;font-weight:800;line-height:1.3;letter-spacing:-.01em;color:var(--txt);margin:2px 0 10px}
+.rp-media{display:block;width:100%;max-height:420px;object-fit:cover;border-radius:14px;margin:8px 0 2px;background:#eef2ff}
 .pcard-text{font-size:14.5px;color:var(--txt);line-height:1.5;white-space:pre-wrap;word-break:break-word;
   display:-webkit-box;-webkit-line-clamp:15;-webkit-box-orient:vertical;overflow:hidden}
 .pcard-seemore{display:none;margin-top:2px;font-size:13.5px;font-weight:700;color:var(--p);cursor:pointer}
@@ -2555,6 +2561,7 @@ window.onPostScroll = function(id){
 // buildEmbedCardHtml docs) — just a "Reposted" label + the embed. A quote
 // repost is a real post of the reposter's own, so it renders like any
 // other post card, with the quoted content embedded under the caption.
+const RP_ICON = '<svg viewBox="0 0 24 24"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>';
 function renderRepostsSection(sec){
   if(_repostsLoading || (!_repostsLoaded && !allReposts.length)){
     sec.innerHTML = `<div class="empty-state"><p>Loading…</p></div>`;
@@ -2585,15 +2592,34 @@ function renderRepostsSection(sec){
         </div>`;
       }
       const openFn = ttype==='article' ? `openArticle('${tid}','article')` : `openArticle('${tid}','post')`;
-      return `<div class="acard pcard" onclick="${openFn}">
-        <div class="acard-body">
-          <div class="acard-author">
+      // X-style: a small "<name> reposted" line, then the ORIGINAL post (its author + content). Built from the
+      // snapshot saved with each repost, so reposts made earlier render the same way. No snapshot → old layout.
+      const snap = r.targetSnapshot;
+      const meName = isOwner ? 'You' : (profileData.name || 'Someone');
+      let rpTop = '', rpHead, rpBody;
+      if(snap){
+        const ownerUid = snap.authorUid || '';
+        const img = snap.img || '';
+        rpTop = `<div class="rp-by">${RP_ICON}<span><b>${esc(meName)}</b> reposted</span>${r.createdAt ? `<span class="rp-by-when">· ${fmtRel(r.createdAt)}</span>` : ''}</div>`;
+        rpHead = `<div class="acard-author" ${ownerUid && ownerUid !== 'official' ? `onclick="event.stopPropagation();goProfile('${ownerUid}')" style="cursor:pointer"` : ''}>
+            <img class="acard-av" src="${snap.avatar||'logo.jpg'}" alt="${esc(snap.author||'')}" onerror="this.style.background='linear-gradient(135deg,#4f46e5,#06b6d4)'">
+            <span class="acard-author-name">${esc(snap.author||'MindShift Books User')}</span>
+          </div>`;
+        rpBody = ttype==='article'
+          ? `${snap.title ? `<div class="rp-title">${esc(snap.title)}</div>` : ''}${img ? `<img class="rp-media" src="${img}" alt="" loading="lazy" onerror="this.style.display='none'">` : ''}`
+          : `${snap.text ? `<div class="pcard-text">${esc(snap.text)}</div>` : ''}${img ? `<img class="rp-media" src="${img}" alt="" loading="lazy" onerror="this.style.display='none'">` : ''}`;
+      } else {
+        rpHead = `<div class="acard-author">
             <img class="acard-av" src="${profileData.photo||'logo.jpg'}" alt="${esc(profileData.name||'You')}" onerror="this.style.background='linear-gradient(135deg,#4f46e5,#06b6d4)'">
             <span class="acard-author-name">${esc(profileData.name||'You')}</span>
             <span class="acard-author-dot">·</span>
             <span class="acard-author-date">${fmtRel(r.createdAt)}</span>
-          </div>
-          ${repost.buildEmbedCardHtml(r.targetSnapshot)}
+          </div>`;
+        rpBody = repost.buildEmbedCardHtml(r.targetSnapshot);
+      }
+      return `<div class="acard pcard" onclick="${openFn}">
+        <div class="acard-body">
+          ${rpTop}${rpHead}${rpBody}
           <div class="acard-foot">
             <button class="acard-like ${likedSet.has(tid)?'liked':''}" id="lb-${tid}" onclick="event.stopPropagation();handleLike('${tid}')">
               <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>

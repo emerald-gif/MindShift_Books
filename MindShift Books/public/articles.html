@@ -1471,8 +1471,34 @@ function restoreFeedFromCache(){
 }
 // Fresh items keep the position they already have on screen; anything new goes on top
 // (or at the end if the reader has already scrolled down); anything gone from the server drops out.
+// Reposts always reach the people they're for: yours, and ones from people you follow, are ALWAYS shown (even
+// when the original is also in the feed). Only reposts from strangers are thinned out — dropped when the
+// original is already on screen, and several strangers' reposts of the same thing collapse to one (the most
+// recent) — so discovery doesn't fill with copies. Quote (caption) reposts are real posts and never touched.
+function feedRepostsDeduped(articles){
+  const have = new Set([...articles.map(a=>'article:'+a.id), ...POSTS.map(p=>'post:'+p.id)]);
+  const follow = _myFollowingCache;
+  const meUid = currentUser ? currentUser.uid : _engageUid();
+  const isMineOrFollowed = r => !!meUid && r.reposterUid===meUid || !!(follow && r.reposterUid && follow.has(r.reposterUid));
+  const keyOf = r => (r.targetType || r.targetSnapshot?.type || 'post') + ':' + (r.targetId || r.targetSnapshot?.id || '');
+  const out = [], coveredKeys = new Set(), strangers = new Map();
+  REPOSTS.forEach(r=>{
+    const id = r.targetId || r.targetSnapshot?.id || '';
+    if(!id || isMineOrFollowed(r)){ out.push(r); if(id) coveredKeys.add(keyOf(r)); }
+  });
+  REPOSTS.forEach(r=>{
+    const id = r.targetId || r.targetSnapshot?.id || '';
+    if(!id || isMineOrFollowed(r)) return;
+    const k = keyOf(r);
+    if(have.has(k) || coveredKeys.has(k)) return;
+    const cur = strangers.get(k);
+    if(!cur || _feedItemTime(r) > _feedItemTime(cur)) strangers.set(k, r);
+  });
+  return [...out, ...strangers.values()];
+}
 function stableMergeOrder(oldOrder){
-  const fresh = [...getFiltered().map(a=>({...a, type:'article'})), ...POSTS, ...REPOSTS];
+  const _arts = getFiltered().map(a=>({...a, type:'article'}));
+  const fresh = [..._arts, ...POSTS, ...feedRepostsDeduped(_arts)];
   const byKey = new Map(fresh.map(x=>[x.type+':'+x.id, x]));
   const kept = [];
   oldOrder.forEach(o=>{
@@ -2853,7 +2879,7 @@ function weightedShuffleFeed(items){
 function rebuildMergedFeedOrder(){
   if(activeFilter!=='all' || searchQuery) return; // filtered/search views don't use this
   const articles = getFiltered().map(a=>({...a, type:'article'}));
-  mergedFeedOrder = weightedShuffleFeed([...articles, ...POSTS, ...REPOSTS]);
+  mergedFeedOrder = weightedShuffleFeed([...articles, ...POSTS, ...feedRepostsDeduped(articles)]);
 }
 
 function getMergedFeed(){
@@ -3094,6 +3120,8 @@ function buildRepostCardHtml(r){
   const orig = (ttype === 'article' ? ARTICLES : POSTS).find(x=>x.id===tid);
   const origDate = orig && orig.publishedAt ? `<span class="acard-author-dot">·</span><span class="acard-author-date">${fmtRel(orig.publishedAt)}</span>` : '';
   const when = r.publishedAt ? `<span class="rp-by-when">· ${fmtRel(r.publishedAt)}</span>` : '';
+  const meUid = currentUser ? currentUser.uid : _engageUid();        // before sign-in resolves, the remembered account
+  const byMe = !!(meUid && r.reposterUid && r.reposterUid === meUid);
   const img = snap.img || '';
   const body = ttype === 'article'
     ? `${snap.title ? `<div class="rp-title">${esc(snap.title)}</div>` : ''}
@@ -3115,7 +3143,7 @@ function buildRepostCardHtml(r){
     <div style="height:1px;background:var(--border);margin:4px 0"></div>` : '';
   return `<div class="acard pcard rp-card" data-repost-id="${r.id}" onclick="${openFn}">
     <div class="acard-body">
-      <div class="rp-by" data-author-uid="${r.reposterUid||''}" onclick="event.stopPropagation();goAuthor('${r.reposterUid||''}',false)">${RP_ICON}<span><b data-author-name>${esc(r.reposterName||'Someone')}</b> reposted</span>${when}</div>
+      <div class="rp-by" ${byMe ? '' : `data-author-uid="${r.reposterUid||''}"`} onclick="event.stopPropagation();goAuthor('${r.reposterUid||''}',false)">${RP_ICON}<span><b ${byMe ? '' : 'data-author-name'}>${byMe ? 'You' : esc(r.reposterName||'Someone')}</b> reposted</span>${when}</div>
       <div class="acard-head">
         <div class="acard-author" data-author-uid="${ownerUid}" onclick="event.stopPropagation();goAuthor('${ownerUid}',${isMs})">
           <img class="acard-av" data-author-photo src="${snap.avatar||'logo.jpg'}" alt="${esc(snap.author||'')}" onerror="this.style.background='linear-gradient(135deg,#4f46e5,#06b6d4)'">
