@@ -228,6 +228,12 @@ main{max-width:1100px;margin:0 auto}
 .acard-like.liked{color:var(--red)}
 .acard-like.liked svg{fill:var(--red);stroke:var(--red);animation:hpop .25s ease}
 /* ── POST CARD ── */
+.rp-by{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--sub);margin:0 0 8px;cursor:pointer}
+.rp-by svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.rp-by b{font-weight:700;color:var(--sub)}
+.rp-by-when{font-weight:500;color:var(--mute)}
+.rp-title{font-size:17px;font-weight:800;line-height:1.3;letter-spacing:-.01em;color:var(--txt);margin:2px 0 10px}
+.rp-media{display:block;width:100%;max-height:420px;object-fit:cover;border-radius:14px;margin:8px 0 2px;background:#eef2ff}
 .pcard-text{font-size:14.5px;color:var(--txt);line-height:1.5;white-space:pre-wrap;word-break:break-word;
   display:-webkit-box;-webkit-line-clamp:15;-webkit-box-orient:vertical;overflow:hidden}
 .pcard-seemore{display:none;margin-top:2px;font-size:13.5px;font-weight:700;color:var(--p);cursor:pointer}
@@ -2980,7 +2986,7 @@ function buildPostCardHtml(p){
 // bound to targetId, not to the repost record itself). Tapping the embed
 // itself opens the original directly (no separate "repost view" exists
 // for a plain repost) — same as before, unchanged.
-function buildRepostCardHtml(r){
+function buildRepostCardHtmlLegacy(r){
   // Fall back to the snapshot's own id if the repost doc's top-level
   // targetId is somehow missing — belt-and-suspenders, since a truly
   // empty id here means every action on this card (open, like, repost)
@@ -3059,6 +3065,85 @@ function buildRepostCardHtml(r){
         ${commentBtn}
         <button class="acard-repost" id="rb-${tid}" onclick="event.stopPropagation();doRepostCard('${ttype}','${tid}')" title="Repost">
           <svg viewBox="0 0 24 24"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+          <span id="rc-${tid}"></span>
+        </button>
+        <button class="acard-save ${savedSet.has(tid)?'saved':''}" id="sv-${tid}" onclick="event.stopPropagation();handleSave('${tid}')" title="Save">
+          <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── Plain repost, X-style ─────────────────────────────────────────────────
+// A small "<name> reposted" line sits above, and the card itself reads as the ORIGINAL post: its author in the
+// header, its content below, and the action row bound to the original's id (so counts / likes are the
+// original's). Built from the snapshot saved with every repost, so reposts made before this change look the
+// same. A repost with no snapshot falls back to the previous layout.
+const RP_ICON = '<svg viewBox="0 0 24 24"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>';
+function buildRepostCardHtml(r){
+  const snap = r.targetSnapshot;
+  const tid = r.targetId || snap?.id || '';
+  if(!snap || !tid) return buildRepostCardHtmlLegacy(r);
+  const ttype = r.targetType || snap.type || 'post';
+  const openFn = ttype === 'article' ? `goRead('${tid}')` : `goPostRead('${tid}')`;
+  const ownerUid = snap.authorUid || '';
+  const isMs = ownerUid === 'official';
+  const isOwnerViewing = ownerUid && currentUser && ownerUid === currentUser.uid;
+  // The original's own post time, when we happen to have it loaded (snapshots don't store one).
+  const orig = (ttype === 'article' ? ARTICLES : POSTS).find(x=>x.id===tid);
+  const origDate = orig && orig.publishedAt ? `<span class="acard-author-dot">·</span><span class="acard-author-date">${fmtRel(orig.publishedAt)}</span>` : '';
+  const when = r.publishedAt ? `<span class="rp-by-when">· ${fmtRel(r.publishedAt)}</span>` : '';
+  const img = snap.img || '';
+  const body = ttype === 'article'
+    ? `${snap.title ? `<div class="rp-title">${esc(snap.title)}</div>` : ''}
+       ${img ? `<img class="rp-media" src="${img}" alt="" loading="lazy" onerror="this.style.display='none'">` : ''}`
+    : `${snap.text ? `<div class="pcard-text">${esc(snap.text)}</div>` : ''}
+       ${img ? `<img class="rp-media" src="${img}" alt="" loading="lazy" onerror="this.style.display='none'">` : ''}`;
+  const commentBtn = ttype === 'post'
+    ? `<button class="pcard-comment" onclick="event.stopPropagation();goPostReadComment('${tid}')" title="Comment">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+        <span id="pcc-${tid}"></span>
+      </button>`
+    : `<button class="pcard-comment" onclick="event.stopPropagation();goReadComment('${tid}')" title="Comment">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+        <span id="acc-${tid}"></span>
+      </button>`;
+  const editDelete = isOwnerViewing ? `
+    <button class="acard-menu-item" onclick="closeOpenCardMenu();location.href='/${ttype==='article'?'write':'create-post'}?edit=${tid}'">Edit</button>
+    <button class="acard-menu-item" style="color:var(--red)" onclick="closeOpenCardMenu();deleteFromFeedMenu('${tid}','${ttype}')">Delete</button>
+    <div style="height:1px;background:var(--border);margin:4px 0"></div>` : '';
+  return `<div class="acard pcard rp-card" data-repost-id="${r.id}" onclick="${openFn}">
+    <div class="acard-body">
+      <div class="rp-by" data-author-uid="${r.reposterUid||''}" onclick="event.stopPropagation();goAuthor('${r.reposterUid||''}',false)">${RP_ICON}<span><b data-author-name>${esc(r.reposterName||'Someone')}</b> reposted</span>${when}</div>
+      <div class="acard-head">
+        <div class="acard-author" data-author-uid="${ownerUid}" onclick="event.stopPropagation();goAuthor('${ownerUid}',${isMs})">
+          <img class="acard-av" data-author-photo src="${snap.avatar||'logo.jpg'}" alt="${esc(snap.author||'')}" onerror="this.style.background='linear-gradient(135deg,#4f46e5,#06b6d4)'">
+          <span class="acard-author-name" data-author-name>${esc(snap.author||'MindShift Books User')}</span>
+          ${isMs ? `<span class="vbadge"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>` : ''}
+          ${origDate}
+        </div>
+        ${followPillHtml(ownerUid, snap.author, isMs)}
+        <div class="acard-menu-wrap" onclick="event.stopPropagation()">
+          <button class="acard-menu-btn" onclick="toggleCardMenu('${tid}',event)" title="More options">
+            <svg fill="currentColor" viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+          </button>
+          <div class="acard-menu-drop" id="cmenu-${tid}">
+            ${editDelete}
+            <button class="acard-menu-item" onclick="copyCardLink('${tid}')">Copy Link</button>
+            <button class="acard-menu-item" onclick="closeOpenCardMenu();shareAsImage('${tid}','${ttype}')">Share as Image</button>
+          </div>
+        </div>
+      </div>
+      ${body}
+      <div class="acard-foot">
+        <button class="acard-like ${likedSet.has(tid)?'liked':''}" id="lb-${tid}" onclick="event.stopPropagation();handleLike('${tid}')">
+          <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+          <span id="lc-${tid}"></span>
+        </button>
+        ${commentBtn}
+        <button class="acard-repost" id="rb-${tid}" onclick="event.stopPropagation();doRepostCard('${ttype}','${tid}')" title="Repost">
+          ${RP_ICON}
           <span id="rc-${tid}"></span>
         </button>
         <button class="acard-save ${savedSet.has(tid)?'saved':''}" id="sv-${tid}" onclick="event.stopPropagation();handleSave('${tid}')" title="Save">
