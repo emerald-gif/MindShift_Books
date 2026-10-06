@@ -2426,7 +2426,7 @@ function buildAcard(a){
         </div>` : ''}
       </div>
       <div class="acard-img">
-        <img src="${a.img||a.coverImage||''}" alt="${esc(a.title||'')}" loading="lazy" onerror="this.parentElement.style.background='linear-gradient(135deg,#e0e7ff,#93c5fd)'">
+        ${(a.img||a.coverImage) ? `<img src="${a.img||a.coverImage}" alt="${esc(a.title||'')}" loading="lazy" onerror="this.style.display='none';this.parentElement.style.background='linear-gradient(135deg,#e0e7ff,#93c5fd)'">` : ''}
         <div class="acard-img-ov">
           <div class="acard-img-meta">
             <span class="acard-ov-cat">${esc(a.cat||a.category||'ARTICLE')}</span>
@@ -3287,7 +3287,7 @@ function renderGrid(){
           </div>
         </div>
         <div class="acard-img">
-          <img src="${a.img}" alt="${a.title}" loading="lazy" onerror="this.parentElement.style.background='linear-gradient(135deg,#e0e7ff,#93c5fd)'">
+          <img src="${a.img}" alt="${a.title}" loading="lazy" onerror="this.style.display='none';this.parentElement.style.background='linear-gradient(135deg,#e0e7ff,#93c5fd)'">
           <div class="acard-img-ov">
             <div class="acard-img-meta">
               <span class="acard-ov-cat">${a.cat}</span>

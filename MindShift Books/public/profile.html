@@ -2635,7 +2635,10 @@ function renderRepostsSection(sec){
             ${ttype==='post' ? `<button class="pcard-comment" onclick="event.stopPropagation();openArticle('${tid}','post')" title="Comment">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
               <span id="pcc-${tid}"></span>
-            </button>` : ''}
+            </button>` : `<button class="pcard-comment" onclick="event.stopPropagation();location.href='/article-read?id=${tid}&comment=1'" title="Comment">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+              <span id="acc-${tid}"></span>
+            </button>`}
           </div>
         </div>
       </div>`;
@@ -2678,6 +2681,12 @@ function renderRepostsSection(sec){
   const engagementRefs = allReposts.map(r => r.kind==='plain' ? { id:r.targetId } : { id:r.post.id });
   fetchLikeCounts(engagementRefs.map(r=>({ id:r.id, hideLikeCount:false, isOwnerViewing:isOwner })));
   fetchRepostCounts(engagementRefs);
+  // comment counts for reposted posts / articles (the cards show the ORIGINAL's counts)
+  const plain = allReposts.filter(r => r.kind==='plain' && (r.targetId || r.targetSnapshot?.id));
+  const tidOf = r => r.targetId || r.targetSnapshot?.id;
+  const typeOf = r => r.targetType || r.targetSnapshot?.type || 'post';
+  fetchPostCommentCounts([...new Set(plain.filter(r=>typeOf(r)==='post').map(tidOf))]);
+  fetchArticleCommentCountsForReposts([...new Set(plain.filter(r=>typeOf(r)==='article').map(tidOf))]);
   markTruncatedPostText();
 }
 
@@ -3276,6 +3285,19 @@ window.handleSave = function(id){
     }
   })();
 };
+
+/* ── ARTICLE COMMENT COUNTS for reposted articles (articleMeta/{id}.commentCount) ── */
+async function fetchArticleCommentCountsForReposts(ids){
+  if(!ids.length) return;
+  try{
+    const results = await Promise.all(ids.map(id => getDoc(doc(db,'articleMeta',id)).catch(()=>null)));
+    results.forEach((snap,i)=>{
+      const id = ids[i];
+      const c = snap&&snap.exists() ? (snap.data().commentCount||0) : 0;
+      document.querySelectorAll(`#acc-${id}`).forEach(el=>{ el.textContent = c > 0 ? c : ''; });
+    });
+  }catch(e){}
+}
 
 /* ── POST COMMENT COUNTS (postMeta/{id}.commentCount) ── */
 async function fetchPostCommentCounts(ids){
