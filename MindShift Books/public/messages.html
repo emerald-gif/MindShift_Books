@@ -6,6 +6,11 @@
 <meta name="robots" content="noindex, nofollow"/>
 <meta name="theme-color" content="#ffffff"/>
 <title>Messages | MindShift Books</title>
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin/>
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin/>
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js"/>
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js"/>
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
@@ -84,6 +89,9 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .msg.me{align-self:flex-end;background:var(--gm);color:#fff;border-bottom-right-radius:6px}
 .msg .t{display:block;text-align:right;font-size:10.5px;margin-top:3px;opacity:.65}
 .msg.pending{opacity:.65}
+.stat{align-self:flex-end;font-size:11.5px;color:var(--mute);margin:0 6px 6px;line-height:1.2}
+.stat.err{color:var(--red);font-weight:700;cursor:pointer}
+.msg.failed{border:1.5px solid var(--red);opacity:1}
 .empty-chat{margin:auto;text-align:center;color:var(--mute);font-size:14px;padding:20px}
 
 .composer{display:flex;align-items:flex-end;gap:8px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid var(--border);flex-shrink:0}
@@ -101,7 +109,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 <body>
 
 <!-- ── INBOX ── -->
-<section class="view" id="listView">
+<section class="view on" id="listView">
   <div class="bar">
     <button class="back" id="listBack" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
     <div class="bar-title">Messages</div>
@@ -110,7 +118,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
     <button class="tab on" data-f="all">All</button>
     <button class="tab" data-f="unread">Unread<span class="n" id="unreadN"></span></button>
   </div>
-  <div class="list" id="list"></div>
+  <div class="list" id="list"><div class="skel-row"><div class="skel c"></div><div style="flex:1"><div class="skel" style="height:14px;width:42%;margin-bottom:9px"></div><div class="skel" style="height:12px;width:78%"></div></div></div><div class="skel-row"><div class="skel c"></div><div style="flex:1"><div class="skel" style="height:14px;width:42%;margin-bottom:9px"></div><div class="skel" style="height:12px;width:78%"></div></div></div><div class="skel-row"><div class="skel c"></div><div style="flex:1"><div class="skel" style="height:14px;width:42%;margin-bottom:9px"></div><div class="skel" style="height:12px;width:78%"></div></div></div><div class="skel-row"><div class="skel c"></div><div style="flex:1"><div class="skel" style="height:14px;width:42%;margin-bottom:9px"></div><div class="skel" style="height:12px;width:78%"></div></div></div><div class="skel-row"><div class="skel c"></div><div style="flex:1"><div class="skel" style="height:14px;width:42%;margin-bottom:9px"></div><div class="skel" style="height:12px;width:78%"></div></div></div><div class="skel-row"><div class="skel c"></div><div style="flex:1"><div class="skel" style="height:14px;width:42%;margin-bottom:9px"></div><div class="skel" style="height:12px;width:78%"></div></div></div></div>
 </section>
 
 <!-- ── CHAT ── -->
@@ -122,7 +130,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
       <div class="chat-id"><div class="chat-name" id="chatName"></div><div class="chat-sub" id="chatSub"></div></div>
     </button>
   </div>
-  <div class="msgs" id="msgs"></div>
+  <div class="msgs" id="msgs"><div class="empty-chat">Loading…</div></div>
   <div class="composer">
     <textarea id="input" rows="1" placeholder="Message…" maxlength="2000" aria-label="Type a message"></textarea>
     <button class="send" id="sendBtn" disabled aria-label="Send"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg></button>
@@ -131,37 +139,18 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 
 <div class="toast" id="toast"></div>
 
+<script>
+/* Opened straight into a chat (?with=…)? show the chat shell on the very first paint, not the inbox. */
+if(/[?&]with=/.test(location.search)){ document.getElementById('listView').classList.remove('on'); document.getElementById('chatView').classList.add('on'); }
+</script>
+
 <script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
-import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
-import { getFirestore, doc, getDoc, getDocs, setDoc, updateDoc, collection, query, orderBy, limit, startAfter,
-         onSnapshot, writeBatch, serverTimestamp, increment }
-  from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
-
-const app  = initializeApp({
-  apiKey:"AIzaSyDTn70s1_uIiSOR6lPLY_nKh8Ff1FViFCs",
-  authDomain:"mindshiftbooks-c4451.firebaseapp.com",
-  projectId:"mindshiftbooks-c4451",
-  storageBucket:"mindshiftbooks-c4451.firebasestorage.app",
-  messagingSenderId:"388697987853",
-  appId:"1:388697987853:web:f023df9412c22285012e44"
-});
-const auth = getAuth(app);
-const db   = getFirestore(app, 'default');
-
-/* ── DATA MODEL (kept deliberately small — see messages-rules.txt) ──────────────────────────────────
-   conversations/{uidA_uidB}/messages/{id}  { senderUid, text, createdAt }       (ids sorted → one thread per pair)
-   inbox/{uid}/threads/{otherUid}           { otherUid, name, photo, lastText, lastAt, lastSender, unread }
-   The inbox row carries the other person's name + photo, so the inbox never needs a second lookup per row.
-   Cost:  open inbox ≤30 reads (+1 per change) · open a chat ≤30 reads (+1 per new message) ·
-          send = 3 writes · mark read = 1 read (+1 write only if something was unread).
-   Listeners are dropped after the tab has been hidden for a minute and re-attached on return.            */
-
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const PAGE = 30;
 
 let me = null;                 // { uid, name, photo }
+let dbReady = false;           // true once the Firebase SDK has loaded (the page paints from saved copies before that)
 let threads = [];              // current inbox rows
 let unsubInbox = null;
 let chat = null;               // { other:{uid,name,photo}, cid, msgs:Map, oldest, hasMore, lastTs, unsubLive, pending:[] }
@@ -267,7 +256,7 @@ function renderList(){
   }
   el.innerHTML = shown.map(t => {
     const un = t.unread > 0;
-    const last = (t.lastSender === me.uid ? 'You: ' : '') + (t.lastText || '');
+    const last = (t.lastSender === me.uid ? 'You: ' : '') + (t.lastText || '') + (t.lastSender === me.uid && t.seenAt && ms(t.seenAt) >= ms(t.lastAt) ? ' · Seen' : '');
     return `<button class="row ${un?'unread':''}" data-uid="${esc(t.otherUid)}">
       <div class="av">${avatarHtml(t.name, t.photo)}</div>
       <div class="row-main">
@@ -283,11 +272,13 @@ document.querySelectorAll('.tab').forEach(b => b.onclick = () => {
   renderList();
 });
 function startInbox(){
+  if(!dbReady || !me) return;
   stopInbox();
   const q = query(collection(db,'inbox',me.uid,'threads'), orderBy('lastAt','desc'), limit(PAGE));
   unsubInbox = onSnapshot(q, snap => {
     threads = snap.docs.map(d => ({ id:d.id, ...d.data(), otherUid: d.data().otherUid || d.id }));
     renderList();
+    saveInboxCache();
   }, () => {
     $('list').innerHTML = `<div class="empty"><h2>Couldn't load messages</h2><p>Check your connection and try again.</p><button class="btn" onclick="location.reload()">Try again</button></div>`;
   });
@@ -322,13 +313,27 @@ async function fetchOtherExtras(c){
 /* ───────── CHAT ───────── */
 function toMsg(d){
   const x = d.data({ serverTimestamps:'estimate' });
-  return { id:d.id, senderUid:x.senderUid, text:x.text, ts: ms(x.createdAt), raw:x.createdAt };
+  return { id:d.id, senderUid:x.senderUid, text:x.text, ts: ms(x.createdAt), raw:x.createdAt, confirmed: !d.metadata.hasPendingWrites };
+}
+/* Under my latest message: Sending… / Delivered / Seen 2:14 PM — and under any failed one: Not delivered.
+   "Delivered" = saved on our server and in their inbox (a website can't know more than that).
+   "Seen" = they opened the chat with that message on screen (their phone writes seenAt into my inbox row). */
+function statusFor(m, isLastMine){
+  if(m.failed) return { text:'Not delivered · Tap to retry', err:true };
+  const acked = m.confirmed || (chat && chat.ack.has(m.id));
+  if(m.pendingLocal && !acked) return { text: navigator.onLine ? 'Sending…' : 'Waiting for connection' };
+  if(!isLastMine) return null;
+  const seen = ms(chat && chat.row && chat.row.seenAt);
+  if(seen && m.ts && seen >= m.ts) return { text:'Seen ' + fmtListTime(seen) };
+  return { text: acked ? 'Delivered' : 'Sending…' };
 }
 function renderMsgs(stick){
   const box = $('msgs'); if(!chat) return;
   const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 140;
   const prevH = box.scrollHeight, prevTop = box.scrollTop;
-  const items = [...chat.msgs.values(), ...chat.pending].sort((a,b) => (a.ts||Infinity) - (b.ts||Infinity));
+  const items = [...chat.msgs.values(), ...chat.pending.filter(p => !chat.msgs.has(p.id))].sort((a,b) => (a.ts||Infinity) - (b.ts||Infinity));
+  let lastMineId = null;
+  items.forEach(m => { if(m.senderUid === me.uid) lastMineId = m.id; });
   let html = chat.hasMore ? `<button class="older" id="olderBtn">Load earlier messages</button>` : `
     <div class="intro">
       <div class="av">${avatarHtml(chat.other.name, chat.other.photo)}</div>
@@ -342,9 +347,12 @@ function renderMsgs(stick){
     const dk = m.ts ? new Date(m.ts).toDateString() : lastDay;
     if(dk && dk !== lastDay){ html += `<div class="day">${esc(fmtDay(m.ts))}</div>`; lastDay = dk; }
     const mine = m.senderUid === me.uid;
-    html += `<div class="msg ${mine?'me':'them'} ${m.pendingLocal?'pending':''}">${esc(m.text)}<span class="t">${m.ts ? new Date(m.ts).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}) : ''}</span></div>`;
+    const st = mine ? statusFor(m, m.id === lastMineId) : null;
+    html += `<div class="msg ${mine?'me':'them'} ${m.pendingLocal && !m.failed && !chat.ack.has(m.id)?'pending':''} ${m.failed?'failed':''}">${esc(m.text)}<span class="t">${m.ts ? new Date(m.ts).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}) : ''}</span></div>`;
+    if(st) html += `<div class="stat ${st.err?'err':''}" ${st.err?`data-retry="${esc(m.id)}"`:''}>${esc(st.text)}</div>`;
   });
   box.innerHTML = html;
+  box.querySelectorAll('[data-retry]').forEach(el => el.onclick = () => { const pm = chat && chat.pending.find(x => x.id === el.dataset.retry); if(pm) send(pm); });
   const ob = $('olderBtn'); if(ob) ob.onclick = loadOlder;
   const vp = $('vpBtn'); if(vp) vp.onclick = () => { location.href = `/profile?uid=${encodeURIComponent(chat.other.uid)}`; };
   if(stick || nearBottom) box.scrollTop = box.scrollHeight;
@@ -352,7 +360,7 @@ function renderMsgs(stick){
   chat.prepended = false;
 }
 async function loadOlder(){
-  if(!chat || !chat.hasMore || chat.loadingOlder) return;
+  if(!dbReady || !chat || !chat.hasMore || chat.loadingOlder || !chat.oldest) return;
   chat.loadingOlder = true;
   try{
     const q = query(collection(db,'conversations',chat.cid,'messages'), orderBy('createdAt','desc'), startAfter(chat.oldest), limit(PAGE));
@@ -372,49 +380,66 @@ function attachLive(){
   // Only messages newer than what's already on screen — so re-attaching never re-reads old ones.
   const q = chat.lastTs ? query(base, orderBy('createdAt','asc'), startAfter(chat.lastTs)) : query(base, orderBy('createdAt','asc'));
   const cid = chat.cid;
-  chat.unsubLive = onSnapshot(q, snap => {
+  chat.unsubLive = onSnapshot(q, { includeMetadataChanges:true }, snap => {
     if(!chat || chat.cid !== cid) return;
-    let incoming = false;
-    snap.docChanges().forEach(ch => {
+    snap.docChanges({ includeMetadataChanges:true }).forEach(ch => {
       if(ch.type === 'removed'){ chat.msgs.delete(ch.doc.id); return; }
       const m = toMsg(ch.doc);
       chat.msgs.set(m.id, m);
       if(m.raw && (!chat.lastTs || m.raw.toMillis() > chat.lastTs.toMillis()) && !ch.doc.metadata.hasPendingWrites) chat.lastTs = m.raw;
       if(m.senderUid === me.uid){
-        const i = chat.pending.findIndex(p => p.text === m.text);        // the real copy arrived → drop our placeholder
+        const i = chat.pending.findIndex(p => p.id === m.id);            // the real copy arrived → drop our placeholder
         if(i > -1) chat.pending.splice(i, 1);
-      } else if(ch.type === 'added'){ incoming = true; }
+      }
     });
     renderMsgs(false);
-    if(incoming && !document.hidden) markReadSoon();
+    saveChatCacheSoon();
   }, () => toast('Connection problem — messages may be delayed'));
+  // My own inbox row for this chat: tells me (a) there's something unread to mark as read, and
+  // (b) when they last saw my messages. 1 read to start, then 1 per change — replaces the old read-before-write.
+  chat.unsubRow = onSnapshot(doc(db,'inbox',me.uid,'threads',chat.other.uid), s => {
+    if(!chat || chat.cid !== cid) return;
+    chat.row = s.exists() ? s.data() : null;
+    renderMsgs(false);
+    if(chat.row && chat.row.unread > 0 && !document.hidden) markReadSoon(!chat.rowSeen);
+    chat.rowSeen = true;
+  }, () => {});
 }
-function detachLive(){ if(chat && chat.unsubLive){ chat.unsubLive(); chat.unsubLive = null; } }
+function detachLive(){
+  if(chat && chat.unsubLive){ chat.unsubLive(); chat.unsubLive = null; }
+  if(chat && chat.unsubRow){ chat.unsubRow(); chat.unsubRow = null; chat.rowSeen = false; }
+}
 
 async function openChat(otherUid, { push = true } = {}){
   if(!me) return;
   if(!otherUid || otherUid === me.uid){ history.replaceState({}, '', '/messages'); showList(); return; }
   if(otherUid.includes('_') || me.uid.includes('_')){ toast('This conversation isn’t available'); return; }
-  const same = chat && chat.other.uid === otherUid;
+  const same = chat && chat.other.uid === otherUid && !chat.provisional;
   show('chat');
   if(push) history.pushState({ chat:otherUid }, '', `/messages?with=${encodeURIComponent(otherUid)}`);
   else history.replaceState({ chat:otherUid, direct:!history.state }, '', `/messages?with=${encodeURIComponent(otherUid)}`);
   if(same){ attachLive(); markReadSoon(); return; }
 
-  closeChat();
+  const prov = (chat && chat.provisional && chat.other.uid === otherUid) ? chat : null;   // already painted from the saved copy
+  if(!prov) closeChat();
   // who is it? — the inbox row if we have it, otherwise their profile (1 read)
   let other = null;
-  const t = threads.find(x => x.otherUid === otherUid);
-  if(t) other = { uid:otherUid, name:t.name, photo:t.photo };
+  const t = threads.find(x => x.otherUid === otherUid) || (prov && prov.other.name ? prov.other : null);
+  if(prov) other = prov.other;
+  else if(t) other = { uid:otherUid, name:t.name, photo:t.photo };
   else other = { uid:otherUid, name:'MindShift Books User', photo:'' };
-  chat = { other, cid:convId(me.uid, otherUid), msgs:new Map(), oldest:null, hasMore:false, lastTs:null, unsubLive:null, pending:[], extrasAt:0, loaded:false };
+  if(prov){
+    chat = Object.assign(prov, { provisional:false, pending:[], ack:new Set(), unsubLive:null, unsubRow:null, rowSeen:false, loaded:false, extrasAt:0 });
+  } else {
+    chat = { other, cid:convId(me.uid, otherUid), msgs:new Map(), oldest:null, hasMore:false, lastTs:null, unsubLive:null, pending:[], extrasAt:0, loaded:false, ack:new Set(), row:null, unsubRow:null, rowSeen:false };
+  }
   const mine = chat;
   const extras = fetchOtherExtras(mine).then(() => { if(chat === mine){ paintOther(); if(mine.loaded) renderMsgs(false); document.title = `${mine.other.name} | Messages`; } });
   if(!t) await extras;                       // no inbox row yet (opened from a profile) → wait so the header isn't a placeholder
   if(chat !== mine) return;
   paintOther();
   document.title = `${other.name} | Messages`;
-  $('msgs').innerHTML = '<div class="empty-chat">Loading…</div>';
+  if(!prov || !prov.msgs.size) $('msgs').innerHTML = '<div class="empty-chat">Loading…</div>';
   const cid = chat.cid;
   try{
     const snap = await getDocs(query(collection(db,'conversations',cid,'messages'), orderBy('createdAt','desc'), limit(PAGE)));
@@ -427,6 +452,7 @@ async function openChat(otherUid, { push = true } = {}){
     chat.hasMore = snap.docs.length === PAGE;
     chat.loaded = true;
     renderMsgs(true);
+    saveChatCacheSoon();
     attachLive();
     markReadSoon(true);
   }catch(e){
@@ -437,20 +463,24 @@ async function openChat(otherUid, { push = true } = {}){
 function closeChat(){ detachLive(); chat = null; $('input').value = ''; autosize(); }
 
 /* ───────── read receipts (unread → 0) ───────── */
+function receiptsOn(){ try{ return localStorage.getItem('msb_receipts') !== 'off'; }catch(e){ return true; } }   // a "Read receipts" switch in message settings can flip this later
 function markReadSoon(now){
   clearTimeout(markTimer);
-  const wait = now ? 0 : Math.max(0, 8000 - (Date.now() - lastMark));
+  const wait = now ? 0 : Math.max(0, 4000 - (Date.now() - lastMark));
   markTimer = setTimeout(markRead, wait);
 }
 async function markRead(){
   if(!chat || document.hidden) return;
+  const row = chat.row;
+  if(!row || !(row.unread > 0)) return;          // nothing unread → nothing to write
   lastMark = Date.now();
+  const other = chat.other.uid;
   try{
-    const ref = doc(db,'inbox',me.uid,'threads',chat.other.uid);
-    const s = await getDoc(ref);
-    if(s.exists() && (s.data().unread || 0) > 0) await updateDoc(ref, { unread:0 });
+    await updateDoc(doc(db,'inbox',me.uid,'threads',other), { unread:0 });
     clearBadgeCache();
-  }catch(e){}
+  }catch(e){ return; }
+  // let them know it's been seen (best effort — never blocks my own unread reset)
+  if(receiptsOn()){ updateDoc(doc(db,'inbox',other,'threads',me.uid), { seenAt:serverTimestamp() }).catch(() => {}); }
 }
 
 /* ───────── composer ───────── */
@@ -461,33 +491,47 @@ input.addEventListener('keydown', e => {
   if(e.key === 'Enter' && !e.shiftKey && matchMedia('(pointer:fine)').matches){ e.preventDefault(); send(); }
 });
 sendBtn.onclick = send;
-async function send(){
+async function send(retryItem){
   if(!chat || !me) return;
-  const text = input.value.trim().slice(0, 2000);
-  if(!text) return;
+  if(!dbReady){ toast('Connecting… try again in a second'); return; }
+  let text;
+  if(retryItem) text = retryItem.text;
+  else { text = input.value.trim().slice(0, 2000); if(!text) return; }
   const c = chat;
   pingActive();
-  input.value = ''; autosize(); input.focus();
-  const temp = { id:'local-'+Date.now()+Math.random(), senderUid:me.uid, text, ts:Date.now(), pendingLocal:true };
-  c.pending.push(temp);
+  // The message id is fixed up front, so a retry can never create a second copy of the same message.
+  const msgRef = retryItem ? doc(db,'conversations',c.cid,'messages',retryItem.id) : doc(collection(db,'conversations',c.cid,'messages'));
+  let temp = retryItem;
+  if(!temp){
+    input.value = ''; autosize(); input.focus();
+    temp = { id:msgRef.id, senderUid:me.uid, text, ts:Date.now(), pendingLocal:true };
+    c.pending.push(temp);
+  } else { temp.failed = false; temp.ts = Date.now(); }
   renderMsgs(true);
   try{
+    if(retryItem){                                     // maybe the first attempt actually went through
+      const ex = await getDoc(msgRef);
+      if(ex.exists()){ c.ack.add(temp.id); if(chat === c) renderMsgs(false); return; }
+    }
     const batch = writeBatch(db);
-    batch.set(doc(collection(db,'conversations',c.cid,'messages')), { senderUid:me.uid, text, createdAt:serverTimestamp() });
+    batch.set(msgRef, { senderUid:me.uid, text, createdAt:serverTimestamp() });
     const last = text.slice(0, 120);
     batch.set(doc(db,'inbox',me.uid,'threads',c.other.uid),
       { otherUid:c.other.uid, name:c.other.name, photo:c.other.photo || '', lastText:last, lastAt:serverTimestamp(), lastSender:me.uid, unread:0 }, { merge:true });
     batch.set(doc(db,'inbox',c.other.uid,'threads',me.uid),
       { otherUid:me.uid, name:me.name, photo:me.photo || '', lastText:last, lastAt:serverTimestamp(), lastSender:me.uid, unread:increment(1) }, { merge:true });
     await batch.commit();
-    // the live listener swaps our placeholder for the real message; make sure it never lingers
-    setTimeout(() => { if(chat === c){ const i = c.pending.indexOf(temp); if(i > -1){ c.pending.splice(i, 1); renderMsgs(false); } } }, 4000);
+    c.ack.add(temp.id);                                // server has it → "Delivered"
+    if(chat === c) renderMsgs(false);
   }catch(e){
-    const i = c.pending.indexOf(temp); if(i > -1) c.pending.splice(i, 1);
-    if(chat === c){ renderMsgs(false); if(!input.value) { input.value = text; autosize(); } }
-    toast('Couldn’t send — tap send to try again');
+    try{ const ex = await getDoc(msgRef); if(ex.exists()){ c.ack.add(temp.id); if(chat === c) renderMsgs(false); return; } }catch(_){}
+    temp.failed = true;
+    if(chat === c) renderMsgs(false);
+    toast('Couldn’t send — tap the message to retry');
   }
 }
+window.addEventListener('online',  () => { if(chat) renderMsgs(false); });
+window.addEventListener('offline', () => { if(chat) renderMsgs(false); });
 
 /* ───────── save reads: pause listeners while the tab is hidden ───────── */
 document.addEventListener('visibilitychange', () => {
@@ -512,7 +556,7 @@ document.addEventListener('visibilitychange', () => {
 
 /* ───────── my activity (for "Active now") — one small write at most every 5 minutes ───────── */
 function pingActive(){
-  if(!me || document.hidden) return;
+  if(!me || !dbReady || document.hidden) return;
   try{
     const last = Number(localStorage.getItem('msb_ping_v1') || 0);
     if(Date.now() - last < 300000) return;
@@ -522,14 +566,104 @@ function pingActive(){
 }
 setInterval(pingActive, 300000);
 
+/* ───────── instant open: paint from saved copies, then load the SDK and refresh ─────────
+   The inbox and the last 30 messages of recent chats are remembered on this device (per account), so the page
+   shows real content immediately — before Firebase has even downloaded — and the live data quietly takes over.
+   Cleared on sign-out. */
+const INBOX_KEY = u => 'msb_inbox_v1_' + u;
+const CHAT_KEY  = c => 'msb_chat_v1_' + c;
+const _cacheTimers = {};
+function saveInboxCache(){
+  clearTimeout(_cacheTimers.i);
+  _cacheTimers.i = setTimeout(() => {
+    if(!me) return;
+    try{
+      localStorage.setItem(INBOX_KEY(me.uid), JSON.stringify(threads.map(t => ({
+        otherUid:t.otherUid, name:t.name, photo:t.photo, lastText:t.lastText, lastAt:ms(t.lastAt),
+        lastSender:t.lastSender, unread:t.unread || 0, seenAt:ms(t.seenAt) }))));
+    }catch(e){}
+  }, 400);
+}
+function loadInboxCache(uid){ try{ const v = JSON.parse(localStorage.getItem(INBOX_KEY(uid))); return Array.isArray(v) ? v : null; }catch(e){ return null; } }
+function saveChatCacheSoon(){
+  clearTimeout(_cacheTimers.c);
+  const c = chat; if(!c || !c.loaded) return;
+  _cacheTimers.c = setTimeout(() => {
+    try{
+      const msgs = [...c.msgs.values()].filter(m => m.ts && m.confirmed).sort((a,b) => a.ts - b.ts).slice(-PAGE)
+        .map(m => ({ id:m.id, senderUid:m.senderUid, text:m.text, ts:m.ts }));
+      localStorage.setItem(CHAT_KEY(c.cid), JSON.stringify({ msgs, hasMore:c.hasMore, t:Date.now() }));
+      const idx = JSON.parse(localStorage.getItem('msb_chat_idx') || '[]').filter(x => x !== c.cid); idx.push(c.cid);
+      while(idx.length > 8) localStorage.removeItem(CHAT_KEY(idx.shift()));      // keep only the 8 most recent chats
+      localStorage.setItem('msb_chat_idx', JSON.stringify(idx));
+    }catch(e){}
+  }, 600);
+}
+function loadChatCache(cid){
+  try{ const v = JSON.parse(localStorage.getItem(CHAT_KEY(cid))); if(v && Array.isArray(v.msgs) && Date.now() - v.t < 14*86400000) return v; }catch(e){}
+  return null;
+}
+function clearMsgCaches(){
+  try{
+    Object.keys(localStorage).filter(k => k.startsWith('msb_inbox_v1_') || k.startsWith('msb_chat_v1_') || k === 'msb_chat_idx').forEach(k => localStorage.removeItem(k));
+    sessionStorage.removeItem('msb_open_chat');
+  }catch(e){}
+}
+function earlyPaint(){
+  let uid = null;
+  try{ const v = localStorage.getItem('mindshift_hero_last_uid'); if(v && v !== 'guest') uid = v; }catch(e){}
+  if(!uid || uid.includes('_')) return;                     // signed out / unknown → the skeleton stays until we know
+  me = { uid, name:'', photo:'' };
+  const withUid = new URLSearchParams(location.search).get('with');
+  if(withUid){
+    if(withUid === uid || withUid.includes('_')) return;
+    let h = null; try{ h = JSON.parse(sessionStorage.getItem('msb_open_chat')); }catch(e){}
+    if(!h || h.uid !== withUid) h = null;                  // handed over by the profile page (name + photo)
+    const cid = convId(uid, withUid);
+    const cached = loadChatCache(cid);
+    const row = (loadInboxCache(uid) || []).find(x => x.otherUid === withUid);
+    const other = { uid:withUid, name:(h && h.name) || (row && row.name) || '', photo:(h && h.photo) || (row && row.photo) || '', jobTitle:(h && h.jobTitle) || '' };
+    if(!other.name && !cached) return;
+    chat = { other, cid, msgs:new Map(), oldest:null, hasMore:!!(cached && cached.hasMore), lastTs:null, unsubLive:null, pending:[],
+             extrasAt:0, loaded:false, ack:new Set(), row:null, unsubRow:null, rowSeen:false, provisional:true };
+    if(cached) cached.msgs.forEach(m => chat.msgs.set(m.id, { ...m, confirmed:true }));
+    show('chat'); paintOther(); renderMsgs(true);
+  } else {
+    const rows = loadInboxCache(uid);
+    if(rows && rows.length){ threads = rows; show('list'); renderList(); }
+  }
+}
+earlyPaint();                                               // ← real content on screen now, before any network
+
+/* ───────── load Firebase (starts downloading from the <head> hints; the page is already painted) ───────── */
+const FB = 'https://www.gstatic.com/firebasejs/10.11.0/';
+const [{ initializeApp }, { getAuth, onAuthStateChanged }, fsdk] = await Promise.all([
+  import(FB + 'firebase-app.js'), import(FB + 'firebase-auth.js'), import(FB + 'firebase-firestore.js')
+]);
+const { getFirestore, doc, getDoc, getDocs, setDoc, updateDoc, collection, query, orderBy, limit, startAfter,
+        onSnapshot, writeBatch, serverTimestamp, increment } = fsdk;
+const app  = initializeApp({
+  apiKey:"AIzaSyDTn70s1_uIiSOR6lPLY_nKh8Ff1FViFCs",
+  authDomain:"mindshiftbooks-c4451.firebaseapp.com",
+  projectId:"mindshiftbooks-c4451",
+  storageBucket:"mindshiftbooks-c4451.firebasestorage.app",
+  messagingSenderId:"388697987853",
+  appId:"1:388697987853:web:f023df9412c22285012e44"
+});
+const auth = getAuth(app);
+const db   = getFirestore(app, 'default');
+dbReady = true;
+
 /* ───────── boot ───────── */
 onAuthStateChanged(auth, async user => {
-  if(!user){ me = null; showSignedOut(); return; }
+  if(!user){ me = null; threads = []; chat = null; clearMsgCaches(); showSignedOut(); return; }
+  if(me && me.uid !== user.uid){ threads = []; chat = null; }         // the instant paint belonged to a different account
   me = await loadMe(user);
   pingActive();
   const withUid = new URLSearchParams(location.search).get('with');
   if(withUid) openChat(withUid, { push:false });
   else showList();
+  if($('listView').classList.contains('on')) startInbox();             // e.g. they tapped back before we finished loading
 });
 </script>
 </body>

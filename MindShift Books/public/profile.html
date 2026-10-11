@@ -2228,6 +2228,8 @@ async function loadFollowState(){
 /* ── MESSAGE THIS PERSON ── */
 window.openChatWithProfile = function(){
   if(!currentUser || !profileData.uid) return;
+  // hand the name/photo over so the chat header paints instantly on the next page
+  try{ sessionStorage.setItem('msb_open_chat', JSON.stringify({ uid:profileData.uid, name:profileData.name||'', photo:profileData.photo||'', jobTitle:profileData.jobTitle||'' })); }catch(e){}
   location.href = `/messages?with=${encodeURIComponent(profileData.uid)}`;
 };
 

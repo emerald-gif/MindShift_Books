@@ -113,12 +113,19 @@ function attempt(){
   if(!install()) return;
   done = true;
   if(obs) obs.disconnect();
+  // warm the Messages page so tapping it opens from cache
+  (window.requestIdleCallback || (f => setTimeout(f, 1500)))(() => {
+    try{ const l = document.createElement('link'); l.rel = 'prefetch'; l.href = '/messages'; l.as = 'document'; document.head.appendChild(l); }catch(e){}
+  });
   onAuthStateChanged(getAuth(getApps()[0]), user => {
     if(user){
       refreshCount(user); pingActive(user);
       setInterval(() => pingActive(getAuth(getApps()[0]).currentUser), 300000);
       document.addEventListener('visibilitychange', () => pingActive(getAuth(getApps()[0]).currentUser));
-    } else { unread = 0; paint(); }
+    } else {
+      unread = 0; paint();
+      try{ Object.keys(localStorage).filter(k => k.startsWith('msb_inbox_v1_') || k.startsWith('msb_chat_v1_') || k === 'msb_chat_idx').forEach(k => localStorage.removeItem(k)); }catch(e){}
+    }
   });
 }
 let timer = null;
