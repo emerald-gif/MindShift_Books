@@ -490,8 +490,9 @@ input.addEventListener('input', autosize);
 input.addEventListener('keydown', e => {
   if(e.key === 'Enter' && !e.shiftKey && matchMedia('(pointer:fine)').matches){ e.preventDefault(); send(); }
 });
-sendBtn.onclick = send;
+sendBtn.onclick = () => send();
 async function send(retryItem){
+  if(retryItem && !retryItem.pendingLocal) retryItem = undefined;   // only a real failed message counts as a retry (never a click event)
   if(!chat || !me) return;
   if(!dbReady){ toast('Connecting… try again in a second'); return; }
   let text;
