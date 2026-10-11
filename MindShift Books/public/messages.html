@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="robots" content="noindex, nofollow"/>
+<meta name="theme-color" content="#ffffff"/>
+<title>Messages | MindShift Books</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --p:#4f46e5;--p2:#06b6d4;--g:linear-gradient(135deg,#4f46e5,#06b6d4);--gm:linear-gradient(135deg,#4f46e5,#2563eb);
+  --txt:#0f172a;--sub:#6b7280;--mute:#9ca3af;
+  --bg:#f8fafc;--card:#fff;--border:#e5e7eb;--red:#ef4444;
+}
+html,body{height:100%}
+body{font-family:'Segoe UI',system-ui,-apple-system,Roboto,sans-serif;background:var(--bg);color:var(--txt);-webkit-font-smoothing:antialiased;overflow:hidden}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+
+.view{display:none;height:100dvh;flex-direction:column;background:var(--bg)}
+.view.on{display:flex}
+
+/* ── top bar ── */
+.bar{display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top)) 12px 10px;background:#fff;border-bottom:1px solid var(--border);flex-shrink:0}
+.back{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--txt)}
+.back:active{background:#f1f5f9}
+.back svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.bar-title{font-size:20px;font-weight:800;letter-spacing:-.02em}
+
+/* ── inbox ── */
+.list{flex:1;overflow-y:auto;background:#fff}
+.row{display:flex;align-items:center;gap:12px;padding:12px 16px;width:100%;text-align:left;border-bottom:1px solid #f1f5f9}
+.row:active{background:#f8fafc}
+.av{position:relative;width:50px;height:50px;border-radius:50%;flex-shrink:0;background:var(--g);color:#fff;font-weight:800;font-size:18px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.av img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.row-main{flex:1;min-width:0}
+.row-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.row-name{font-size:15.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row-time{font-size:12px;color:var(--mute);flex-shrink:0}
+.row-bot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:2px}
+.row-last{font-size:14px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row.unread .row-last{color:var(--txt);font-weight:600}
+.row.unread .row-time{color:var(--p);font-weight:700}
+.pill{min-width:20px;height:20px;padding:0 6px;border-radius:99px;background:var(--g);color:#fff;font-size:11.5px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+.skel-row{display:flex;align-items:center;gap:12px;padding:14px 16px}
+.skel{background:linear-gradient(90deg,#eef2ff 25%,#f8fafc 50%,#eef2ff 75%);background-size:200% 100%;animation:sh 1.3s infinite;border-radius:8px}
+@keyframes sh{to{background-position:-200% 0}}
+.skel.c{border-radius:50%;width:50px;height:50px;flex-shrink:0}
+
+.empty{padding:70px 28px;text-align:center;color:var(--sub)}
+.empty .ic{width:68px;height:68px;border-radius:50%;background:#eef2ff;color:var(--p);display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.empty .ic svg{width:30px;height:30px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.empty h2{font-size:18px;font-weight:800;color:var(--txt);margin-bottom:6px}
+.empty p{font-size:14.5px;line-height:1.5;max-width:300px;margin:0 auto}
+.btn{display:inline-block;margin-top:18px;padding:12px 26px;border-radius:99px;background:var(--g);color:#fff;font-weight:700;font-size:14.5px;text-decoration:none;box-shadow:0 4px 14px rgba(79,70,229,.3)}
+
+/* ── chat ── */
+.chat-head{display:flex;align-items:center;gap:10px;min-width:0;flex:1;text-align:left}
+.chat-head .av{width:40px;height:40px;font-size:15px}
+.chat-name{font-size:16px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.msgs{flex:1;overflow-y:auto;padding:14px 12px 8px;display:flex;flex-direction:column;gap:4px;background:var(--bg);overscroll-behavior:contain}
+.older{align-self:center;margin:2px 0 10px;padding:7px 16px;border-radius:99px;background:#fff;border:1px solid var(--border);font-size:12.5px;font-weight:600;color:var(--sub)}
+.day{align-self:center;margin:12px 0 6px;padding:3px 12px;border-radius:99px;background:#e9edf5;color:var(--sub);font-size:11.5px;font-weight:600}
+.msg{max-width:78%;padding:9px 13px 7px;border-radius:18px;font-size:15px;line-height:1.4;white-space:pre-wrap;word-break:break-word;position:relative}
+.msg.them{align-self:flex-start;background:#fff;border:1px solid var(--border);border-bottom-left-radius:6px}
+.msg.me{align-self:flex-end;background:var(--gm);color:#fff;border-bottom-right-radius:6px}
+.msg .t{display:block;text-align:right;font-size:10.5px;margin-top:3px;opacity:.65}
+.msg.pending{opacity:.65}
+.empty-chat{margin:auto;text-align:center;color:var(--mute);font-size:14px;padding:20px}
+
+.composer{display:flex;align-items:flex-end;gap:8px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid var(--border);flex-shrink:0}
+.composer textarea{flex:1;resize:none;border:1.5px solid var(--border);border-radius:22px;padding:10px 15px;font:inherit;font-size:15px;line-height:1.35;max-height:120px;outline:none;background:#f8fafc;color:var(--txt)}
+.composer textarea:focus{border-color:var(--p);background:#fff}
+.send{width:44px;height:44px;border-radius:50%;background:var(--g);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:opacity .15s,transform .1s}
+.send:active{transform:scale(.94)}
+.send[disabled]{opacity:.4;cursor:default}
+.send svg{width:20px;height:20px;fill:none;stroke:#fff;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+
+.toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:#0f172a;color:#fff;padding:10px 18px;border-radius:99px;font-size:13.5px;font-weight:600;opacity:0;pointer-events:none;transition:all .25s;z-index:50;max-width:90vw;text-align:center}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<!-- ── INBOX ── -->
+<section class="view" id="listView">
+  <div class="bar">
+    <button class="back" id="listBack" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <div class="bar-title">Messages</div>
+  </div>
+  <div class="list" id="list"></div>
+</section>
+
+<!-- ── CHAT ── -->
+<section class="view" id="chatView">
+  <div class="bar">
+    <button class="back" id="chatBack" aria-label="Back to messages"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <button class="chat-head" id="chatHead" aria-label="View profile">
+      <div class="av" id="chatAv"></div>
+      <div class="chat-name" id="chatName"></div>
+    </button>
+  </div>
+  <div class="msgs" id="msgs"></div>
+  <div class="composer">
+    <textarea id="input" rows="1" placeholder="Message…" maxlength="2000" aria-label="Type a message"></textarea>
+    <button class="send" id="sendBtn" disabled aria-label="Send"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg></button>
+  </div>
+</section>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
+import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
+import { getFirestore, doc, getDoc, getDocs, updateDoc, collection, query, orderBy, limit, startAfter,
+         onSnapshot, writeBatch, serverTimestamp, increment }
+  from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
+
+const app  = initializeApp({
+  apiKey:"AIzaSyDTn70s1_uIiSOR6lPLY_nKh8Ff1FViFCs",
+  authDomain:"mindshiftbooks-c4451.firebaseapp.com",
+  projectId:"mindshiftbooks-c4451",
+  storageBucket:"mindshiftbooks-c4451.firebasestorage.app",
+  messagingSenderId:"388697987853",
+  appId:"1:388697987853:web:f023df9412c22285012e44"
+});
+const auth = getAuth(app);
+const db   = getFirestore(app, 'default');
+
+/* ── DATA MODEL (kept deliberately small — see messages-rules.txt) ──────────────────────────────────
+   conversations/{uidA_uidB}/messages/{id}  { senderUid, text, createdAt }       (ids sorted → one thread per pair)
+   inbox/{uid}/threads/{otherUid}           { otherUid, name, photo, lastText, lastAt, lastSender, unread }
+   The inbox row carries the other person's name + photo, so the inbox never needs a second lookup per row.
+   Cost:  open inbox ≤30 reads (+1 per change) · open a chat ≤30 reads (+1 per new message) ·
+          send = 3 writes · mark read = 1 read (+1 write only if something was unread).
+   Listeners are dropped after the tab has been hidden for a minute and re-attached on return.            */
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const PAGE = 30;
+
+let me = null;                 // { uid, name, photo }
+let threads = [];              // current inbox rows
+let unsubInbox = null;
+let chat = null;               // { other:{uid,name,photo}, cid, msgs:Map, oldest, hasMore, lastTs, unsubLive, pending:[] }
+let hiddenTimer = null, detached = false;
+let lastMark = 0, markTimer = null;
+
+/* ───────── helpers ───────── */
+function toast(t){ const el=$('toast'); el.textContent=t; el.classList.add('on'); clearTimeout(toast._t); toast._t=setTimeout(()=>el.classList.remove('on'),2600); }
+function convId(a,b){ return [a,b].sort().join('_'); }
+function initials(n){ return (String(n||'?').trim()[0]||'?').toUpperCase(); }
+function avatarHtml(name, photo){
+  return photo ? `<img src="${esc(photo)}" alt="" onerror="this.remove()">` + esc(initials(name)) : esc(initials(name));
+}
+function ms(ts){ return ts && ts.toMillis ? ts.toMillis() : (typeof ts === 'number' ? ts : 0); }
+function fmtListTime(t){
+  if(!t) return '';
+  const d = new Date(t), now = new Date();
+  const day = x => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const diff = (day(now) - day(d)) / 86400000;
+  if(diff <= 0) return d.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
+  if(diff === 1) return 'Yesterday';
+  if(diff < 7) return d.toLocaleDateString([], {weekday:'short'});
+  return d.toLocaleDateString([], {month:'short', day:'numeric'});
+}
+function fmtDay(t){
+  const d = new Date(t), now = new Date();
+  const day = x => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const diff = (day(now) - day(d)) / 86400000;
+  if(diff <= 0) return 'Today';
+  if(diff === 1) return 'Yesterday';
+  return d.toLocaleDateString([], {weekday:'long', month:'short', day:'numeric'});
+}
+function clearBadgeCache(){ try{ sessionStorage.removeItem('msb_unread_v1'); }catch(e){} }
+
+/* ───────── views / navigation ───────── */
+function show(view){ $('listView').classList.toggle('on', view==='list'); $('chatView').classList.toggle('on', view==='chat'); }
+function leaveMessages(){
+  let same = false; try{ same = !!document.referrer && new URL(document.referrer).origin === location.origin; }catch(e){}
+  if(history.length > 1 && same){ history.back(); } else { location.href = '/'; }
+}
+$('listBack').onclick = leaveMessages;
+$('chatBack').onclick = () => {
+  if(history.state && history.state.chat && !history.state.direct) history.back();
+  else { closeChat(); history.replaceState({}, '', '/messages'); showList(); }
+};
+$('chatHead').onclick = () => { if(chat) location.href = `/profile?uid=${encodeURIComponent(chat.other.uid)}`; };
+window.addEventListener('popstate', e => {
+  const st = e.state || {};
+  if(st.chat) openChat(st.chat, { push:false });
+  else { closeChat(); showList(); }
+});
+
+/* ───────── signed-out ───────── */
+function showSignedOut(){
+  show('list');
+  $('list').innerHTML = `<div class="empty"><div class="ic"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg></div>
+    <h2>Log in to see your messages</h2><p>Chat directly with creators and readers on MindShift Books.</p>
+    <a class="btn" href="/signup?returnTo=%2Fmessages">Log in or sign up</a></div>`;
+}
+
+/* ───────── my profile (cached 10 min) ───────── */
+async function loadMe(user){
+  try{
+    const c = JSON.parse(sessionStorage.getItem('msb_me_v1'));
+    if(c && c.uid === user.uid && Date.now() - c.t < 600000) return { uid:c.uid, name:c.name, photo:c.photo };
+  }catch(e){}
+  let name = user.displayName || 'MindShift Books User', photo = user.photoURL || '';
+  try{
+    const s = await getDoc(doc(db,'users',user.uid));
+    if(s.exists()){ const d = s.data(); name = d.name || name; photo = d.photo || photo; }
+  }catch(e){}
+  try{ sessionStorage.setItem('msb_me_v1', JSON.stringify({ uid:user.uid, name, photo, t:Date.now() })); }catch(e){}
+  return { uid:user.uid, name, photo };
+}
+
+/* ───────── INBOX ───────── */
+function skeletonList(){
+  $('list').innerHTML = Array(6).fill('<div class="skel-row"><div class="skel c"></div><div style="flex:1"><div class="skel" style="height:14px;width:42%;margin-bottom:9px"></div><div class="skel" style="height:12px;width:78%"></div></div></div>').join('');
+}
+function renderList(){
+  const el = $('list');
+  if(!threads.length){
+    el.innerHTML = `<div class="empty"><div class="ic"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg></div>
+      <h2>No messages yet</h2><p>Open someone's profile and tap the chat icon next to Follow to start a conversation.</p></div>`;
+    return;
+  }
+  el.innerHTML = threads.map(t => {
+    const un = t.unread > 0;
+    const last = (t.lastSender === me.uid ? 'You: ' : '') + (t.lastText || '');
+    return `<button class="row ${un?'unread':''}" data-uid="${esc(t.otherUid)}">
+      <div class="av">${avatarHtml(t.name, t.photo)}</div>
+      <div class="row-main">
+        <div class="row-top"><span class="row-name">${esc(t.name || 'MindShift Books User')}</span><span class="row-time">${fmtListTime(ms(t.lastAt))}</span></div>
+        <div class="row-bot"><span class="row-last">${esc(last)}</span>${un ? `<span class="pill">${t.unread > 99 ? '99+' : t.unread}</span>` : ''}</div>
+      </div></button>`;
+  }).join('');
+  el.querySelectorAll('.row').forEach(b => b.onclick = () => openChat(b.dataset.uid, { push:true }));
+}
+function startInbox(){
+  stopInbox();
+  const q = query(collection(db,'inbox',me.uid,'threads'), orderBy('lastAt','desc'), limit(PAGE));
+  unsubInbox = onSnapshot(q, snap => {
+    threads = snap.docs.map(d => ({ id:d.id, ...d.data(), otherUid: d.data().otherUid || d.id }));
+    renderList();
+  }, () => {
+    $('list').innerHTML = `<div class="empty"><h2>Couldn't load messages</h2><p>Check your connection and try again.</p><button class="btn" onclick="location.reload()">Try again</button></div>`;
+  });
+}
+function stopInbox(){ if(unsubInbox){ unsubInbox(); unsubInbox = null; } }
+function showList(){
+  show('list');
+  document.title = 'Messages | MindShift Books';
+  if(!unsubInbox){ if(!threads.length) skeletonList(); startInbox(); }
+}
+
+/* ───────── CHAT ───────── */
+function toMsg(d){
+  const x = d.data({ serverTimestamps:'estimate' });
+  return { id:d.id, senderUid:x.senderUid, text:x.text, ts: ms(x.createdAt), raw:x.createdAt };
+}
+function renderMsgs(stick){
+  const box = $('msgs'); if(!chat) return;
+  const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 140;
+  const prevH = box.scrollHeight, prevTop = box.scrollTop;
+  const items = [...chat.msgs.values(), ...chat.pending].sort((a,b) => (a.ts||Infinity) - (b.ts||Infinity));
+  let html = chat.hasMore ? `<button class="older" id="olderBtn">Load earlier messages</button>` : '';
+  if(!items.length) html += `<div class="empty-chat">Say hi to ${esc(chat.other.name)} 👋</div>`;
+  let lastDay = '';
+  items.forEach(m => {
+    const dk = m.ts ? new Date(m.ts).toDateString() : lastDay;
+    if(dk && dk !== lastDay){ html += `<div class="day">${esc(fmtDay(m.ts))}</div>`; lastDay = dk; }
+    const mine = m.senderUid === me.uid;
+    html += `<div class="msg ${mine?'me':'them'} ${m.pendingLocal?'pending':''}">${esc(m.text)}<span class="t">${m.ts ? new Date(m.ts).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}) : ''}</span></div>`;
+  });
+  box.innerHTML = html;
+  const ob = $('olderBtn'); if(ob) ob.onclick = loadOlder;
+  if(stick || nearBottom) box.scrollTop = box.scrollHeight;
+  else box.scrollTop = prevTop + (box.scrollHeight - prevH) * (chat.prepended ? 1 : 0);
+  chat.prepended = false;
+}
+async function loadOlder(){
+  if(!chat || !chat.hasMore || chat.loadingOlder) return;
+  chat.loadingOlder = true;
+  try{
+    const q = query(collection(db,'conversations',chat.cid,'messages'), orderBy('createdAt','desc'), startAfter(chat.oldest), limit(PAGE));
+    const snap = await getDocs(q);
+    snap.docs.forEach(d => { const m = toMsg(d); chat.msgs.set(m.id, m); });
+    if(snap.docs.length) chat.oldest = snap.docs[snap.docs.length - 1];
+    chat.hasMore = snap.docs.length === PAGE;
+    chat.prepended = true;
+    renderMsgs(false);
+  }catch(e){ toast('Couldn’t load earlier messages'); }
+  chat.loadingOlder = false;
+}
+function attachLive(){
+  if(!chat) return;
+  detachLive();
+  const base = collection(db,'conversations',chat.cid,'messages');
+  // Only messages newer than what's already on screen — so re-attaching never re-reads old ones.
+  const q = chat.lastTs ? query(base, orderBy('createdAt','asc'), startAfter(chat.lastTs)) : query(base, orderBy('createdAt','asc'));
+  const cid = chat.cid;
+  chat.unsubLive = onSnapshot(q, snap => {
+    if(!chat || chat.cid !== cid) return;
+    let incoming = false;
+    snap.docChanges().forEach(ch => {
+      if(ch.type === 'removed'){ chat.msgs.delete(ch.doc.id); return; }
+      const m = toMsg(ch.doc);
+      chat.msgs.set(m.id, m);
+      if(m.raw && (!chat.lastTs || m.raw.toMillis() > chat.lastTs.toMillis()) && !ch.doc.metadata.hasPendingWrites) chat.lastTs = m.raw;
+      if(m.senderUid === me.uid){
+        const i = chat.pending.findIndex(p => p.text === m.text);        // the real copy arrived → drop our placeholder
+        if(i > -1) chat.pending.splice(i, 1);
+      } else if(ch.type === 'added'){ incoming = true; }
+    });
+    renderMsgs(false);
+    if(incoming && !document.hidden) markReadSoon();
+  }, () => toast('Connection problem — messages may be delayed'));
+}
+function detachLive(){ if(chat && chat.unsubLive){ chat.unsubLive(); chat.unsubLive = null; } }
+
+async function openChat(otherUid, { push = true } = {}){
+  if(!me) return;
+  if(!otherUid || otherUid === me.uid){ history.replaceState({}, '', '/messages'); showList(); return; }
+  if(otherUid.includes('_') || me.uid.includes('_')){ toast('This conversation isn’t available'); return; }
+  const same = chat && chat.other.uid === otherUid;
+  show('chat');
+  if(push) history.pushState({ chat:otherUid }, '', `/messages?with=${encodeURIComponent(otherUid)}`);
+  else history.replaceState({ chat:otherUid, direct:!history.state }, '', `/messages?with=${encodeURIComponent(otherUid)}`);
+  if(same){ attachLive(); markReadSoon(); return; }
+
+  closeChat();
+  // who is it? — the inbox row if we have it, otherwise their profile (1 read)
+  let other = null;
+  const t = threads.find(x => x.otherUid === otherUid);
+  if(t) other = { uid:otherUid, name:t.name, photo:t.photo };
+  if(!other){
+    other = { uid:otherUid, name:'MindShift Books User', photo:'' };
+    try{
+      const s = await getDoc(doc(db,'users',otherUid));
+      if(s.exists()){ const d = s.data(); other.name = d.name || other.name; other.photo = d.photo || ''; }
+    }catch(e){}
+  }
+  chat = { other, cid:convId(me.uid, otherUid), msgs:new Map(), oldest:null, hasMore:false, lastTs:null, unsubLive:null, pending:[] };
+  $('chatName').textContent = other.name;
+  $('chatAv').innerHTML = avatarHtml(other.name, other.photo);
+  document.title = `${other.name} | Messages`;
+  $('msgs').innerHTML = '<div class="empty-chat">Loading…</div>';
+  const cid = chat.cid;
+  try{
+    const snap = await getDocs(query(collection(db,'conversations',cid,'messages'), orderBy('createdAt','desc'), limit(PAGE)));
+    if(!chat || chat.cid !== cid) return;
+    snap.docs.forEach(d => { const m = toMsg(d); chat.msgs.set(m.id, m); });
+    if(snap.docs.length){
+      chat.oldest = snap.docs[snap.docs.length - 1];
+      chat.lastTs = snap.docs[0].data().createdAt;
+    }
+    chat.hasMore = snap.docs.length === PAGE;
+    renderMsgs(true);
+    attachLive();
+    markReadSoon(true);
+  }catch(e){
+    $('msgs').innerHTML = '<div class="empty-chat">Couldn’t load this conversation.<br>Check your connection and try again.</div>';
+  }
+  setTimeout(() => { if(matchMedia('(pointer:fine)').matches) $('input').focus(); }, 50);
+}
+function closeChat(){ detachLive(); chat = null; $('input').value = ''; autosize(); }
+
+/* ───────── read receipts (unread → 0) ───────── */
+function markReadSoon(now){
+  clearTimeout(markTimer);
+  const wait = now ? 0 : Math.max(0, 8000 - (Date.now() - lastMark));
+  markTimer = setTimeout(markRead, wait);
+}
+async function markRead(){
+  if(!chat || document.hidden) return;
+  lastMark = Date.now();
+  try{
+    const ref = doc(db,'inbox',me.uid,'threads',chat.other.uid);
+    const s = await getDoc(ref);
+    if(s.exists() && (s.data().unread || 0) > 0) await updateDoc(ref, { unread:0 });
+    clearBadgeCache();
+  }catch(e){}
+}
+
+/* ───────── composer ───────── */
+const input = $('input'), sendBtn = $('sendBtn');
+function autosize(){ input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 120) + 'px'; sendBtn.disabled = !input.value.trim(); }
+input.addEventListener('input', autosize);
+input.addEventListener('keydown', e => {
+  if(e.key === 'Enter' && !e.shiftKey && matchMedia('(pointer:fine)').matches){ e.preventDefault(); send(); }
+});
+sendBtn.onclick = send;
+async function send(){
+  if(!chat || !me) return;
+  const text = input.value.trim().slice(0, 2000);
+  if(!text) return;
+  const c = chat;
+  input.value = ''; autosize(); input.focus();
+  const temp = { id:'local-'+Date.now()+Math.random(), senderUid:me.uid, text, ts:Date.now(), pendingLocal:true };
+  c.pending.push(temp);
+  renderMsgs(true);
+  try{
+    const batch = writeBatch(db);
+    batch.set(doc(collection(db,'conversations',c.cid,'messages')), { senderUid:me.uid, text, createdAt:serverTimestamp() });
+    const last = text.slice(0, 120);
+    batch.set(doc(db,'inbox',me.uid,'threads',c.other.uid),
+      { otherUid:c.other.uid, name:c.other.name, photo:c.other.photo || '', lastText:last, lastAt:serverTimestamp(), lastSender:me.uid, unread:0 }, { merge:true });
+    batch.set(doc(db,'inbox',c.other.uid,'threads',me.uid),
+      { otherUid:me.uid, name:me.name, photo:me.photo || '', lastText:last, lastAt:serverTimestamp(), lastSender:me.uid, unread:increment(1) }, { merge:true });
+    await batch.commit();
+    // the live listener swaps our placeholder for the real message; make sure it never lingers
+    setTimeout(() => { if(chat === c){ const i = c.pending.indexOf(temp); if(i > -1){ c.pending.splice(i, 1); renderMsgs(false); } } }, 4000);
+  }catch(e){
+    const i = c.pending.indexOf(temp); if(i > -1) c.pending.splice(i, 1);
+    if(chat === c){ renderMsgs(false); if(!input.value) { input.value = text; autosize(); } }
+    toast('Couldn’t send — tap send to try again');
+  }
+}
+
+/* ───────── save reads: pause listeners while the tab is hidden ───────── */
+document.addEventListener('visibilitychange', () => {
+  if(document.hidden){
+    clearTimeout(hiddenTimer);
+    hiddenTimer = setTimeout(() => { stopInbox(); detachLive(); detached = true; }, 60000);
+  } else {
+    clearTimeout(hiddenTimer);
+    if(detached && me){
+      detached = false;
+      if($('listView').classList.contains('on')) startInbox();
+      if(chat) attachLive();          // only fetches what arrived while away
+    }
+    if(chat) markReadSoon();
+  }
+});
+
+/* ───────── boot ───────── */
+onAuthStateChanged(auth, async user => {
+  if(!user){ me = null; showSignedOut(); return; }
+  me = await loadMe(user);
+  const withUid = new URLSearchParams(location.search).get('with');
+  if(withUid) openChat(withUid, { push:false });
+  else showList();
+});
+</script>
+</body>
+</html>
