@@ -85,6 +85,22 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .older{align-self:center;margin:2px 0 10px;padding:7px 16px;border-radius:99px;background:#fff;border:1px solid var(--border);font-size:12.5px;font-weight:600;color:var(--sub)}
 .day{align-self:center;margin:12px 0 6px;padding:3px 12px;border-radius:99px;background:#e9edf5;color:var(--sub);font-size:11.5px;font-weight:600}
 .msg{max-width:78%;padding:9px 13px 7px;border-radius:18px;font-size:15px;line-height:1.4;white-space:pre-wrap;word-break:break-word;position:relative}
+.msg{touch-action:pan-y;transition:transform .18s}
+.msg.flash{animation:flash 1.3s ease}
+@keyframes flash{0%,60%{box-shadow:0 0 0 3px rgba(79,70,229,.35)}100%{box-shadow:0 0 0 3px rgba(79,70,229,0)}}
+.quote{margin:-2px -4px 6px;padding:6px 10px;border-radius:10px;border-left:3px solid var(--p);background:rgba(15,23,42,.06);cursor:pointer;max-width:100%}
+.msg.me .quote{background:rgba(255,255,255,.18);border-left-color:#fff}
+.q-name{font-size:12px;font-weight:800;opacity:.9}
+.q-text{font-size:13px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60vw}
+.swipe-ic{position:absolute;left:-40px;top:50%;margin-top:-15px;width:30px;height:30px;border-radius:50%;background:#e5e9f0;color:var(--sub);display:flex;align-items:center;justify-content:center;pointer-events:none}
+.swipe-ic svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.replybar{display:flex;align-items:center;gap:10px;padding:8px 14px;background:#fff;border-top:1px solid var(--border);flex-shrink:0}
+.replybar[hidden]{display:none}
+.rb-main{flex:1;min-width:0;border-left:3px solid var(--p);padding-left:10px}
+.rb-name{font-size:12.5px;font-weight:800;color:var(--p)}
+.rb-text{font-size:13.5px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rb-x{width:30px;height:30px;border-radius:50%;background:#f1f5f9;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.rb-x svg{width:14px;height:14px;fill:none;stroke:var(--sub);stroke-width:2.6;stroke-linecap:round}
 .msg.them{align-self:flex-start;background:#fff;border:1px solid var(--border);border-bottom-left-radius:6px}
 .msg.me{align-self:flex-end;background:var(--gm);color:#fff;border-bottom-right-radius:6px}
 .msg .t{display:block;text-align:right;font-size:10.5px;margin-top:3px;opacity:.65}
@@ -131,6 +147,10 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
     </button>
   </div>
   <div class="msgs" id="msgs"><div class="empty-chat">Loading…</div></div>
+  <div class="replybar" id="replyBar" hidden>
+    <div class="rb-main"><div class="rb-name" id="rbName"></div><div class="rb-text" id="rbText"></div></div>
+    <button class="rb-x" id="rbX" aria-label="Cancel reply"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
   <div class="composer">
     <textarea id="input" rows="1" placeholder="Message…" maxlength="2000" aria-label="Type a message"></textarea>
     <button class="send" id="sendBtn" disabled aria-label="Send"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg></button>
@@ -313,18 +333,18 @@ async function fetchOtherExtras(c){
 /* ───────── CHAT ───────── */
 function toMsg(d){
   const x = d.data({ serverTimestamps:'estimate' });
-  return { id:d.id, senderUid:x.senderUid, text:x.text, ts: ms(x.createdAt), raw:x.createdAt, confirmed: !d.metadata.hasPendingWrites };
+  return { id:d.id, senderUid:x.senderUid, text:x.text, replyTo:x.replyTo || null, ts: ms(x.createdAt), raw:x.createdAt, confirmed: !d.metadata.hasPendingWrites };
 }
-/* Under my latest message: Sending… / Delivered / Seen 2:14 PM — and under any failed one: Not delivered.
+/* Every one of my messages carries its own status in its time line:  3:07 PM · Sending… / Delivered / Seen
    "Delivered" = saved on our server and in their inbox (a website can't know more than that).
-   "Seen" = they opened the chat with that message on screen (their phone writes seenAt into my inbox row). */
-function statusFor(m, isLastMine){
+   "Seen"      = they opened the chat after this message arrived (their phone writes seenAt into my inbox row).
+   A message that failed gets a red "Not delivered · Tap to retry" under it. */
+function statusFor(m){
   if(m.failed) return { text:'Not delivered · Tap to retry', err:true };
   const acked = m.confirmed || (chat && chat.ack.has(m.id));
   if(m.pendingLocal && !acked) return { text: navigator.onLine ? 'Sending…' : 'Waiting for connection' };
-  if(!isLastMine) return null;
   const seen = ms(chat && chat.row && chat.row.seenAt);
-  if(seen && m.ts && seen >= m.ts) return { text:'Seen ' + fmtListTime(seen) };
+  if(seen && m.ts && seen >= m.ts) return { text:'Seen' };
   return { text: acked ? 'Delivered' : 'Sending…' };
 }
 function renderMsgs(stick){
@@ -332,8 +352,6 @@ function renderMsgs(stick){
   const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 140;
   const prevH = box.scrollHeight, prevTop = box.scrollTop;
   const items = [...chat.msgs.values(), ...chat.pending.filter(p => !chat.msgs.has(p.id))].sort((a,b) => (a.ts||Infinity) - (b.ts||Infinity));
-  let lastMineId = null;
-  items.forEach(m => { if(m.senderUid === me.uid) lastMineId = m.id; });
   let html = chat.hasMore ? `<button class="older" id="olderBtn">Load earlier messages</button>` : `
     <div class="intro">
       <div class="av">${avatarHtml(chat.other.name, chat.other.photo)}</div>
@@ -347,12 +365,15 @@ function renderMsgs(stick){
     const dk = m.ts ? new Date(m.ts).toDateString() : lastDay;
     if(dk && dk !== lastDay){ html += `<div class="day">${esc(fmtDay(m.ts))}</div>`; lastDay = dk; }
     const mine = m.senderUid === me.uid;
-    const st = mine ? statusFor(m, m.id === lastMineId) : null;
-    html += `<div class="msg ${mine?'me':'them'} ${m.pendingLocal && !m.failed && !chat.ack.has(m.id)?'pending':''} ${m.failed?'failed':''}">${esc(m.text)}<span class="t">${m.ts ? new Date(m.ts).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}) : ''}</span></div>`;
-    if(st) html += `<div class="stat ${st.err?'err':''}" ${st.err?`data-retry="${esc(m.id)}"`:''}>${esc(st.text)}</div>`;
+    const st = mine ? statusFor(m) : null;
+    const time = m.ts ? new Date(m.ts).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}) : '';
+    const q = m.replyTo ? `<div class="quote" data-qid="${esc(m.replyTo.id)}"><div class="q-name">${esc(m.replyTo.senderUid === me.uid ? 'You' : chat.other.name)}</div><div class="q-text">${esc(m.replyTo.text)}</div></div>` : '';
+    html += `<div class="msg ${mine?'me':'them'} ${m.pendingLocal && !m.failed && !chat.ack.has(m.id)?'pending':''} ${m.failed?'failed':''}" data-mid="${esc(m.id)}">${q}${esc(m.text)}<span class="t">${time}${st && !st.err ? ' · ' + esc(st.text) : ''}</span></div>`;
+    if(st && st.err) html += `<div class="stat err" data-retry="${esc(m.id)}">${esc(st.text)}</div>`;
   });
   box.innerHTML = html;
   box.querySelectorAll('[data-retry]').forEach(el => el.onclick = () => { const pm = chat && chat.pending.find(x => x.id === el.dataset.retry); if(pm) send(pm); });
+  box.querySelectorAll('.quote').forEach(el => el.onclick = () => jumpTo(el.dataset.qid));
   const ob = $('olderBtn'); if(ob) ob.onclick = loadOlder;
   const vp = $('vpBtn'); if(vp) vp.onclick = () => { location.href = `/profile?uid=${encodeURIComponent(chat.other.uid)}`; };
   if(stick || nearBottom) box.scrollTop = box.scrollHeight;
@@ -460,7 +481,7 @@ async function openChat(otherUid, { push = true } = {}){
   }
   setTimeout(() => { if(matchMedia('(pointer:fine)').matches) $('input').focus(); }, 50);
 }
-function closeChat(){ detachLive(); chat = null; $('input').value = ''; autosize(); }
+function closeChat(){ detachLive(); chat = null; $('input').value = ''; autosize(); hideReplyBar(); }
 
 /* ───────── read receipts (unread → 0) ───────── */
 function receiptsOn(){ try{ return localStorage.getItem('msb_receipts') !== 'off'; }catch(e){ return true; } }   // a "Read receipts" switch in message settings can flip this later
@@ -483,6 +504,71 @@ async function markRead(){
   if(receiptsOn()){ updateDoc(doc(db,'inbox',other,'threads',me.uid), { seenAt:serverTimestamp() }).catch(() => {}); }
 }
 
+/* ───────── reply to a specific message (swipe right on it) ───────── */
+function setReply(m){
+  if(!chat) return;
+  chat.reply = { id:m.id, senderUid:m.senderUid, text:String(m.text || '').slice(0, 140) };
+  $('rbName').textContent = m.senderUid === me.uid ? 'Replying to yourself' : 'Replying to ' + chat.other.name;
+  $('rbText').textContent = chat.reply.text;
+  $('replyBar').hidden = false;
+  input.focus();
+}
+function hideReplyBar(){ $('replyBar').hidden = true; }
+function clearReply(){ if(chat) chat.reply = null; hideReplyBar(); }
+$('rbX').onclick = clearReply;
+function jumpTo(id){
+  const box = $('msgs');
+  const t = [...box.querySelectorAll('[data-mid]')].find(el => el.dataset.mid === id);
+  if(!t){ toast('That message is further up — scroll up to find it'); return; }
+  t.scrollIntoView({ block:'center', behavior:'smooth' });
+  t.classList.add('flash'); setTimeout(() => t.classList.remove('flash'), 1400);
+}
+(function enableSwipeReply(){
+  const box = $('msgs');
+  const ICON = '<svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 016 6v3"/></svg>';
+  let st = null;
+  const msgOf = id => chat && (chat.msgs.get(id) || chat.pending.find(p => p.id === id));
+  box.addEventListener('pointerdown', e => {
+    const el = e.target.closest('.msg');
+    if(!el || e.target.closest('.quote')) return;
+    st = { el, x:e.clientX, y:e.clientY, dx:0, locked:false, id:e.pointerId, ic:null };
+  });
+  box.addEventListener('pointermove', e => {
+    if(!st || e.pointerId !== st.id) return;
+    const dx = e.clientX - st.x, dy = e.clientY - st.y;
+    if(!st.locked){
+      if(Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)){ st = null; return; }          // it's a scroll, not a swipe
+      if(dx > 10 && dx > Math.abs(dy)){
+        st.locked = true;
+        try{ box.setPointerCapture(e.pointerId); }catch(_){}
+        st.el.style.transition = 'none';
+        st.ic = document.createElement('span'); st.ic.className = 'swipe-ic'; st.ic.innerHTML = ICON; st.ic.style.opacity = '0';
+        st.el.appendChild(st.ic);
+      } else return;
+    }
+    st.dx = Math.max(0, Math.min(dx, 90));
+    st.el.style.transform = `translateX(${st.dx}px)`;
+    if(st.ic) st.ic.style.opacity = String(Math.min(1, st.dx / 56));
+  });
+  const end = () => {
+    if(!st) return;
+    const s = st; st = null;
+    s.el.style.transition = 'transform .18s'; s.el.style.transform = '';
+    if(s.ic) s.ic.remove();
+    if(s.locked && s.dx > 56){
+      const m = msgOf(s.el.dataset.mid);
+      if(m){ setReply(m); try{ navigator.vibrate && navigator.vibrate(12); }catch(_){} }
+    }
+  };
+  box.addEventListener('pointerup', end);
+  box.addEventListener('pointercancel', end);
+  // desktop: double-click a message to reply
+  box.addEventListener('dblclick', e => {
+    const el = e.target.closest('.msg'); if(!el || e.target.closest('.quote')) return;
+    const m = msgOf(el.dataset.mid); if(m) setReply(m);
+  });
+})();
+
 /* ───────── composer ───────── */
 const input = $('input'), sendBtn = $('sendBtn');
 function autosize(){ input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 120) + 'px'; sendBtn.disabled = !input.value.trim(); }
@@ -500,13 +586,15 @@ async function send(retryItem){
   else { text = input.value.trim().slice(0, 2000); if(!text) return; }
   const c = chat;
   pingActive();
+  const replyTo = retryItem ? (retryItem.replyTo || null) : (c.reply || null);
   // The message id is fixed up front, so a retry can never create a second copy of the same message.
   const msgRef = retryItem ? doc(db,'conversations',c.cid,'messages',retryItem.id) : doc(collection(db,'conversations',c.cid,'messages'));
   let temp = retryItem;
   if(!temp){
     input.value = ''; autosize(); input.focus();
-    temp = { id:msgRef.id, senderUid:me.uid, text, ts:Date.now(), pendingLocal:true };
+    temp = { id:msgRef.id, senderUid:me.uid, text, replyTo, ts:Date.now(), pendingLocal:true };
     c.pending.push(temp);
+    c.reply = null; hideReplyBar();
   } else { temp.failed = false; temp.ts = Date.now(); }
   renderMsgs(true);
   try{
@@ -515,7 +603,9 @@ async function send(retryItem){
       if(ex.exists()){ c.ack.add(temp.id); if(chat === c) renderMsgs(false); return; }
     }
     const batch = writeBatch(db);
-    batch.set(msgRef, { senderUid:me.uid, text, createdAt:serverTimestamp() });
+    const payload = { senderUid:me.uid, text, createdAt:serverTimestamp() };
+    if(replyTo) payload.replyTo = replyTo;
+    batch.set(msgRef, payload);
     const last = text.slice(0, 120);
     batch.set(doc(db,'inbox',me.uid,'threads',c.other.uid),
       { otherUid:c.other.uid, name:c.other.name, photo:c.other.photo || '', lastText:last, lastAt:serverTimestamp(), lastSender:me.uid, unread:0 }, { merge:true });
@@ -592,7 +682,7 @@ function saveChatCacheSoon(){
   _cacheTimers.c = setTimeout(() => {
     try{
       const msgs = [...c.msgs.values()].filter(m => m.ts && m.confirmed).sort((a,b) => a.ts - b.ts).slice(-PAGE)
-        .map(m => ({ id:m.id, senderUid:m.senderUid, text:m.text, ts:m.ts }));
+        .map(m => ({ id:m.id, senderUid:m.senderUid, text:m.text, replyTo:m.replyTo || null, ts:m.ts }));
       localStorage.setItem(CHAT_KEY(c.cid), JSON.stringify({ msgs, hasMore:c.hasMore, t:Date.now() }));
       const idx = JSON.parse(localStorage.getItem('msb_chat_idx') || '[]').filter(x => x !== c.cid); idx.push(c.cid);
       while(idx.length > 8) localStorage.removeItem(CHAT_KEY(idx.shift()));      // keep only the 8 most recent chats
