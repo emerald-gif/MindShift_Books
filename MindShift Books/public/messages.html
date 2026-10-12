@@ -96,6 +96,19 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .pres-name{font-size:15px;font-weight:700}
 .pres-sub{font-size:12.5px;color:var(--mute)}
 .pnote{text-align:center;color:var(--mute);font-size:13.5px;padding:14px 8px}
+.reqrow .reqav{background:#eef2ff;color:var(--p)}
+.reqrow .reqav svg{width:24px;height:24px}
+.req-intro{padding:12px 16px;font-size:13.5px;color:var(--sub);background:#fff;border-bottom:1px solid #f1f5f9;flex-shrink:0;line-height:1.45}
+.req-note{align-self:center;text-align:center;font-size:12.5px;color:var(--mute);padding:6px 18px 12px;max-width:330px;line-height:1.45}
+.reqbar{padding:14px 16px calc(14px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid var(--border);flex-shrink:0}
+.reqbar[hidden]{display:none}
+.reqbar-text{font-size:13.5px;color:var(--sub);text-align:center;line-height:1.45;margin-bottom:12px}
+.reqbar-text b{color:var(--txt)}
+.reqbar-btns{display:flex;gap:8px}
+.rq-btn{flex:1;padding:12px 8px;border-radius:99px;font-size:14.5px;font-weight:800;background:#f1f5f9;color:var(--txt)}
+.rq-btn.primary{background:var(--g);color:#fff}
+.rq-btn.danger{color:var(--red)}
+.rq-btn:active{opacity:.85}
 .tabs{display:flex;gap:8px;padding:10px 16px;background:#fff;border-bottom:1px solid #f1f5f9;flex-shrink:0}
 .tab{padding:7px 16px;border-radius:99px;background:#f1f5f9;font-size:13.5px;font-weight:700;color:var(--sub);transition:all .15s}
 .tab.on{background:#eef2ff;color:var(--p)}
@@ -175,6 +188,16 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
   <div class="list" id="list"><div class="skel-row"><div class="skel c"></div><div style="flex:1"><div class="skel" style="height:14px;width:42%;margin-bottom:9px"></div><div class="skel" style="height:12px;width:78%"></div></div></div><div class="skel-row"><div class="skel c"></div><div style="flex:1"><div class="skel" style="height:14px;width:42%;margin-bottom:9px"></div><div class="skel" style="height:12px;width:78%"></div></div></div><div class="skel-row"><div class="skel c"></div><div style="flex:1"><div class="skel" style="height:14px;width:42%;margin-bottom:9px"></div><div class="skel" style="height:12px;width:78%"></div></div></div><div class="skel-row"><div class="skel c"></div><div style="flex:1"><div class="skel" style="height:14px;width:42%;margin-bottom:9px"></div><div class="skel" style="height:12px;width:78%"></div></div></div><div class="skel-row"><div class="skel c"></div><div style="flex:1"><div class="skel" style="height:14px;width:42%;margin-bottom:9px"></div><div class="skel" style="height:12px;width:78%"></div></div></div><div class="skel-row"><div class="skel c"></div><div style="flex:1"><div class="skel" style="height:14px;width:42%;margin-bottom:9px"></div><div class="skel" style="height:12px;width:78%"></div></div></div></div>
 </section>
 
+<!-- ── MESSAGE REQUESTS ── -->
+<section class="view" id="reqView">
+  <div class="bar">
+    <button class="back" id="reqBack" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <div class="bar-title">Message requests</div>
+  </div>
+  <div class="req-intro">Messages from people you don’t follow. They won’t know you’ve seen them until you accept.</div>
+  <div class="list" id="reqList"></div>
+</section>
+
 <!-- ── CHAT ── -->
 <section class="view" id="chatView">
   <div class="bar">
@@ -189,6 +212,10 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
   <div class="replybar" id="replyBar" hidden>
     <div class="rb-main"><div class="rb-name" id="rbName"></div><div class="rb-text" id="rbText"></div></div>
     <button class="rb-x" id="rbX" aria-label="Cancel reply"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div class="reqbar" id="reqBar" hidden>
+    <div class="reqbar-text"><b id="reqName"></b> isn’t someone you follow. They won’t know you’ve seen this until you accept.</div>
+    <div class="reqbar-btns"><button class="rq-btn danger" id="reqBlock">Block</button><button class="rq-btn" id="reqDecline">Decline</button><button class="rq-btn primary" id="reqAccept">Accept</button></div>
   </div>
   <div class="blockbar" id="blockBar" hidden><span id="blockMsg">You blocked this user.</span><button id="unblockBtn">Unblock</button></div>
   <div class="composer" id="composer">
@@ -215,6 +242,7 @@ let me = null;                 // { uid, name, photo }
 let dbReady = false;           // true once the Firebase SDK has loaded (the page paints from saved copies before that)
 let threads = [];              // current inbox rows
 let unsubInbox = null, unsubPinned = null;
+let requests = [];                             // people I don't follow who've messaged me and haven't been accepted
 let recentRows = [], pinnedRows = [];        // raw inbox rows: the 30 most recent, and pinned ones (≤5, even if old)
 let blockedSet = new Set(), blockedInfo = new Map();
 let chat = null;               // { other:{uid,name,photo}, cid, msgs:Map, oldest, hasMore, lastTs, unsubLive, pending:[] }
@@ -260,7 +288,7 @@ function activeLabel(t){
 function clearBadgeCache(){ try{ sessionStorage.removeItem('msb_unread_v1'); }catch(e){} }
 
 /* ───────── views / navigation ───────── */
-function show(view){ $('listView').classList.toggle('on', view==='list'); $('chatView').classList.toggle('on', view==='chat'); }
+function show(view){ $('listView').classList.toggle('on', view==='list'); $('chatView').classList.toggle('on', view==='chat'); $('reqView').classList.toggle('on', view==='req'); }
 function leaveMessages(){
   let same = false; try{ same = !!document.referrer && new URL(document.referrer).origin === location.origin; }catch(e){}
   if(history.length > 1 && same){ history.back(); } else { location.href = '/'; }
@@ -270,11 +298,16 @@ function backToList(){
   if(history.state && history.state.chat && !history.state.direct) history.back();
   else { closeChat(); history.replaceState({}, '', '/messages'); showList(); }
 }
+$('reqBack').onclick = () => {
+  if(history.state && history.state.req) history.back();
+  else { history.replaceState({}, '', '/messages'); showList(); }
+};
 $('chatBack').onclick = backToList;
 $('chatHead').onclick = () => { if(chat) location.href = `/profile?uid=${encodeURIComponent(chat.other.uid)}`; };
 window.addEventListener('popstate', e => {
   const st = e.state || {};
   if(st.chat) openChat(st.chat, { push:false });
+  else if(st.req){ closeChat(); showRequests(false); }
   else { closeChat(); showList(); }
 });
 
@@ -314,12 +347,23 @@ function isVisible(t){
 function rebuildThreads(){
   const map = new Map();
   recentRows.concat(pinnedRows).forEach(t => map.set(t.otherUid, t));
-  threads = [...map.values()].filter(isVisible).sort((a,b) =>
+  const rows = [...map.values()].filter(isVisible);
+  requests = rows.filter(isRequest).sort((a,b) => ms(b.lastAt) - ms(a.lastAt));
+  threads = rows.filter(t => !isRequest(t)).sort((a,b) =>
     (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) ||
     (b.pinned ? ms(b.pinnedAt) - ms(a.pinnedAt) : 0) ||
     ms(b.lastAt) - ms(a.lastAt));
 }
 const PIN_SVG = '<svg class="pin-ic" viewBox="0 0 24 24"><path d="M16 3l5 5-3 1-3.5 3.5.5 4.5-1.5 1.5L10 14l-6 6-1-1 6-6-4.5-4.5L6 7.5l4.5.5L14 4.5z"/></svg>';
+function reqRowHtml(){
+  if(filter !== 'all' || !requests.length) return '';
+  const unread = requests.filter(r => r.unread > 0).length;
+  const names = requests.slice(0, 2).map(r => firstName(r.name)).join(', ') + (requests.length > 2 ? ' and more' : '');
+  return `<button class="row reqrow" id="reqRow"><div class="av reqav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v12H5.2L4 17.2V4z"/><path d="M8 9h8M8 12h5"/></svg></div>
+    <div class="row-main"><div class="row-top"><span class="row-name">Message requests</span><span class="row-time">${requests.length}</span></div>
+    <div class="row-bot"><span class="row-last">${esc(names)}</span>${unread ? `<span class="pill">${unread}</span>` : ''}</div></div></button>`;
+}
+function bindReqRow(){ const b = $('reqRow'); if(b) b.onclick = () => showRequests(true); }
 function renderList(){
   const el = $('list');
   const unreadCount = threads.filter(t => t.unread > 0).length;
@@ -330,12 +374,12 @@ function renderList(){
   }
   const shown = filter === 'unread' ? threads.filter(t => t.unread > 0) : threads;
   if(!threads.length){
-    el.innerHTML = `<div class="empty"><div class="ic"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg></div>
+    el.innerHTML = reqRowHtml() + `<div class="empty"><div class="ic"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg></div>
       <h2>No messages yet</h2><p>Tap someone in the row above, or the + to find anyone, to start a conversation.</p></div>`;
-    renderPeople();
+    renderPeople(); bindReqRow();
     return;
   }
-  el.innerHTML = shown.map(t => {
+  el.innerHTML = reqRowHtml() + shown.map(t => {
     const un = t.unread > 0;
     const last = (t.lastSender === me.uid ? 'You: ' : '') + (t.lastText || '') + (t.lastSender === me.uid && t.seenAt && ms(t.seenAt) >= ms(t.lastAt) ? ' · Seen' : '');
     return `<button class="row ${un?'unread':''}" data-uid="${esc(t.otherUid)}">
@@ -345,8 +389,8 @@ function renderList(){
         <div class="row-bot"><span class="row-last">${esc(last)}</span>${un ? `<span class="pill">${t.unread > 99 ? '99+' : t.unread}</span>` : ''}</div>
       </div></button>`;
   }).join('');
-  renderPeople();
-  el.querySelectorAll('.row').forEach(b => {
+  renderPeople(); bindReqRow();
+  el.querySelectorAll('.row:not(.reqrow)').forEach(b => {
     let timer = null, fired = false;
     const t = threads.find(x => x.otherUid === b.dataset.uid);
     b.onclick = () => { if(fired){ fired = false; return; } openChat(b.dataset.uid, { push:true }); };
@@ -368,11 +412,11 @@ function startInbox(){
   const rowOf = d => { const x = d.data({ serverTimestamps:'estimate' }); return { id:d.id, ...x, otherUid: x.otherUid || d.id }; };
   const failed = () => { $('list').innerHTML = `<div class="empty"><h2>Couldn't load messages</h2><p>Check your connection and try again.</p><button class="btn" onclick="location.reload()">Try again</button></div>`; };
   unsubInbox = onSnapshot(query(col, orderBy('lastAt','desc'), limit(PAGE)), snap => {
-    recentRows = snap.docs.map(rowOf); rebuildThreads(); renderList(); saveInboxCache();
+    recentRows = snap.docs.map(rowOf); rebuildThreads(); renderList(); saveInboxCache(); checkRequests();
   }, failed);
   // pinned chats are fetched on their own so a pinned chat stays at the top even when it's old (≤5 reads)
   unsubPinned = onSnapshot(query(col, where('pinned','==',true), limit(5)), snap => {
-    pinnedRows = snap.docs.map(rowOf); rebuildThreads(); renderList(); saveInboxCache();
+    pinnedRows = snap.docs.map(rowOf); rebuildThreads(); renderList(); saveInboxCache(); checkRequests();
   }, () => {});
 }
 function stopInbox(){
@@ -400,7 +444,7 @@ async function fetchOtherExtras(c){
     getDoc(doc(db,'users',o.uid)).catch(() => null),
     getDoc(doc(db,'presence',o.uid)).catch(() => null)
   ]);
-  if(u && u.exists()){ const d = u.data(); o.name = d.name || o.name; o.photo = d.photo || o.photo || ''; o.jobTitle = d.jobTitle || ''; o.msgPrivacy = d.msgPrivacy || 'everyone'; }
+  if(u && u.exists()){ const d = u.data(); o.name = d.name || o.name; o.photo = d.photo || o.photo || ''; o.jobTitle = d.jobTitle || ''; }
   if(p && p.exists()) o.lastActive = ms(p.data().lastActive);
   c.extrasAt = Date.now();
 }
@@ -434,7 +478,7 @@ function renderMsgs(stick){
       <div class="intro-name">${esc(chat.other.name)}</div>
       ${chat.other.jobTitle ? `<div class="intro-sub">${esc(chat.other.jobTitle)}</div>` : ''}
       <button class="vp" id="vpBtn">View profile</button>
-    </div>`;
+    </div>${chat.reqNote && !ms(chat.row && chat.row.seenAt) && ![...chat.msgs.values()].some(m => m.senderUid !== me.uid) ? `<div class="req-note">${esc(chat.other.name)} doesn’t follow you, so your first message goes to their message requests until they accept.</div>` : ''}`;
   if(!items.length) html += `<div class="empty-chat">Say hi to ${esc(chat.other.name)} 👋</div>`;
   let lastDay = '';
   items.forEach(m => {
@@ -501,6 +545,7 @@ function attachLive(){
   chat.unsubRow = onSnapshot(doc(db,'inbox',me.uid,'threads',chat.other.uid), s => {
     if(!chat || chat.cid !== cid) return;
     chat.row = s.exists() ? s.data() : null;
+    evaluateRequest();
     if(chat.row && !_reloading && ms(chat.row.clearedAt) > ms(chat.clearedAt)){ reloadChat(); return; }   // cleared elsewhere
     renderMsgs(false);
     if(chat.row && chat.row.unread > 0 && !document.hidden) markReadSoon(!chat.rowSeen);
@@ -543,11 +588,11 @@ async function openChat(otherUid, { push = true, reload = false } = {}){
   chat.blocked = blockedSet.has(otherUid);
   chat.pending.push(...loadSilent(chat.cid));
   const mine = chat;
-  const extras = fetchOtherExtras(mine).then(() => { if(chat === mine){ updateRestricted(); paintOther(); if(mine.loaded) renderMsgs(false); document.title = `${mine.other.name} | Messages`; } });
+  const extras = fetchOtherExtras(mine).then(() => { if(chat === mine){ paintOther(); if(mine.loaded) renderMsgs(false); document.title = `${mine.other.name} | Messages`; } });
   if(!t) await extras;                       // no inbox row yet (opened from a profile) → wait so the header isn't a placeholder
   if(rowP){ const rs = await rowP; rowDoc = rs && rs.exists() ? rs.data({ serverTimestamps:'estimate' }) : null; }
   if(chat !== mine) return;
-  updateRestricted();
+  evaluateRequest();
   chat.clearedAt = rowDoc && ms(rowDoc.clearedAt) ? new Date(ms(rowDoc.clearedAt)) : null;
   if(reload){ chat.msgs.clear(); chat.lastTs = null; chat.oldest = null; chat.hasMore = false; }
   applyBlockUI();
@@ -567,6 +612,7 @@ async function openChat(otherUid, { push = true, reload = false } = {}){
     chat.loaded = true;
     _reloading = false;
     renderMsgs(true);
+    checkTheyFollowMe();
     saveChatCacheSoon();
     attachLive();
     markReadSoon(true);
@@ -594,8 +640,8 @@ async function markRead(){
     await updateDoc(doc(db,'inbox',me.uid,'threads',other), { unread:0 });
     clearBadgeCache();
   }catch(e){ return; }
-  // let them know it's been seen (best effort — never blocks my own unread reset)
-  if(receiptsOn()){ updateDoc(doc(db,'inbox',other,'threads',me.uid), { seenAt:serverTimestamp() }).catch(() => {}); }
+  // let them know it's been seen (best effort — never blocks my own unread reset). Not for a request: no "Seen" until I accept.
+  if(receiptsOn() && !chat.isRequest){ updateDoc(doc(db,'inbox',other,'threads',me.uid), { seenAt:serverTimestamp() }).catch(() => {}); }
 }
 
 /* ───────── reply to a specific message (swipe right on it) ───────── */
@@ -676,7 +722,6 @@ async function send(retryItem){
   if(!chat || !me) return;
   if(!dbReady){ toast('Connecting… try again in a second'); return; }
   if(chat.blocked){ toast('Unblock this user to send messages'); return; }
-  if(chat.restricted){ toast('This person isn’t accepting messages right now'); return; }
   let text;
   if(retryItem) text = retryItem.text;
   else { text = input.value.trim().slice(0, 2000); if(!text) return; }
@@ -704,7 +749,7 @@ async function send(retryItem){
     batch.set(msgRef, payload);
     const last = text.slice(0, 120);
     batch.set(doc(db,'inbox',me.uid,'threads',c.other.uid),
-      { otherUid:c.other.uid, name:c.other.name, photo:c.other.photo || '', lastText:last, lastAt:serverTimestamp(), lastSender:me.uid, unread:0 }, { merge:true });
+      { otherUid:c.other.uid, name:c.other.name, photo:c.other.photo || '', lastText:last, lastAt:serverTimestamp(), lastSender:me.uid, unread:0, accepted:true }, { merge:true });
     batch.set(doc(db,'inbox',c.other.uid,'threads',me.uid),
       { otherUid:me.uid, name:me.name, photo:me.photo || '', lastText:last, lastAt:serverTimestamp(), lastSender:me.uid, unread:increment(1) }, { merge:true });
     await batch.commit();
@@ -827,12 +872,13 @@ async function markAllRead(){
   try{
     // ask the server for every unread row (not just the 30 on screen); it only reads rows that are actually unread
     const snap = await getDocs(query(collection(db,'inbox',me.uid,'threads'), where('unread','>',0), limit(100)));
-    if(snap.empty){ toast('Nothing unread'); return; }
+    const docs = snap.docs.filter(d => !isRequest({ ...d.data(), otherUid: d.data().otherUid || d.id }));   // requests stay unread until you open them
+    if(!docs.length){ toast('Nothing unread'); return; }
     const batch = writeBatch(db);
-    snap.docs.forEach(d => batch.update(d.ref, { unread:0 }));       // clears the counters only — no "Seen" is sent to anyone
+    docs.forEach(d => batch.update(d.ref, { unread:0 }));            // clears the counters only — no "Seen" is sent to anyone
     await batch.commit();
     clearBadgeCache();
-    toast(snap.size === 1 ? 'Marked 1 chat as read' : `Marked ${snap.size} chats as read`);
+    toast(docs.length === 1 ? 'Marked 1 chat as read' : `Marked ${docs.length} chats as read`);
   }catch(e){ toast('Couldn’t mark as read'); }
 }
 async function reloadChat(){
@@ -868,10 +914,10 @@ async function deleteChat(uid){
   }catch(e){ toast('Couldn’t delete this chat'); }
 }
 function applyBlockUI(){
-  const b = !!(chat && chat.blocked), r = !!(chat && !chat.blocked && chat.restricted);
-  $('blockBar').hidden = !(b || r);
-  $('blockMsg').textContent = b ? 'You blocked this user.' : `${(chat && chat.other.name) || 'This person'} isn’t accepting messages right now.`;
-  $('unblockBtn').style.display = b ? '' : 'none';
+  const b = !!(chat && chat.blocked), r = !!(chat && !chat.blocked && chat.isRequest);
+  $('blockBar').hidden = !b;
+  $('reqBar').hidden = !r;
+  if(r) $('reqName').textContent = chat.other.name || 'This person';
   $('composer').style.display = (b || r) ? 'none' : '';
   if(b || r) hideReplyBar();
 }
@@ -938,26 +984,127 @@ $('listMenuBtn').onclick = openListMenu;
 $('chatMenuBtn').onclick = openChatMenu;
 $('unblockBtn').onclick = () => { if(chat) unblockUser(chat.other.uid); };
 
+/* ───────── message requests ─────────
+   Standard rule: if I follow someone, their messages land in my inbox. If I don't, they land in "Message requests"
+   until I accept (or decline / block). Replying to a request counts as accepting it.
+   It's worked out on MY side from my own follows, so a sender can't fake their way into my inbox.
+   Opening a request never sends a "Seen" receipt; accepting does. */
+const followMap = new Map();                       // uid -> { v:true|false (do I follow them?), t:when checked }
+const FOLLOW_KEY = u => 'msb_follows_v1_' + u;
+const followFresh = x => !!x && (Date.now() - x.t) < (x.v ? 30 * 60000 : 3 * 60000);   // "yes" is trusted longer than "no"
+function loadFollowMapCache(){
+  try{ const o = JSON.parse(localStorage.getItem(FOLLOW_KEY(me.uid))) || {}; Object.keys(o).forEach(k => { if(!followMap.has(k)) followMap.set(k, { v:o[k][0], t:o[k][1] }); }); }catch(e){}
+}
+function saveFollowMap(){
+  try{ const o = {}; followMap.forEach((x, k) => { o[k] = [x.v, x.t]; }); localStorage.setItem(FOLLOW_KEY(me.uid), JSON.stringify(o)); }catch(e){}
+}
+async function ensureFollow(uids){
+  if(!dbReady || !me) return;
+  const need = [...new Set(uids)].filter(u => u && !u.includes('_') && !followFresh(followMap.get(u)));
+  for(let i = 0; i < need.length; i += 30){
+    const chunk = need.slice(i, i + 30);
+    try{
+      // follow docs are keyed "<follower>_<following>", so one query answers "do I follow any of these?"
+      const s = await getDocs(query(collection(db,'follows'), where(documentId(), 'in', chunk.map(u => me.uid + '_' + u))));
+      const yes = new Set(s.docs.map(d => d.id.slice(me.uid.length + 1)));
+      chunk.forEach(u => followMap.set(u, { v:yes.has(u), t:Date.now() }));
+    }catch(e){}
+  }
+  saveFollowMap();
+}
+// a row is a request when I haven't accepted it, I didn't write last, and I'm known not to follow them
+function isRequest(row){
+  if(!row || row.accepted || row.lastSender === (me && me.uid)) return false;
+  const f = followMap.get(row.otherUid);
+  return !!f && f.v === false;
+}
+let _reqSeq = 0;
+function checkRequests(){
+  const need = recentRows.concat(pinnedRows).filter(r => !r.accepted && r.lastSender !== me.uid && !followFresh(followMap.get(r.otherUid))).map(r => r.otherUid);
+  if(!need.length) return;
+  const seq = ++_reqSeq;
+  ensureFollow(need).then(() => {
+    if(seq !== _reqSeq) return;
+    rebuildThreads(); renderList();
+    if($('reqView').classList.contains('on')) renderRequests();
+  });
+}
+function renderRequests(){
+  const el = $('reqList');
+  if(!requests.length){
+    el.innerHTML = `<div class="empty"><div class="ic"><svg viewBox="0 0 24 24"><path d="M4 4h16v12H5.2L4 17.2V4z"/><path d="M8 9h8M8 12h5"/></svg></div><h2>No message requests</h2><p>When someone you don’t follow messages you, it shows up here.</p></div>`;
+    return;
+  }
+  el.innerHTML = requests.map(t => `<button class="row ${t.unread > 0 ? 'unread' : ''}" data-uid="${esc(t.otherUid)}">
+      <div class="av">${avatarHtml(t.name, t.photo)}</div>
+      <div class="row-main"><div class="row-top"><span class="row-name">${esc(t.name || 'MindShift Books User')}</span><span class="row-time">${fmtListTime(ms(t.lastAt))}</span></div>
+      <div class="row-bot"><span class="row-last">${esc(t.lastText || '')}</span>${t.unread > 0 ? `<span class="pill">${t.unread > 99 ? '99+' : t.unread}</span>` : ''}</div></div></button>`).join('');
+  el.querySelectorAll('.row').forEach(b => b.onclick = () => openChat(b.dataset.uid, { push:true }));
+}
+function showRequests(push){
+  show('req');
+  document.title = 'Message requests | MindShift Books';
+  renderRequests();
+  if(push) history.pushState({ req:true }, '', '/messages?requests=1');
+}
+// is the chat I just opened a request? (decided here, from my row + whether I follow them)
+async function evaluateRequest(){
+  if(!chat) return;
+  const c = chat, uid = c.other.uid;
+  const row = rowFor(uid) || c.rowInfo || c.row;
+  if(!row || row.accepted || row.lastSender === me.uid){ c.isRequest = false; applyBlockUI(); return; }
+  if(!followFresh(followMap.get(uid))) await ensureFollow([uid]);
+  if(chat !== c) return;
+  c.isRequest = isRequest({ ...row, otherUid:uid });
+  applyBlockUI();
+}
+async function acceptRequest(){
+  if(!chat) return;
+  const uid = chat.other.uid;
+  try{
+    await updateDoc(myRow(uid), { accepted:true });
+    [recentRows, pinnedRows].forEach(arr => arr.forEach(r => { if(r.otherUid === uid) r.accepted = true; }));
+    chat.isRequest = false; rebuildThreads(); applyBlockUI(); saveInboxCache();
+    // now they can be told it's been seen (best effort)
+    if(receiptsOn()) updateDoc(doc(db,'inbox',uid,'threads',me.uid), { seenAt:serverTimestamp() }).catch(() => {});
+    toast('Accepted — you can reply now');
+    input.focus();
+  }catch(e){ toast('Couldn’t accept this request'); }
+}
+async function declineRequest(uid){
+  if(!await confirmSheet('Decline this request?', 'The messages are removed for you and they aren’t told. If they message you again it shows up as a new request. You can also block them.', 'Decline')) return;
+  try{
+    await updateDoc(myRow(uid), { deleted:true, clearedAt:serverTimestamp(), lastText:'', unread:0, pinned:false });
+    removeChatCache(convId(me.uid, uid));
+    recentRows = recentRows.filter(t => t.otherUid !== uid); pinnedRows = pinnedRows.filter(t => t.otherUid !== uid);
+    rebuildThreads(); renderList(); saveInboxCache(); clearBadgeCache();
+    toast('Request declined');
+    if(chat && chat.other.uid === uid) backToList();
+  }catch(e){ toast('Couldn’t decline this request'); }
+}
+$('reqAccept').onclick = acceptRequest;
+$('reqDecline').onclick = () => { if(chat) declineRequest(chat.other.uid); };
+$('reqBlock').onclick = () => { if(chat) blockUser(chat.other.uid, chat.other.name, chat.other.photo); };
+// a note for the SENDER: this first message will wait in their requests
+async function checkTheyFollowMe(){
+  const c = chat; if(!c || c.noteChecked) return;
+  c.noteChecked = true;
+  if([...c.msgs.values()].some(m => m.senderUid !== me.uid)) return;     // they've written to me — nothing to explain
+  try{
+    const s = await getDoc(doc(db,'follows', c.other.uid + '_' + me.uid));
+    if(chat !== c) return;
+    c.reqNote = !s.exists();
+    renderMsgs(false);
+  }catch(e){}
+}
+
 /* ───────── people row (top of the inbox) ─────────
    People you follow, most recently active first (green dot = active now). If you follow nobody yet, rising
    creators are suggested instead. Reads are kept small: the follow list + profiles are remembered for 30 minutes
    and last-active times for 5, so a visit usually costs nothing.
-   Message privacy: each person's `msgPrivacy` field ('everyone' | 'followers' | 'none', default everyone) is honoured
-   here already — the settings screen that sets it comes later, and a server rule will enforce it for real. */
+   */
 let people = [], peopleMode = 'follow', followingIds = new Set(), peopleAct = {}, peopleState = 'idle', _peopleSig = '';
 const PEOPLE_KEY = u => 'msb_people_v1_' + u;
-function allowsMessages(u, iFollow){
-  const m = (u && u.msgPrivacy) || 'everyone';
-  if(m === 'none') return false;
-  if(m === 'followers') return !!iFollow;       // "followers" = people who follow them; for someone I follow that's me
-  return true;
-}
-function updateRestricted(){
-  if(!chat) return;
-  const uid = chat.other.uid;
-  chat.restricted = !rowFor(uid) && !allowsMessages(chat.other, followingIds.has(uid) || chat.other.msgPrivacy === 'followers' && peopleMode === 'follow' && people.some(p => p.uid === uid));
-  applyBlockUI();
-}
 const firstName = n => String(n || '').trim().split(/\s+/)[0] || 'User';
 const isActiveNow = t => !!t && (Date.now() - t) < 7 * 60000;
 function visiblePeople(){
@@ -1000,7 +1147,7 @@ function savePeopleCache(extra){
 }
 async function fetchProfiles(ids){
   const s = await getDocs(query(collection(db,'users'), where(documentId(), 'in', ids.slice(0, 30))));
-  return s.docs.map(d => { const x = d.data(); return { uid:d.id, name:x.name || '', photo:x.photo || '', jobTitle:x.jobTitle || '', username:x.username || '', msgPrivacy:x.msgPrivacy || 'everyone' }; });
+  return s.docs.map(d => { const x = d.data(); return { uid:d.id, name:x.name || '', photo:x.photo || '', jobTitle:x.jobTitle || '', username:x.username || '' }; });
 }
 async function loadPeople(){
   if(!dbReady || !me) return;
@@ -1017,15 +1164,15 @@ async function loadPeople(){
       followingIds = new Set(ids);
       if(ids.length){
         peopleMode = 'follow';
-        people = (await fetchProfiles(ids)).filter(p => allowsMessages(p, true));
+        people = await fetchProfiles(ids);
       } else {
         peopleMode = 'suggest';
         let snap = null;
         try{ snap = await getDocs(query(collection(db,'users'), orderBy('followerCount','desc'), limit(24))); }catch(e){}
         if(!snap || snap.empty) snap = await getDocs(query(collection(db,'users'), limit(24)));
-        people = snap.docs.map(d => { const x = d.data(); return { uid:d.id, name:x.name || '', photo:x.photo || '', jobTitle:x.jobTitle || '', username:x.username || '', msgPrivacy:x.msgPrivacy || 'everyone',
+        people = snap.docs.map(d => { const x = d.data(); return { uid:d.id, name:x.name || '', photo:x.photo || '', jobTitle:x.jobTitle || '', username:x.username || '',
                  _score: ((x.photo || x.photoURL) ? 1 : 0) + (x.cover ? 1 : 0) + ((x.bio && String(x.bio).trim()) ? 1 : 0) + ((Array.isArray(x.categories) && x.categories.length) ? 1 : 0) + (x.username ? 1 : 0) }; })
-          .filter(p => p.uid !== me.uid && p._score >= 2 && p.photo && allowsMessages(p, false)).slice(0, 15);
+          .filter(p => p.uid !== me.uid && p._score >= 2 && p.photo).slice(0, 15);
       }
       t = Date.now(); actT = 0; peopleAct = {};
     }
@@ -1063,12 +1210,12 @@ function openPeopleSearch(){
       if(mySeq !== seq) return;
       const seen = new Map();
       [u1, n1, n2].forEach(sn => sn && sn.docs.forEach(d => { if(d.id !== me.uid && !blockedSet.has(d.id) && !seen.has(d.id)) seen.set(d.id, { uid:d.id, ...d.data() }); }));
-      const res = [...seen.values()].filter(u => allowsMessages(u, followingIds.has(u.uid))).slice(0, 8);
+      const res = [...seen.values()].slice(0, 8);
       $('psr').innerHTML = res.length ? res.map(u => `<button class="pres" data-uid="${esc(u.uid)}"><div class="av">${avatarHtml(u.name, u.photo)}</div><div><div class="pres-name">${esc(u.name || 'User')}</div><div class="pres-sub">${u.username ? '@' + esc(u.username) : esc(u.jobTitle || '')}</div></div></button>`).join('')
                                   : '<div class="pnote">No one found</div>';
       $('psr').querySelectorAll('.pres').forEach(b => b.onclick = () => {
         const u = seen.get(b.dataset.uid); closeSheet();
-        if(u && !people.some(p => p.uid === u.uid)) people.push({ uid:u.uid, name:u.name || '', photo:u.photo || '', jobTitle:u.jobTitle || '', msgPrivacy:u.msgPrivacy || 'everyone' });
+        if(u && !people.some(p => p.uid === u.uid)) people.push({ uid:u.uid, name:u.name || '', photo:u.photo || '', jobTitle:u.jobTitle || '' });
         openChat(b.dataset.uid, { push:true });
       });
     }, 400);
@@ -1090,7 +1237,7 @@ function saveInboxCache(){
       localStorage.setItem(INBOX_KEY(me.uid), JSON.stringify(threads.map(t => ({
         otherUid:t.otherUid, name:t.name, photo:t.photo, lastText:t.lastText, lastAt:ms(t.lastAt),
         lastSender:t.lastSender, unread:t.unread || 0, seenAt:ms(t.seenAt),
-        pinned:!!t.pinned, pinnedAt:ms(t.pinnedAt), clearedAt:ms(t.clearedAt), deleted:!!t.deleted }))));
+        pinned:!!t.pinned, pinnedAt:ms(t.pinnedAt), clearedAt:ms(t.clearedAt), deleted:!!t.deleted, accepted:!!t.accepted }))));
     }catch(e){}
   }, 400);
 }
@@ -1115,7 +1262,7 @@ function loadChatCache(cid){
 }
 function clearMsgCaches(){
   try{
-    Object.keys(localStorage).filter(k => k.startsWith('msb_inbox_v1_') || k.startsWith('msb_chat_v1_') || k.startsWith('msb_silent_v1_') || k.startsWith('msb_people_v1_') || k === 'msb_chat_idx').forEach(k => localStorage.removeItem(k));
+    Object.keys(localStorage).filter(k => k.startsWith('msb_inbox_v1_') || k.startsWith('msb_chat_v1_') || k.startsWith('msb_silent_v1_') || k.startsWith('msb_people_v1_') || k.startsWith('msb_follows_v1_') || k === 'msb_chat_idx').forEach(k => localStorage.removeItem(k));
     sessionStorage.removeItem('msb_open_chat');
   }catch(e){}
 }
@@ -1174,10 +1321,12 @@ onAuthStateChanged(auth, async user => {
   if(me && me.uid !== user.uid){ threads = []; chat = null; }         // the instant paint belonged to a different account
   me = await loadMe(user);
   pingActive();
+  loadFollowMapCache();         // remembered "do I follow them?" answers
   loadBlocks();                 // who I've blocked (1 small query)
   loadPeople();                 // the circles at the top of the inbox
   const withUid = new URLSearchParams(location.search).get('with');
   if(withUid) openChat(withUid, { push:false });
+  else if(new URLSearchParams(location.search).get('requests')){ history.replaceState({ req:true }, '', '/messages?requests=1'); startInbox(); showRequests(false); }
   else showList();
   if($('listView').classList.contains('on')) startInbox();             // e.g. they tapped back before we finished loading
 });
