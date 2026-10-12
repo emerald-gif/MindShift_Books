@@ -60,6 +60,24 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .empty p{font-size:14.5px;line-height:1.5;max-width:300px;margin:0 auto}
 .btn{display:inline-block;margin-top:18px;padding:12px 26px;border-radius:99px;background:var(--g);color:#fff;font-weight:700;font-size:14.5px;text-decoration:none;box-shadow:0 4px 14px rgba(79,70,229,.3)}
 
+.kebab{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:auto;color:var(--txt)}
+.kebab:active{background:#f1f5f9}
+.kebab svg{width:22px;height:22px;fill:currentColor}
+.pin-ic{width:13px;height:13px;fill:var(--mute);margin-right:4px;vertical-align:-1px;flex-shrink:0}
+.sheet-bg{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:60}
+.sheet{position:fixed;left:0;right:0;bottom:0;background:#fff;border-radius:22px 22px 0 0;padding:8px 10px calc(12px + env(safe-area-inset-bottom));z-index:61;max-height:82dvh;overflow-y:auto;animation:sheetUp .22s ease}
+@keyframes sheetUp{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+.sheet::before{content:'';display:block;width:38px;height:4px;border-radius:99px;background:#d9dee7;margin:6px auto 10px}
+.sheet-title{text-align:center;font-weight:800;font-size:15.5px;padding:0 12px 6px}
+.sheet-text{text-align:center;color:var(--sub);font-size:14px;line-height:1.45;padding:0 16px 12px}
+.sheet-item{display:block;width:100%;text-align:left;padding:15px 16px;font-size:16px;font-weight:600;border-radius:14px}
+.sheet-item:active{background:#f1f5f9}
+.sheet-item.danger{color:var(--red)}
+.sheet-item.cancel{text-align:center;color:var(--sub);margin-top:4px;background:#f8fafc}
+.sheet[hidden],.sheet-bg[hidden]{display:none}
+.blockbar{padding:14px 16px calc(14px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid var(--border);text-align:center;font-size:14px;color:var(--sub);flex-shrink:0}
+.blockbar[hidden]{display:none}
+.blockbar button{margin-left:8px;font-weight:800;color:var(--p)}
 .tabs{display:flex;gap:8px;padding:10px 16px;background:#fff;border-bottom:1px solid #f1f5f9;flex-shrink:0}
 .tab{padding:7px 16px;border-radius:99px;background:#f1f5f9;font-size:13.5px;font-weight:700;color:var(--sub);transition:all .15s}
 .tab.on{background:#eef2ff;color:var(--p)}
@@ -129,6 +147,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
   <div class="bar">
     <button class="back" id="listBack" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
     <div class="bar-title">Messages</div>
+    <button class="kebab" id="listMenuBtn" aria-label="More options"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>
   </div>
   <div class="tabs" id="tabs">
     <button class="tab on" data-f="all">All</button>
@@ -145,19 +164,23 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
       <div class="av" id="chatAv"></div>
       <div class="chat-id"><div class="chat-name" id="chatName"></div><div class="chat-sub" id="chatSub"></div></div>
     </button>
+    <button class="kebab" id="chatMenuBtn" aria-label="Chat options"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>
   </div>
   <div class="msgs" id="msgs"><div class="empty-chat">Loading…</div></div>
   <div class="replybar" id="replyBar" hidden>
     <div class="rb-main"><div class="rb-name" id="rbName"></div><div class="rb-text" id="rbText"></div></div>
     <button class="rb-x" id="rbX" aria-label="Cancel reply"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
   </div>
-  <div class="composer">
+  <div class="blockbar" id="blockBar" hidden>You blocked this user.<button id="unblockBtn">Unblock</button></div>
+  <div class="composer" id="composer">
     <textarea id="input" rows="1" placeholder="Message…" maxlength="2000" aria-label="Type a message"></textarea>
     <button class="send" id="sendBtn" disabled aria-label="Send"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg></button>
   </div>
 </section>
 
 <div class="toast" id="toast"></div>
+<div class="sheet-bg" id="sheetBg" hidden></div>
+<div class="sheet" id="sheet" hidden><div class="sheet-title" id="sheetTitle"></div><div id="sheetBody"></div></div>
 
 <script>
 /* Opened straight into a chat (?with=…)? show the chat shell on the very first paint, not the inbox. */
@@ -172,7 +195,9 @@ const PAGE = 30;
 let me = null;                 // { uid, name, photo }
 let dbReady = false;           // true once the Firebase SDK has loaded (the page paints from saved copies before that)
 let threads = [];              // current inbox rows
-let unsubInbox = null;
+let unsubInbox = null, unsubPinned = null;
+let recentRows = [], pinnedRows = [];        // raw inbox rows: the 30 most recent, and pinned ones (≤5, even if old)
+let blockedSet = new Set(), blockedInfo = new Map();
 let chat = null;               // { other:{uid,name,photo}, cid, msgs:Map, oldest, hasMore, lastTs, unsubLive, pending:[] }
 let hiddenTimer = null, detached = false;
 let lastMark = 0, markTimer = null;
@@ -222,10 +247,11 @@ function leaveMessages(){
   if(history.length > 1 && same){ history.back(); } else { location.href = '/'; }
 }
 $('listBack').onclick = leaveMessages;
-$('chatBack').onclick = () => {
+function backToList(){
   if(history.state && history.state.chat && !history.state.direct) history.back();
   else { closeChat(); history.replaceState({}, '', '/messages'); showList(); }
-};
+}
+$('chatBack').onclick = backToList;
 $('chatHead').onclick = () => { if(chat) location.href = `/profile?uid=${encodeURIComponent(chat.other.uid)}`; };
 window.addEventListener('popstate', e => {
   const st = e.state || {};
@@ -260,6 +286,21 @@ async function loadMe(user){
 function skeletonList(){
   $('list').innerHTML = Array(6).fill('<div class="skel-row"><div class="skel c"></div><div style="flex:1"><div class="skel" style="height:14px;width:42%;margin-bottom:9px"></div><div class="skel" style="height:12px;width:78%"></div></div></div>').join('');
 }
+/* A row is hidden when the chat was deleted (and nothing new has arrived since) or the person is blocked. */
+function isVisible(t){
+  if(blockedSet.has(t.otherUid)) return false;
+  if(t.deleted && ms(t.lastAt) <= ms(t.clearedAt)) return false;
+  return true;
+}
+function rebuildThreads(){
+  const map = new Map();
+  recentRows.concat(pinnedRows).forEach(t => map.set(t.otherUid, t));
+  threads = [...map.values()].filter(isVisible).sort((a,b) =>
+    (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) ||
+    (b.pinned ? ms(b.pinnedAt) - ms(a.pinnedAt) : 0) ||
+    ms(b.lastAt) - ms(a.lastAt));
+}
+const PIN_SVG = '<svg class="pin-ic" viewBox="0 0 24 24"><path d="M16 3l5 5-3 1-3.5 3.5.5 4.5-1.5 1.5L10 14l-6 6-1-1 6-6-4.5-4.5L6 7.5l4.5.5L14 4.5z"/></svg>';
 function renderList(){
   const el = $('list');
   const unreadCount = threads.filter(t => t.unread > 0).length;
@@ -280,11 +321,18 @@ function renderList(){
     return `<button class="row ${un?'unread':''}" data-uid="${esc(t.otherUid)}">
       <div class="av">${avatarHtml(t.name, t.photo)}</div>
       <div class="row-main">
-        <div class="row-top"><span class="row-name">${esc(t.name || 'MindShift Books User')}</span><span class="row-time">${fmtListTime(ms(t.lastAt))}</span></div>
+        <div class="row-top"><span class="row-name">${esc(t.name || 'MindShift Books User')}</span><span class="row-time">${t.pinned ? PIN_SVG : ''}${fmtListTime(ms(t.lastAt))}</span></div>
         <div class="row-bot"><span class="row-last">${esc(last)}</span>${un ? `<span class="pill">${t.unread > 99 ? '99+' : t.unread}</span>` : ''}</div>
       </div></button>`;
   }).join('');
-  el.querySelectorAll('.row').forEach(b => b.onclick = () => openChat(b.dataset.uid, { push:true }));
+  el.querySelectorAll('.row').forEach(b => {
+    let timer = null, fired = false;
+    const t = threads.find(x => x.otherUid === b.dataset.uid);
+    b.onclick = () => { if(fired){ fired = false; return; } openChat(b.dataset.uid, { push:true }); };
+    b.addEventListener('pointerdown', () => { fired = false; timer = setTimeout(() => { fired = true; if(t) openRowMenu(t); }, 450); });
+    ['pointerup','pointermove','pointercancel','pointerleave'].forEach(ev => b.addEventListener(ev, () => clearTimeout(timer)));
+    b.addEventListener('contextmenu', e => { e.preventDefault(); if(t) openRowMenu(t); });
+  });
 }
 document.querySelectorAll('.tab').forEach(b => b.onclick = () => {
   filter = b.dataset.f;
@@ -294,16 +342,21 @@ document.querySelectorAll('.tab').forEach(b => b.onclick = () => {
 function startInbox(){
   if(!dbReady || !me) return;
   stopInbox();
-  const q = query(collection(db,'inbox',me.uid,'threads'), orderBy('lastAt','desc'), limit(PAGE));
-  unsubInbox = onSnapshot(q, snap => {
-    threads = snap.docs.map(d => ({ id:d.id, ...d.data(), otherUid: d.data().otherUid || d.id }));
-    renderList();
-    saveInboxCache();
-  }, () => {
-    $('list').innerHTML = `<div class="empty"><h2>Couldn't load messages</h2><p>Check your connection and try again.</p><button class="btn" onclick="location.reload()">Try again</button></div>`;
-  });
+  const col = collection(db,'inbox',me.uid,'threads');
+  const rowOf = d => { const x = d.data({ serverTimestamps:'estimate' }); return { id:d.id, ...x, otherUid: x.otherUid || d.id }; };
+  const failed = () => { $('list').innerHTML = `<div class="empty"><h2>Couldn't load messages</h2><p>Check your connection and try again.</p><button class="btn" onclick="location.reload()">Try again</button></div>`; };
+  unsubInbox = onSnapshot(query(col, orderBy('lastAt','desc'), limit(PAGE)), snap => {
+    recentRows = snap.docs.map(rowOf); rebuildThreads(); renderList(); saveInboxCache();
+  }, failed);
+  // pinned chats are fetched on their own so a pinned chat stays at the top even when it's old (≤5 reads)
+  unsubPinned = onSnapshot(query(col, where('pinned','==',true), limit(5)), snap => {
+    pinnedRows = snap.docs.map(rowOf); rebuildThreads(); renderList(); saveInboxCache();
+  }, () => {});
 }
-function stopInbox(){ if(unsubInbox){ unsubInbox(); unsubInbox = null; } }
+function stopInbox(){
+  if(unsubInbox){ unsubInbox(); unsubInbox = null; }
+  if(unsubPinned){ unsubPinned(); unsubPinned = null; }
+}
 function showList(){
   show('list');
   document.title = 'Messages | MindShift Books';
@@ -340,6 +393,7 @@ function toMsg(d){
    "Seen"      = they opened the chat after this message arrived (their phone writes seenAt into my inbox row).
    A message that failed gets a red "Not delivered · Tap to retry" under it. */
 function statusFor(m){
+  if(m.silent) return { text:'Sent' };                    // the server refused it on purpose (e.g. they blocked you): no retry prompt, never Delivered/Seen
   if(m.failed) return { text:'Not delivered · Tap to retry', err:true };
   const acked = m.confirmed || (chat && chat.ack.has(m.id));
   if(m.pendingLocal && !acked) return { text: navigator.onLine ? 'Sending…' : 'Waiting for connection' };
@@ -368,7 +422,7 @@ function renderMsgs(stick){
     const st = mine ? statusFor(m) : null;
     const time = m.ts ? new Date(m.ts).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}) : '';
     const q = m.replyTo ? `<div class="quote" data-qid="${esc(m.replyTo.id)}"><div class="q-name">${esc(m.replyTo.senderUid === me.uid ? 'You' : chat.other.name)}</div><div class="q-text">${esc(m.replyTo.text)}</div></div>` : '';
-    html += `<div class="msg ${mine?'me':'them'} ${m.pendingLocal && !m.failed && !chat.ack.has(m.id)?'pending':''} ${m.failed?'failed':''}" data-mid="${esc(m.id)}">${q}${esc(m.text)}<span class="t">${time}${st && !st.err ? ' · ' + esc(st.text) : ''}</span></div>`;
+    html += `<div class="msg ${mine?'me':'them'} ${m.pendingLocal && !m.failed && !m.silent && !chat.ack.has(m.id)?'pending':''} ${m.failed?'failed':''}" data-mid="${esc(m.id)}">${q}${esc(m.text)}<span class="t">${time}${st && !st.err ? ' · ' + esc(st.text) : ''}</span></div>`;
     if(st && st.err) html += `<div class="stat err" data-retry="${esc(m.id)}">${esc(st.text)}</div>`;
   });
   box.innerHTML = html;
@@ -380,11 +434,16 @@ function renderMsgs(stick){
   else box.scrollTop = prevTop + (box.scrollHeight - prevH) * (chat.prepended ? 1 : 0);
   chat.prepended = false;
 }
+// Messages query for the open chat. If the chat was cleared/deleted, only messages after that moment are ever read.
+function mq(...constraints){
+  const base = collection(db,'conversations',chat.cid,'messages');
+  return chat.clearedAt ? query(base, where('createdAt','>',chat.clearedAt), ...constraints) : query(base, ...constraints);
+}
 async function loadOlder(){
   if(!dbReady || !chat || !chat.hasMore || chat.loadingOlder || !chat.oldest) return;
   chat.loadingOlder = true;
   try{
-    const q = query(collection(db,'conversations',chat.cid,'messages'), orderBy('createdAt','desc'), startAfter(chat.oldest), limit(PAGE));
+    const q = mq(orderBy('createdAt','desc'), startAfter(chat.oldest), limit(PAGE));
     const snap = await getDocs(q);
     snap.docs.forEach(d => { const m = toMsg(d); chat.msgs.set(m.id, m); });
     if(snap.docs.length) chat.oldest = snap.docs[snap.docs.length - 1];
@@ -397,9 +456,8 @@ async function loadOlder(){
 function attachLive(){
   if(!chat) return;
   detachLive();
-  const base = collection(db,'conversations',chat.cid,'messages');
   // Only messages newer than what's already on screen — so re-attaching never re-reads old ones.
-  const q = chat.lastTs ? query(base, orderBy('createdAt','asc'), startAfter(chat.lastTs)) : query(base, orderBy('createdAt','asc'));
+  const q = chat.lastTs ? mq(orderBy('createdAt','asc'), startAfter(chat.lastTs)) : mq(orderBy('createdAt','asc'));
   const cid = chat.cid;
   chat.unsubLive = onSnapshot(q, { includeMetadataChanges:true }, snap => {
     if(!chat || chat.cid !== cid) return;
@@ -421,6 +479,7 @@ function attachLive(){
   chat.unsubRow = onSnapshot(doc(db,'inbox',me.uid,'threads',chat.other.uid), s => {
     if(!chat || chat.cid !== cid) return;
     chat.row = s.exists() ? s.data() : null;
+    if(chat.row && !_reloading && ms(chat.row.clearedAt) > ms(chat.clearedAt)){ reloadChat(); return; }   // cleared elsewhere
     renderMsgs(false);
     if(chat.row && chat.row.unread > 0 && !document.hidden) markReadSoon(!chat.rowSeen);
     chat.rowSeen = true;
@@ -431,14 +490,16 @@ function detachLive(){
   if(chat && chat.unsubRow){ chat.unsubRow(); chat.unsubRow = null; chat.rowSeen = false; }
 }
 
-async function openChat(otherUid, { push = true } = {}){
+async function openChat(otherUid, { push = true, reload = false } = {}){
   if(!me) return;
   if(!otherUid || otherUid === me.uid){ history.replaceState({}, '', '/messages'); showList(); return; }
   if(otherUid.includes('_') || me.uid.includes('_')){ toast('This conversation isn’t available'); return; }
   const same = chat && chat.other.uid === otherUid && !chat.provisional;
   show('chat');
-  if(push) history.pushState({ chat:otherUid }, '', `/messages?with=${encodeURIComponent(otherUid)}`);
-  else history.replaceState({ chat:otherUid, direct:!history.state }, '', `/messages?with=${encodeURIComponent(otherUid)}`);
+  if(!reload){
+    if(push) history.pushState({ chat:otherUid }, '', `/messages?with=${encodeURIComponent(otherUid)}`);
+    else history.replaceState({ chat:otherUid, direct:!history.state }, '', `/messages?with=${encodeURIComponent(otherUid)}`);
+  }
   if(same){ attachLive(); markReadSoon(); return; }
 
   const prov = (chat && chat.provisional && chat.other.uid === otherUid) ? chat : null;   // already painted from the saved copy
@@ -454,16 +515,25 @@ async function openChat(otherUid, { push = true } = {}){
   } else {
     chat = { other, cid:convId(me.uid, otherUid), msgs:new Map(), oldest:null, hasMore:false, lastTs:null, unsubLive:null, pending:[], extrasAt:0, loaded:false, ack:new Set(), row:null, unsubRow:null, rowSeen:false };
   }
+  // Was this chat cleared/deleted before? Use the row we already have; only ask the server when we don't (or on reload).
+  let rowDoc = recentRows.concat(pinnedRows).find(x => x.otherUid === otherUid) || (prov && prov.rowInfo) || null;
+  const rowP = (!rowDoc || reload) ? getDoc(doc(db,'inbox',me.uid,'threads',otherUid)).catch(() => null) : null;
+  chat.blocked = blockedSet.has(otherUid);
+  chat.pending.push(...loadSilent(chat.cid));
   const mine = chat;
   const extras = fetchOtherExtras(mine).then(() => { if(chat === mine){ paintOther(); if(mine.loaded) renderMsgs(false); document.title = `${mine.other.name} | Messages`; } });
   if(!t) await extras;                       // no inbox row yet (opened from a profile) → wait so the header isn't a placeholder
+  if(rowP){ const rs = await rowP; rowDoc = rs && rs.exists() ? rs.data({ serverTimestamps:'estimate' }) : null; }
   if(chat !== mine) return;
+  chat.clearedAt = rowDoc && ms(rowDoc.clearedAt) ? new Date(ms(rowDoc.clearedAt)) : null;
+  if(reload){ chat.msgs.clear(); chat.lastTs = null; chat.oldest = null; chat.hasMore = false; }
+  applyBlockUI();
   paintOther();
   document.title = `${other.name} | Messages`;
   if(!prov || !prov.msgs.size) $('msgs').innerHTML = '<div class="empty-chat">Loading…</div>';
   const cid = chat.cid;
   try{
-    const snap = await getDocs(query(collection(db,'conversations',cid,'messages'), orderBy('createdAt','desc'), limit(PAGE)));
+    const snap = await getDocs(mq(orderBy('createdAt','desc'), limit(PAGE)));
     if(!chat || chat.cid !== cid) return;
     snap.docs.forEach(d => { const m = toMsg(d); chat.msgs.set(m.id, m); });
     if(snap.docs.length){
@@ -472,6 +542,7 @@ async function openChat(otherUid, { push = true } = {}){
     }
     chat.hasMore = snap.docs.length === PAGE;
     chat.loaded = true;
+    _reloading = false;
     renderMsgs(true);
     saveChatCacheSoon();
     attachLive();
@@ -481,7 +552,7 @@ async function openChat(otherUid, { push = true } = {}){
   }
   setTimeout(() => { if(matchMedia('(pointer:fine)').matches) $('input').focus(); }, 50);
 }
-function closeChat(){ detachLive(); chat = null; $('input').value = ''; autosize(); hideReplyBar(); }
+function closeChat(){ detachLive(); chat = null; $('input').value = ''; autosize(); hideReplyBar(); applyBlockUI(); }
 
 /* ───────── read receipts (unread → 0) ───────── */
 function receiptsOn(){ try{ return localStorage.getItem('msb_receipts') !== 'off'; }catch(e){ return true; } }   // a "Read receipts" switch in message settings can flip this later
@@ -581,6 +652,7 @@ async function send(retryItem){
   if(retryItem && !retryItem.pendingLocal) retryItem = undefined;   // only a real failed message counts as a retry (never a click event)
   if(!chat || !me) return;
   if(!dbReady){ toast('Connecting… try again in a second'); return; }
+  if(chat.blocked){ toast('Unblock this user to send messages'); return; }
   let text;
   if(retryItem) text = retryItem.text;
   else { text = input.value.trim().slice(0, 2000); if(!text) return; }
@@ -616,6 +688,15 @@ async function send(retryItem){
     if(chat === c) renderMsgs(false);
   }catch(e){
     try{ const ex = await getDoc(msgRef); if(ex.exists()){ c.ack.add(temp.id); if(chat === c) renderMsgs(false); return; } }catch(_){}
+    if(e && e.code === 'permission-denied'){
+      // The server refused this on purpose — most often because the other person has blocked you. Like other apps,
+      // that stays silent: the message just shows "Sent" (kept on this device), with no red label and no retry prompt.
+      temp.failed = false; temp.silent = true;
+      saveSilent(c);
+      if(chat === c) renderMsgs(false);
+      console.warn('[messages] send refused by the server (permission-denied)', e);
+      return;
+    }
     temp.failed = true;
     if(chat === c) renderMsgs(false);
     toast('Couldn’t send — tap the message to retry');
@@ -657,6 +738,180 @@ function pingActive(){
 }
 setInterval(pingActive, 300000);
 
+/* Messages the server silently refused (see send()). Kept per chat on this device only, so they stay visible as "Sent". */
+const SILENT_KEY = cid => 'msb_silent_v1_' + cid;
+function loadSilent(cid){
+  try{
+    const v = JSON.parse(localStorage.getItem(SILENT_KEY(cid)));
+    return Array.isArray(v) ? v.map(m => ({ id:m.id, senderUid:me.uid, text:m.text, replyTo:m.replyTo || null, ts:m.ts, pendingLocal:true, silent:true })) : [];
+  }catch(e){ return []; }
+}
+function saveSilent(c){
+  try{
+    const items = c.pending.filter(p => p.silent).slice(-100).map(p => ({ id:p.id, text:p.text, replyTo:p.replyTo || null, ts:p.ts }));
+    localStorage.setItem(SILENT_KEY(c.cid), JSON.stringify(items));
+  }catch(e){}
+}
+
+/* ───────── chat actions: pin · clear · delete · block · mark all as read ───────── */
+let _reloading = false;
+function closeSheet(){ $('sheet').hidden = true; $('sheetBg').hidden = true; }
+function openSheet(title, items){
+  $('sheetTitle').textContent = title || ''; $('sheetTitle').style.display = title ? '' : 'none';
+  const body = $('sheetBody'); body.innerHTML = '';
+  items.filter(Boolean).forEach(it => {
+    const b = document.createElement('button');
+    b.className = 'sheet-item' + (it.danger ? ' danger' : '');
+    b.textContent = it.label;
+    b.onclick = () => { closeSheet(); if(it.run) it.run(); };
+    body.appendChild(b);
+  });
+  const c = document.createElement('button'); c.className = 'sheet-item cancel'; c.textContent = 'Cancel'; c.onclick = closeSheet; body.appendChild(c);
+  $('sheetBg').onclick = closeSheet; $('sheetBg').hidden = false; $('sheet').hidden = false;
+}
+function confirmSheet(title, text, label){
+  return new Promise(resolve => {
+    $('sheetTitle').textContent = title; $('sheetTitle').style.display = '';
+    const body = $('sheetBody'); body.innerHTML = '';
+    const p = document.createElement('div'); p.className = 'sheet-text'; p.textContent = text; body.appendChild(p);
+    const ok = document.createElement('button'); ok.className = 'sheet-item danger'; ok.style.textAlign = 'center'; ok.textContent = label;
+    ok.onclick = () => { closeSheet(); resolve(true); };
+    const no = document.createElement('button'); no.className = 'sheet-item cancel'; no.textContent = 'Cancel';
+    no.onclick = () => { closeSheet(); resolve(false); };
+    body.appendChild(ok); body.appendChild(no);
+    $('sheetBg').onclick = () => { closeSheet(); resolve(false); };
+    $('sheetBg').hidden = false; $('sheet').hidden = false;
+  });
+}
+const myRow = uid => doc(db,'inbox',me.uid,'threads',uid);
+const rowFor = uid => recentRows.concat(pinnedRows).find(t => t.otherUid === uid) || (chat && chat.other.uid === uid ? chat.row : null);
+function removeChatCache(cid){ try{ localStorage.removeItem(CHAT_KEY(cid)); }catch(e){} }
+
+async function setPinned(uid, on){
+  if(!rowFor(uid)){ toast('Send a message first to pin this chat'); return; }
+  if(on && threads.filter(t => t.pinned).length >= 3){ toast('You can pin up to 3 chats'); return; }
+  try{
+    await updateDoc(myRow(uid), on ? { pinned:true, pinnedAt:serverTimestamp() } : { pinned:false });
+    toast(on ? 'Chat pinned' : 'Chat unpinned');
+  }catch(e){ toast('Couldn’t update this chat'); }
+}
+async function markRowRead(uid){
+  try{ await updateDoc(myRow(uid), { unread:0 }); clearBadgeCache(); }catch(e){ toast('Couldn’t update this chat'); }
+}
+async function markAllRead(){
+  if(!dbReady) return;
+  try{
+    // ask the server for every unread row (not just the 30 on screen); it only reads rows that are actually unread
+    const snap = await getDocs(query(collection(db,'inbox',me.uid,'threads'), where('unread','>',0), limit(100)));
+    if(snap.empty){ toast('Nothing unread'); return; }
+    const batch = writeBatch(db);
+    snap.docs.forEach(d => batch.update(d.ref, { unread:0 }));       // clears the counters only — no "Seen" is sent to anyone
+    await batch.commit();
+    clearBadgeCache();
+    toast(snap.size === 1 ? 'Marked 1 chat as read' : `Marked ${snap.size} chats as read`);
+  }catch(e){ toast('Couldn’t mark as read'); }
+}
+async function reloadChat(){
+  if(!chat || _reloading) return;
+  _reloading = true;
+  const uid = chat.other.uid;
+  closeChat();
+  await openChat(uid, { push:false, reload:true });
+  _reloading = false;
+}
+async function clearChat(){
+  if(!chat) return;
+  const uid = chat.other.uid, cid = chat.cid;
+  if(!rowFor(uid)){ toast('Nothing to clear yet'); return; }
+  if(!await confirmSheet('Clear this chat?', 'The messages are removed for you only. The other person keeps their copy and the chat stays in your inbox.', 'Clear chat')) return;
+  try{
+    await updateDoc(myRow(uid), { clearedAt:serverTimestamp(), lastText:'', unread:0 });
+    removeChatCache(cid);
+    toast('Chat cleared');
+    await reloadChat();
+  }catch(e){ toast('Couldn’t clear this chat'); }
+}
+async function deleteChat(uid){
+  if(!rowFor(uid)){ if(chat && chat.other.uid === uid) backToList(); return; }
+  if(!await confirmSheet('Delete this chat?', 'It disappears from your inbox and the messages are cleared for you. The other person keeps their copy. If they message you again, a fresh chat starts.', 'Delete chat')) return;
+  try{
+    await updateDoc(myRow(uid), { deleted:true, clearedAt:serverTimestamp(), lastText:'', unread:0, pinned:false });
+    removeChatCache(convId(me.uid, uid));
+    recentRows = recentRows.filter(t => t.otherUid !== uid); pinnedRows = pinnedRows.filter(t => t.otherUid !== uid);
+    rebuildThreads(); renderList(); saveInboxCache(); clearBadgeCache();
+    if(chat && chat.other.uid === uid) backToList();
+    toast('Chat deleted');
+  }catch(e){ toast('Couldn’t delete this chat'); }
+}
+function applyBlockUI(){
+  const b = !!(chat && chat.blocked);
+  $('blockBar').hidden = !b;
+  $('composer').style.display = b ? 'none' : '';
+  if(b) hideReplyBar();
+}
+async function blockUser(uid, name, photo){
+  const nm = name || 'this user';
+  if(!await confirmSheet(`Block ${nm}?`, 'They won’t be able to message you and you won’t see this chat. They aren’t told. You can unblock them any time from Messages → ⋮ → Blocked users.', 'Block')) return;
+  try{
+    await setDoc(doc(db,'blocks', me.uid + '_' + uid), { blockerUid:me.uid, blockedUid:uid, name:name || '', photo:photo || '', at:serverTimestamp() });
+    blockedSet.add(uid); blockedInfo.set(uid, { name, photo });
+    rebuildThreads(); renderList(); saveInboxCache();
+    if(chat && chat.other.uid === uid) backToList();
+    toast(`${nm} blocked`);
+  }catch(e){ toast('Couldn’t block this user'); }
+}
+async function unblockUser(uid){
+  try{
+    await deleteDoc(doc(db,'blocks', me.uid + '_' + uid));
+    blockedSet.delete(uid); blockedInfo.delete(uid);
+    rebuildThreads(); renderList(); saveInboxCache();
+    if(chat && chat.other.uid === uid){ chat.blocked = false; applyBlockUI(); }
+    toast('Unblocked');
+  }catch(e){ toast('Couldn’t unblock'); }
+}
+async function loadBlocks(){
+  try{
+    const s = await getDocs(query(collection(db,'blocks'), where('blockerUid','==',me.uid), limit(100)));
+    blockedSet = new Set(); blockedInfo = new Map();
+    s.docs.forEach(d => { const x = d.data(); blockedSet.add(x.blockedUid); blockedInfo.set(x.blockedUid, { name:x.name, photo:x.photo }); });
+    rebuildThreads(); if($('listView').classList.contains('on')) renderList();
+    if(chat){ chat.blocked = blockedSet.has(chat.other.uid); applyBlockUI(); }
+  }catch(e){}
+}
+function openBlockedList(){
+  if(!blockedSet.size){ toast('You haven’t blocked anyone'); return; }
+  openSheet('Blocked users', [...blockedSet].map(uid => ({ label:`Unblock ${(blockedInfo.get(uid) || {}).name || 'user'}`, run:() => unblockUser(uid) })));
+}
+function openListMenu(){
+  openSheet('', [
+    { label:'Mark all as read', run:markAllRead },
+    { label:'Blocked users', run:openBlockedList }
+  ]);
+}
+function openChatMenu(){
+  if(!chat) return;
+  const uid = chat.other.uid, pinned = !!(chat.row && chat.row.pinned);
+  openSheet(chat.other.name, [
+    { label: pinned ? 'Unpin chat' : 'Pin chat', run:() => setPinned(uid, !pinned) },
+    { label:'View profile', run:() => { location.href = `/profile?uid=${encodeURIComponent(uid)}`; } },
+    { label:'Clear chat', run:clearChat },
+    { label:'Delete chat', danger:true, run:() => deleteChat(uid) },
+    chat.blocked ? { label:'Unblock user', run:() => unblockUser(uid) }
+                 : { label:'Block user', danger:true, run:() => blockUser(uid, chat.other.name, chat.other.photo) }
+  ]);
+}
+function openRowMenu(t){
+  openSheet(t.name || 'Chat', [
+    { label: t.pinned ? 'Unpin chat' : 'Pin chat', run:() => setPinned(t.otherUid, !t.pinned) },
+    t.unread > 0 ? { label:'Mark as read', run:() => markRowRead(t.otherUid) } : null,
+    { label:'Delete chat', danger:true, run:() => deleteChat(t.otherUid) },
+    { label:'Block user', danger:true, run:() => blockUser(t.otherUid, t.name, t.photo) }
+  ]);
+}
+$('listMenuBtn').onclick = openListMenu;
+$('chatMenuBtn').onclick = openChatMenu;
+$('unblockBtn').onclick = () => { if(chat) unblockUser(chat.other.uid); };
+
 /* ───────── instant open: paint from saved copies, then load the SDK and refresh ─────────
    The inbox and the last 30 messages of recent chats are remembered on this device (per account), so the page
    shows real content immediately — before Firebase has even downloaded — and the live data quietly takes over.
@@ -671,7 +926,8 @@ function saveInboxCache(){
     try{
       localStorage.setItem(INBOX_KEY(me.uid), JSON.stringify(threads.map(t => ({
         otherUid:t.otherUid, name:t.name, photo:t.photo, lastText:t.lastText, lastAt:ms(t.lastAt),
-        lastSender:t.lastSender, unread:t.unread || 0, seenAt:ms(t.seenAt) }))));
+        lastSender:t.lastSender, unread:t.unread || 0, seenAt:ms(t.seenAt),
+        pinned:!!t.pinned, pinnedAt:ms(t.pinnedAt), clearedAt:ms(t.clearedAt), deleted:!!t.deleted }))));
     }catch(e){}
   }, 400);
 }
@@ -696,7 +952,7 @@ function loadChatCache(cid){
 }
 function clearMsgCaches(){
   try{
-    Object.keys(localStorage).filter(k => k.startsWith('msb_inbox_v1_') || k.startsWith('msb_chat_v1_') || k === 'msb_chat_idx').forEach(k => localStorage.removeItem(k));
+    Object.keys(localStorage).filter(k => k.startsWith('msb_inbox_v1_') || k.startsWith('msb_chat_v1_') || k.startsWith('msb_silent_v1_') || k === 'msb_chat_idx').forEach(k => localStorage.removeItem(k));
     sessionStorage.removeItem('msb_open_chat');
   }catch(e){}
 }
@@ -716,7 +972,7 @@ function earlyPaint(){
     const other = { uid:withUid, name:(h && h.name) || (row && row.name) || '', photo:(h && h.photo) || (row && row.photo) || '', jobTitle:(h && h.jobTitle) || '' };
     if(!other.name && !cached) return;
     chat = { other, cid, msgs:new Map(), oldest:null, hasMore:!!(cached && cached.hasMore), lastTs:null, unsubLive:null, pending:[],
-             extrasAt:0, loaded:false, ack:new Set(), row:null, unsubRow:null, rowSeen:false, provisional:true };
+             extrasAt:0, loaded:false, ack:new Set(), row:null, unsubRow:null, rowSeen:false, provisional:true, rowInfo:row || null };
     if(cached) cached.msgs.forEach(m => chat.msgs.set(m.id, { ...m, confirmed:true }));
     show('chat'); paintOther(); renderMsgs(true);
   } else {
@@ -731,7 +987,7 @@ const FB = 'https://www.gstatic.com/firebasejs/10.11.0/';
 const [{ initializeApp }, { getAuth, onAuthStateChanged }, fsdk] = await Promise.all([
   import(FB + 'firebase-app.js'), import(FB + 'firebase-auth.js'), import(FB + 'firebase-firestore.js')
 ]);
-const { getFirestore, doc, getDoc, getDocs, setDoc, updateDoc, collection, query, orderBy, limit, startAfter,
+const { getFirestore, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, collection, query, where, orderBy, limit, startAfter,
         onSnapshot, writeBatch, serverTimestamp, increment } = fsdk;
 const app  = initializeApp({
   apiKey:"AIzaSyDTn70s1_uIiSOR6lPLY_nKh8Ff1FViFCs",
@@ -751,6 +1007,7 @@ onAuthStateChanged(auth, async user => {
   if(me && me.uid !== user.uid){ threads = []; chat = null; }         // the instant paint belonged to a different account
   me = await loadMe(user);
   pingActive();
+  loadBlocks();                 // who I've blocked (1 small query)
   const withUid = new URLSearchParams(location.search).get('with');
   if(withUid) openChat(withUid, { push:false });
   else showList();

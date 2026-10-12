@@ -124,7 +124,7 @@ function attempt(){
       document.addEventListener('visibilitychange', () => pingActive(getAuth(getApps()[0]).currentUser));
     } else {
       unread = 0; paint();
-      try{ Object.keys(localStorage).filter(k => k.startsWith('msb_inbox_v1_') || k.startsWith('msb_chat_v1_') || k === 'msb_chat_idx').forEach(k => localStorage.removeItem(k)); }catch(e){}
+      try{ Object.keys(localStorage).filter(k => k.startsWith('msb_inbox_v1_') || k.startsWith('msb_chat_v1_') || k.startsWith('msb_silent_v1_') || k === 'msb_chat_idx').forEach(k => localStorage.removeItem(k)); }catch(e){}
     }
   });
 }
