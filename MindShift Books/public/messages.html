@@ -78,6 +78,24 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .blockbar{padding:14px 16px calc(14px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid var(--border);text-align:center;font-size:14px;color:var(--sub);flex-shrink:0}
 .blockbar[hidden]{display:none}
 .blockbar button{margin-left:8px;font-weight:800;color:var(--p)}
+.people{display:flex;gap:14px;overflow-x:auto;padding:12px 16px 10px;background:#fff;border-bottom:1px solid #f1f5f9;flex-shrink:0;scrollbar-width:none;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}
+.people::-webkit-scrollbar{display:none}
+.people[hidden]{display:none}
+.pp{flex:0 0 auto;width:62px;text-align:center;scroll-snap-align:start}
+.pp .av{width:58px;height:58px;margin:0 auto;font-size:20px;overflow:visible}
+.pp .av img{border-radius:50%}
+.pp.add .av{background:#eef2ff;color:var(--p);border:2px dashed #c7d2fe}
+.pp.add .av svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
+.pp-name{font-size:12px;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--txt)}
+.pp-sub{font-size:10.5px;color:var(--mute);margin-top:-1px}
+.psq{width:100%;border:1.5px solid var(--border);border-radius:14px;padding:12px 14px;font:inherit;font-size:15px;outline:none;background:#f8fafc;margin:2px 0 8px}
+.psq:focus{border-color:var(--p);background:#fff}
+.pres{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:10px 6px;border-radius:12px}
+.pres:active{background:#f1f5f9}
+.pres .av{width:44px;height:44px;font-size:16px}
+.pres-name{font-size:15px;font-weight:700}
+.pres-sub{font-size:12.5px;color:var(--mute)}
+.pnote{text-align:center;color:var(--mute);font-size:13.5px;padding:14px 8px}
 .tabs{display:flex;gap:8px;padding:10px 16px;background:#fff;border-bottom:1px solid #f1f5f9;flex-shrink:0}
 .tab{padding:7px 16px;border-radius:99px;background:#f1f5f9;font-size:13.5px;font-weight:700;color:var(--sub);transition:all .15s}
 .tab.on{background:#eef2ff;color:var(--p)}
@@ -149,6 +167,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
     <div class="bar-title">Messages</div>
     <button class="kebab" id="listMenuBtn" aria-label="More options"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>
   </div>
+  <div class="people" id="people" hidden></div>
   <div class="tabs" id="tabs">
     <button class="tab on" data-f="all">All</button>
     <button class="tab" data-f="unread">Unread<span class="n" id="unreadN"></span></button>
@@ -171,7 +190,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
     <div class="rb-main"><div class="rb-name" id="rbName"></div><div class="rb-text" id="rbText"></div></div>
     <button class="rb-x" id="rbX" aria-label="Cancel reply"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
   </div>
-  <div class="blockbar" id="blockBar" hidden>You blocked this user.<button id="unblockBtn">Unblock</button></div>
+  <div class="blockbar" id="blockBar" hidden><span id="blockMsg">You blocked this user.</span><button id="unblockBtn">Unblock</button></div>
   <div class="composer" id="composer">
     <textarea id="input" rows="1" placeholder="Message…" maxlength="2000" aria-label="Type a message"></textarea>
     <button class="send" id="sendBtn" disabled aria-label="Send"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg></button>
@@ -312,7 +331,8 @@ function renderList(){
   const shown = filter === 'unread' ? threads.filter(t => t.unread > 0) : threads;
   if(!threads.length){
     el.innerHTML = `<div class="empty"><div class="ic"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg></div>
-      <h2>No messages yet</h2><p>Open someone's profile and tap the chat icon next to Follow to start a conversation.</p></div>`;
+      <h2>No messages yet</h2><p>Tap someone in the row above, or the + to find anyone, to start a conversation.</p></div>`;
+    renderPeople();
     return;
   }
   el.innerHTML = shown.map(t => {
@@ -325,6 +345,7 @@ function renderList(){
         <div class="row-bot"><span class="row-last">${esc(last)}</span>${un ? `<span class="pill">${t.unread > 99 ? '99+' : t.unread}</span>` : ''}</div>
       </div></button>`;
   }).join('');
+  renderPeople();
   el.querySelectorAll('.row').forEach(b => {
     let timer = null, fired = false;
     const t = threads.find(x => x.otherUid === b.dataset.uid);
@@ -337,6 +358,7 @@ function renderList(){
 document.querySelectorAll('.tab').forEach(b => b.onclick = () => {
   filter = b.dataset.f;
   document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x === b));
+  _peopleSig = '';
   renderList();
 });
 function startInbox(){
@@ -378,7 +400,7 @@ async function fetchOtherExtras(c){
     getDoc(doc(db,'users',o.uid)).catch(() => null),
     getDoc(doc(db,'presence',o.uid)).catch(() => null)
   ]);
-  if(u && u.exists()){ const d = u.data(); o.name = d.name || o.name; o.photo = d.photo || o.photo || ''; o.jobTitle = d.jobTitle || ''; }
+  if(u && u.exists()){ const d = u.data(); o.name = d.name || o.name; o.photo = d.photo || o.photo || ''; o.jobTitle = d.jobTitle || ''; o.msgPrivacy = d.msgPrivacy || 'everyone'; }
   if(p && p.exists()) o.lastActive = ms(p.data().lastActive);
   c.extrasAt = Date.now();
 }
@@ -506,7 +528,7 @@ async function openChat(otherUid, { push = true, reload = false } = {}){
   if(!prov) closeChat();
   // who is it? — the inbox row if we have it, otherwise their profile (1 read)
   let other = null;
-  const t = threads.find(x => x.otherUid === otherUid) || (prov && prov.other.name ? prov.other : null);
+  const t = threads.find(x => x.otherUid === otherUid) || (prov && prov.other.name ? prov.other : null) || people.find(x => x.uid === otherUid) || null;
   if(prov) other = prov.other;
   else if(t) other = { uid:otherUid, name:t.name, photo:t.photo };
   else other = { uid:otherUid, name:'MindShift Books User', photo:'' };
@@ -521,10 +543,11 @@ async function openChat(otherUid, { push = true, reload = false } = {}){
   chat.blocked = blockedSet.has(otherUid);
   chat.pending.push(...loadSilent(chat.cid));
   const mine = chat;
-  const extras = fetchOtherExtras(mine).then(() => { if(chat === mine){ paintOther(); if(mine.loaded) renderMsgs(false); document.title = `${mine.other.name} | Messages`; } });
+  const extras = fetchOtherExtras(mine).then(() => { if(chat === mine){ updateRestricted(); paintOther(); if(mine.loaded) renderMsgs(false); document.title = `${mine.other.name} | Messages`; } });
   if(!t) await extras;                       // no inbox row yet (opened from a profile) → wait so the header isn't a placeholder
   if(rowP){ const rs = await rowP; rowDoc = rs && rs.exists() ? rs.data({ serverTimestamps:'estimate' }) : null; }
   if(chat !== mine) return;
+  updateRestricted();
   chat.clearedAt = rowDoc && ms(rowDoc.clearedAt) ? new Date(ms(rowDoc.clearedAt)) : null;
   if(reload){ chat.msgs.clear(); chat.lastTs = null; chat.oldest = null; chat.hasMore = false; }
   applyBlockUI();
@@ -653,6 +676,7 @@ async function send(retryItem){
   if(!chat || !me) return;
   if(!dbReady){ toast('Connecting… try again in a second'); return; }
   if(chat.blocked){ toast('Unblock this user to send messages'); return; }
+  if(chat.restricted){ toast('This person isn’t accepting messages right now'); return; }
   let text;
   if(retryItem) text = retryItem.text;
   else { text = input.value.trim().slice(0, 2000); if(!text) return; }
@@ -844,10 +868,12 @@ async function deleteChat(uid){
   }catch(e){ toast('Couldn’t delete this chat'); }
 }
 function applyBlockUI(){
-  const b = !!(chat && chat.blocked);
-  $('blockBar').hidden = !b;
-  $('composer').style.display = b ? 'none' : '';
-  if(b) hideReplyBar();
+  const b = !!(chat && chat.blocked), r = !!(chat && !chat.blocked && chat.restricted);
+  $('blockBar').hidden = !(b || r);
+  $('blockMsg').textContent = b ? 'You blocked this user.' : `${(chat && chat.other.name) || 'This person'} isn’t accepting messages right now.`;
+  $('unblockBtn').style.display = b ? '' : 'none';
+  $('composer').style.display = (b || r) ? 'none' : '';
+  if(b || r) hideReplyBar();
 }
 async function blockUser(uid, name, photo){
   const nm = name || 'this user';
@@ -912,6 +938,143 @@ $('listMenuBtn').onclick = openListMenu;
 $('chatMenuBtn').onclick = openChatMenu;
 $('unblockBtn').onclick = () => { if(chat) unblockUser(chat.other.uid); };
 
+/* ───────── people row (top of the inbox) ─────────
+   People you follow, most recently active first (green dot = active now). If you follow nobody yet, rising
+   creators are suggested instead. Reads are kept small: the follow list + profiles are remembered for 30 minutes
+   and last-active times for 5, so a visit usually costs nothing.
+   Message privacy: each person's `msgPrivacy` field ('everyone' | 'followers' | 'none', default everyone) is honoured
+   here already — the settings screen that sets it comes later, and a server rule will enforce it for real. */
+let people = [], peopleMode = 'follow', followingIds = new Set(), peopleAct = {}, peopleState = 'idle', _peopleSig = '';
+const PEOPLE_KEY = u => 'msb_people_v1_' + u;
+function allowsMessages(u, iFollow){
+  const m = (u && u.msgPrivacy) || 'everyone';
+  if(m === 'none') return false;
+  if(m === 'followers') return !!iFollow;       // "followers" = people who follow them; for someone I follow that's me
+  return true;
+}
+function updateRestricted(){
+  if(!chat) return;
+  const uid = chat.other.uid;
+  chat.restricted = !rowFor(uid) && !allowsMessages(chat.other, followingIds.has(uid) || chat.other.msgPrivacy === 'followers' && peopleMode === 'follow' && people.some(p => p.uid === uid));
+  applyBlockUI();
+}
+const firstName = n => String(n || '').trim().split(/\s+/)[0] || 'User';
+const isActiveNow = t => !!t && (Date.now() - t) < 7 * 60000;
+function visiblePeople(){
+  const inChat = new Set(threads.map(t => t.otherUid));
+  const list = people.filter(p => p.uid !== (me && me.uid) && !inChat.has(p.uid) && !blockedSet.has(p.uid) && p.name);
+  return list.sort((a, b) => (peopleAct[b.uid] || 0) - (peopleAct[a.uid] || 0)).slice(0, 15);
+}
+function renderPeople(){
+  const el = $('people');
+  if(!el || !me || filter === 'unread'){ if(el) el.hidden = true; return; }
+  const list = visiblePeople();
+  if(!list.length && peopleState === 'ready'){ el.hidden = true; return; }
+  if(!list.length && peopleState !== 'loading'){ el.hidden = true; return; }
+  const sig = peopleState + '|' + list.map(p => p.uid + (isActiveNow(peopleAct[p.uid]) ? '*' : '')).join(',');
+  el.hidden = false;
+  if(sig === _peopleSig) return;                      // nothing changed — don't disturb the scroll position
+  _peopleSig = sig;
+  const add = `<button class="pp add" data-add="1" aria-label="New message"><div class="av"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div><div class="pp-name">New</div></button>`;
+  if(!list.length){
+    el.innerHTML = add + Array(5).fill('<div class="pp"><div class="skel c" style="width:58px;height:58px;margin:0 auto"></div><div class="skel" style="height:10px;width:44px;margin:8px auto 0"></div></div>').join('');
+    return;
+  }
+  el.innerHTML = add + list.map(p => `<button class="pp" data-uid="${esc(p.uid)}" data-mode="${peopleMode}">
+    <div class="av">${avatarHtml(p.name, p.photo)}${isActiveNow(peopleAct[p.uid]) ? '<span class="on-dot"></span>' : ''}</div>
+    <div class="pp-name">${esc(firstName(p.name))}</div>${peopleMode === 'suggest' ? '<div class="pp-sub">Creator</div>' : ''}</button>`).join('');
+}
+$('people').addEventListener('click', e => {
+  const b = e.target.closest('.pp'); if(!b) return;
+  if(b.dataset.add){ openPeopleSearch(); return; }
+  const uid = b.dataset.uid;
+  if(b.dataset.mode === 'suggest') location.href = `/profile?uid=${encodeURIComponent(uid)}`;     // not following them yet → see who they are first
+  else openChat(uid, { push:true });
+});
+function savePeopleCache(extra){
+  try{
+    const prev = JSON.parse(localStorage.getItem(PEOPLE_KEY(me.uid))) || {};
+    localStorage.setItem(PEOPLE_KEY(me.uid), JSON.stringify({ t:prev.t || Date.now(), actT:prev.actT || 0, ...extra,
+      mode:peopleMode, people, following:[...followingIds], act:peopleAct }));
+  }catch(e){}
+}
+async function fetchProfiles(ids){
+  const s = await getDocs(query(collection(db,'users'), where(documentId(), 'in', ids.slice(0, 30))));
+  return s.docs.map(d => { const x = d.data(); return { uid:d.id, name:x.name || '', photo:x.photo || '', jobTitle:x.jobTitle || '', username:x.username || '', msgPrivacy:x.msgPrivacy || 'everyone' }; });
+}
+async function loadPeople(){
+  if(!dbReady || !me) return;
+  let cache = null;
+  try{ cache = JSON.parse(localStorage.getItem(PEOPLE_KEY(me.uid))); }catch(e){}
+  const listFresh = cache && cache.people && Date.now() - cache.t < 30 * 60000;
+  if(cache && cache.people){ people = cache.people; peopleMode = cache.mode || 'follow'; followingIds = new Set(cache.following || []); peopleAct = cache.act || {}; peopleState = 'ready'; renderPeople(); }
+  else { peopleState = 'loading'; renderPeople(); }
+  try{
+    let t = cache && cache.t, actT = cache && cache.actT;
+    if(!listFresh){
+      const fs = await getDocs(query(collection(db,'follows'), where('followerId','==',me.uid), limit(30)));
+      const ids = [...new Set(fs.docs.map(d => d.data().followingId).filter(id => id && id !== me.uid && id !== 'official' && !id.includes('_')))];
+      followingIds = new Set(ids);
+      if(ids.length){
+        peopleMode = 'follow';
+        people = (await fetchProfiles(ids)).filter(p => allowsMessages(p, true));
+      } else {
+        peopleMode = 'suggest';
+        let snap = null;
+        try{ snap = await getDocs(query(collection(db,'users'), orderBy('followerCount','desc'), limit(24))); }catch(e){}
+        if(!snap || snap.empty) snap = await getDocs(query(collection(db,'users'), limit(24)));
+        people = snap.docs.map(d => { const x = d.data(); return { uid:d.id, name:x.name || '', photo:x.photo || '', jobTitle:x.jobTitle || '', username:x.username || '', msgPrivacy:x.msgPrivacy || 'everyone',
+                 _score: ((x.photo || x.photoURL) ? 1 : 0) + (x.cover ? 1 : 0) + ((x.bio && String(x.bio).trim()) ? 1 : 0) + ((Array.isArray(x.categories) && x.categories.length) ? 1 : 0) + (x.username ? 1 : 0) }; })
+          .filter(p => p.uid !== me.uid && p._score >= 2 && p.photo && allowsMessages(p, false)).slice(0, 15);
+      }
+      t = Date.now(); actT = 0; peopleAct = {};
+    }
+    // last-active times for the people shown (refreshed at most every 5 minutes)
+    if(peopleMode === 'follow' && people.length && (!actT || Date.now() - actT > 300000)){
+      const ids = people.map(p => p.uid).slice(0, 30);
+      const ps = await getDocs(query(collection(db,'presence'), where(documentId(), 'in', ids)));
+      peopleAct = {}; ps.docs.forEach(d => { peopleAct[d.id] = ms(d.data().lastActive); });
+      actT = Date.now();
+    }
+    peopleState = 'ready';
+    savePeopleCache({ t:t || Date.now(), actT:actT || 0 });
+    renderPeople();
+  }catch(e){ peopleState = 'ready'; renderPeople(); }
+}
+
+/* "+" → find anyone by name or @username and start a chat (≤ about 15 reads per search, debounced) */
+function openPeopleSearch(){
+  $('sheetTitle').textContent = 'New message'; $('sheetTitle').style.display = '';
+  const body = $('sheetBody');
+  body.innerHTML = '<input class="psq" id="psq" placeholder="Search by name or @username" autocomplete="off"><div id="psr"><div class="pnote">Type at least 2 letters</div></div>';
+  const cancel = document.createElement('button'); cancel.className = 'sheet-item cancel'; cancel.textContent = 'Cancel'; cancel.onclick = closeSheet; body.appendChild(cancel);
+  $('sheetBg').onclick = closeSheet; $('sheetBg').hidden = false; $('sheet').hidden = false;
+  const inp = $('psq'); let timer = null, seq = 0;
+  setTimeout(() => inp.focus(), 80);
+  inp.addEventListener('input', () => {
+    clearTimeout(timer);
+    const q = inp.value.trim().replace(/^@/, '');
+    if(q.length < 2){ $('psr').innerHTML = '<div class="pnote">Type at least 2 letters</div>'; return; }
+    timer = setTimeout(async () => {
+      const mySeq = ++seq;
+      const title = q.replace(/\b\w/g, c => c.toUpperCase());
+      const range = (field, v) => getDocs(query(collection(db,'users'), where(field,'>=',v), where(field,'<=',v + '\uf8ff'), limit(5))).catch(() => null);
+      const [u1, n1, n2] = await Promise.all([range('username', q.toLowerCase()), range('name', q), title !== q ? range('name', title) : Promise.resolve(null)]);
+      if(mySeq !== seq) return;
+      const seen = new Map();
+      [u1, n1, n2].forEach(sn => sn && sn.docs.forEach(d => { if(d.id !== me.uid && !blockedSet.has(d.id) && !seen.has(d.id)) seen.set(d.id, { uid:d.id, ...d.data() }); }));
+      const res = [...seen.values()].filter(u => allowsMessages(u, followingIds.has(u.uid))).slice(0, 8);
+      $('psr').innerHTML = res.length ? res.map(u => `<button class="pres" data-uid="${esc(u.uid)}"><div class="av">${avatarHtml(u.name, u.photo)}</div><div><div class="pres-name">${esc(u.name || 'User')}</div><div class="pres-sub">${u.username ? '@' + esc(u.username) : esc(u.jobTitle || '')}</div></div></button>`).join('')
+                                  : '<div class="pnote">No one found</div>';
+      $('psr').querySelectorAll('.pres').forEach(b => b.onclick = () => {
+        const u = seen.get(b.dataset.uid); closeSheet();
+        if(u && !people.some(p => p.uid === u.uid)) people.push({ uid:u.uid, name:u.name || '', photo:u.photo || '', jobTitle:u.jobTitle || '', msgPrivacy:u.msgPrivacy || 'everyone' });
+        openChat(b.dataset.uid, { push:true });
+      });
+    }, 400);
+  });
+}
+
 /* ───────── instant open: paint from saved copies, then load the SDK and refresh ─────────
    The inbox and the last 30 messages of recent chats are remembered on this device (per account), so the page
    shows real content immediately — before Firebase has even downloaded — and the live data quietly takes over.
@@ -952,7 +1115,7 @@ function loadChatCache(cid){
 }
 function clearMsgCaches(){
   try{
-    Object.keys(localStorage).filter(k => k.startsWith('msb_inbox_v1_') || k.startsWith('msb_chat_v1_') || k.startsWith('msb_silent_v1_') || k === 'msb_chat_idx').forEach(k => localStorage.removeItem(k));
+    Object.keys(localStorage).filter(k => k.startsWith('msb_inbox_v1_') || k.startsWith('msb_chat_v1_') || k.startsWith('msb_silent_v1_') || k.startsWith('msb_people_v1_') || k === 'msb_chat_idx').forEach(k => localStorage.removeItem(k));
     sessionStorage.removeItem('msb_open_chat');
   }catch(e){}
 }
@@ -978,6 +1141,10 @@ function earlyPaint(){
   } else {
     const rows = loadInboxCache(uid);
     if(rows && rows.length){ threads = rows; show('list'); renderList(); }
+    try{
+      const pc = JSON.parse(localStorage.getItem(PEOPLE_KEY(uid)));
+      if(pc && pc.people){ people = pc.people; peopleMode = pc.mode || 'follow'; followingIds = new Set(pc.following || []); peopleAct = pc.act || {}; peopleState = 'ready'; renderPeople(); }
+    }catch(e){}
   }
 }
 earlyPaint();                                               // ← real content on screen now, before any network
@@ -988,7 +1155,7 @@ const [{ initializeApp }, { getAuth, onAuthStateChanged }, fsdk] = await Promise
   import(FB + 'firebase-app.js'), import(FB + 'firebase-auth.js'), import(FB + 'firebase-firestore.js')
 ]);
 const { getFirestore, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, collection, query, where, orderBy, limit, startAfter,
-        onSnapshot, writeBatch, serverTimestamp, increment } = fsdk;
+        onSnapshot, writeBatch, serverTimestamp, increment, documentId } = fsdk;
 const app  = initializeApp({
   apiKey:"AIzaSyDTn70s1_uIiSOR6lPLY_nKh8Ff1FViFCs",
   authDomain:"mindshiftbooks-c4451.firebaseapp.com",
@@ -1008,6 +1175,7 @@ onAuthStateChanged(auth, async user => {
   me = await loadMe(user);
   pingActive();
   loadBlocks();                 // who I've blocked (1 small query)
+  loadPeople();                 // the circles at the top of the inbox
   const withUid = new URLSearchParams(location.search).get('with');
   if(withUid) openChat(withUid, { push:false });
   else showList();
