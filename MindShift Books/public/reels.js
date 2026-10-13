@@ -109,7 +109,7 @@ body.msb-reels-open .overlay{z-index:100002!important}
   function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
   function fmt(t){ t = Math.max(0, Math.floor(t||0)); return Math.floor(t/60)+':'+String(t%60).padStart(2,'0'); }
 
-  var prevOv = ['',''], muted = false, speed = 1, observer = null, pushed = false, syncTimer = null, cfg = null, activeId = null, items = [];
+  var scrollerEl = null, loadingMore = false, exhausted = false, endFlashed = false, prevOv = ['',''], muted = false, speed = 1, observer = null, pushed = false, syncTimer = null, cfg = null, activeId = null, items = [];
   var SPEEDS = [1, 1.5, 2, 0.5];
 
   function muteIcon(){
@@ -273,7 +273,9 @@ body.msb-reels-open .overlay{z-index:100002!important}
     document.documentElement.style.overflow = 'hidden'; document.body.style.overflow = 'hidden';
     document.body.classList.add('msb-reels-open');
 
+    loadingMore = false; exhausted = false; endFlashed = false;
     var scroller = ov.querySelector('.rl-scroller');
+    scrollerEl = scroller;
     var startIdx = Math.max(0, items.findIndex(function(p){ return p.id === startId; }));
     scroller.scrollTop = startIdx * scroller.clientHeight;
 
@@ -284,6 +286,9 @@ body.msb-reels-open .overlay{z-index:100002!important}
         if(en.isIntersecting){
           activeId = slide.getAttribute('data-id'); play(slide); sync(slide);
           if(cfg.onActive) cfg.onActive(activeId);
+          var idx = Array.prototype.indexOf.call(scroller.children, slide);
+          maybeLoadMore(idx);
+          if(exhausted && idx === items.length - 1 && !endFlashed){ endFlashed = true; flash('You\u2019ve reached the end'); }
           var next = slide.nextElementSibling; if(next){ var nv = next.querySelector('video'); if(nv) nv.preload = 'auto'; }
         } else { v.pause(); try{ v.currentTime = 0; }catch(_){} slide.classList.remove('paused'); }
       });
@@ -318,12 +323,48 @@ body.msb-reels-open .overlay{z-index:100002!important}
     try{
       if(items.length > 1 && !localStorage.getItem('msb_reels_hint')){
         localStorage.setItem('msb_reels_hint', '1');
-        var h = document.createElement('div'); h.className = 'rl-hint'; h.innerHTML = I.up+'Swipe up for more';
-        ov.appendChild(h); setTimeout(function(){ h.remove(); }, 3100);
+        flash('Swipe up for more', I.up);
       }
     }catch(_){}
 
+    maybeLoadMore(startIdx);     // short list? start fetching more right away
+
     history.pushState({ msbReels: 1 }, ''); pushed = true;
+  }
+
+
+  function flash(text, icon){
+    var ov = document.getElementById('msbReels'); if(!ov) return;
+    var h = document.createElement('div'); h.className = 'rl-hint'; h.innerHTML = (icon||'') + esc(text);
+    ov.appendChild(h); setTimeout(function(){ h.remove(); }, 3100);
+  }
+  // Append freshly loaded videos to the end of the open scroller.
+  function appendItems(list){
+    var ov = document.getElementById('msbReels');
+    if(!ov || !ov.classList.contains('open') || !scrollerEl) return;
+    var have = {}; items.forEach(function(p){ have[p.id] = 1; });
+    var fresh = list.filter(function(p){ return p && p.videoUrl && !have[p.id]; });
+    if(!fresh.length) return;
+    fresh.forEach(function(p){
+      items.push(p);
+      scrollerEl.insertAdjacentHTML('beforeend', slideHtml(p));
+      var slide = scrollerEl.lastElementChild;
+      wireSlide(slide); observer.observe(slide);
+    });
+    if(cfg.onAppend) cfg.onAppend(fresh);
+  }
+  // Called when you're within 3 videos of the end: ask the page for more.
+  function maybeLoadMore(idx){
+    if(!cfg || !cfg.loadMore || loadingMore || exhausted) return;
+    if(idx < items.length - 4) return;
+    loadingMore = true;
+    var cur = cfg;
+    Promise.resolve(cfg.loadMore(items.map(function(p){ return p.id; }))).then(function(list){
+      loadingMore = false;
+      if(cur !== cfg) return;                       // reels were closed/reopened meanwhile
+      if(!list || !list.length){ exhausted = true; return; }
+      appendItems(list);
+    }).catch(function(){ loadingMore = false; });
   }
 
   function toggleMute(){

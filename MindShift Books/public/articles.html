@@ -22,7 +22,7 @@
 <meta name="twitter:title" content="MindShift Books" />
 <meta name="twitter:description" content="Discover articles, ideas, insights, and stories on mindset, money, productivity, relationships, wellness, career, purpose, and personal growth from the MindShift Books community."/>
 
-<script src="/reels.js?v=3"></script>
+<script src="/reels.js?v=4"></script>
 <script src="/image-viewer.js?v=1"></script>
 <script type="application/ld+json">
 {
@@ -3012,6 +3012,44 @@ window.toggleFeedVideoMute = function(id, event){
 };
 /* Tap a feed video -> full-screen reels (reels.js). Tapping anywhere else on the card still opens the post.
    `ids` (optional) = an explicit ordered list, e.g. from the Suggested Videos rail in search. */
+
+/* ── REELS: keep loading more videos as you swipe ──
+   The feed only has ~60 recent posts in memory, so the reels page through Firestore for older
+   videos when you get near the end (cached, so reopening reels doesn't re-read them). */
+const _rl = { vids: [], cursor: null, done: false };
+function _rlMap(d){
+  const x = d.data();
+  return { id:d.id, type:'post', videoUrl:x.videoUrl, thumbnailUrl:x.thumbnailUrl||'', text:x.text||'',
+    author:x.authorName||'MindShift Books User', avatar:x.authorPhoto||'logo.jpg', authorUid:x.authorUid||null,
+    isMindshift:x.authorUid==='official', commentsOff:!!x.commentsOff, hideLikeCount:!!x.hideLikeCount, duration:x.duration||0 };
+}
+async function reelsLoadMore(have){
+  const seen = new Set(have);
+  const pick = () => _rl.vids.filter(v=>!seen.has(v.id)).slice(0, 8);
+  let out = pick();
+  for(let k=0; k<6 && out.length<8 && !_rl.done; k++){
+    const parts = [collection(db,'posts'), where('status','==','published'), orderBy('publishedAt','desc')];
+    if(_rl.cursor) parts.push(startAfter(_rl.cursor));
+    parts.push(limit(40));
+    const snap = await rgetDocs(query(...parts), { tries: 2, timeoutMs: 7000 });
+    if(snap.docs.length) _rl.cursor = snap.docs[snap.docs.length-1];
+    if(snap.docs.length < 40) _rl.done = true;
+    snap.docs.forEach(d=>{ if(d.data().videoUrl && !_rl.vids.some(v=>v.id===d.id)) _rl.vids.push(_rlMap(d)); });
+    out = pick();
+  }
+  return out;
+}
+// Extra videos have no card in the feed, so give the existing like/comment machinery hidden
+// stand-ins to write into (handleLike, fetchLikeCounts and fetchPostCommentCounts all target #lb-/#lc-/#pcc- ids).
+function reelsRegister(fresh){
+  let box = document.getElementById('reelStubs');
+  if(!box){ box = document.createElement('div'); box.id = 'reelStubs'; box.hidden = true; document.body.appendChild(box); }
+  fresh.forEach(p=>{
+    if(!document.getElementById('lc-'+p.id)) box.insertAdjacentHTML('beforeend', `<button id="lb-${p.id}" hidden></button><span id="lc-${p.id}"></span><span id="pcc-${p.id}"></span>`);
+  });
+  fetchLikeCounts(fresh.map(p=>({ id:p.id, hideLikeCount:!!p.hideLikeCount, authorUid:p.authorUid })));
+  fetchPostCommentCounts(fresh.filter(p=>!p.commentsOff).map(p=>p.id));
+}
 window.openReels = function(startId, ids){
   const lookup = pid => {
     const p = POSTS.find(x=>x.id===pid);
@@ -3023,10 +3061,13 @@ window.openReels = function(startId, ids){
     isLiked: pid => likedSet.has(pid),
     like: pid => handleLike(pid),
     comment: pid => goPostReadComment(pid),
-    link: pid => copyCardLink(pid),
     openPost: pid => goPostRead(pid),
     author: it => goAuthor(it.authorUid||'', !!it.isMindshift),
-    onActive: pid => markVideoSeen(pid)
+    onActive: pid => markVideoSeen(pid),
+    // Reels always link to the post page (extra videos aren't in POSTS, so copyCardLink would guess "article").
+    link: pid => navigator.clipboard.writeText(`${location.origin}/post-read?id=${pid}`).then(()=>toast('Link copied! 🎉')).catch(()=>toast('Copy failed')),
+    loadMore: have => reelsLoadMore(have),
+    onAppend: fresh => reelsRegister(fresh)
   };
   if(Array.isArray(ids) && ids.length){
     const list = ids.map(lookup).filter(Boolean);

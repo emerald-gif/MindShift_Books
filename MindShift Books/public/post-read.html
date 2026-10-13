@@ -702,7 +702,7 @@ body{padding-bottom:64px} /* room for the fixed comment bar on post-read */
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
 <script src="/mentions.js"></script>
 <script src="/link-card.js"></script>
-<script src="/reels.js?v=3"></script>
+<script src="/reels.js?v=4"></script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
@@ -1220,19 +1220,38 @@ window.initPostVideo = function(){
 /* ── REELS ──
    Tapping the video here opens the full-screen reels (reels.js): this post's
    video first, then other recent video posts to swipe through. */
-let _reelOthers = null, _reelLoading = false, _reelUL = null;
+let _reelOthers = null, _reelLoading = false, _reelUL = null, _reelCursor = null, _reelDone = false;
+function mapReelDoc(d){
+  const x = d.data();
+  return { id:d.id, type:'post', videoUrl:x.videoUrl, thumbnailUrl:x.thumbnailUrl||'', text:x.text||'',
+    author:x.authorName||'MindShift Books User', avatar:x.authorPhoto||'logo.jpg', authorUid:x.authorUid||null,
+    isMindshift:x.authorUid==='official', commentsOff:!!x.commentsOff, hideLikeCount:!!x.hideLikeCount };
+}
+// Page further back through published posts for more videos when the reels get near the end.
+async function reelsLoadMore(have){
+  const seen = new Set(have);
+  const out = [];
+  for(let k=0; k<6 && out.length<8 && !_reelDone; k++){
+    const parts = [collection(db,'posts'), where('status','==','published'), orderBy('publishedAt','desc')];
+    if(_reelCursor) parts.push(startAfter(_reelCursor));
+    parts.push(limit(40));
+    const snap = await getDocs(query(...parts));
+    if(snap.docs.length) _reelCursor = snap.docs[snap.docs.length-1];
+    if(snap.docs.length < 40) _reelDone = true;
+    snap.docs.forEach(d=>{ if(d.data().videoUrl && !seen.has(d.id)){ seen.add(d.id); out.push(mapReelDoc(d)); } });
+  }
+  if(out.length) (_reelOthers = _reelOthers || []).push(...out);
+  return out;
+}
 const _rs = {};   // id -> { loaded, liked, likes, comments } for the other videos
 async function prefetchReelVideos(){
   if(_reelOthers || _reelLoading) return;
   _reelLoading = true;
   try{
     const snap = await getDocs(query(collection(db,'posts'), where('status','==','published'), orderBy('publishedAt','desc'), limit(40)));
-    _reelOthers = snap.docs.filter(d=>d.id!==artId && d.data().videoUrl).slice(0,25).map(d=>{
-      const x = d.data();
-      return { id:d.id, type:'post', videoUrl:x.videoUrl, thumbnailUrl:x.thumbnailUrl||'', text:x.text||'',
-        author:x.authorName||'MindShift Books User', avatar:x.authorPhoto||'logo.jpg', authorUid:x.authorUid||null,
-        isMindshift:x.authorUid==='official', commentsOff:!!x.commentsOff, hideLikeCount:!!x.hideLikeCount };
-    });
+    _reelCursor = snap.docs.length ? snap.docs[snap.docs.length-1] : null;
+    _reelDone = snap.docs.length < 40;
+    _reelOthers = snap.docs.filter(d=>d.id!==artId && d.data().videoUrl).map(mapReelDoc);
   }catch(e){ _reelOthers = []; }
   _reelLoading = false;
 }
@@ -1296,6 +1315,8 @@ window.openReels = function(){
       }
       return _rs[id] || {};
     },
+    loadMore: have => reelsLoadMore(have),
+    onAppend: fresh => fresh.forEach(p=>loadReelState(p.id)),
     onActive: id => {
       loadReelState(id);
       const list = [cur, ...(_reelOthers||[])], i = list.findIndex(x=>x.id===id);
