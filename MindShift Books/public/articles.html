@@ -594,8 +594,9 @@ main{max-width:1100px;margin:0 auto}
 .xs-clear svg{width:11px;height:11px;stroke:currentColor;stroke-width:2.6;fill:none;stroke-linecap:round}
 
 /* Suggested videos rail (search) */
-.xvid-rail{display:flex;gap:10px;overflow-x:auto;padding:2px 16px 16px;scroll-snap-type:x proximity;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.xvid-rail{display:flex;gap:10px;overflow-x:auto;padding:2px 16px 16px;scroll-padding-left:16px;scroll-padding-right:16px;scroll-snap-type:x proximity;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .xvid-rail::-webkit-scrollbar{display:none}
+.xvid-rail::after{content:"";flex:0 0 6px}
 .xvid{flex:0 0 138px;scroll-snap-align:start;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .xvid-thumb{position:relative;width:138px;aspect-ratio:9/16;border-radius:14px;overflow:hidden;background:linear-gradient(135deg,#1e1b4b,#312e81);transition:transform .15s}
 .xvid:active .xvid-thumb{transform:scale(.97)}
