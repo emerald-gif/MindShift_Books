@@ -6,7 +6,7 @@
    and cleared by the Messages page whenever something is read — so it never costs more than ~1 read a minute. */
 import { getApps } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
-import { getFirestore, collection, query, where, getCountFromServer, doc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
+import { getFirestore, collection, query, where, getCountFromServer, doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
 
 const CACHE_KEY = 'msb_unread_v1';
 const CHAT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>';
@@ -76,14 +76,27 @@ function install(){
   return true;
 }
 
-// "Active now": one tiny write at most every 5 minutes (shared across tabs via localStorage), only while visible.
-function pingActive(user){
+// "Active now": one tiny write at most every 5 minutes (shared across tabs via localStorage), only while visible,
+// and only if the person hasn't turned activity status off (settings remembered for an hour, shared with Messages).
+async function activityAllowed(user){
+  const key = 'msb_settings_v1_' + user.uid;
+  try{ const c = JSON.parse(localStorage.getItem(key)); if(c && Date.now() - c.t < 3600000) return c.showActivity !== false; }catch(e){}
+  try{
+    const app = getApps()[0];
+    const sn = await getDoc(doc(getFirestore(app, 'default'), 'messageSettings', user.uid));
+    const d = sn.exists() ? sn.data() : {};
+    localStorage.setItem(key, JSON.stringify({ t:Date.now(), readReceipts:d.readReceipts !== false, showActivity:d.showActivity !== false }));
+    return d.showActivity !== false;
+  }catch(e){ return true; }
+}
+async function pingActive(user){
   if(!user || document.hidden) return;
   try{
     const last = Number(localStorage.getItem('msb_ping_v1') || 0);
     if(Date.now() - last < 300000) return;
-    localStorage.setItem('msb_ping_v1', String(Date.now()));
   }catch(e){}
+  if(!(await activityAllowed(user))) return;
+  try{ localStorage.setItem('msb_ping_v1', String(Date.now())); }catch(e){}
   try{
     const app = getApps()[0]; if(!app) return;
     setDoc(doc(getFirestore(app, 'default'), 'presence', user.uid), { lastActive: serverTimestamp() }).catch(() => {});
@@ -124,7 +137,7 @@ function attempt(){
       document.addEventListener('visibilitychange', () => pingActive(getAuth(getApps()[0]).currentUser));
     } else {
       unread = 0; paint();
-      try{ Object.keys(localStorage).filter(k => k.startsWith('msb_inbox_v1_') || k.startsWith('msb_chat_v1_') || k.startsWith('msb_silent_v1_') || k.startsWith('msb_people_v1_') || k.startsWith('msb_follows_v1_') || k === 'msb_chat_idx').forEach(k => localStorage.removeItem(k)); }catch(e){}
+      try{ Object.keys(localStorage).filter(k => k.startsWith('msb_inbox_v1_') || k.startsWith('msb_chat_v1_') || k.startsWith('msb_silent_v1_') || k.startsWith('msb_people_v1_') || k.startsWith('msb_follows_v1_') || k.startsWith('msb_settings_v1_') || k === 'msb_chat_idx').forEach(k => localStorage.removeItem(k)); }catch(e){}
     }
   });
 }
