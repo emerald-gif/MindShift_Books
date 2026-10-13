@@ -23,6 +23,7 @@
 <meta name="twitter:description" content="Discover articles, ideas, insights, and stories on mindset, money, productivity, relationships, wellness, career, purpose, and personal growth from the MindShift Books community."/>
 
 <script src="/reels.js?v=3"></script>
+<script src="/image-viewer.js?v=1"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -591,11 +592,6 @@ main{max-width:1100px;margin:0 auto}
 .xs-clear{position:absolute;right:8px;top:50%;transform:translateY(-50%) scale(1);opacity:1;width:22px;height:22px;border-radius:50%;background:var(--border2);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--sub);padding:0;transition:opacity .15s,transform .15s}
 .xs-clear[hidden]{display:flex;opacity:0;transform:translateY(-50%) scale(.5);pointer-events:none}
 .xs-clear svg{width:11px;height:11px;stroke:currentColor;stroke-width:2.6;fill:none;stroke-linecap:round}
-.xs-tabs{display:none;background:var(--card);border-bottom:1.5px solid var(--border);position:relative}
-.xs-tabs.show{display:flex}
-.xs-tab{flex:1;padding:12px 8px;text-align:center;font-size:13.5px;font-weight:700;color:var(--mute);background:none;border:none;cursor:pointer;transition:color .18s;font-family:'Inter',sans-serif;-webkit-tap-highlight-color:transparent}
-.xs-tab.active{color:var(--p)}
-.xs-tab-indicator{position:absolute;left:0;bottom:-1.5px;height:2.5px;width:33.3333%;background:var(--p);border-radius:2px;transition:transform .28s cubic-bezier(.4,0,.2,1);transform:translateX(0)}
 
 /* Suggested videos rail (search) */
 .xvid-rail{display:flex;gap:10px;overflow-x:auto;padding:2px 16px 16px;scroll-snap-type:x proximity;scrollbar-width:none;-webkit-overflow-scrolling:touch}
@@ -693,6 +689,65 @@ main{max-width:1100px;margin:0 auto}
 @keyframes xsFadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 .xs-fade-in{animation:xsFadeIn .22s cubic-bezier(.2,.8,.2,1) both}
 @media (prefers-reduced-motion:reduce){.xs-fade-in{animation:none}}
+
+/* ── SEARCH REDESIGN ── */
+.xs-top{padding:10px 12px;border-bottom:none;gap:6px;transition:box-shadow .2s;background:#fff;position:relative;z-index:2}
+.xs-top.scrolled{box-shadow:0 2px 14px rgba(15,23,42,.07)}
+.xs-back{border-radius:50%;width:40px;height:40px}
+.xs-back:active{background:#f1f5f9}
+.xs-inp{padding:12px 38px 12px 40px;background:#f1f5f9;border:1.5px solid transparent;font-size:15px;font-weight:500}
+.xs-inp::placeholder{color:#94a3b8;font-weight:500}
+.xs-inp:focus{background:#fff;border-color:var(--p);box-shadow:0 0 0 4px rgba(79,70,229,.1)}
+.xs-search-ico{left:14px}
+.xs-search-ico svg{width:18px;height:18px}
+.xs-chips{display:none;gap:8px;overflow-x:auto;padding:4px 12px 12px;scrollbar-width:none;background:#fff;border-bottom:1px solid var(--border);flex-shrink:0;-webkit-overflow-scrolling:touch}
+.xs-chips::-webkit-scrollbar{display:none}
+.xs-chips.show{display:flex}
+.xs-chip{flex:none;display:inline-flex;align-items:center;gap:6px;padding:8px 15px;border-radius:99px;border:none;background:#f1f5f9;color:var(--sub);font-size:13.5px;font-weight:700;
+  font-family:inherit;cursor:pointer;white-space:nowrap;-webkit-tap-highlight-color:transparent;transition:background .15s,color .15s,transform .1s}
+.xs-chip:active{transform:scale(.95)}
+.xs-chip.active{background:var(--txt);color:#fff}
+.xs-chip.dim{opacity:.4}
+.xs-chip-n{font-size:11.5px;font-weight:800;opacity:.65}
+.xs-chip-n:empty{display:none}
+.xs-body{overscroll-behavior:contain}
+.xs-section-lbl,.xs-sec-hd{display:flex;align-items:baseline;justify-content:space-between;padding:20px 16px 10px;font-size:17px;font-weight:800;color:var(--txt);text-transform:none;letter-spacing:-.2px}
+.xs-sec-hd button{background:none;border:none;color:var(--p);font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;padding:2px 0;-webkit-tap-highlight-color:transparent}
+.xs-recent-hd{padding:16px 16px 10px}
+.xs-recent-hd span{font-size:17px;font-weight:800;color:var(--txt);text-transform:none;letter-spacing:-.2px}
+.xs-wrap{display:flex;flex-wrap:wrap;gap:8px;padding:0 16px 4px}
+.xs-rchip{display:inline-flex;align-items:center;gap:7px;padding:7px 6px 7px 12px;border-radius:99px;background:#f1f5f9;font-size:13px;font-weight:600;color:var(--txt);cursor:pointer;max-width:100%;-webkit-tap-highlight-color:transparent}
+.xs-rchip:active{background:#e2e8f0}
+.xs-rchip svg{width:14px;height:14px;stroke:var(--mute);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.xs-rchip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px}
+.xs-rchip button{width:20px;height:20px;border-radius:50%;border:none;background:none;color:var(--mute);display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
+.xs-rchip button svg{width:11px;height:11px;stroke:currentColor;stroke-width:2.6}
+.xs-topic-pill{background:#f1f5f9;border:none;color:var(--txt);padding:9px 15px;font-size:13px;font-weight:700}
+.xs-topic-pill:active{background:#e2e8f0}
+.xs-topics.xs-wrapped{flex-wrap:wrap;overflow:visible;padding:2px 16px 4px}
+.xs-more{display:block;margin:6px auto 28px;padding:10px 26px;border-radius:99px;border:1.5px solid var(--border2);background:#fff;color:var(--txt);font-size:13.5px;font-weight:700;font-family:inherit;cursor:pointer}
+.xs-more:active{background:#f1f5f9}
+.xvid-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 10px;padding:4px 16px 28px}
+.xvid-grid .xvid{flex:none;width:auto;min-width:0}
+.xvid-grid .xvid-thumb{width:100%}
+.xs-empty{padding:56px 24px 40px}
+.xs-empty h4{font-size:17px;font-weight:800;color:var(--txt);margin-bottom:6px;word-break:break-word}
+.xs-empty p{font-size:13.5px;font-weight:500;color:var(--sub);line-height:1.5;margin-bottom:18px}
+.xs-empty .xs-topics{justify-content:center;margin-bottom:6px}
+.xs-skel-row{display:flex;gap:12px;align-items:center;padding:12px 16px}
+.xs-skel{background:linear-gradient(90deg,#f1f5f9 25%,#e8edf3 37%,#f1f5f9 63%);background-size:400% 100%;animation:xsShimmer 1.3s ease infinite;border-radius:8px}
+@keyframes xsShimmer{0%{background-position:100% 0}100%{background-position:0 0}}
+.xs-skel.c{width:42px;height:42px;border-radius:50%;flex:none}
+.xs-skel.l{height:12px}
+.xs-vbadge-play{position:absolute;left:6px;bottom:6px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center}
+.xs-vbadge-play svg{width:8px;height:8px;fill:#fff;margin-left:1px}
+.xpost-thumbwrap{position:relative;flex-shrink:0;width:52px;height:52px}
+.xpost-thumbwrap .xpost-thumb{width:52px;height:52px}
+.xacc-row.top{padding:10px 16px}
+.xs-topic-pill{display:inline-flex;align-items:center;gap:7px}
+.xs-topic-pill svg{width:16px;height:16px;flex:none;color:var(--p)}
+@media (prefers-reduced-motion:reduce){.xs-skel{animation:none}}
+
 
 /* ══ WEEKLY UI POLISH — feed (CSS only: no markup, script or behaviour changes) ══ */
 .filter-row{gap:8px;padding:12px 16px;border-bottom:1px solid #eef2f7}
@@ -1031,28 +1086,24 @@ main{max-width:1100px;margin:0 auto}
     </button>
     <div class="xs-search-wrap">
       <span class="xs-search-ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="m21 21-4.35-4.35"/></svg></span>
-      <input class="xs-inp" id="xSearchInp" type="text" placeholder="People, articles, or posts" oninput="onXSearchInput()" onkeydown="if(event.key==='Enter'){event.preventDefault();if(xQuery)addRecentSearch(xQuery);this.blur();}" autocomplete="off" enterkeyhint="search"/>
+      <input class="xs-inp" id="xSearchInp" type="text" placeholder="Search articles, posts, videos, people" oninput="onXSearchInput()" onkeydown="if(event.key==='Enter'){event.preventDefault();if(xQuery)addRecentSearch(xQuery);this.blur();}" autocomplete="off" enterkeyhint="search"/>
       <button class="xs-clear" id="xClearBtn" onclick="clearXSearch()" hidden aria-label="Clear search">
         <svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
       </button>
     </div>
   </div>
-  <div class="xs-tabs" id="xTabs">
-    <button class="xs-tab active" data-xtab="articles" onclick="switchXTab('articles')">Articles</button>
-    <button class="xs-tab" data-xtab="posts" onclick="switchXTab('posts')">Posts</button>
-    <button class="xs-tab" data-xtab="accounts" onclick="switchXTab('accounts')">People</button>
-    <span class="xs-tab-indicator" id="xTabIndicator"></span>
+  <div class="xs-chips" id="xTabs" role="tablist">
+    <button class="xs-chip active" data-xtab="top" onclick="switchXTab('top')">Top</button>
+    <button class="xs-chip" data-xtab="articles" onclick="switchXTab('articles')">Articles<span class="xs-chip-n"></span></button>
+    <button class="xs-chip" data-xtab="posts" onclick="switchXTab('posts')">Posts<span class="xs-chip-n"></span></button>
+    <button class="xs-chip" data-xtab="videos" onclick="switchXTab('videos')">Videos<span class="xs-chip-n"></span></button>
+    <button class="xs-chip" data-xtab="accounts" onclick="switchXTab('accounts')">People<span class="xs-chip-n"></span></button>
   </div>
   <div class="xs-body" id="xBody">
     <div id="xRecentWrap"></div>
     <div id="xDiscover"></div>
-    <div id="xArticlesRes" class="xgrid" style="display:none"></div>
-    <div id="xPostsRes" class="xres-list" style="display:none"></div>
-    <div id="xAccountsRes" class="xres-list" style="display:none"></div>
-    <div class="xs-empty" id="xEmpty" style="display:none">
-      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="m21 21-4.35-4.35"/></svg>
-      <p>No results found</p>
-    </div>
+    <div id="xResults" style="display:none"></div>
+    <div class="xs-empty" id="xEmpty" style="display:none"></div>
   </div>
 </div>
 
@@ -2913,14 +2964,14 @@ function getMergedFeed(){
 function buildMediaGridHtml(images, postId){
   if(!images || !images.length) return '';
   if(images.length===1){
-    return `<div class="pcard-single" onclick="event.stopPropagation()">
-      <img src="${images[0]}" alt="" loading="lazy" onclick="goPostRead('${postId}')">
+    return `<div class="pcard-single">
+      <img src="${images[0]}" alt="" loading="lazy" onclick="event.stopPropagation();MSBImageViewer.fromEl(this)">
     </div>`;
   }
   return `
-    <div class="pcard-carousel" onclick="event.stopPropagation()">
+    <div class="pcard-carousel">
       <div class="pcard-track" id="ptrack-${postId}" onscroll="onPostScroll('${postId}')">
-        ${images.map(url=>`<div class="pcard-slide"><img src="${url}" alt="" loading="lazy" onclick="goPostRead('${postId}')" onload="fitCarouselSlide(this)" onerror="fitCarouselSlide(this)"></div>`).join('')}
+        ${images.map(url=>`<div class="pcard-slide"><img src="${url}" alt="" loading="lazy" onclick="event.stopPropagation();MSBImageViewer.fromEl(this)" onload="fitCarouselSlide(this)" onerror="fitCarouselSlide(this)"></div>`).join('')}
       </div>
       <div class="pcard-count" id="pcount-${postId}">1/${images.length}</div>
     </div>`;
@@ -4069,7 +4120,7 @@ async function loadFeedBatch(loaders){
 
 /* ── FULLSCREEN SEARCH / EXPLORE ── */
 let xQuery = '';
-let _xActiveTab = 'articles';
+let _xActiveTab = 'top';
 let _xDiscoverBuilt = false;
 let _allUsersCache = null;
 let _usersCachePromise = null;
@@ -4147,24 +4198,15 @@ window.clearAllRecentSearches = function(){
 function renderRecentSearches(){
   const wrap = document.getElementById('xRecentWrap');
   if(!wrap) return;
-  const list = getRecentSearches();
+  const list = getRecentSearches().slice(0,10);
   if(!list.length){ wrap.innerHTML = ''; return; }
-  wrap.innerHTML = `<div class="xs-recent-hd"><span>Recent</span><button type="button" class="xs-recent-clear" onclick="clearAllRecentSearches()">Clear all</button></div>` +
-    list.map(q => `<div class="xs-recent-row" onclick="runRecentSearch('${esc(q).replace(/'/g,"\\'")}')">
-      <span class="xs-recent-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg></span>
-      <span class="xs-recent-txt">${esc(q)}</span>
-      <button type="button" class="xs-recent-rm" onclick="event.stopPropagation();removeRecentSearch('${esc(q).replace(/'/g,"\\'")}')" aria-label="Remove"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
-    </div>`).join('');
-}
-
-// Slides the underline to whichever tab is active — index-based so it stays
-// correct even if a tab is added/reordered later.
-function moveTabIndicator(tab){
-  const ind = document.getElementById('xTabIndicator');
-  if(!ind) return;
-  const order = ['articles','posts','accounts'];
-  const i = Math.max(0, order.indexOf(tab));
-  ind.style.transform = `translateX(${i * 100}%)`;
+  const q = t => esc(t).replace(/'/g,"\\'");
+  wrap.innerHTML = `<div class="xs-recent-hd"><span>Recent</span><button type="button" class="xs-recent-clear" onclick="clearAllRecentSearches()">Clear all</button></div>
+    <div class="xs-wrap">${list.map(t => `<span class="xs-rchip" onclick="runRecentSearch('${q(t)}')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>
+      <span>${esc(t)}</span>
+      <button type="button" aria-label="Remove" onclick="event.stopPropagation();removeRecentSearch('${q(t)}')"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </span>`).join('')}</div>`;
 }
 
 function shuffleArr(arr){
@@ -4291,27 +4333,55 @@ function buildSuggestedVideos(max, onlyFrom){
   return out;
 }
 window._xvLists = {};
-function buildVideoRailHtml(list, key){
+function videoTileHtml(p, key){
+  const lk = likeCountCache[p.id] || 0;
+  const media = p.thumbnailUrl
+    ? `<img src="${p.thumbnailUrl}" alt="" loading="lazy" onerror="this.style.display='none'">`
+    : `<video src="${p.videoUrl}#t=0.1" muted playsinline preload="metadata"></video>`;
+  return `<div class="xvid" onclick="openSuggestedReel('${p.id}','${key}')">
+    <div class="xvid-thumb">${media}
+      <span class="xvid-play"><svg viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg></span>
+      ${p.duration ? `<span class="xvid-dur">${fmtDuration(p.duration)}</span>` : ''}
+      ${lk>0 && !p.hideLikeCount ? `<span class="xvid-like"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>${lk}</span>` : ''}
+    </div>
+    <div class="xvid-by"><img src="${p.avatar||'logo.jpg'}" alt="" onerror="this.style.visibility='hidden'"><span>${esc(p.author||'MindShift Books User')}</span></div>
+    ${p.text ? `<div class="xvid-cap">${hl(p.text)}</div>` : ''}
+  </div>`;
+}
+// The reels swipe through the FULL list for this key, even when the rail only shows the first `max`.
+function buildVideoRailHtml(list, key, max){
   window._xvLists[key] = list.map(p=>p.id);
-  return `<div class="xvid-rail">${list.map(p=>{
-    const lk = likeCountCache[p.id] || 0;
-    const media = p.thumbnailUrl
-      ? `<img src="${p.thumbnailUrl}" alt="" loading="lazy" onerror="this.style.display='none'">`
-      : `<video src="${p.videoUrl}#t=0.1" muted playsinline preload="metadata"></video>`;
-    return `<div class="xvid" onclick="openSuggestedReel('${p.id}','${key}')">
-      <div class="xvid-thumb">${media}
-        <span class="xvid-play"><svg viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg></span>
-        ${p.duration ? `<span class="xvid-dur">${fmtDuration(p.duration)}</span>` : ''}
-        ${lk>0 && !p.hideLikeCount ? `<span class="xvid-like"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>${lk}</span>` : ''}
-      </div>
-      <div class="xvid-by"><img src="${p.avatar||'logo.jpg'}" alt="" onerror="this.style.visibility='hidden'"><span>${esc(p.author||'MindShift Books User')}</span></div>
-      ${p.text ? `<div class="xvid-cap">${esc(p.text)}</div>` : ''}
-    </div>`;
-  }).join('')}</div>`;
+  return `<div class="xvid-rail">${list.slice(0, max||list.length).map(p=>videoTileHtml(p,key)).join('')}</div>`;
+}
+function buildVideoGridHtml(list, key){
+  window._xvLists[key] = list.map(p=>p.id);
+  return `<div class="xvid-grid">${list.map(p=>videoTileHtml(p,key)).join('')}</div>`;
 }
 window.openSuggestedReel = function(id, key){
   openReels(id, window._xvLists[key] || null);
 };
+// Topic chips: emoji + short label, tap runs the topic as a search. Stored by index so
+// codes containing quotes/ampersands never break the inline onclick.
+const TOPIC_FALLBACK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18"/></svg>';
+window._xTopicLists = {};
+function topicChipsHtml(topics, wrapped, key){
+  key = key || 'default';
+  window._xTopicLists[key] = topics.map(t=>t.code);
+  return `<div class="xs-topics${wrapped?' xs-wrapped':''}">${topics.map((t,i)=>{
+    const c = (window.MSB_CAT_BY_CODE||{})[t.code];
+    const label = c ? c.label.split(/[&,]/)[0].trim() : (t.code||'').toString().replace(/_/g,' ').toLowerCase().replace(/\b\w/g,m=>m.toUpperCase());
+    return `<button type="button" class="xs-topic-pill" onclick="runTopicIdx('${key}',${i})">${(window.msbCatIconSvg && window.msbCatIconSvg(t.code)) || TOPIC_FALLBACK_SVG}${esc(label)}</button>`;
+  }).join('')}</div>`;
+}
+window.runTopicIdx = function(key, i){ const l = window._xTopicLists[key]; if(l) runTopicSearch(l[i]); };
+// Categories whose name / sub-topics contain the query — "mon" -> Money & Financial Growth, etc.
+function relatedTopics(q){
+  return (window.MSB_CATEGORIES||[]).filter(c =>
+    c.label.toLowerCase().includes(q) || c.code.toLowerCase().includes(q) ||
+    (c.sub||[]).some(x=>String(x).toLowerCase().includes(q))
+  ).slice(0,6).map(c=>({ code:c.code }));
+}
+
 function suggestedVideosHtml(){
   const v = buildSuggestedVideos(10);
   return v.length ? `<div class="xs-section-lbl">Suggested videos</div>${buildVideoRailHtml(v, 'discover')}` : '';
@@ -4328,8 +4398,7 @@ function renderDiscover(){
 
   let html = '';
   if(topics.length){
-    html += `<div class="xs-section-lbl">Trending topics</div>
-      <div class="xs-topics">${topics.map(t=>`<button class="xs-topic-pill" onclick="runTopicSearch('${esc(t)}')">${esc(t)}</button>`).join('')}</div>`;
+    html += `<div class="xs-section-lbl">Trending topics</div>${topicChipsHtml(topics.map(t=>({ code:t })), false, 'discover')}`;
   }
   // Real "People to follow" widget, reused as-is (same Firestore queries,
   // follow/dismiss logic, notifications) — just a new idSuffix so it gets
@@ -4355,6 +4424,7 @@ window.openSearchScreen = function(){
   document.getElementById('searchScreen').classList.add('on');
   document.body.style.overflow = 'hidden';
   if(!_xDiscoverBuilt){ renderDiscover(); _xDiscoverBuilt = true; } else refreshSuggestedVideos();
+  initSearchUX();
   renderRecentSearches();          // refreshed every open — cheap, and keeps it current
   ensureUsersCache();              // pre-warm People results so the first search this session is instant, not fired-and-forgotten
   setTimeout(()=>{ const i=document.getElementById('xSearchInp'); if(i) i.focus(); }, 280);
@@ -4408,14 +4478,16 @@ function renderXAccounts(users, container){
 }
 
 function buildXPostRow(p){
-  const thumb = p.images && p.images[0];
-  return `<div class="xpost-row" data-author-uid="${p.authorUid||''}" onclick="closeSearchScreen();goPostRead('${p.id}')">
+  const isVid = !!p.videoUrl;
+  const thumb = isVid ? p.thumbnailUrl : (p.images && p.images[0]);
+  const go = isVid ? `openSuggestedReel('${p.id}','results')` : `closeSearchScreen();goPostRead('${p.id}')`;
+  return `<div class="xpost-row" data-author-uid="${p.authorUid||''}" onclick="${go}">
     <img class="xpost-av" data-author-photo src="${p.avatar||'logo.jpg'}" alt="" onerror="this.style.background='linear-gradient(135deg,#4f46e5,#06b6d4)'">
     <div class="xpost-body">
       <div class="xpost-name"><span data-author-name>${esc(p.author||'MindShift Books User')}</span>${p.isMindshift?` <span class="vbadge"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>`:''}</div>
       <div class="xpost-text">${hl(p.text||'')}</div>
     </div>
-    ${thumb ? `<img class="xpost-thumb" src="${thumb}" alt="" loading="lazy" onerror="this.style.display='none'">` : ''}
+    ${thumb ? `<div class="xpost-thumbwrap"><img class="xpost-thumb" src="${thumb}" alt="" loading="lazy" onerror="this.style.display='none'">${isVid?'<span class="xs-vbadge-play"><svg viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg></span>':''}</div>` : (isVid ? `<div class="xpost-thumbwrap"><div class="xpost-thumb" style="background:linear-gradient(135deg,#1e1b4b,#312e81)"></div><span class="xs-vbadge-play"><svg viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg></span></div>` : '')}
   </div>`;
 }
 function renderXPosts(posts, container){
@@ -4424,73 +4496,147 @@ function renderXPosts(posts, container){
   fadeIn(container);
 }
 
-window.onXSearchInput = async function(){
-  xQuery = document.getElementById('xSearchInp').value.trim().toLowerCase();
+/* ── SEARCH: smart results ──
+   Chips: Top · Articles · Posts · Videos · People (with live counts). "Top" is a mixed overview,
+   ordered by what the query most likely means (a name that matches a person leads with People).
+   Typing is debounced, only the latest query renders, and the keyboard hides when you scroll. */
+let _xToken = 0, _xDebounce = null, _xState = null;
+const _xShown = { articles:20, posts:20, videos:20, accounts:30 };
+const X_CHIP_ORDER = ['top','articles','posts','videos','accounts'];
+
+window.onXSearchInput = function(){
+  const v = (document.getElementById('xSearchInp').value||'').trim();
+  clearTimeout(_xDebounce);
+  if(!v){ runXSearch(); return; }                 // clearing is instant
+  _xDebounce = setTimeout(runXSearch, 140);       // typing waits a beat so we don't re-render every keystroke
+};
+
+function xCount(n){ return n > 99 ? '99+' : (n || ''); }
+function xSkeleton(){
+  return Array.from({length:4}).map(()=>`<div class="xs-skel-row"><div class="xs-skel c"></div><div style="flex:1"><div class="xs-skel l" style="width:55%;margin-bottom:8px"></div><div class="xs-skel l" style="width:80%"></div></div></div>`).join('');
+}
+function xSec(title, html, seeAllTab){
+  return `<div class="xs-sec-hd"><span>${title}</span>${seeAllTab?`<button type="button" onclick="switchXTab('${seeAllTab}')">See all</button>`:''}</div>${html}`;
+}
+function xMore(tab, total){
+  return total > _xShown[tab] ? `<button type="button" class="xs-more" onclick="xShowMore('${tab}')">Show more</button>` : '';
+}
+window.xShowMore = function(tab){ _xShown[tab] += 20; renderXTab(); };
+
+async function runXSearch(){
+  const token = ++_xToken;
+  const inp = document.getElementById('xSearchInp');
+  xQuery = inp.value.trim().toLowerCase();
   document.getElementById('xClearBtn').hidden = !xQuery;
-  const discover = document.getElementById('xDiscover');
-  const recent   = document.getElementById('xRecentWrap');
-  const tabs     = document.getElementById('xTabs');
-  const artRes   = document.getElementById('xArticlesRes');
-  const postRes  = document.getElementById('xPostsRes');
-  const accRes   = document.getElementById('xAccountsRes');
-  const empty    = document.getElementById('xEmpty');
+  const discover = document.getElementById('xDiscover'), recent = document.getElementById('xRecentWrap');
+  const chips = document.getElementById('xTabs'), res = document.getElementById('xResults'), empty = document.getElementById('xEmpty');
+  const body = document.getElementById('xBody');
 
   if(!xQuery){
-    discover.style.display='block'; if(recent) recent.style.display='block'; tabs.classList.remove('show');
-    artRes.style.display='none'; postRes.style.display='none'; accRes.style.display='none'; empty.style.display='none';
-    fadeIn(discover);
+    _xState = null;
+    discover.style.display = 'block'; if(recent) recent.style.display = 'block';
+    chips.classList.remove('show'); res.style.display = 'none'; empty.style.display = 'none';
+    renderRecentSearches(); fadeIn(discover);
     return;
   }
-  discover.style.display='none'; if(recent) recent.style.display='none'; tabs.classList.add('show');
+  discover.style.display = 'none'; if(recent) recent.style.display = 'none';
+  chips.classList.add('show'); empty.style.display = 'none';
 
   const artMatches = ARTICLES.filter(a =>
-    (a.title||'').toLowerCase().includes(xQuery) ||
-    (a.brief||'').toLowerCase().includes(xQuery)  ||
-    (a.cat||'').toLowerCase().includes(xQuery)    ||
-    (a.author||'').toLowerCase().includes(xQuery)
-  );
+    (a.title||'').toLowerCase().includes(xQuery) || (a.brief||'').toLowerCase().includes(xQuery) ||
+    (a.cat||'').toLowerCase().includes(xQuery)   || (a.author||'').toLowerCase().includes(xQuery));
   const postMatches = POSTS.filter(p =>
-    (p.text||'').toLowerCase().includes(xQuery) ||
-    (p.author||'').toLowerCase().includes(xQuery)
-  );
+    (p.text||'').toLowerCase().includes(xQuery) || (p.author||'').toLowerCase().includes(xQuery));
+  const vidMatches = postMatches.filter(p=>p.videoUrl);
+  window._xvLists.results = vidMatches.map(p=>p.id);   // video rows anywhere in results swipe through all matching videos
+
+  if(!_allUsersCache){            // first search of the session: people list still loading
+    res.style.display = 'block'; res.innerHTML = xSkeleton();
+  }
   const accMatches = await searchAccountsList(xQuery);
+  if(token !== _xToken) return;   // a newer keystroke superseded this one
 
-  // Auto-surface whichever tab actually has results for this query — prefer
-  // keeping the user's current tab if it has any results at all.
-  const counts = { articles: artMatches.length, posts: postMatches.length, accounts: accMatches.length };
-  if(!counts[_xActiveTab]){
-    _xActiveTab = ['articles','posts','accounts'].find(t => counts[t]) || _xActiveTab;
-  }
+  _xState = { art:artMatches, post:postMatches, vid:vidMatches, acc:accMatches, topics:relatedTopics(xQuery) };
+  Object.keys(_xShown).forEach(k=>{ _xShown[k] = k==='accounts' ? 30 : 20; });
+  const counts = { articles:artMatches.length, posts:postMatches.length, videos:vidMatches.length, accounts:accMatches.length };
+  chips.querySelectorAll('.xs-chip').forEach(c=>{
+    const t = c.dataset.xtab, n = counts[t];
+    if(t==='top') return;
+    c.querySelector('.xs-chip-n').textContent = xCount(n);
+    c.classList.toggle('dim', !n);
+  });
+  if(_xActiveTab!=='top' && !counts[_xActiveTab]) _xActiveTab = 'top';
+  const total = counts.articles + counts.posts + counts.accounts;
+  if(!total){ showXEmpty(); return; }
+  body.scrollTop = 0;
+  renderXTab();
+}
 
-  document.querySelectorAll('.xs-tab').forEach(t=>t.classList.toggle('active', t.dataset.xtab===_xActiveTab));
-  moveTabIndicator(_xActiveTab);
+function showXEmpty(){
+  const res = document.getElementById('xResults'), empty = document.getElementById('xEmpty');
+  res.style.display = 'none'; res.innerHTML = '';
+  document.getElementById('xTabs').classList.remove('show');
+  const q = document.getElementById('xSearchInp').value.trim();
+  const topics = buildTrendingTopics().slice(0,6).map(t=>({code:t}));
+  empty.innerHTML = `<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="m21 21-4.35-4.35"/></svg>
+    <h4>No results for “${esc(q)}”</h4>
+    <p>Check the spelling, or try a broader word.</p>
+    ${topics.length ? `<div class="xs-section-lbl" style="justify-content:center;padding:6px 0 10px;font-size:14px">Try a topic</div>${topicChipsHtml(topics,true,'empty')}` : ''}`;
+  empty.style.display = 'block'; fadeIn(empty);
+}
 
-  artRes.style.display  = _xActiveTab==='articles' ? 'grid'  : 'none';
-  postRes.style.display = _xActiveTab==='posts'    ? 'block' : 'none';
-  accRes.style.display  = _xActiveTab==='accounts' ? 'block' : 'none';
-
-  const list = _xActiveTab==='articles' ? artMatches : _xActiveTab==='posts' ? postMatches : accMatches;
-  if(!list.length){
-    empty.style.display='block';
-    artRes.innerHTML=''; postRes.innerHTML=''; accRes.innerHTML='';
-    fadeIn(empty);
+function renderXTab(){
+  if(!_xState) return;
+  const res = document.getElementById('xResults');
+  const { art, post, vid, acc, topics } = _xState;
+  document.querySelectorAll('#xTabs .xs-chip').forEach(c=>c.classList.toggle('active', c.dataset.xtab===_xActiveTab));
+  let html = '';
+  if(_xActiveTab==='top'){
+    const nonVidPosts = post.filter(p=>!p.videoUrl);
+    const personHit = acc.some(u => (u.name||u.displayName||'').toLowerCase().startsWith(xQuery));
+    const sections = {
+      accounts: acc.length ? ()=>xSec('People', `<div id="xTopAcc"></div>`, acc.length>3?'accounts':null) : null,
+      articles: art.length ? ()=>xSec('Articles', art.slice(0,4).map(buildXArticleRow).join(''), art.length>4?'articles':null) : null,
+      videos:   vid.length ? ()=>xSec('Videos', buildVideoRailHtml(vid,'results',10), vid.length>3?'videos':null) : null,
+      posts:    nonVidPosts.length ? ()=>xSec('Posts', nonVidPosts.slice(0,3).map(buildXPostRow).join(''), nonVidPosts.length>3?'posts':null) : null
+    };
+    const order = personHit ? ['accounts','articles','videos','posts'] : ['articles','videos','posts','accounts'];
+    if(topics.length) html += `<div class="xs-sec-hd"><span>Related topics</span></div>${topicChipsHtml(topics,true,'related')}`;
+    order.forEach(k=>{ if(sections[k]) html += sections[k](); });
+    html += '<div style="height:40px"></div>';
+  } else if(_xActiveTab==='articles'){
+    html = art.slice(0,_xShown.articles).map(buildXArticleRow).join('') + xMore('articles', art.length) + '<div style="height:30px"></div>';
+  } else if(_xActiveTab==='posts'){
+    html = post.slice(0,_xShown.posts).map(buildXPostRow).join('') + xMore('posts', post.length) + '<div style="height:30px"></div>';
+  } else if(_xActiveTab==='videos'){
+    html = buildVideoGridHtml(vid.slice(0,_xShown.videos),'results') + xMore('videos', vid.length);
+    window._xvLists.results = vid.map(p=>p.id);
   } else {
-    empty.style.display='none';
-    if(_xActiveTab==='articles') renderXGrid(artMatches, artRes);
-    else if(_xActiveTab==='posts'){
-      renderXPosts(postMatches, postRes);
-      const vidMatches = buildSuggestedVideos(10, postMatches);
-      if(vidMatches.length) postRes.insertAdjacentHTML('afterbegin', `<div class="xs-section-lbl">Videos</div>${buildVideoRailHtml(vidMatches, 'results')}<div class="xs-section-lbl">Posts</div>`);
-    }
-    else renderXAccounts(accMatches, accRes);
+    html = `<div id="xAccTab"></div>` + xMore('accounts', acc.length) + '<div style="height:30px"></div>';
   }
-};
+  res.innerHTML = html; res.style.display = 'block';
+  const ta = document.getElementById('xTopAcc'); if(ta){ renderXAccounts(acc.slice(0,3), ta); }
+  const tb = document.getElementById('xAccTab'); if(tb){ renderXAccounts(acc.slice(0,_xShown.accounts), tb); }
+  window.MSBAuthorLive && window.MSBAuthorLive.refresh(db, { doc, getDoc }, res);
+  fadeIn(res);
+}
 
 window.switchXTab = function(tab){
   _xActiveTab = tab;
-  moveTabIndicator(tab);
-  onXSearchInput();
+  renderXTab();
+  const body = document.getElementById('xBody'); if(body) body.scrollTop = 0;
 };
+
+// One-time UX wiring: hide the keyboard once you start scrolling results, and give the top bar a soft shadow when scrolled.
+let _xUxReady = false;
+function initSearchUX(){
+  if(_xUxReady) return; _xUxReady = true;
+  const body = document.getElementById('xBody'), top = document.querySelector('.xs-top'), inp = document.getElementById('xSearchInp');
+  body.addEventListener('scroll', ()=>{
+    top.classList.toggle('scrolled', body.scrollTop > 4);
+    if(document.activeElement===inp && body.scrollTop > 40) inp.blur();
+  }, { passive:true });
+}
 
 /* ── CLOSE ALL ── */
 window.closeAll = function(){
