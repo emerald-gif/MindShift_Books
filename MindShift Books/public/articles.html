@@ -22,7 +22,7 @@
 <meta name="twitter:title" content="MindShift Books" />
 <meta name="twitter:description" content="Discover articles, ideas, insights, and stories on mindset, money, productivity, relationships, wellness, career, purpose, and personal growth from the MindShift Books community."/>
 
-<script src="/reels.js?v=2"></script>
+<script src="/reels.js?v=3"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -596,6 +596,25 @@ main{max-width:1100px;margin:0 auto}
 .xs-tab{flex:1;padding:12px 8px;text-align:center;font-size:13.5px;font-weight:700;color:var(--mute);background:none;border:none;cursor:pointer;transition:color .18s;font-family:'Inter',sans-serif;-webkit-tap-highlight-color:transparent}
 .xs-tab.active{color:var(--p)}
 .xs-tab-indicator{position:absolute;left:0;bottom:-1.5px;height:2.5px;width:33.3333%;background:var(--p);border-radius:2px;transition:transform .28s cubic-bezier(.4,0,.2,1);transform:translateX(0)}
+
+/* Suggested videos rail (search) */
+.xvid-rail{display:flex;gap:10px;overflow-x:auto;padding:2px 16px 16px;scroll-snap-type:x proximity;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.xvid-rail::-webkit-scrollbar{display:none}
+.xvid{flex:0 0 138px;scroll-snap-align:start;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.xvid-thumb{position:relative;width:138px;aspect-ratio:9/16;border-radius:14px;overflow:hidden;background:linear-gradient(135deg,#1e1b4b,#312e81);transition:transform .15s}
+.xvid:active .xvid-thumb{transform:scale(.97)}
+.xvid-thumb img,.xvid-thumb video{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
+.xvid-thumb::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.55),transparent 45%);pointer-events:none}
+.xvid-play{position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;background:rgba(0,0,0,.45);backdrop-filter:blur(4px);
+  display:flex;align-items:center;justify-content:center;z-index:1}
+.xvid-play svg{width:12px;height:12px;fill:#fff;margin-left:1px}
+.xvid-dur{position:absolute;left:8px;bottom:8px;z-index:1;color:#fff;font-size:11px;font-weight:800;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.xvid-like{position:absolute;right:8px;bottom:8px;z-index:1;color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;gap:3px;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.xvid-like svg{width:11px;height:11px;fill:#fff}
+.xvid-by{display:flex;align-items:center;gap:6px;margin-top:8px;min-width:0}
+.xvid-by img{width:20px;height:20px;border-radius:50%;object-fit:cover;flex:none;background:linear-gradient(135deg,#4f46e5,#06b6d4)}
+.xvid-by span{font-size:12.5px;font-weight:700;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.xvid-cap{margin-top:3px;font-size:11.5px;color:var(--sub);line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .xs-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .xs-section-lbl{padding:14px 16px 8px;font-size:12px;font-weight:800;color:var(--mute);text-transform:uppercase;letter-spacing:.4px}
 .xgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:6px}
@@ -2939,21 +2958,29 @@ window.toggleFeedVideoMute = function(id, event){
   btn.innerHTML = vid.muted ? MUTE_ICON_ON : MUTE_ICON_OFF;
   btn.title = vid.muted ? 'Unmute' : 'Mute';
 };
-/* Tap a feed video -> full-screen reels (reels.js). Tapping anywhere else on the card still opens the post. */
-window.openReels = function(startId){
-  MSBReels.open(startId, {
-    lookup: pid => {
-      const p = POSTS.find(x=>x.id===pid);
-      return p && p.videoUrl ? { id:p.id, videoUrl:p.videoUrl, thumbnailUrl:p.thumbnailUrl, text:p.text, author:p.author,
-        avatar:p.avatar, authorUid:p.authorUid, isMindshift:p.isMindshift, commentsOff:p.commentsOff } : null;
-    },
+/* Tap a feed video -> full-screen reels (reels.js). Tapping anywhere else on the card still opens the post.
+   `ids` (optional) = an explicit ordered list, e.g. from the Suggested Videos rail in search. */
+window.openReels = function(startId, ids){
+  const lookup = pid => {
+    const p = POSTS.find(x=>x.id===pid);
+    return p && p.videoUrl ? { id:p.id, videoUrl:p.videoUrl, thumbnailUrl:p.thumbnailUrl, text:p.text, author:p.author,
+      avatar:p.avatar, authorUid:p.authorUid, isMindshift:p.isMindshift, commentsOff:p.commentsOff } : null;
+  };
+  const cfg = {
+    lookup,
     isLiked: pid => likedSet.has(pid),
     like: pid => handleLike(pid),
     comment: pid => goPostReadComment(pid),
     link: pid => copyCardLink(pid),
     openPost: pid => goPostRead(pid),
-    author: it => goAuthor(it.authorUid||'', !!it.isMindshift)
-  });
+    author: it => goAuthor(it.authorUid||'', !!it.isMindshift),
+    onActive: pid => markVideoSeen(pid)
+  };
+  if(Array.isArray(ids) && ids.length){
+    const list = ids.map(lookup).filter(Boolean);
+    if(list.length) cfg.items = list;
+  }
+  MSBReels.open(startId, cfg);
 };
 function buildPostCardHtml(p){
   const carousel = p.videoUrl ? buildVideoTileHtml(p) : buildMediaGridHtml(p.images, p.id);
@@ -4218,6 +4245,81 @@ window.runTopicSearch = function(topic){
   onXSearchInput();
 };
 
+
+/* ── SUGGESTED VIDEOS (search) ──
+   Ranks the video posts we have by: recency, popularity (likes), whether you follow the
+   author or have liked that author before, minus videos you've already watched in the
+   reels — with a little randomness so the row feels fresh every time you open search
+   and no single author fills it. Tap a tile -> reels, swiping through the same list. */
+function _seenVids(){ try{ return new Set(JSON.parse(localStorage.getItem('msb_seen_vids')||'[]')); }catch(e){ return new Set(); } }
+function markVideoSeen(id){
+  try{
+    const a = JSON.parse(localStorage.getItem('msb_seen_vids')||'[]').filter(x=>x!==id);
+    a.push(id); localStorage.setItem('msb_seen_vids', JSON.stringify(a.slice(-200)));
+  }catch(e){}
+}
+function _pubMs(p){
+  const t = p.publishedAt; if(!t) return 0;
+  if(t.seconds) return t.seconds*1000;
+  if(t.toMillis) return t.toMillis();
+  const n = +new Date(t); return isNaN(n) ? 0 : n;
+}
+function buildSuggestedVideos(max, onlyFrom){
+  const pool = (onlyFrom || POSTS).filter(p=>p.videoUrl);
+  if(!pool.length) return [];
+  const seen = _seenVids(), follow = _myFollowingCache, now = Date.now();
+  const likedAuthors = new Set();
+  likedSet.forEach(id=>{ const lp = POSTS.find(x=>x.id===id); if(lp && lp.authorUid) likedAuthors.add(lp.authorUid); });
+  const scored = pool.map(p=>{
+    const ms = _pubMs(p), ageDays = ms ? (now - ms)/864e5 : 30;
+    let sc = 1 + Math.log2(1 + (likeCountCache[p.id]||0))*0.6 + 2*Math.exp(-ageDays/10);
+    if(follow && p.authorUid && follow.has(p.authorUid)) sc *= 1.5;
+    if(p.authorUid && likedAuthors.has(p.authorUid)) sc *= 1.25;
+    if(seen.has(p.id)) sc *= 0.3;
+    if(likedSet.has(p.id)) sc *= 0.6;
+    if(currentUser && p.authorUid===currentUser.uid) sc *= 0.5;
+    return { p, sc: sc * (0.8 + Math.random()*0.4) };
+  }).sort((a,b)=>b.sc-a.sc);
+  const out = [], perAuthor = {};
+  for(const {p} of scored){
+    const k = p.authorUid || p.author || '?';
+    if((perAuthor[k]||0) >= 2) continue;
+    perAuthor[k] = (perAuthor[k]||0) + 1;
+    out.push(p);
+    if(out.length >= max) break;
+  }
+  return out;
+}
+window._xvLists = {};
+function buildVideoRailHtml(list, key){
+  window._xvLists[key] = list.map(p=>p.id);
+  return `<div class="xvid-rail">${list.map(p=>{
+    const lk = likeCountCache[p.id] || 0;
+    const media = p.thumbnailUrl
+      ? `<img src="${p.thumbnailUrl}" alt="" loading="lazy" onerror="this.style.display='none'">`
+      : `<video src="${p.videoUrl}#t=0.1" muted playsinline preload="metadata"></video>`;
+    return `<div class="xvid" onclick="openSuggestedReel('${p.id}','${key}')">
+      <div class="xvid-thumb">${media}
+        <span class="xvid-play"><svg viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg></span>
+        ${p.duration ? `<span class="xvid-dur">${fmtDuration(p.duration)}</span>` : ''}
+        ${lk>0 && !p.hideLikeCount ? `<span class="xvid-like"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>${lk}</span>` : ''}
+      </div>
+      <div class="xvid-by"><img src="${p.avatar||'logo.jpg'}" alt="" onerror="this.style.visibility='hidden'"><span>${esc(p.author||'MindShift Books User')}</span></div>
+      ${p.text ? `<div class="xvid-cap">${esc(p.text)}</div>` : ''}
+    </div>`;
+  }).join('')}</div>`;
+}
+window.openSuggestedReel = function(id, key){
+  openReels(id, window._xvLists[key] || null);
+};
+function suggestedVideosHtml(){
+  const v = buildSuggestedVideos(10);
+  return v.length ? `<div class="xs-section-lbl">Suggested videos</div>${buildVideoRailHtml(v, 'discover')}` : '';
+}
+// Re-rank every time search opens so the row stays fresh (new uploads, what you just watched/liked).
+function refreshSuggestedVideos(){
+  const w = document.getElementById('xvidWrap'); if(w) w.innerHTML = suggestedVideosHtml();
+}
 function renderDiscover(){
   const el = document.getElementById('xDiscover');
   const topics = buildTrendingTopics();
@@ -4232,6 +4334,7 @@ function renderDiscover(){
   // Real "People to follow" widget, reused as-is (same Firestore queries,
   // follow/dismiss logic, notifications) — just a new idSuffix so it gets
   // its own DOM ids instead of clashing with the copy already in the feed.
+  html += `<div id="xvidWrap">${suggestedVideosHtml()}</div>`;
   html += ptfRowHtml('discover');
   if(posts.length){
     html += `<div class="xs-section-lbl">Posts for you</div><div class="xres-list">${posts.map(buildXPostRow).join('')}</div>`;
@@ -4251,7 +4354,7 @@ function renderDiscover(){
 window.openSearchScreen = function(){
   document.getElementById('searchScreen').classList.add('on');
   document.body.style.overflow = 'hidden';
-  if(!_xDiscoverBuilt){ renderDiscover(); _xDiscoverBuilt = true; }
+  if(!_xDiscoverBuilt){ renderDiscover(); _xDiscoverBuilt = true; } else refreshSuggestedVideos();
   renderRecentSearches();          // refreshed every open — cheap, and keeps it current
   ensureUsersCache();              // pre-warm People results so the first search this session is instant, not fired-and-forgotten
   setTimeout(()=>{ const i=document.getElementById('xSearchInp'); if(i) i.focus(); }, 280);
@@ -4374,7 +4477,11 @@ window.onXSearchInput = async function(){
   } else {
     empty.style.display='none';
     if(_xActiveTab==='articles') renderXGrid(artMatches, artRes);
-    else if(_xActiveTab==='posts') renderXPosts(postMatches, postRes);
+    else if(_xActiveTab==='posts'){
+      renderXPosts(postMatches, postRes);
+      const vidMatches = buildSuggestedVideos(10, postMatches);
+      if(vidMatches.length) postRes.insertAdjacentHTML('afterbegin', `<div class="xs-section-lbl">Videos</div>${buildVideoRailHtml(vidMatches, 'results')}<div class="xs-section-lbl">Posts</div>`);
+    }
     else renderXAccounts(accMatches, accRes);
   }
 };

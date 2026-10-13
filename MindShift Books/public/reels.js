@@ -109,7 +109,7 @@ body.msb-reels-open .overlay{z-index:100002!important}
   function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
   function fmt(t){ t = Math.max(0, Math.floor(t||0)); return Math.floor(t/60)+':'+String(t%60).padStart(2,'0'); }
 
-  var muted = false, speed = 1, observer = null, pushed = false, syncTimer = null, cfg = null, activeId = null, items = [];
+  var prevOv = ['',''], muted = false, speed = 1, observer = null, pushed = false, syncTimer = null, cfg = null, activeId = null, items = [];
   var SPEEDS = [1, 1.5, 2, 0.5];
 
   function muteIcon(){
@@ -269,6 +269,7 @@ body.msb-reels-open .overlay{z-index:100002!important}
       '</div></div>'+
       '<div class="rl-scroller">'+items.map(slideHtml).join('')+'</div>';
     ov.classList.add('open');
+    prevOv = [document.documentElement.style.overflow, document.body.style.overflow];
     document.documentElement.style.overflow = 'hidden'; document.body.style.overflow = 'hidden';
     document.body.classList.add('msb-reels-open');
 
@@ -337,7 +338,7 @@ body.msb-reels-open .overlay{z-index:100002!important}
     clearInterval(syncTimer); syncTimer = null; activeId = null;
     ov.querySelectorAll('video').forEach(function(v){ v.pause(); v.removeAttribute('src'); v.load(); });
     ov.classList.remove('open'); ov.innerHTML = ''; ov.onclick = null;
-    document.documentElement.style.overflow = ''; document.body.style.overflow = '';
+    document.documentElement.style.overflow = prevOv[0]; document.body.style.overflow = prevOv[1];
     document.body.classList.remove('msb-reels-open');
     // Resume whichever feed videos are actually on screen (muted, like before).
     document.querySelectorAll('.pcard-video-el').forEach(function(v){
