@@ -318,6 +318,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 <div class="toast" id="toast"></div>
 
 <script src="/reels.js?v=3"></script>
+<script src="/image-viewer.js?v=1"></script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
@@ -560,14 +561,14 @@ function fmtRel(ts){
 function buildMediaGridHtml(images, postId){
   if(!images || !images.length) return '';
   if(images.length===1){
-    return `<div class="pcard-single" onclick="event.stopPropagation()">
-      <img src="${images[0]}" alt="" loading="lazy" onclick="location.href='/post-read?id=${postId}'">
+    return `<div class="pcard-single">
+      <img src="${images[0]}" alt="" loading="lazy" onclick="event.stopPropagation();MSBImageViewer.fromEl(this)">
     </div>`;
   }
   return `
-    <div class="pcard-carousel" onclick="event.stopPropagation()">
+    <div class="pcard-carousel">
       <div class="pcard-track" id="ptrack-${postId}" onscroll="onPostScroll('${postId}')">
-        ${images.map(url=>`<div class="pcard-slide"><img src="${url}" alt="" loading="lazy" onclick="location.href='/post-read?id=${postId}'" onload="fitCarouselSlide(this)" onerror="fitCarouselSlide(this)"></div>`).join('')}
+        ${images.map(url=>`<div class="pcard-slide"><img src="${url}" alt="" loading="lazy" onclick="event.stopPropagation();MSBImageViewer.fromEl(this)" onload="fitCarouselSlide(this)" onerror="fitCarouselSlide(this)"></div>`).join('')}
       </div>
       <div class="pcard-count" id="pcount-${postId}">1/${images.length}</div>
     </div>`;
