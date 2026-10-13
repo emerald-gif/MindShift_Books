@@ -702,6 +702,7 @@ body{padding-bottom:64px} /* room for the fixed comment bar on post-read */
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
 <script src="/mentions.js"></script>
 <script src="/link-card.js"></script>
+<script src="/reels.js?v=2"></script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
@@ -1045,9 +1046,9 @@ async function renderArticle(){
   const imgs = article.images || [];
   window.currentPostImages = imgs;
   const carouselHtml = article.videoUrl ? `
-    <div class="post-video" id="pvWrap" onclick="handlePostVideoTap(event)">
+    <div class="post-video" id="pvWrap" onclick="openReels()">
       <video id="pvEl" src="${article.videoUrl}" poster="${article.thumbnailUrl||''}" playsinline preload="metadata"></video>
-      <button type="button" class="pv-playbtn" id="pvPlayBtn" onclick="event.stopPropagation();togglePostVideoPlay()" aria-label="Play">
+      <button type="button" class="pv-playbtn" id="pvPlayBtn" onclick="event.stopPropagation();openReels()" aria-label="Play">
         <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"/></svg>
       </button>
       <div class="pv-bar" onclick="event.stopPropagation()">
@@ -1130,6 +1131,7 @@ async function renderArticle(){
   `;
   _articleRendered = true;
   if(article.videoUrl) initPostVideo();
+  if(article.videoUrl) prefetchReelVideos();
 
   window.MSBAuthorLive && window.MSBAuthorLive.refresh(db, { doc, getDoc }, document.getElementById('artContent'));
   syncLikeUI();
@@ -1212,6 +1214,106 @@ window.initPostVideo = function(){
   vid.addEventListener('ended', () => {
     wrap.classList.remove('pv-playing');
     fill.style.width = '0%';
+  });
+};
+
+/* ── REELS ──
+   Tapping the video here opens the full-screen reels (reels.js): this post's
+   video first, then other recent video posts to swipe through. */
+let _reelOthers = null, _reelLoading = false, _reelUL = null;
+const _rs = {};   // id -> { loaded, liked, likes, comments } for the other videos
+async function prefetchReelVideos(){
+  if(_reelOthers || _reelLoading) return;
+  _reelLoading = true;
+  try{
+    const snap = await getDocs(query(collection(db,'posts'), where('status','==','published'), orderBy('publishedAt','desc'), limit(40)));
+    _reelOthers = snap.docs.filter(d=>d.id!==artId && d.data().videoUrl).slice(0,25).map(d=>{
+      const x = d.data();
+      return { id:d.id, type:'post', videoUrl:x.videoUrl, thumbnailUrl:x.thumbnailUrl||'', text:x.text||'',
+        author:x.authorName||'MindShift Books User', avatar:x.authorPhoto||'logo.jpg', authorUid:x.authorUid||null,
+        isMindshift:x.authorUid==='official', commentsOff:!!x.commentsOff, hideLikeCount:!!x.hideLikeCount };
+    });
+  }catch(e){ _reelOthers = []; }
+  _reelLoading = false;
+}
+async function loadReelState(id){
+  if(id===artId || (_rs[id] && _rs[id].loaded)) return;
+  const s = _rs[id] = { loaded:true, liked:false, likes:'', comments:'' };
+  const it = (_reelOthers||[]).find(x=>x.id===id);
+  try{
+    if(currentUser && !_reelUL) _reelUL = getDoc(doc(db,'userLikes',currentUser.uid)).catch(()=>null);
+    const [lk, cm, ul] = await Promise.all([
+      getDoc(doc(db,'articleLikes',id)).catch(()=>null),
+      getDoc(doc(db,'postMeta',id)).catch(()=>null),
+      _reelUL
+    ]);
+    const hide = it && it.hideLikeCount && !(currentUser && it.authorUid===currentUser.uid);
+    const lc = lk && lk.exists() ? (lk.data().count||0) : 0;
+    s.likes = hide ? '' : (lc>0 ? lc : '');
+    const cc = cm && cm.exists() ? (cm.data().commentCount||0) : 0;
+    s.comments = cc>0 ? cc : '';
+    s.liked = !!(ul && ul.exists() && ul.data()[id]);
+  }catch(e){}
+}
+async function reelLikeOther(id){
+  if(!currentUser){ openAuth(); return; }
+  const s = _rs[id] || (_rs[id] = { loaded:true, liked:false, likes:'', comments:'' });
+  const it = (_reelOthers||[]).find(x=>x.id===id);
+  const hide = it && it.hideLikeCount && it.authorUid!==currentUser.uid;
+  const was = !!s.liked, prev = s.likes;
+  s.liked = !was;
+  if(!hide) s.likes = Math.max(0, (+s.likes||0) + (was?-1:1)) || '';
+  try{
+    const userRef = doc(db,'userLikes',currentUser.uid), cRef = doc(db,'articleLikes',id);
+    const nowLiked = await runTransaction(db, async (tx)=>{
+      const us = await tx.get(userRef);
+      const already = !!(us.exists() && us.data()[id]);
+      const cs = await tx.get(cRef);
+      const cur = cs.exists() ? (cs.data().count||0) : 0;
+      const next = !already;
+      tx.set(userRef, {[id]:next}, {merge:true});
+      tx.set(cRef, {count:Math.max(0, cur + (next?1:-1))}, {merge:true});
+      return next;
+    });
+    if(nowLiked !== s.liked){ s.liked = nowLiked; }
+    if(nowLiked && it){ try{ notif.notifyArticleLike(it,'post'); }catch(_){} }
+  }catch(e){
+    s.liked = was; s.likes = prev;
+    showToast('Could not update like — try again.');
+  }
+}
+window.openReels = function(){
+  if(!article || !article.videoUrl) return;
+  const cur = { id:artId, type:'post', videoUrl:article.videoUrl, thumbnailUrl:article.thumbnailUrl||'', text:article.text||'',
+    author:article.author, avatar:article.avatar, authorUid:article.authorUid, isMindshift:article.isMindshift, commentsOff:!!article.commentsOff };
+  const goOther = (id)=>{ location.href = `/post-read?id=${id}`; };
+  MSBReels.open(artId, {
+    items: [cur, ...(_reelOthers||[])],
+    getState: id => {
+      if(id===artId){
+        const hide = article.hideLikeCount && !(currentUser && article.authorUid===currentUser.uid);
+        return { liked:isLiked, likes: hide ? '' : (likeCount||''), comments: cCommentCount||'' };
+      }
+      return _rs[id] || {};
+    },
+    onActive: id => {
+      loadReelState(id);
+      const list = [cur, ...(_reelOthers||[])], i = list.findIndex(x=>x.id===id);
+      if(list[i+1]) loadReelState(list[i+1].id);
+    },
+    like: id => { if(id===artId) doLike(); else reelLikeOther(id); },
+    comment: id => {
+      if(id===artId){
+        MSBReels.close();
+        setTimeout(()=>{ const ci=document.getElementById('mainCI'); if(ci){ ci.scrollIntoView({block:'center'}); ci.focus(); } }, 250);
+      } else location.href = `/post-read?id=${id}&comment=1`;
+    },
+    link: id => navigator.clipboard.writeText(`${location.origin}/post-read?id=${id}`).then(()=>showToast('Link copied! 🎉')).catch(()=>showToast('Copy failed')),
+    openPost: id => { if(id===artId) MSBReels.close(); else goOther(id); },
+    author: it => {
+      if(it.id===artId) return goAuthor();
+      location.href = (it.isMindshift || !it.authorUid || it.authorUid==='official') ? '/mindshift-profile' : `/profile?uid=${encodeURIComponent(it.authorUid)}`;
+    }
   });
 };
 window.togglePostVideoPlay = function(){
