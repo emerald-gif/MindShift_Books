@@ -88,6 +88,20 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .pp.add .av svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
 .pp-name{font-size:12px;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--txt)}
 .pp-sub{font-size:10.5px;color:var(--mute);margin-top:-1px}
+.nbar{gap:6px}
+.nsearch{flex:1;display:flex;align-items:center;gap:10px;background:#f1f5f9;border-radius:99px;padding:0 8px 0 14px;height:44px;min-width:0}
+.nsearch > svg{width:20px;height:20px;fill:none;stroke:var(--mute);stroke-width:2.2;stroke-linecap:round;flex-shrink:0}
+.nsearch input{flex:1;min-width:0;border:none;outline:none;background:transparent;font:inherit;font-size:16px;color:var(--txt)}
+.nsearch input::placeholder{color:var(--mute)}
+.nclear{width:28px;height:28px;border-radius:50%;background:#cbd5e1;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.nclear[hidden]{display:none}
+.nclear svg{width:12px;height:12px;fill:none;stroke:#fff;stroke-width:3;stroke-linecap:round}
+.nlabel{padding:16px 18px 6px;font-size:13px;font-weight:700;color:var(--sub);background:#fff;flex-shrink:0}
+.prow{display:flex;align-items:center;gap:14px;width:100%;text-align:left;padding:10px 18px}
+.prow:active{background:#f8fafc}
+.prow .av{width:52px;height:52px;font-size:18px}
+.prow-name{font-size:16px;font-weight:700}
+.prow-sub{font-size:14px;color:var(--mute);margin-top:1px}
 .psq{width:100%;border:1.5px solid var(--border);border-radius:14px;padding:12px 14px;font:inherit;font-size:15px;outline:none;background:#f8fafc;margin:2px 0 8px}
 .psq:focus{border-color:var(--p);background:#fff}
 .pres{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:10px 6px;border-radius:12px}
@@ -156,6 +170,34 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .mact:active{background:#f1f5f9}
 .mact svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
 .mact.danger{color:var(--red)}
+.rxbtn.plus{background:#f1f5f9;color:var(--sub)}
+.rxbtn.plus svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
+.emo{position:fixed;inset:0;z-index:80;display:flex;align-items:flex-end}
+.emo[hidden]{display:none}
+.emo-bg{position:absolute;inset:0;background:rgba(15,23,42,.35)}
+.emo-sheet{position:relative;width:100%;height:58dvh;max-height:520px;background:#fff;border-radius:22px 22px 0 0;display:flex;flex-direction:column;animation:sheetUp .22s ease;padding-bottom:env(safe-area-inset-bottom)}
+.emo-grab{width:38px;height:4px;border-radius:99px;background:#d9dee7;margin:8px auto 4px;flex-shrink:0}
+.emo-search{display:flex;align-items:center;gap:8px;margin:6px 12px 4px;background:#f1f5f9;border-radius:99px;padding:0 14px;height:40px;flex-shrink:0}
+.emo-search svg{width:18px;height:18px;fill:none;stroke:var(--mute);stroke-width:2.2;stroke-linecap:round;flex-shrink:0}
+.emo-search input{flex:1;min-width:0;border:none;outline:none;background:transparent;font:inherit;font-size:15px;color:var(--txt)}
+.emo-label{padding:8px 16px 2px;font-size:12.5px;font-weight:700;color:var(--sub);flex-shrink:0}
+.emo-grid{flex:1;overflow-y:auto;display:grid;grid-template-columns:repeat(8,1fr);align-content:start;padding:2px 8px 8px}
+.emo-grid .eb{font-size:27px;line-height:1;padding:7px 0;border-radius:10px;text-align:center}
+.emo-grid .eb:active{background:#eef2ff}
+.emo-grid .none{grid-column:1/-1;text-align:center;color:var(--mute);font-size:14px;padding:30px 10px}
+.emo-tabs{display:flex;justify-content:space-around;border-top:1px solid var(--border);flex-shrink:0;padding:2px 4px}
+.emo-tabs button{flex:1;padding:9px 0;font-size:20px;line-height:1;border-radius:10px;filter:grayscale(1);opacity:.55}
+.emo-tabs button.on{filter:none;opacity:1;background:#eef2ff}
+.emo-tabs svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.sel{position:fixed;inset:0;z-index:75;display:flex;align-items:flex-end;justify-content:center}
+.sel[hidden]{display:none}
+.sel-bg{position:absolute;inset:0;background:rgba(15,23,42,.38);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.sel-card{position:relative;width:100%;max-width:560px;background:#fff;border-radius:22px 22px 0 0;padding:18px 18px calc(16px + env(safe-area-inset-bottom));animation:sheetUp .22s ease}
+.sel-hint{font-size:12.5px;color:var(--mute);margin-bottom:10px;font-weight:600}
+.sel-text{max-height:45dvh;overflow-y:auto;font-size:16px;line-height:1.5;white-space:pre-wrap;word-break:break-word;-webkit-user-select:text;user-select:text;-webkit-touch-callout:default;background:#f8fafc;border-radius:14px;padding:14px}
+.sel-btns{display:flex;gap:8px;margin-top:14px}
+.sel-btns button{flex:1;padding:12px;border-radius:99px;font-weight:800;font-size:14.5px;background:#f1f5f9}
+.sel-btns button.primary{background:var(--g);color:#fff}
 .msg.flash{animation:flash 1.3s ease}
 @keyframes flash{0%,60%{box-shadow:0 0 0 3px rgba(79,70,229,.35)}100%{box-shadow:0 0 0 3px rgba(79,70,229,0)}}
 .quote{margin:-2px -4px 6px;padding:6px 10px;border-radius:10px;border-left:3px solid var(--p);background:rgba(15,23,42,.06);cursor:pointer;max-width:100%}
@@ -209,6 +251,20 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
   <div class="list" id="list"><div class="skel-row"><div class="skel c"></div><div style="flex:1"><div class="skel" style="height:14px;width:42%;margin-bottom:9px"></div><div class="skel" style="height:12px;width:78%"></div></div></div><div class="skel-row"><div class="skel c"></div><div style="flex:1"><div class="skel" style="height:14px;width:42%;margin-bottom:9px"></div><div class="skel" style="height:12px;width:78%"></div></div></div><div class="skel-row"><div class="skel c"></div><div style="flex:1"><div class="skel" style="height:14px;width:42%;margin-bottom:9px"></div><div class="skel" style="height:12px;width:78%"></div></div></div><div class="skel-row"><div class="skel c"></div><div style="flex:1"><div class="skel" style="height:14px;width:42%;margin-bottom:9px"></div><div class="skel" style="height:12px;width:78%"></div></div></div><div class="skel-row"><div class="skel c"></div><div style="flex:1"><div class="skel" style="height:14px;width:42%;margin-bottom:9px"></div><div class="skel" style="height:12px;width:78%"></div></div></div><div class="skel-row"><div class="skel c"></div><div style="flex:1"><div class="skel" style="height:14px;width:42%;margin-bottom:9px"></div><div class="skel" style="height:12px;width:78%"></div></div></div></div>
 </section>
 
+<!-- ── NEW MESSAGE (full screen) ── -->
+<section class="view" id="newView">
+  <div class="bar nbar">
+    <button class="back" id="newBack" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <div class="nsearch">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input id="newQ" type="text" placeholder="Search…" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" aria-label="Search people"/>
+      <button class="nclear" id="newClear" hidden aria-label="Clear"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+  </div>
+  <div class="nlabel" id="newLabel">Suggested</div>
+  <div class="list" id="newList"></div>
+</section>
+
 <!-- ── MESSAGE REQUESTS ── -->
 <section class="view" id="reqView">
   <div class="bar">
@@ -247,6 +303,24 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 
 <div class="toast" id="toast"></div>
 <div class="mo" id="mo" hidden><div class="mo-bg" id="moBg"></div><div class="mo-body" id="moBody"></div></div>
+<div class="emo" id="emo" hidden>
+  <div class="emo-bg" id="emoBg"></div>
+  <div class="emo-sheet">
+    <div class="emo-grab"></div>
+    <div class="emo-search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="emoQ" type="text" placeholder="Search emoji" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Search emoji"/></div>
+    <div class="emo-label" id="emoLabel"></div>
+    <div class="emo-grid" id="emoGrid"></div>
+    <div class="emo-tabs" id="emoTabs"></div>
+  </div>
+</div>
+<div class="sel" id="sel" hidden>
+  <div class="sel-bg" id="selBg"></div>
+  <div class="sel-card">
+    <div class="sel-hint">Touch and hold the text to select part of it</div>
+    <div class="sel-text" id="selText"></div>
+    <div class="sel-btns"><button id="selClose">Close</button><button class="primary" id="selCopy">Copy</button></div>
+  </div>
+</div>
 <div class="sheet-bg" id="sheetBg" hidden></div>
 <div class="sheet" id="sheet" hidden><div class="sheet-title" id="sheetTitle"></div><div id="sheetBody"></div></div>
 
@@ -311,7 +385,7 @@ function activeLabel(t){
 function clearBadgeCache(){ try{ sessionStorage.removeItem('msb_unread_v1'); }catch(e){} }
 
 /* ───────── views / navigation ───────── */
-function show(view){ $('listView').classList.toggle('on', view==='list'); $('chatView').classList.toggle('on', view==='chat'); $('reqView').classList.toggle('on', view==='req'); }
+function show(view){ $('listView').classList.toggle('on', view==='list'); $('chatView').classList.toggle('on', view==='chat'); $('reqView').classList.toggle('on', view==='req'); $('newView').classList.toggle('on', view==='new'); }
 function leaveMessages(){
   let same = false; try{ same = !!document.referrer && new URL(document.referrer).origin === location.origin; }catch(e){}
   if(history.length > 1 && same){ history.back(); } else { location.href = '/'; }
@@ -321,6 +395,10 @@ function backToList(){
   if(history.state && history.state.chat && !history.state.direct) history.back();
   else { closeChat(); history.replaceState({}, '', '/messages'); showList(); }
 }
+$('newBack').onclick = () => {
+  if(history.state && history.state.new) history.back();
+  else { history.replaceState({}, '', '/messages'); showList(); }
+};
 $('reqBack').onclick = () => {
   if(history.state && history.state.req) history.back();
   else { history.replaceState({}, '', '/messages'); showList(); }
@@ -331,6 +409,7 @@ window.addEventListener('popstate', e => {
   const st = e.state || {};
   if(st.chat) openChat(st.chat, { push:false });
   else if(st.req){ closeChat(); showRequests(false); }
+  else if(st.new){ closeChat(); showNew(false); }
   else { closeChat(); showList(); }
 });
 
@@ -475,7 +554,7 @@ async function fetchOtherExtras(c){
 /* ───────── CHAT ───────── */
 function toMsg(d){
   const x = d.data({ serverTimestamps:'estimate' });
-  return { id:d.id, senderUid:x.senderUid, text:x.text, replyTo:x.replyTo || null, reactions:x.reactions || {}, ts: ms(x.createdAt), raw:x.createdAt, confirmed: !d.metadata.hasPendingWrites };
+  return { id:d.id, senderUid:x.senderUid, text:x.text, replyTo:x.replyTo || null, reactions:x.reactions || {}, edited:!!x.edited, ts: ms(x.createdAt), raw:x.createdAt, confirmed: !d.metadata.hasPendingWrites };
 }
 /* Every one of my messages carries its own status in its time line:  3:07 PM · Sending… / Delivered / Seen
    "Delivered" = saved on our server and in their inbox (a website can't know more than that).
@@ -522,7 +601,7 @@ function renderMsgs(stick){
     const time = m.ts ? new Date(m.ts).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}) : '';
     const q = m.replyTo ? `<div class="quote" data-qid="${esc(m.replyTo.id)}"><div class="q-name">${esc(m.replyTo.senderUid === me.uid ? 'You' : chat.other.name)}</div><div class="q-text">${esc(m.replyTo.text)}</div></div>` : '';
     const rx = rxHtml(m);
-    html += `<div class="msg ${mine?'me':'them'} ${m.pendingLocal && !m.failed && !m.silent && !chat.ack.has(m.id)?'pending':''} ${m.failed?'failed':''} ${rx?'has-rx':''}" data-mid="${esc(m.id)}">${q}${esc(m.text)}<span class="t">${time}${st && !st.err ? ' · ' + esc(st.text) : ''}</span>${rx}</div>`;
+    html += `<div class="msg ${mine?'me':'them'} ${m.pendingLocal && !m.failed && !m.silent && !chat.ack.has(m.id)?'pending':''} ${m.failed?'failed':''} ${rx?'has-rx':''}" data-mid="${esc(m.id)}">${q}${esc(m.text)}<span class="t">${time}${m.edited ? ' · edited' : ''}${st && !st.err ? ' · ' + esc(st.text) : ''}</span>${rx}</div>`;
     if(st && st.err) html += `<div class="stat err" data-retry="${esc(m.id)}">${esc(st.text)}</div>`;
   });
   box.innerHTML = html;
@@ -661,7 +740,7 @@ async function openChat(otherUid, { push = true, reload = false } = {}){
   }
   setTimeout(() => { if(matchMedia('(pointer:fine)').matches) $('input').focus(); }, 50);
 }
-function closeChat(){ detachLive(); chat = null; $('input').value = ''; autosize(); hideReplyBar(); applyBlockUI(); }
+function closeChat(){ detachLive(); if(chat) chat.editing = null; chat = null; $('input').value = ''; autosize(); hideReplyBar(); applyBlockUI(); }
 
 /* ───────── read receipts (unread → 0) ───────── */
 function receiptsOn(){ return settings.readReceipts; }   // off → I don't send "Seen" to anyone
@@ -753,6 +832,8 @@ function jumpTo(id){
 const REACTIONS = ['❤️','😂','😮','😢','😡','👍'];
 const ICON_REPLY = '<svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 016 6v3"/></svg>';
 const ICON_COPY  = '<svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 012-2h9"/></svg>';
+const ICON_EDIT  = '<svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>';
+const ICON_SELECT = '<svg viewBox="0 0 24 24"><path d="M4 7V5a1 1 0 011-1h2M17 4h2a1 1 0 011 1v2M20 17v2a1 1 0 01-1 1h-2M7 20H5a1 1 0 01-1-1v-2M9 12h6"/></svg>';
 const ICON_TRASH = '<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 002 2h6a2 2 0 002-2l1-12M9 7V4h6v3"/></svg>';
 let _moOpenedAt = 0;
 function closeMsgMenu(){ $('mo').hidden = true; $('moBody').innerHTML = ''; }
@@ -772,6 +853,10 @@ function openMsgMenu(el){
       b.onclick = () => { closeMsgMenu(); reactTo(m, e); };
       bar.appendChild(b);
     });
+    const more = document.createElement('button'); more.className = 'rxbtn plus'; more.setAttribute('aria-label', 'More emoji');
+    more.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>';
+    more.onclick = () => openEmojiPicker(m);              // the message stays blurred behind; picking an emoji closes both
+    bar.appendChild(more);
     body.appendChild(bar);
   }
   const clone = el.cloneNode(true);
@@ -790,7 +875,9 @@ function openMsgMenu(el){
     card.appendChild(b);
   };
   if(interactive) add(ICON_REPLY, 'Reply', () => setReply(m));
+  if(interactive && mine && Date.now() - m.ts < EDIT_WINDOW_MS) add(ICON_EDIT, 'Edit', () => startEdit(m));
   add(ICON_COPY, 'Copy', () => copyText(m.text));
+  add(ICON_SELECT, 'Select text', () => openSelectText(m));
   add(ICON_TRASH, 'Delete for you', () => deleteForMe(m), true);
   body.appendChild(card);
   _moOpenedAt = Date.now();
@@ -798,7 +885,7 @@ function openMsgMenu(el){
   try{ navigator.vibrate && navigator.vibrate(12); }catch(_){}
 }
 $('moBody').addEventListener('click', e => { if(e.target === $('moBody') && Date.now() - _moOpenedAt > 350) closeMsgMenu(); });
-document.addEventListener('keydown', e => { if(e.key === 'Escape') closeMsgMenu(); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape'){ if(!$('emo').hidden) closeEmojiPicker(); else if(!$('sel').hidden) closeSelect(); else closeMsgMenu(); } });
 
 async function copyText(t){
   try{ await navigator.clipboard.writeText(t); toast('Copied'); }
@@ -833,6 +920,118 @@ async function deleteForMe(m){
     c.msgs.delete(m.id); saveSilent(c); renderMsgs(false); toast('Message deleted');
   }
 }
+/* ───────── edit a message you sent (for 15 minutes, like Instagram) ─────────
+   The text goes back into the box; sending saves the change and the message shows "edited".
+   (The other person's inbox preview keeps the old text until the next message.) */
+const EDIT_WINDOW_MS = 15 * 60 * 1000;
+function startEdit(m){
+  if(!chat) return;
+  clearReply();
+  chat.editing = { id:m.id, original:m.text };
+  $('rbName').textContent = 'Editing message';
+  $('rbText').textContent = m.text.slice(0, 140);
+  $('replyBar').hidden = false;
+  input.value = m.text; autosize(); input.focus();
+  try{ input.setSelectionRange(input.value.length, input.value.length); }catch(_){}
+}
+function clearEdit(){
+  if(!chat || !chat.editing) return false;
+  chat.editing = null; input.value = ''; autosize(); hideReplyBar();
+  return true;
+}
+async function saveEdit(){
+  const c = chat, ed = c && c.editing; if(!ed) return;
+  const text = input.value.trim().slice(0, 2000);
+  if(!text){ toast('A message can’t be empty'); return; }
+  if(text === ed.original){ clearEdit(); return; }
+  const m = c.msgs.get(ed.id);
+  if(!m){ clearEdit(); return; }
+  const before = { text:m.text, edited:m.edited };
+  m.text = text; m.edited = true;
+  const isLatest = ![...c.msgs.values()].some(x => x.ts > m.ts);
+  clearEdit(); renderMsgs(false);
+  try{
+    await updateDoc(doc(db,'conversations',c.cid,'messages',m.id), { text, edited:true, editedAt:serverTimestamp() });
+    if(isLatest) updateDoc(myRow(c.other.uid), { lastText:text.slice(0, 120) }).catch(() => {});
+  }catch(e){
+    m.text = before.text; m.edited = before.edited;
+    if(chat === c) renderMsgs(false);
+    toast('Couldn’t edit — a message can only be edited for 15 minutes');
+  }
+}
+$('rbX').onclick = () => { if(!clearEdit()) clearReply(); };
+
+/* ───────── select text ───────── */
+function openSelectText(m){
+  $('selText').textContent = m.text;
+  $('sel').hidden = false;
+  try{ const r = document.createRange(); r.selectNodeContents($('selText')); const sl = getSelection(); sl.removeAllRanges(); sl.addRange(r); }catch(_){}
+}
+function closeSelect(){ $('sel').hidden = true; try{ getSelection().removeAllRanges(); }catch(_){} }
+$('selBg').onclick = closeSelect; $('selClose').onclick = closeSelect;
+$('selCopy').onclick = () => {
+  let t = ''; try{ t = String(getSelection()); }catch(_){}
+  copyText(t.trim() || $('selText').textContent);
+  closeSelect();
+};
+
+/* ───────── emoji picker (the "+" in the reaction bar) — Gboard-style ───────── */
+const RECENT_KEY = 'msb_emoji_recent_v1';
+let _emojiData = null, emoTarget = null, emoTab = 'smileys';
+async function loadEmojiData(){
+  if(_emojiData) return _emojiData;
+  const mod = await import('/emoji-data.js?v=1');
+  _emojiData = mod.EMOJI;
+  return _emojiData;
+}
+const getRecents = () => { try{ return JSON.parse(localStorage.getItem(RECENT_KEY)) || []; }catch(e){ return []; } };
+function addRecent(e){
+  try{ const r = getRecents().filter(x => x !== e); r.unshift(e); localStorage.setItem(RECENT_KEY, JSON.stringify(r.slice(0, 32))); }catch(_){}
+}
+function closeEmojiPicker(){ $('emo').hidden = true; }
+function drawEmojiGrid(items, label){
+  $('emoLabel').textContent = label || '';
+  $('emoGrid').innerHTML = items.length ? items.map(e => `<button class="eb" data-e="${esc(e)}">${esc(e)}</button>`).join('') : '<div class="none">No emoji found</div>';
+  $('emoGrid').scrollTop = 0;
+}
+function selectEmojiTab(id){
+  emoTab = id;
+  [...$('emoTabs').children].forEach(b => b.classList.toggle('on', b.dataset.cat === id));
+  if(id === 'recent'){ drawEmojiGrid(getRecents(), 'Recent'); return; }
+  const c = _emojiData.find(x => x.id === id);
+  drawEmojiGrid(c.items.map(i => i[0]), c.label);
+}
+async function openEmojiPicker(m){
+  try{ await loadEmojiData(); }catch(e){ toast('Couldn’t load emoji — check your connection'); return; }
+  emoTarget = m;
+  const hasRecent = getRecents().length > 0;
+  $('emoTabs').innerHTML = (hasRecent ? '<button data-cat="recent" aria-label="Recent"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></button>' : '')
+    + _emojiData.map(c => `<button data-cat="${c.id}" aria-label="${esc(c.label)}">${c.icon}</button>`).join('');
+  $('emoQ').value = '';
+  selectEmojiTab(hasRecent ? 'recent' : 'smileys');                    // recently used comes first, like Gboard
+  $('emo').hidden = false;
+}
+$('emoTabs').addEventListener('click', e => { const b = e.target.closest('button'); if(b){ $('emoQ').value = ''; selectEmojiTab(b.dataset.cat); } });
+$('emoGrid').addEventListener('click', e => {
+  const b = e.target.closest('.eb'); if(!b || !emoTarget) return;
+  const emoji = b.dataset.e, m = emoTarget;
+  addRecent(emoji); closeEmojiPicker(); closeMsgMenu(); reactTo(m, emoji);
+});
+$('emoBg').onclick = closeEmojiPicker;
+let _emoTimer = null;
+$('emoQ').addEventListener('input', () => {
+  clearTimeout(_emoTimer);
+  _emoTimer = setTimeout(() => {
+    const q = $('emoQ').value.trim().toLowerCase();
+    if(!q){ selectEmojiTab(emoTab); return; }
+    const hits = [];
+    _emojiData.forEach(c => c.items.forEach(i => { if(hits.length < 160 && (i[1].includes(q) || i[0] === q)) hits.push(i[0]); }));
+    drawEmojiGrid(hits, hits.length ? 'Results' : '');
+  }, 120);
+});
+// fetch the emoji list quietly once the page is idle, so the picker opens instantly
+(window.requestIdleCallback || (f => setTimeout(f, 4000)))(() => { loadEmojiData().catch(() => {}); });
+
 // long-press (or right-click) a bubble
 (function enableLongPress(){
   const box = $('msgs');
@@ -857,6 +1056,7 @@ input.addEventListener('keydown', e => {
 });
 sendBtn.onclick = () => send();
 async function send(retryItem){
+  if(chat && chat.editing){ saveEdit(); return; }                // editing a message → save instead of sending a new one
   if(retryItem && !retryItem.pendingLocal) retryItem = undefined;   // only a real failed message counts as a retry (never a click event)
   if(!chat || !me) return;
   if(!dbReady){ toast('Connecting… try again in a second'); return; }
@@ -1292,7 +1492,7 @@ function renderPeople(){
 }
 $('people').addEventListener('click', e => {
   const b = e.target.closest('.pp'); if(!b) return;
-  if(b.dataset.add){ openPeopleSearch(); return; }
+  if(b.dataset.add){ showNew(true); return; }
   const uid = b.dataset.uid;
   if(b.dataset.mode === 'suggest') location.href = `/profile?uid=${encodeURIComponent(uid)}`;     // not following them yet → see who they are first
   else openChat(uid, { push:true });
@@ -1313,7 +1513,7 @@ async function loadPeople(){
   let cache = null;
   try{ cache = JSON.parse(localStorage.getItem(PEOPLE_KEY(me.uid))); }catch(e){}
   const listFresh = cache && cache.people && Date.now() - cache.t < 30 * 60000;
-  if(cache && cache.people){ people = cache.people; peopleMode = cache.mode || 'follow'; followingIds = new Set(cache.following || []); peopleAct = cache.act || {}; peopleState = 'ready'; renderPeople(); }
+  if(cache && cache.people){ people = cache.people; peopleMode = cache.mode || 'follow'; followingIds = new Set(cache.following || []); peopleAct = cache.act || {}; peopleState = 'ready'; renderPeople(); refreshNewList(); }
   else { peopleState = 'loading'; renderPeople(); }
   try{
     let t = cache && cache.t, actT = cache && cache.actT;
@@ -1344,42 +1544,73 @@ async function loadPeople(){
     }
     peopleState = 'ready';
     savePeopleCache({ t:t || Date.now(), actT:actT || 0 });
-    renderPeople();
+    renderPeople(); refreshNewList();
   }catch(e){ peopleState = 'ready'; renderPeople(); }
 }
 
-/* "+" → find anyone by name or @username and start a chat (≤ about 15 reads per search, debounced) */
-function openPeopleSearch(){
-  $('sheetTitle').textContent = 'New message'; $('sheetTitle').style.display = '';
-  const body = $('sheetBody');
-  body.innerHTML = '<input class="psq" id="psq" placeholder="Search by name or @username" autocomplete="off"><div id="psr"><div class="pnote">Type at least 2 letters</div></div>';
-  const cancel = document.createElement('button'); cancel.className = 'sheet-item cancel'; cancel.textContent = 'Cancel'; cancel.onclick = closeSheet; body.appendChild(cancel);
-  $('sheetBg').onclick = closeSheet; $('sheetBg').hidden = false; $('sheet').hidden = false;
-  const inp = $('psq'); let timer = null, seq = 0;
-  setTimeout(() => inp.focus(), 80);
-  inp.addEventListener('input', () => {
-    clearTimeout(timer);
-    const q = inp.value.trim().replace(/^@/, '');
-    if(q.length < 2){ $('psr').innerHTML = '<div class="pnote">Type at least 2 letters</div>'; return; }
-    timer = setTimeout(async () => {
-      const mySeq = ++seq;
-      const title = q.replace(/\b\w/g, c => c.toUpperCase());
-      const range = (field, v) => getDocs(query(collection(db,'users'), where(field,'>=',v), where(field,'<=',v + '\uf8ff'), limit(5))).catch(() => null);
-      const [u1, n1, n2] = await Promise.all([range('username', q.toLowerCase()), range('name', q), title !== q ? range('name', title) : Promise.resolve(null)]);
-      if(mySeq !== seq) return;
-      const seen = new Map();
-      [u1, n1, n2].forEach(sn => sn && sn.docs.forEach(d => { if(d.id !== me.uid && !blockedSet.has(d.id) && !seen.has(d.id)) seen.set(d.id, { uid:d.id, ...d.data() }); }));
-      const res = [...seen.values()].slice(0, 8);
-      $('psr').innerHTML = res.length ? res.map(u => `<button class="pres" data-uid="${esc(u.uid)}"><div class="av">${avatarHtml(u.name, u.photo)}</div><div><div class="pres-name">${esc(u.name || 'User')}</div><div class="pres-sub">${u.username ? '@' + esc(u.username) : esc(u.jobTitle || '')}</div></div></button>`).join('')
-                                  : '<div class="pnote">No one found</div>';
-      $('psr').querySelectorAll('.pres').forEach(b => b.onclick = () => {
-        const u = seen.get(b.dataset.uid); closeSheet();
-        if(u && !people.some(p => p.uid === u.uid)) people.push({ uid:u.uid, name:u.name || '', photo:u.photo || '', jobTitle:u.jobTitle || '' });
-        openChat(b.dataset.uid, { push:true });
-      });
-    }, 400);
+/* "+ New" → a full screen: search at the top, people below.
+   Empty search = people you chat with and follow. Typing (2+ letters) searches everyone by name or @username
+   (≈15 reads per search, debounced). Tapping someone opens the chat. */
+let _newSeq = 0, _newTimer = null;
+function newRow(u){
+  return `<button class="prow" data-uid="${esc(u.uid)}"><div class="av">${avatarHtml(u.name, u.photo)}</div>
+    <div><div class="prow-name">${esc(u.name || 'User')}</div>${(u.username || u.jobTitle) ? `<div class="prow-sub">${u.username ? '@' + esc(u.username) : esc(u.jobTitle)}</div>` : ''}</div></button>`;
+}
+function renderNewList(results){
+  const list = $('newList');
+  let rows, label;
+  if(results === null){
+    // suggestions: existing chats first, then people I follow
+    const seen = new Set([me.uid]), out = [];
+    const take = u => { if(u.uid && !seen.has(u.uid) && !blockedSet.has(u.uid) && u.name){ seen.add(u.uid); out.push(u); } };
+    threads.forEach(t => { const pp = people.find(x => x.uid === t.otherUid) || {}; take({ uid:t.otherUid, name:t.name, photo:t.photo, username:pp.username, jobTitle:pp.jobTitle }); });
+    people.forEach(take);
+    rows = out.slice(0, 30);
+    label = rows.length ? 'Suggested' : '';
+    list.innerHTML = rows.length ? rows.map(newRow).join('') : '<div class="pnote">Search by name or @username to start a chat.</div>';
+  } else if(results === 'loading'){
+    label = 'Searching…';
+    list.innerHTML = '';
+  } else {
+    rows = results; label = rows.length ? 'People' : '';
+    list.innerHTML = rows.length ? rows.map(newRow).join('') : '<div class="pnote">No one found for that search.</div>';
+  }
+  $('newLabel').textContent = label; $('newLabel').style.display = label ? '' : 'none';
+  list.querySelectorAll('.prow').forEach(b => b.onclick = () => {
+    const u = (rows || []).find(x => x.uid === b.dataset.uid);
+    if(u && !people.some(p => p.uid === u.uid)) people.push({ uid:u.uid, name:u.name || '', photo:u.photo || '', jobTitle:u.jobTitle || '', username:u.username || '' });
+    history.replaceState({}, '', '/messages');           // so Back from the chat returns to the inbox, not to this search
+    openChat(b.dataset.uid, { push:true });
   });
 }
+function refreshNewList(){ if($('newView').classList.contains('on') && !$('newQ').value.trim()) renderNewList(null); }
+function showNew(push){
+  show('new');
+  document.title = 'New message | MindShift Books';
+  if(push) history.pushState({ new:true }, '', '/messages?new=1');
+  $('newQ').value = ''; $('newClear').hidden = true;
+  renderNewList(null);
+  setTimeout(() => $('newQ').focus(), 60);
+}
+$('newClear').onclick = () => { $('newQ').value = ''; $('newClear').hidden = true; ++_newSeq; renderNewList(null); $('newQ').focus(); };
+$('newQ').addEventListener('input', () => {
+  clearTimeout(_newTimer);
+  const raw = $('newQ').value;
+  $('newClear').hidden = !raw;
+  const q = raw.trim().replace(/^@/, '');
+  if(q.length < 2){ ++_newSeq; renderNewList(null); return; }
+  _newTimer = setTimeout(async () => {
+    const mySeq = ++_newSeq;
+    renderNewList('loading');
+    const title = q.replace(/\b\w/g, c => c.toUpperCase());
+    const range = (field, v) => getDocs(query(collection(db,'users'), where(field,'>=',v), where(field,'<=',v + '\uf8ff'), limit(6))).catch(() => null);
+    const [u1, n1, n2] = await Promise.all([range('username', q.toLowerCase()), range('name', q), title !== q ? range('name', title) : Promise.resolve(null)]);
+    if(mySeq !== _newSeq) return;
+    const seen = new Map();
+    [u1, n1, n2].forEach(sn => sn && sn.docs.forEach(d => { if(d.id !== me.uid && !blockedSet.has(d.id) && !seen.has(d.id)) seen.set(d.id, { uid:d.id, ...d.data() }); }));
+    renderNewList([...seen.values()].slice(0, 20));
+  }, 350);
+});
 
 /* ───────── instant open: paint from saved copies, then load the SDK and refresh ─────────
    The inbox and the last 30 messages of recent chats are remembered on this device (per account), so the page
@@ -1407,7 +1638,7 @@ function saveChatCacheSoon(){
   _cacheTimers.c = setTimeout(() => {
     try{
       const msgs = [...c.msgs.values()].filter(m => m.ts && m.confirmed).sort((a,b) => a.ts - b.ts).slice(-PAGE)
-        .map(m => ({ id:m.id, senderUid:m.senderUid, text:m.text, replyTo:m.replyTo || null, reactions:m.reactions || {}, ts:m.ts }));
+        .map(m => ({ id:m.id, senderUid:m.senderUid, text:m.text, replyTo:m.replyTo || null, reactions:m.reactions || {}, edited:!!m.edited, ts:m.ts }));
       localStorage.setItem(CHAT_KEY(c.cid), JSON.stringify({ msgs, hasMore:c.hasMore, t:Date.now() }));
       const idx = JSON.parse(localStorage.getItem('msb_chat_idx') || '[]').filter(x => x !== c.cid); idx.push(c.cid);
       while(idx.length > 8) localStorage.removeItem(CHAT_KEY(idx.shift()));      // keep only the 8 most recent chats
@@ -1486,6 +1717,7 @@ onAuthStateChanged(auth, async user => {
   loadSettings().finally(loadPeople);   // my switches first (they decide whether presence is even fetched), then the circles at the top
   const withUid = new URLSearchParams(location.search).get('with');
   if(withUid) openChat(withUid, { push:false });
+  else if(new URLSearchParams(location.search).get('new')){ history.replaceState({ new:true }, '', '/messages?new=1'); startInbox(); showNew(false); }
   else if(new URLSearchParams(location.search).get('requests')){ history.replaceState({ req:true }, '', '/messages?requests=1'); startInbox(); showRequests(false); }
   else showList();
   if($('listView').classList.contains('on')) startInbox();             // e.g. they tapped back before we finished loading
