@@ -134,7 +134,28 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .older{align-self:center;margin:2px 0 10px;padding:7px 16px;border-radius:99px;background:#fff;border:1px solid var(--border);font-size:12.5px;font-weight:600;color:var(--sub)}
 .day{align-self:center;margin:12px 0 6px;padding:3px 12px;border-radius:99px;background:#e9edf5;color:var(--sub);font-size:11.5px;font-weight:600}
 .msg{max-width:78%;padding:9px 13px 7px;border-radius:18px;font-size:15px;line-height:1.4;white-space:pre-wrap;word-break:break-word;position:relative}
-.msg{touch-action:pan-y;transition:transform .18s}
+.msg{touch-action:pan-y;transition:transform .18s;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.msg.has-rx{margin-bottom:14px}
+.rx{position:absolute;bottom:-13px;right:10px;background:#fff;border:1px solid var(--border);border-radius:99px;padding:1px 7px;font-size:13px;line-height:1.5;box-shadow:0 1px 4px rgba(15,23,42,.12);color:var(--txt)}
+.rx i{font-style:normal;font-size:11.5px;font-weight:700;color:var(--sub)}
+.mo{position:fixed;inset:0;z-index:70;display:flex}
+.mo[hidden]{display:none}
+.mo-bg{position:absolute;inset:0;background:rgba(15,23,42,.38);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.mo-body{position:relative;display:flex;flex-direction:column;gap:12px;width:100%;padding:calc(20px + env(safe-area-inset-top)) 16px calc(20px + env(safe-area-inset-bottom));justify-content:center;overflow-y:auto;animation:moIn .18s ease}
+@keyframes moIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
+.mo-body.me{align-items:flex-end}
+.mo-body.them{align-items:flex-start}
+.rxbar{display:flex;gap:2px;background:#fff;border-radius:99px;padding:6px 10px;box-shadow:0 8px 30px rgba(15,23,42,.2)}
+.rxbtn{font-size:27px;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:transform .12s}
+.rxbtn:active{transform:scale(1.28)}
+.rxbtn.mine{background:#eef2ff}
+.mo-msg{max-width:84%;margin:0;transform:none;box-shadow:0 6px 24px rgba(15,23,42,.18)}
+.macts{background:#fff;border-radius:20px;min-width:236px;padding:4px 0 6px;box-shadow:0 8px 30px rgba(15,23,42,.2);overflow:hidden}
+.macts-t{font-size:11.5px;color:var(--mute);font-weight:700;letter-spacing:.04em;padding:12px 18px 6px}
+.mact{display:flex;align-items:center;gap:14px;width:100%;padding:13px 18px;font-size:16px;font-weight:600;text-align:left}
+.mact:active{background:#f1f5f9}
+.mact svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.mact.danger{color:var(--red)}
 .msg.flash{animation:flash 1.3s ease}
 @keyframes flash{0%,60%{box-shadow:0 0 0 3px rgba(79,70,229,.35)}100%{box-shadow:0 0 0 3px rgba(79,70,229,0)}}
 .quote{margin:-2px -4px 6px;padding:6px 10px;border-radius:10px;border-left:3px solid var(--p);background:rgba(15,23,42,.06);cursor:pointer;max-width:100%}
@@ -225,6 +246,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 </section>
 
 <div class="toast" id="toast"></div>
+<div class="mo" id="mo" hidden><div class="mo-bg" id="moBg"></div><div class="mo-body" id="moBody"></div></div>
 <div class="sheet-bg" id="sheetBg" hidden></div>
 <div class="sheet" id="sheet" hidden><div class="sheet-title" id="sheetTitle"></div><div id="sheetBody"></div></div>
 
@@ -453,7 +475,7 @@ async function fetchOtherExtras(c){
 /* ───────── CHAT ───────── */
 function toMsg(d){
   const x = d.data({ serverTimestamps:'estimate' });
-  return { id:d.id, senderUid:x.senderUid, text:x.text, replyTo:x.replyTo || null, ts: ms(x.createdAt), raw:x.createdAt, confirmed: !d.metadata.hasPendingWrites };
+  return { id:d.id, senderUid:x.senderUid, text:x.text, replyTo:x.replyTo || null, reactions:x.reactions || {}, ts: ms(x.createdAt), raw:x.createdAt, confirmed: !d.metadata.hasPendingWrites };
 }
 /* Every one of my messages carries its own status in its time line:  3:07 PM · Sending… / Delivered / Seen
    "Delivered" = saved on our server and in their inbox (a website can't know more than that).
@@ -468,11 +490,21 @@ function statusFor(m){
   if(seen && m.ts && seen >= m.ts) return { text:'Seen' };
   return { text: acked ? 'Delivered' : 'Sending…' };
 }
+// reaction pill on a bubble: the emojis people used, plus a count when there's more than one
+function rxHtml(m){
+  const r = m.reactions; if(!r) return '';
+  const counts = {}; Object.values(r).forEach(e => { if(typeof e === 'string' && e) counts[e] = (counts[e] || 0) + 1; });
+  const keys = Object.keys(counts); if(!keys.length) return '';
+  const total = keys.reduce((n, k) => n + counts[k], 0);
+  return `<span class="rx">${keys.slice(0, 3).map(esc).join('')}${total > 1 ? ` <i>${total}</i>` : ''}</span>`;
+}
 function renderMsgs(stick){
   const box = $('msgs'); if(!chat) return;
   const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 140;
   const prevH = box.scrollHeight, prevTop = box.scrollTop;
-  const items = [...chat.msgs.values(), ...chat.pending.filter(p => !chat.msgs.has(p.id))].sort((a,b) => (a.ts||Infinity) - (b.ts||Infinity));
+  chat.hiddenLocal = chat.hiddenLocal || new Set();
+  const hidden = new Set([...((chat.row && chat.row.hiddenMsgs) || (chat.rowInfo && chat.rowInfo.hiddenMsgs) || []), ...chat.hiddenLocal]);   // "Delete for you"
+  const items = [...chat.msgs.values(), ...chat.pending.filter(p => !chat.msgs.has(p.id))].filter(m => !hidden.has(m.id)).sort((a,b) => (a.ts||Infinity) - (b.ts||Infinity));
   let html = chat.hasMore ? `<button class="older" id="olderBtn">Load earlier messages</button>` : `
     <div class="intro">
       <div class="av">${avatarHtml(chat.other.name, chat.other.photo)}</div>
@@ -489,7 +521,8 @@ function renderMsgs(stick){
     const st = mine ? statusFor(m) : null;
     const time = m.ts ? new Date(m.ts).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}) : '';
     const q = m.replyTo ? `<div class="quote" data-qid="${esc(m.replyTo.id)}"><div class="q-name">${esc(m.replyTo.senderUid === me.uid ? 'You' : chat.other.name)}</div><div class="q-text">${esc(m.replyTo.text)}</div></div>` : '';
-    html += `<div class="msg ${mine?'me':'them'} ${m.pendingLocal && !m.failed && !m.silent && !chat.ack.has(m.id)?'pending':''} ${m.failed?'failed':''}" data-mid="${esc(m.id)}">${q}${esc(m.text)}<span class="t">${time}${st && !st.err ? ' · ' + esc(st.text) : ''}</span></div>`;
+    const rx = rxHtml(m);
+    html += `<div class="msg ${mine?'me':'them'} ${m.pendingLocal && !m.failed && !m.silent && !chat.ack.has(m.id)?'pending':''} ${m.failed?'failed':''} ${rx?'has-rx':''}" data-mid="${esc(m.id)}">${q}${esc(m.text)}<span class="t">${time}${st && !st.err ? ' · ' + esc(st.text) : ''}</span>${rx}</div>`;
     if(st && st.err) html += `<div class="stat err" data-retry="${esc(m.id)}">${esc(st.text)}</div>`;
   });
   box.innerHTML = html;
@@ -523,13 +556,19 @@ async function loadOlder(){
 function attachLive(){
   if(!chat) return;
   detachLive();
-  // Only messages newer than what's already on screen — so re-attaching never re-reads old ones.
-  const q = chat.lastTs ? mq(orderBy('createdAt','asc'), startAfter(chat.lastTs)) : mq(orderBy('createdAt','asc'));
+  // Listen to the newest few messages: new ones arrive and reactions on recent ones update live.
+  // (Older messages are loaded once when the chat opens.) About 12 reads to start, then 1 per change.
+  const q = mq(orderBy('createdAt','desc'), limit(12));
   const cid = chat.cid;
   chat.unsubLive = onSnapshot(q, { includeMetadataChanges:true }, snap => {
     if(!chat || chat.cid !== cid) return;
     snap.docChanges({ includeMetadataChanges:true }).forEach(ch => {
-      if(ch.type === 'removed'){ chat.msgs.delete(ch.doc.id); return; }
+      if(ch.type === 'removed'){
+        // only a rejected local write ever disappears; a saved message can just slide out of this 12-message window
+        const cur = chat.msgs.get(ch.doc.id);
+        if(cur && !cur.confirmed) chat.msgs.delete(ch.doc.id);
+        return;
+      }
       const m = toMsg(ch.doc);
       chat.msgs.set(m.id, m);
       if(m.raw && (!chat.lastTs || m.raw.toMillis() > chat.lastTs.toMillis()) && !ch.doc.metadata.hasPendingWrites) chat.lastTs = m.raw;
@@ -708,6 +747,105 @@ function jumpTo(id){
     const el = e.target.closest('.msg'); if(!el || e.target.closest('.quote')) return;
     const m = msgOf(el.dataset.mid); if(m) setReply(m);
   });
+})();
+
+/* ───────── hold a message: reactions + Reply / Copy / Delete for you (background blurs) ───────── */
+const REACTIONS = ['❤️','😂','😮','😢','😡','👍'];
+const ICON_REPLY = '<svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 016 6v3"/></svg>';
+const ICON_COPY  = '<svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 012-2h9"/></svg>';
+const ICON_TRASH = '<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 002 2h6a2 2 0 002-2l1-12M9 7V4h6v3"/></svg>';
+let _moOpenedAt = 0;
+function closeMsgMenu(){ $('mo').hidden = true; $('moBody').innerHTML = ''; }
+function msgById(id){ return chat && (chat.msgs.get(id) || chat.pending.find(p => p.id === id)); }
+function openMsgMenu(el){
+  if(!chat || !$('mo').hidden) return;
+  const m = msgById(el.dataset.mid); if(!m) return;
+  const mine = m.senderUid === me.uid;
+  const saved = !!(m.confirmed && !m.pendingLocal);                 // exists on the server
+  const interactive = saved && !chat.blocked && !chat.isRequest;    // react / reply only on saved messages, never inside a request
+  const body = $('moBody'); body.className = 'mo-body ' + (mine ? 'me' : 'them'); body.innerHTML = '';
+  if(interactive){
+    const bar = document.createElement('div'); bar.className = 'rxbar';
+    const mineR = (m.reactions || {})[me.uid];
+    REACTIONS.forEach(e => {
+      const b = document.createElement('button'); b.className = 'rxbtn' + (mineR === e ? ' mine' : ''); b.textContent = e;
+      b.onclick = () => { closeMsgMenu(); reactTo(m, e); };
+      bar.appendChild(b);
+    });
+    body.appendChild(bar);
+  }
+  const clone = el.cloneNode(true);
+  clone.classList.add('mo-msg'); clone.style.transform = '';
+  clone.querySelectorAll('.swipe-ic,.rx').forEach(n => n.remove());
+  body.appendChild(clone);
+  const card = document.createElement('div'); card.className = 'macts';
+  if(m.ts){
+    const d = new Date(m.ts);
+    card.insertAdjacentHTML('beforeend', `<div class="macts-t">${esc(d.toLocaleDateString([], { day:'numeric', month:'short' }).toUpperCase())} AT ${esc(d.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' }))}</div>`);
+  }
+  const add = (icon, label, run, danger) => {
+    const b = document.createElement('button'); b.className = 'mact' + (danger ? ' danger' : '');
+    b.innerHTML = icon + `<span>${label}</span>`;
+    b.onclick = () => { closeMsgMenu(); run(); };
+    card.appendChild(b);
+  };
+  if(interactive) add(ICON_REPLY, 'Reply', () => setReply(m));
+  add(ICON_COPY, 'Copy', () => copyText(m.text));
+  add(ICON_TRASH, 'Delete for you', () => deleteForMe(m), true);
+  body.appendChild(card);
+  _moOpenedAt = Date.now();
+  $('mo').hidden = false;
+  try{ navigator.vibrate && navigator.vibrate(12); }catch(_){}
+}
+$('moBody').addEventListener('click', e => { if(e.target === $('moBody') && Date.now() - _moOpenedAt > 350) closeMsgMenu(); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape') closeMsgMenu(); });
+
+async function copyText(t){
+  try{ await navigator.clipboard.writeText(t); toast('Copied'); }
+  catch(e){
+    const ta = document.createElement('textarea'); ta.value = t; ta.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); toast('Copied'); }catch(_){ toast('Couldn’t copy'); }
+    ta.remove();
+  }
+}
+// react: tap an emoji to add it, tap the same one again to take it back (1 write each)
+async function reactTo(m, emoji){
+  if(!dbReady || !chat) return;
+  const c = chat, msgRef = doc(db,'conversations',c.cid,'messages',m.id);
+  const remove = (m.reactions || {})[me.uid] === emoji;
+  const prev = { ...(m.reactions || {}) }, next = { ...prev };
+  if(remove) delete next[me.uid]; else next[me.uid] = emoji;
+  m.reactions = next; renderMsgs(false);                                // instant
+  try{ await updateDoc(msgRef, { ['reactions.' + me.uid]: remove ? deleteField() : emoji }); }
+  catch(e){ m.reactions = prev; if(chat === c) renderMsgs(false); toast('Couldn’t add that reaction'); }
+}
+// "Delete for you": hidden for me only (remembered on my inbox row); the other person still sees it
+async function deleteForMe(m){
+  if(!chat) return;
+  const c = chat;
+  if(m.confirmed && !m.pendingLocal){
+    c.hiddenLocal = c.hiddenLocal || new Set(); c.hiddenLocal.add(m.id); renderMsgs(false);
+    try{ await updateDoc(myRow(c.other.uid), { hiddenMsgs: arrayUnion(m.id) }); toast('Message deleted for you'); }
+    catch(e){ c.hiddenLocal.delete(m.id); if(chat === c) renderMsgs(false); toast('Couldn’t delete this message'); }
+  } else {                                                               // not saved anywhere yet (sending / failed / silent) — just drop it here
+    const i = c.pending.findIndex(p => p.id === m.id); if(i > -1) c.pending.splice(i, 1);
+    c.msgs.delete(m.id); saveSilent(c); renderMsgs(false); toast('Message deleted');
+  }
+}
+// long-press (or right-click) a bubble
+(function enableLongPress(){
+  const box = $('msgs');
+  let timer = null, sx = 0, sy = 0, target = null;
+  const cancel = () => { clearTimeout(timer); timer = null; };
+  box.addEventListener('pointerdown', e => {
+    const el = e.target.closest('.msg'); if(!el || e.target.closest('.quote')) return;
+    target = el; sx = e.clientX; sy = e.clientY; cancel();
+    timer = setTimeout(() => { timer = null; if(target) openMsgMenu(target); }, 380);
+  });
+  box.addEventListener('pointermove', e => { if(timer && (Math.abs(e.clientX - sx) > 8 || Math.abs(e.clientY - sy) > 8)) cancel(); });
+  ['pointerup','pointercancel','pointerleave'].forEach(ev => box.addEventListener(ev, cancel));
+  box.addEventListener('contextmenu', e => { const el = e.target.closest('.msg'); if(el){ e.preventDefault(); cancel(); openMsgMenu(el); } });
 })();
 
 /* ───────── composer ───────── */
@@ -1258,7 +1396,7 @@ function saveInboxCache(){
       localStorage.setItem(INBOX_KEY(me.uid), JSON.stringify(threads.map(t => ({
         otherUid:t.otherUid, name:t.name, photo:t.photo, lastText:t.lastText, lastAt:ms(t.lastAt),
         lastSender:t.lastSender, unread:t.unread || 0, seenAt:ms(t.seenAt),
-        pinned:!!t.pinned, pinnedAt:ms(t.pinnedAt), clearedAt:ms(t.clearedAt), deleted:!!t.deleted, accepted:!!t.accepted }))));
+        pinned:!!t.pinned, pinnedAt:ms(t.pinnedAt), clearedAt:ms(t.clearedAt), deleted:!!t.deleted, accepted:!!t.accepted, hiddenMsgs:t.hiddenMsgs || [] }))));
     }catch(e){}
   }, 400);
 }
@@ -1269,7 +1407,7 @@ function saveChatCacheSoon(){
   _cacheTimers.c = setTimeout(() => {
     try{
       const msgs = [...c.msgs.values()].filter(m => m.ts && m.confirmed).sort((a,b) => a.ts - b.ts).slice(-PAGE)
-        .map(m => ({ id:m.id, senderUid:m.senderUid, text:m.text, replyTo:m.replyTo || null, ts:m.ts }));
+        .map(m => ({ id:m.id, senderUid:m.senderUid, text:m.text, replyTo:m.replyTo || null, reactions:m.reactions || {}, ts:m.ts }));
       localStorage.setItem(CHAT_KEY(c.cid), JSON.stringify({ msgs, hasMore:c.hasMore, t:Date.now() }));
       const idx = JSON.parse(localStorage.getItem('msb_chat_idx') || '[]').filter(x => x !== c.cid); idx.push(c.cid);
       while(idx.length > 8) localStorage.removeItem(CHAT_KEY(idx.shift()));      // keep only the 8 most recent chats
@@ -1324,7 +1462,7 @@ const [{ initializeApp }, { getAuth, onAuthStateChanged }, fsdk] = await Promise
   import(FB + 'firebase-app.js'), import(FB + 'firebase-auth.js'), import(FB + 'firebase-firestore.js')
 ]);
 const { getFirestore, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, collection, query, where, orderBy, limit, startAfter,
-        onSnapshot, writeBatch, serverTimestamp, increment, documentId } = fsdk;
+        onSnapshot, writeBatch, serverTimestamp, increment, documentId, deleteField, arrayUnion } = fsdk;
 const app  = initializeApp({
   apiKey:"AIzaSyDTn70s1_uIiSOR6lPLY_nKh8Ff1FViFCs",
   authDomain:"mindshiftbooks-c4451.firebaseapp.com",
