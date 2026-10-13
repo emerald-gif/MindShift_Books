@@ -22,6 +22,7 @@
 <meta name="twitter:title" content="MindShift Books" />
 <meta name="twitter:description" content="Discover articles, ideas, insights, and stories on mindset, money, productivity, relationships, wellness, career, purpose, and personal growth from the MindShift Books community."/>
 
+<script src="/reels.js?v=1"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -2919,7 +2920,7 @@ function fmtDuration(secs){
 // card no longer sits inside a big painted black box either side of it.
 function buildVideoTileHtml(p){
   if(!p.videoUrl) return '';
-  return `<div class="pcard-video" onclick="event.stopPropagation();goPostRead('${p.id}')">
+  return `<div class="pcard-video" onclick="event.stopPropagation();openReels('${p.id}')">
     <video class="pcard-video-el" data-post-id="${p.id}" src="${p.videoUrl}" poster="${p.thumbnailUrl||''}" muted loop playsinline preload="metadata"></video>
     <button type="button" class="pcard-video-mute" onclick="event.stopPropagation();toggleFeedVideoMute('${p.id}',event)" title="Unmute">
       ${MUTE_ICON_ON}
@@ -2937,6 +2938,22 @@ window.toggleFeedVideoMute = function(id, event){
   btn.classList.toggle('unmuted', !vid.muted);
   btn.innerHTML = vid.muted ? MUTE_ICON_ON : MUTE_ICON_OFF;
   btn.title = vid.muted ? 'Unmute' : 'Mute';
+};
+/* Tap a feed video -> full-screen reels (reels.js). Tapping anywhere else on the card still opens the post. */
+window.openReels = function(startId){
+  MSBReels.open(startId, {
+    lookup: pid => {
+      const p = POSTS.find(x=>x.id===pid);
+      return p && p.videoUrl ? { id:p.id, videoUrl:p.videoUrl, thumbnailUrl:p.thumbnailUrl, text:p.text, author:p.author,
+        avatar:p.avatar, authorUid:p.authorUid, isMindshift:p.isMindshift, commentsOff:p.commentsOff } : null;
+    },
+    isLiked: pid => likedSet.has(pid),
+    like: pid => handleLike(pid),
+    comment: pid => goPostReadComment(pid),
+    link: pid => copyCardLink(pid),
+    openPost: pid => goPostRead(pid),
+    author: it => goAuthor(it.authorUid||'', !!it.isMindshift)
+  });
 };
 function buildPostCardHtml(p){
   const carousel = p.videoUrl ? buildVideoTileHtml(p) : buildMediaGridHtml(p.images, p.id);

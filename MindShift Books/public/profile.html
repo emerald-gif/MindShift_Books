@@ -683,6 +683,7 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
 <script src="/sidebar-nav.js?v=3"></script>
 <script type="module" src="/messages-nav.js?v=1"></script>
 <script src="/share-image.js"></script>
+<script src="/reels.js?v=1"></script>
 <script>
   function toggleSidebar(){
     const sidebar = document.getElementById('sidebar');
@@ -2517,9 +2518,26 @@ function fmtDuration(secs){
 
 // Feed video tile — mirrors articles.html's buildVideoTileHtml so video
 // posts render the same way on the profile as they do in the main feed.
+/* Tap a video -> full-screen reels (reels.js). Tapping anywhere else on the card still opens the post. */
+window.openReels = function(startId){
+  MSBReels.open(startId, {
+    lookup: pid => {
+      const s = allSubmissions.find(x=>x.id===pid && x.type==='post' && x.videoUrl);
+      return s ? { id:s.id, videoUrl:s.videoUrl, thumbnailUrl:s.thumbnailUrl||'', text:s.text||'',
+        author:s.authorName||profileData.name||'MindShift Books User', avatar:s.authorPhoto||profileData.photo||'logo.jpg',
+        authorUid:profileData.uid, commentsOff:!!s.commentsOff } : null;
+    },
+    isLiked: pid => likedSet.has(pid),
+    like: pid => handleLike(pid),
+    comment: pid => { location.href = `/post-read?id=${pid}&comment=1`; },
+    link: pid => navigator.clipboard.writeText(`${location.origin}/post-read?id=${pid}`).then(()=>showToast('Link copied! 🎉')).catch(()=>showToast('Copy failed')),
+    openPost: pid => openArticle(pid,'post'),
+    author: () => MSBReels.close()   // already on this author's profile
+  });
+};
 function buildVideoTileHtml(p){
   if(!p.videoUrl) return '';
-  return `<div class="pcard-video" onclick="event.stopPropagation();openArticle('${p.id}','post')">
+  return `<div class="pcard-video" onclick="event.stopPropagation();openReels('${p.id}')">
     <video class="pcard-video-el" data-post-id="${p.id}" src="${p.videoUrl}" poster="${p.thumbnailUrl||''}" muted loop playsinline preload="metadata"></video>
     <button type="button" class="pcard-video-mute" onclick="event.stopPropagation();toggleFeedVideoMute('${p.id}',event)" title="Unmute">
       ${MUTE_ICON_ON}

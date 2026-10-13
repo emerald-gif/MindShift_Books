@@ -317,6 +317,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 
 <div class="toast" id="toast"></div>
 
+<script src="/reels.js?v=1"></script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
@@ -620,9 +621,26 @@ function fmtDuration(secs){
   const m = Math.floor(secs/60), s = secs%60;
   return `${m}:${String(s).padStart(2,'0')}`;
 }
+/* Tap a video -> full-screen reels (reels.js). Tapping anywhere else on the card still opens the post. */
+window.openReels = function(startId){
+  MSBReels.open(startId, {
+    lookup: pid => {
+      const p = posts.find(x=>x.id===pid);
+      return p && p.videoUrl ? { id:p.id, videoUrl:p.videoUrl, thumbnailUrl:p.thumbnailUrl||'', text:p.text||'',
+        author:'MindShift Books', avatar:document.getElementById('kvAvatarImg')?.src||'logo.jpg',
+        authorUid:'official', isMindshift:true, commentsOff:!!p.commentsOff } : null;
+    },
+    isLiked: pid => likedSet.has(pid),
+    like: pid => handleLike(pid),
+    comment: pid => { location.href = `/post-read?id=${pid}&comment=1`; },
+    link: pid => navigator.clipboard.writeText(`${location.origin}/post-read?id=${pid}`).then(()=>showToast('Link copied! 🎉')).catch(()=>showToast('Copy failed')),
+    openPost: pid => { location.href = `/post-read?id=${pid}`; },
+    author: () => MSBReels.close()
+  });
+};
 function buildVideoTileHtml(p){
   if(!p.videoUrl) return '';
-  return `<div class="pcard-video" onclick="event.stopPropagation();location.href='/post-read?id=${p.id}'">
+  return `<div class="pcard-video" onclick="event.stopPropagation();openReels('${p.id}')">
     <video class="pcard-video-el" data-post-id="${p.id}" src="${p.videoUrl}" poster="${p.thumbnailUrl||''}" muted loop playsinline preload="metadata"></video>
     <button type="button" class="pcard-video-mute" onclick="event.stopPropagation();toggleFeedVideoMute('${p.id}',event)" title="Unmute">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
