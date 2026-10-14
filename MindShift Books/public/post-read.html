@@ -702,7 +702,7 @@ body{padding-bottom:64px} /* room for the fixed comment bar on post-read */
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
 <script src="/mentions.js"></script>
 <script src="/link-card.js"></script>
-<script src="/reels.js?v=4"></script>
+<script src="/reels.js?v=7"></script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
@@ -1257,15 +1257,20 @@ async function prefetchReelVideos(){
 }
 async function loadReelState(id){
   if(id===artId || (_rs[id] && _rs[id].loaded)) return;
-  const s = _rs[id] = { loaded:true, liked:false, likes:'', comments:'' };
+  const s = _rs[id] = { loaded:true, liked:false, likes:'', comments:'', reposts:'', reposted:false };
   const it = (_reelOthers||[]).find(x=>x.id===id);
   try{
     if(currentUser && !_reelUL) _reelUL = getDoc(doc(db,'userLikes',currentUser.uid)).catch(()=>null);
-    const [lk, cm, ul] = await Promise.all([
+    const [lk, cm, ul, rcd, rpd] = await Promise.all([
       getDoc(doc(db,'articleLikes',id)).catch(()=>null),
       getDoc(doc(db,'postMeta',id)).catch(()=>null),
-      _reelUL
+      _reelUL,
+      getDoc(doc(db,'repostCounts',id)).catch(()=>null),
+      currentUser ? getDoc(doc(db,'reposts',`plain_${currentUser.uid}_post_${id}`)).catch(()=>null) : null
     ]);
+    const rcn = rcd && rcd.exists() ? (rcd.data().count||0) : 0;
+    s.reposts = rcn > 0 ? rcn : '';
+    s.reposted = !!(rpd && rpd.exists());
     const hide = it && it.hideLikeCount && !(currentUser && it.authorUid===currentUser.uid);
     const lc = lk && lk.exists() ? (lk.data().count||0) : 0;
     s.likes = hide ? '' : (lc>0 ? lc : '');
@@ -1273,6 +1278,51 @@ async function loadReelState(id){
     s.comments = cc>0 ? cc : '';
     s.liked = !!(ul && ul.exists() && ul.data()[id]);
   }catch(e){}
+}
+let _rFollow = null, _rFollowLoading = false;
+async function loadReelFollows(){
+  if(_rFollow || _rFollowLoading || !currentUser) return;
+  _rFollowLoading = true;
+  try{
+    const snap = await getDocs(query(collection(db,'follows'), where('followerId','==',currentUser.uid)));
+    _rFollow = new Set(snap.docs.map(d=>d.data().followingId).filter(Boolean));
+  }catch(e){ _rFollow = new Set(); }
+  _rFollowLoading = false;
+}
+async function reelFollowOther(uid, name){
+  if(!currentUser){ openAuth(); return; }
+  if(!_rFollow) await loadReelFollows();
+  const was = _rFollow.has(uid);
+  was ? _rFollow.delete(uid) : _rFollow.add(uid);
+  try{
+    const followId = `${currentUser.uid}_${uid}`;
+    if(was){
+      await deleteDoc(doc(db,'follows',followId));
+      updateDoc(doc(db,'users',uid),{followerCount:increment(-1)}).catch(()=>{});
+    }else{
+      await setDoc(doc(db,'follows',followId),{followerId:currentUser.uid,followingId:uid,createdAt:serverTimestamp()});
+      updateDoc(doc(db,'users',uid),{followerCount:increment(1)}).catch(()=>{});
+      notif.notifyFollow(uid);
+    }
+    showToast(was ? 'Unfollowed' : `Following ${name||'author'} ✅`);
+  }catch(e){
+    was ? _rFollow.add(uid) : _rFollow.delete(uid);
+    showToast('Could not update — try again.');
+  }
+}
+function repostOther(id){
+  if(!currentUser){ openAuth(); return; }
+  const it = (_reelOthers||[]).find(x=>x.id===id); if(!it) return;
+  const s = _rs[id] || (_rs[id] = { loaded:true, liked:false, likes:'', comments:'', reposts:'', reposted:false });
+  repost.open({
+    targetType:'post', targetId:id, recipientUid:it.authorUid,
+    snapshot:{ type:'post', id, author:it.author, avatar:it.avatar, authorUid:it.authorUid, text:it.text, img:it.thumbnailUrl||'' },
+    onSuccess: ({ kind, reposted }) => {
+      let c = +s.reposts || 0;
+      if(kind==='plain'){ s.reposted = reposted; c = Math.max(0, c + (reposted?1:-1)); } else { c += 1; }
+      s.reposts = c || '';
+    }
+  });
 }
 async function reelLikeOther(id){
   if(!currentUser){ openAuth(); return; }
@@ -1311,7 +1361,7 @@ window.openReels = function(){
     getState: id => {
       if(id===artId){
         const hide = article.hideLikeCount && !(currentUser && article.authorUid===currentUser.uid);
-        return { liked:isLiked, likes: hide ? '' : (likeCount||''), comments: cCommentCount||'' };
+        return { liked:isLiked, likes: hide ? '' : (likeCount||''), comments: cCommentCount||'', reposts: repostCount||'', reposted: isReposted };
       }
       return _rs[id] || {};
     },
@@ -1323,6 +1373,19 @@ window.openReels = function(){
       if(list[i+1]) loadReelState(list[i+1].id);
     },
     like: id => { if(id===artId) doLike(); else reelLikeOther(id); },
+    repost: id => { if(id===artId) doRepost(); else repostOther(id); },
+    followState: it => {
+      const uid = (it.isMindshift || !it.authorUid) ? 'official' : it.authorUid;
+      if(currentUser && uid === currentUser.uid) return null;
+      if(!currentUser) return 'follow';
+      if(uid === followTargetUid()) return isFollowing ? 'following' : 'follow';    // this post's author: the page already tracks it
+      if(!_rFollow){ loadReelFollows(); return null; }
+      return _rFollow.has(uid) ? 'following' : 'follow';
+    },
+    toggleFollow: it => {
+      const uid = (it.isMindshift || !it.authorUid) ? 'official' : it.authorUid;
+      if(uid === followTargetUid()) doFollow(); else reelFollowOther(uid, it.author);
+    },
     comment: id => {
       if(id===artId){
         MSBReels.close();

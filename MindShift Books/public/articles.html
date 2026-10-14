@@ -22,7 +22,7 @@
 <meta name="twitter:title" content="MindShift Books" />
 <meta name="twitter:description" content="Discover articles, ideas, insights, and stories on mindset, money, productivity, relationships, wellness, career, purpose, and personal growth from the MindShift Books community."/>
 
-<script src="/reels.js?v=4"></script>
+<script src="/reels.js?v=7"></script>
 <script src="/image-viewer.js?v=1"></script>
 <script type="application/ld+json">
 {
@@ -3045,11 +3045,40 @@ function reelsRegister(fresh){
   let box = document.getElementById('reelStubs');
   if(!box){ box = document.createElement('div'); box.id = 'reelStubs'; box.hidden = true; document.body.appendChild(box); }
   fresh.forEach(p=>{
-    if(!document.getElementById('lc-'+p.id)) box.insertAdjacentHTML('beforeend', `<button id="lb-${p.id}" hidden></button><span id="lc-${p.id}"></span><span id="pcc-${p.id}"></span>`);
+    if(!document.getElementById('lc-'+p.id)) box.insertAdjacentHTML('beforeend', `<button id="lb-${p.id}" hidden></button><span id="lc-${p.id}"></span><span id="pcc-${p.id}"></span><button id="rb-${p.id}" hidden></button><span id="rc-${p.id}"></span>`);
   });
   fetchLikeCounts(fresh.map(p=>({ id:p.id, hideLikeCount:!!p.hideLikeCount, authorUid:p.authorUid })));
   fetchPostCommentCounts(fresh.filter(p=>!p.commentsOff).map(p=>p.id));
+  fetchRepostCounts(fresh.map(p=>p.id));
 }
+
+// Follow / unfollow from the reels. Same writes as the feed's follow pill + suggestion buttons.
+window.reelsToggleFollow = async function(uid, name){
+  if(!currentUser){ openAuth(); return; }
+  if(!uid || uid === currentUser.uid) return;
+  const c = await getMyFollowingUids();
+  const was = c.has(uid);
+  was ? c.delete(uid) : c.add(uid);                       // optimistic — the reels re-read this set
+  try{
+    const ref = doc(db,'follows',`${currentUser.uid}_${uid}`);
+    if(was){
+      await deleteDoc(ref);
+      updateDoc(doc(db,'users',uid),{followerCount:increment(-1)}).catch(()=>{});
+      updateDoc(doc(db,'users',currentUser.uid),{followingCount:increment(-1)}).catch(()=>{});
+    }else{
+      await setDoc(ref,{followerId:currentUser.uid,followingId:uid,createdAt:serverTimestamp()});
+      updateDoc(doc(db,'users',uid),{followerCount:increment(1)}).catch(()=>{});
+      updateDoc(doc(db,'users',currentUser.uid),{followingCount:increment(1)}).catch(()=>{});
+      notif.notifyFollow(uid);
+      _dismissedUids.add(uid); _ptfDismissed.add(uid);
+    }
+    syncFollowPills();                                    // keep the feed's own pills in step
+    toast(was ? `Unfollowed ${name||'author'}` : `Following ${name||'author'} ✅`);
+  }catch(e){
+    was ? c.add(uid) : c.delete(uid);
+    toast('Could not update — try again');
+  }
+};
 window.openReels = function(startId, ids){
   const lookup = pid => {
     const p = POSTS.find(x=>x.id===pid);
@@ -3066,6 +3095,16 @@ window.openReels = function(startId, ids){
     onActive: pid => markVideoSeen(pid),
     // Reels always link to the post page (extra videos aren't in POSTS, so copyCardLink would guess "article").
     link: pid => navigator.clipboard.writeText(`${location.origin}/post-read?id=${pid}`).then(()=>toast('Link copied! 🎉')).catch(()=>toast('Copy failed')),
+    repost: pid => doRepostCard('post', pid),
+    followState: it => {
+      const uid = it.isMindshift ? 'official' : it.authorUid;
+      if(!uid || (currentUser && uid === currentUser.uid)) return null;
+      if(!currentUser) return probablySignedIn() ? null : 'follow';
+      const c = followCache();
+      if(!c){ getMyFollowingUids().catch(()=>{}); return null; }     // load once, button appears as soon as we know
+      return c.has(uid) ? 'following' : 'follow';
+    },
+    toggleFollow: it => reelsToggleFollow(it.isMindshift ? 'official' : it.authorUid, it.author),
     loadMore: have => reelsLoadMore(have),
     onAppend: fresh => reelsRegister(fresh)
   };
@@ -3575,7 +3614,7 @@ window.handleSave = function(id){
 /* ── REPOST (feed card) ── */
 window.doRepostCard = function(type, id){
   if(gateEngage(()=>window.doRepostCard(type, id), document.querySelector(`#rb-${id}`))) return;
-  const item = type==='article' ? ARTICLES.find(a=>a.id===id) : POSTS.find(p=>p.id===id);
+  const item = type==='article' ? ARTICLES.find(a=>a.id===id) : (POSTS.find(p=>p.id===id) || _rl.vids.find(p=>p.id===id));   // _rl.vids = extra videos loaded by the reels
   if(!item) return;
   const snapshot = type==='article'
     ? { type:'article', id, title:item.title, author:item.author, avatar:item.avatar, authorUid:item.authorUid, img:item.img }

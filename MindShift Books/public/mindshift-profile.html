@@ -317,7 +317,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 
 <div class="toast" id="toast"></div>
 
-<script src="/reels.js?v=4"></script>
+<script src="/reels.js?v=7"></script>
 <script src="/image-viewer.js?v=1"></script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
@@ -636,6 +636,8 @@ window.openReels = function(startId){
     comment: pid => { location.href = `/post-read?id=${pid}&comment=1`; },
     link: pid => navigator.clipboard.writeText(`${location.origin}/post-read?id=${pid}`).then(()=>showToast('Link copied! 🎉')).catch(()=>showToast('Copy failed')),
     openPost: pid => { location.href = `/post-read?id=${pid}`; },
+    followState: () => (currentUser && isFollowing) ? 'following' : 'follow',
+    toggleFollow: () => toggleFollow(),
     author: () => MSBReels.close()
   });
 };

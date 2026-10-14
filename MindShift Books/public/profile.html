@@ -683,7 +683,7 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
 <script src="/sidebar-nav.js?v=3"></script>
 <script type="module" src="/messages-nav.js?v=1"></script>
 <script src="/share-image.js"></script>
-<script src="/reels.js?v=4"></script>
+<script src="/reels.js?v=7"></script>
 <script src="/image-viewer.js?v=1"></script>
 <script>
   function toggleSidebar(){
@@ -2533,6 +2533,10 @@ window.openReels = function(startId){
     comment: pid => { location.href = `/post-read?id=${pid}&comment=1`; },
     link: pid => navigator.clipboard.writeText(`${location.origin}/post-read?id=${pid}`).then(()=>showToast('Link copied! 🎉')).catch(()=>showToast('Copy failed')),
     openPost: pid => openArticle(pid,'post'),
+    repost: pid => { const s = allSubmissions.find(x=>x.id===pid && x.type==='post'); if(s) doRepostCardProfile(s); },
+    followState: () => (!profileData || !profileData.uid || (currentUser && profileData.uid === currentUser.uid)) ? null
+                       : (currentUser && isFollowing ? 'following' : 'follow'),
+    toggleFollow: () => toggleFollow(),
     author: () => MSBReels.close()   // already on this author's profile
   });
 };
