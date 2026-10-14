@@ -230,6 +230,73 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .send[disabled]{opacity:.4;cursor:default}
 .send svg{width:20px;height:20px;fill:none;stroke:#fff;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 
+
+/* ── voice messages ── */
+.mic{width:44px;height:44px;border-radius:50%;background:var(--g);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 14px rgba(79,70,229,.28);transition:transform .12s}
+.mic:active{transform:scale(.92)}
+.mic svg{width:21px;height:21px;fill:none;stroke:#fff;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round}
+.composer.has-text .mic,.composer.no-mic .mic{display:none}
+.composer:not(.has-text):not(.no-mic) .send{display:none}
+.composer.recording > textarea,.composer.recording > .send,.composer.recording > .mic{display:none!important}
+.rec{flex:1;min-width:0;display:none;align-items:center;gap:8px;align-self:center}
+.composer.recording .rec{display:flex;animation:recIn .22s ease}
+@keyframes recIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.rec-btn{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .12s,background .15s}
+.rec-btn:active{transform:scale(.92)}
+.rec-btn svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round}
+.rec-del{background:#fef2f2;color:var(--red)}
+.rec-pause{background:#f1f5f9;color:var(--txt)}
+.rec-pause .i-resume{display:none}
+.rec.paused .rec-pause .i-pause{display:none}
+.rec.paused .rec-pause .i-resume{display:block}
+.rec-send{width:44px;height:44px;background:var(--g);color:#fff;box-shadow:0 4px 14px rgba(79,70,229,.28)}
+.rec-pill{flex:1;min-width:0;height:44px;border-radius:22px;background:#f8fafc;border:1.5px solid var(--border);display:flex;align-items:center;gap:9px;padding:0 14px}
+.rec-dot{width:9px;height:9px;border-radius:50%;background:var(--red);flex-shrink:0;animation:recPulse 1.2s ease-in-out infinite}
+.rec.paused .rec-dot{animation:none;background:#f59e0b}
+@keyframes recPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.78)}}
+.rec-time{font-size:14.5px;font-weight:800;font-variant-numeric:tabular-nums;min-width:40px;color:var(--txt)}
+.rec.low .rec-time{color:var(--red)}
+.rec-wave{flex:1;min-width:0;height:28px;-webkit-mask-image:linear-gradient(90deg,transparent,#000 38%);mask-image:linear-gradient(90deg,transparent,#000 38%)}
+.rec-wave canvas{width:100%;height:100%;display:block}
+.mic:focus-visible,.rec-btn:focus-visible,.vplay:focus-visible,.vspd:focus-visible{outline:2px solid var(--p);outline-offset:2px}
+
+.msg.voice{min-width:min(250px,78vw);padding:9px 12px 6px 9px}
+.msg.voice.pending{opacity:.88}
+.vm{display:flex;align-items:center;gap:10px}
+.vplay{width:38px;height:38px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;position:relative;background:var(--g);color:#fff;transition:transform .12s}
+.vplay:active{transform:scale(.92)}
+.vplay svg{width:16px;height:16px;fill:currentColor;stroke:none}
+.vplay .i-pause{display:none}
+.vm.playing .vplay .i-play{display:none}
+.vm.playing .vplay .i-pause{display:block}
+.msg.me .vplay{background:#fff;color:var(--p)}
+.vspin{position:absolute;inset:-3px;border-radius:50%;border:2px solid transparent;border-top-color:var(--p2);display:none;animation:vspin .8s linear infinite}
+.msg.me .vspin{border-top-color:#fff}
+.vm.load .vspin{display:block}
+@keyframes vspin{to{transform:rotate(360deg)}}
+.vcol{flex:1;min-width:0}
+.vw{position:relative;height:30px;cursor:pointer;touch-action:pan-y}
+.vw svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.vw path{fill:none;stroke:#cbd5e1;stroke-width:2.4;stroke-linecap:round;vector-effect:non-scaling-stroke}
+.vw .on{clip-path:inset(0 calc(100% - var(--pr,0%)) 0 0)}
+.vw .on path{stroke:var(--p)}
+.msg.me .vw path{stroke:rgba(255,255,255,.42)}
+.msg.me .vw .on path{stroke:#fff}
+.vknob{position:absolute;top:50%;left:var(--pr,0%);width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:var(--p);box-shadow:0 0 0 3px rgba(79,70,229,.18);opacity:0;transition:opacity .15s;pointer-events:none}
+.msg.me .vknob{background:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.25)}
+.vm.act .vknob{opacity:1}
+.vmeta{display:flex;align-items:center;gap:6px;min-height:18px;font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--sub)}
+.msg.me .vmeta{color:rgba(255,255,255,.88)}
+.vdot{width:7px;height:7px;border-radius:50%;background:var(--p2);display:none}
+.vm.new .vdot{display:inline-block}
+.vspd{margin-left:auto;display:none;padding:1px 8px;border-radius:99px;font-size:11px;font-weight:800;background:rgba(15,23,42,.07);color:inherit}
+.msg.me .vspd{background:rgba(255,255,255,.22)}
+.vm.act .vspd{display:inline-block}
+.vup{height:3px;border-radius:2px;background:rgba(255,255,255,.28);margin-top:2px;overflow:hidden}
+.vup i{display:block;height:100%;width:0;background:#fff;transition:width .2s}
+.msg.voice .t{margin-top:2px}
+@media (prefers-reduced-motion:reduce){.rec-dot,.composer.recording .rec{animation:none}}
+
 .toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:#0f172a;color:#fff;padding:10px 18px;border-radius:99px;font-size:13.5px;font-weight:600;opacity:0;pointer-events:none;transition:all .25s;z-index:50;max-width:90vw;text-align:center}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
@@ -297,7 +364,14 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
   <div class="blockbar" id="blockBar" hidden><span id="blockMsg">You blocked this user.</span><button id="unblockBtn">Unblock</button></div>
   <div class="composer" id="composer">
     <textarea id="input" rows="1" placeholder="Message…" maxlength="2000" aria-label="Type a message"></textarea>
+    <button class="mic" id="micBtn" aria-label="Record a voice message"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg></button>
     <button class="send" id="sendBtn" disabled aria-label="Send"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg></button>
+    <div class="rec" id="rec">
+      <button class="rec-btn rec-del" id="recDel" aria-label="Discard recording"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v5M14 11v5"/></svg></button>
+      <div class="rec-pill"><i class="rec-dot"></i><span class="rec-time" id="recTime" role="timer">0:00</span><div class="rec-wave"><canvas id="recCv" aria-hidden="true"></canvas></div></div>
+      <button class="rec-btn rec-pause" id="recPause" aria-label="Pause recording"><svg class="i-pause" viewBox="0 0 24 24"><rect x="6.5" y="5" width="3.6" height="14" rx="1.2" fill="currentColor" stroke="none"/><rect x="13.9" y="5" width="3.6" height="14" rx="1.2" fill="currentColor" stroke="none"/></svg><svg class="i-resume" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg></button>
+      <button class="rec-btn rec-send" id="recSend" aria-label="Send voice message"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg></button>
+    </div>
   </div>
 </section>
 
@@ -554,7 +628,8 @@ async function fetchOtherExtras(c){
 /* ───────── CHAT ───────── */
 function toMsg(d){
   const x = d.data({ serverTimestamps:'estimate' });
-  return { id:d.id, senderUid:x.senderUid, text:x.text, replyTo:x.replyTo || null, reactions:x.reactions || {}, edited:!!x.edited, ts: ms(x.createdAt), raw:x.createdAt, confirmed: !d.metadata.hasPendingWrites };
+  return { id:d.id, senderUid:x.senderUid, text:x.text, replyTo:x.replyTo || null, reactions:x.reactions || {}, edited:!!x.edited, ts: ms(x.createdAt), raw:x.createdAt, confirmed: !d.metadata.hasPendingWrites,
+           type:x.type === 'voice' ? 'voice' : '', audioUrl:x.audioUrl || '', duration:Math.min(7200, Math.max(0, Number(x.duration) || 0)), wf:typeof x.wf === 'string' ? x.wf : '', mime:typeof x.mime === 'string' ? x.mime : '' };
 }
 /* Every one of my messages carries its own status in its time line:  3:07 PM · Sending… / Delivered / Seen
    "Delivered" = saved on our server and in their inbox (a website can't know more than that).
@@ -563,6 +638,7 @@ function toMsg(d){
 function statusFor(m){
   if(m.silent) return { text:'Sent' };                    // the server refused it on purpose (e.g. they blocked you): no retry prompt, never Delivered/Seen
   if(m.failed) return { text:'Not delivered · Tap to retry', err:true };
+  if(m.uploading) return { text:'Uploading' + (m.progress > 0 ? ' ' + Math.round(m.progress) + '%' : '…') };
   const acked = m.confirmed || (chat && chat.ack.has(m.id));
   if(m.pendingLocal && !acked) return { text: navigator.onLine ? 'Sending…' : 'Waiting for connection' };
   const seen = settings.readReceipts ? ms(chat && chat.row && chat.row.seenAt) : 0;   // receipts off = I don't see theirs either
@@ -601,10 +677,11 @@ function renderMsgs(stick){
     const time = m.ts ? new Date(m.ts).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}) : '';
     const q = m.replyTo ? `<div class="quote" data-qid="${esc(m.replyTo.id)}"><div class="q-name">${esc(m.replyTo.senderUid === me.uid ? 'You' : chat.other.name)}</div><div class="q-text">${esc(m.replyTo.text)}</div></div>` : '';
     const rx = rxHtml(m);
-    html += `<div class="msg ${mine?'me':'them'} ${m.pendingLocal && !m.failed && !m.silent && !chat.ack.has(m.id)?'pending':''} ${m.failed?'failed':''} ${rx?'has-rx':''}" data-mid="${esc(m.id)}">${q}${esc(m.text)}<span class="t">${time}${m.edited ? ' · edited' : ''}${st && !st.err ? ' · ' + esc(st.text) : ''}</span>${rx}</div>`;
+    html += `<div class="msg ${mine?'me':'them'} ${m.pendingLocal && !m.failed && !m.silent && !chat.ack.has(m.id)?'pending':''} ${m.failed?'failed':''} ${rx?'has-rx':''} ${m.type==='voice'?'voice':''}" data-mid="${esc(m.id)}">${q}${m.type==='voice'?voiceHtml(m):esc(m.text)}<span class="t">${time}${m.edited ? ' · edited' : ''}${st && !st.err ? ' · ' + esc(st.text) : ''}</span>${rx}</div>`;
     if(st && st.err) html += `<div class="stat err" data-retry="${esc(m.id)}">${esc(st.text)}</div>`;
   });
   box.innerHTML = html;
+  voiceSync();
   box.querySelectorAll('[data-retry]').forEach(el => el.onclick = () => { const pm = chat && chat.pending.find(x => x.id === el.dataset.retry); if(pm) send(pm); });
   box.querySelectorAll('.quote').forEach(el => el.onclick = () => jumpTo(el.dataset.qid));
   const ob = $('olderBtn'); if(ob) ob.onclick = loadOlder;
@@ -740,7 +817,7 @@ async function openChat(otherUid, { push = true, reload = false } = {}){
   }
   setTimeout(() => { if(matchMedia('(pointer:fine)').matches) $('input').focus(); }, 50);
 }
-function closeChat(){ detachLive(); if(chat) chat.editing = null; chat = null; $('input').value = ''; autosize(); hideReplyBar(); applyBlockUI(); }
+function closeChat(){ recCancel(); voiceStop(); detachLive(); if(chat) chat.editing = null; chat = null; $('input').value = ''; autosize(); hideReplyBar(); applyBlockUI(); }
 
 /* ───────── read receipts (unread → 0) ───────── */
 function receiptsOn(){ return settings.readReceipts; }   // off → I don't send "Seen" to anyone
@@ -766,7 +843,7 @@ async function markRead(){
 /* ───────── reply to a specific message (swipe right on it) ───────── */
 function setReply(m){
   if(!chat) return;
-  chat.reply = { id:m.id, senderUid:m.senderUid, text:String(m.text || '').slice(0, 140) };
+  chat.reply = { id:m.id, senderUid:m.senderUid, text:m.type === 'voice' ? VOICE_LABEL + ' (' + fmtDur(m.duration) + ')' : String(m.text || '').slice(0, 140) };
   $('rbName').textContent = m.senderUid === me.uid ? 'Replying to yourself' : 'Replying to ' + chat.other.name;
   $('rbText').textContent = chat.reply.text;
   $('replyBar').hidden = false;
@@ -875,9 +952,11 @@ function openMsgMenu(el){
     card.appendChild(b);
   };
   if(interactive) add(ICON_REPLY, 'Reply', () => setReply(m));
-  if(interactive && mine && Date.now() - m.ts < EDIT_WINDOW_MS) add(ICON_EDIT, 'Edit', () => startEdit(m));
-  add(ICON_COPY, 'Copy', () => copyText(m.text));
-  add(ICON_SELECT, 'Select text', () => openSelectText(m));
+  if(interactive && mine && m.type !== 'voice' && Date.now() - m.ts < EDIT_WINDOW_MS) add(ICON_EDIT, 'Edit', () => startEdit(m));
+  if(m.type !== 'voice'){
+    add(ICON_COPY, 'Copy', () => copyText(m.text));
+    add(ICON_SELECT, 'Select text', () => openSelectText(m));
+  }
   add(ICON_TRASH, 'Delete for you', () => deleteForMe(m), true);
   body.appendChild(card);
   _moOpenedAt = Date.now();
@@ -916,7 +995,8 @@ async function deleteForMe(m){
     try{ await updateDoc(myRow(c.other.uid), { hiddenMsgs: arrayUnion(m.id) }); toast('Message deleted for you'); }
     catch(e){ c.hiddenLocal.delete(m.id); if(chat === c) renderMsgs(false); toast('Couldn’t delete this message'); }
   } else {                                                               // not saved anywhere yet (sending / failed / silent) — just drop it here
-    const i = c.pending.findIndex(p => p.id === m.id); if(i > -1) c.pending.splice(i, 1);
+    const i = c.pending.findIndex(p => p.id === m.id);
+    if(i > -1){ const pm = c.pending[i]; pm.deleted = true; if(pm.xhr){ try{ pm.xhr.abort(); }catch(_){} } c.pending.splice(i, 1); }
     c.msgs.delete(m.id); saveSilent(c); renderMsgs(false); toast('Message deleted');
   }
 }
@@ -1049,13 +1129,14 @@ $('emoQ').addEventListener('input', () => {
 
 /* ───────── composer ───────── */
 const input = $('input'), sendBtn = $('sendBtn');
-function autosize(){ input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 120) + 'px'; sendBtn.disabled = !input.value.trim(); }
+function autosize(){ input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 120) + 'px'; const has = !!input.value.trim(); sendBtn.disabled = !has; $('composer').classList.toggle('has-text', has); }
 input.addEventListener('input', autosize);
 input.addEventListener('keydown', e => {
   if(e.key === 'Enter' && !e.shiftKey && matchMedia('(pointer:fine)').matches){ e.preventDefault(); send(); }
 });
 sendBtn.onclick = () => send();
 async function send(retryItem){
+  if(retryItem && retryItem.type === 'voice' && retryItem.pendingLocal){ sendVoice(null, retryItem); return; }   // retry of a voice note
   if(chat && chat.editing){ saveEdit(); return; }                // editing a message → save instead of sending a new one
   if(retryItem && !retryItem.pendingLocal) retryItem = undefined;   // only a real failed message counts as a retry (never a click event)
   if(!chat || !me) return;
@@ -1112,6 +1193,437 @@ async function send(retryItem){
 }
 window.addEventListener('online',  () => { if(chat) renderMsgs(false); });
 window.addEventListener('offline', () => { if(chat) renderMsgs(false); });
+
+/* ───────── voice messages ─────────
+   Record in the browser → upload straight to Cloudinary with a signed request (Render only signs, it never touches the audio)
+   → one small Firestore message. Playback is on demand: nothing is downloaded until someone taps play. */
+const VOICE_MAX_SEC = 30 * 60;     // a safety net, not a real limit: ~5 MB at 24 kbps, still under Cloudinary's 10 MB free-plan file cap
+const VOICE_WARN_SEC = 60;         // last minute: timer turns red and counts down
+const VOICE_MIN_MS = 1000;
+const VOICE_LABEL = '🎤 Voice message';
+const WF_BARS = 48;
+const fmtDur = s => { s = Math.max(0, Math.round(s || 0)); const h = Math.floor(s / 3600), mi = Math.floor(s % 3600 / 60), x = s % 60; return h ? h + ':' + String(mi).padStart(2,'0') + ':' + String(x).padStart(2,'0') : mi + ':' + String(x).padStart(2,'0'); };
+const fmtClock = ts => ts ? new Date(ts).toLocaleTimeString([], { hour:'numeric', minute:'2-digit' }) : '';
+const extFor = mime => /mp4|m4a|aac/.test(mime || '') ? 'm4a' : /ogg/.test(mime || '') ? 'ogg' : 'webm';
+
+/* waveform: 48 bars, each stored as one base36 character (0–35) → a 48-character string in the message */
+const encWf = bars => bars.map(v => Math.max(0, Math.min(35, Math.round(v * 35))).toString(36)).join('');
+const decWf = str => /^[0-9a-z]{8,128}$/.test(str || '') ? [...str].map(ch => parseInt(ch, 36) / 35) : new Array(WF_BARS).fill(0.3);
+const _wfCache = new Map();
+function wfPath(str){
+  let p = _wfCache.get(str); if(p) return p;
+  const bars = decWf(str), step = 192 / bars.length;
+  p = bars.map((v, i) => { const h = 3 + Math.max(0.08, v) * 24, x = (i * step + step / 2).toFixed(1); return 'M' + x + ' ' + (15 - h / 2).toFixed(1) + 'V' + (15 + h / 2).toFixed(1); }).join('');
+  _wfCache.set(str, p); return p;
+}
+function peaksToBars(peaks){
+  const n = WF_BARS, out = new Array(n).fill(0);
+  if(!peaks.length) return out.map(() => 0.3);
+  for(let i = 0; i < n; i++){
+    const a = Math.floor(i * peaks.length / n), b = Math.max(a + 1, Math.floor((i + 1) * peaks.length / n));
+    let sum = 0, mx = 0, k = 0;
+    for(let j = a; j < b && j < peaks.length; j++){ sum += peaks[j]; k++; if(peaks[j] > mx) mx = peaks[j]; }
+    out[i] = k ? (sum / k) * 0.6 + mx * 0.4 : 0;
+  }
+  const top = Math.max(0.05, ...out);          // the floor keeps room noise from being blown up into a "loud" wave
+  return out.map(v => Math.pow(Math.min(1, v / top), 0.75) * 0.92 + 0.08);
+}
+
+/* ── bubble markup ── */
+const I_PLAY = '<svg class="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 001.5.86l10.5-6.5a1 1 0 000-1.72L9.5 4.64A1 1 0 008 5.5z"/></svg>';
+const I_PAUSE = '<svg class="i-pause" viewBox="0 0 24 24"><rect x="6.5" y="5" width="4" height="14" rx="1.3"/><rect x="13.5" y="5" width="4" height="14" rx="1.3"/></svg>';
+function voiceHtml(m){
+  const mine = m.senderUid === me.uid, heard = mine || isHeard(m.id), path = wfPath(m.wf);
+  const up = m.uploading ? '<div class="vup"><i style="width:' + Math.round(m.progress || 0) + '%"></i></div>' : '';
+  return '<div class="vm' + (heard ? '' : ' new') + '" data-v="' + esc(m.id) + '">' +
+    '<button class="vplay" aria-label="Play voice message">' + I_PLAY + I_PAUSE + '<i class="vspin"></i></button>' +
+    '<div class="vcol"><div class="vw" aria-label="Voice message, tap to jump to a spot">' +
+      '<svg viewBox="0 0 192 30" preserveAspectRatio="none"><path d="' + path + '"/></svg>' +
+      '<svg class="on" viewBox="0 0 192 30" preserveAspectRatio="none"><path d="' + path + '"/></svg><i class="vknob"></i></div>' +
+    '<div class="vmeta"><span class="vdur">' + fmtDur(m.duration) + '</span><i class="vdot"></i><button class="vspd" aria-label="Playback speed">' + VR.rate + '×</button></div>' + up + '</div></div>';
+}
+function voiceProgress(c, temp, pct){
+  temp.progress = pct;
+  if(chat !== c) return;
+  const el = $('msgs').querySelector('[data-mid="' + temp.id + '"]'); if(!el) return;
+  const f = el.querySelector('.vup i'); if(f) f.style.width = pct + '%';
+  const t = el.querySelector('.t'); if(t) t.textContent = fmtClock(temp.ts) + ' · Uploading ' + pct + '%';
+}
+
+/* ── playback: one shared <audio>, so only one voice note plays at a time and it survives list re-renders ── */
+const VR = { a:null, mid:null, loading:false, rate:1, seekTo:null, fixing:false, fb:false };
+try{ const r = parseFloat(localStorage.getItem('msb_vrate')); if(r === 1.5 || r === 2) VR.rate = r; }catch(e){}
+const HEARD_KEY = 'msb_vheard_v1';
+let _heard = null;
+function heardSet(){ if(!_heard){ try{ _heard = new Set(JSON.parse(localStorage.getItem(HEARD_KEY)) || []); }catch(e){ _heard = new Set(); } } return _heard; }
+const isHeard = id => heardSet().has(id);
+function markHeard(id){ const s = heardSet(); if(s.has(id)) return; s.add(id); try{ localStorage.setItem(HEARD_KEY, JSON.stringify([...s].slice(-400))); }catch(e){} }
+const okAudio = u => typeof u === 'string' && /^https:\/\/res\.cloudinary\.com\//.test(u);
+const _canPlay = {};
+function canPlayMime(mime){ if(!mime) return true; if(!(mime in _canPlay)){ try{ _canPlay[mime] = !!new Audio().canPlayType(mime); }catch(e){ _canPlay[mime] = true; } } return _canPlay[mime]; }
+const mp3Of = u => u.indexOf('/video/upload/') > -1 ? u.replace('/video/upload/', '/video/upload/f_mp3/').replace(/\.[a-z0-9]+(\?.*)?$/i, '.mp3$1') : '';
+function voiceSrc(m){
+  const p = chat && chat.pending.find(x => x.id === m.id);
+  if(p && p.localUrl) return p.localUrl;                         // my own note: play the local copy, zero download
+  if(m.localUrl) return m.localUrl;
+  if(!okAudio(m.audioUrl)) return '';
+  if(!canPlayMime(m.mime)) return mp3Of(m.audioUrl) || m.audioUrl;   // only browsers that can't play it get a converted copy
+  return m.audioUrl;
+}
+const voiceEl = id => id ? $('msgs').querySelector('[data-v="' + id + '"]') : null;
+function voiceAudio(){
+  if(VR.a) return VR.a;
+  const a = new Audio(); a.preload = 'none';
+  a.addEventListener('timeupdate', vTick);
+  a.addEventListener('play', voiceSync);
+  a.addEventListener('pause', () => { if(!VR.fixing) voiceSync(); });
+  a.addEventListener('waiting', () => { VR.loading = true; voiceSync(); });
+  a.addEventListener('playing', () => { VR.loading = false; voiceSync(); });
+  a.addEventListener('canplay', () => { VR.loading = false; voiceSync(); });
+  a.addEventListener('ended', vEnded);
+  a.addEventListener('error', vError);
+  a.addEventListener('loadedmetadata', () => {
+    a.playbackRate = VR.rate;
+    if(a.duration === Infinity){        // recorded files often have no length in their header; this makes the browser work it out so jumping works
+      const keep = VR.seekTo || 0; VR.fixing = true;
+      const done = () => { a.removeEventListener('timeupdate', done); VR.fixing = false; try{ a.currentTime = keep; }catch(_){} vTick(); };
+      a.addEventListener('timeupdate', done);
+      try{ a.currentTime = 1e101; }catch(_){ VR.fixing = false; }
+    } else if(VR.seekTo){ try{ a.currentTime = VR.seekTo; }catch(_){} }
+    VR.seekTo = null;
+  });
+  return VR.a = a;
+}
+function voiceToggle(m, frac){
+  const a = voiceAudio();
+  if(VR.mid === m.id && a.getAttribute('src')){
+    if(frac != null) seekFrac(m, frac);
+    if(a.paused || a.ended){ if(a.ended){ try{ a.currentTime = 0; }catch(_){} } a.play().catch(vError); }
+    else if(frac == null) a.pause();
+    return;
+  }
+  voiceStop();
+  const src = voiceSrc(m);
+  if(!src){ toast('This voice message isn’t available'); return; }
+  VR.mid = m.id; VR.loading = true; VR.fb = false; VR.seekTo = frac != null && m.duration ? frac * m.duration : null;
+  a.src = src; a.defaultPlaybackRate = VR.rate; a.playbackRate = VR.rate;
+  a.play().catch(vError);
+  if(m.senderUid !== me.uid) markHeard(m.id);
+  voiceSession(m);
+  voiceSync();
+}
+function voiceStop(){
+  const a = VR.a, old = VR.mid;
+  VR.mid = null; VR.loading = false; VR.fixing = false;
+  if(a){ a.pause(); a.removeAttribute('src'); try{ a.load(); }catch(_){} }   // frees the buffered audio
+  if(old) voiceSync();
+}
+function seekFrac(m, frac){
+  const a = VR.a; if(!a) return;
+  const dur = m.duration || (isFinite(a.duration) ? a.duration : 0); if(!dur) return;
+  try{ a.currentTime = Math.max(0, Math.min(dur - 0.05, frac * dur)); }catch(_){}
+  vTick();
+}
+function voiceReset(el){
+  el.classList.remove('act', 'playing', 'load');
+  const w = el.querySelector('.vw'); if(w) w.style.setProperty('--pr', '0%');
+  const m = msgById(el.dataset.v), d = el.querySelector('.vdur'); if(d && m) d.textContent = fmtDur(m.duration);
+}
+function voiceSync(){
+  const box = $('msgs'); if(!box) return;
+  box.querySelectorAll('.vm.act').forEach(el => { if(el.dataset.v !== VR.mid) voiceReset(el); });
+  const el = voiceEl(VR.mid); if(!el) return;
+  const a = VR.a, playing = !!(a && !a.paused && !a.ended);
+  el.classList.add('act'); el.classList.remove('new');
+  el.classList.toggle('playing', playing);
+  el.classList.toggle('load', playing && VR.loading);
+  const sp = el.querySelector('.vspd'); if(sp) sp.textContent = VR.rate + '×';
+  vTick();
+}
+function vTick(){
+  const a = VR.a; if(!a || VR.fixing) return;
+  const el = voiceEl(VR.mid); if(!el) return;
+  const m = msgById(VR.mid), dur = (m && m.duration) || (isFinite(a.duration) ? a.duration : 0);
+  const pr = dur ? Math.min(1, a.currentTime / dur) : 0;
+  const w = el.querySelector('.vw'); if(w) w.style.setProperty('--pr', (pr * 100).toFixed(1) + '%');
+  const d = el.querySelector('.vdur'), t = fmtDur(a.currentTime); if(d && d.textContent !== t) d.textContent = t;
+}
+function vEnded(){
+  if(VR.fixing) return;
+  const a = VR.a, id = VR.mid; VR.loading = false;
+  try{ a.currentTime = 0; }catch(_){}
+  const el = voiceEl(id); if(el) voiceReset(el);
+  // keep going: the next unheard voice note from the other person plays by itself
+  const items = chat ? [...chat.msgs.values()].filter(x => !(chat.hiddenLocal && chat.hiddenLocal.has(x.id))).sort((x, y) => (x.ts || 0) - (y.ts || 0)) : [];
+  const i = items.findIndex(x => x.id === id), nx = items[i + 1];
+  if(i > -1 && nx && nx.type === 'voice' && nx.senderUid !== me.uid && !isHeard(nx.id)) voiceToggle(nx);
+}
+function vError(){
+  const m = msgById(VR.mid);
+  if(m && !VR.fb && okAudio(m.audioUrl) && mp3Of(m.audioUrl) && VR.a && VR.a.src !== mp3Of(m.audioUrl)){   // the browser said it could play it but couldn't: try the converted copy once
+    VR.fb = true; VR.a.src = mp3Of(m.audioUrl); VR.a.play().catch(() => {}); return;
+  }
+  VR.loading = false; toast('Couldn’t play this voice message'); voiceStop();
+}
+function voiceSession(m){
+  if(!('mediaSession' in navigator)) return;
+  try{
+    navigator.mediaSession.metadata = new MediaMetadata({ title:'Voice message', artist: m.senderUid === me.uid ? 'You' : ((chat && chat.other.name) || '') });
+    const a = VR.a;
+    navigator.mediaSession.setActionHandler('play', () => a.play().catch(() => {}));
+    navigator.mediaSession.setActionHandler('pause', () => a.pause());
+    navigator.mediaSession.setActionHandler('seekbackward', () => { try{ a.currentTime = Math.max(0, a.currentTime - 10); }catch(_){} });
+    navigator.mediaSession.setActionHandler('seekforward', () => { try{ a.currentTime = a.currentTime + 10; }catch(_){} });
+  }catch(e){}
+}
+$('msgs').addEventListener('click', e => {
+  const vm = e.target.closest('.vm'); if(!vm || !$('mo').hidden) return;
+  const m = msgById(vm.dataset.v); if(!m) return;
+  if(e.target.closest('.vspd')){
+    VR.rate = VR.rate === 1 ? 1.5 : VR.rate === 1.5 ? 2 : 1;
+    try{ localStorage.setItem('msb_vrate', String(VR.rate)); }catch(_){}
+    if(VR.a){ VR.a.defaultPlaybackRate = VR.rate; VR.a.playbackRate = VR.rate; }
+    voiceSync(); return;
+  }
+  if(e.target.closest('.vplay')){ voiceToggle(m); return; }
+  const w = e.target.closest('.vw');
+  if(w){ const r = w.getBoundingClientRect(); voiceToggle(m, Math.max(0, Math.min(1, (e.clientX - r.left) / r.width))); }
+});
+
+/* ── recording ── */
+const REC = { st:'idle', stream:null, mr:null, chunks:[], ctx:null, an:null, buf:null, raf:0, meter:0, tick:0, peaks:[], live:[], t0:0, acc:0,
+              lastSample:0, lastDraw:0, wake:null, mime:'', canceled:false, sendAfter:false, finalMs:null, warned:false, autoPaused:false };
+const recSupported = () => !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
+if(!recSupported()) $('composer').classList.add('no-mic');          // old browsers / in-app browsers: the normal send button stays
+function pickMime(){
+  const ua = navigator.userAgent || '';
+  const apple = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) || (/Safari/.test(ua) && !/Chrome|Chromium|Android|Edg/.test(ua));
+  const list = apple ? ['audio/mp4;codecs=mp4a.40.2','audio/mp4','audio/webm;codecs=opus','audio/webm'] : ['audio/webm;codecs=opus','audio/ogg;codecs=opus','audio/mp4;codecs=mp4a.40.2','audio/mp4','audio/webm'];
+  for(const t of list){ try{ if(MediaRecorder.isTypeSupported(t)) return t; }catch(_){} }
+  return '';
+}
+const recElapsed = () => REC.acc + (REC.st === 'rec' ? Date.now() - REC.t0 : 0);
+function recUI(){
+  const on = REC.st === 'rec' || REC.st === 'paused';
+  $('composer').classList.toggle('recording', on);
+  $('rec').classList.toggle('paused', REC.st === 'paused');
+  $('recPause').setAttribute('aria-label', REC.st === 'paused' ? 'Resume recording' : 'Pause recording');
+}
+function recTickUI(){
+  const sec = Math.floor(recElapsed() / 1000), left = VOICE_MAX_SEC - sec, low = left <= VOICE_WARN_SEC;
+  const txt = low ? '−' + fmtDur(Math.max(0, left)) : fmtDur(sec), el = $('recTime');
+  if(el.textContent !== txt) el.textContent = txt;
+  $('rec').classList.toggle('low', low);
+  if(low && !REC.warned){ REC.warned = true; toast('1 minute left on this voice message'); }
+  if(left <= 0) recSend();
+}
+function recSample(){
+  if(REC.st !== 'rec') return;
+  let lv = 0.35;
+  if(REC.an){
+    REC.an.getByteTimeDomainData(REC.buf);
+    let s = 0; for(let i = 0; i < REC.buf.length; i++){ const d = (REC.buf[i] - 128) / 128; s += d * d; }
+    lv = Math.min(1, Math.sqrt(s / REC.buf.length) * 3.4);
+  }
+  REC.peaks.push(lv); REC.live.push(lv);
+  if(REC.live.length > 160) REC.live.splice(0, REC.live.length - 160);
+  REC.lastSample = performance.now();
+}
+function recDraw(ts){
+  REC.raf = 0;
+  if(REC.st !== 'rec' && REC.st !== 'paused') return;
+  const cv = $('recCv');
+  if(REC.st === 'rec' && ts - REC.lastDraw < 30){ REC.raf = requestAnimationFrame(recDraw); return; }   // ~30 fps is plenty
+  REC.lastDraw = ts || 0;
+  const dpr = Math.min(2, window.devicePixelRatio || 1), w = cv.clientWidth, h = cv.clientHeight;
+  if(!w || !h){ if(REC.st === 'rec') REC.raf = requestAnimationFrame(recDraw); return; }
+  if(cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)){ cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+  const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
+  const bw = 2.5, step = 5, n = Math.ceil(w / step) + 1, live = REC.live, off = live.length - n;
+  const f = REC.st === 'rec' ? Math.min(1, (performance.now() - REC.lastSample) / 80) : 0;   // slide smoothly between samples
+  g.fillStyle = REC.st === 'paused' ? '#94a3b8' : '#4f46e5';
+  for(let i = 0; i < n; i++){
+    const v = live[off + i], bh = Math.max(3, (v == null ? 0 : v) * (h - 4)), x = i * step - f * step;
+    g.beginPath(); if(g.roundRect) g.roundRect(x, (h - bh) / 2, bw, bh, bw / 2); else g.rect(x, (h - bh) / 2, bw, bh); g.fill();
+  }
+  if(REC.st === 'rec') REC.raf = requestAnimationFrame(recDraw);
+}
+function recWake(){   // keep the screen on during a long recording
+  try{ if(navigator.wakeLock) navigator.wakeLock.request('screen').then(l => { if(REC.st === 'idle') l.release(); else REC.wake = l; }).catch(() => {}); }catch(_){}
+}
+async function recStart(){
+  if(REC.st !== 'idle' || !chat || !me) return;
+  if(!dbReady){ toast('Connecting… try again in a second'); return; }
+  if(chat.blocked){ toast('Unblock this user to send messages'); return; }
+  voiceStop();                                      // never record over a playing voice note
+  REC.st = 'starting';
+  let ctx = null;
+  try{ const AC = window.AudioContext || window.webkitAudioContext; if(AC){ ctx = new AC(); if(ctx.resume) ctx.resume(); } }catch(_){ ctx = null; }   // made inside the tap so iOS allows it
+  const closeCtx = () => { try{ ctx && ctx.close(); }catch(_){} };
+  let stream;
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({ audio:{ channelCount:1, echoCancellation:true, noiseSuppression:true, autoGainControl:true } });
+  }catch(e){
+    closeCtx(); REC.st = 'idle';
+    const n = e && e.name;
+    toast(n === 'NotAllowedError' || n === 'SecurityError' ? 'Microphone is blocked. Allow it in your browser’s site settings, then try again.'
+        : n === 'NotFoundError' ? 'No microphone found on this device.' : 'Couldn’t start recording. Try again.');
+    return;
+  }
+  if(REC.st !== 'starting' || !chat){ stream.getTracks().forEach(t => t.stop()); closeCtx(); REC.st = 'idle'; return; }   // cancelled while the permission box was open
+  const mime = pickMime();
+  let mr;
+  try{ mr = new MediaRecorder(stream, Object.assign({ audioBitsPerSecond: /mp4/.test(mime) ? 32000 : 24000 }, mime ? { mimeType:mime } : {})); }   // mono voice at 24 kbps ≈ 180 KB per minute
+  catch(e){
+    try{ mr = new MediaRecorder(stream); }
+    catch(e2){ stream.getTracks().forEach(t => t.stop()); closeCtx(); REC.st = 'idle'; toast('Voice messages aren’t supported on this browser'); return; }
+  }
+  Object.assign(REC, { stream, mr, ctx, mime: mr.mimeType || mime || 'audio/webm', chunks:[], peaks:[], live:[], acc:0, t0:Date.now(), canceled:false, sendAfter:false, finalMs:null, warned:false, autoPaused:false, an:null, buf:null });
+  if(ctx){ try{ const an = ctx.createAnalyser(); an.fftSize = 256; an.smoothingTimeConstant = 0.5; ctx.createMediaStreamSource(stream).connect(an); REC.an = an; REC.buf = new Uint8Array(an.fftSize); }catch(_){ REC.an = null; } }
+  mr.ondataavailable = e => { if(e.data && e.data.size) REC.chunks.push(e.data); };
+  mr.onstop = recFinish;
+  mr.onerror = () => toast('Recording stopped unexpectedly');
+  stream.getTracks().forEach(t => { t.onended = () => { if((REC.st === 'rec' || REC.st === 'paused') && REC.finalMs == null) REC.finalMs = recElapsed(); }; });   // mic unplugged / taken by a call
+  mr.start(1000);                                   // chunks arrive every second, so nothing big piles up in memory at the end
+  REC.st = 'rec'; REC.t0 = Date.now();
+  REC.meter = setInterval(recSample, 80);
+  REC.tick = setInterval(recTickUI, 250);
+  $('recTime').textContent = '0:00'; recTickUI(); recUI(); recWake();
+  REC.raf = requestAnimationFrame(recDraw);
+  try{ navigator.vibrate && navigator.vibrate(10); }catch(_){}
+}
+function recPauseToggle(){
+  if(REC.st === 'rec'){
+    try{ REC.mr.pause(); }catch(_){ return; }
+    REC.acc += Date.now() - REC.t0; REC.st = 'paused';
+    recUI(); recTickUI(); REC.raf = requestAnimationFrame(recDraw);
+  } else if(REC.st === 'paused'){
+    try{ REC.mr.resume(); }catch(_){ return; }
+    REC.t0 = Date.now(); REC.st = 'rec'; REC.autoPaused = false;
+    recUI(); recWake(); REC.raf = requestAnimationFrame(recDraw);
+  }
+}
+function recSend(){
+  if(REC.st !== 'rec' && REC.st !== 'paused') return;
+  const ms = recElapsed();
+  if(ms < VOICE_MIN_MS){ toast('Too short — keep talking for a second'); return; }
+  REC.finalMs = ms; REC.sendAfter = true;
+  try{ navigator.vibrate && navigator.vibrate(10); }catch(_){}
+  if(REC.mr && REC.mr.state !== 'inactive'){ try{ REC.mr.stop(); }catch(_){ recTeardown(); } } else recTeardown();
+}
+function recCancel(){
+  if(REC.st === 'idle') return;
+  if(REC.st === 'starting'){ REC.st = 'idle'; return; }
+  REC.canceled = true;
+  if(REC.mr && REC.mr.state !== 'inactive'){ try{ REC.mr.stop(); }catch(_){ recTeardown(); } } else recTeardown();
+}
+function recTeardown(){
+  clearInterval(REC.meter); clearInterval(REC.tick); cancelAnimationFrame(REC.raf);
+  try{ REC.stream && REC.stream.getTracks().forEach(t => t.stop()); }catch(_){}       // releases the mic (the browser's recording dot goes away)
+  try{ REC.ctx && REC.ctx.close(); }catch(_){}
+  try{ REC.wake && REC.wake.release(); }catch(_){}
+  Object.assign(REC, { st:'idle', stream:null, mr:null, chunks:[], ctx:null, an:null, buf:null, peaks:[], live:[], wake:null, acc:0, canceled:false, sendAfter:false, finalMs:null, warned:false, autoPaused:false });
+  recUI();
+}
+function recFinish(){
+  const keep = !REC.canceled, send = REC.sendAfter, ms = REC.finalMs != null ? REC.finalMs : recElapsed();
+  const blob = new Blob(REC.chunks, { type: REC.mime || 'audio/webm' }), bars = peaksToBars(REC.peaks);
+  recTeardown();
+  if(!keep || !blob.size) return;
+  if(ms < VOICE_MIN_MS){ toast('Too short — keep talking for a second'); return; }
+  const info = { blob, duration: Math.max(1, Math.round(ms / 1000)), wf: encWf(bars), mime: blob.type };
+  if(send) sendVoice(info);
+  else openSheet('Recording stopped at ' + fmtDur(info.duration), [{ label:'Send voice message', run:() => sendVoice(info) }, { label:'Discard', danger:true }]);   // interrupted (call, mic unplugged): never lose it silently
+}
+$('micBtn').onclick = recStart;
+$('recPause').onclick = recPauseToggle;
+$('recSend').onclick = recSend;
+$('recDel').onclick = () => {
+  if(recElapsed() > 10000) confirmSheet('Discard recording?', 'This voice message hasn’t been sent.', 'Discard').then(ok => { if(ok) recCancel(); });
+  else recCancel();
+};
+document.addEventListener('visibilitychange', () => {
+  if(document.hidden && REC.st === 'rec'){ recPauseToggle(); REC.autoPaused = true; }       // phones stop the mic in the background anyway
+  else if(!document.hidden && REC.autoPaused && REC.st === 'paused'){ REC.autoPaused = false; toast('Recording paused while you were away'); }
+});
+window.addEventListener('pagehide', () => { try{ REC.stream && REC.stream.getTracks().forEach(t => t.stop()); }catch(_){} });
+
+/* ── upload + send ── */
+async function uploadVoice(c, temp){
+  const token = await auth.currentUser.getIdToken();
+  const sr = await fetch('/api/voice/upload-signature', { method:'POST', headers:{ Authorization:'Bearer ' + token } });
+  const sig = await sr.json().catch(() => ({}));
+  if(!sr.ok || !sig.ok) throw new Error(sig.error || 'Could not start upload');
+  const form = new FormData();
+  form.append('file', temp.blob, 'voice.' + extFor(temp.mime));
+  form.append('api_key', sig.apiKey); form.append('timestamp', sig.timestamp); form.append('folder', sig.folder); form.append('signature', sig.signature);
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest(); temp.xhr = xhr;
+    let last = -1;
+    xhr.upload.onprogress = ev => { if(!ev.lengthComputable) return; const pct = Math.round(ev.loaded / ev.total * 100); if(pct !== last){ last = pct; voiceProgress(c, temp, pct); } };
+    xhr.onload = () => { temp.xhr = null; if(xhr.status >= 200 && xhr.status < 300){ try{ resolve(JSON.parse(xhr.responseText)); }catch(e){ reject(e); } } else reject(new Error('Upload failed')); };
+    xhr.onerror = () => { temp.xhr = null; reject(new Error('Network error')); };
+    xhr.onabort = () => { temp.xhr = null; reject(new Error('aborted')); };
+    xhr.open('POST', 'https://api.cloudinary.com/v1_1/' + sig.cloudName + '/video/upload');
+    xhr.send(form);
+  });
+}
+async function sendVoice(info, retryItem){
+  if(!chat || !me) return;
+  if(!dbReady){ toast('Connecting… try again in a second'); return; }
+  if(chat.blocked){ toast('Unblock this user to send messages'); return; }
+  const c = chat;
+  pingActive();
+  let temp = retryItem;
+  const msgRef = temp ? doc(db,'conversations',c.cid,'messages',temp.id) : doc(collection(db,'conversations',c.cid,'messages'));
+  if(!temp){
+    temp = { id:msgRef.id, senderUid:me.uid, type:'voice', text:VOICE_LABEL, replyTo:c.reply || null, ts:Date.now(), pendingLocal:true,
+             duration:info.duration, wf:info.wf, mime:info.mime, blob:info.blob, localUrl:URL.createObjectURL(info.blob), audioUrl:'', uploading:true, progress:0 };
+    c.pending.push(temp);
+    c.reply = null; hideReplyBar();
+  } else { temp.failed = false; temp.uploading = !temp.audioUrl; temp.progress = 0; temp.ts = Date.now(); }
+  renderMsgs(true);
+  try{
+    if(retryItem){                                    // maybe the first attempt actually went through
+      const ex = await getDoc(msgRef);
+      if(ex.exists()){ temp.uploading = false; c.ack.add(temp.id); if(chat === c) renderMsgs(false); return; }
+    }
+    if(!temp.audioUrl){
+      const up = await uploadVoice(c, temp);
+      if(temp.deleted) return;
+      temp.audioUrl = up.secure_url;
+      if(!temp.duration && up.duration) temp.duration = Math.round(up.duration);
+    }
+    temp.uploading = false;
+    const payload = { senderUid:me.uid, type:'voice', text:VOICE_LABEL, audioUrl:temp.audioUrl, duration:temp.duration, wf:temp.wf, mime:temp.mime, createdAt:serverTimestamp() };
+    if(temp.replyTo) payload.replyTo = temp.replyTo;
+    const last = VOICE_LABEL + ' · ' + fmtDur(temp.duration);
+    const batch = writeBatch(db);
+    batch.set(msgRef, payload);
+    batch.set(doc(db,'inbox',me.uid,'threads',c.other.uid),
+      { otherUid:c.other.uid, name:c.other.name, photo:c.other.photo || '', lastText:last, lastAt:serverTimestamp(), lastSender:me.uid, unread:0, accepted:true }, { merge:true });
+    batch.set(doc(db,'inbox',c.other.uid,'threads',me.uid),
+      { otherUid:me.uid, name:me.name, photo:me.photo || '', lastText:last, lastAt:serverTimestamp(), lastSender:me.uid, unread:increment(1) }, { merge:true });
+    await batch.commit();
+    temp.blob = null;                                 // the upload is safe in Cloudinary: let go of the recording
+    c.ack.add(temp.id);
+    if(chat === c) renderMsgs(false);
+  }catch(e){
+    if(temp.deleted) return;
+    temp.uploading = false;
+    try{ const ex = await getDoc(msgRef); if(ex.exists()){ c.ack.add(temp.id); if(chat === c) renderMsgs(false); return; } }catch(_){}
+    if(e && e.code === 'permission-denied'){          // same silent behaviour as text (e.g. they blocked you)
+      temp.failed = false; temp.silent = true;
+      saveSilent(c);
+      if(chat === c) renderMsgs(false);
+      console.warn('[messages] voice send refused by the server (permission-denied)', e);
+      return;
+    }
+    temp.failed = true;
+    if(chat === c) renderMsgs(false);
+    toast('Couldn’t send — tap the message to retry');
+  }
+}
 
 /* ───────── save reads: pause listeners while the tab is hidden ───────── */
 document.addEventListener('visibilitychange', () => {
@@ -1258,7 +1770,7 @@ function applyBlockUI(){
   $('reqBar').hidden = !r;
   if(r) $('reqName').textContent = chat.other.name || 'This person';
   $('composer').style.display = (b || r) ? 'none' : '';
-  if(b || r) hideReplyBar();
+  if(b || r){ hideReplyBar(); recCancel(); }
 }
 async function blockUser(uid, name, photo){
   const nm = name || 'this user';
@@ -1638,7 +2150,7 @@ function saveChatCacheSoon(){
   _cacheTimers.c = setTimeout(() => {
     try{
       const msgs = [...c.msgs.values()].filter(m => m.ts && m.confirmed).sort((a,b) => a.ts - b.ts).slice(-PAGE)
-        .map(m => ({ id:m.id, senderUid:m.senderUid, text:m.text, replyTo:m.replyTo || null, reactions:m.reactions || {}, edited:!!m.edited, ts:m.ts }));
+        .map(m => ({ id:m.id, senderUid:m.senderUid, text:m.text, replyTo:m.replyTo || null, reactions:m.reactions || {}, edited:!!m.edited, ts:m.ts, type:m.type || '', audioUrl:m.audioUrl || '', duration:m.duration || 0, wf:m.wf || '', mime:m.mime || '' }));
       localStorage.setItem(CHAT_KEY(c.cid), JSON.stringify({ msgs, hasMore:c.hasMore, t:Date.now() }));
       const idx = JSON.parse(localStorage.getItem('msb_chat_idx') || '[]').filter(x => x !== c.cid); idx.push(c.cid);
       while(idx.length > 8) localStorage.removeItem(CHAT_KEY(idx.shift()));      // keep only the 8 most recent chats
