@@ -383,6 +383,35 @@ app.post('/api/video/upload-signature', requireUser, async (req, res) => {
   }
 });
 
+// ---------------- Voice messages: direct-to-Cloudinary upload ----------------
+// Same idea as the video endpoint above: the browser records a voice note and
+// uploads it straight to Cloudinary, so Render only ever sees this tiny signing
+// request, never the audio. Cloudinary stores audio under the "video" resource
+// type. No eager/transformations here: playback only asks Cloudinary for a
+// converted copy (mp3) on the rare browser that can't play the original.
+const CLOUDINARY_VOICE_FOLDER = 'mindshift-voice';
+app.post('/api/voice/upload-signature', requireUser, async (req, res) => {
+  try {
+    if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_API_KEY || !CLOUDINARY_API_SECRET) {
+      return res.status(500).json({ error: 'Voice hosting is not configured (missing Cloudinary credentials).' });
+    }
+    const timestamp = Math.round(Date.now() / 1000);
+    const paramsToSign = { folder: CLOUDINARY_VOICE_FOLDER, timestamp };
+    const signature = signCloudinaryParams(paramsToSign);
+    return res.json({
+      ok: true,
+      cloudName: CLOUDINARY_CLOUD_NAME,
+      apiKey: CLOUDINARY_API_KEY,
+      timestamp,
+      folder: CLOUDINARY_VOICE_FOLDER,
+      signature
+    });
+  } catch (err) {
+    console.error('/api/voice/upload-signature error', err);
+    return res.status(500).json({ error: 'Could not prepare voice upload' });
+  }
+});
+
 // Admin-dashboard twin of the above. The admin panel authenticates with its
 // own password-based session cookie (requireAdminApi / hasValidAdminSession)
 // rather than a Firebase customer account, so it has no ID token to satisfy
