@@ -683,8 +683,9 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
 <script src="/sidebar-nav.js?v=3"></script>
 <script type="module" src="/messages-nav.js?v=1"></script>
 <script src="/share-image.js"></script>
-<script src="/reels.js?v=7"></script>
-<script src="/image-viewer.js?v=1"></script>
+<script src="/share-drawer.js?v=1"></script>
+<script src="/reels.js?v=8"></script>
+<script src="/image-viewer.js?v=2"></script>
 <script>
   function toggleSidebar(){
     const sidebar = document.getElementById('sidebar');
@@ -2236,31 +2237,18 @@ window.openChatWithProfile = function(){
 };
 
 /* ── SHARE PROFILE ── */
-window.shareProfile = async function(){
+window.shareProfile = function(){
   // Clean URL: /profile/@username  or fallback to ?uid=
   const url = profileData.username
     ? `${location.origin}/profile/@${encodeURIComponent(profileData.username)}`
     : `${location.origin}/profile?uid=${profileData.uid}`;
   const name = profileData.name || 'this profile';
-  const shareData = {
-    title: `${name} on MindShift Books`,
-    text:  `Check out ${name}'s profile on MindShift Books`,
-    url
-  };
-  if(navigator.share){
-    try{ await navigator.share(shareData); }
-    catch(e){ /* user cancelled */ }
-    return;
-  }
-  try{
-    await navigator.clipboard.writeText(url);
-    showToast('Profile link copied to clipboard');
-  }catch{
-    showToast('Could not copy link');
-  }
+  MSBShare.open({
+    url, heading:'Share profile', title:`${name} on MindShift Books`,
+    text:`Check out ${name}'s profile on MindShift Books`, author:name, thumb:profileData.photo
+  });
 };
 
-/* ── TOGGLE FOLLOW ── */
 window.toggleFollow = async function(){
   if(!currentUser){ window.location.href='/login'; return; }
   const btn = document.getElementById('followBtn');
@@ -2465,13 +2453,13 @@ function buildMediaGridHtml(images, postId){
   if(!images || !images.length) return '';
   if(images.length===1){
     return `<div class="pcard-single">
-      <img src="${images[0]}" alt="" loading="lazy" onclick="event.stopPropagation();MSBImageViewer.fromEl(this)">
+      <img src="${images[0]}" alt="" loading="lazy" data-post-id="${postId}" onclick="event.stopPropagation();MSBImageViewer.fromEl(this)">
     </div>`;
   }
   return `
     <div class="pcard-carousel">
       <div class="pcard-track" id="ptrack-${postId}" onscroll="onPostScroll('${postId}')">
-        ${images.map(url=>`<div class="pcard-slide"><img src="${url}" alt="" loading="lazy" onclick="event.stopPropagation();MSBImageViewer.fromEl(this)" onload="fitCarouselSlide(this)" onerror="fitCarouselSlide(this)"></div>`).join('')}
+        ${images.map(url=>`<div class="pcard-slide"><img src="${url}" alt="" loading="lazy" data-post-id="${postId}" onclick="event.stopPropagation();MSBImageViewer.fromEl(this)" onload="fitCarouselSlide(this)" onerror="fitCarouselSlide(this)"></div>`).join('')}
       </div>
       <div class="pcard-count" id="pcount-${postId}">1/${images.length}</div>
     </div>`;
@@ -2520,6 +2508,26 @@ function fmtDuration(secs){
 // Feed video tile — mirrors articles.html's buildVideoTileHtml so video
 // posts render the same way on the profile as they do in the main feed.
 /* Tap a video -> full-screen reels (reels.js). Tapping anywhere else on the card still opens the post. */
+/* Engagement inside the full-screen image viewer (image-viewer.js) — same actions as the card footer. */
+window.msbImgEngage = {
+  like:    id => handleLike(id),
+  comment: id => { location.href = `/post-read?id=${id}&comment=1`; },
+  repost:  id => { const s = allSubmissions.find(x=>x.id===id && x.type==='post'); if(s) doRepostCardProfile(s); },
+  save:    id => handleSave(id),
+  share:   id => {
+    const s = allSubmissions.find(x=>x.id===id); if(!s) return;
+    const img = (s.images && s.images[0]) || s.thumbnailUrl || '';
+    MSBShare.open({
+      url: `${location.origin}/post-read?id=${id}`, text: s.text || '', author: s.authorName || profileData.name, thumb: img,
+      onImage: typeof openShareImageCard === 'function'
+        ? () => openShareImageCard({ type:'post', id, author:s.authorName||profileData.name, avatar:s.authorPhoto||profileData.photo, publishedAt:s.publishedAt, text:s.text, image:img })
+        : null
+    });
+  },
+  info:    id => { const s = allSubmissions.find(x=>x.id===id); return s ? { author:s.authorName||profileData.name, avatar:s.authorPhoto||profileData.photo, text:s.text } : null; },
+  isLiked: id => likedSet.has(id),
+  isSaved: id => savedSet.has(id)
+};
 window.openReels = function(startId){
   MSBReels.open(startId, {
     lookup: pid => {

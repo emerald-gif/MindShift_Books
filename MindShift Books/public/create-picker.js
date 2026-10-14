@@ -17,7 +17,7 @@
 
     var style = document.createElement('style');
     style.textContent = `
-#cpk-fab{position:fixed;right:16px;bottom:max(env(safe-area-inset-bottom,0px),16px);width:44px;height:44px;border-radius:50%;
+#cpk-fab{position:fixed;right:16px;bottom:max(env(safe-area-inset-bottom,0px),16px);width:48px;height:48px;border-radius:14px;
   background:linear-gradient(135deg,#4f46e5,#06b6d4);border:none;cursor:pointer;z-index:900;
   display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(79,70,229,.4);
   transition:transform .15s}

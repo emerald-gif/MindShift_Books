@@ -22,8 +22,9 @@
 <meta name="twitter:title" content="MindShift Books" />
 <meta name="twitter:description" content="Discover articles, ideas, insights, and stories on mindset, money, productivity, relationships, wellness, career, purpose, and personal growth from the MindShift Books community."/>
 
-<script src="/reels.js?v=7"></script>
-<script src="/image-viewer.js?v=1"></script>
+<script src="/share-drawer.js?v=1"></script>
+<script src="/reels.js?v=8"></script>
+<script src="/image-viewer.js?v=2"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -2487,6 +2488,10 @@ function buildAcard(a){
               Delete
             </button>
             <div style="height:1px;background:var(--border);margin:4px 0"></div>
+            <button class="acard-menu-item" onclick="closeOpenCardMenu();shareItemDrawer('${a.id}')">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              Share
+            </button>
             <button class="acard-menu-item" onclick="copyCardLink('${a.id}')">
               <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path stroke-linecap="round" d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
               Copy Link
@@ -2966,13 +2971,13 @@ function buildMediaGridHtml(images, postId){
   if(!images || !images.length) return '';
   if(images.length===1){
     return `<div class="pcard-single">
-      <img src="${images[0]}" alt="" loading="lazy" onclick="event.stopPropagation();MSBImageViewer.fromEl(this)">
+      <img src="${images[0]}" alt="" loading="lazy" data-post-id="${postId}" onclick="event.stopPropagation();MSBImageViewer.fromEl(this)">
     </div>`;
   }
   return `
     <div class="pcard-carousel">
       <div class="pcard-track" id="ptrack-${postId}" onscroll="onPostScroll('${postId}')">
-        ${images.map(url=>`<div class="pcard-slide"><img src="${url}" alt="" loading="lazy" onclick="event.stopPropagation();MSBImageViewer.fromEl(this)" onload="fitCarouselSlide(this)" onerror="fitCarouselSlide(this)"></div>`).join('')}
+        ${images.map(url=>`<div class="pcard-slide"><img src="${url}" alt="" loading="lazy" data-post-id="${postId}" onclick="event.stopPropagation();MSBImageViewer.fromEl(this)" onload="fitCarouselSlide(this)" onerror="fitCarouselSlide(this)"></div>`).join('')}
       </div>
       <div class="pcard-count" id="pcount-${postId}">1/${images.length}</div>
     </div>`;
@@ -3079,6 +3084,31 @@ window.reelsToggleFollow = async function(uid, name){
     toast('Could not update — try again');
   }
 };
+/* ── ONE share drawer (share-drawer.js) for posts + articles ── */
+window.shareItemDrawer = function(id){
+  const post = POSTS.find(p=>p.id===id) || (typeof _rl !== 'undefined' && _rl.vids.find(p=>p.id===id));
+  if(post){
+    MSBShare.open({
+      url: `${location.origin}/post-read?id=${id}`,
+      text: post.text, author: post.author,
+      thumb: post.videoUrl ? post.thumbnailUrl : (post.images && post.images[0]),
+      onImage: () => shareAsImage(id, 'post')
+    });
+    return;
+  }
+  openShare(id);
+};
+/* Engagement inside the full-screen image viewer (image-viewer.js) — same actions as the card footer. */
+window.msbImgEngage = {
+  like:    id => handleLike(id),
+  comment: id => goPostReadComment(id),
+  repost:  id => doRepostCard('post', id),
+  save:    id => handleSave(id),
+  share:   id => shareItemDrawer(id),
+  info:    id => { const p = POSTS.find(x=>x.id===id); return p ? { author:p.author, avatar:p.avatar, text:p.text } : null; },
+  isLiked: id => likedSet.has(id),
+  isSaved: id => savedSet.has(id)
+};
 window.openReels = function(startId, ids){
   const lookup = pid => {
     const p = POSTS.find(x=>x.id===pid);
@@ -3096,6 +3126,7 @@ window.openReels = function(startId, ids){
     // Reels always link to the post page (extra videos aren't in POSTS, so copyCardLink would guess "article").
     link: pid => navigator.clipboard.writeText(`${location.origin}/post-read?id=${pid}`).then(()=>toast('Link copied! 🎉')).catch(()=>toast('Copy failed')),
     repost: pid => doRepostCard('post', pid),
+    shareImage: it => { if(typeof openShareImageCard==='function') openShareImageCard({ type:'post', id:it.id, author:it.author, avatar:it.avatar, text:it.text, image:it.thumbnailUrl }); },
     followState: it => {
       const uid = it.isMindshift ? 'official' : it.authorUid;
       if(!uid || (currentUser && uid === currentUser.uid)) return null;
@@ -3143,6 +3174,10 @@ function buildPostCardHtml(p){
               Delete
             </button>
             <div style="height:1px;background:var(--border);margin:4px 0"></div>` : ''}
+            <button class="acard-menu-item" onclick="closeOpenCardMenu();shareItemDrawer('${p.id}')">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              Share
+            </button>
             <button class="acard-menu-item" onclick="copyCardLink('${p.id}')">
               <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path stroke-linecap="round" d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
               Copy Link
@@ -3248,6 +3283,10 @@ function buildRepostCardHtmlLegacy(r){
           </button>
           <div class="acard-menu-drop" id="cmenu-${tid}">
             ${editDelete}
+            <button class="acard-menu-item" onclick="closeOpenCardMenu();shareItemDrawer('${tid}')">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              Share
+            </button>
             <button class="acard-menu-item" onclick="copyCardLink('${tid}')">
               <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path stroke-linecap="round" d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
               Copy Link
@@ -3335,6 +3374,10 @@ function buildRepostCardHtml(r){
           </button>
           <div class="acard-menu-drop" id="cmenu-${tid}">
             ${editDelete}
+            <button class="acard-menu-item" onclick="closeOpenCardMenu();shareItemDrawer('${tid}')">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              Share
+            </button>
             <button class="acard-menu-item" onclick="copyCardLink('${tid}')">Copy Link</button>
             <button class="acard-menu-item" onclick="closeOpenCardMenu();shareAsImage('${tid}','${ttype}')">Share as Image</button>
           </div>
@@ -3452,7 +3495,11 @@ function renderGrid(){
                 Delete
               </button>
               <div style="height:1px;background:var(--border);margin:4px 0"></div>` : ''}
-              <button class="acard-menu-item" onclick="copyCardLink('${a.id}')">
+              <button class="acard-menu-item" onclick="closeOpenCardMenu();shareItemDrawer('${a.id}')">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              Share
+            </button>
+            <button class="acard-menu-item" onclick="copyCardLink('${a.id}')">
                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path stroke-linecap="round" d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
                 Copy Link
               </button>
@@ -4806,11 +4853,14 @@ window.handleBellClick = function(){
 /* ── SHARE ── */
 window.openShare = function(id){
   shareId = id;
-  const url = `${location.origin}/article-read?id=${id}`;
-  document.getElementById('copyUrl').textContent = url;
-  document.getElementById('authOverlay').classList.add('on');
-  document.getElementById('shareSheet').classList.add('on');
-  document.body.style.overflow='hidden';
+  const art = ARTICLES.find(a=>a.id===id);
+  MSBShare.open({
+    url: `${location.origin}/article-read?id=${id}`,
+    heading: 'Share this article',
+    title: art ? art.title : 'Article', text: art ? art.title : 'Article',
+    thumb: art ? (art.img || art.coverImage) : '', author: art ? art.author : '',
+    onImage: () => shareAsImage(id, 'article')
+  });
 };
 window.doShare = function(platform){
   if(!shareId) return;

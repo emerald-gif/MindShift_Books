@@ -123,30 +123,6 @@ body.msb-reels-open .rp-sheet{z-index:100005!important}
 #msbReels .rl-tip-row span{font-size:14px;color:rgba(255,255,255,.82);line-height:1.3}
 #msbReels .rl-tip-row b{color:#fff;font-weight:800}
 #msbReels .rl-tip-ok{display:block;width:100%;margin-top:10px;padding:11px;border:none;border-radius:12px;background:#fff;color:#0f172a;font-weight:800;font-size:14px;font-family:inherit;cursor:pointer}
-/* share drawer */
-#msbReels .rl-sbd{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.55);opacity:0;transition:opacity .22s}
-#msbReels .rl-sbd.in{opacity:1}
-#msbReels .rl-sheet{position:absolute;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;background:#fff;color:#0f172a;border-radius:22px 22px 0 0;
-  padding:8px 18px calc(max(18px,env(safe-area-inset-bottom)) + 6px);transform:translateY(100%);transition:transform .26s cubic-bezier(.2,.8,.2,1);
-  box-shadow:0 -10px 40px rgba(0,0,0,.35)}
-#msbReels .rl-sbd.in .rl-sheet{transform:translateY(0)}
-#msbReels .rl-sheet.drag{transition:none}
-#msbReels .rl-sbar{width:40px;height:4px;border-radius:2px;background:#cbd5e1;margin:4px auto 10px}
-#msbReels .rl-shd{font-size:17px;font-weight:800;text-align:center;margin-bottom:12px}
-#msbReels .rl-sprev{display:flex;gap:11px;align-items:center;padding:10px;border:1px solid #e2e8f0;border-radius:14px;margin-bottom:16px;background:#f8fafc}
-#msbReels .rl-sprev img{width:44px;height:58px;border-radius:8px;object-fit:cover;background:linear-gradient(135deg,#1e1b4b,#312e81);flex:none}
-#msbReels .rl-sprev div{min-width:0}
-#msbReels .rl-sprev b{display:block;font-size:13.5px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#msbReels .rl-sprev span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:12.5px;color:#64748b;line-height:1.35;margin-top:2px}
-#msbReels .rl-sgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px 6px}
-#msbReels .rl-sapp{background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:7px;font-family:inherit;font-size:12px;font-weight:700;color:#334155;cursor:pointer;padding:0}
-#msbReels .rl-sapp i{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:transform .12s}
-#msbReels .rl-sapp:active i{transform:scale(.9)}
-#msbReels .rl-sapp svg{width:26px;height:26px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-#msbReels .rl-sapp svg.fill{fill:#fff;stroke:none}
-#msbReels .rl-slink{display:flex;gap:8px;margin-top:18px;align-items:center;background:#f1f5f9;border-radius:12px;padding:6px 6px 6px 14px}
-#msbReels .rl-slink input{flex:1;min-width:0;border:none;background:none;font-size:13px;color:#475569;font-family:inherit;outline:none}
-#msbReels .rl-slink button{border:none;background:#4f46e5;color:#fff;font-weight:800;font-size:13px;padding:9px 16px;border-radius:9px;cursor:pointer;font-family:inherit}
 `;
   var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
 
@@ -457,88 +433,20 @@ body.msb-reels-open .rp-sheet{z-index:100005!important}
   }
 
 
-  /* ── Share drawer ── */
-  var shareOpen = false, sharePushed = false;
-  var APPS = {
-    native:  { label:'Share via…', bg:'#4f46e5', svg:'<svg viewBox="0 0 24 24"><path d="M4 12v7a2 2 0 002 2h12a2 2 0 002-2v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>' },
-    whatsapp:{ label:'WhatsApp', bg:'#25D366', svg:'<svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 01-12.4 7.4L3 21l1.9-5.5A8.4 8.4 0 1121 11.5z"/><path d="M9 8.5c0 3 3.5 6.5 6.5 6.5l1-1.6-2.2-1.1-.9.9c-.9-.4-2-1.5-2.4-2.4l.9-.9-1.1-2.2z" fill="#fff" stroke="none"/></svg>' },
-    telegram:{ label:'Telegram', bg:'#229ED9', svg:'<svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>' },
-    x:       { label:'X',        bg:'#0f172a', svg:'<svg viewBox="0 0 24 24" style="stroke-width:2.6"><line x1="4.5" y1="4.5" x2="19.5" y2="19.5"/><line x1="19.5" y1="4.5" x2="4.5" y2="19.5"/></svg>' },
-    facebook:{ label:'Facebook', bg:'#1877F2', svg:'<svg viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg>' },
-    email:   { label:'Email',    bg:'#64748b', svg:'<svg viewBox="0 0 24 24"><path d="M4 4h16a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2z"/><polyline points="22 6 12 13 2 6"/></svg>' },
-    sms:     { label:'Messages', bg:'#16a34a', svg:'<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>' },
-    copy:    { label:'Copy link',bg:'#475569', svg:I.link }
-  };
-  function shareUrlFor(id){ return (cfg && cfg.shareUrl) ? cfg.shareUrl(id) : (location.origin + '/post-read?id=' + id); }
+  /* Share: the one app-wide drawer (share-drawer.js). */
   function openShare(item){
-    var ov = document.getElementById('msbReels'); if(!ov || !item || shareOpen) return;
-    var url = shareUrlFor(item.id);
-    var snippet = (item.text || 'Watch this on MindShift Books').replace(/\s+/g,' ').trim();
-    var text = snippet.length > 110 ? snippet.slice(0,110) + '…' : snippet;
-    var order = [navigator.share ? 'native' : null, 'whatsapp','telegram','x','facebook','email','sms','copy'].filter(Boolean);
-    var bd = document.createElement('div'); bd.className = 'rl-sbd'; bd.id = 'rlShare';
-    bd.innerHTML = '<div class="rl-sheet" role="dialog" aria-label="Share">'+
-      '<div class="rl-sbar"></div><div class="rl-shd">Share</div>'+
-      '<div class="rl-sprev">'+(item.thumbnailUrl ? '<img src="'+esc(item.thumbnailUrl)+'" alt="">' : '<img alt="">')+
-        '<div><b>'+esc(item.author||'MindShift Books User')+'</b><span>'+esc(text)+'</span></div></div>'+
-      '<div class="rl-sgrid">'+order.map(function(k){ var a = APPS[k];
-        return '<button class="rl-sapp" data-s="'+k+'"><i style="background:'+a.bg+'">'+a.svg+'</i>'+a.label+'</button>'; }).join('')+'</div>'+
-      '<div class="rl-slink"><input readonly value="'+esc(url)+'"><button data-s="copy">Copy</button></div></div>';
-    ov.appendChild(bd);
-    requestAnimationFrame(function(){ requestAnimationFrame(function(){ bd.classList.add('in'); }); });
-    shareOpen = true;
-    history.pushState({ msbShare: 1 }, ''); sharePushed = true;
-
-    var sheet = bd.querySelector('.rl-sheet');
-    bd.addEventListener('click', function(e){
-      if(e.target === bd){ closeShare(); return; }
-      var b = e.target.closest('[data-s]'); if(!b) return;
-      e.stopPropagation();
-      doShare(b.getAttribute('data-s'), url, text);
-    });
-    // drag the sheet down to dismiss
-    var y0 = null, dy = 0;
-    sheet.addEventListener('touchstart', function(e){
-      if(e.target.closest('input')) return;
-      y0 = e.touches[0].clientY; dy = 0; sheet.classList.add('drag');
-    }, { passive:true });
-    sheet.addEventListener('touchmove', function(e){
-      if(y0 == null) return; dy = Math.max(0, e.touches[0].clientY - y0); sheet.style.transform = 'translateY('+dy+'px)';
-    }, { passive:true });
-    sheet.addEventListener('touchend', function(){
-      if(y0 == null) return; y0 = null; sheet.classList.remove('drag');
-      if(dy > 90) closeShare(); else sheet.style.transform = '';
-    });
-  }
-  function hideShare(){
-    shareOpen = false;
-    var bd = document.getElementById('rlShare'); if(!bd) return;
-    bd.classList.remove('in'); setTimeout(function(){ bd.remove(); }, 260);
-  }
-  function closeShare(){
-    if(sharePushed){ sharePushed = false; history.back(); }   // popstate -> hideShare()
-    else hideShare();
-  }
-  function doShare(kind, url, text){
-    var u = encodeURIComponent(url), t = encodeURIComponent(text + ' — MindShift Books');
-    if(kind === 'native'){ navigator.share({ title:'MindShift Books', text: text, url: url }).then(closeShare).catch(function(){}); return; }
-    if(kind === 'copy'){
-      var done = function(){ flash('Link copied'); closeShare(); };
-      if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done).catch(function(){ flash('Copy failed'); });
-      else { var inp = document.querySelector('#rlShare input'); if(inp){ inp.select(); try{ document.execCommand('copy'); done(); }catch(_){ flash('Copy failed'); } } }
+    if(!item) return;
+    var url = (cfg && cfg.shareUrl) ? cfg.shareUrl(item.id) : (location.origin + '/post-read?id=' + item.id);
+    if(!window.MSBShare){
+      if(navigator.share) navigator.share({ title:'MindShift Books', text:item.text||'', url:url }).catch(function(){});
+      else if(navigator.clipboard) navigator.clipboard.writeText(url).then(function(){ flash('Link copied'); });
       return;
     }
-    var link = {
-      whatsapp:'https://wa.me/?text=' + t + '%20' + u,
-      telegram:'https://t.me/share/url?url=' + u + '&text=' + t,
-      x:'https://twitter.com/intent/tweet?text=' + t + '&url=' + u,
-      facebook:'https://www.facebook.com/sharer/sharer.php?u=' + u,
-      email:'mailto:?subject=' + encodeURIComponent('MindShift Books') + '&body=' + t + '%0A' + u,
-      sms:'sms:?body=' + t + '%20' + u
-    }[kind];
-    if(!link) return;
-    if(kind === 'email' || kind === 'sms') location.href = link; else window.open(link, '_blank', 'noopener');
-    closeShare();
+    MSBShare.open({
+      url:url, text:item.text || 'Watch this on MindShift Books', thumb:item.thumbnailUrl, author:item.author,
+      onShare: cfg && cfg.onShare ? function(k){ cfg.onShare(item, k); } : null,
+      onImage: cfg && cfg.shareImage ? function(){ cfg.shareImage(item); } : null
+    });
   }
 
   function toggleMute(){
@@ -550,7 +458,7 @@ body.msb-reels-open .rp-sheet{z-index:100005!important}
     var ov = document.getElementById('msbReels');
     if(!ov || !ov.classList.contains('open')) return;
     if(observer){ observer.disconnect(); observer = null; }
-    clearInterval(syncTimer); syncTimer = null; activeId = null; shareOpen = false; sharePushed = false;
+    clearInterval(syncTimer); syncTimer = null; activeId = null;
     ov.querySelectorAll('video').forEach(function(v){ v.pause(); v.removeAttribute('src'); v.load(); });
     ov.classList.remove('open'); ov.innerHTML = ''; ov.onclick = null;
     document.documentElement.style.overflow = prevOv[0]; document.body.style.overflow = prevOv[1];
@@ -567,13 +475,13 @@ body.msb-reels-open .rp-sheet{z-index:100005!important}
     else teardown();
   }
   window.addEventListener('popstate', function(){
-    if(shareOpen){ sharePushed = false; hideShare(); return; }   // back button closes the share drawer first
+    if(window.MSBShare && MSBShare.justClosed()) return;     // that back press only closed the share drawer
     pushed = false; teardown();
   });
   document.addEventListener('keydown', function(e){
     var ov = document.getElementById('msbReels'); if(!ov || !ov.classList.contains('open')) return;
     var sc = ov.querySelector('.rl-scroller');
-    if(e.key === 'Escape'){ if(shareOpen) closeShare(); else close(); }
+    if(e.key === 'Escape'){ if(!(window.MSBShare && MSBShare.isOpen())) close(); }
     else if(e.key === 'ArrowDown'){ sc.scrollBy({top: sc.clientHeight, behavior:'smooth'}); e.preventDefault(); }
     else if(e.key === 'ArrowUp'){ sc.scrollBy({top: -sc.clientHeight, behavior:'smooth'}); e.preventDefault(); }
   });

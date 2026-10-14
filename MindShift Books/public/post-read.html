@@ -702,7 +702,8 @@ body{padding-bottom:64px} /* room for the fixed comment bar on post-read */
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
 <script src="/mentions.js"></script>
 <script src="/link-card.js"></script>
-<script src="/reels.js?v=7"></script>
+<script src="/share-drawer.js?v=1"></script>
+<script src="/reels.js?v=8"></script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
@@ -1374,6 +1375,8 @@ window.openReels = function(){
     },
     like: id => { if(id===artId) doLike(); else reelLikeOther(id); },
     repost: id => { if(id===artId) doRepost(); else repostOther(id); },
+    onShare: (it) => bumpShareCount(it.id),
+    shareImage: it => { if(typeof openShareImageCard==='function') openShareImageCard({ type:'post', id:it.id, author:it.author, avatar:it.avatar, text:it.text, image:it.thumbnailUrl }); },
     followState: it => {
       const uid = (it.isMindshift || !it.authorUid) ? 'official' : it.authorUid;
       if(currentUser && uid === currentUser.uid) return null;
@@ -2109,10 +2112,21 @@ function cTA(ts){
    see notif.notifyComment() below, at the actual submitComment/submitReply/like sites. */
 
 /* ── SHARE ── */
+/* One uniform share drawer (share-drawer.js). Counts every share like the old sheet did. */
+function bumpShareCount(id){
+  if(!id) return;
+  const shRef=doc(db,'articleShares',id);
+  updateDoc(shRef,{count:increment(1)}).catch(()=>setDoc(shRef,{count:1},{merge:true}).catch(()=>{}));
+}
 window.openShare=function(){
-  document.getElementById('authOverlay').classList.add('on');
-  document.getElementById('shareSheet').classList.add('on');
-  document.body.style.overflow='hidden';
+  MSBShare.open({
+    url: location.href, title:'MindShift Books',
+    text: (article && article.text) ? article.text : 'A post',
+    author: article && article.author,
+    thumb: article && (article.videoUrl ? article.thumbnailUrl : (article.images && article.images[0])),
+    onShare: () => bumpShareCount(artId),
+    onImage: (typeof openShareImageCard==='function' && article) ? () => openShareAsImageFromArticle() : null
+  });
 };
 window.closeShare=function(){
   document.getElementById('authOverlay').classList.remove('on');
