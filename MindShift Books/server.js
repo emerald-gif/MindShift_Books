@@ -199,6 +199,16 @@ app.get(/\.html$/, (req, res, next) => {
   return res.redirect(301, clean + qs);
 });
 
+// ── Link previews + live sitemap ──────────────────────────────────────────
+// server/seo.js writes the right <title> / Open Graph / Twitter tags into
+// /post-read, /article-read and /profile pages (WhatsApp, X, Facebook and
+// Google don't run the page's JavaScript, so they previously saw a generic
+// card for every shared link) and serves a live /sitemap.xml that includes
+// published articles, posts and public profiles. Registered BEFORE the
+// /profile/@:username route and express.static below so it wins over both;
+// on any problem it falls through to the normal page / static sitemap.
+require('./server/seo')(app, { publicDir: path.join(__dirname, 'public') });
+
 // ── Homepage: Articles, not the bookstore ──────────────────────────────────
 // mindshiftbooks.shop's default landing page is now the article ecosystem.
 // The bookstore didn't go away — it moved to /books (the sidebar's
