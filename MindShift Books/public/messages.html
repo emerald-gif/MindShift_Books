@@ -48,6 +48,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .row-bot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:2px}
 .row-last{font-size:14px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .row.unread .row-last{color:var(--txt);font-weight:600}
+.draft-tag{color:#e11d48;font-weight:600}
 .row.unread .row-time{color:var(--p);font-weight:700}
 .pill{min-width:20px;height:20px;padding:0 6px;border-radius:99px;background:var(--g);color:#fff;font-size:11.5px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 
@@ -394,6 +395,19 @@ mark{background:#e0e7ff;color:inherit;border-radius:3px;padding:0 1px}
 .mring .tr{stroke:rgba(255,255,255,.28)}
 .mring .fg{stroke:#fff;stroke-linecap:round;stroke-dasharray:157.1;transition:stroke-dashoffset .2s linear}
 .mring .x{width:20px;height:20px;fill:none;stroke:#fff;stroke-width:2.4;stroke-linecap:round}
+.mg{display:grid;gap:2px;width:100%;border-radius:15px;overflow:hidden;background:#dfe4ee}
+.mg.n2{grid-template-columns:1fr 1fr;grid-template-rows:1fr;aspect-ratio:2/1}
+.mg.n3{grid-template-columns:1fr 1fr;grid-template-rows:2fr 1fr;aspect-ratio:1}
+.mg.n3 .mb:first-child{grid-column:1/-1}
+.mg.n4{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;aspect-ratio:1}
+.mg .mb{border-radius:0;min-height:0}
+.mg .mb::before{display:none}
+.mg .mplay{width:38px;height:38px;margin:-19px 0 0 -19px}
+.mg .mplay svg{width:17px;height:17px}
+.mg .mring{width:44px;height:44px;margin:-22px 0 0 -22px}
+.mg .mdur{left:6px;top:6px;font-size:10.5px;padding:1px 7px}
+.mmore{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(15,23,42,.58);color:#fff;font-size:28px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.mhid{display:none}
 .msg.media .cap{padding:7px 9px 0;line-height:1.38;white-space:pre-wrap;word-break:break-word}
 .msg.media .t{padding:0 8px}
 .msg.media.nocap .t{position:absolute;right:9px;bottom:9px;margin:0;padding:1px 8px;border-radius:99px;background:rgba(15,23,42,.5);color:#fff;font-size:11px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
@@ -654,6 +668,56 @@ function activeLabel(t){
 }
 function clearBadgeCache(){ try{ sessionStorage.removeItem('msb_unread_v1'); }catch(e){} }
 
+/* ───────── drafts: unsent text is kept per chat (on this device) and comes back when you return ─────────
+   Saved while you type, and again when you leave the chat, switch apps or close the tab. Sending clears it.
+   Shown as a red "Draft:" preview in the inbox. Nothing is written to Firestore, so it costs no reads or writes. */
+const DRAFT_PREFIX = 'msb_draft_v1_';
+const DRAFT_KEY = (u, o) => DRAFT_PREFIX + u + '_' + o;
+const DRAFT_TTL = 30 * 86400000;            // forgotten after 30 days
+let _draftTimer = null, _draftDirty = false;
+function getDraft(otherUid){
+  if(!me || !otherUid) return '';
+  try{
+    const v = JSON.parse(localStorage.getItem(DRAFT_KEY(me.uid, otherUid)));
+    if(v && typeof v.text === 'string' && v.text.trim() && Date.now() - v.t < DRAFT_TTL) return v.text;
+  }catch(e){}
+  return '';
+}
+function writeDraft(otherUid, text){
+  if(!me || !otherUid) return;
+  const t = String(text || '').trim() ? String(text).slice(0, 2000) : '';
+  if(t === getDraft(otherUid)) return;
+  try{
+    if(t) localStorage.setItem(DRAFT_KEY(me.uid, otherUid), JSON.stringify({ text:t, t:Date.now() }));
+    else localStorage.removeItem(DRAFT_KEY(me.uid, otherUid));
+  }catch(e){}
+  _draftDirty = true;                         // the inbox preview needs a repaint next time it's shown
+}
+function clearDraft(otherUid){
+  clearTimeout(_draftTimer); _draftTimer = null;
+  if(!me || !otherUid) return;
+  try{ localStorage.removeItem(DRAFT_KEY(me.uid, otherUid)); }catch(e){}
+  _draftDirty = true;
+}
+function saveDraftNow(){                       // text currently in the box → this chat's draft
+  clearTimeout(_draftTimer); _draftTimer = null;
+  if(!chat || !me || chat.editing) return;     // the box holds an edit, not a draft
+  writeDraft(chat.other.uid, $('input').value);
+}
+function restoreDraft(){                       // put a saved draft back in the box (never over text that's already there)
+  if(!chat || !me || chat.editing || $('input').value) return;
+  const d = getDraft(chat.other.uid);
+  if(d){ $('input').value = d; autosize(); }
+}
+function pruneDrafts(){                        // drop drafts older than the limit
+  try{
+    Object.keys(localStorage).filter(k => k.startsWith(DRAFT_PREFIX)).forEach(k => {
+      let v = null; try{ v = JSON.parse(localStorage.getItem(k)); }catch(e){}
+      if(!v || typeof v.text !== 'string' || !(Date.now() - v.t < DRAFT_TTL)) localStorage.removeItem(k);
+    });
+  }catch(e){}
+}
+
 /* ───────── views / navigation ───────── */
 function show(view){ $('listView').classList.toggle('on', view==='list'); $('chatView').classList.toggle('on', view==='chat'); $('reqView').classList.toggle('on', view==='req'); $('newView').classList.toggle('on', view==='new'); }
 function leaveMessages(){
@@ -776,7 +840,8 @@ function renderList(){
   el.innerHTML = (inboxQ ? '' : reqRowHtml()) + shown.map(t => {
     const un = t.unread > 0;
     const pv = previewOf(t);
-    const last = pv ? esc(t.lastSender === me.uid ? 'You: ' : '') + hlText(pv, inboxQ, true) + esc(settings.readReceipts && t.lastSender === me.uid && t.seenAt && ms(t.seenAt) >= ms(t.lastAt) ? ' · Seen' : '') : '';
+    const dr = getDraft(t.otherUid);
+    const last = dr ? '<span class="draft-tag">Draft:</span> ' + esc(dr.replace(/\s+/g, ' ').trim().slice(0, 120)) : pv ? esc(t.lastSender === me.uid ? 'You: ' : '') + hlText(pv, inboxQ, true) + esc(settings.readReceipts && t.lastSender === me.uid && t.seenAt && ms(t.seenAt) >= ms(t.lastAt) ? ' · Seen' : '') : '';
     return `<button class="row ${un?'unread':''}" data-uid="${esc(t.otherUid)}">
       <div class="av">${avatarHtml(t.name, t.photo)}</div>
       <div class="row-main">
@@ -829,6 +894,7 @@ function stopInbox(){
 }
 function showList(){
   show('list');
+  if(_draftDirty){ _draftDirty = false; if(threads.length) renderList(); }   // a draft was added / removed while in a chat
   document.title = 'Messages | MindShift Books';
   if(!unsubInbox){ if(!threads.length) skeletonList(); startInbox(); }
   tourSoon('inbox');
@@ -861,7 +927,8 @@ function toMsg(d){
   const x = d.data({ serverTimestamps:'estimate' });
   return { id:d.id, senderUid:x.senderUid, text:x.text, replyTo:x.replyTo || null, reactions:x.reactions || {}, edited:!!x.edited, deleted:x.deleted === true, ts: ms(x.createdAt), raw:x.createdAt, confirmed: !d.metadata.hasPendingWrites,
            type:(x.type === 'voice' || x.type === 'image' || x.type === 'video') ? x.type : '', audioUrl:x.audioUrl || '', duration:Math.min(86400, Math.max(0, Number(x.duration) || 0)), wf:typeof x.wf === 'string' ? x.wf : '', mime:typeof x.mime === 'string' ? x.mime : '',
-           mediaUrl:typeof x.mediaUrl === 'string' ? x.mediaUrl : '', w:Math.max(0, Number(x.w) || 0), h:Math.max(0, Number(x.h) || 0), ph:typeof x.ph === 'string' ? x.ph : '', cap:typeof x.cap === 'string' ? x.cap : '' };
+           mediaUrl:typeof x.mediaUrl === 'string' ? x.mediaUrl : '', w:Math.max(0, Number(x.w) || 0), h:Math.max(0, Number(x.h) || 0), ph:typeof x.ph === 'string' ? x.ph : '', cap:typeof x.cap === 'string' ? x.cap : '',
+           gid:typeof x.gid === 'string' ? x.gid.slice(0, 40) : '', gi:Math.max(0, Math.min(99, Number(x.gi) || 0)) };      // gid/gi: photos sent together share a gid and show as one grid
 }
 /* Every one of my messages carries its own status in its time line:  3:07 PM · Sending… / Delivered / Seen
    "Delivered" = saved on our server and in their inbox (a website can't know more than that).
@@ -907,7 +974,14 @@ function renderMsgs(stick){
     ? `<div class="empty-chat hi">Chat cleared · new messages will show up here</div>`
     : `<div class="empty-chat hi">No messages yet · say hi to ${esc(chat.other.name)} 👋</div>`;
   let lastDay = '';
+  // photos/videos sent together (same gid, same sender) are drawn as ONE grid bubble, at the spot of the first one
+  const gkey = m => m.gid && (isMedia(m) || m.deleted) ? (m.deleted ? 'd|' : 'm|') + m.senderUid + '|' + m.gid : '';
+  const groups = new Map(), seenG = new Set();
+  items.forEach(m => { const k = gkey(m); if(k && !m.deleted) (groups.get(k) || groups.set(k, []).get(k)).push(m); });
+  groups.forEach((a, k) => { if(a.length < 2) groups.delete(k); else a.sort((x, y) => (x.gi || 0) - (y.gi || 0)); });
   items.forEach(m => {
+    const gk = gkey(m);
+    if(gk){ if(seenG.has(gk)) return; if(m.deleted || groups.has(gk)) seenG.add(gk); }
     const dk = m.ts ? new Date(m.ts).toDateString() : lastDay;
     if(dk && dk !== lastDay){ html += `<div class="day">${esc(fmtDay(m.ts))}</div>`; lastDay = dk; }
     const mine = m.senderUid === me.uid;
@@ -917,6 +991,8 @@ function renderMsgs(stick){
       html += `<div class="msg ${mine?'me':'them'} deleted" data-mid="${esc(m.id)}"><span class="dl">${mine ? 'You deleted this message' : 'This message was deleted'}</span><span class="t">${time}</span></div>`;
       return;
     }
+    const g = groups.get(gk) || null;
+    if(g){ html += groupBubble(g); return; }
     const qm = m.replyTo && chat.msgs.get(m.replyTo.id), qDel = !!(qm && qm.deleted);   // a quote of an unsent message must not leak its text
     const q = m.replyTo ? `<div class="quote" data-qid="${esc(m.replyTo.id)}"><div class="q-name">${esc(m.replyTo.senderUid === me.uid ? 'You' : chat.other.name)}</div><div class="q-text">${esc(qDel ? 'Message deleted' : m.replyTo.text)}</div></div>` : '';
     const rx = rxHtml(m);
@@ -925,7 +1001,10 @@ function renderMsgs(stick){
   });
   box.innerHTML = html;
   voiceSync();
-  box.querySelectorAll('[data-retry]').forEach(el => el.onclick = () => { const pm = chat && chat.pending.find(x => x.id === el.dataset.retry); if(pm) send(pm); });
+  box.querySelectorAll('[data-retry]').forEach(el => el.onclick = () => {
+    const pm = chat && chat.pending.find(x => x.id === el.dataset.retry); if(!pm) return;
+    if(pm.gid && isMedia(pm)) chat.pending.filter(x => x.gid === pm.gid && x.failed).forEach(retryMedia); else send(pm);
+  });
   box.querySelectorAll('.quote').forEach(el => el.onclick = () => jumpTo(el.dataset.qid));
   const ob = $('olderBtn'); if(ob) ob.onclick = loadOlder;
   const vp = $('vpBtn'); if(vp) vp.onclick = () => { location.href = `/profile?uid=${encodeURIComponent(chat.other.uid)}`; };
@@ -1026,6 +1105,7 @@ async function openChat(otherUid, { push = true, reload = false } = {}){
   const rowP = (!rowDoc || reload) ? getDoc(doc(db,'inbox',me.uid,'threads',otherUid)).catch(() => null) : null;
   chat.blocked = blockedSet.has(otherUid);
   chat.pending.push(...loadSilent(chat.cid));
+  restoreDraft();
   const mine = chat;
   const extras = fetchOtherExtras(mine).then(() => { if(chat === mine){ paintOther(); if(mine.loaded) renderMsgs(false); document.title = `${mine.other.name} | Messages`; } });
   if(!t) await extras;                       // no inbox row yet (opened from a profile) → wait so the header isn't a placeholder
@@ -1061,7 +1141,7 @@ async function openChat(otherUid, { push = true, reload = false } = {}){
   }
   setTimeout(() => { if(matchMedia('(pointer:fine)').matches) $('input').focus(); }, 50);
 }
-function closeChat(){ recCancel(); voiceStop(); lbClose(true); msClose(false, true); detachLive(); if(chat) chat.editing = null; chat = null; $('input').value = ''; autosize(); hideReplyBar(); applyBlockUI(); }
+function closeChat(){ saveDraftNow(); recCancel(); voiceStop(); lbClose(true); msClose(false, true); detachLive(); if(chat) chat.editing = null; chat = null; $('input').value = ''; autosize(); hideReplyBar(); applyBlockUI(); }
 
 /* ───────── read receipts (unread → 0) ───────── */
 function receiptsOn(){ return settings.readReceipts; }   // off → I don't send "Seen" to anyone
@@ -1098,7 +1178,8 @@ function clearReply(){ if(chat) chat.reply = null; hideReplyBar(); }
 $('rbX').onclick = clearReply;
 function jumpTo(id){
   const box = $('msgs');
-  const t = [...box.querySelectorAll('[data-mid]')].find(el => el.dataset.mid === id);
+  let t = [...box.querySelectorAll('[data-mid]')].find(el => el.dataset.mid === id);
+  if(!t){ const tile = [...box.querySelectorAll('.mb[data-id],.mhid[data-id]')].find(el => el.dataset.id === id); t = tile && tile.closest('.msg'); }
   if(!t){ toast('That message is further up — scroll up to find it'); return; }
   t.scrollIntoView({ block:'center', behavior:'smooth' });
   t.classList.add('flash'); setTimeout(() => t.classList.remove('flash'), 1400);
@@ -1159,11 +1240,16 @@ const ICON_TRASH = '<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 
 let _moOpenedAt = 0;
 function closeMsgMenu(){ $('mo').hidden = true; $('moBody').innerHTML = ''; }
 function msgById(id){ return chat && (chat.msgs.get(id) || chat.pending.find(p => p.id === id)); }
+function groupOf(m){      // every photo/video sent together with m (just [m] for anything else)
+  if(!m || !m.gid || !isMedia(m) || !chat) return [m];
+  const a = [...chat.msgs.values(), ...chat.pending.filter(p => !chat.msgs.has(p.id))].filter(x => x.gid === m.gid && x.senderUid === m.senderUid && isMedia(x) && !x.deleted).sort((x, y) => (x.gi || 0) - (y.gi || 0));
+  return a.length > 1 ? a : [m];
+}
 function openMsgMenu(el){
   if(!chat || !$('mo').hidden) return;
   const m = msgById(el.dataset.mid); if(!m) return;
   const mine = m.senderUid === me.uid;
-  const saved = !!(m.confirmed && !m.pendingLocal);                 // exists on the server
+  const saved = groupOf(m).every(x => x.confirmed && !x.pendingLocal);   // exists on the server (all of a grid)
   const del = !!m.deleted;                                          // an unsent message only offers "Delete for you"
   const interactive = saved && !del && !chat.blocked && !chat.isRequest;    // react / reply only on saved messages, never inside a request
   const body = $('moBody'); body.className = 'mo-body ' + (mine ? 'me' : 'them'); body.innerHTML = '';
@@ -1240,9 +1326,15 @@ async function reactTo(m, emoji){
 const UNSENT_TEXT = 'This message was deleted';
 async function unsendMsg(m){
   if(!chat || !me) return;
-  const c = chat;
-  if(m.senderUid !== me.uid || !(m.confirmed && !m.pendingLocal) || m.deleted) return;
-  if(!await confirmSheet('Delete for everyone?', 'This message is removed for both of you and replaced with “This message was deleted”. Anyone who already saw it may still remember it.', 'Delete')) return;
+  const c = chat, grp = groupOf(m);
+  if(m.senderUid !== me.uid || !grp.every(x => x.confirmed && !x.pendingLocal) || m.deleted) return;
+  const many = grp.length > 1;
+  if(!await confirmSheet('Delete for everyone?', many ? 'These ' + grp.length + ' photos and videos are removed for both of you and replaced with “This message was deleted”. Anyone who already saw them may still remember them.' : 'This message is removed for both of you and replaced with “This message was deleted”. Anyone who already saw it may still remember it.', 'Delete')) return;
+  let ok = 0;
+  for(const x of grp){ if(await unsendOne(c, x)) ok++; }
+  if(ok) toast(many ? 'Messages deleted for everyone' : 'Message deleted for everyone');
+}
+async function unsendOne(c, m){
   const live = c.msgs.get(m.id), before = live ? { ...live } : null;
   const isLatest = ![...c.msgs.values(), ...c.pending].some(x => x.id !== m.id && x.ts > m.ts);
   if(live){ Object.assign(live, { deleted:true, text:UNSENT_TEXT, reactions:{}, replyTo:null, type:'', cap:'', mediaUrl:'', audioUrl:'', edited:false }); renderMsgs(false); }
@@ -1250,32 +1342,42 @@ async function unsendMsg(m){
     const ref = doc(db,'conversations',c.cid,'messages',m.id);
     let created = m.raw;
     if(!created){ const s0 = await getDoc(ref); if(!s0.exists()) throw new Error('gone'); created = s0.data().createdAt; }
-    await setDoc(ref, { senderUid:me.uid, createdAt:created, text:UNSENT_TEXT, deleted:true, deletedAt:serverTimestamp() });
+    const gone = { senderUid:me.uid, createdAt:created, text:UNSENT_TEXT, deleted:true, deletedAt:serverTimestamp() };
+    if(m.gid){                                           // keep the group id so a deleted grid collapses into ONE placeholder (falls back if the rules don't allow it)
+      try{ await setDoc(ref, Object.assign({ gid:m.gid }, gone)); }
+      catch(err){ if(err && err.code === 'permission-denied') await setDoc(ref, gone); else throw err; }
+    } else await setDoc(ref, gone);
     if(isLatest){                                       // keep both inboxes from previewing the old text
       updateDoc(myRow(c.other.uid), { lastText:UNSENT_TEXT }).catch(() => {});
       updateDoc(doc(db,'inbox',c.other.uid,'threads',me.uid), { lastText:UNSENT_TEXT }).catch(() => {});
     }
     saveChatCacheSoon();
-    toast('Message deleted for everyone');
+    return true;
   }catch(e){
     if(live && before) Object.assign(live, before);
     if(chat === c) renderMsgs(false);
     toast('Couldn’t delete this message');
+    return false;
   }
 }
 // "Delete for you": hidden for me only (remembered on my inbox row); the other person still sees it
 async function deleteForMe(m){
   if(!chat) return;
-  const c = chat;
-  if(m.confirmed && !m.pendingLocal){
-    c.hiddenLocal = c.hiddenLocal || new Set(); c.hiddenLocal.add(m.id); renderMsgs(false);
-    try{ await updateDoc(myRow(c.other.uid), { hiddenMsgs: arrayUnion(m.id) }); toast('Message deleted for you'); }
-    catch(e){ c.hiddenLocal.delete(m.id); if(chat === c) renderMsgs(false); toast('Couldn’t delete this message'); }
-  } else {                                                               // not saved anywhere yet (sending / failed / silent) — just drop it here
-    const i = c.pending.findIndex(p => p.id === m.id);
-    if(i > -1){ const pm = c.pending[i]; pm.deleted = true; if(pm.xhr){ try{ pm.xhr.abort(); }catch(_){} } c.pending.splice(i, 1); }
-    c.msgs.delete(m.id); saveSilent(c); renderMsgs(false); toast('Message deleted');
+  const c = chat, grp = groupOf(m), many = grp.length > 1;
+  const saved = grp.filter(x => x.confirmed && !x.pendingLocal), loose = grp.filter(x => !saved.includes(x));
+  if(loose.length){                                                      // not saved anywhere yet (sending / failed / silent) — just drop it here
+    loose.forEach(x => {
+      const i = c.pending.findIndex(p => p.id === x.id);
+      if(i > -1){ const pm = c.pending[i]; pm.deleted = true; if(pm.xhr){ try{ pm.xhr.abort(); }catch(_){} } c.pending.splice(i, 1); }
+      c.msgs.delete(x.id);
+    });
+    saveSilent(c);
   }
+  if(saved.length){
+    c.hiddenLocal = c.hiddenLocal || new Set(); saved.forEach(x => c.hiddenLocal.add(x.id)); renderMsgs(false);
+    try{ await updateDoc(myRow(c.other.uid), { hiddenMsgs: arrayUnion(...saved.map(x => x.id)) }); toast(many ? 'Messages deleted for you' : 'Message deleted for you'); }
+    catch(e){ saved.forEach(x => c.hiddenLocal.delete(x.id)); if(chat === c) renderMsgs(false); toast('Couldn’t delete this message'); }
+  } else { renderMsgs(false); toast('Message deleted'); }
 }
 /* ───────── edit a message you sent (for 15 minutes, like Instagram) ─────────
    The text goes back into the box; sending saves the change and the message shows "edited".
@@ -1285,6 +1387,7 @@ function startEdit(m){
   if(!chat) return;
   clearReply();
   const media = isMedia(m), cur = media ? (m.cap || '') : m.text;
+  if(!chat.editing){ saveDraftNow(); chat.stash = input.value; }
   chat.editing = { id:m.id, original:cur, media };
   $('rbName').textContent = media ? (cur ? 'Editing caption' : 'Adding caption') : 'Editing message';
   $('rbText').textContent = (cur || (m.type === 'video' ? '🎥 Video' : '📷 Photo')).slice(0, 140);
@@ -1294,7 +1397,7 @@ function startEdit(m){
 }
 function clearEdit(){
   if(!chat || !chat.editing) return false;
-  chat.editing = null; input.value = ''; autosize(); hideReplyBar();
+  chat.editing = null; input.value = chat.stash || ''; chat.stash = ''; autosize(); hideReplyBar();
   return true;
 }
 async function saveEdit(){
@@ -1415,6 +1518,9 @@ input.addEventListener('keydown', e => {
   if(e.key === 'Enter' && !e.shiftKey && matchMedia('(pointer:fine)').matches){ e.preventDefault(); send(); }
 });
 sendBtn.onclick = () => send();
+input.addEventListener('input', () => { clearTimeout(_draftTimer); _draftTimer = setTimeout(saveDraftNow, 400); });
+document.addEventListener('visibilitychange', () => { if(document.hidden) saveDraftNow(); });   // switched apps / locked the phone
+window.addEventListener('pagehide', saveDraftNow);                                              // closed the tab
 async function send(retryItem){
   if(retryItem && retryItem.type === 'voice' && retryItem.pendingLocal){ sendVoice(null, retryItem); return; }   // retry of a voice note
   if(retryItem && isMedia(retryItem) && retryItem.pendingLocal){ retryMedia(retryItem); return; }               // retry of a photo / video
@@ -1433,7 +1539,7 @@ async function send(retryItem){
   const msgRef = retryItem ? doc(db,'conversations',c.cid,'messages',retryItem.id) : doc(collection(db,'conversations',c.cid,'messages'));
   let temp = retryItem;
   if(!temp){
-    input.value = ''; autosize(); input.focus();
+    input.value = ''; autosize(); input.focus(); clearDraft(c.other.uid);
     temp = { id:msgRef.id, senderUid:me.uid, text, replyTo, ts:Date.now(), pendingLocal:true };
     c.pending.push(temp);
     c.reply = null; hideReplyBar();
@@ -1993,7 +2099,28 @@ function mediaThumb(m){
   if(!isCld(m.mediaUrl)) return '';
   return m.mediaUrl.indexOf('/image/upload/') > -1 && !/\.gif(\?|$)/i.test(m.mediaUrl) ? cldT(m.mediaUrl, 'c_limit,w_640,f_auto,q_auto') : m.mediaUrl;   // small, modern-format copy for the bubble
 }
-function mediaHtml(m){
+/* a bubble holding several photos/videos sent together: 2 side by side, 3 = one wide + two, 4+ = 2x2 with a "+N" on the last tile */
+function groupStatus(g){
+  const bad = g.find(x => x.failed); if(bad) return { text:'Not delivered · Tap to retry', err:true, id:bad.id };
+  const up = g.filter(x => x.uploading); if(up.length) return { text:'Uploading ' + (g.length - up.length) + '/' + g.length };
+  return statusFor(g[g.length - 1]);
+}
+function groupBubble(g){
+  const lead = g.find(x => x.cap) || g[0], last = g[g.length - 1], mine = lead.senderUid === me.uid;
+  const st = mine ? groupStatus(g) : null, time = last.ts ? new Date(last.ts).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}) : '';
+  const rep = g.find(x => x.replyTo), rt = rep && rep.replyTo, qm = rt && chat.msgs.get(rt.id), qDel = !!(qm && qm.deleted);
+  const q = rt ? `<div class="quote" data-qid="${esc(rt.id)}"><div class="q-name">${esc(rt.senderUid === me.uid ? 'You' : chat.other.name)}</div><div class="q-text">${esc(qDel ? 'Message deleted' : rt.text)}</div></div>` : '';
+  const rx = rxHtml(lead), n = g.length, extra = n - 4;
+  const tiles = g.slice(0, 4).map((m, i) => mediaTile(m, true, i === 3 ? extra : 0)).join('');
+  const hid = g.slice(4).map(m => '<i class="mhid' + (m.uploading ? ' up' : '') + (m.failed ? ' fail' : '') + '" data-id="' + esc(m.id) + '"></i>').join('');
+  const pend = g.some(x => x.pendingLocal && !x.failed && !x.silent && !chat.ack.has(x.id));
+  const cls = 'msg ' + (mine ? 'me' : 'them') + (pend ? ' pending' : '') + (g.some(x => x.failed) ? ' failed' : '') + (rx ? ' has-rx' : '') + ' media ' + (lead.cap ? 'hascap' : 'nocap') + (g.some(x => x.uploading) ? ' up' : '');
+  let h = '<div class="' + cls + '" data-mid="' + esc(lead.id) + '">' + q + '<div class="mg n' + Math.min(n, 4) + '">' + tiles + '</div>' + hid + (lead.cap ? '<div class="cap">' + esc(lead.cap) + '</div>' : '')
+        + '<span class="t">' + time + (lead.edited ? ' · edited' : '') + (st && !st.err ? ' · ' + esc(st.text) : '') + '</span>' + rx + '</div>';
+  if(st && st.err) h += '<div class="stat err" data-retry="' + esc(st.id) + '">' + esc(st.text) + '</div>';
+  return h;
+}
+function mediaTile(m, grid, more){
   const v = m.type === 'video';
   const ar = m.w > 0 && m.h > 0 ? Math.max(0.55, Math.min(1.8, m.h / m.w)) : (v ? 0.5625 : 0.75);    // the box is reserved up front, so the chat never jumps while images load
   const src = mediaThumb(m), ph = okPh(m.ph) ? '<i class="mph" style="background-image:url(' + m.ph + ')"></i>' : '';
@@ -2004,28 +2131,29 @@ function mediaHtml(m){
     ov = '<div class="mring" data-id="' + esc(m.id) + '" role="button" aria-label="Cancel upload"><svg class="r" viewBox="0 0 56 56"><circle class="tr" cx="28" cy="28" r="25"/><circle class="fg" cx="28" cy="28" r="25" style="stroke-dashoffset:' + off + '"/></svg><svg class="x" viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17"/></svg></div>';
   } else if(v) ov = '<div class="mplay"><svg viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 001.5.86l10.5-6.5a1 1 0 000-1.72L9.5 4.64A1 1 0 008 5.5z"/></svg></div>';
   const dur = v && m.duration ? '<span class="mdur">' + fmtDur(m.duration) + '</span>' : '';
-  return '<div class="mb" style="--ar:' + (ar * 100).toFixed(1) + '%">' + ph + img + dur + ov + '</div>' + (m.cap ? '<div class="cap">' + esc(m.cap) + '</div>' : '');
+  return '<div class="mb' + (m.uploading ? ' up' : '') + (m.failed ? ' fail' : '') + '" data-id="' + esc(m.id) + '"' + (grid ? '' : ' style="--ar:' + (ar * 100).toFixed(1) + '%"') + '>' + ph + img + dur + ov + (more > 0 ? '<span class="mmore">+' + more + '</span>' : '') + '</div>';
 }
+function mediaHtml(m){ return mediaTile(m, false, 0) + (m.cap ? '<div class="cap">' + esc(m.cap) + '</div>' : ''); }
 $('msgs').addEventListener('load', e => { const i = e.target; if(i.tagName === 'IMG' && i.closest && i.closest('.mb')){ LOADED.add(i.getAttribute('src')); i.classList.add('ok'); } }, true);
 $('msgs').addEventListener('error', e => {
   const i = e.target; if(i.tagName !== 'IMG' || !i.closest || !i.closest('.mb') || i.dataset.fb) return;
   i.dataset.fb = '1';
-  const el = i.closest('.msg'), m = el && msgById(el.dataset.mid); if(!m || !isCld(m.mediaUrl)) return;
+  const mbx = i.closest('.mb'), m = mbx && msgById(mbx.dataset.id); if(!m || !isCld(m.mediaUrl)) return;
   if(m.type === 'video') i.src = swapExt(m.mediaUrl, 'jpg');                          // poster copy not ready yet: the plain first frame
   else if(i.getAttribute('src') !== m.mediaUrl) i.src = m.mediaUrl;                    // thumbnail failed: the original
 }, true);
 $('msgs').addEventListener('click', e => {
   const ring = e.target.closest('.mring'); if(ring){ cancelPendingMedia(ring.dataset.id); return; }
   const mb = e.target.closest('.mb'); if(!mb || !$('mo').hidden) return;
-  const el = mb.closest('.msg'); if(!el || el.classList.contains('up') || el.classList.contains('failed')) return;
-  openLightbox(el.dataset.mid);
+  if(mb.classList.contains('up') || mb.classList.contains('fail')) return;
+  openLightbox(mb.dataset.id);
 });
 function mediaProgress(c, temp, pct){
   temp.progress = pct;
   if(chat !== c) return;
-  const el = $('msgs').querySelector('[data-mid="' + temp.id + '"]'); if(!el) return;
-  const f = el.querySelector('.mring .fg'); if(f) f.style.strokeDashoffset = (157.1 * (1 - pct / 100)).toFixed(1);
-  const t = el.querySelector('.t'); if(t) t.textContent = fmtClock(temp.ts) + ' · Uploading ' + pct + '%';
+  const tile = $('msgs').querySelector('.mb[data-id="' + temp.id + '"]'); if(!tile) return;
+  const f = tile.querySelector('.mring .fg'); if(f) f.style.strokeDashoffset = (157.1 * (1 - pct / 100)).toFixed(1);
+  const el = tile.closest('.msg'), t = el && !el.querySelector('.mg') && el.querySelector('.t'); if(t) t.textContent = fmtClock(temp.ts) + ' · Uploading ' + pct + '%';
 }
 function cancelPendingMedia(id){
   if(!chat) return;
@@ -2166,6 +2294,7 @@ async function runMedia(c, temp){
     const payload = { senderUid:me.uid, type:temp.type, text:temp.cap || (temp.type === 'image' ? '📷 Photo' : '🎥 Video'), mediaUrl:temp.mediaUrl,
                       w:Math.round(temp.w || 0), h:Math.round(temp.h || 0), ph:okPh(temp.ph) ? temp.ph : '', createdAt:serverTimestamp() };
     if(temp.cap) payload.cap = temp.cap;
+    if(temp.gid){ payload.gid = temp.gid; payload.gi = temp.gi || 0; }          // sent together: the chat draws these as one grid
     if(temp.type === 'video' && temp.duration) payload.duration = Math.round(temp.duration);
     if(temp.replyTo) payload.replyTo = temp.replyTo;
     const last = temp.cap ? (temp.type === 'image' ? '📷 ' : '🎥 ') + temp.cap.slice(0, 100)
@@ -2193,11 +2322,11 @@ async function runMedia(c, temp){
     toast((e && e.userMsg) || 'Couldn’t send — tap the message to retry');
   }
 }
-function queueMediaItem(c, it, idx){
+function queueMediaItem(c, it, idx, gid){
   const id = doc(collection(db, 'conversations', c.cid, 'messages')).id, meta = it.meta || {}, cap = (it.cap || '').trim();
   const temp = { id, senderUid:me.uid, type:it.kind, text:cap || (it.kind === 'image' ? '📷 Photo' : '🎥 Video'), cap, replyTo: idx === 0 ? (c.reply || null) : null,
     ts:Date.now() + idx, pendingLocal:true, w:meta.w || 0, h:meta.h || 0, ph:meta.ph || '', duration:meta.duration || 0,
-    localUrl:it.url, posterUrl:meta.posterUrl || '', file:it.file, metaP:it.metaP, blob:null, mediaUrl:'', uploading:true, stage:'wait', progress:0 };
+    gid:gid || '', gi:idx, localUrl:it.url, posterUrl:meta.posterUrl || '', file:it.file, metaP:it.metaP, blob:null, mediaUrl:'', uploading:true, stage:'wait', progress:0 };
   c.pending.push(temp);
   if(idx === 0){ c.reply = null; hideReplyBar(); }
   enqueueMedia(c, temp);
@@ -2264,8 +2393,9 @@ function addMediaFiles(files){
 function msSend(){
   const c = chat; if(!c || !MS.items.length) return;
   const list = MS.items.slice();
+  const gid = list.length > 1 ? 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8) : '';
   msClose(true, false);
-  list.forEach((it, i) => queueMediaItem(c, it, i));
+  list.forEach((it, i) => queueMediaItem(c, it, i, gid));
   renderMsgs(true);
 }
 $('msX').onclick = () => msClose(false, false);
@@ -2303,7 +2433,10 @@ document.addEventListener('drop', e => { if(!chat) return; const fs = [...((e.da
 /* ── full-screen viewer: swipe left/right, swipe down to close ── */
 const LB = { ids:[], i:0, open:false };
 function openLightbox(id){
-  const ids = [...$('msgs').querySelectorAll('.msg.media:not(.up):not(.failed)')].map(el => el.dataset.mid), i = ids.indexOf(id);
+  const all = [...$('msgs').querySelectorAll('.msg.media .mb[data-id], .msg.media .mhid[data-id]')], cur = all.find(el => el.dataset.id === id);
+  if(!cur) return;
+  const box = cur.closest('.msg'), scope = box.querySelector('.mg') ? all.filter(el => el.closest('.msg') === box) : all;   // a grid swipes through its own items; single photos swipe through the chat as before
+  const ids = scope.filter(el => !el.classList.contains('up') && !el.classList.contains('fail')).map(el => el.dataset.id), i = ids.indexOf(id);
   if(i < 0) return;
   LB.ids = ids; LB.open = true; $('lb').hidden = false; lbShow(i);
   ovOpen(() => lbClose(true));
@@ -2663,7 +2796,8 @@ async function deleteChat(uid){
   if(!await confirmSheet('Delete this chat?', 'It disappears from your inbox and the messages are cleared for you. The other person keeps their copy. If they message you again, a fresh chat starts.', 'Delete chat')) return;
   try{
     await updateDoc(myRow(uid), { deleted:true, clearedAt:serverTimestamp(), lastText:'', unread:0, pinned:false, hiddenMsgs:[] });
-    removeChatCache(convId(me.uid, uid));
+    removeChatCache(convId(me.uid, uid)); clearDraft(uid);
+    if(chat && chat.other.uid === uid){ $('input').value = ''; autosize(); }
     recentRows = recentRows.filter(t => t.otherUid !== uid); pinnedRows = pinnedRows.filter(t => t.otherUid !== uid);
     rebuildThreads(); renderList(); saveInboxCache(); clearBadgeCache();
     if(chat && chat.other.uid === uid) backToList();
@@ -2835,7 +2969,8 @@ async function declineRequest(uid){
   if(!await confirmSheet('Decline this request?', 'The messages are removed for you and they aren’t told. If they message you again it shows up as a new request. You can also block them.', 'Decline')) return;
   try{
     await updateDoc(myRow(uid), { deleted:true, clearedAt:serverTimestamp(), lastText:'', unread:0, pinned:false, hiddenMsgs:[] });
-    removeChatCache(convId(me.uid, uid));
+    removeChatCache(convId(me.uid, uid)); clearDraft(uid);
+    if(chat && chat.other.uid === uid){ $('input').value = ''; autosize(); }
     recentRows = recentRows.filter(t => t.otherUid !== uid); pinnedRows = pinnedRows.filter(t => t.otherUid !== uid);
     rebuildThreads(); renderList(); saveInboxCache(); clearBadgeCache();
     toast('Request declined');
@@ -3061,7 +3196,7 @@ function saveChatCacheSoon(){
   _cacheTimers.c = setTimeout(() => {
     try{
       const msgs = [...c.msgs.values()].filter(m => m.ts && m.confirmed).sort((a,b) => a.ts - b.ts).slice(-PAGE)
-        .map(m => ({ id:m.id, senderUid:m.senderUid, text:m.text, replyTo:m.replyTo || null, reactions:m.reactions || {}, edited:!!m.edited, deleted:!!m.deleted, ts:m.ts, type:m.type || '', audioUrl:m.audioUrl || '', duration:m.duration || 0, wf:m.wf || '', mime:m.mime || '', mediaUrl:m.mediaUrl || '', w:m.w || 0, h:m.h || 0, ph:m.ph || '', cap:m.cap || '' }));
+        .map(m => ({ id:m.id, senderUid:m.senderUid, text:m.text, replyTo:m.replyTo || null, reactions:m.reactions || {}, edited:!!m.edited, deleted:!!m.deleted, ts:m.ts, type:m.type || '', audioUrl:m.audioUrl || '', duration:m.duration || 0, wf:m.wf || '', mime:m.mime || '', mediaUrl:m.mediaUrl || '', w:m.w || 0, h:m.h || 0, ph:m.ph || '', cap:m.cap || '', gid:m.gid || '', gi:m.gi || 0 }));
       localStorage.setItem(CHAT_KEY(c.cid), JSON.stringify({ msgs, hasMore:c.hasMore, t:Date.now() }));
       const idx = JSON.parse(localStorage.getItem('msb_chat_idx') || '[]').filter(x => x !== c.cid); idx.push(c.cid);
       while(idx.length > 8) localStorage.removeItem(CHAT_KEY(idx.shift()));      // keep only the 8 most recent chats
@@ -3075,7 +3210,7 @@ function loadChatCache(cid){
 }
 function clearMsgCaches(){
   try{
-    Object.keys(localStorage).filter(k => k.startsWith('msb_inbox_v1_') || k.startsWith('msb_chat_v1_') || k.startsWith('msb_silent_v1_') || k.startsWith('msb_people_v1_') || k.startsWith('msb_follows_v1_') || k.startsWith('msb_settings_v1_') || k === 'msb_chat_idx').forEach(k => localStorage.removeItem(k));
+    Object.keys(localStorage).filter(k => k.startsWith('msb_inbox_v1_') || k.startsWith('msb_chat_v1_') || k.startsWith('msb_silent_v1_') || k.startsWith('msb_people_v1_') || k.startsWith('msb_follows_v1_') || k.startsWith('msb_settings_v1_') || k.startsWith(DRAFT_PREFIX) || k === 'msb_chat_idx').forEach(k => localStorage.removeItem(k));
     sessionStorage.removeItem('msb_open_chat');
   }catch(e){}
 }
@@ -3084,6 +3219,7 @@ function earlyPaint(){
   try{ const v = localStorage.getItem('mindshift_hero_last_uid'); if(v && v !== 'guest') uid = v; }catch(e){}
   if(!uid || uid.includes('_')) return;                     // signed out / unknown → the skeleton stays until we know
   me = { uid, name:'', photo:'' };
+  pruneDrafts();
   try{ const sc = JSON.parse(localStorage.getItem(SETTINGS_KEY(uid))); if(sc) applySettingsObj(sc); }catch(e){}
   const withUid = new URLSearchParams(location.search).get('with');
   if(withUid){
@@ -3098,7 +3234,7 @@ function earlyPaint(){
     chat = { other, cid, msgs:new Map(), oldest:null, hasMore:!!(cached && cached.hasMore), lastTs:null, unsubLive:null, pending:[],
              extrasAt:0, loaded:false, ack:new Set(), row:null, unsubRow:null, rowSeen:false, provisional:true, rowInfo:row || null };
     if(cached) cached.msgs.forEach(m => { if(!(row && row.clearedAt && m.ts <= row.clearedAt)) chat.msgs.set(m.id, { ...m, confirmed:true }); });
-    show('chat'); paintOther(); renderMsgs(true);
+    show('chat'); paintOther(); renderMsgs(true); restoreDraft();
   } else {
     const rows = loadInboxCache(uid);
     if(rows && rows.length){ threads = rows; show('list'); renderList(); }
