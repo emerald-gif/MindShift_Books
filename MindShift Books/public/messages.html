@@ -396,10 +396,10 @@ mark{background:#e0e7ff;color:inherit;border-radius:3px;padding:0 1px}
 .mring .fg{stroke:#fff;stroke-linecap:round;stroke-dasharray:157.1;transition:stroke-dashoffset .2s linear}
 .mring .x{width:20px;height:20px;fill:none;stroke:#fff;stroke-width:2.4;stroke-linecap:round}
 .mg{display:grid;gap:2px;width:100%;border-radius:15px;overflow:hidden;background:#dfe4ee}
-.mg.n2{grid-template-columns:1fr 1fr;grid-template-rows:1fr;aspect-ratio:2/1}
-.mg.n3{grid-template-columns:1fr 1fr;grid-template-rows:2fr 1fr;aspect-ratio:1}
-.mg.n3 .mb:first-child{grid-column:1/-1}
-.mg.n4{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;aspect-ratio:1}
+.mg.n2{grid-template-columns:1fr 1fr;grid-template-rows:1fr;aspect-ratio:1/1}
+.mg.n3{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;aspect-ratio:1/1.08}
+.mg.n3 .mb:first-child{grid-row:1/3}
+.mg.n4{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;aspect-ratio:1/1}
 .mg .mb{border-radius:0;min-height:0}
 .mg .mb::before{display:none}
 .mg .mplay{width:38px;height:38px;margin:-19px 0 0 -19px}
@@ -2305,7 +2305,17 @@ async function runMedia(c, temp){
       { otherUid:c.other.uid, name:c.other.name, photo:c.other.photo || '', lastText:last, lastAt:serverTimestamp(), lastSender:me.uid, unread:0, accepted:true }, { merge:true });
     batch.set(doc(db,'inbox',c.other.uid,'threads',me.uid),
       { otherUid:me.uid, name:me.name, photo:me.photo || '', lastText:last, lastAt:serverTimestamp(), lastSender:me.uid, unread:increment(1) }, { merge:true });
-    await batch.commit();
+    try{ await batch.commit(); }
+    catch(err){
+      if(err && err.code === 'permission-denied' && payload.gid){       // rules may not know gid/gi yet: send without them so the photo is still delivered
+        delete payload.gid; delete payload.gi;
+        const b2 = writeBatch(db);
+        b2.set(msgRef, payload);
+        b2.set(doc(db,'inbox',me.uid,'threads',c.other.uid), { otherUid:c.other.uid, name:c.other.name, photo:c.other.photo || '', lastText:last, lastAt:serverTimestamp(), lastSender:me.uid, unread:0, accepted:true }, { merge:true });
+        b2.set(doc(db,'inbox',c.other.uid,'threads',me.uid), { otherUid:me.uid, name:me.name, photo:me.photo || '', lastText:last, lastAt:serverTimestamp(), lastSender:me.uid, unread:increment(1) }, { merge:true });
+        await b2.commit();
+      } else throw err;
+    }
     temp.blob = null; temp.file = null;                    // safely in Cloudinary: let go of the big file
     c.ack.add(temp.id);
     paint();
@@ -2533,12 +2543,13 @@ const SILENT_KEY = cid => 'msb_silent_v1_' + cid;
 function loadSilent(cid){
   try{
     const v = JSON.parse(localStorage.getItem(SILENT_KEY(cid)));
-    return Array.isArray(v) ? v.map(m => ({ id:m.id, senderUid:me.uid, text:m.text, replyTo:m.replyTo || null, ts:m.ts, pendingLocal:true, silent:true })) : [];
+    return Array.isArray(v) ? v.map(m => ({ id:m.id, senderUid:me.uid, text:m.text, replyTo:m.replyTo || null, ts:m.ts, pendingLocal:true, silent:true,
+      type:m.type || '', mediaUrl:m.mediaUrl || '', w:m.w || 0, h:m.h || 0, ph:m.ph || '', cap:m.cap || '', gid:m.gid || '', gi:m.gi || 0, duration:m.duration || 0 })) : [];
   }catch(e){ return []; }
 }
 function saveSilent(c){
   try{
-    const items = c.pending.filter(p => p.silent).slice(-100).map(p => ({ id:p.id, text:p.text, replyTo:p.replyTo || null, ts:p.ts }));
+    const items = c.pending.filter(p => p.silent).slice(-100).map(p => ({ id:p.id, text:p.text, replyTo:p.replyTo || null, ts:p.ts, type:p.type || '', mediaUrl:p.mediaUrl || '', w:p.w || 0, h:p.h || 0, ph:p.ph || '', cap:p.cap || '', gid:p.gid || '', gi:p.gi || 0, duration:p.duration || 0 }));
     localStorage.setItem(SILENT_KEY(c.cid), JSON.stringify(items));
   }catch(e){}
 }
