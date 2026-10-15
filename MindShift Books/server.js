@@ -422,6 +422,48 @@ app.post('/api/voice/upload-signature', requireUser, async (req, res) => {
   }
 });
 
+// ---------------- Chat photos & videos: direct-to-Cloudinary upload ----------------
+// Same idea as the video and voice endpoints above: the browser uploads the
+// photo/video straight to Cloudinary, so Render only ever sees this tiny
+// signing request. POST /api/chat/upload-signature?kind=image|video
+//  - image: plain signed upload (the browser has already shrunk it to <=1600px).
+//  - video: also asks Cloudinary to build, in the background (eager_async), a
+//    720p H.264 copy (what people actually stream, far smaller than a phone's
+//    original) and a poster frame. If the 720p copy isn't ready yet the chat
+//    falls back to the original, so nothing ever blocks.
+// NOTE: these two eager strings are mirrored in public/messages.html
+// (VID_T and POSTER_T). Change them in both places together.
+const CLOUDINARY_CHAT_FOLDER = 'mindshift-chat';
+const CHAT_VIDEO_EAGER = 'c_limit,f_mp4,q_auto,vc_h264,w_720|c_limit,f_jpg,so_0,w_640';
+app.post('/api/chat/upload-signature', requireUser, async (req, res) => {
+  try {
+    if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_API_KEY || !CLOUDINARY_API_SECRET) {
+      return res.status(500).json({ error: 'Media hosting is not configured (missing Cloudinary credentials).' });
+    }
+    const kind = req.query.kind === 'video' ? 'video' : 'image';
+    const timestamp = Math.round(Date.now() / 1000);
+    const paramsToSign = kind === 'video'
+      ? { eager: CHAT_VIDEO_EAGER, eager_async: 'true', folder: CLOUDINARY_CHAT_FOLDER, timestamp }
+      : { folder: CLOUDINARY_CHAT_FOLDER, timestamp };
+    const signature = signCloudinaryParams(paramsToSign);
+    return res.json({
+      ok: true,
+      kind,
+      resourceType: kind,
+      cloudName: CLOUDINARY_CLOUD_NAME,
+      apiKey: CLOUDINARY_API_KEY,
+      timestamp,
+      folder: CLOUDINARY_CHAT_FOLDER,
+      eager: kind === 'video' ? CHAT_VIDEO_EAGER : undefined,
+      eagerAsync: kind === 'video' ? 'true' : undefined,
+      signature
+    });
+  } catch (err) {
+    console.error('/api/chat/upload-signature error', err);
+    return res.status(500).json({ error: 'Could not prepare upload' });
+  }
+});
+
 // Admin-dashboard twin of the above. The admin panel authenticates with its
 // own password-based session cookie (requireAdminApi / hasValidAdminSession)
 // rather than a Firebase customer account, so it has no ID token to satisfy
