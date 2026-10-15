@@ -207,10 +207,14 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
       </button>
       <button type="button" class="media-tile mt-poll" id="pollHint" onclick="openPoll()">
         <span class="mt-ico"><svg viewBox="0 0 24 24"><line x1="6" y1="20" x2="6" y2="11"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="18" y1="20" x2="18" y2="14"/></svg></span>
-        <span class="mt-txt"><b>Add poll</b><span>Ask a question, 2 to 4 options</span></span>
+        <span class="mt-txt"><b>Add poll<i class="new-pill" id="pollNewPill" style="display:none">New</i></b><span>Ask a question, 2 to 4 options</span></span>
       </button>
     </div>
     <div class="poll-box" id="pollBox" style="display:none"></div>
+<script>
+  /* "New" pill on Add poll — shows until this date (local time), then disappears on its own. Change the date to extend/shorten. */
+  (function(){ var p=document.getElementById('pollNewPill'); if(p && Date.now() < new Date('2026-10-30T00:00:00').getTime()) p.style.display=''; })();
+</script>
 
     <input type="file" id="fileInput" accept="image/*" multiple style="display:none">
     <input type="file" id="videoInput" accept="video/mp4,video/quicktime" style="display:none">
@@ -234,6 +238,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   .mt-poll .mt-ico{background:#fef3c7;color:#b45309}
   .composer-media-hints{flex-wrap:wrap}
   .mt-poll{flex:1 1 100%}
+  .new-pill{display:inline-block;margin-left:7px;padding:2px 7px;border-radius:99px;background:#dbeafe;color:#1d4ed8;font-size:10.5px;font-weight:800;font-style:normal;letter-spacing:.04em;text-transform:uppercase;line-height:1.5;vertical-align:middle}
   body.has-poll #composerMediaHints,body.has-poll #linkPrev{display:none!important}
   body.has-media #pollHint{display:none!important}
   .poll-box{margin-top:14px;border:1.5px solid #e2e8f0;border-radius:16px;padding:12px 12px 14px;background:#fff}
