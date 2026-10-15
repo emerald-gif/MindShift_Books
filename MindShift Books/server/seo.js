@@ -110,9 +110,20 @@ function registerSeo(app, { publicDir }) {
     const text = clean(x.text, 200);
     const isVideo = !!x.videoUrl;
     const image = (Array.isArray(x.images) && x.images[0]) || x.thumbnailUrl || '';
+    // Polls: say it's a poll and show the choices, so the link itself invites a vote.
+    const pollOpts = (x.poll && Array.isArray(x.poll.options))
+      ? x.poll.options.map((o) => clean(o && o.text, 40)).filter(Boolean).slice(0, 4) : [];
+    const isPoll = pollOpts.length >= 2;
+    let description = text || (isVideo ? `Watch ${name}'s video on MindShift Books.` : `See ${name}'s post on MindShift Books.`);
+    if (isPoll) {
+      const tail = ' \u2014 ' + pollOpts.join(' \u00b7 ');
+      const q = clean(x.text, Math.max(40, 200 - tail.length));
+      description = `Poll: ${q || 'Cast your vote'}${tail}`;
+      if (description.length > 200) description = description.slice(0, 199).trimEnd() + '\u2026';
+    }
     return {
-      title: `${name} on MindShift Books`,
-      description: text || (isVideo ? `Watch ${name}'s video on MindShift Books.` : `See ${name}'s post on MindShift Books.`),
+      title: isPoll ? `Poll by ${name} on MindShift Books` : `${name} on MindShift Books`,
+      description,
       image, type: isVideo ? 'video.other' : 'article',
       url: `${site()}/post-read?id=${encodeURIComponent(id)}`,
       publishedTime: iso(x.publishedAt || x.createdAt)
