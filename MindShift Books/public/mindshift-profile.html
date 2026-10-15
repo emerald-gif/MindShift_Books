@@ -318,6 +318,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 <div class="toast" id="toast"></div>
 
 <script src="/share-drawer.js?v=1"></script>
+<script src="/poll.js?v=1"></script>
 <script src="/reels.js?v=8"></script>
 <script src="/image-viewer.js?v=2"></script>
 <script type="module">
@@ -643,6 +644,11 @@ window.msbImgEngage = {
   isLiked: id => likedSet.has(id),
   isSaved: id => savedSet.has(id)
 };
+/* polls (poll.js): drawn inside post cards, voting + counts handled there */
+if(window.MSBPoll) MSBPoll.init({ db, doc, getDoc, runTransaction, serverTimestamp, getUser: () => currentUser,
+  openAuth: () => (typeof openAuth === 'function' ? openAuth() : (location.href = '/login')),
+  toast: m => showToast(m) });
+
 window.openReels = function(startId){
   MSBReels.open(startId, {
     lookup: pid => {
@@ -863,6 +869,7 @@ function renderPosts(){
           <span class="acard-author-date">${fmtRel(p.publishedAt||p.createdAt)}</span>
         </div>
         ${p.text ? `<div class="pcard-text">${esc(p.text)}</div>` : ''}
+        ${window.MSBPoll ? MSBPoll.html(p) : ''}
         ${media}
         <div class="acard-foot">
           <button class="acard-like" id="lb-${p.id}" onclick="event.stopPropagation();handleLike('${p.id}')">

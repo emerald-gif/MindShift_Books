@@ -205,7 +205,12 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
         <span class="mt-ico"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="14" height="14" rx="3"/><path d="M16 10.5l5.2-3a.5.5 0 0 1 .8.43v8.14a.5.5 0 0 1-.8.43L16 13.5"/></svg></span>
         <span class="mt-txt"><b>Add video</b><span>Up to 5 min</span></span>
       </button>
+      <button type="button" class="media-tile mt-poll" id="pollHint" onclick="openPoll()">
+        <span class="mt-ico"><svg viewBox="0 0 24 24"><line x1="6" y1="20" x2="6" y2="11"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="18" y1="20" x2="18" y2="14"/></svg></span>
+        <span class="mt-txt"><b>Add poll</b><span>Ask a question, 2 to 4 options</span></span>
+      </button>
     </div>
+    <div class="poll-box" id="pollBox" style="display:none"></div>
 
     <input type="file" id="fileInput" accept="image/*" multiple style="display:none">
     <input type="file" id="videoInput" accept="video/mp4,video/quicktime" style="display:none">
@@ -226,6 +231,31 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   .mt-ico svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
   .mt-photo .mt-ico{background:#e0e7ff;color:#4f46e5}
   .mt-video .mt-ico{background:#cffafe;color:#0e7490}
+  .mt-poll .mt-ico{background:#fef3c7;color:#b45309}
+  .composer-media-hints{flex-wrap:wrap}
+  .mt-poll{flex:1 1 100%}
+  body.has-poll #composerMediaHints,body.has-poll #linkPrev{display:none!important}
+  body.has-media #pollHint{display:none!important}
+  .poll-box{margin-top:14px;border:1.5px solid #e2e8f0;border-radius:16px;padding:12px 12px 14px;background:#fff}
+  .pb-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  .pb-hd b{font-size:14px;font-weight:800;display:flex;align-items:center;gap:7px}
+  .pb-hd b svg{width:17px;height:17px;fill:none;stroke:#b45309;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+  .pb-x{width:32px;height:32px;border-radius:50%;border:none;background:#f1f5f9;color:#475569;display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .pb-x svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round}
+  .pb-row{display:flex;gap:8px;margin-bottom:8px}
+  .pb-row input{flex:1;min-width:0;border:1.5px solid #e2e8f0;border-radius:11px;padding:11px 12px;font-size:14.5px;font-family:inherit;outline:none;background:#fff;color:var(--txt)}
+  .pb-row input:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(79,70,229,.1)}
+  .pb-del{flex:none;width:40px;border-radius:11px;border:1.5px solid #e2e8f0;background:#fff;color:#64748b;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .pb-del svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
+  .pb-add{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:10px;border:1.5px dashed #c7d2fe;border-radius:11px;background:#f5f7ff;color:var(--p);font-weight:700;font-size:13.5px;font-family:inherit;cursor:pointer}
+  .pb-add svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round}
+  .pb-dur{display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap}
+  .pb-dur>span{font-size:12.5px;color:var(--sub);font-weight:600}
+  .pb-chip{padding:7px 14px;border-radius:99px;border:1.5px solid #e2e8f0;background:#fff;color:var(--sub);font-size:13px;font-weight:700;font-family:inherit;cursor:pointer}
+  .pb-chip.on{background:var(--p);border-color:var(--p);color:#fff}
+  .pb-note{font-size:12.5px;color:#b45309;font-weight:600;margin-top:10px}
+  .pb-note:empty{display:none}
+  .pb-locked{font-size:13px;color:var(--sub);line-height:1.45;font-weight:500}
   .mt-txt{min-width:0;display:flex;flex-direction:column;gap:1px;line-height:1.25}
   .mt-txt b{font-size:14px;font-weight:700;white-space:nowrap}
   .mt-txt span{font-size:12px;font-weight:500;color:var(--sub);white-space:nowrap}
@@ -355,6 +385,9 @@ let _autosaveTimer = null, _autosaveFadeTimer = null;
    to Cloudinary. Render only ever sees a small signing request — never the
    video bytes — so this never touches /api/upload-image's base64 pattern. */
 let video = null; // {url, thumbnailUrl, duration, publicId, uploading, progress} | null
+let poll = null;        // {options:[str,str,...<=4], days:1|3|7} | null  — the post text is the question
+let editHasPoll = false; // editing a post that already has a poll: the poll itself is locked
+const POLL_MAX = 4, POLL_OPT_LEN = 40;   // declared up here so draft restore (runs early) can use them
 const VIDEO_MAX_BYTES = 200 * 1024 * 1024;   // 200MB — spec section 9
 const VIDEO_MAX_DURATION = 5 * 60;           // 5 minutes — spec section 9
 
@@ -416,6 +449,7 @@ async function loadPostForEdit(id){
     document.getElementById('hdrTitle').textContent = 'Edit Post';
     document.getElementById('postBtn').textContent = 'Save';
     document.getElementById('postText').value = p.text||'';
+    editHasPoll = !!(p.poll && Array.isArray(p.poll.options));
     resetTextHistory();
     images = (p.images||[]).map(url=>({ url, uploading:false }));
     linkPrev = cleanLink(p.linkPreview);
@@ -426,6 +460,7 @@ async function loadPostForEdit(id){
     onTextInput();
     renderImages();
     renderVideoTile();
+    renderPoll();
     _editLoaded = true; _editRetryable = false;
     hideEditLoadError();
   }catch(e){
@@ -505,7 +540,13 @@ window.onTextInput = function(){
 function updatePostBtn(){
   const val = document.getElementById('postText').value.trim();
   const stillUploading = images.some(i => i.uploading) || (video && video.uploading);
-  document.getElementById('postBtn').disabled = (!val && !images.length && !video) || stillUploading;
+  const pollFilled = poll ? poll.options.filter(o => o.trim()).length : 0;
+  const pollBad = !!poll && (!val || pollFilled < 2);
+  document.getElementById('postBtn').disabled = (!val && !images.length && !video && !poll) || stillUploading || pollBad;
+  document.body.classList.toggle('has-poll', !!poll || editHasPoll);
+  document.body.classList.toggle('has-media', !!(images.length || video) || editHasPoll);
+  const pn = document.getElementById('pollNote');
+  if(pn) pn.textContent = !poll ? '' : (!val ? 'Write your question in the box above.' : (pollFilled < 2 ? 'Fill in at least 2 options.' : ''));
   scheduleAutosave(); // text, photo and video changes all pass through here
   scheduleLinkCheck();
 }
@@ -585,6 +626,7 @@ document.getElementById('fileInput').addEventListener('change', async (e) => {
 });
 
 window.openImagePicker = function(){
+  if(poll || editHasPoll){ showToast('Polls can\'t have photos or video'); return; }
   if(video){ showToast('Remove the video first — one video or up to 5 photos, not both'); return; }
   if(images.length >= MAX_IMAGES){ showToast(`Max ${MAX_IMAGES} photos per post`); return; }
   document.getElementById('fileInput').click();
@@ -709,6 +751,7 @@ renderImages();
 
 /* ── VIDEO ── */
 window.openVideoPicker = function(){
+  if(poll || editHasPoll){ showToast('Polls can\'t have photos or video'); return; }
   if(images.length){ showToast('Remove your photos first — one video or up to 5 photos, not both'); return; }
   document.getElementById('videoInput').click();
 };
@@ -838,10 +881,11 @@ function draftSnapshot(){
     images: images.filter(i => i.url && !i.uploading).map(i => i.url),
     video: vid,
     link: linkPrev,
-    linkOff: Array.from(linkOff).slice(0, 20)
+    linkOff: Array.from(linkOff).slice(0, 20),
+    poll: poll ? { options: poll.options.slice(), days: poll.days } : null
   };
 }
-function draftIsEmpty(d){ return !d.text.trim() && !d.images.length && !d.video; }
+function draftIsEmpty(d){ return !d.text.trim() && !d.images.length && !d.video && !(d.poll && d.poll.options.some(o => (o||'').trim())); }
 
 function clearDraft(){
   try{ localStorage.removeItem(DRAFT_KEY); }catch(e){}
@@ -905,11 +949,15 @@ function initDraft(){
   try{
     const d = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null');
     // Ignore a draft that belongs to a different account on this device.
-    if(d && (!d.uid || d.uid === currentUser.uid) && ((d.text || '').trim() || (d.images || []).length || d.video)){
+    if(d && (!d.uid || d.uid === currentUser.uid) && ((d.text || '').trim() || (d.images || []).length || d.video || (d.poll && Array.isArray(d.poll.options)))){
       document.getElementById('postText').value = d.text || '';
       resetTextHistory();
       linkPrev = cleanLink(d.link);
       linkOff = new Set(Array.isArray(d.linkOff) ? d.linkOff.slice(0, 20) : []);
+      if(d.poll && Array.isArray(d.poll.options) && !(d.video && d.video.url) && !(d.images || []).length){
+        poll = { options: d.poll.options.slice(0, POLL_MAX).map(o => String(o||'').slice(0, POLL_OPT_LEN)), days: [1,3,7].includes(d.poll.days) ? d.poll.days : 1 };
+        while(poll.options.length < 2) poll.options.push('');
+      }
       if(d.video && d.video.url){
         // one video OR photos, never both
         video = { url: d.video.url, thumbnailUrl: d.video.thumbnailUrl || '', duration: d.video.duration || 0, publicId: d.video.publicId || '', uploading: false };
@@ -920,6 +968,7 @@ function initDraft(){
       onTextInput();
       renderImages();
       renderVideoTile();
+      renderPoll();
       restored = true;
     }
   }catch(e){ console.warn('draft restore failed:', e && e.message); }
@@ -927,6 +976,45 @@ function initDraft(){
   _lastDraftJson = JSON.stringify(draftSnapshot());
   if(restored) showToast('Draft restored');
 }
+
+/* ── POLL ──
+   The post text is the question; here you add 2–4 options and pick how long it stays open.
+   One poll OR photos/video, never both. Votes are one-per-person and can't be changed (see poll.js). */
+function _escAttr(x){ return String(x).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+window.openPoll = function(){
+  if(images.length || video){ showToast('Remove your photos / video first — a poll can\'t have media'); return; }
+  poll = { options:['',''], days:1 };
+  renderPoll();
+  setTimeout(()=>{ const i = document.querySelector('#pollBox .pb-row input'); if(i) i.focus(); }, 50);
+};
+window.removePoll = function(){ poll = null; renderPoll(); };
+window.pollInput = function(i, v){ if(poll){ poll.options[i] = v; updatePostBtn(); } };
+window.pollAdd = function(){ if(poll && poll.options.length < POLL_MAX){ poll.options.push(''); renderPoll(); const ins = document.querySelectorAll('#pollBox .pb-row input'); if(ins.length) ins[ins.length-1].focus(); } };
+window.pollDel = function(i){ if(poll && poll.options.length > 2){ poll.options.splice(i,1); renderPoll(); } };
+window.pollDays = function(d){ if(poll){ poll.days = d; renderPoll(); } };
+function renderPoll(){
+  const box = document.getElementById('pollBox');
+  if(editHasPoll){
+    box.style.display = 'block';
+    box.innerHTML = '<div class="pb-hd"><b><svg viewBox="0 0 24 24"><line x1="6" y1="20" x2="6" y2="11"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="18" y1="20" x2="18" y2="14"/></svg>Poll</b></div><div class="pb-locked">This post has a poll. Polls can\'t be edited once people can vote — you can still change the text.</div>';
+    updatePostBtn(); return;
+  }
+  if(!poll){ box.style.display = 'none'; box.innerHTML = ''; updatePostBtn(); return; }
+  box.style.display = 'block';
+  box.innerHTML =
+    '<div class="pb-hd"><b><svg viewBox="0 0 24 24"><line x1="6" y1="20" x2="6" y2="11"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="18" y1="20" x2="18" y2="14"/></svg>Poll</b>' +
+      '<button type="button" class="pb-x" aria-label="Remove poll" onclick="removePoll()"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>' +
+    poll.options.map((o,i) =>
+      '<div class="pb-row"><input type="text" maxlength="'+POLL_OPT_LEN+'" placeholder="Option '+(i+1)+'" value="'+_escAttr(o)+'" oninput="pollInput('+i+',this.value)">' +
+      (poll.options.length > 2 ? '<button type="button" class="pb-del" aria-label="Remove option" onclick="pollDel('+i+')"><svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>' : '') + '</div>').join('') +
+    (poll.options.length < POLL_MAX ? '<button type="button" class="pb-add" onclick="pollAdd()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add option</button>' : '') +
+    '<div class="pb-dur"><span>Poll length</span>' +
+      [[1,'1 day'],[3,'3 days'],[7,'7 days']].map(d => '<button type="button" class="pb-chip'+(poll.days===d[0]?' on':'')+'" onclick="pollDays('+d[0]+')">'+d[1]+'</button>').join('') + '</div>' +
+    '<div class="pb-note" id="pollNote"></div>';
+  updatePostBtn();
+}
+
+renderPoll();
 
 /* ── @MENTIONS ──
    Type @ and a few letters → matching usernames appear (people you follow first); tap one and it
@@ -1325,7 +1413,15 @@ window.submitPost = async function(){
   const text = document.getElementById('postText').value.trim();
   const urls = images.filter(i=>i.url).map(i=>i.url);
   const hasVideo = !!(video && video.url && !video.uploading);
-  if(!text && !urls.length && !hasVideo){ showToast('Write something, add a photo, or add a video first'); return; }
+  if(!text && !urls.length && !hasVideo && !poll){ showToast('Write something, add a photo, or add a video first'); return; }
+  let pollField = null;
+  if(poll){
+    const opts = poll.options.map(o => o.trim()).filter(Boolean);
+    if(!text){ showToast('Write your poll question first'); return; }
+    if(opts.length < 2){ showToast('Add at least 2 poll options'); return; }
+    if(new Set(opts.map(o => o.toLowerCase())).size < opts.length){ showToast('Poll options must be different'); return; }
+    pollField = { options: opts.map(t => ({ text: t.slice(0, POLL_OPT_LEN) })), endsAt: Date.now() + poll.days * 86400000, days: poll.days };
+  }
 
   const btn = document.getElementById('postBtn');
   btn.disabled = true;
@@ -1333,7 +1429,7 @@ window.submitPost = async function(){
   let mentions = [];
   try{ mentions = await resolveMentions(text); }catch(e){ mentions = []; }
   try{ await settleLink(); }catch(e){}
-  const linkPreview = (linkPrev && !urls.length && !hasVideo && sameLink(firstUrl(text), linkPrev.url)) ? cleanLink(linkPrev) : null;
+  const linkPreview = (linkPrev && !pollField && !urls.length && !hasVideo && sameLink(firstUrl(text), linkPrev.url)) ? cleanLink(linkPrev) : null;
 
   // videoFields per the Firebase/Firestore data model in the video spec —
   // Firebase stores the reference (URL/duration/publicId), never the binary.
@@ -1376,6 +1472,7 @@ window.submitPost = async function(){
       authorUsername: userProfile.username || '',
       text, mentions, images: urls, ...videoFields,
       ...(linkPreview ? { linkPreview } : {}),
+      ...(pollField ? { poll: pollField } : {}),
       status: 'published',
       likeCount: 0, commentCount: 0, saveCount: 0,
       createdAt: serverTimestamp(),

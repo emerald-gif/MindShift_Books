@@ -320,6 +320,7 @@ export function initRepost({ db, fs, getCurrentUser, getMyProfile, notif, openAu
       ${authorRow}
       ${snap.text ? `<div class="rp-embed-text">${esc(trunc(snap.text, 220))}</div>` : ''}
       ${media}
+      ${snap.poll && window.MSBPoll ? window.MSBPoll.html({ id: snap.id, poll: snap.poll }) : ''}
     </div>`;
   }
 
