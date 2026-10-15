@@ -65,15 +65,30 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .kebab svg{width:22px;height:22px;fill:currentColor}
 .pin-ic{width:13px;height:13px;fill:var(--mute);margin-right:4px;vertical-align:-1px;flex-shrink:0}
 .sheet-bg{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:60}
-.sheet{position:fixed;left:0;right:0;bottom:0;background:#fff;border-radius:22px 22px 0 0;padding:8px 10px calc(12px + env(safe-area-inset-bottom));z-index:61;max-height:82dvh;overflow-y:auto;animation:sheetUp .22s ease}
+.sheet{position:fixed;left:0;right:0;bottom:0;background:#f2f3f5;border-radius:26px 26px 0 0;padding:8px 14px calc(14px + env(safe-area-inset-bottom));z-index:61;max-height:82dvh;overflow-y:auto;animation:sheetUp .22s ease;box-shadow:0 -8px 30px rgba(15,23,42,.12)}
 @keyframes sheetUp{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
-.sheet::before{content:'';display:block;width:38px;height:4px;border-radius:99px;background:#d9dee7;margin:6px auto 10px}
-.sheet-title{text-align:center;font-weight:800;font-size:15.5px;padding:0 12px 6px}
-.sheet-text{text-align:center;color:var(--sub);font-size:14px;line-height:1.45;padding:0 16px 12px}
-.sheet-item{display:block;width:100%;text-align:left;padding:15px 16px;font-size:16px;font-weight:600;border-radius:14px}
-.sheet-item:active{background:#f1f5f9}
+.sheet::before{content:'';display:block;width:38px;height:4px;border-radius:99px;background:#cfd4dc;margin:4px auto 12px}
+.sheet-title{text-align:center;font-weight:700;font-size:13.5px;color:var(--sub);padding:0 12px 10px}
+.sheet-text{text-align:center;color:var(--sub);font-size:14px;line-height:1.5;padding:18px 20px 16px}
+.sheet-card{background:#fff;border-radius:18px;overflow:hidden;margin-top:10px}
+.sheet-card:first-child{margin-top:0}
+.sheet-item{display:flex;align-items:center;justify-content:space-between;gap:14px;width:100%;text-align:left;padding:16px 18px;font-size:16px;font-weight:500;color:var(--txt);border-radius:0}
+.sheet-item+.sheet-item{border-top:1px solid #eef0f3}
+.sheet-item:active{background:#f4f5f7}
+.sheet-item .si-label{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sheet-item .si-hint{font-size:14px;font-weight:400;color:var(--mute);flex-shrink:0}
+.sheet-item .si-ic{width:22px;height:22px;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .sheet-item.danger{color:var(--red)}
-.sheet-item.cancel{text-align:center;color:var(--sub);margin-top:4px;background:#f8fafc}
+.sheet-item.cancel{justify-content:center;color:var(--sub);font-weight:600}
+.sheet-item.confirm{justify-content:center;font-weight:700}
+.sheet-tiles{display:flex;gap:8px;padding:14px 10px 6px}
+.sheet-tile{flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;padding:14px 6px 12px;border-radius:16px;font-size:13.5px;font-weight:600;color:var(--txt);-webkit-tap-highlight-color:transparent}
+.sheet-tile:active{background:#f4f5f7}
+.sheet-tile .st-ic{width:56px;height:56px;border-radius:19px;display:flex;align-items:center;justify-content:center}
+.sheet-tile .st-ic svg{width:27px;height:27px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.st-ic.indigo{background:#eef0ff;color:#4f46e5}
+.st-ic.cyan{background:#e0f7fb;color:#0891b2}
+.sheet-hint{text-align:center;color:var(--mute);font-size:12.5px;padding:4px 16px 16px}
 .sheet[hidden],.sheet-bg[hidden]{display:none}
 .blockbar{padding:14px 16px calc(14px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid var(--border);text-align:center;font-size:14px;color:var(--sub);flex-shrink:0}
 .blockbar[hidden]{display:none}
@@ -222,17 +237,19 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .msg.failed{border:1.5px solid var(--red);opacity:1}
 .empty-chat{margin:auto;text-align:center;color:var(--mute);font-size:14px;padding:20px}
 
-.composer{position:relative;z-index:3;display:flex;align-items:flex-end;gap:8px;padding:8px 10px calc(8px + env(safe-area-inset-bottom));background:rgba(255,255,255,.92);-webkit-backdrop-filter:saturate(1.4) blur(14px);backdrop-filter:saturate(1.4) blur(14px);border-top:1px solid rgba(15,23,42,.06);box-shadow:0 -8px 26px rgba(15,23,42,.045);flex-shrink:0}
-.composer textarea{flex:1;resize:none;border:1.5px solid #e6e9f2;border-radius:24px;padding:11px 17px;font:inherit;font-size:15px;line-height:1.35;max-height:120px;outline:none;background:#fff;color:var(--txt);box-shadow:0 2px 10px rgba(15,23,42,.05);transition:border-color .15s,box-shadow .2s}
-.composer textarea:focus{border-color:#a5b4fc;box-shadow:0 0 0 4px rgba(79,70,229,.10),0 2px 10px rgba(15,23,42,.05)}
-.send{width:46px;height:46px;border-radius:50%;background:var(--g);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 6px 18px rgba(79,70,229,.3);transition:opacity .15s,transform .1s}
+.composer{position:relative;z-index:3;display:flex;align-items:flex-end;gap:10px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid #eef0f5;flex-shrink:0}
+.composer textarea{flex:1;min-width:0;min-height:46px;resize:none;border:1.5px solid transparent;border-radius:24px;padding:12px 18px;font:inherit;font-size:15.5px;line-height:1.35;max-height:120px;outline:none;background:#f1f3f9;color:var(--txt);overflow-y:hidden;scrollbar-width:none;transition:background .15s,border-color .15s,box-shadow .2s}
+.composer textarea::-webkit-scrollbar{display:none}
+.composer textarea::placeholder{color:#98a2b3}
+.composer textarea:focus{background:#fff;border-color:#a5b4fc;box-shadow:0 0 0 4px rgba(79,70,229,.10)}
+.send{width:46px;height:46px;border-radius:50%;background:var(--g);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 12px rgba(79,70,229,.25);transition:opacity .15s,transform .1s}
 .send:active{transform:scale(.94)}
 .send[disabled]{opacity:.4;cursor:default}
 .send svg{width:20px;height:20px;fill:none;stroke:#fff;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 
 
 /* ── voice messages ── */
-.mic{position:relative;isolation:isolate;width:46px;height:46px;border-radius:50%;background:var(--g);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 6px 18px rgba(79,70,229,.32);transition:transform .24s cubic-bezier(.2,.9,.3,1.25),box-shadow .2s;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+.mic{position:relative;isolation:isolate;width:46px;height:46px;border-radius:50%;background:var(--g);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 12px rgba(79,70,229,.28);transition:transform .24s cubic-bezier(.2,.9,.3,1.25),box-shadow .2s;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
 .mic svg{width:21px;height:21px;fill:none;stroke:#fff;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
 .mic:active{transform:scale(.93)}
 .mic.holding{transform:translate(calc(var(--dx,0px) - 8px),var(--dy,0px)) scale(1.5);transition:none;box-shadow:0 12px 30px rgba(79,70,229,.45);z-index:6}
@@ -246,7 +263,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .composer.holding > .mic{order:2}
 
 /* hold-to-record: timer + "slide to cancel" pill, big mic, lock capsule above it */
-.rec-hold{position:relative;flex:1;min-width:0;height:46px;margin-right:12px;border-radius:23px;background:#fff;border:1.5px solid #e6e9f2;box-shadow:0 2px 12px rgba(15,23,42,.07);display:none;align-items:center;gap:10px;padding:0 16px;overflow:hidden;align-self:center}
+.rec-hold{position:relative;flex:1;min-width:0;height:46px;margin-right:12px;border-radius:23px;background:#f1f3f9;border:1.5px solid transparent;display:none;align-items:center;gap:10px;padding:0 16px;overflow:hidden;align-self:center}
 .composer.holding .rec-hold{display:flex;animation:recIn .2s ease}
 .rec-hold::after{content:'';position:absolute;inset:0;background:rgba(239,68,68,.14);opacity:var(--cp,0);pointer-events:none}
 .slide-cancel{margin-left:auto;display:flex;align-items:center;gap:3px;font-size:14px;font-weight:700;color:var(--sub);white-space:nowrap;transform:translateX(calc(var(--dx,0px) * .55));opacity:calc(1 - var(--cp,0) * 1.2)}
@@ -326,9 +343,9 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 
 
 /* ── photos & videos ── */
-.attach{width:44px;height:44px;border-radius:50%;background:#fff;border:1.5px solid #e6e9f2;box-shadow:0 2px 10px rgba(15,23,42,.06);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--p);transition:transform .12s,background .15s}
-.attach:active{transform:scale(.92);background:#f5f6ff}
-.attach svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.attach{width:46px;height:46px;border-radius:50%;background:#eef0ff;border:0;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--p);transition:transform .12s,background .15s}
+.attach:active{transform:scale(.92);background:#e0e4ff}
+.attach svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .attach:focus-visible{outline:2px solid var(--p);outline-offset:2px}
 .composer.recording > .attach,.composer.holding > .attach{display:none!important}
 .msg.media{position:relative;padding:3px;width:min(280px,72vw);max-width:none}
@@ -1257,7 +1274,7 @@ $('emoQ').addEventListener('input', () => {
 
 /* ───────── composer ───────── */
 const input = $('input'), sendBtn = $('sendBtn');
-function autosize(){ input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 120) + 'px'; const has = !!input.value.trim(); sendBtn.disabled = !has; $('composer').classList.toggle('has-text', has); }
+function autosize(){ input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 120) + 'px'; input.style.overflowY = input.scrollHeight > 120 ? 'auto' : 'hidden'; const has = !!input.value.trim(); sendBtn.disabled = !has; $('composer').classList.toggle('has-text', has); }
 input.addEventListener('input', autosize);
 input.addEventListener('keydown', e => {
   if(e.key === 'Enter' && !e.shiftKey && matchMedia('(pointer:fine)').matches){ e.preventDefault(); send(); }
@@ -2138,10 +2155,10 @@ $('attachBtn').onclick = () => {
   if(chat.blocked){ toast('Unblock this user to send messages'); return; }
   if(chat.editing){ toast('Finish editing first'); return; }
   const touch = window.matchMedia && matchMedia('(pointer:coarse)').matches;
-  openSheet('Send a photo or video', [
-    { label:'Photo or video library', run:() => { $('fileLib').value = ''; $('fileLib').click(); } },
-    touch ? { label:'Take a photo or video', run:() => { $('fileCam').value = ''; $('fileCam').click(); } } : null
-  ]);
+  openTileSheet('Share', [
+    { label:'Library', icon:'image', tone:'indigo', run:() => { $('fileLib').value = ''; $('fileLib').click(); } },
+    touch ? { label:'Camera', icon:'camera', tone:'cyan', run:() => { $('fileCam').value = ''; $('fileCam').click(); } } : null
+  ], 'Photos & videos · up to ' + MEDIA_MAX_FILES + ' at a time · videos up to ' + MEDIA_VIDEO_MAX_MB + ' MB');
 };
 ['fileLib', 'fileCam'].forEach(id => $(id).addEventListener('change', e => addMediaFiles([...e.target.files])));
 input.addEventListener('paste', e => { const fs = [...((e.clipboardData && e.clipboardData.files) || [])].filter(f => /^image\//.test(f.type)); if(fs.length){ e.preventDefault(); addMediaFiles(fs); } });
@@ -2261,32 +2278,94 @@ function saveSilent(c){
 /* ───────── chat actions: pin · clear · delete · block · mark all as read ───────── */
 let _reloading = false;
 function closeSheet(){ $('sheet').hidden = true; $('sheetBg').hidden = true; }
+const SI = {
+  pin:'<path d="M12 17v5"/><path d="M9 10.8a2 2 0 0 1-1.1 1.8l-1.8.9A2 2 0 0 0 5 15.2V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.8a2 2 0 0 0-1.1-1.8l-1.8-.9A2 2 0 0 1 15 10.8V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/>',
+  unpin:'<path d="M12 17v5"/><path d="M9 10.8a2 2 0 0 1-1.1 1.8l-1.8.9A2 2 0 0 0 5 15.2V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.8a2 2 0 0 0-1.1-1.8l-1.8-.9A2 2 0 0 1 15 10.8V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/><path d="M3 3l18 18"/>',
+  user:'<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+  userCheck:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="m16 11 2 2 4-4"/>',
+  eraser:'<path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/>',
+  trash:'<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+  checks:'<path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/>',
+  ban:'<circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/>',
+  sliders:'<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>',
+  image:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>',
+  camera:'<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3"/>',
+  send:'<path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/>',
+  x:'<path d="M18 6 6 18M6 6l12 12"/>'
+};
+// Picks a right-hand icon from the item's label, so none of the existing call sites need to change.
+// An item can still force one with { icon:'pin' } or turn it off with { icon:'' }.
+function sheetIcon(it){
+  if(it.icon !== undefined) return SI[it.icon] || '';
+  const l = String(it.label || '').toLowerCase();
+  if(/^unpin/.test(l)) return SI.unpin;
+  if(/^pin/.test(l)) return SI.pin;
+  if(/profile/.test(l)) return SI.user;
+  if(/^unblock/.test(l)) return SI.userCheck;
+  if(/clear/.test(l)) return SI.eraser;
+  if(/delete/.test(l)) return SI.trash;
+  if(/mark.*read/.test(l)) return SI.checks;
+  if(/block/.test(l)) return SI.ban;
+  if(/settings/.test(l)) return SI.sliders;
+  if(/take a photo|camera/.test(l)) return SI.camera;
+  if(/photo|video|library/.test(l)) return SI.image;
+  if(/send/.test(l)) return SI.send;
+  if(/discard|cancel/.test(l)) return SI.x;
+  return '';
+}
+function sheetBtn(it){
+  const b = document.createElement('button');
+  b.className = 'sheet-item' + (it.danger ? ' danger' : '');
+  const lab = document.createElement('span'); lab.className = 'si-label'; lab.textContent = it.label; b.appendChild(lab);
+  if(it.hint){ const h = document.createElement('span'); h.className = 'si-hint'; h.textContent = it.hint; b.appendChild(h); }
+  const ic = sheetIcon(it);
+  if(ic) b.insertAdjacentHTML('beforeend', '<svg class="si-ic" viewBox="0 0 24 24" aria-hidden="true">' + ic + '</svg>');
+  b.onclick = () => { closeSheet(); if(it.run) it.run(); };
+  return b;
+}
+function sheetCard(){ const c = document.createElement('div'); c.className = 'sheet-card'; return c; }
 function openSheet(title, items){
   $('sheetTitle').textContent = title || ''; $('sheetTitle').style.display = title ? '' : 'none';
   const body = $('sheetBody'); body.innerHTML = '';
-  items.filter(Boolean).forEach(it => {
-    const b = document.createElement('button');
-    b.className = 'sheet-item' + (it.danger ? ' danger' : '');
-    b.textContent = it.label;
-    b.onclick = () => { closeSheet(); if(it.run) it.run(); };
-    body.appendChild(b);
+  const list = items.filter(Boolean);
+  // Normal actions share one rounded card; destructive ones (delete, block…) sit in their own card below, like the reference design.
+  const groups = [list.filter(it => !it.danger), list.filter(it => it.danger)];
+  groups.forEach(g => {
+    if(!g.length) return;
+    const card = sheetCard(); g.forEach(it => card.appendChild(sheetBtn(it))); body.appendChild(card);
   });
-  const c = document.createElement('button'); c.className = 'sheet-item cancel'; c.textContent = 'Cancel'; c.onclick = closeSheet; body.appendChild(c);
   $('sheetBg').onclick = closeSheet; $('sheetBg').hidden = false; $('sheet').hidden = false;
 }
 function confirmSheet(title, text, label){
   return new Promise(resolve => {
     $('sheetTitle').textContent = title; $('sheetTitle').style.display = '';
     const body = $('sheetBody'); body.innerHTML = '';
-    const p = document.createElement('div'); p.className = 'sheet-text'; p.textContent = text; body.appendChild(p);
-    const ok = document.createElement('button'); ok.className = 'sheet-item danger'; ok.style.textAlign = 'center'; ok.textContent = label;
+    const info = sheetCard(); const p = document.createElement('div'); p.className = 'sheet-text'; p.textContent = text; info.appendChild(p); body.appendChild(info);
+    const acts = sheetCard();
+    const ok = document.createElement('button'); ok.className = 'sheet-item danger confirm'; ok.textContent = label;
     ok.onclick = () => { closeSheet(); resolve(true); };
     const no = document.createElement('button'); no.className = 'sheet-item cancel'; no.textContent = 'Cancel';
     no.onclick = () => { closeSheet(); resolve(false); };
-    body.appendChild(ok); body.appendChild(no);
+    acts.appendChild(ok); acts.appendChild(no); body.appendChild(acts);
     $('sheetBg').onclick = () => { closeSheet(); resolve(false); };
     $('sheetBg').hidden = false; $('sheet').hidden = false;
   });
+}
+function openTileSheet(title, tiles, hint){
+  $('sheetTitle').textContent = title || ''; $('sheetTitle').style.display = title ? '' : 'none';
+  const body = $('sheetBody'); body.innerHTML = '';
+  const card = sheetCard(), row = document.createElement('div'); row.className = 'sheet-tiles';
+  tiles.filter(Boolean).forEach(t => {
+    const b = document.createElement('button'); b.className = 'sheet-tile';
+    b.innerHTML = '<span class="st-ic ' + (t.tone || 'indigo') + '"><svg viewBox="0 0 24 24" aria-hidden="true">' + (SI[t.icon] || '') + '</svg></span><span></span>';
+    b.lastChild.textContent = t.label;
+    b.onclick = () => { closeSheet(); if(t.run) t.run(); };
+    row.appendChild(b);
+  });
+  card.appendChild(row);
+  if(hint){ const h = document.createElement('div'); h.className = 'sheet-hint'; h.textContent = hint; card.appendChild(h); }
+  body.appendChild(card);
+  $('sheetBg').onclick = closeSheet; $('sheetBg').hidden = false; $('sheet').hidden = false;
 }
 const myRow = uid => doc(db,'inbox',me.uid,'threads',uid);
 const rowFor = uid => recentRows.concat(pinnedRows).find(t => t.otherUid === uid) || (chat && chat.other.uid === uid ? chat.row : null);
