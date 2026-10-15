@@ -5964,6 +5964,13 @@ const ANNOUNCEMENTS = [
     message: 'A new creator tool — you can now manage all your comments from one place. Reply, pin and hide comments across your posts and articles.',
     ctaLabel: 'Open Comment Manager',
     ctaUrl: '/comment-manager'
+  },
+  {
+    id: 'messages-launch-2026-10',
+    title: 'Messages are here 💬',
+    message: 'You can now message anyone on MindShift Books. Go say hi to a writer you love.',
+    ctaLabel: 'Open Messages',
+    ctaUrl: '/messages'
   }
 ];
 
