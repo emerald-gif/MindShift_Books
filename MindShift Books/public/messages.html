@@ -93,8 +93,21 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .blockbar{padding:14px 16px calc(14px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid var(--border);text-align:center;font-size:14px;color:var(--sub);flex-shrink:0}
 .blockbar[hidden]{display:none}
 .blockbar button{margin-left:8px;font-weight:800;color:var(--p)}
-.people{display:flex;gap:14px;overflow-x:auto;padding:12px 16px 10px;background:#fff;border-bottom:1px solid #f1f5f9;flex-shrink:0;scrollbar-width:none;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}
-.people::-webkit-scrollbar{display:none}
+.isearch{padding:10px 14px 6px;background:#fff;flex-shrink:0}
+.isearch[hidden]{display:none}
+.isearch-in{display:flex;align-items:center;gap:10px;height:42px;padding:0 8px 0 14px;border-radius:99px;background:#f1f3f9;border:1.5px solid transparent;transition:background .15s,border-color .15s,box-shadow .2s}
+.isearch-in:focus-within{background:#fff;border-color:#a5b4fc;box-shadow:0 0 0 4px rgba(79,70,229,.10)}
+.isearch-in > svg{width:19px;height:19px;fill:none;stroke:var(--mute);stroke-width:2.2;stroke-linecap:round;flex-shrink:0}
+.isearch-in input{flex:1;min-width:0;border:none;outline:none;background:transparent;font:inherit;font-size:16px;color:var(--txt);-webkit-appearance:none;appearance:none}
+.isearch-in input::-webkit-search-cancel-button,.isearch-in input::-webkit-search-decoration{-webkit-appearance:none;display:none}
+.isearch-in input::placeholder{color:#98a2b3}
+mark{background:#e0e7ff;color:inherit;border-radius:3px;padding:0 1px}
+.people{background:#fff;padding:8px 0 4px;border-bottom:1px solid #f1f5f9;flex-shrink:0}
+.people-head{display:flex;align-items:center;justify-content:space-between;padding:0 18px 6px;font-size:13px;font-weight:700;color:var(--sub)}
+.pp-all{font-size:13px;font-weight:700;color:var(--p);padding:4px 0 4px 12px}
+.people-track{display:flex;gap:12px;overflow-x:auto;padding:2px 16px 8px;scroll-padding-inline:16px;scrollbar-width:none;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 10px,#000 calc(100% - 26px),transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 10px,#000 calc(100% - 26px),transparent 100%)}
+.people-track::after{content:'';flex:0 0 12px}
+.people-track::-webkit-scrollbar{display:none}
 .people[hidden]{display:none}
 .pp{flex:0 0 auto;width:62px;text-align:center;scroll-snap-align:start}
 .pp .av{width:58px;height:58px;margin:0 auto;font-size:20px;overflow:visible}
@@ -432,6 +445,13 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
     <div class="bar-title">Messages</div>
     <button class="kebab" id="listMenuBtn" aria-label="More options"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>
   </div>
+  <div class="isearch" id="isearch" hidden>
+    <div class="isearch-in">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input id="inboxQ" type="search" placeholder="Search your messages" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" aria-label="Search your messages">
+      <button class="nclear" id="inboxQClear" aria-label="Clear search" hidden><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+  </div>
   <div class="people" id="people" hidden></div>
   <div class="tabs" id="tabs">
     <button class="tab on" data-f="all">All</button>
@@ -555,6 +575,7 @@ let dbReady = false;           // true once the Firebase SDK has loaded (the pag
 let threads = [];              // current inbox rows
 let unsubInbox = null, unsubPinned = null;
 let requests = [];                             // people I don't follow who've messaged me and haven't been accepted
+let inboxQ = '';                                // text typed in the inbox search box (lower-cased)
 let recentRows = [], pinnedRows = [];        // raw inbox rows: the 30 most recent, and pinned ones (≤5, even if old)
 let blockedSet = new Set(), blockedInfo = new Map();
 let chat = null;               // { other:{uid,name,photo}, cid, msgs:Map, oldest, hasMore, lastTs, unsubLive, pending:[] }
@@ -681,33 +702,52 @@ function reqRowHtml(){
     <div class="row-main"><div class="row-top"><span class="row-name">Message requests</span><span class="row-time">${requests.length}</span></div>
     <div class="row-bot"><span class="row-last">${esc(names)}</span>${unread ? `<span class="pill">${unread}</span>` : ''}</div></div></button>`;
 }
+// Wraps the first match in <mark>; for long messages, trims the start so the match stays visible.
+function hlText(text, q, snippet){
+  let t = String(text || '');
+  if(!q) return esc(t);
+  const i = t.toLowerCase().indexOf(q);
+  if(i < 0) return esc(t);
+  let pre = '';
+  if(snippet && i > 18){ t = t.slice(i - 12); pre = '…'; }
+  const k = t.toLowerCase().indexOf(q);
+  return pre + esc(t.slice(0, k)) + '<mark>' + esc(t.slice(k, k + q.length)) + '</mark>' + esc(t.slice(k + q.length));
+}
+const threadMatches = (t, q) => (String(t.name || 'MindShift Books User') + ' ' + String(t.lastText || '')).toLowerCase().includes(q);
 function bindReqRow(){ const b = $('reqRow'); if(b) b.onclick = () => showRequests(true); }
 function renderList(){
   const el = $('list');
   const unreadCount = threads.filter(t => t.unread > 0).length;
   $('unreadN').textContent = unreadCount ? ` ${unreadCount}` : '';
-  if(filter === 'unread' && threads.length && !unreadCount){
+  $('isearch').hidden = !threads.length;          // nothing to search until there is at least one chat
+  if(filter === 'unread' && threads.length && !unreadCount && !inboxQ){
     el.innerHTML = `<div class="empty"><div class="ic"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></div><h2>You're all caught up</h2><p>No unread messages right now.</p></div>`;
     return;
   }
-  const shown = filter === 'unread' ? threads.filter(t => t.unread > 0) : threads;
+  let shown = filter === 'unread' ? threads.filter(t => t.unread > 0) : threads;
+  if(inboxQ) shown = shown.filter(t => threadMatches(t, inboxQ));
   if(!threads.length){
     el.innerHTML = reqRowHtml() + `<div class="empty"><div class="ic"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg></div>
       <h2>No messages yet</h2><p>Tap someone in the row above, or the + to find anyone, to start a conversation.</p></div>`;
     renderPeople(); bindReqRow();
     return;
   }
-  el.innerHTML = reqRowHtml() + shown.map(t => {
+  if(inboxQ && !shown.length){
+    el.innerHTML = `<div class="empty"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></div><h2>No results</h2><p>Nothing in your ${filter === 'unread' ? 'unread ' : ''}messages matches “${esc(inboxQ)}”.</p></div>`;
+    renderPeople();
+    return;
+  }
+  el.innerHTML = (inboxQ ? '' : reqRowHtml()) + shown.map(t => {
     const un = t.unread > 0;
-    const last = (t.lastSender === me.uid ? 'You: ' : '') + (t.lastText || '') + (settings.readReceipts && t.lastSender === me.uid && t.seenAt && ms(t.seenAt) >= ms(t.lastAt) ? ' · Seen' : '');
+    const last = esc(t.lastSender === me.uid ? 'You: ' : '') + hlText(t.lastText || '', inboxQ, true) + esc(settings.readReceipts && t.lastSender === me.uid && t.seenAt && ms(t.seenAt) >= ms(t.lastAt) ? ' · Seen' : '');
     return `<button class="row ${un?'unread':''}" data-uid="${esc(t.otherUid)}">
       <div class="av">${avatarHtml(t.name, t.photo)}</div>
       <div class="row-main">
-        <div class="row-top"><span class="row-name">${esc(t.name || 'MindShift Books User')}</span><span class="row-time">${t.pinned ? PIN_SVG : ''}${fmtListTime(ms(t.lastAt))}</span></div>
-        <div class="row-bot"><span class="row-last">${esc(last)}</span>${un ? `<span class="pill">${t.unread > 99 ? '99+' : t.unread}</span>` : ''}</div>
+        <div class="row-top"><span class="row-name">${hlText(t.name || 'MindShift Books User', inboxQ)}</span><span class="row-time">${t.pinned ? PIN_SVG : ''}${fmtListTime(ms(t.lastAt))}</span></div>
+        <div class="row-bot"><span class="row-last">${last}</span>${un ? `<span class="pill">${t.unread > 99 ? '99+' : t.unread}</span>` : ''}</div>
       </div></button>`;
   }).join('');
-  renderPeople(); bindReqRow();
+  renderPeople(); if(!inboxQ) bindReqRow();
   el.querySelectorAll('.row:not(.reqrow)').forEach(b => {
     let timer = null, fired = false;
     const t = threads.find(x => x.otherUid === b.dataset.uid);
@@ -723,6 +763,15 @@ document.querySelectorAll('.tab').forEach(b => b.onclick = () => {
   _peopleSig = '';
   renderList();
 });
+const _iq = $('inboxQ'), _iqx = $('inboxQClear');
+_iq.addEventListener('input', () => {
+  inboxQ = _iq.value.trim().toLowerCase();
+  _iqx.hidden = !_iq.value;
+  $('list').scrollTop = 0;
+  renderList();
+});
+_iq.addEventListener('keydown', e => { if(e.key === 'Enter') _iq.blur(); if(e.key === 'Escape'){ _iqx.click(); _iq.blur(); } });
+_iqx.onclick = () => { _iq.value = ''; inboxQ = ''; _iqx.hidden = true; renderList(); _iq.focus(); };
 function startInbox(){
   if(!dbReady || !me) return;
   stopInbox();
@@ -2649,26 +2698,28 @@ function visiblePeople(){
 }
 function renderPeople(){
   const el = $('people');
-  if(!el || !me || filter === 'unread'){ if(el) el.hidden = true; return; }
+  if(!el || !me || filter === 'unread' || inboxQ){ if(el) el.hidden = true; return; }
   const list = visiblePeople();
   if(!list.length && peopleState === 'ready'){ el.hidden = true; return; }
   if(!list.length && peopleState !== 'loading'){ el.hidden = true; return; }
-  const sig = peopleState + '|' + list.map(p => p.uid + (isActiveNow(peopleAct[p.uid]) ? '*' : '')).join(',');
+  const sig = peopleMode + '|' + peopleState + '|' + list.map(p => p.uid + (isActiveNow(peopleAct[p.uid]) ? '*' : '')).join(',');
   el.hidden = false;
   if(sig === _peopleSig) return;                      // nothing changed — don't disturb the scroll position
   _peopleSig = sig;
   const add = `<button class="pp add" data-add="1" aria-label="New message"><div class="av"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div><div class="pp-name">New</div></button>`;
+  const head = `<div class="people-head"><span>${peopleMode === 'suggest' ? 'Suggested creators' : 'Start a chat'}</span><button class="pp-all" data-all="1">See all</button></div>`;
+  const track = inner => head + '<div class="people-track">' + inner + '</div>';
   if(!list.length){
-    el.innerHTML = add + Array(5).fill('<div class="pp"><div class="skel c" style="width:58px;height:58px;margin:0 auto"></div><div class="skel" style="height:10px;width:44px;margin:8px auto 0"></div></div>').join('');
+    el.innerHTML = track(add + Array(5).fill('<div class="pp"><div class="skel c" style="width:58px;height:58px;margin:0 auto"></div><div class="skel" style="height:10px;width:44px;margin:8px auto 0"></div></div>').join(''));
     return;
   }
-  el.innerHTML = add + list.map(p => `<button class="pp" data-uid="${esc(p.uid)}" data-mode="${peopleMode}">
+  el.innerHTML = track(add + list.map(p => `<button class="pp" data-uid="${esc(p.uid)}" data-mode="${peopleMode}">
     <div class="av">${avatarHtml(p.name, p.photo)}${isActiveNow(peopleAct[p.uid]) ? '<span class="on-dot"></span>' : ''}</div>
-    <div class="pp-name">${esc(firstName(p.name))}</div>${peopleMode === 'suggest' ? '<div class="pp-sub">Creator</div>' : ''}</button>`).join('');
+    <div class="pp-name">${esc(firstName(p.name))}</div>${peopleMode === 'suggest' ? '<div class="pp-sub">Creator</div>' : ''}</button>`).join(''));
 }
 $('people').addEventListener('click', e => {
-  const b = e.target.closest('.pp'); if(!b) return;
-  if(b.dataset.add){ showNew(true); return; }
+  const b = e.target.closest('.pp, .pp-all'); if(!b) return;
+  if(b.dataset.add || b.dataset.all){ showNew(true); return; }
   const uid = b.dataset.uid;
   if(b.dataset.mode === 'suggest') location.href = `/profile?uid=${encodeURIComponent(uid)}`;     // not following them yet → see who they are first
   else openChat(uid, { push:true });
