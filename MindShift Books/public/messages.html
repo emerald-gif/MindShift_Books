@@ -324,7 +324,85 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .msg.voice .t{margin-top:2px}
 @media (prefers-reduced-motion:reduce){.rec-dot,.composer.recording .rec,.composer.holding .rec-hold,.mic.holding::before,.slide-cancel svg,.lockcap .lk-chev{animation:none}}
 
-.toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:#0f172a;color:#fff;padding:10px 18px;border-radius:99px;font-size:13.5px;font-weight:600;opacity:0;pointer-events:none;transition:all .25s;z-index:50;max-width:90vw;text-align:center}
+
+/* ── photos & videos ── */
+.attach{width:44px;height:44px;border-radius:50%;background:#fff;border:1.5px solid #e6e9f2;box-shadow:0 2px 10px rgba(15,23,42,.06);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--p);transition:transform .12s,background .15s}
+.attach:active{transform:scale(.92);background:#f5f6ff}
+.attach svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.attach:focus-visible{outline:2px solid var(--p);outline-offset:2px}
+.composer.recording > .attach,.composer.holding > .attach{display:none!important}
+.msg.media{position:relative;padding:3px;width:min(280px,72vw);max-width:none}
+.msg.media.hascap{padding-bottom:6px}
+.msg.media .quote{margin:3px 3px 6px}
+.mb{position:relative;display:block;width:100%;border-radius:15px;overflow:hidden;background:#dfe4ee;cursor:pointer;line-height:0;-webkit-tap-highlight-color:transparent}
+.mb::before{content:'';display:block;padding-top:var(--ar,75%)}
+.mb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .28s}
+.mb img.ok{opacity:1}
+.mph{position:absolute;inset:-12px;background-size:cover;background-position:center;filter:blur(10px)}
+.mdur{position:absolute;left:8px;top:8px;padding:2px 9px;border-radius:99px;background:rgba(15,23,42,.55);color:#fff;font-size:11.5px;font-weight:700;line-height:1.55;font-variant-numeric:tabular-nums;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.mplay{position:absolute;left:50%;top:50%;width:52px;height:52px;margin:-26px 0 0 -26px;border-radius:50%;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);transition:transform .15s}
+.mb:active .mplay{transform:scale(.92)}
+.mplay svg{width:22px;height:22px;fill:#fff;margin-left:2px}
+.mring{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.mring .r{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+.mring circle{fill:none;stroke-width:3}
+.mring .tr{stroke:rgba(255,255,255,.28)}
+.mring .fg{stroke:#fff;stroke-linecap:round;stroke-dasharray:157.1;transition:stroke-dashoffset .2s linear}
+.mring .x{width:20px;height:20px;fill:none;stroke:#fff;stroke-width:2.4;stroke-linecap:round}
+.msg.media .cap{padding:7px 9px 0;line-height:1.38;white-space:pre-wrap;word-break:break-word}
+.msg.media .t{padding:0 8px}
+.msg.media.nocap .t{position:absolute;right:9px;bottom:9px;margin:0;padding:1px 8px;border-radius:99px;background:rgba(15,23,42,.5);color:#fff;font-size:11px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+
+/* preview + caption screen */
+.ms{position:fixed;inset:0;z-index:85;background:#0b1020;display:flex;flex-direction:column;color:#fff;animation:msIn .26s cubic-bezier(.2,.9,.3,1.05)}
+.ms[hidden]{display:none}
+@keyframes msIn{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
+.ms-bg{position:absolute;inset:0;background-size:cover;background-position:center;filter:blur(42px) brightness(.5) saturate(1.3);transform:scale(1.25)}
+.ms > *:not(.ms-bg){position:relative}
+.ms-top{display:flex;align-items:center;gap:12px;padding:calc(10px + env(safe-area-inset-top)) 12px 4px}
+.ms-x{width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.13);display:flex;align-items:center;justify-content:center;color:#fff}
+.ms-x svg,.ms-send svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.ms-title{font-weight:800;font-size:15.5px}
+.ms-stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:8px 16px}
+.ms-stage img,.ms-stage video{max-width:100%;max-height:100%;border-radius:18px;box-shadow:0 18px 56px rgba(0,0,0,.55);object-fit:contain;background:#000}
+.ms-strip{display:flex;gap:9px;padding:6px 14px;overflow-x:auto;scrollbar-width:none}
+.ms-strip:empty{display:none}
+.ms-strip::-webkit-scrollbar{display:none}
+.ms-th{position:relative;flex:0 0 auto;width:56px;height:56px;border-radius:13px;overflow:hidden;border:2px solid transparent;opacity:.6;background:#1c2440 center/cover no-repeat;transition:opacity .15s,border-color .15s}
+.ms-th.on{border-color:#fff;opacity:1}
+.ms-th.add{display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.12);opacity:1;color:#fff}
+.ms-th.add svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
+.ms-th .rm{position:absolute;top:2px;right:2px;width:19px;height:19px;border-radius:50%;background:rgba(0,0,0,.62);display:flex;align-items:center;justify-content:center;color:#fff}
+.ms-th .rm svg{width:11px;height:11px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round}
+.ms-th .vb{position:absolute;left:4px;bottom:3px;font-size:10px;line-height:1;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.ms-bar{display:flex;align-items:flex-end;gap:10px;padding:8px 12px calc(12px + env(safe-area-inset-bottom))}
+.ms-cap{flex:1;min-width:0;background:rgba(255,255,255,.15);border-radius:25px;padding:3px 8px 3px 17px;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.ms-cap textarea{display:block;width:100%;background:transparent;border:0;outline:0;color:#fff;font:inherit;font-size:15px;line-height:1.35;padding:9px 0;resize:none;max-height:96px}
+.ms-cap textarea::placeholder{color:rgba(255,255,255,.62)}
+.ms-send{width:50px;height:50px;border-radius:50%;background:var(--g);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 8px 22px rgba(79,70,229,.5);transition:transform .12s}
+.ms-send:active{transform:scale(.92)}
+
+/* full-screen viewer */
+.lb{position:fixed;inset:0;z-index:90;background:rgba(5,8,18,.97);display:flex;align-items:center;justify-content:center;animation:lbIn .2s ease}
+.lb[hidden]{display:none}
+@keyframes lbIn{from{opacity:0}to{opacity:1}}
+.lb-stage{width:100%;height:100%;display:flex;align-items:center;justify-content:center;touch-action:none;transition:transform .22s cubic-bezier(.2,.9,.3,1.05)}
+.lb-stage img,.lb-stage video{max-width:100%;max-height:100%;object-fit:contain;-webkit-user-select:none;user-select:none;background:#000}
+.lb-stage video{width:100%;height:100%}
+.lb-top{position:absolute;top:0;left:0;right:0;z-index:2;display:flex;align-items:center;gap:8px;padding:calc(10px + env(safe-area-inset-top)) 12px 14px;background:linear-gradient(rgba(0,0,0,.6),transparent);pointer-events:none}
+.lb-top > *{pointer-events:auto}
+.lb-count{flex:1;text-align:center;font-size:13.5px;font-weight:700;color:rgba(255,255,255,.85);font-variant-numeric:tabular-nums}
+.lb-btn{width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.15);color:#fff;display:flex;align-items:center;justify-content:center;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.lb-btn svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.lb-nav{position:absolute;top:50%;margin-top:-21px;z-index:2}
+.lb-nav.prev{left:12px}.lb-nav.next{right:12px}
+.lb-nav[hidden]{display:none}
+@media (hover:none){.lb-nav{display:none!important}}
+.lb-cap{position:absolute;left:0;right:0;bottom:0;z-index:2;padding:34px 18px calc(16px + env(safe-area-inset-bottom));background:linear-gradient(transparent,rgba(0,0,0,.72));color:#fff;font-size:14.5px;line-height:1.42;max-height:34%;overflow:auto;white-space:pre-wrap;word-break:break-word}
+.lb-cap[hidden]{display:none}
+@media (prefers-reduced-motion:reduce){.ms,.lb{animation:none}}
+
+.toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:#0f172a;color:#fff;padding:10px 18px;border-radius:99px;font-size:13.5px;font-weight:600;opacity:0;pointer-events:none;transition:all .25s;z-index:120;max-width:90vw;text-align:center}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
 </head>
@@ -390,6 +468,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
   </div>
   <div class="blockbar" id="blockBar" hidden><span id="blockMsg">You blocked this user.</span><button id="unblockBtn">Unblock</button></div>
   <div class="composer" id="composer">
+    <button class="attach" id="attachBtn" aria-label="Send a photo or video"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
     <textarea id="input" rows="1" placeholder="Message…" maxlength="2000" aria-label="Type a message"></textarea>
     <button class="mic" id="micBtn" aria-label="Record a voice message"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg></button>
     <button class="send" id="sendBtn" disabled aria-label="Send"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg></button>
@@ -432,6 +511,22 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 if(/[?&]with=/.test(location.search)){ document.getElementById('listView').classList.remove('on'); document.getElementById('chatView').classList.add('on'); }
 </script>
 
+<input type="file" id="fileLib" accept="image/*,video/*" multiple hidden>
+<input type="file" id="fileCam" accept="image/*,video/*" capture hidden>
+<div class="ms" id="ms" hidden>
+  <div class="ms-bg" id="msBg"></div>
+  <div class="ms-top"><button class="ms-x" id="msX" aria-label="Cancel"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button><span class="ms-title" id="msTitle">Photo</span></div>
+  <div class="ms-stage" id="msStage"></div>
+  <div class="ms-strip" id="msStrip"></div>
+  <div class="ms-bar"><div class="ms-cap"><textarea id="msCap" rows="1" maxlength="1000" placeholder="Add a caption…" aria-label="Caption"></textarea></div><button class="ms-send" id="msSend" aria-label="Send"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg></button></div>
+</div>
+<div class="lb" id="lb" hidden>
+  <div class="lb-top"><button class="lb-btn" id="lbX" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button><span class="lb-count" id="lbCount"></span><a class="lb-btn" id="lbDl" aria-label="Save" download><svg viewBox="0 0 24 24"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg></a></div>
+  <div class="lb-stage" id="lbStage"></div>
+  <button class="lb-btn lb-nav prev" id="lbPrev" aria-label="Previous"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+  <button class="lb-btn lb-nav next" id="lbNext" aria-label="Next"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
+  <div class="lb-cap" id="lbCap" hidden></div>
+</div>
 <script type="module">
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -509,6 +604,7 @@ $('reqBack').onclick = () => {
 $('chatBack').onclick = backToList;
 $('chatHead').onclick = () => { if(chat) location.href = `/profile?uid=${encodeURIComponent(chat.other.uid)}`; };
 window.addEventListener('popstate', e => {
+  if(overlayBack()) return;                                  // Back closed the photo viewer / preview, not the chat
   const st = e.state || {};
   if(st.chat) openChat(st.chat, { push:false });
   else if(st.req){ closeChat(); showRequests(false); }
@@ -658,7 +754,8 @@ async function fetchOtherExtras(c){
 function toMsg(d){
   const x = d.data({ serverTimestamps:'estimate' });
   return { id:d.id, senderUid:x.senderUid, text:x.text, replyTo:x.replyTo || null, reactions:x.reactions || {}, edited:!!x.edited, ts: ms(x.createdAt), raw:x.createdAt, confirmed: !d.metadata.hasPendingWrites,
-           type:x.type === 'voice' ? 'voice' : '', audioUrl:x.audioUrl || '', duration:Math.min(7200, Math.max(0, Number(x.duration) || 0)), wf:typeof x.wf === 'string' ? x.wf : '', mime:typeof x.mime === 'string' ? x.mime : '' };
+           type:(x.type === 'voice' || x.type === 'image' || x.type === 'video') ? x.type : '', audioUrl:x.audioUrl || '', duration:Math.min(86400, Math.max(0, Number(x.duration) || 0)), wf:typeof x.wf === 'string' ? x.wf : '', mime:typeof x.mime === 'string' ? x.mime : '',
+           mediaUrl:typeof x.mediaUrl === 'string' ? x.mediaUrl : '', w:Math.max(0, Number(x.w) || 0), h:Math.max(0, Number(x.h) || 0), ph:typeof x.ph === 'string' ? x.ph : '', cap:typeof x.cap === 'string' ? x.cap : '' };
 }
 /* Every one of my messages carries its own status in its time line:  3:07 PM · Sending… / Delivered / Seen
    "Delivered" = saved on our server and in their inbox (a website can't know more than that).
@@ -667,7 +764,7 @@ function toMsg(d){
 function statusFor(m){
   if(m.silent) return { text:'Sent' };                    // the server refused it on purpose (e.g. they blocked you): no retry prompt, never Delivered/Seen
   if(m.failed) return { text:'Not delivered · Tap to retry', err:true };
-  if(m.uploading) return { text:'Uploading' + (m.progress > 0 ? ' ' + Math.round(m.progress) + '%' : '…') };
+  if(m.uploading) return { text: m.stage === 'wait' ? 'Waiting…' : m.stage === 'prep' ? 'Preparing…' : 'Uploading' + (m.progress > 0 ? ' ' + Math.round(m.progress) + '%' : '…') };
   const acked = m.confirmed || (chat && chat.ack.has(m.id));
   if(m.pendingLocal && !acked) return { text: navigator.onLine ? 'Sending…' : 'Waiting for connection' };
   const seen = settings.readReceipts ? ms(chat && chat.row && chat.row.seenAt) : 0;   // receipts off = I don't see theirs either
@@ -706,7 +803,7 @@ function renderMsgs(stick){
     const time = m.ts ? new Date(m.ts).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}) : '';
     const q = m.replyTo ? `<div class="quote" data-qid="${esc(m.replyTo.id)}"><div class="q-name">${esc(m.replyTo.senderUid === me.uid ? 'You' : chat.other.name)}</div><div class="q-text">${esc(m.replyTo.text)}</div></div>` : '';
     const rx = rxHtml(m);
-    html += `<div class="msg ${mine?'me':'them'} ${m.pendingLocal && !m.failed && !m.silent && !chat.ack.has(m.id)?'pending':''} ${m.failed?'failed':''} ${rx?'has-rx':''} ${m.type==='voice'?'voice':''}" data-mid="${esc(m.id)}">${q}${m.type==='voice'?voiceHtml(m):esc(m.text)}<span class="t">${time}${m.edited ? ' · edited' : ''}${st && !st.err ? ' · ' + esc(st.text) : ''}</span>${rx}</div>`;
+    html += `<div class="msg ${mine?'me':'them'} ${m.pendingLocal && !m.failed && !m.silent && !chat.ack.has(m.id)?'pending':''} ${m.failed?'failed':''} ${rx?'has-rx':''} ${m.type==='voice'?'voice':''} ${isMedia(m)?'media '+(m.cap?'hascap':'nocap')+(m.uploading?' up':''):''}" data-mid="${esc(m.id)}">${q}${m.type==='voice'?voiceHtml(m):isMedia(m)?mediaHtml(m):esc(m.text)}<span class="t">${time}${m.edited ? ' · edited' : ''}${st && !st.err ? ' · ' + esc(st.text) : ''}</span>${rx}</div>`;
     if(st && st.err) html += `<div class="stat err" data-retry="${esc(m.id)}">${esc(st.text)}</div>`;
   });
   box.innerHTML = html;
@@ -846,7 +943,7 @@ async function openChat(otherUid, { push = true, reload = false } = {}){
   }
   setTimeout(() => { if(matchMedia('(pointer:fine)').matches) $('input').focus(); }, 50);
 }
-function closeChat(){ recCancel(); voiceStop(); detachLive(); if(chat) chat.editing = null; chat = null; $('input').value = ''; autosize(); hideReplyBar(); applyBlockUI(); }
+function closeChat(){ recCancel(); voiceStop(); lbClose(true); msClose(false, true); detachLive(); if(chat) chat.editing = null; chat = null; $('input').value = ''; autosize(); hideReplyBar(); applyBlockUI(); }
 
 /* ───────── read receipts (unread → 0) ───────── */
 function receiptsOn(){ return settings.readReceipts; }   // off → I don't send "Seen" to anyone
@@ -872,7 +969,7 @@ async function markRead(){
 /* ───────── reply to a specific message (swipe right on it) ───────── */
 function setReply(m){
   if(!chat) return;
-  chat.reply = { id:m.id, senderUid:m.senderUid, text:m.type === 'voice' ? VOICE_LABEL + ' (' + fmtDur(m.duration) + ')' : String(m.text || '').slice(0, 140) };
+  chat.reply = { id:m.id, senderUid:m.senderUid, text:m.type === 'voice' ? VOICE_LABEL + ' (' + fmtDur(m.duration) + ')' : isMedia(m) ? ((m.type === 'image' ? '📷 ' : '🎥 ') + (m.cap || (m.type === 'image' ? 'Photo' : 'Video'))).slice(0, 140) : String(m.text || '').slice(0, 140) };
   $('rbName').textContent = m.senderUid === me.uid ? 'Replying to yourself' : 'Replying to ' + chat.other.name;
   $('rbText').textContent = chat.reply.text;
   $('replyBar').hidden = false;
@@ -981,10 +1078,12 @@ function openMsgMenu(el){
     card.appendChild(b);
   };
   if(interactive) add(ICON_REPLY, 'Reply', () => setReply(m));
-  if(interactive && mine && m.type !== 'voice' && Date.now() - m.ts < EDIT_WINDOW_MS) add(ICON_EDIT, 'Edit', () => startEdit(m));
-  if(m.type !== 'voice'){
+  if(interactive && mine && !m.type && Date.now() - m.ts < EDIT_WINDOW_MS) add(ICON_EDIT, 'Edit', () => startEdit(m));
+  if(!m.type){
     add(ICON_COPY, 'Copy', () => copyText(m.text));
     add(ICON_SELECT, 'Select text', () => openSelectText(m));
+  } else if(isMedia(m) && m.cap){
+    add(ICON_COPY, 'Copy caption', () => copyText(m.cap));
   }
   add(ICON_TRASH, 'Delete for you', () => deleteForMe(m), true);
   body.appendChild(card);
@@ -1166,6 +1265,7 @@ input.addEventListener('keydown', e => {
 sendBtn.onclick = () => send();
 async function send(retryItem){
   if(retryItem && retryItem.type === 'voice' && retryItem.pendingLocal){ sendVoice(null, retryItem); return; }   // retry of a voice note
+  if(retryItem && isMedia(retryItem) && retryItem.pendingLocal){ retryMedia(retryItem); return; }               // retry of a photo / video
   if(chat && chat.editing){ saveEdit(); return; }                // editing a message → save instead of sending a new one
   if(retryItem && !retryItem.pendingLocal) retryItem = undefined;   // only a real failed message counts as a retry (never a click event)
   if(!chat || !me) return;
@@ -1707,6 +1807,409 @@ async function sendVoice(info, retryItem){
   }
 }
 
+/* ───────── photos & videos ─────────
+   Pick → preview with captions → each file is prepared on the phone (photos are shrunk to ≤1600px, which also strips GPS data),
+   uploaded straight to Cloudinary one at a time (Render only signs) → one small Firestore message per photo/video. */
+const MEDIA_IMG_MAX = 1600, MEDIA_IMG_Q = 0.82, MEDIA_RAW_IMG_MAX_MB = 60, MEDIA_VIDEO_MAX_MB = 100, MEDIA_MAX_FILES = 10;
+const VID_T = 'c_limit,f_mp4,q_auto,vc_h264,w_720', POSTER_T = 'c_limit,f_jpg,so_0,w_640';   // keep identical to CHAT_VIDEO_EAGER in server.js
+const isMedia = m => !!m && (m.type === 'image' || m.type === 'video');
+const isCld = u => typeof u === 'string' && /^https:\/\/res\.cloudinary\.com\//.test(u);
+const okPh = p => typeof p === 'string' && /^data:image\/jpeg;base64,[A-Za-z0-9+\/=]{16,2900}$/.test(p);
+const cldT = (u, t) => u.replace('/upload/', '/upload/' + t + '/');
+const swapExt = (u, ext) => u.replace(/\.[a-z0-9]+(\?.*)?$/i, '.' + ext + '$1');
+const pendingOf = id => chat && chat.pending.find(x => x.id === id);
+const LOADED = new Set();      // thumbnails already on screen: they skip the fade-in when the list redraws
+
+/* ── overlays and the Back button: Back closes the viewer/preview instead of leaving the chat ── */
+const OV = { stack:[], skip:0 };
+function ovOpen(close){ let pushed = false; try{ history.pushState(Object.assign({}, history.state, { ov:1 }), ''); pushed = true; }catch(_){} OV.stack.push({ close, pushed }); }
+function ovPop(){ const o = OV.stack.pop(); if(o && o.pushed){ OV.skip++; history.back(); } }
+function overlayBack(){
+  if(OV.skip > 0){ OV.skip--; return true; }
+  if(!OV.stack.length) return false;
+  OV.stack.pop().close(true); return true;
+}
+
+/* ── bubble ── */
+function mediaThumb(m){
+  const p = pendingOf(m.id) || m;
+  if(m.type === 'video'){
+    if(p.posterUrl) return p.posterUrl;
+    return isCld(m.mediaUrl) && m.mediaUrl.indexOf('/video/upload/') > -1 ? swapExt(cldT(m.mediaUrl, POSTER_T), 'jpg') : '';
+  }
+  if(p.localUrl) return p.localUrl;                                    // my own photo: shown from the phone, nothing downloaded
+  if(!isCld(m.mediaUrl)) return '';
+  return m.mediaUrl.indexOf('/image/upload/') > -1 && !/\.gif(\?|$)/i.test(m.mediaUrl) ? cldT(m.mediaUrl, 'c_limit,w_640,f_auto,q_auto') : m.mediaUrl;   // small, modern-format copy for the bubble
+}
+function mediaHtml(m){
+  const v = m.type === 'video';
+  const ar = m.w > 0 && m.h > 0 ? Math.max(0.55, Math.min(1.8, m.h / m.w)) : (v ? 0.5625 : 0.75);    // the box is reserved up front, so the chat never jumps while images load
+  const src = mediaThumb(m), ph = okPh(m.ph) ? '<i class="mph" style="background-image:url(' + m.ph + ')"></i>' : '';
+  const img = src ? '<img src="' + esc(src) + '" alt=""' + (LOADED.has(src) ? ' class="ok"' : '') + ' loading="lazy" decoding="async" draggable="false">' : '';
+  let ov = '';
+  if(m.uploading){
+    const off = (157.1 * (1 - Math.min(100, m.progress || 0) / 100)).toFixed(1);
+    ov = '<div class="mring" data-id="' + esc(m.id) + '" role="button" aria-label="Cancel upload"><svg class="r" viewBox="0 0 56 56"><circle class="tr" cx="28" cy="28" r="25"/><circle class="fg" cx="28" cy="28" r="25" style="stroke-dashoffset:' + off + '"/></svg><svg class="x" viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17"/></svg></div>';
+  } else if(v) ov = '<div class="mplay"><svg viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 001.5.86l10.5-6.5a1 1 0 000-1.72L9.5 4.64A1 1 0 008 5.5z"/></svg></div>';
+  const dur = v && m.duration ? '<span class="mdur">' + fmtDur(m.duration) + '</span>' : '';
+  return '<div class="mb" style="--ar:' + (ar * 100).toFixed(1) + '%">' + ph + img + dur + ov + '</div>' + (m.cap ? '<div class="cap">' + esc(m.cap) + '</div>' : '');
+}
+$('msgs').addEventListener('load', e => { const i = e.target; if(i.tagName === 'IMG' && i.closest && i.closest('.mb')){ LOADED.add(i.getAttribute('src')); i.classList.add('ok'); } }, true);
+$('msgs').addEventListener('error', e => {
+  const i = e.target; if(i.tagName !== 'IMG' || !i.closest || !i.closest('.mb') || i.dataset.fb) return;
+  i.dataset.fb = '1';
+  const el = i.closest('.msg'), m = el && msgById(el.dataset.mid); if(!m || !isCld(m.mediaUrl)) return;
+  if(m.type === 'video') i.src = swapExt(m.mediaUrl, 'jpg');                          // poster copy not ready yet: the plain first frame
+  else if(i.getAttribute('src') !== m.mediaUrl) i.src = m.mediaUrl;                    // thumbnail failed: the original
+}, true);
+$('msgs').addEventListener('click', e => {
+  const ring = e.target.closest('.mring'); if(ring){ cancelPendingMedia(ring.dataset.id); return; }
+  const mb = e.target.closest('.mb'); if(!mb || !$('mo').hidden) return;
+  const el = mb.closest('.msg'); if(!el || el.classList.contains('up') || el.classList.contains('failed')) return;
+  openLightbox(el.dataset.mid);
+});
+function mediaProgress(c, temp, pct){
+  temp.progress = pct;
+  if(chat !== c) return;
+  const el = $('msgs').querySelector('[data-mid="' + temp.id + '"]'); if(!el) return;
+  const f = el.querySelector('.mring .fg'); if(f) f.style.strokeDashoffset = (157.1 * (1 - pct / 100)).toFixed(1);
+  const t = el.querySelector('.t'); if(t) t.textContent = fmtClock(temp.ts) + ' · Uploading ' + pct + '%';
+}
+function cancelPendingMedia(id){
+  if(!chat) return;
+  const i = chat.pending.findIndex(p => p.id === id); if(i < 0) return;
+  const pm = chat.pending[i]; pm.deleted = true;
+  if(pm.xhr){ try{ pm.xhr.abort(); }catch(_){} }
+  chat.pending.splice(i, 1); renderMsgs(false);
+}
+
+/* ── getting the files ready on the phone ── */
+const kindOf = f => /^video\//.test(f.type) || /\.(mp4|m4v|mov|webm|3gp)$/i.test(f.name) ? 'video' : 'image';
+function tinyFrom(src){                                    // a ~20px blurred stand-in (≈1 KB) that shows instantly while the real image loads
+  const sw = src.width || src.naturalWidth, sh = src.height || src.naturalHeight; if(!sw || !sh) return '';
+  const c = document.createElement('canvas'); c.width = 20; c.height = Math.max(1, Math.round(20 * sh / sw));
+  c.getContext('2d').drawImage(src, 0, 0, c.width, c.height);
+  const d = c.toDataURL('image/jpeg', 0.5); return okPh(d) ? d : '';
+}
+async function decodeImage(file){
+  try{ return await createImageBitmap(file, { imageOrientation:'from-image' }); }catch(_){}
+  const url = URL.createObjectURL(file);
+  try{ return await new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => rej(Object.assign(new Error('decode'), { userMsg:'That file doesn’t look like a photo this browser can open' })); im.src = url; }); }
+  finally{ URL.revokeObjectURL(url); }
+}
+let _tq = Promise.resolve();
+function imageThumb(file, px){                             // small preview, one at a time so ten big photos are never decoded together
+  const job = async () => {
+    try{
+      let bmp;
+      try{ bmp = await createImageBitmap(file, { resizeWidth:px, resizeQuality:'low', imageOrientation:'from-image' }); }catch(_){ bmp = await decodeImage(file); }
+      const bw = bmp.width || bmp.naturalWidth, bh = bmp.height || bmp.naturalHeight, sc = Math.min(1, px / Math.max(bw, bh));
+      const w = Math.max(1, Math.round(bw * sc)), h = Math.max(1, Math.round(bh * sc));
+      const cv = document.createElement('canvas'); cv.width = w; cv.height = h; cv.getContext('2d').drawImage(bmp, 0, 0, w, h);
+      if(bmp.close) bmp.close();
+      return { url:cv.toDataURL('image/jpeg', 0.7), w:bw, h:bh };       // only the w:h ratio matters here
+    }catch(_){ return { url:'', w:0, h:0 }; }
+  };
+  const p = _tq.then(job); _tq = p.catch(() => {}); return p;
+}
+async function prepImage(file){
+  const bmp = await decodeImage(file), bw = bmp.width || bmp.naturalWidth, bh = bmp.height || bmp.naturalHeight;
+  const ph = tinyFrom(bmp);
+  if(file.type === 'image/gif'){ if(bmp.close) bmp.close(); return { blob:file, w:bw, h:bh, ph }; }       // keep the animation
+  const sc = Math.min(1, MEDIA_IMG_MAX / Math.max(bw, bh)), w = Math.max(1, Math.round(bw * sc)), h = Math.max(1, Math.round(bh * sc));
+  const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+  const g = cv.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, w, h); g.imageSmoothingQuality = 'high'; g.drawImage(bmp, 0, 0, w, h);
+  if(bmp.close) bmp.close();
+  const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', MEDIA_IMG_Q));
+  cv.width = cv.height = 0;
+  if(!blob) throw Object.assign(new Error('encode'), { userMsg:'Couldn’t prepare that photo' });
+  return { blob, w, h, ph };
+}
+function prepVideo(url){                                   // length, size, and a first-frame poster (best effort: some phone formats can't be read here)
+  return new Promise(resolve => {
+    const v = document.createElement('video'); v.muted = true; v.playsInline = true; v.preload = 'metadata';
+    let meta = {}, done = false, tm = 0;
+    const fin = o => { if(done) return; done = true; clearTimeout(tm); v.onloadedmetadata = v.onseeked = v.onerror = null; v.removeAttribute('src'); try{ v.load(); }catch(_){} resolve(o || meta); };
+    tm = setTimeout(() => fin(), 7000);
+    v.onerror = () => fin();
+    v.onloadedmetadata = () => {
+      meta = { w:v.videoWidth || 0, h:v.videoHeight || 0, duration:isFinite(v.duration) ? Math.round(v.duration) : 0 };
+      try{ v.currentTime = Math.min(0.15, (v.duration || 1) / 2); }catch(_){ fin(); }
+    };
+    v.onseeked = () => {
+      try{
+        const sc = Math.min(1, 480 / Math.max(v.videoWidth, v.videoHeight)), w = Math.max(1, Math.round(v.videoWidth * sc)), h = Math.max(1, Math.round(v.videoHeight * sc));
+        const cv = document.createElement('canvas'); cv.width = w; cv.height = h; cv.getContext('2d').drawImage(v, 0, 0, w, h);
+        const ph = tinyFrom(cv);
+        cv.toBlob(b => fin(Object.assign({}, meta, { ph, posterUrl: b ? URL.createObjectURL(b) : '' })), 'image/jpeg', 0.7);
+      }catch(_){ fin(); }
+    };
+    v.src = url;
+  });
+}
+
+/* ── upload ── */
+const SIGC = {};                                           // one signature per kind is reused for 25 min, so an album of 10 is a single tiny request to Render
+async function chatSig(kind){
+  const c = SIGC[kind]; if(c && Date.now() - c.at < 25 * 60 * 1000) return c.sig;
+  const token = await auth.currentUser.getIdToken();
+  const r = await fetch('/api/chat/upload-signature?kind=' + kind, { method:'POST', headers:{ Authorization:'Bearer ' + token } });
+  const sig = await r.json().catch(() => ({}));
+  if(!r.ok || !sig.ok) throw Object.assign(new Error(sig.error || 'Could not start upload'), { userMsg:'Couldn’t start the upload — tap the message to retry' });
+  SIGC[kind] = { at:Date.now(), sig }; return sig;
+}
+async function uploadChat(c, temp){
+  const kind = temp.type, sig = await chatSig(kind);
+  const form = new FormData();
+  form.append('file', temp.blob, kind === 'video' ? ((temp.file && temp.file.name) || 'video.mp4') : (temp.blob.type === 'image/gif' ? 'photo.gif' : 'photo.jpg'));
+  form.append('api_key', sig.apiKey); form.append('timestamp', sig.timestamp); form.append('folder', sig.folder); form.append('signature', sig.signature);
+  if(kind === 'video'){ form.append('eager', sig.eager); form.append('eager_async', sig.eagerAsync); }
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest(); temp.xhr = xhr;
+    let last = -1;
+    xhr.upload.onprogress = ev => { if(!ev.lengthComputable) return; const pct = Math.round(ev.loaded / ev.total * 100); if(pct !== last){ last = pct; mediaProgress(c, temp, pct); } };
+    xhr.onload = () => {
+      temp.xhr = null;
+      if(xhr.status >= 200 && xhr.status < 300){ try{ resolve(JSON.parse(xhr.responseText)); }catch(e){ reject(e); } return; }
+      SIGC[kind] = null;                                   // maybe the signature went stale: fetch a fresh one next time
+      let msg = ''; try{ msg = (JSON.parse(xhr.responseText).error || {}).message || ''; }catch(_){}
+      reject(Object.assign(new Error(msg || 'Upload failed'), { userMsg: /too large|file size/i.test(msg) ? 'That file is too large to send' : 'Upload failed — tap the message to retry' }));
+    };
+    xhr.onerror = () => { temp.xhr = null; SIGC[kind] = null; reject(new Error('Network error')); };
+    xhr.onabort = () => { temp.xhr = null; reject(new Error('aborted')); };
+    xhr.open('POST', 'https://api.cloudinary.com/v1_1/' + sig.cloudName + '/' + sig.resourceType + '/upload');
+    xhr.send(form);
+  });
+}
+const MQ = []; let _mqBusy = false;
+function enqueueMedia(c, t){ MQ.push([c, t]); pumpMedia(); }
+async function pumpMedia(){                                // one upload at a time: kind to the phone's battery and the network
+  if(_mqBusy) return; _mqBusy = true;
+  try{ while(MQ.length){ const [c, t] = MQ.shift(); if(!t.deleted) await runMedia(c, t); } } finally { _mqBusy = false; }
+}
+function retryMedia(temp){
+  if(!chat) return;
+  temp.failed = false; temp.uploading = true; temp.stage = 'wait'; temp.progress = 0; temp.ts = Date.now();
+  renderMsgs(false); enqueueMedia(chat, temp);
+}
+async function runMedia(c, temp){
+  if(temp.deleted) return;
+  const msgRef = doc(db, 'conversations', c.cid, 'messages', temp.id);
+  const paint = () => { if(chat === c) renderMsgs(false); };
+  try{
+    if(!temp.mediaUrl){
+      if(!temp.blob){
+        temp.stage = 'prep'; paint();
+        if(temp.type === 'image'){ const r = await prepImage(temp.file); if(temp.deleted) return; Object.assign(temp, { blob:r.blob, w:r.w, h:r.h, ph:r.ph }); }
+        else { const m = await (temp.metaP || Promise.resolve({})); if(temp.deleted) return; Object.assign(temp, { blob:temp.file, w:m.w || temp.w, h:m.h || temp.h, ph:m.ph || temp.ph, duration:m.duration || temp.duration, posterUrl:m.posterUrl || temp.posterUrl }); }
+      }
+      temp.stage = 'up'; temp.progress = 0; paint();
+      const up = await uploadChat(c, temp);
+      if(temp.deleted) return;
+      temp.mediaUrl = up.secure_url;
+      if(!temp.w && up.width){ temp.w = up.width; temp.h = up.height; }
+      if(temp.type === 'video' && !temp.duration && up.duration) temp.duration = Math.round(up.duration);
+    }
+    temp.uploading = false; temp.stage = '';
+    const payload = { senderUid:me.uid, type:temp.type, text:temp.cap || (temp.type === 'image' ? '📷 Photo' : '🎥 Video'), mediaUrl:temp.mediaUrl,
+                      w:Math.round(temp.w || 0), h:Math.round(temp.h || 0), ph:okPh(temp.ph) ? temp.ph : '', createdAt:serverTimestamp() };
+    if(temp.cap) payload.cap = temp.cap;
+    if(temp.type === 'video' && temp.duration) payload.duration = Math.round(temp.duration);
+    if(temp.replyTo) payload.replyTo = temp.replyTo;
+    const last = temp.cap ? (temp.type === 'image' ? '📷 ' : '🎥 ') + temp.cap.slice(0, 100)
+               : temp.type === 'image' ? '📷 Photo' : '🎥 Video' + (temp.duration ? ' · ' + fmtDur(temp.duration) : '');
+    const batch = writeBatch(db);
+    batch.set(msgRef, payload);
+    batch.set(doc(db,'inbox',me.uid,'threads',c.other.uid),
+      { otherUid:c.other.uid, name:c.other.name, photo:c.other.photo || '', lastText:last, lastAt:serverTimestamp(), lastSender:me.uid, unread:0, accepted:true }, { merge:true });
+    batch.set(doc(db,'inbox',c.other.uid,'threads',me.uid),
+      { otherUid:me.uid, name:me.name, photo:me.photo || '', lastText:last, lastAt:serverTimestamp(), lastSender:me.uid, unread:increment(1) }, { merge:true });
+    await batch.commit();
+    temp.blob = null; temp.file = null;                    // safely in Cloudinary: let go of the big file
+    c.ack.add(temp.id);
+    paint();
+  }catch(e){
+    if(temp.deleted) return;
+    temp.uploading = false; temp.stage = '';
+    try{ const ex = await getDoc(msgRef); if(ex.exists()){ c.ack.add(temp.id); paint(); return; } }catch(_){}
+    if(e && e.code === 'permission-denied'){               // same silent behaviour as text (e.g. they blocked you)
+      temp.failed = false; temp.silent = true; saveSilent(c); paint();
+      console.warn('[messages] media send refused by the server (permission-denied)', e);
+      return;
+    }
+    temp.failed = true; paint();
+    toast((e && e.userMsg) || 'Couldn’t send — tap the message to retry');
+  }
+}
+function queueMediaItem(c, it, idx){
+  const id = doc(collection(db, 'conversations', c.cid, 'messages')).id, meta = it.meta || {}, cap = (it.cap || '').trim();
+  const temp = { id, senderUid:me.uid, type:it.kind, text:cap || (it.kind === 'image' ? '📷 Photo' : '🎥 Video'), cap, replyTo: idx === 0 ? (c.reply || null) : null,
+    ts:Date.now() + idx, pendingLocal:true, w:meta.w || 0, h:meta.h || 0, ph:meta.ph || '', duration:meta.duration || 0,
+    localUrl:it.url, posterUrl:meta.posterUrl || '', file:it.file, metaP:it.metaP, blob:null, mediaUrl:'', uploading:true, stage:'wait', progress:0 };
+  c.pending.push(temp);
+  if(idx === 0){ c.reply = null; hideReplyBar(); }
+  enqueueMedia(c, temp);
+}
+
+/* ── preview + caption screen ── */
+const MS = { items:[], sel:0, n:0 };
+function msOpen(){ $('ms').hidden = false; msRender(); ovOpen(() => msClose(false, true)); }
+function msClose(sent, fromBack){
+  const el = $('ms'); if(el.hidden) return;
+  el.hidden = true;
+  const st = $('msStage'); st.querySelectorAll('video').forEach(v => { try{ v.pause(); }catch(_){} v.removeAttribute('src'); }); st.innerHTML = '';
+  if(!sent) MS.items.forEach(it => { URL.revokeObjectURL(it.url); if(it.meta && it.meta.posterUrl) URL.revokeObjectURL(it.meta.posterUrl); });
+  MS.items = []; MS.sel = 0;
+  if(!fromBack) ovPop();
+}
+function msStrip(){
+  const n = MS.items.length;
+  $('msStrip').innerHTML = n < 2 ? '' : MS.items.map((it, i) => {
+    const bg = it.kind === 'video' ? (it.meta && it.meta.posterUrl) : it.thumb;
+    return '<div class="ms-th' + (i === MS.sel ? ' on' : '') + '" data-i="' + i + '" style="' + (bg ? 'background-image:url(' + bg + ')' : '') + '">' + (it.kind === 'video' ? '<span class="vb">▶</span>' : '') +
+           '<button class="rm" data-rm="' + i + '" aria-label="Remove"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>';
+  }).join('') + (n < MEDIA_MAX_FILES ? '<button class="ms-th add" data-add="1" aria-label="Add more"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>' : '');
+}
+function msBg(){
+  const it = MS.items[MS.sel]; if(!it) return;
+  const u = it.kind === 'image' ? it.url : (it.meta && it.meta.posterUrl) || '';
+  $('msBg').style.backgroundImage = u ? 'url(' + u + ')' : '';
+}
+function msRender(){
+  const it = MS.items[MS.sel]; if(!it){ msClose(false); return; }
+  $('msTitle').textContent = MS.items.length > 1 ? (MS.sel + 1) + ' of ' + MS.items.length : (it.kind === 'video' ? 'Video' : 'Photo');
+  const st = $('msStage'); st.querySelectorAll('video').forEach(v => { try{ v.pause(); }catch(_){} });
+  st.innerHTML = it.kind === 'video' ? '<video src="' + it.url + '" controls playsinline preload="metadata"></video>' : '<img src="' + it.url + '" alt="">';
+  msBg(); msStrip();
+  const ta = $('msCap'); ta.value = it.cap || ''; ta.style.height = 'auto'; ta.style.height = Math.min(96, ta.scrollHeight) + 'px';
+  $('msSend').setAttribute('aria-label', 'Send ' + MS.items.length + (MS.items.length > 1 ? ' items' : ' item'));
+}
+function addMediaFiles(files){
+  if(!chat || !me) return;
+  if(chat.blocked){ toast('Unblock this user to send messages'); return; }
+  let bad = ''; const ok = [];
+  for(const f of files){
+    const k = kindOf(f);
+    if(k === 'image' && !(/^image\//.test(f.type) || /\.(jpe?g|png|webp|gif|heic|heif)$/i.test(f.name))){ bad = bad || 'Only photos and videos can be sent'; continue; }
+    if(k === 'video' && f.size > MEDIA_VIDEO_MAX_MB * 1048576){ bad = bad || 'Videos can be up to ' + MEDIA_VIDEO_MAX_MB + ' MB — this one is ' + Math.round(f.size / 1048576) + ' MB'; continue; }
+    if(k === 'image' && f.size > MEDIA_RAW_IMG_MAX_MB * 1048576){ bad = bad || 'That photo is too large'; continue; }
+    if(f.type === 'image/gif' && f.size > 9.5 * 1048576){ bad = bad || 'GIFs can be up to 10 MB'; continue; }
+    ok.push(f);
+  }
+  const room = MEDIA_MAX_FILES - MS.items.length;
+  if(ok.length > room){ bad = bad || 'You can send up to ' + MEDIA_MAX_FILES + ' at a time'; ok.length = Math.max(0, room); }
+  if(bad) toast(bad);
+  if(!ok.length) return;
+  const first = MS.items.length;
+  ok.forEach(f => {
+    const it = { id:'m' + (++MS.n), file:f, kind:kindOf(f), url:URL.createObjectURL(f), cap:'', meta:null, thumb:'' };
+    if(it.kind === 'video') it.metaP = prepVideo(it.url).then(m => { it.meta = m; if(!$('ms').hidden){ msStrip(); if(MS.items[MS.sel] === it) msBg(); } return m; });
+    else it.metaP = imageThumb(f, 160).then(t => { it.thumb = t.url; it.meta = { w:t.w, h:t.h }; if(!$('ms').hidden) msStrip(); return it.meta; });
+    MS.items.push(it);
+  });
+  if($('ms').hidden){ MS.sel = 0; msOpen(); } else { MS.sel = first; msRender(); }
+}
+function msSend(){
+  const c = chat; if(!c || !MS.items.length) return;
+  const list = MS.items.slice();
+  msClose(true, false);
+  list.forEach((it, i) => queueMediaItem(c, it, i));
+  renderMsgs(true);
+}
+$('msX').onclick = () => msClose(false, false);
+$('msSend').onclick = msSend;
+$('msCap').addEventListener('input', e => { const it = MS.items[MS.sel]; if(it) it.cap = e.target.value; e.target.style.height = 'auto'; e.target.style.height = Math.min(96, e.target.scrollHeight) + 'px'; });
+$('msCap').addEventListener('keydown', e => { if(e.key === 'Enter' && (e.ctrlKey || e.metaKey)){ e.preventDefault(); msSend(); } });
+$('msStrip').addEventListener('click', e => {
+  const rm = e.target.closest('[data-rm]');
+  if(rm){
+    e.stopPropagation();
+    const i = +rm.dataset.rm, [it] = MS.items.splice(i, 1);
+    URL.revokeObjectURL(it.url); if(it.meta && it.meta.posterUrl) URL.revokeObjectURL(it.meta.posterUrl);
+    if(MS.sel >= MS.items.length) MS.sel = MS.items.length - 1;
+    if(!MS.items.length) msClose(false, false); else msRender();
+    return;
+  }
+  if(e.target.closest('[data-add]')){ $('fileLib').value = ''; $('fileLib').click(); return; }
+  const th = e.target.closest('.ms-th'); if(th){ MS.sel = +th.dataset.i; msRender(); }
+});
+$('attachBtn').onclick = () => {
+  if(!chat || !me) return;
+  if(chat.blocked){ toast('Unblock this user to send messages'); return; }
+  if(chat.editing){ toast('Finish editing first'); return; }
+  const touch = window.matchMedia && matchMedia('(pointer:coarse)').matches;
+  openSheet('Send a photo or video', [
+    { label:'Photo or video library', run:() => { $('fileLib').value = ''; $('fileLib').click(); } },
+    touch ? { label:'Take a photo or video', run:() => { $('fileCam').value = ''; $('fileCam').click(); } } : null
+  ]);
+};
+['fileLib', 'fileCam'].forEach(id => $(id).addEventListener('change', e => addMediaFiles([...e.target.files])));
+input.addEventListener('paste', e => { const fs = [...((e.clipboardData && e.clipboardData.files) || [])].filter(f => /^image\//.test(f.type)); if(fs.length){ e.preventDefault(); addMediaFiles(fs); } });
+document.addEventListener('dragover', e => { if(chat && e.dataTransfer && [...e.dataTransfer.types].includes('Files')) e.preventDefault(); });
+document.addEventListener('drop', e => { if(!chat) return; const fs = [...((e.dataTransfer && e.dataTransfer.files) || [])]; if(fs.length){ e.preventDefault(); addMediaFiles(fs); } });
+
+/* ── full-screen viewer: swipe left/right, swipe down to close ── */
+const LB = { ids:[], i:0, open:false };
+function openLightbox(id){
+  const ids = [...$('msgs').querySelectorAll('.msg.media:not(.up):not(.failed)')].map(el => el.dataset.mid), i = ids.indexOf(id);
+  if(i < 0) return;
+  LB.ids = ids; LB.open = true; $('lb').hidden = false; lbShow(i);
+  ovOpen(() => lbClose(true));
+  document.addEventListener('keydown', lbKey);
+}
+function lbStopVideo(){ const v = $('lbStage').querySelector('video'); if(v){ try{ v.pause(); }catch(_){} v.removeAttribute('src'); try{ v.load(); }catch(_){} } }
+function lbClose(fromBack){
+  if(!LB.open) return;
+  LB.open = false; lbStopVideo(); $('lbStage').innerHTML = ''; $('lb').hidden = true;
+  document.removeEventListener('keydown', lbKey);
+  if(!fromBack) ovPop();
+}
+function lbStep(d){ const i = LB.i + d; if(i >= 0 && i < LB.ids.length) lbShow(i); }
+function lbKey(e){ if(e.key === 'Escape') lbClose(false); else if(e.key === 'ArrowLeft') lbStep(-1); else if(e.key === 'ArrowRight') lbStep(1); }
+function lbShow(i){
+  LB.i = i;
+  const id = LB.ids[i], m = msgById(id); if(!m){ lbClose(false); return; }
+  const p = pendingOf(id), local = p && p.localUrl, st = $('lbStage'), cap = $('lbCap');
+  lbStopVideo();
+  $('lbCount').textContent = LB.ids.length > 1 ? (i + 1) + ' / ' + LB.ids.length : '';
+  if(m.type === 'video'){
+    const orig = local || (isCld(m.mediaUrl) ? m.mediaUrl : ''), der = !local && orig ? swapExt(cldT(orig, VID_T), 'mp4') : '';
+    st.innerHTML = '<video controls autoplay playsinline preload="auto"></video>';
+    const vv = st.firstChild; let tried = false;
+    vv.poster = mediaThumb(m) || '';
+    vv.onerror = () => { if(!tried && der && orig){ tried = true; vv.src = orig; vv.play().catch(() => {}); } else toast('Couldn’t play this video'); };   // the small 720p copy first, the original if it isn't ready
+    vv.src = der || orig;
+    cap.hidden = true;
+  } else {
+    st.innerHTML = '<img src="' + esc(local || (isCld(m.mediaUrl) ? m.mediaUrl : '')) + '" alt="" draggable="false">';
+    cap.textContent = m.cap || ''; cap.hidden = !m.cap;
+  }
+  const dl = $('lbDl'); dl.href = local || (isCld(m.mediaUrl) ? cldT(m.mediaUrl, 'fl_attachment') : '#');
+  $('lbPrev').hidden = i === 0; $('lbNext').hidden = i === LB.ids.length - 1;
+}
+$('lbX').onclick = () => lbClose(false);
+$('lbPrev').onclick = () => lbStep(-1);
+$('lbNext').onclick = () => lbStep(1);
+$('lb').addEventListener('click', e => { if(e.target === $('lb') || e.target === $('lbStage')) lbClose(false); });
+(function(){
+  const st = $('lbStage'); let on = false, x0 = 0, y0 = 0, dx = 0, dy = 0, lock = '';
+  st.addEventListener('pointerdown', e => { if(e.target.tagName !== 'IMG') return; on = true; x0 = e.clientX; y0 = e.clientY; dx = dy = 0; lock = ''; try{ st.setPointerCapture(e.pointerId); }catch(_){} });
+  st.addEventListener('pointermove', e => {
+    if(!on) return;
+    dx = e.clientX - x0; dy = e.clientY - y0;
+    if(!lock && (Math.abs(dx) > 10 || Math.abs(dy) > 10)) lock = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+    st.style.transition = 'none';
+    st.style.transform = lock === 'x' ? 'translateX(' + dx + 'px)' : lock === 'y' ? 'translateY(' + Math.max(0, dy) + 'px)' : '';
+  });
+  const end = () => {
+    if(!on) return; on = false; st.style.transition = ''; st.style.transform = '';
+    if(lock === 'x' && Math.abs(dx) > 70) lbStep(dx < 0 ? 1 : -1);
+    else if(lock === 'y' && dy > 110) lbClose(false);
+  };
+  st.addEventListener('pointerup', end);
+  st.addEventListener('pointercancel', () => { on = false; st.style.transition = ''; st.style.transform = ''; });
+})();
+
 /* ───────── save reads: pause listeners while the tab is hidden ───────── */
 document.addEventListener('visibilitychange', () => {
   if(document.hidden){
@@ -2232,7 +2735,7 @@ function saveChatCacheSoon(){
   _cacheTimers.c = setTimeout(() => {
     try{
       const msgs = [...c.msgs.values()].filter(m => m.ts && m.confirmed).sort((a,b) => a.ts - b.ts).slice(-PAGE)
-        .map(m => ({ id:m.id, senderUid:m.senderUid, text:m.text, replyTo:m.replyTo || null, reactions:m.reactions || {}, edited:!!m.edited, ts:m.ts, type:m.type || '', audioUrl:m.audioUrl || '', duration:m.duration || 0, wf:m.wf || '', mime:m.mime || '' }));
+        .map(m => ({ id:m.id, senderUid:m.senderUid, text:m.text, replyTo:m.replyTo || null, reactions:m.reactions || {}, edited:!!m.edited, ts:m.ts, type:m.type || '', audioUrl:m.audioUrl || '', duration:m.duration || 0, wf:m.wf || '', mime:m.mime || '', mediaUrl:m.mediaUrl || '', w:m.w || 0, h:m.h || 0, ph:m.ph || '', cap:m.cap || '' }));
       localStorage.setItem(CHAT_KEY(c.cid), JSON.stringify({ msgs, hasMore:c.hasMore, t:Date.now() }));
       const idx = JSON.parse(localStorage.getItem('msb_chat_idx') || '[]').filter(x => x !== c.cid); idx.push(c.cid);
       while(idx.length > 8) localStorage.removeItem(CHAT_KEY(idx.shift()));      // keep only the 8 most recent chats
