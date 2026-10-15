@@ -257,6 +257,7 @@ mark{background:#e0e7ff;color:inherit;border-radius:3px;padding:0 1px}
 .stat.err{color:var(--red);font-weight:700;cursor:pointer}
 .msg.failed{border:1.5px solid var(--red);opacity:1}
 .empty-chat{margin:auto;text-align:center;color:var(--mute);font-size:14px;padding:20px}
+.empty-chat.hi{margin:16px auto 0;align-self:center;max-width:86%;padding:10px 18px;background:#fff;border:1px solid var(--border);border-radius:99px;color:var(--sub);font-size:13.5px;line-height:1.35;box-shadow:0 1px 2px rgba(15,23,42,.04)}
 
 .composer{position:relative;z-index:3;display:flex;align-items:flex-end;gap:10px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid #eef0f5;flex-shrink:0}
 .composer textarea{flex:1;min-width:0;min-height:46px;resize:none;border:1.5px solid transparent;border-radius:24px;padding:12px 18px;font:inherit;font-size:15.5px;line-height:1.35;max-height:120px;outline:none;background:#f1f3f9;color:var(--txt);overflow-y:hidden;scrollbar-width:none;transition:background .15s,border-color .15s,box-shadow .2s}
@@ -440,6 +441,24 @@ mark{background:#e0e7ff;color:inherit;border-radius:3px;padding:0 1px}
 .lb-cap[hidden]{display:none}
 @media (prefers-reduced-motion:reduce){.ms,.lb{animation:none}}
 
+/* ── first-time tour: blurred + dimmed page, one spotlight, a card with an arrow ── */
+.tour{position:fixed;inset:0;z-index:100;touch-action:none;-webkit-tap-highlight-color:transparent;overflow:hidden}
+.tour-p{position:absolute;display:block;background:rgba(15,23,42,.58);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px);transition:top .3s ease,left .3s ease,width .3s ease,height .3s ease}
+.tour-ring{position:absolute;border-radius:16px;pointer-events:none;box-shadow:0 0 0 2px #fff,0 0 0 6px rgba(129,140,248,.6);transition:top .3s ease,left .3s ease,width .3s ease,height .3s ease,opacity .2s;animation:tourPulse 1.6s ease-in-out infinite}
+@keyframes tourPulse{0%,100%{box-shadow:0 0 0 2px #fff,0 0 0 6px rgba(129,140,248,.6)}50%{box-shadow:0 0 0 2px #fff,0 0 0 10px rgba(129,140,248,.25)}}
+.tour-card{position:absolute;background:#fff;border-radius:20px;padding:18px 18px 14px;box-shadow:0 20px 56px rgba(15,23,42,.4);transition:top .3s ease,left .3s ease}
+.tour-arrow{position:absolute;width:16px;height:16px;background:#fff;border-radius:4px;transform:rotate(45deg)}
+.tour-arrow.up{top:-7px}.tour-arrow.down{bottom:-7px}.tour-arrow.none{display:none}
+.tour-t{font-size:17px;font-weight:800;color:var(--txt);margin:0 0 6px;letter-spacing:-.2px}
+.tour-x{font-size:14.5px;line-height:1.48;color:var(--sub);margin:0}
+.tour-foot{display:flex;align-items:center;justify-content:space-between;margin-top:16px;gap:10px}
+.tour-dots{display:flex;gap:5px}
+.tour-dots i{width:6px;height:6px;border-radius:99px;background:#d6dbe6;transition:all .2s}
+.tour-dots i.on{width:18px;background:var(--p)}
+.tour-btns{display:flex;align-items:center;gap:6px}
+.tour-skip{padding:9px 12px;font:inherit;font-size:14px;font-weight:700;color:var(--mute);background:none;border:0;cursor:pointer}
+.tour-next{padding:10px 20px;font:inherit;font-size:14.5px;font-weight:800;color:#fff;background:var(--g);border:0;border-radius:99px;cursor:pointer;box-shadow:0 4px 14px rgba(79,70,229,.3)}
+@media (prefers-reduced-motion:reduce){.tour-p,.tour-ring,.tour-card{transition:none}.tour-ring{animation:none}}
 .toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:#0f172a;color:#fff;padding:10px 18px;border-radius:99px;font-size:13.5px;font-weight:600;opacity:0;pointer-events:none;transition:all .25s;z-index:120;max-width:90vw;text-align:center}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
@@ -598,7 +617,7 @@ function initials(n){ return (String(n||'?').trim()[0]||'?').toUpperCase(); }
 function avatarHtml(name, photo){
   return photo ? `<img src="${esc(photo)}" alt="" onerror="this.remove()">` + esc(initials(name)) : esc(initials(name));
 }
-function ms(ts){ return ts && ts.toMillis ? ts.toMillis() : (typeof ts === 'number' ? ts : 0); }
+function ms(ts){ return ts && ts.toMillis ? ts.toMillis() : (ts instanceof Date ? ts.getTime() : (typeof ts === 'number' ? ts : 0)); }
 function fmtListTime(t){
   if(!t) return '';
   const d = new Date(t), now = new Date();
@@ -790,7 +809,7 @@ function startInbox(){
   const rowOf = d => { const x = d.data({ serverTimestamps:'estimate' }); return { id:d.id, ...x, otherUid: x.otherUid || d.id }; };
   const failed = () => { $('list').innerHTML = `<div class="empty"><h2>Couldn't load messages</h2><p>Check your connection and try again.</p><button class="btn" onclick="location.reload()">Try again</button></div>`; };
   unsubInbox = onSnapshot(query(col, orderBy('lastAt','desc'), limit(PAGE)), snap => {
-    recentRows = snap.docs.map(rowOf); rebuildThreads(); renderList(); saveInboxCache(); checkRequests();
+    recentRows = snap.docs.map(rowOf); rebuildThreads(); renderList(); saveInboxCache(); checkRequests(); tourSoon('inbox');
   }, failed);
   // pinned chats are fetched on their own so a pinned chat stays at the top even when it's old (≤5 reads)
   unsubPinned = onSnapshot(query(col, where('pinned','==',true), limit(5)), snap => {
@@ -805,6 +824,7 @@ function showList(){
   show('list');
   document.title = 'Messages | MindShift Books';
   if(!unsubInbox){ if(!threads.length) skeletonList(); startInbox(); }
+  tourSoon('inbox');
 }
 
 /* ───────── who they are + when they were last active (2 reads per chat open) ───────── */
@@ -876,7 +896,9 @@ function renderMsgs(stick){
         <button class="vp" id="vpBtn">View profile</button>
       </div>
     </div>${chat.reqNote && !ms(chat.row && chat.row.seenAt) && ![...chat.msgs.values()].some(m => m.senderUid !== me.uid) ? `<div class="req-note">${esc(chat.other.name)} doesn’t follow you, so your first message goes to their message requests until they accept.</div>` : ''}`;
-  if(!items.length) html += `<div class="empty-chat">Say hi to ${esc(chat.other.name)} 👋</div>`;
+  if(!items.length) html += chat.clearedAt
+    ? `<div class="empty-chat hi">Chat cleared · new messages will show up here</div>`
+    : `<div class="empty-chat hi">No messages yet · say hi to ${esc(chat.other.name)} 👋</div>`;
   let lastDay = '';
   items.forEach(m => {
     const dk = m.ts ? new Date(m.ts).toDateString() : lastDay;
@@ -954,9 +976,9 @@ function attachLive(){
   // (b) when they last saw my messages. 1 read to start, then 1 per change — replaces the old read-before-write.
   chat.unsubRow = onSnapshot(doc(db,'inbox',me.uid,'threads',chat.other.uid), s => {
     if(!chat || chat.cid !== cid) return;
-    chat.row = s.exists() ? s.data() : null;
+    chat.row = s.exists() ? s.data({ serverTimestamps:'estimate' }) : null;
     evaluateRequest();
-    if(chat.row && !_reloading && ms(chat.row.clearedAt) > ms(chat.clearedAt)){ reloadChat(); return; }   // cleared elsewhere
+    if(chat.row && !_reloading && !s.metadata.hasPendingWrites && ms(chat.row.clearedAt) > ms(chat.clearedAt)){ reloadChat(); return; }   // cleared on another device
     renderMsgs(false);
     if(chat.row && chat.row.unread > 0 && !document.hidden) markReadSoon(!chat.rowSeen);
     chat.rowSeen = true;
@@ -1026,6 +1048,7 @@ async function openChat(otherUid, { push = true, reload = false } = {}){
     saveChatCacheSoon();
     attachLive();
     markReadSoon(true);
+    tourSoon('chat');
   }catch(e){
     $('msgs').innerHTML = '<div class="empty-chat">Couldn’t load this conversation.<br>Check your connection and try again.</div>';
   }
@@ -1167,7 +1190,8 @@ function openMsgMenu(el){
     card.appendChild(b);
   };
   if(interactive) add(ICON_REPLY, 'Reply', () => setReply(m));
-  if(interactive && mine && (!m.type || (isMedia(m) && !m.uploading))) add(ICON_EDIT, isMedia(m) ? (m.cap ? 'Edit caption' : 'Add caption') : 'Edit', () => { if(Date.now() - m.ts < EDIT_WINDOW_MS) startEdit(m); else toast('You can only edit a message within 15 minutes'); });
+  // Edit / Edit caption / Add caption only exist for the first 15 minutes — after that the option is simply not in the menu.
+  if(interactive && mine && (!m.type || (isMedia(m) && !m.uploading)) && m.ts && Date.now() - m.ts < EDIT_WINDOW_MS) add(ICON_EDIT, isMedia(m) ? (m.cap ? 'Edit caption' : 'Add caption') : 'Edit', () => { if(Date.now() - m.ts < EDIT_WINDOW_MS) startEdit(m); else toast('Time’s up — this message can no longer be edited'); });
   if(!m.type && !del){
     add(ICON_COPY, 'Copy', () => copyText(m.text));
     add(ICON_SELECT, 'Select text', () => openSelectText(m));
@@ -2379,6 +2403,109 @@ function saveSilent(c){
   }catch(e){}
 }
 
+/* ───────── first-time tour ─────────
+   The page behind goes blurred and dim, one spot stays sharp with a ring around it, and a card with an arrow explains it.
+   "Continue" moves the spotlight (and the arrow) to the next thing. Shown once per person per device (inbox tour, chat tour);
+   "Show me around" in the ⋮ menus plays it again. Steps whose target isn't on screen (no chats yet, etc.) are skipped. */
+const TOUR_KEY = (u, k) => 'msb_tour_v1_' + u + '_' + k;
+const TOURS = {
+  inbox: [
+    { title:'Welcome to Messages 👋', text:'Chat privately with creators and readers. Here’s a quick look around — it takes about 20 seconds.' },
+    { sel:'#people', title:'Start a chat', text:'Tap anyone here to open a conversation, or tap New to find someone.' },
+    { sel:'#tabs', title:'Filter your inbox', text:'See all your chats, or switch to Unread to catch up fast.' },
+    { sel:'#list .row[data-uid]', title:'Your conversations', text:'Tap one to open it. Press and hold a chat to pin it, mark it read, delete it or block someone.' },
+    { sel:'#listMenuBtn', title:'More options', text:'Mark everything as read, manage blocked people and open your message settings.' }
+  ],
+  chat: [
+    { sel:'#chatHead', title:'Who you’re talking to', text:'Tap their name or photo to open their profile.' },
+    { sel:'#attachBtn', title:'Photos & videos', text:'Send a photo or video — you can add a caption before it goes out.' },
+    { sel:'#micBtn', title:'Voice messages', text:'Press and hold to record. Slide left to cancel, or slide up to lock it and go hands-free.' },
+    { sel:'#msgs .msg:not(.deleted)', last:true, title:'Press and hold a message', text:'React, reply or copy. On your own messages you can edit within 15 minutes, or delete for you or for everyone.' },
+    { sel:'#chatMenuBtn', title:'Chat options', text:'Pin, clear or delete this chat, or block the person.' }
+  ]
+};
+let TOUR = null;
+function tourSeen(kind){ try{ return !!localStorage.getItem(TOUR_KEY(me.uid, kind)); }catch(e){ return true; } }   // storage blocked → never nag
+function tourMark(kind){ try{ localStorage.setItem(TOUR_KEY(me.uid, kind), '1'); }catch(e){} }
+function tourTarget(s){
+  if(!s.sel) return null;
+  const els = document.querySelectorAll(s.sel), el = s.last ? els[els.length - 1] : els[0];
+  if(!el) return null;
+  const r = el.getBoundingClientRect();
+  return r.width > 0 && r.height > 0 ? el : null;
+}
+function tourSoon(kind){
+  if(!me || !me.uid || TOUR || tourSeen(kind)) return;
+  clearTimeout(tourSoon.t);
+  tourSoon.t = setTimeout(() => {
+    if(TOUR || !$('mo').hidden || !$('ms').hidden || !$('sheet').hidden) return;
+    const here = kind === 'inbox' ? ($('listView').classList.contains('on') && !chat) : ($('chatView').classList.contains('on') && chat && chat.loaded);
+    if(here) startTour(kind);
+  }, 900);
+}
+function startTour(kind, force){
+  if(TOUR || !me) return;
+  const steps = TOURS[kind].filter(s => !s.sel || tourTarget(s));
+  if(steps.length < 2) return;
+  tourMark(kind);
+  const root = document.createElement('div');
+  root.className = 'tour'; root.setAttribute('role', 'dialog'); root.setAttribute('aria-modal', 'true'); root.setAttribute('aria-label', 'Quick tour');
+  root.innerHTML = '<i class="tour-p"></i><i class="tour-p"></i><i class="tour-p"></i><i class="tour-p"></i><div class="tour-ring"></div>'
+    + '<div class="tour-card"><div class="tour-arrow none"></div><h3 class="tour-t"></h3><p class="tour-x"></p>'
+    + '<div class="tour-foot"><div class="tour-dots"></div><div class="tour-btns"><button class="tour-skip" type="button">Skip</button><button class="tour-next" type="button">Continue</button></div></div></div>';
+  document.body.appendChild(root);
+  const T = TOUR = { kind, steps, i:0, root };
+  const q = sel => root.querySelector(sel), P = root.querySelectorAll('.tour-p'), ring = q('.tour-ring'), card = q('.tour-card'), arrow = q('.tour-arrow');
+  const end = () => {
+    if(TOUR !== T) return;
+    TOUR = null; root.remove();
+    window.removeEventListener('resize', place); window.removeEventListener('popstate', end); document.removeEventListener('keydown', onKey, true);
+  };
+  const next = () => { if(T.i >= steps.length - 1) end(); else { T.i++; paint(); } };
+  const onKey = e => {
+    if(e.key === 'Escape'){ e.preventDefault(); end(); }
+    else if(e.key === 'Enter' || e.key === 'ArrowRight'){ e.preventDefault(); next(); }
+  };
+  function place(){
+    if(TOUR !== T) return;
+    const s = steps[T.i], el = tourTarget(s), vw = innerWidth, vh = innerHeight, pad = 6;
+    let x, y, w, h;
+    if(el){ const r = el.getBoundingClientRect(); x = Math.max(0, r.left - pad); y = Math.max(0, r.top - pad); w = Math.min(vw - x, r.width + pad * 2); h = Math.min(vh - y, r.height + pad * 2); }
+    else { x = vw / 2; y = vh / 2; w = 0; h = 0; }                       // no target (welcome step): everything is dimmed, the card sits in the middle
+    const box = (n, l, t, ww, hh) => { n.style.left = l + 'px'; n.style.top = t + 'px'; n.style.width = Math.max(0, ww) + 'px'; n.style.height = Math.max(0, hh) + 'px'; };
+    box(P[0], 0, 0, vw, y); box(P[1], 0, y + h, vw, vh - (y + h)); box(P[2], 0, y, x, h); box(P[3], x + w, y, vw - (x + w), h);
+    box(ring, x, y, w, h); ring.style.opacity = el ? 1 : 0;
+    const cw = Math.min(340, vw - 32); card.style.width = cw + 'px';
+    const ch = card.offsetHeight;
+    let left, top;
+    if(el){
+      const cx = x + w / 2, below = (vh - (y + h)) >= ch + 28;           // below the spot if it fits, otherwise above it
+      left = Math.min(Math.max(16, cx - cw / 2), vw - cw - 16);
+      top = below ? y + h + 14 : y - ch - 14;
+      arrow.className = 'tour-arrow ' + (below ? 'up' : 'down');
+      arrow.style.left = Math.min(Math.max(18, cx - left - 8), cw - 34) + 'px';
+    } else {
+      left = (vw - cw) / 2; top = (vh - ch) / 2; arrow.className = 'tour-arrow none';
+    }
+    card.style.left = left + 'px'; card.style.top = Math.min(Math.max(12, top), Math.max(12, vh - ch - 12)) + 'px';
+  }
+  function paint(){
+    const s = steps[T.i], last = T.i === steps.length - 1, el = tourTarget(s);
+    if(el){ try{ el.scrollIntoView({ block:'nearest', inline:'nearest' }); }catch(_){} }
+    q('.tour-t').textContent = s.title; q('.tour-x').textContent = s.text;
+    q('.tour-dots').innerHTML = steps.map((_, k) => '<i class="' + (k === T.i ? 'on' : '') + '"></i>').join('');
+    q('.tour-next').textContent = last ? 'Got it' : 'Continue';
+    q('.tour-skip').hidden = last;
+    place();
+    requestAnimationFrame(place);                                         // once more after the scroll above has settled
+    try{ q('.tour-next').focus({ preventScroll:true }); }catch(_){}
+  }
+  q('.tour-next').onclick = next;
+  q('.tour-skip').onclick = end;
+  window.addEventListener('resize', place); window.addEventListener('popstate', end); document.addEventListener('keydown', onKey, true);
+  paint();
+}
+
 /* ───────── chat actions: pin · clear · delete · block · mark all as read ───────── */
 let _reloading = false;
 function closeSheet(){ $('sheet').hidden = true; $('sheetBg').hidden = true; }
@@ -2395,7 +2522,8 @@ const SI = {
   image:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>',
   camera:'<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3"/>',
   send:'<path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/>',
-  x:'<path d="M18 6 6 18M6 6l12 12"/>'
+  x:'<path d="M18 6 6 18M6 6l12 12"/>',
+  compass:'<circle cx="12" cy="12" r="10"/><path d="m16.2 7.8-2.1 6.3-6.3 2.1 2.1-6.3z"/>'
 };
 // Picks a right-hand icon from the item's label, so none of the existing call sites need to change.
 // An item can still force one with { icon:'pin' } or turn it off with { icon:'' }.
@@ -2580,7 +2708,8 @@ function openListMenu(){
   openSheet('', [
     { label:'Mark all as read', run:markAllRead },
     { label:'Blocked users', run:openBlockedList },
-    { label:'Message settings', run:() => { location.href = '/message-settings'; } }
+    { label:'Message settings', run:() => { location.href = '/message-settings'; } },
+    { label:'Show me around', icon:'compass', run:() => setTimeout(() => startTour('inbox', true), 300) }
   ]);
 }
 function openChatMenu(){
@@ -2590,6 +2719,7 @@ function openChatMenu(){
     { label: pinned ? 'Unpin chat' : 'Pin chat', run:() => setPinned(uid, !pinned) },
     { label:'View profile', run:() => { location.href = `/profile?uid=${encodeURIComponent(uid)}`; } },
     { label:'Clear chat', run:clearChat },
+    { label:'How this chat works', icon:'compass', run:() => setTimeout(() => startTour('chat', true), 300) },
     { label:'Delete chat', danger:true, run:() => deleteChat(uid) },
     chat.blocked ? { label:'Unblock user', run:() => unblockUser(uid) }
                  : { label:'Block user', danger:true, run:() => blockUser(uid, chat.other.name, chat.other.photo) }
