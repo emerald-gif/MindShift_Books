@@ -250,6 +250,8 @@ mark{background:#e0e7ff;color:inherit;border-radius:3px;padding:0 1px}
 .msg.them{align-self:flex-start;background:#fff;border:1px solid var(--border);border-bottom-left-radius:6px}
 .msg.me{align-self:flex-end;background:var(--gm);color:#fff;border-bottom-right-radius:6px}
 .msg .t{display:block;text-align:right;font-size:10.5px;margin-top:3px;opacity:.65}
+.msg.deleted,.msg.me.deleted,.msg.them.deleted{background:transparent;color:var(--sub);border:1px dashed #cfd4dc}
+.msg.deleted .dl{font-style:italic;font-size:13.5px}
 .msg.pending{opacity:.65}
 .stat{align-self:flex-end;font-size:11.5px;color:var(--mute);margin:0 6px 6px;line-height:1.2}
 .stat.err{color:var(--red);font-weight:700;cursor:pointer}
@@ -458,7 +460,7 @@ mark{background:#e0e7ff;color:inherit;border-radius:3px;padding:0 1px}
       <button class="nclear" id="inboxQClear" aria-label="Clear search" hidden><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </div>
   </div>
-  <div class="people" id="people" hidden></div>
+  <div class="people" id="people"><div class="people-head"><span>Start a chat</span><button class="pp-all" data-all="1">See all</button></div><div class="people-track"><button class="pp add" data-add="1" aria-label="New message"><div class="av"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div><div class="pp-name">New</div></button><div class="pp"><div class="skel c" style="width:58px;height:58px;margin:0 auto"></div><div class="skel" style="height:10px;width:44px;margin:8px auto 0"></div></div><div class="pp"><div class="skel c" style="width:58px;height:58px;margin:0 auto"></div><div class="skel" style="height:10px;width:44px;margin:8px auto 0"></div></div><div class="pp"><div class="skel c" style="width:58px;height:58px;margin:0 auto"></div><div class="skel" style="height:10px;width:44px;margin:8px auto 0"></div></div><div class="pp"><div class="skel c" style="width:58px;height:58px;margin:0 auto"></div><div class="skel" style="height:10px;width:44px;margin:8px auto 0"></div></div><div class="pp"><div class="skel c" style="width:58px;height:58px;margin:0 auto"></div><div class="skel" style="height:10px;width:44px;margin:8px auto 0"></div></div></div></div>
   <div class="tabs" id="tabs">
     <button class="tab on" data-f="all">All</button>
     <button class="tab" data-f="unread">Unread<span class="n" id="unreadN"></span></button>
@@ -719,7 +721,9 @@ function hlText(text, q, snippet){
   const k = t.toLowerCase().indexOf(q);
   return pre + esc(t.slice(0, k)) + '<mark>' + esc(t.slice(k, k + q.length)) + '</mark>' + esc(t.slice(k + q.length));
 }
-const threadMatches = (t, q) => (String(t.name || 'MindShift Books User') + ' ' + String(t.lastText || '')).toLowerCase().includes(q);
+// The preview line of a chat. After "Clear chat" / "Delete chat" nothing older than that moment may ever show — not even from a saved copy.
+function previewOf(t){ return (t && t.clearedAt && ms(t.lastAt) <= ms(t.clearedAt)) ? '' : String((t && t.lastText) || ''); }
+const threadMatches = (t, q) => (String(t.name || 'MindShift Books User') + ' ' + previewOf(t)).toLowerCase().includes(q);
 function bindReqRow(){ const b = $('reqRow'); if(b) b.onclick = () => showRequests(true); }
 function renderList(){
   const el = $('list');
@@ -745,7 +749,8 @@ function renderList(){
   }
   el.innerHTML = (inboxQ ? '' : reqRowHtml()) + shown.map(t => {
     const un = t.unread > 0;
-    const last = esc(t.lastSender === me.uid ? 'You: ' : '') + hlText(t.lastText || '', inboxQ, true) + esc(settings.readReceipts && t.lastSender === me.uid && t.seenAt && ms(t.seenAt) >= ms(t.lastAt) ? ' · Seen' : '');
+    const pv = previewOf(t);
+    const last = pv ? esc(t.lastSender === me.uid ? 'You: ' : '') + hlText(pv, inboxQ, true) + esc(settings.readReceipts && t.lastSender === me.uid && t.seenAt && ms(t.seenAt) >= ms(t.lastAt) ? ' · Seen' : '') : '';
     return `<button class="row ${un?'unread':''}" data-uid="${esc(t.otherUid)}">
       <div class="av">${avatarHtml(t.name, t.photo)}</div>
       <div class="row-main">
@@ -827,7 +832,7 @@ async function fetchOtherExtras(c){
 /* ───────── CHAT ───────── */
 function toMsg(d){
   const x = d.data({ serverTimestamps:'estimate' });
-  return { id:d.id, senderUid:x.senderUid, text:x.text, replyTo:x.replyTo || null, reactions:x.reactions || {}, edited:!!x.edited, ts: ms(x.createdAt), raw:x.createdAt, confirmed: !d.metadata.hasPendingWrites,
+  return { id:d.id, senderUid:x.senderUid, text:x.text, replyTo:x.replyTo || null, reactions:x.reactions || {}, edited:!!x.edited, deleted:x.deleted === true, ts: ms(x.createdAt), raw:x.createdAt, confirmed: !d.metadata.hasPendingWrites,
            type:(x.type === 'voice' || x.type === 'image' || x.type === 'video') ? x.type : '', audioUrl:x.audioUrl || '', duration:Math.min(86400, Math.max(0, Number(x.duration) || 0)), wf:typeof x.wf === 'string' ? x.wf : '', mime:typeof x.mime === 'string' ? x.mime : '',
            mediaUrl:typeof x.mediaUrl === 'string' ? x.mediaUrl : '', w:Math.max(0, Number(x.w) || 0), h:Math.max(0, Number(x.h) || 0), ph:typeof x.ph === 'string' ? x.ph : '', cap:typeof x.cap === 'string' ? x.cap : '' };
 }
@@ -879,7 +884,12 @@ function renderMsgs(stick){
     const mine = m.senderUid === me.uid;
     const st = mine ? statusFor(m) : null;
     const time = m.ts ? new Date(m.ts).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}) : '';
-    const q = m.replyTo ? `<div class="quote" data-qid="${esc(m.replyTo.id)}"><div class="q-name">${esc(m.replyTo.senderUid === me.uid ? 'You' : chat.other.name)}</div><div class="q-text">${esc(m.replyTo.text)}</div></div>` : '';
+    if(m.deleted){                                   // "Delete for everyone": a placeholder for both people, no content left
+      html += `<div class="msg ${mine?'me':'them'} deleted" data-mid="${esc(m.id)}"><span class="dl">${mine ? 'You deleted this message' : 'This message was deleted'}</span><span class="t">${time}</span></div>`;
+      return;
+    }
+    const qm = m.replyTo && chat.msgs.get(m.replyTo.id), qDel = !!(qm && qm.deleted);   // a quote of an unsent message must not leak its text
+    const q = m.replyTo ? `<div class="quote" data-qid="${esc(m.replyTo.id)}"><div class="q-name">${esc(m.replyTo.senderUid === me.uid ? 'You' : chat.other.name)}</div><div class="q-text">${esc(qDel ? 'Message deleted' : m.replyTo.text)}</div></div>` : '';
     const rx = rxHtml(m);
     html += `<div class="msg ${mine?'me':'them'} ${m.pendingLocal && !m.failed && !m.silent && !chat.ack.has(m.id)?'pending':''} ${m.failed?'failed':''} ${rx?'has-rx':''} ${m.type==='voice'?'voice':''} ${isMedia(m)?'media '+(m.cap?'hascap':'nocap')+(m.uploading?' up':''):''}" data-mid="${esc(m.id)}">${q}${m.type==='voice'?voiceHtml(m):isMedia(m)?mediaHtml(m):esc(m.text)}<span class="t">${time}${m.edited ? ' · edited' : ''}${st && !st.err ? ' · ' + esc(st.text) : ''}</span>${rx}</div>`;
     if(st && st.err) html += `<div class="stat err" data-retry="${esc(m.id)}">${esc(st.text)}</div>`;
@@ -932,8 +942,8 @@ function attachLive(){
       const m = toMsg(ch.doc);
       chat.msgs.set(m.id, m);
       if(m.raw && (!chat.lastTs || m.raw.toMillis() > chat.lastTs.toMillis()) && !ch.doc.metadata.hasPendingWrites) chat.lastTs = m.raw;
-      if(m.senderUid === me.uid){
-        const i = chat.pending.findIndex(p => p.id === m.id);            // the real copy arrived → drop our placeholder
+      if(m.senderUid === me.uid && !ch.doc.metadata.hasPendingWrites){
+        const i = chat.pending.findIndex(p => p.id === m.id);            // the SERVER copy arrived (not the optimistic local one) → drop our placeholder
         if(i > -1) chat.pending.splice(i, 1);
       }
     });
@@ -1124,7 +1134,8 @@ function openMsgMenu(el){
   const m = msgById(el.dataset.mid); if(!m) return;
   const mine = m.senderUid === me.uid;
   const saved = !!(m.confirmed && !m.pendingLocal);                 // exists on the server
-  const interactive = saved && !chat.blocked && !chat.isRequest;    // react / reply only on saved messages, never inside a request
+  const del = !!m.deleted;                                          // an unsent message only offers "Delete for you"
+  const interactive = saved && !del && !chat.blocked && !chat.isRequest;    // react / reply only on saved messages, never inside a request
   const body = $('moBody'); body.className = 'mo-body ' + (mine ? 'me' : 'them'); body.innerHTML = '';
   if(interactive){
     const bar = document.createElement('div'); bar.className = 'rxbar';
@@ -1157,13 +1168,14 @@ function openMsgMenu(el){
   };
   if(interactive) add(ICON_REPLY, 'Reply', () => setReply(m));
   if(interactive && mine && (!m.type || (isMedia(m) && !m.uploading))) add(ICON_EDIT, isMedia(m) ? (m.cap ? 'Edit caption' : 'Add caption') : 'Edit', () => { if(Date.now() - m.ts < EDIT_WINDOW_MS) startEdit(m); else toast('You can only edit a message within 15 minutes'); });
-  if(!m.type){
+  if(!m.type && !del){
     add(ICON_COPY, 'Copy', () => copyText(m.text));
     add(ICON_SELECT, 'Select text', () => openSelectText(m));
   } else if(isMedia(m) && m.cap){
     add(ICON_COPY, 'Copy caption', () => copyText(m.cap));
   }
   add(ICON_TRASH, 'Delete for you', () => deleteForMe(m), true);
+  if(mine && saved && !del) add(ICON_TRASH, 'Delete for everyone', () => unsendMsg(m), true);
   body.appendChild(card);
   _moOpenedAt = Date.now();
   $('mo').hidden = false;
@@ -1191,6 +1203,34 @@ async function reactTo(m, emoji){
   m.reactions = next; renderMsgs(false);                                // instant
   try{ await updateDoc(msgRef, { ['reactions.' + me.uid]: remove ? deleteField() : emoji }); }
   catch(e){ m.reactions = prev; if(chat === c) renderMsgs(false); toast('Couldn’t add that reaction'); }
+}
+/* "Delete for everyone": the message document is OVERWRITTEN (text, caption, media link, voice link, reply quote, reactions are all gone)
+   and flagged deleted:true — both people then see a placeholder. Only the sender can do it (enforced by the rules), no time limit. */
+const UNSENT_TEXT = 'This message was deleted';
+async function unsendMsg(m){
+  if(!chat || !me) return;
+  const c = chat;
+  if(m.senderUid !== me.uid || !(m.confirmed && !m.pendingLocal) || m.deleted) return;
+  if(!await confirmSheet('Delete for everyone?', 'This message is removed for both of you and replaced with “This message was deleted”. Anyone who already saw it may still remember it.', 'Delete')) return;
+  const live = c.msgs.get(m.id), before = live ? { ...live } : null;
+  const isLatest = ![...c.msgs.values(), ...c.pending].some(x => x.id !== m.id && x.ts > m.ts);
+  if(live){ Object.assign(live, { deleted:true, text:UNSENT_TEXT, reactions:{}, replyTo:null, type:'', cap:'', mediaUrl:'', audioUrl:'', edited:false }); renderMsgs(false); }
+  try{
+    const ref = doc(db,'conversations',c.cid,'messages',m.id);
+    let created = m.raw;
+    if(!created){ const s0 = await getDoc(ref); if(!s0.exists()) throw new Error('gone'); created = s0.data().createdAt; }
+    await setDoc(ref, { senderUid:me.uid, createdAt:created, text:UNSENT_TEXT, deleted:true, deletedAt:serverTimestamp() });
+    if(isLatest){                                       // keep both inboxes from previewing the old text
+      updateDoc(myRow(c.other.uid), { lastText:UNSENT_TEXT }).catch(() => {});
+      updateDoc(doc(db,'inbox',c.other.uid,'threads',me.uid), { lastText:UNSENT_TEXT }).catch(() => {});
+    }
+    saveChatCacheSoon();
+    toast('Message deleted for everyone');
+  }catch(e){
+    if(live && before) Object.assign(live, before);
+    if(chat === c) renderMsgs(false);
+    toast('Couldn’t delete this message');
+  }
 }
 // "Delete for you": hidden for me only (remembered on my inbox row); the other person still sees it
 async function deleteForMe(m){
@@ -2433,7 +2473,7 @@ function openTileSheet(title, tiles, hint){
 }
 const myRow = uid => doc(db,'inbox',me.uid,'threads',uid);
 const rowFor = uid => recentRows.concat(pinnedRows).find(t => t.otherUid === uid) || (chat && chat.other.uid === uid ? chat.row : null);
-function removeChatCache(cid){ try{ localStorage.removeItem(CHAT_KEY(cid)); }catch(e){} }
+function removeChatCache(cid){ clearTimeout(_cacheTimers.c); try{ localStorage.removeItem(CHAT_KEY(cid)); localStorage.removeItem(SILENT_KEY(cid)); }catch(e){} }
 
 async function setPinned(uid, on){
   if(!rowFor(uid)){ toast('Send a message first to pin this chat'); return; }
@@ -2474,8 +2514,11 @@ async function clearChat(){
   if(!rowFor(uid)){ toast('Nothing to clear yet'); return; }
   if(!await confirmSheet('Clear this chat?', 'The messages are removed for you only. The other person keeps their copy and the chat stays in your inbox.', 'Clear chat')) return;
   try{
-    await updateDoc(myRow(uid), { clearedAt:serverTimestamp(), lastText:'', unread:0 });
+    await updateDoc(myRow(uid), { clearedAt:serverTimestamp(), lastText:'', unread:0, hiddenMsgs:[] });
     removeChatCache(cid);
+    const now = Date.now();                              // the inbox row (and its saved copy) go blank immediately, not after the next sync
+    [recentRows, pinnedRows].forEach(a => a.forEach(r => { if(r.otherUid === uid){ r.lastText = ''; r.unread = 0; r.clearedAt = now; r.hiddenMsgs = []; } }));
+    rebuildThreads(); renderList(); saveInboxCache(); clearBadgeCache();
     toast('Chat cleared');
     await reloadChat();
   }catch(e){ toast('Couldn’t clear this chat'); }
@@ -2484,7 +2527,7 @@ async function deleteChat(uid){
   if(!rowFor(uid)){ if(chat && chat.other.uid === uid) backToList(); return; }
   if(!await confirmSheet('Delete this chat?', 'It disappears from your inbox and the messages are cleared for you. The other person keeps their copy. If they message you again, a fresh chat starts.', 'Delete chat')) return;
   try{
-    await updateDoc(myRow(uid), { deleted:true, clearedAt:serverTimestamp(), lastText:'', unread:0, pinned:false });
+    await updateDoc(myRow(uid), { deleted:true, clearedAt:serverTimestamp(), lastText:'', unread:0, pinned:false, hiddenMsgs:[] });
     removeChatCache(convId(me.uid, uid));
     recentRows = recentRows.filter(t => t.otherUid !== uid); pinnedRows = pinnedRows.filter(t => t.otherUid !== uid);
     rebuildThreads(); renderList(); saveInboxCache(); clearBadgeCache();
@@ -2618,7 +2661,7 @@ function renderRequests(){
   el.innerHTML = requests.map(t => `<button class="row ${t.unread > 0 ? 'unread' : ''}" data-uid="${esc(t.otherUid)}">
       <div class="av">${avatarHtml(t.name, t.photo)}</div>
       <div class="row-main"><div class="row-top"><span class="row-name">${esc(t.name || 'MindShift Books User')}</span><span class="row-time">${fmtListTime(ms(t.lastAt))}</span></div>
-      <div class="row-bot"><span class="row-last">${esc(t.lastText || '')}</span>${t.unread > 0 ? `<span class="pill">${t.unread > 99 ? '99+' : t.unread}</span>` : ''}</div></div></button>`).join('');
+      <div class="row-bot"><span class="row-last">${esc(previewOf(t))}</span>${t.unread > 0 ? `<span class="pill">${t.unread > 99 ? '99+' : t.unread}</span>` : ''}</div></div></button>`).join('');
   el.querySelectorAll('.row').forEach(b => b.onclick = () => openChat(b.dataset.uid, { push:true }));
 }
 function showRequests(push){
@@ -2654,7 +2697,7 @@ async function acceptRequest(){
 async function declineRequest(uid){
   if(!await confirmSheet('Decline this request?', 'The messages are removed for you and they aren’t told. If they message you again it shows up as a new request. You can also block them.', 'Decline')) return;
   try{
-    await updateDoc(myRow(uid), { deleted:true, clearedAt:serverTimestamp(), lastText:'', unread:0, pinned:false });
+    await updateDoc(myRow(uid), { deleted:true, clearedAt:serverTimestamp(), lastText:'', unread:0, pinned:false, hiddenMsgs:[] });
     removeChatCache(convId(me.uid, uid));
     recentRows = recentRows.filter(t => t.otherUid !== uid); pinnedRows = pinnedRows.filter(t => t.otherUid !== uid);
     rebuildThreads(); renderList(); saveInboxCache(); clearBadgeCache();
@@ -2715,6 +2758,7 @@ function renderPeople(){
   const el = $('people');
   if(!el || !me || filter === 'unread' || inboxQ){ if(el) el.hidden = true; return; }
   const list = visiblePeople();
+  if(!list.length && peopleState === 'idle'){ el.hidden = false; return; }          // the skeleton strip from the HTML stays until loadPeople() starts
   if(!list.length && peopleState === 'ready'){ el.hidden = true; return; }
   if(!list.length && peopleState !== 'loading'){ el.hidden = true; return; }
   const sig = peopleMode + '|' + peopleState + '|' + list.map(p => p.uid + (isActiveNow(peopleAct[p.uid]) ? '*' : '')).join(',');
@@ -2880,7 +2924,7 @@ function saveChatCacheSoon(){
   _cacheTimers.c = setTimeout(() => {
     try{
       const msgs = [...c.msgs.values()].filter(m => m.ts && m.confirmed).sort((a,b) => a.ts - b.ts).slice(-PAGE)
-        .map(m => ({ id:m.id, senderUid:m.senderUid, text:m.text, replyTo:m.replyTo || null, reactions:m.reactions || {}, edited:!!m.edited, ts:m.ts, type:m.type || '', audioUrl:m.audioUrl || '', duration:m.duration || 0, wf:m.wf || '', mime:m.mime || '', mediaUrl:m.mediaUrl || '', w:m.w || 0, h:m.h || 0, ph:m.ph || '', cap:m.cap || '' }));
+        .map(m => ({ id:m.id, senderUid:m.senderUid, text:m.text, replyTo:m.replyTo || null, reactions:m.reactions || {}, edited:!!m.edited, deleted:!!m.deleted, ts:m.ts, type:m.type || '', audioUrl:m.audioUrl || '', duration:m.duration || 0, wf:m.wf || '', mime:m.mime || '', mediaUrl:m.mediaUrl || '', w:m.w || 0, h:m.h || 0, ph:m.ph || '', cap:m.cap || '' }));
       localStorage.setItem(CHAT_KEY(c.cid), JSON.stringify({ msgs, hasMore:c.hasMore, t:Date.now() }));
       const idx = JSON.parse(localStorage.getItem('msb_chat_idx') || '[]').filter(x => x !== c.cid); idx.push(c.cid);
       while(idx.length > 8) localStorage.removeItem(CHAT_KEY(idx.shift()));      // keep only the 8 most recent chats
@@ -2916,7 +2960,7 @@ function earlyPaint(){
     if(!other.name && !cached) return;
     chat = { other, cid, msgs:new Map(), oldest:null, hasMore:!!(cached && cached.hasMore), lastTs:null, unsubLive:null, pending:[],
              extrasAt:0, loaded:false, ack:new Set(), row:null, unsubRow:null, rowSeen:false, provisional:true, rowInfo:row || null };
-    if(cached) cached.msgs.forEach(m => chat.msgs.set(m.id, { ...m, confirmed:true }));
+    if(cached) cached.msgs.forEach(m => { if(!(row && row.clearedAt && m.ts <= row.clearedAt)) chat.msgs.set(m.id, { ...m, confirmed:true }); });
     show('chat'); paintOther(); renderMsgs(true);
   } else {
     const rows = loadInboxCache(uid);
