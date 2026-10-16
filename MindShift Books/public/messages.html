@@ -36,7 +36,14 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .bar-title{font-size:20px;font-weight:800;letter-spacing:-.02em}
 
 /* ── inbox ── */
-.list{flex:1;overflow-y:auto;background:#fff}
+.lscroll{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;background:#fff;position:relative;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch}
+.list{flex:1 0 auto;background:#fff}
+.ptr{position:absolute;left:50%;top:0;z-index:5;width:38px;height:38px;border-radius:50%;background:#fff;box-shadow:0 3px 14px rgba(15,23,42,.18);display:flex;align-items:center;justify-content:center;transform:translate(-50%,-44px);opacity:0;pointer-events:none;color:#94a3b8}
+.ptr.go{color:var(--g, #4f46e5)}
+.ptr svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.ptr.spin{color:#4f46e5}
+.ptr.spin svg{animation:ptrSpin .7s linear infinite}
+@keyframes ptrSpin{to{transform:rotate(360deg)}}
 .row{display:flex;align-items:center;gap:12px;padding:12px 16px;width:100%;text-align:left;border-bottom:1px solid #f1f5f9}
 .row:active{background:#f8fafc}
 .av{position:relative;width:50px;height:50px;border-radius:50%;flex-shrink:0;background:var(--g);color:#fff;font-weight:800;font-size:18px;display:flex;align-items:center;justify-content:center;overflow:hidden}
@@ -45,6 +52,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .row-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
 .row-name{font-size:15.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .row-time{font-size:12px;color:var(--mute);flex-shrink:0}
+.pv-ic{width:16px;height:16px;vertical-align:-3px;margin-right:5px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
 .row-who{display:flex;align-items:baseline;gap:6px;min-width:0;flex:1}
 .stk{flex:none;font-size:12.5px;font-weight:800;color:#ea580c;white-space:nowrap}
 .stk.risk{color:#dc2626}
@@ -96,7 +104,6 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .sheet-tile .st-ic svg{width:27px;height:27px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 .st-ic.indigo{background:#eef0ff;color:#4f46e5}
 .st-ic.cyan{background:#e0f7fb;color:#0891b2}
-.st-ic.amber{background:#fff4e0;color:#d97706}
 .sheet-hint{text-align:center;color:var(--mute);font-size:12.5px;padding:4px 16px 16px}
 .sheet[hidden],.sheet-bg[hidden]{display:none}
 .blockbar{padding:14px 16px calc(14px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid var(--border);text-align:center;font-size:14px;color:var(--sub);flex-shrink:0}
@@ -549,6 +556,7 @@ mark{background:#e0e7ff;color:inherit;border-radius:3px;padding:0 1px}
     <div class="bar-title">Messages</div>
     <button class="kebab" id="listMenuBtn" aria-label="More options"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>
   </div>
+  <div class="lscroll" id="lscroll"><div class="ptr" id="ptr" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 11-3-6.7L21 8M21 3v5h-5"/></svg></div>
   <div class="isearch" id="isearch">
     <div class="isearch-in">
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
@@ -562,6 +570,7 @@ mark{background:#e0e7ff;color:inherit;border-radius:3px;padding:0 1px}
     <button class="tab" data-f="unread">Unread<span class="n" id="unreadN"></span></button>
   </div>
   <div class="list" id="list"><div class="skel-row"><div class="skel c"></div><div style="flex:1"><div class="skel" style="height:14px;width:42%;margin-bottom:9px"></div><div class="skel" style="height:12px;width:78%"></div></div></div><div class="skel-row"><div class="skel c"></div><div style="flex:1"><div class="skel" style="height:14px;width:42%;margin-bottom:9px"></div><div class="skel" style="height:12px;width:78%"></div></div></div><div class="skel-row"><div class="skel c"></div><div style="flex:1"><div class="skel" style="height:14px;width:42%;margin-bottom:9px"></div><div class="skel" style="height:12px;width:78%"></div></div></div><div class="skel-row"><div class="skel c"></div><div style="flex:1"><div class="skel" style="height:14px;width:42%;margin-bottom:9px"></div><div class="skel" style="height:12px;width:78%"></div></div></div><div class="skel-row"><div class="skel c"></div><div style="flex:1"><div class="skel" style="height:14px;width:42%;margin-bottom:9px"></div><div class="skel" style="height:12px;width:78%"></div></div></div><div class="skel-row"><div class="skel c"></div><div style="flex:1"><div class="skel" style="height:14px;width:42%;margin-bottom:9px"></div><div class="skel" style="height:12px;width:78%"></div></div></div></div>
+  </div>
 </section>
 
 <!-- ── NEW MESSAGE (full screen) ── -->
@@ -885,6 +894,13 @@ function hlText(text, q, snippet){
   return pre + esc(t.slice(0, k)) + '<mark>' + esc(t.slice(k, k + q.length)) + '</mark>' + esc(t.slice(k + q.length));
 }
 // The preview line of a chat. After "Clear chat" / "Delete chat" nothing older than that moment may ever show — not even from a saved copy.
+/* "📷 Photo" / "🎥 Video" / "🎤 Voice message" are stored as text; the list shows clean line icons in their place (WhatsApp / Instagram style) */
+const PV_ICONS = {
+  '📷':'<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3.2"/>',
+  '🎥':'<rect x="2" y="6" width="13" height="12" rx="3"/><path d="m15 10 6-3.2v10.4L15 14"/>',
+  '🎤':'<rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3.5"/>'
+};
+const pvIcons = h => String(h).replace(/^(📷|🎥|🎤)\uFE0F?\s?/, (m, e) => '<svg class="pv-ic" viewBox="0 0 24 24" aria-hidden="true">' + PV_ICONS[e] + '</svg>');
 function previewOf(t){ return (t && t.clearedAt && ms(t.lastAt) <= ms(t.clearedAt)) ? '' : String((t && t.lastText) || ''); }
 const threadMatches = (t, q) => (String(t.name || 'MindShift Books User') + ' ' + previewOf(t)).toLowerCase().includes(q);
 function bindReqRow(){ const b = $('reqRow'); if(b) b.onclick = () => showRequests(true); }
@@ -914,7 +930,7 @@ function renderList(){
     const un = t.unread > 0;
     const pv = previewOf(t);
     const dr = getDraft(t.otherUid);
-    const last = dr ? '<span class="draft-tag">Draft:</span> ' + esc(dr.replace(/\s+/g, ' ').trim().slice(0, 120)) : pv ? esc(t.lastSender === me.uid ? 'You: ' : '') + hlText(pv, inboxQ, true) + esc(settings.readReceipts && t.lastSender === me.uid && t.seenAt && ms(t.seenAt) >= ms(t.lastAt) ? ' · Seen' : '') : '';
+    const last = dr ? '<span class="draft-tag">Draft:</span> ' + esc(dr.replace(/\s+/g, ' ').trim().slice(0, 120)) : pv ? esc(t.lastSender === me.uid ? 'You: ' : '') + pvIcons(hlText(pv, inboxQ, true)) + esc(settings.readReceipts && t.lastSender === me.uid && t.seenAt && ms(t.seenAt) >= ms(t.lastAt) ? ' · Seen' : '') : '';
     return `<button class="row ${un?'unread':''}" data-uid="${esc(t.otherUid)}">
       <div class="av">${avatarHtml(t.name, t.photo)}</div>
       <div class="row-main">
@@ -938,11 +954,30 @@ document.querySelectorAll('.tab').forEach(b => b.onclick = () => {
   _peopleSig = '';
   renderList();
 });
+/* pull down at the very top of the inbox to reload (the whole inbox scrolls as one, so only the header stays put) */
+(() => {
+  const sc = $('lscroll'), ptr = $('ptr'), ic = ptr.firstElementChild; let y0 = null, dy = 0, busy = false;
+  const pull = () => Math.min(dy * .5, 80);
+  sc.addEventListener('touchstart', e => { y0 = (!busy && sc.scrollTop <= 0 && e.touches.length === 1) ? e.touches[0].clientY : null; dy = 0; }, { passive:true });
+  sc.addEventListener('touchmove', e => {
+    if(y0 == null) return;
+    dy = e.touches[0].clientY - y0;
+    if(dy <= 0 || sc.scrollTop > 0){ ptr.style.opacity = 0; return; }
+    const d = pull(); ptr.style.opacity = Math.min(1, d / 45);
+    ptr.style.transform = 'translate(-50%,' + (d - 40) + 'px)'; ic.style.transform = 'rotate(' + (d * 4) + 'deg)'; ptr.classList.toggle('go', d >= 60);
+  }, { passive:true });
+  sc.addEventListener('touchend', () => {
+    if(y0 == null) return;
+    const go = pull() >= 60; y0 = null;
+    if(go){ busy = true; ptr.classList.add('spin'); ic.style.transform = ''; ptr.style.opacity = 1; ptr.style.transform = 'translate(-50%,14px)'; setTimeout(() => location.reload(), 300); }
+    else { ptr.style.opacity = 0; ptr.style.transform = 'translate(-50%,-44px)'; ptr.classList.remove('go'); }
+  }, { passive:true });
+})();
 const _iq = $('inboxQ'), _iqx = $('inboxQClear');
 _iq.addEventListener('input', () => {
   inboxQ = _iq.value.trim().toLowerCase();
   _iqx.hidden = !_iq.value;
-  $('list').scrollTop = 0;
+  $('lscroll').scrollTop = 0;
   renderList();
 });
 _iq.addEventListener('keydown', e => { if(e.key === 'Enter') _iq.blur(); if(e.key === 'Escape'){ _iqx.click(); _iq.blur(); } });
@@ -2822,21 +2857,6 @@ $('msStrip').addEventListener('click', e => {
   if(e.target.closest('[data-add]')){ $('fileLib').value = ''; $('fileLib').click(); return; }
   const th = e.target.closest('.ms-th'); if(th){ MS.sel = +th.dataset.i; msRender(); }
 });
-/* "Paste image": reads a copied screenshot / photo straight from the clipboard (needs a tap + the browser's permission) */
-async function pasteFromClipboard(){
-  if(!chat || !me) return;
-  try{
-    const items = await navigator.clipboard.read(), files = [];
-    for(const it of items){
-      const t = it.types.find(x => /^image\//.test(x)); if(!t) continue;
-      const b = await it.getType(t), ext = (t.split('/')[1] || 'png').replace('jpeg', 'jpg').replace(/[^a-z0-9]/gi, '');
-      files.push(new File([b], 'pasted-' + Date.now() + '-' + files.length + '.' + ext, { type:t }));
-    }
-    if(files.length) addMediaFiles(files); else toast('No image copied yet — copy a screenshot or photo first');
-  }catch(e){
-    toast(e && e.name === 'NotAllowedError' ? 'Allow clipboard access to paste an image' : 'No image copied yet — copy a screenshot or photo first');
-  }
-}
 $('attachBtn').onclick = () => {
   if(!chat || !me) return;
   if(chat.blocked){ toast('Unblock this user to send messages'); return; }
@@ -2844,8 +2864,7 @@ $('attachBtn').onclick = () => {
   const touch = window.matchMedia && matchMedia('(pointer:coarse)').matches;
   openTileSheet('Share', [
     { label:'Library', icon:'image', tone:'indigo', run:() => { $('fileLib').value = ''; $('fileLib').click(); } },
-    touch ? { label:'Camera', icon:'camera', tone:'cyan', run:() => { $('fileCam').value = ''; $('fileCam').click(); } } : null,
-    (navigator.clipboard && navigator.clipboard.read) ? { label:'Paste image', icon:'clip', tone:'amber', run:pasteFromClipboard } : null
+    touch ? { label:'Camera', icon:'camera', tone:'cyan', run:() => { $('fileCam').value = ''; $('fileCam').click(); } } : null
   ], 'Photos & videos · up to ' + MEDIA_MAX_FILES + ' at a time · videos up to ' + MEDIA_VIDEO_MAX_MB + ' MB');
 };
 ['fileLib', 'fileCam'].forEach(id => $(id).addEventListener('change', e => addMediaFiles([...e.target.files])));
@@ -3084,7 +3103,6 @@ const SI = {
   ban:'<circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/>',
   sliders:'<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>',
   image:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>',
-  clip:'<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>',
   camera:'<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3"/>',
   send:'<path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/>',
   x:'<path d="M18 6 6 18M6 6l12 12"/>',
@@ -3357,7 +3375,7 @@ function renderRequests(){
   el.innerHTML = requests.map(t => `<button class="row ${t.unread > 0 ? 'unread' : ''}" data-uid="${esc(t.otherUid)}">
       <div class="av">${avatarHtml(t.name, t.photo)}</div>
       <div class="row-main"><div class="row-top"><span class="row-name">${esc(t.name || 'MindShift Books User')}</span><span class="row-time">${fmtListTime(ms(t.lastAt))}</span></div>
-      <div class="row-bot"><span class="row-last">${esc(previewOf(t))}</span>${t.unread > 0 ? `<span class="pill">${t.unread > 99 ? '99+' : t.unread}</span>` : ''}</div></div></button>`).join('');
+      <div class="row-bot"><span class="row-last">${pvIcons(esc(previewOf(t)))}</span>${t.unread > 0 ? `<span class="pill">${t.unread > 99 ? '99+' : t.unread}</span>` : ''}</div></div></button>`).join('');
   el.querySelectorAll('.row').forEach(b => b.onclick = () => openChat(b.dataset.uid, { push:true }));
 }
 function showRequests(push){
