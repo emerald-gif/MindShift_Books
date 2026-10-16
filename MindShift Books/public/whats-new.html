@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#4f46e5">
+<title>New on MindShift Books</title>
+<style>
+:root{
+  --ink:#0f172a; --mute:#64748b; --line:#e8eaf2; --bg:#f5f6fb; --card:#fff;
+  --indigo:#4f46e5; --indigo-d:#4338ca; --indigo-soft:#eef0ff;
+  --green:#059669; --green-soft:#e6f7f0;
+  --amber:#d97706; --amber-soft:#fff4e0;
+  --rose:#e11d48; --rose-soft:#ffe9ee;
+  --cyan:#0891b2; --cyan-soft:#e0f7fb;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{font-family:'Segoe UI',system-ui,-apple-system,Roboto,sans-serif;color:var(--ink);background:#fff;-webkit-font-smoothing:antialiased;line-height:1.5}
+button,a{font:inherit;color:inherit}
+.wrap{max-width:560px;margin:0 auto}
+
+/* top bar */
+.bar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:6px;padding:calc(8px + env(safe-area-inset-top)) 10px 8px;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.bar button{width:40px;height:40px;border:0;background:none;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.bar button:active{background:#f1f5f9}
+.bar svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.bar b{font-size:17px;font-weight:800;letter-spacing:-.01em}
+
+/* hero */
+.hero{padding:26px 20px 8px;background:linear-gradient(180deg,var(--indigo-soft) 0%,#fff 100%)}
+.hero h1{font-size:34px;line-height:1.08;font-weight:800;letter-spacing:-.035em;max-width:11em}
+.hero p{margin-top:12px;font-size:16.5px;color:#334155;max-width:24em}
+
+/* the one memorable thing: a little conversation that shows the new features at work */
+.chat{margin:26px 0 6px;padding:16px 14px 18px;border-radius:26px;background:#fff;border:1px solid var(--line);box-shadow:0 18px 40px -22px rgba(79,70,229,.45);display:flex;flex-direction:column;gap:7px;overflow:hidden}
+.b{max-width:80%;padding:9px 13px;border-radius:18px;font-size:15px;line-height:1.35;position:relative}
+.them{align-self:flex-start;background:#f1f3f9;border-bottom-left-radius:6px}
+.me{align-self:flex-end;background:var(--indigo);color:#fff;border-bottom-right-radius:6px}
+.voice{display:flex;align-items:center;gap:10px;padding:8px 14px 8px 8px}
+.voice .play{width:30px;height:30px;border-radius:50%;background:#fff;color:var(--indigo);display:flex;align-items:center;justify-content:center;flex:none}
+.voice .play svg{width:13px;height:13px;fill:currentColor;margin-left:2px}
+.wf{display:flex;align-items:center;gap:2.5px;height:24px}
+.wf i{display:block;width:3px;border-radius:2px;background:rgba(255,255,255,.85)}
+.voice small{font-size:12px;opacity:.85;font-variant-numeric:tabular-nums}
+.album{padding:4px;display:grid;grid-template-columns:1fr 1fr;gap:3px;width:210px;max-width:70%;border-radius:18px;border-bottom-right-radius:6px}
+.album span{aspect-ratio:1/1.18;border-radius:14px;display:block;position:relative;overflow:hidden}
+.album span:first-child{border-bottom-left-radius:14px}
+.album .p1{background:linear-gradient(160deg,#fcd34d 0%,#fb923c 55%,#f43f5e 100%)}
+.album .p2{background:linear-gradient(160deg,#a5b4fc 0%,#6366f1 55%,#312e81 100%)}
+.album .p1::after,.album .p2::after{content:"";position:absolute;left:-10%;right:-10%;bottom:-18%;height:46%;background:rgba(15,23,42,.22);border-radius:50% 50% 0 0}
+.reply{padding-top:7px}
+.reply .q{border-left:3px solid var(--indigo);background:rgba(79,70,229,.08);border-radius:6px;padding:3px 8px;margin-bottom:5px;font-size:12.5px;color:#475569}
+.reply .q b{display:block;color:var(--indigo);font-size:12px}
+.react{position:absolute;right:10px;bottom:-12px;background:#fff;border:1px solid var(--line);border-radius:99px;padding:1px 7px;font-size:13px;box-shadow:0 2px 6px rgba(15,23,42,.1)}
+.chat .them.reply{margin-bottom:10px}
+
+/* one entrance, once: the conversation plays in */
+@media (prefers-reduced-motion:no-preference){
+  .chat .b{opacity:0;transform:translateY(8px) scale(.98);animation:pop .42s cubic-bezier(.2,.9,.3,1.1) forwards}
+  .chat .b:nth-child(1){animation-delay:.25s}.chat .b:nth-child(2){animation-delay:.75s}
+  .chat .b:nth-child(3){animation-delay:1.3s}.chat .b:nth-child(4){animation-delay:1.9s}
+  @keyframes pop{to{opacity:1;transform:none}}
+}
+
+
+/* chips that jump to a section */
+.jump{display:flex;gap:8px;margin-top:18px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.jump::-webkit-scrollbar{display:none}
+.jump a{flex:none;text-decoration:none;font-weight:700;font-size:13.5px;color:var(--indigo-d);background:#fff;border:1px solid #d9ddf7;border-radius:99px;padding:7px 14px}
+.jump a:active{background:var(--indigo-soft)}
+
+/* sections */
+.sec{padding:30px 0 28px;border-top:1px solid var(--line);scroll-margin-top:64px}
+.sec:first-child{border-top:0;padding-top:8px}
+.sh{display:flex;align-items:center;gap:12px}
+.sh h2{font-size:23px;font-weight:800;letter-spacing:-.025em;line-height:1.2}
+.sec>p{margin-top:10px;color:#334155;font-size:15.5px}
+.pts{margin-top:14px;border-top:1px solid var(--line)}
+.pts div{padding:11px 0;border-bottom:1px solid var(--line);font-size:15px;color:#334155}
+.pts dt{display:inline;font-weight:800;color:var(--ink)}
+.pts dd{display:inline}
+.pts dt::after{content:". "}
+
+/* reels mock */
+.reel{position:relative;width:min(220px,62%);aspect-ratio:9/16;margin:18px auto 0;border-radius:24px;overflow:hidden;background:linear-gradient(172deg,#1e1b4b 0%,#4338ca 52%,#db2777 100%);box-shadow:0 22px 44px -22px rgba(67,56,202,.7)}
+.reel .pl{position:absolute;left:50%;top:42%;width:54px;height:54px;margin:-27px 0 0 -27px;border-radius:50%;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center}
+.reel .pl svg{width:22px;height:22px;fill:#fff;margin-left:3px}
+.rail{position:absolute;right:10px;bottom:84px;display:flex;flex-direction:column;align-items:center;gap:15px;color:#fff;font-size:11px;font-weight:700}
+.rail span{display:flex;flex-direction:column;align-items:center;gap:2px}
+.rail svg{width:26px;height:26px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 1px 3px rgba(0,0,0,.35))}
+.rcap{position:absolute;left:12px;right:58px;bottom:34px;color:#fff}
+.rcap b{font-size:13.5px;display:flex;align-items:center;gap:7px}
+.rcap b i{width:24px;height:24px;border-radius:50%;background:#fff;opacity:.9;display:block}
+.rcap u{display:block;height:7px;border-radius:4px;background:rgba(255,255,255,.55);margin-top:7px;width:92%;text-decoration:none}
+.rcap u+u{width:60%}
+.rprog{position:absolute;left:0;right:0;bottom:0;height:3px;background:rgba(255,255,255,.28)}
+.rprog::after{content:"";position:absolute;left:0;top:0;bottom:0;width:38%;background:#fff}
+.swipe{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);display:flex;align-items:center;gap:5px;white-space:nowrap;font-size:11px;font-weight:700;color:#fff;background:rgba(15,23,42,.45);padding:4px 10px 4px 7px;border-radius:99px;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.swipe svg{width:13px;height:13px;fill:none;stroke:#fff;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+@media (prefers-reduced-motion:no-preference){.swipe svg{animation:up 1.5s ease-in-out infinite}@keyframes up{0%,100%{transform:translateY(2px)}50%{transform:translateY(-3px)}}}
+
+/* search mock */
+.smock{margin-top:16px;border:1px solid var(--line);border-radius:20px;padding:12px;background:#fff;box-shadow:0 16px 36px -24px rgba(15,23,42,.45)}
+.sfield{display:flex;align-items:center;gap:10px;height:46px;padding:0 14px;border-radius:99px;background:#f1f3f9;border:1.5px solid #a5b4fc;box-shadow:0 0 0 4px rgba(79,70,229,.1);font-weight:600}
+.sfield svg{width:19px;height:19px;fill:none;stroke:var(--indigo);stroke-width:2.2;stroke-linecap:round;flex:none}
+.sfield span{flex:1}
+.sfield i{width:20px;height:20px;border-radius:50%;background:#cbd5e1;display:flex;align-items:center;justify-content:center;font-style:normal;color:#fff;font-size:12px;line-height:1}
+.sr{display:flex;align-items:center;gap:12px;padding:11px 4px;border-bottom:1px solid #f1f5f9}
+.sr:last-child{border-bottom:0;padding-bottom:3px}
+.sr .av{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#fff;flex:none}
+.sr .sq{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex:none}
+.sr .sq svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.sr b{display:block;font-size:14.5px;line-height:1.25}
+.sr small{color:var(--mute);font-size:12.5px}
+.sres{margin-top:6px}
+
+/* features */
+.features{padding:6px 20px 120px}
+.f{display:grid;grid-template-columns:46px 1fr;gap:14px;padding:22px 0;border-bottom:1px solid var(--line)}
+.f:last-child{border-bottom:0}
+.ic{width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center}
+.ic svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.t-indigo{background:var(--indigo-soft);color:var(--indigo)}
+.t-green{background:var(--green-soft);color:var(--green)}
+.t-amber{background:var(--amber-soft);color:var(--amber)}
+.t-rose{background:var(--rose-soft);color:var(--rose)}
+.t-cyan{background:var(--cyan-soft);color:var(--cyan)}
+.f h2{font-size:19px;font-weight:800;letter-spacing:-.02em;line-height:1.25}
+.f p{margin-top:5px;color:#334155;font-size:15.5px}
+.how{margin-top:10px;padding:10px 13px;border-radius:12px;background:var(--bg);font-size:14.5px;color:#334155}
+.how b{color:var(--ink)}
+.how ol{margin:6px 0 0 18px}
+.how li+li{margin-top:3px}
+.f.main h2{font-size:22px}
+.pollmock{margin-top:12px;border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:7px}
+.pollmock em{font-style:normal;font-weight:700;font-size:14.5px}
+.opt{position:relative;height:34px;border-radius:9px;background:#f1f3f9;overflow:hidden;display:flex;align-items:center;justify-content:space-between;padding:0 11px;font-size:14px;font-weight:600}
+.opt i{position:absolute;inset:0 auto 0 0;background:#c7d2fe;border-radius:9px}
+.opt span{position:relative}
+.opt.lead i{background:#a5b4fc}
+
+/* call to action */
+.cta{position:fixed;left:0;right:0;bottom:0;z-index:30;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:linear-gradient(180deg,rgba(255,255,255,0),#fff 38%)}
+.cta .in{max-width:560px;margin:0 auto;display:flex;gap:10px}
+.go{flex:1;height:52px;border:0;border-radius:16px;background:var(--indigo);color:#fff;font-weight:800;font-size:16.5px;box-shadow:0 10px 22px -10px rgba(79,70,229,.8);text-decoration:none;display:flex;align-items:center;justify-content:center}
+.go:active{background:var(--indigo-d);transform:scale(.99)}
+.alt{height:52px;padding:0 18px;border-radius:16px;background:#fff;border:1.5px solid var(--line);font-weight:700;text-decoration:none;display:flex;align-items:center;justify-content:center;color:#334155}
+:focus-visible{outline:3px solid #a5b4fc;outline-offset:2px}
+@media (min-width:600px){.hero h1{font-size:40px}}
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <button id="back" aria-label="Go back"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
+  <b>What’s new</b>
+</header>
+
+<main class="wrap">
+
+  <section class="hero">
+    <h1>New on MindShift Books</h1>
+    <p>We’ve been building for you. Here’s everything that just landed.</p>
+    <nav class="jump" aria-label="Jump to a feature"><a href="#messages">Messages</a><a href="#reels">Reels</a><a href="#search">Search</a><a href="#polls">Polls</a></nav>
+
+    <div class="chat" aria-hidden="true">
+      <div class="b them">Did you finish chapter 3?</div>
+      <div class="b me voice">
+        <span class="play"><svg viewBox="0 0 24 24"><path d="M6 4l14 8-14 8z"/></svg></span>
+        <span class="wf"><i style="height:8px"></i><i style="height:15px"></i><i style="height:22px"></i><i style="height:12px"></i><i style="height:19px"></i><i style="height:9px"></i><i style="height:16px"></i><i style="height:23px"></i><i style="height:13px"></i><i style="height:7px"></i><i style="height:17px"></i><i style="height:11px"></i></span>
+        <small>0:12</small>
+      </div>
+      <div class="b me album"><span class="p1"></span><span class="p2"></span></div>
+      <div class="b them reply">
+        <div class="q"><b>You</b>Here’s my favourite page</div>
+        Love this one!
+        <span class="react">❤️</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="features">
+
+    <article class="sec" id="messages">
+      <div class="sh"><div class="ic t-indigo"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.4 8.4 0 01-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.4 8.4 0 013.8-.9h.5a8.5 8.5 0 018 8z"/></svg></div><h2>Messages</h2></div>
+      <p>Chat with anyone on MindShift Books. Message writers, creators and other readers directly.</p>
+      <dl class="pts">
+        <div><dt>Voice notes, photos and videos</dt><dd>Send them right inside the chat. Pick several photos and they arrive together as one album.</dd></div>
+        <div><dt>Reactions</dt><dd>Press and hold a message to react with an emoji.</dd></div>
+        <div><dt>Replies</dt><dd>Reply to a specific message so everyone knows what you’re answering.</dd></div>
+      </dl>
+      <div class="how"><b>How to start</b>
+        <ol>
+          <li>Tap the Messages icon, or</li>
+          <li>Open any profile and tap the Message button.</li>
+        </ol>
+      </div>
+    </article>
+
+    <article class="sec" id="reels">
+      <div class="sh"><div class="ic t-rose"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M10 9.5v5l4.5-2.5z"/></svg></div><h2>Videos, reel-style</h2></div>
+      <p>Tap any video in your feed and it opens full screen. Keep swiping up and the next video starts playing, so you can watch one after another without going back to the feed.</p>
+      <div class="reel" aria-hidden="true">
+        <div class="pl"><svg viewBox="0 0 24 24"><path d="M6 4l14 8-14 8z"/></svg></div>
+        <div class="rail">
+          <span><svg viewBox="0 0 24 24"><path d="M20.8 5.6a5.2 5.2 0 00-7.4 0L12 7l-1.4-1.4a5.2 5.2 0 00-7.4 7.4L12 21.8l8.8-8.8a5.2 5.2 0 000-7.4z"/></svg>2.4K</span>
+          <span><svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.4 8.4 0 01-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.4 8.4 0 013.8-.9h.5a8.5 8.5 0 018 8z"/></svg>86</span>
+          <span><svg viewBox="0 0 24 24"><path d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7M16 6l-4-4-4 4M12 2v13"/></svg></span>
+        </div>
+        <div class="rcap"><b><i></i>Creator name</b><u></u><u></u></div>
+        <div class="swipe"><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg>Swipe up for the next video</div>
+        <div class="rprog"></div>
+      </div>
+    </article>
+
+    <article class="sec" id="search">
+      <div class="sh"><div class="ic t-cyan"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></div><h2>A better search</h2></div>
+      <p>Search got a fresh, premium look and feel. Finding writers, articles and posts is cleaner and easier than before.</p>
+      <div class="smock" aria-hidden="true">
+        <div class="sfield"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><span>mindset</span><i>×</i></div>
+        <div class="sres">
+          <div class="sr"><span class="av" style="background:#6366f1">AO</span><div><b>Ada Okafor</b><small>Writer · Habits and mindset</small></div></div>
+          <div class="sr"><span class="sq t-amber"><svg viewBox="0 0 24 24"><path d="M4 4h12a4 4 0 014 4v12H8a4 4 0 01-4-4z"/><path d="M8 9h8M8 13h5"/></svg></span><div><b>Why your mindset shapes your day</b><small>Article</small></div></div>
+          <div class="sr"><span class="sq t-rose"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.4 8.4 0 01-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.4 8.4 0 013.8-.9h.5a8.5 8.5 0 018 8z"/></svg></span><div><b>A reading list for a fresh start</b><small>Post</small></div></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="sec" id="polls">
+      <div class="sh"><div class="ic t-amber"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></div><h2>Polls in your posts</h2></div>
+      <p>Ask your readers a question and let the community vote. Add 2 to 4 options and choose how long the poll stays open.</p>
+      <div class="pollmock" aria-hidden="true">
+        <em>What should we read next?</em>
+        <div class="opt lead"><i style="width:62%"></i><span>Atomic Habits</span><span>62%</span></div>
+        <div class="opt"><i style="width:38%"></i><span>Deep Work</span><span>38%</span></div>
+      </div>
+    </article>
+
+  </section>
+</main>
+
+<nav class="cta" aria-label="Next steps">
+  <div class="in">
+    <a class="alt" href="/" id="later">Later</a>
+    <a class="go" href="/messages">Try Messages now</a>
+  </div>
+</nav>
+
+<script>
+  document.getElementById('back').onclick = function(){ if(history.length > 1) history.back(); else location.href = '/'; };
+</script>
+</body>
+</html>
