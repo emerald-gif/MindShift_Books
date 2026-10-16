@@ -194,7 +194,13 @@ mark{background:#e0e7ff;color:inherit;border-radius:3px;padding:0 1px}
 .intro-follow svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
 .intro-follow{color:var(--p);background:#eef0ff}
 .vp:active{background:#dde2ec}
-.msgs{flex:1;overflow-y:auto;padding:14px 12px 8px;display:flex;flex-direction:column;gap:4px;background:var(--bg);overscroll-behavior:contain}
+.tobot{position:absolute;right:14px;bottom:12px;z-index:4;width:44px;height:44px;border-radius:50%;border:1px solid #e3e6ee;background:#fff;color:#0f172a;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(15,23,42,.2);opacity:0;transform:translateY(10px) scale(.9);pointer-events:none;transition:opacity .18s,transform .18s;padding:0}
+.tobot.on{opacity:1;transform:none;pointer-events:auto}
+.tobot:active{transform:scale(.93);background:#f4f5fa}
+.tobot svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round}
+.tb-n{position:absolute;top:-7px;right:-4px;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--g,#4f46e5);color:#fff;font-size:11.5px;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-sizing:content-box;margin:-2px -2px 0 0}
+.msgs-wrap{position:relative;flex:1;min-height:0;display:flex;flex-direction:column}
+.msgs{flex:1;min-height:0;overflow-y:auto;padding:14px 12px 8px;display:flex;flex-direction:column;gap:4px;background:var(--bg);overscroll-behavior:contain}
 .older{align-self:center;margin:2px 0 10px;padding:7px 16px;border-radius:99px;background:#fff;border:1px solid var(--border);font-size:12.5px;font-weight:600;color:var(--sub)}
 .day{align-self:center;margin:12px 0 6px;padding:3px 12px;border-radius:99px;background:#e9edf5;color:var(--sub);font-size:11.5px;font-weight:600}
 .msg{max-width:78%;padding:9px 13px 7px;border-radius:18px;font-size:15px;line-height:1.4;white-space:pre-wrap;word-break:break-word;position:relative}
@@ -607,7 +613,9 @@ mark{background:#e0e7ff;color:inherit;border-radius:3px;padding:0 1px}
     </button>
     <button class="kebab" id="chatMenuBtn" aria-label="Chat options"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>
   </div>
-  <div class="msgs" id="msgs"><div class="empty-chat">Loading…</div></div>
+  <div class="msgs-wrap"><div class="msgs" id="msgs"><div class="empty-chat">Loading…</div></div>
+    <button class="tobot" id="toBot" aria-label="Jump to latest messages" tabindex="-1"><svg viewBox="0 0 24 24"><path d="M12 5v14M6 13l6 6 6-6"/></svg><span class="tb-n" id="toBotN" hidden></span></button>
+  </div>
   <div class="replybar" id="replyBar" hidden>
     <div class="rb-main"><div class="rb-name" id="rbName"></div><div class="rb-text" id="rbText"></div></div>
     <button class="rb-x" id="rbX" aria-label="Cancel reply"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
@@ -1068,6 +1076,7 @@ function renderMsgs(stick){
   chat.hiddenLocal = chat.hiddenLocal || new Set();
   const hidden = new Set([...((chat.row && chat.row.hiddenMsgs) || (chat.rowInfo && chat.rowInfo.hiddenMsgs) || []), ...chat.hiddenLocal]);   // "Delete for you"
   const items = [...chat.msgs.values(), ...chat.pending.filter(p => !chat.msgs.has(p.id))].filter(m => !hidden.has(m.id)).sort((a,b) => (a.ts||Infinity) - (b.ts||Infinity));
+  chat.lastItems = items;
   let html = chat.hasMore ? `<button class="older" id="olderBtn">Load earlier messages</button>` : `
     <div class="intro">
       <div class="av">${avatarHtml(chat.other.name, chat.other.photo)}</div>
@@ -1120,7 +1129,25 @@ function renderMsgs(stick){
   if(stick || nearBottom) box.scrollTop = box.scrollHeight;
   else box.scrollTop = prevTop + (box.scrollHeight - prevH) * (chat.prepended ? 1 : 0);
   chat.prepended = false;
+  updateToBot();
 }
+/* "jump to latest" arrow: appears once you've scrolled up, with a count of new messages that arrived meanwhile */
+let _tbRaf = 0;
+function updateToBot(){
+  const box = $('msgs'), b = $('toBot'); if(!box || !b) return;
+  const away = box.scrollHeight - box.scrollTop - box.clientHeight > 300;
+  b.classList.toggle('on', away); b.tabIndex = away ? 0 : -1;
+  const items = (chat && chat.lastItems) || [], n = $('toBotN');
+  if(!away){ if(chat && items.length) chat.seenLastId = items[items.length - 1].id; n.hidden = true; return; }
+  let c = 0;
+  if(chat && chat.seenLastId){
+    const i = items.findIndex(m => m.id === chat.seenLastId);
+    if(i >= 0) c = items.slice(i + 1).filter(m => m.senderUid !== me.uid).length;
+  }
+  n.hidden = !c; if(c) n.textContent = c > 99 ? '99+' : c;
+}
+$('msgs').addEventListener('scroll', () => { if(_tbRaf) return; _tbRaf = requestAnimationFrame(() => { _tbRaf = 0; updateToBot(); }); }, { passive:true });
+$('toBot').onclick = () => { const box = $('msgs'); box.scrollTo({ top:box.scrollHeight, behavior:'smooth' }); };
 // Messages query for the open chat. If the chat was cleared/deleted, only messages after that moment are ever read.
 function mq(...constraints){
   const base = collection(db,'conversations',chat.cid,'messages');
