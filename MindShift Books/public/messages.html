@@ -45,6 +45,10 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .row-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
 .row-name{font-size:15.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .row-time{font-size:12px;color:var(--mute);flex-shrink:0}
+.row-who{display:flex;align-items:baseline;gap:6px;min-width:0;flex:1}
+.stk{flex:none;font-size:12.5px;font-weight:800;color:#ea580c;white-space:nowrap}
+.stk.risk{color:#dc2626}
+.chat-name .stk{margin-left:7px;font-size:13px}
 .row-bot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:2px}
 .row-last{font-size:14px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .row.unread .row-last{color:var(--txt);font-weight:600}
@@ -92,6 +96,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .sheet-tile .st-ic svg{width:27px;height:27px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 .st-ic.indigo{background:#eef0ff;color:#4f46e5}
 .st-ic.cyan{background:#e0f7fb;color:#0891b2}
+.st-ic.amber{background:#fff4e0;color:#d97706}
 .sheet-hint{text-align:center;color:var(--mute);font-size:12.5px;padding:4px 16px 16px}
 .sheet[hidden],.sheet-bg[hidden]{display:none}
 .blockbar{padding:14px 16px calc(14px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid var(--border);text-align:center;font-size:14px;color:var(--sub);flex-shrink:0}
@@ -444,16 +449,18 @@ mark{background:#e0e7ff;color:inherit;border-radius:3px;padding:0 1px}
 /* photo editor (crop · rotate · text · draw) */
 .ms-x[hidden]{display:none}
 .ms-edit{margin-left:auto}
-.ed{position:fixed;inset:0;z-index:95;background:#0b1020;display:flex;flex-direction:column;color:#fff;overscroll-behavior:none}
+.ed{position:fixed;left:0;right:0;top:0;height:100dvh;z-index:95;background:#0a0e1a;display:flex;flex-direction:column;color:#fff;overscroll-behavior:none}
 .ed[hidden]{display:none}
-.ed-top{display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top)) 12px 6px}
+.ed>*{position:relative;z-index:2;flex:none}
+.ed>.ed-stage{z-index:1;flex:1 1 0}
+.ed-top{display:flex;align-items:center;gap:8px;padding:calc(8px + env(safe-area-inset-top)) 14px 8px;background:#0a0e1a}
 .ed-top .sp{flex:1}
-.ed-b{width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.13);color:#fff;display:flex;align-items:center;justify-content:center;border:0}
-.ed-b:disabled{opacity:.35}
-.ed-b svg,.ed-tool svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
-.ed-done{height:42px;padding:0 22px;border-radius:21px;border:0;background:var(--g);color:#fff;font:inherit;font-weight:800;font-size:15px}
-.ed-stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:8px 12px}
-.ed-wrap{position:relative;overflow:hidden;border-radius:6px;box-shadow:0 14px 44px rgba(0,0,0,.55);background:#000;touch-action:none;-webkit-user-select:none;user-select:none}
+.ed-b{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.1);color:#fff;display:flex;align-items:center;justify-content:center;border:0;padding:0}
+.ed-b:disabled{opacity:.3}
+.ed-b svg,.ed-tool svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ed-done{height:40px;padding:0 22px;border-radius:20px;border:0;background:var(--g);color:#fff;font:inherit;font-weight:800;font-size:14.5px}
+.ed-stage{position:relative;min-height:0;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:6px 16px;background:#05070f}
+.ed-wrap{position:relative;flex:none;overflow:hidden;border-radius:4px;box-shadow:0 10px 36px rgba(0,0,0,.6);background:#000;touch-action:none;-webkit-user-select:none;user-select:none}
 .ed-wrap canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 #edDr{pointer-events:none;touch-action:none}
 .ed-wrap.t-draw #edDr{pointer-events:auto}
@@ -463,31 +470,33 @@ mark{background:#e0e7ff;color:inherit;border-radius:3px;padding:0 1px}
 .ed-t.on{outline:1.5px dashed rgba(255,255,255,.95);outline-offset:3px;border-radius:4px}
 #edCrop{position:absolute;inset:0;touch-action:none}
 #edCrop[hidden]{display:none}
-.ed-cb{position:absolute;box-sizing:border-box;border:2px solid #fff;box-shadow:0 0 0 9999px rgba(0,0,0,.58);pointer-events:none}
+.ed-cb{position:absolute;box-sizing:border-box;border:1.5px solid #fff;box-shadow:0 0 0 9999px rgba(0,0,0,.6);pointer-events:none}
 .ed-cb::before,.ed-cb::after{content:'';position:absolute;inset:0}
-.ed-cb::before{background:linear-gradient(90deg,transparent calc(33.33% - .5px),rgba(255,255,255,.4) calc(33.33% - .5px),rgba(255,255,255,.4) calc(33.33% + .5px),transparent calc(33.33% + .5px),transparent calc(66.66% - .5px),rgba(255,255,255,.4) calc(66.66% - .5px),rgba(255,255,255,.4) calc(66.66% + .5px),transparent calc(66.66% + .5px))}
-.ed-cb::after{background:linear-gradient(180deg,transparent calc(33.33% - .5px),rgba(255,255,255,.4) calc(33.33% - .5px),rgba(255,255,255,.4) calc(33.33% + .5px),transparent calc(33.33% + .5px),transparent calc(66.66% - .5px),rgba(255,255,255,.4) calc(66.66% - .5px),rgba(255,255,255,.4) calc(66.66% + .5px),transparent calc(66.66% + .5px))}
-.ed-cb i{position:absolute;width:22px;height:22px;border:3px solid #fff;z-index:1}
-.ed-cb i.tl{left:-3px;top:-3px;border-right:0;border-bottom:0}
-.ed-cb i.tr{right:-3px;top:-3px;border-left:0;border-bottom:0}
-.ed-cb i.bl{left:-3px;bottom:-3px;border-right:0;border-top:0}
-.ed-cb i.br{right:-3px;bottom:-3px;border-left:0;border-top:0}
-.ed-sub{padding:4px 12px 6px;display:flex;flex-direction:column;gap:8px}
-.ed-sub:empty{display:none}
-.ed-row{display:flex;align-items:center;gap:8px;overflow-x:auto;scrollbar-width:none}
+.ed-cb::before{background:linear-gradient(90deg,transparent calc(33.33% - .5px),rgba(255,255,255,.35) calc(33.33% - .5px),rgba(255,255,255,.35) calc(33.33% + .5px),transparent calc(33.33% + .5px),transparent calc(66.66% - .5px),rgba(255,255,255,.35) calc(66.66% - .5px),rgba(255,255,255,.35) calc(66.66% + .5px),transparent calc(66.66% + .5px))}
+.ed-cb::after{background:linear-gradient(180deg,transparent calc(33.33% - .5px),rgba(255,255,255,.35) calc(33.33% - .5px),rgba(255,255,255,.35) calc(33.33% + .5px),transparent calc(33.33% + .5px),transparent calc(66.66% - .5px),rgba(255,255,255,.35) calc(66.66% - .5px),rgba(255,255,255,.35) calc(66.66% + .5px),transparent calc(66.66% + .5px))}
+.ed-cb i{position:absolute;width:20px;height:20px;border:3.5px solid #fff;z-index:1}
+.ed-cb i.tl{left:-3px;top:-3px;border-right:0;border-bottom:0;border-top-left-radius:3px}
+.ed-cb i.tr{right:-3px;top:-3px;border-left:0;border-bottom:0;border-top-right-radius:3px}
+.ed-cb i.bl{left:-3px;bottom:-3px;border-right:0;border-top:0;border-bottom-left-radius:3px}
+.ed-cb i.br{right:-3px;bottom:-3px;border-left:0;border-top:0;border-bottom-right-radius:3px}
+.ed-sub{height:104px;padding:8px 14px 6px;display:flex;flex-direction:column;justify-content:center;gap:10px;background:#0a0e1a}
+.ed-hint{text-align:center;font-size:13px;font-weight:600;color:rgba(255,255,255,.5)}
+.ed-row{display:flex;align-items:center;gap:8px;overflow-x:auto;padding:3px 0;scrollbar-width:none}
 .ed-row::-webkit-scrollbar{display:none}
-.ed-chip{flex:0 0 auto;height:34px;padding:0 14px;border-radius:17px;background:rgba(255,255,255,.13);color:#fff;border:0;font:inherit;font-size:13.5px;font-weight:700}
-.ed-chip:disabled{opacity:.4}
-.ed-chip.on{background:#fff;color:#111}
-.ed-chip.pri{background:var(--g);color:#fff}
-.ed-sw{flex:0 0 auto;width:28px;height:28px;border-radius:50%;border:2.5px solid rgba(255,255,255,.35);padding:0}
-.ed-sw.on{border-color:#fff;transform:scale(1.14)}
-.ed-ta{flex:1;min-width:0;background:rgba(255,255,255,.15);border:0;outline:0;border-radius:18px;color:#fff;font:inherit;font-size:16px;padding:8px 14px;resize:none;height:38px;max-height:96px}
-.ed-ta:disabled{opacity:.5}
-.ed-range{flex:1;min-width:90px;accent-color:#fff}
-.ed-tools{display:flex;justify-content:space-around;padding:6px 8px calc(10px + env(safe-area-inset-bottom))}
-.ed-tool{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:0;color:rgba(255,255,255,.72);font:inherit;font-size:11.5px;font-weight:700;padding:6px 16px;border-radius:12px}
-.ed-tool.on{color:#fff;background:rgba(255,255,255,.16)}
+.ed-row.sp-b{justify-content:space-between}
+.ed-chip{flex:0 0 auto;height:34px;padding:0 15px;border-radius:17px;background:rgba(255,255,255,.1);color:#fff;border:0;font:inherit;font-size:13px;font-weight:700;white-space:nowrap}
+.ed-chip:disabled{opacity:.35}
+.ed-chip.on{background:#fff;color:#0a0e1a}
+.ed-chip.pri{background:var(--g);color:#fff;padding:0 20px}
+.ed-chip.ghost{background:none;color:rgba(255,255,255,.75);padding:0 6px}
+.ed-sw{flex:0 0 auto;width:26px;height:26px;border-radius:50%;border:2px solid rgba(255,255,255,.3);padding:0}
+.ed-sw.on{border-color:#fff;box-shadow:0 0 0 2px #0a0e1a,0 0 0 4px #fff}
+.ed-ta{flex:1;min-width:0;background:rgba(255,255,255,.1);border:0;outline:0;border-radius:19px;color:#fff;font:inherit;font-size:16px;padding:0 14px;line-height:38px;resize:none;height:38px;overflow:hidden}
+.ed-ta:disabled{opacity:.45}
+.ed-range{flex:1;min-width:90px;accent-color:#fff;margin-left:6px}
+.ed-tools{display:flex;padding:4px 8px calc(6px + env(safe-area-inset-bottom));background:#0a0e1a;border-top:1px solid rgba(255,255,255,.08)}
+.ed-tool{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:0;color:rgba(255,255,255,.6);font:inherit;font-size:11px;font-weight:700;padding:8px 0;border-radius:12px}
+.ed-tool.on{color:#fff;background:rgba(255,255,255,.12)}
 
 /* full-screen viewer */
 .lb{position:fixed;inset:0;z-index:90;background:rgba(5,8,18,.97);display:flex;align-items:center;justify-content:center;animation:lbIn .2s ease}
@@ -643,8 +652,8 @@ mark{background:#e0e7ff;color:inherit;border-radius:3px;padding:0 1px}
 if(/[?&]with=/.test(location.search)){ document.getElementById('listView').classList.remove('on'); document.getElementById('chatView').classList.add('on'); }
 </script>
 
-<input type="file" id="fileLib" accept="image/*,video/*" multiple hidden>
-<input type="file" id="fileCam" accept="image/*,video/*" capture hidden>
+<input type="file" id="fileLib" accept="image/*,.heic,.heif,video/*" multiple hidden>
+<input type="file" id="fileCam" accept="image/*,.heic,.heif,video/*" capture hidden>
 <div class="ms" id="ms" hidden>
   <div class="ms-bg" id="msBg"></div>
   <div class="ms-top"><button class="ms-x" id="msX" aria-label="Cancel"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button><span class="ms-title" id="msTitle">Photo</span><button class="ms-x ms-edit" id="msEdit" aria-label="Edit photo" hidden><svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg></button></div>
@@ -909,7 +918,7 @@ function renderList(){
     return `<button class="row ${un?'unread':''}" data-uid="${esc(t.otherUid)}">
       <div class="av">${avatarHtml(t.name, t.photo)}</div>
       <div class="row-main">
-        <div class="row-top"><span class="row-name">${hlText(t.name || 'MindShift Books User', inboxQ)}</span><span class="row-time">${t.pinned ? PIN_SVG : ''}${fmtListTime(ms(t.lastAt))}</span></div>
+        <div class="row-top"><span class="row-who"><span class="row-name">${hlText(t.name || 'MindShift Books User', inboxQ)}</span>${stkBadge(t.otherUid)}</span><span class="row-time">${t.pinned ? PIN_SVG : ''}${fmtListTime(ms(t.lastAt))}</span></div>
         <div class="row-bot"><span class="row-last">${last}</span>${un ? `<span class="pill">${t.unread > 99 ? '99+' : t.unread}</span>` : ''}</div>
       </div></button>`;
   }).join('');
@@ -972,6 +981,7 @@ function paintOther(){
   $('chatSub').textContent = lab.text;
   $('chatSub').classList.toggle('live', lab.live);
   $('chatAv').innerHTML = avatarHtml(chat.other.name, chat.other.photo) + (lab.live ? '<span class="on-dot"></span>' : '');
+  paintStreak();
 }
 const fmtCount = n => n >= 1e6 ? (n / 1e6).toFixed(n >= 1e7 ? 0 : 1).replace(/\.0$/, '') + 'M' : n >= 1e3 ? (n / 1e3).toFixed(n >= 1e4 ? 0 : 1).replace(/\.0$/, '') + 'K' : String(n);
 async function fetchOtherExtras(c){
@@ -1625,6 +1635,7 @@ async function send(retryItem){
       { otherUid:me.uid, name:me.name, photo:me.photo || '', lastText:last, lastAt:serverTimestamp(), lastSender:me.uid, unread:increment(1) }, { merge:true });
     await batch.commit();
     c.ack.add(temp.id);                                // server has it → "Delivered"
+    bumpStreak(c);
     if(chat === c) renderMsgs(false);
   }catch(e){
     try{ const ex = await getDoc(msgRef); if(ex.exists()){ c.ack.add(temp.id); if(chat === c) renderMsgs(false); return; } }catch(_){}
@@ -2111,6 +2122,7 @@ async function sendVoice(info, retryItem){
     await batch.commit();
     temp.blob = null;                                 // the upload is safe in Cloudinary: let go of the recording
     c.ack.add(temp.id);
+    bumpStreak(c);
     if(chat === c) renderMsgs(false);
   }catch(e){
     if(temp.deleted) return;
@@ -2382,6 +2394,7 @@ async function runMedia(c, temp){
     }
     temp.blob = null; temp.file = null;                    // safely in Cloudinary: let go of the big file
     c.ack.add(temp.id);
+    bumpStreak(c);
     paint();
   }catch(e){
     if(temp.deleted) return;
@@ -2440,7 +2453,49 @@ function msRender(){
   const ta = $('msCap'); ta.value = it.cap || ''; ta.style.height = 'auto'; ta.style.height = Math.min(96, ta.scrollHeight) + 'px';
   $('msSend').setAttribute('aria-label', 'Send ' + MS.items.length + (MS.items.length > 1 ? ' items' : ' item'));
 }
-function addMediaFiles(files){
+/* iPhone photos (HEIC/HEIF): Safari can read them, most other browsers can't. Where the browser can't, they're converted to JPEG here
+   (the converter is only downloaded the first time it's needed), so the preview, the editor and sending all just get a normal photo. */
+const HEIC_BRANDS = ['heic','heix','hevc','hevx','heim','heis','mif1','msf1'];
+async function looksHeic(f){
+  if(/^image\/hei[cf]/i.test(f.type) || /\.(heic|heif|hif)$/i.test(f.name || '')) return true;
+  if(f.type && f.type !== 'application/octet-stream') return false;                  // a normal, labelled file
+  try{ const b = new Uint8Array(await f.slice(0, 12).arrayBuffer()); return String.fromCharCode(b[4], b[5], b[6], b[7]) === 'ftyp' && HEIC_BRANDS.includes(String.fromCharCode(b[8], b[9], b[10], b[11])); }
+  catch(_){ return false; }
+}
+let _heicLib = null;
+function loadHeicLib(){
+  if(window.heic2any) return Promise.resolve(window.heic2any);
+  if(_heicLib) return _heicLib;
+  const urls = ['https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/heic2any/0.0.4/heic2any.min.js'];
+  _heicLib = (async () => {
+    for(const u of urls){
+      try{ await new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = u; sc.onload = res; sc.onerror = rej; document.head.appendChild(sc); }); if(window.heic2any) return window.heic2any; }catch(_){}
+    }
+    _heicLib = null; throw new Error('heic converter unavailable');
+  })();
+  return _heicLib;
+}
+async function heicToJpeg(f){
+  try{ const t = await createImageBitmap(f); if(t.close) t.close(); return f; }catch(_){}        // this browser reads it natively (Safari / iPhone) → nothing to convert
+  const conv = await loadHeicLib();
+  const out = await conv({ blob:f, toType:'image/jpeg', quality:0.9 });
+  const blob = Array.isArray(out) ? out[0] : out;
+  return new File([blob], ((f.name || 'photo').replace(/\.(heic|heif|hif)$/i, '') || 'photo') + '.jpg', { type:'image/jpeg', lastModified:f.lastModified || Date.now() });
+}
+async function addMediaFiles(files){
+  const list = [];
+  let shown = false, failed = 0;
+  for(const f of files){
+    let g = f;
+    try{
+      if(await looksHeic(f)){ if(!shown){ shown = true; toast('Preparing your iPhone photo…'); } g = await heicToJpeg(f); }
+    }catch(e){ failed++; continue; }
+    list.push(g);
+  }
+  if(failed) toast(failed === 1 ? 'Couldn’t read that iPhone photo — try sending it as a JPEG' : 'Couldn’t read ' + failed + ' of your iPhone photos — try sending them as JPEG');
+  if(list.length) addMediaFilesNow(list);
+}
+function addMediaFilesNow(files){
   if(!chat || !me) return;
   if(chat.blocked){ toast('Unblock this user to send messages'); return; }
   let bad = ''; const ok = [];
@@ -2510,7 +2565,8 @@ function edStrokePath(g, st, W){
 function edDrawStrokes(){ const dr = $('edDr'), g = dr.getContext('2d'); g.clearRect(0, 0, dr.width, dr.height); ED.strokes.forEach(st => edStrokePath(g, st, ED.W)); }
 function edLayout(){
   const W = ED.W; if(!W) return;
-  const st = $('edStage'), sc = Math.min((st.clientWidth - 24) / W.width, (st.clientHeight - 16) / W.height);
+  const st = $('edStage'); if(st.clientWidth < 50 || st.clientHeight < 50) return;
+  const sc = Math.min((st.clientWidth - 32) / W.width, (st.clientHeight - 12) / W.height);
   const dw = Math.max(40, Math.floor(W.width * sc)), dh = Math.max(40, Math.floor(W.height * sc));
   const wrap = $('edWrap'); wrap.style.width = dw + 'px'; wrap.style.height = dh + 'px';
   const cv = $('edCv');
@@ -2578,14 +2634,14 @@ function edSubRender(){
   if(t === 'crop'){
     const R = [['Free',''],['1:1','1'],['4:3','1.3333'],['3:4','0.75'],['16:9','1.7778'],['Original','o']];
     s.innerHTML = '<div class="ed-row">' + R.map(([l, v]) => '<button class="ed-chip' + (ED.rk === v ? ' on' : '') + '" data-r="' + v + '">' + l + '</button>').join('') + '</div>' +
-      '<div class="ed-row"><button class="ed-chip" data-cx="1">Cancel</button><span style="flex:1"></span><button class="ed-chip pri" data-ok="1">Apply crop</button></div>';
+      '<div class="ed-row sp-b"><button class="ed-chip ghost" data-cx="1">Cancel</button><button class="ed-chip pri" data-ok="1">Apply crop</button></div>';
   } else if(t === 'text'){
     s.innerHTML = '<div class="ed-row"><textarea class="ed-ta" id="edTa" rows="1" maxlength="200" placeholder="Type your text…" disabled></textarea><button class="ed-chip pri" data-add="1">Add</button><button class="ed-chip" data-del="1" disabled>Delete</button></div>' +
       '<div class="ed-row" id="edSw">' + edSw(ED.color) + '<input class="ed-range" id="edRg" type="range" min="3" max="20" step="0.5" value="' + (ED.tsize * 100) + '" aria-label="Text size"></div>';
     edSubSync();
   } else if(t === 'draw'){
-    s.innerHTML = '<div class="ed-row" id="edSw">' + edSw(ED.dcolor) + '<input class="ed-range" id="edRg" type="range" min="0.4" max="4" step="0.1" value="' + (ED.dsize * 100) + '" aria-label="Brush size"></div>';
-  } else s.innerHTML = '';
+    s.innerHTML = '<div class="ed-row" id="edSw">' + edSw(ED.dcolor) + '<input class="ed-range" id="edRg" type="range" min="0.4" max="4" step="0.1" value="' + (ED.dsize * 100) + '" aria-label="Brush size"></div><div class="ed-hint">Draw on the photo with your finger</div>';
+  } else s.innerHTML = '<div class="ed-hint">Pick a tool below</div>';
 }
 function edSubSync(){
   if(ED.tool !== 'text') return;
@@ -2627,12 +2683,12 @@ async function edOpen(){
   if(bmp.close) try{ bmp.close(); }catch(_){}
   Object.assign(ED, { open:true, it, W, strokes:[], texts:[], hist:[], tool:'', sel:-1, crop:null, ratio:null, rk:'', dirty:false, armed:false, cur:null, drag:null });
   $('edCv')._src = null; edSnap();
-  $('ed').hidden = false; ovOpen(() => edClose(true));
+  $('ed').hidden = false; edFit(); ovOpen(() => edClose(true));
   edToolsUi(); edSubRender(); requestAnimationFrame(edLayout);
 }
 function edClose(fromBack){
   if(!ED.open) return;
-  ED.open = false; $('ed').hidden = true; ED.W = null; ED.hist = []; ED.it = null; $('edCv')._src = null;
+  ED.open = false; $('ed').hidden = true; $('ed').style.top = ''; $('ed').style.height = ''; ED.W = null; ED.hist = []; ED.it = null; $('edCv')._src = null;
   if(!fromBack) ovPop();
 }
 async function edDone(){
@@ -2656,6 +2712,9 @@ $('edX').onclick = () => {
 };
 $('edTools').addEventListener('click', e => { const b = e.target.closest('.ed-tool'); if(b) edTool(b.dataset.t); });
 window.addEventListener('resize', () => { if(ED.open) edLayout(); });
+function edFit(){ const e = $('ed'), v = window.visualViewport; if(!ED.open) return; if(v){ e.style.top = v.offsetTop + 'px'; e.style.height = v.height + 'px'; } }
+if(window.visualViewport){ visualViewport.addEventListener('resize', edFit); visualViewport.addEventListener('scroll', edFit); }
+if(window.ResizeObserver) new ResizeObserver(() => { if(ED.open) edLayout(); }).observe($('edStage'));
 /* sub-bar controls */
 $('edSub').addEventListener('click', e => {
   const r = e.target.closest('[data-r]');
@@ -2763,6 +2822,21 @@ $('msStrip').addEventListener('click', e => {
   if(e.target.closest('[data-add]')){ $('fileLib').value = ''; $('fileLib').click(); return; }
   const th = e.target.closest('.ms-th'); if(th){ MS.sel = +th.dataset.i; msRender(); }
 });
+/* "Paste image": reads a copied screenshot / photo straight from the clipboard (needs a tap + the browser's permission) */
+async function pasteFromClipboard(){
+  if(!chat || !me) return;
+  try{
+    const items = await navigator.clipboard.read(), files = [];
+    for(const it of items){
+      const t = it.types.find(x => /^image\//.test(x)); if(!t) continue;
+      const b = await it.getType(t), ext = (t.split('/')[1] || 'png').replace('jpeg', 'jpg').replace(/[^a-z0-9]/gi, '');
+      files.push(new File([b], 'pasted-' + Date.now() + '-' + files.length + '.' + ext, { type:t }));
+    }
+    if(files.length) addMediaFiles(files); else toast('No image copied yet — copy a screenshot or photo first');
+  }catch(e){
+    toast(e && e.name === 'NotAllowedError' ? 'Allow clipboard access to paste an image' : 'No image copied yet — copy a screenshot or photo first');
+  }
+}
 $('attachBtn').onclick = () => {
   if(!chat || !me) return;
   if(chat.blocked){ toast('Unblock this user to send messages'); return; }
@@ -2770,7 +2844,8 @@ $('attachBtn').onclick = () => {
   const touch = window.matchMedia && matchMedia('(pointer:coarse)').matches;
   openTileSheet('Share', [
     { label:'Library', icon:'image', tone:'indigo', run:() => { $('fileLib').value = ''; $('fileLib').click(); } },
-    touch ? { label:'Camera', icon:'camera', tone:'cyan', run:() => { $('fileCam').value = ''; $('fileCam').click(); } } : null
+    touch ? { label:'Camera', icon:'camera', tone:'cyan', run:() => { $('fileCam').value = ''; $('fileCam').click(); } } : null,
+    (navigator.clipboard && navigator.clipboard.read) ? { label:'Paste image', icon:'clip', tone:'amber', run:pasteFromClipboard } : null
   ], 'Photos & videos · up to ' + MEDIA_MAX_FILES + ' at a time · videos up to ' + MEDIA_VIDEO_MAX_MB + ' MB');
 };
 ['fileLib', 'fileCam'].forEach(id => $(id).addEventListener('change', e => addMediaFiles([...e.target.files])));
@@ -3009,6 +3084,7 @@ const SI = {
   ban:'<circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/>',
   sliders:'<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>',
   image:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>',
+  clip:'<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>',
   camera:'<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3"/>',
   send:'<path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/>',
   x:'<path d="M18 6 6 18M6 6l12 12"/>',
@@ -3361,11 +3437,82 @@ async function loadSettings(){
   }catch(e){}
 }
 
+/* ───────── streaks ─────────
+   Works the same everywhere in the world: no calendar days, no time zones — only 24-hour windows measured
+   by the server clock. When BOTH of you have sent something, the streak advances and a new window starts.
+   · first 24h after an advance: nothing more is needed (the day is already counted)
+   · from 24h to 48h after it: BOTH of you must send again to advance (🔥 +1)
+   · after 48h without that: the streak is gone and a fresh one starts when you both message within 24h
+   Stored in streaks/{cid}: sent{uid:time of last message}, anchor (when it last advanced), count. */
+const HOUR_MS = 3600000, tms = v => (v && v.toMillis) ? v.toMillis() : 0;
+let streaks = {}, unsubStreaks = null;
+function streakInfo(uid){
+  const s = streaks[uid]; if(!s || !(s.count >= 2)) return null;
+  const a = tms(s.anchor), now = Date.now(); if(!a || now > a + 48 * HOUR_MS) return null;      // gone
+  const open = now >= a + 24 * HOUR_MS, left = a + 48 * HOUR_MS - now;
+  return { n:s.count, risk: open && left < 4 * HOUR_MS };                                      // last 4 hours to keep it → ⏳
+}
+function stkBadge(uid){ const i = streakInfo(uid); return i ? `<span class="stk${i.risk ? ' risk' : ''}">${i.risk ? '⏳' : '🔥'} ${i.n}</span>` : ''; }
+function paintStreak(){
+  const nm = $('chatName'); if(!nm) return;
+  const old = nm.querySelector('.stk'); if(old) old.remove();
+  if(!chat) return;
+  const i = streakInfo(chat.other.uid); if(!i) return;
+  const sp = document.createElement('span'); sp.className = 'stk' + (i.risk ? ' risk' : ''); sp.textContent = (i.risk ? '⏳ ' : '🔥 ') + i.n; nm.appendChild(sp);
+}
+function startStreaks(){
+  if(!dbReady || !me || unsubStreaks) return;
+  unsubStreaks = onSnapshot(query(collection(db,'streaks'), where('uids','array-contains',me.uid), limit(100)), snap => {
+    streaks = {};
+    snap.docs.forEach(d => { const x = d.data({ serverTimestamps:'estimate' }), o = (x.uids || []).find(u => u !== me.uid); if(o) streaks[o] = x; });
+    if(threads.length) renderList();
+    paintStreak();
+  }, () => {});
+}
+async function bumpStreak(c){                                          // called after each message of mine is saved
+  try{
+    if(!dbReady || !me || !c || !c.other) return;
+    const o = c.other.uid, now = Date.now(), cur = streaks[o], ref = doc(db,'streaks',c.cid);
+    // skip the write when it can't change anything: the day is already counted, or I already stamped this window
+    if(cur){
+      const a = tms(cur.anchor), mine = cur.sent ? tms(cur.sent[me.uid]) : 0;
+      if(a && now <= a + 48 * HOUR_MS){ if(now < a + 24 * HOUR_MS || mine >= a + 24 * HOUR_MS) return; }
+      else if(mine >= now - 24 * HOUR_MS) return;
+    }
+    let result = null;
+    const r = await runTransaction(db, async tx => {
+      const sn = await tx.get(ref), d = sn.exists() ? sn.data() : null;
+      const a = d ? tms(d.anchor) : 0, cnt = d ? (d.count || 0) : 0, os = d && d.sent ? tms(d.sent[o]) : 0;
+      const sent = Object.assign({}, d && d.sent, { [me.uid]: serverTimestamp() });
+      let next = null;
+      if(a && now <= a + 48 * HOUR_MS){ if(now >= a + 24 * HOUR_MS && os >= a + 24 * HOUR_MS) next = cnt + 1; }
+      else if(os && os >= now - 24 * HOUR_MS) next = 1;
+      const keep = d && d.anchor ? { anchor:d.anchor } : {};
+      const base = { uids:c.cid.split('_'), sent };
+      try{
+        tx.set(ref, next ? { ...base, count:next, anchor:serverTimestamp() } : { ...base, count:cnt, ...keep });
+      }catch(e){ throw e; }
+      return next;
+    }).catch(async err => {
+      // my clock may be a little off the server's → just record my message and let the next one advance it
+      if(err && err.code === 'permission-denied'){
+        try{
+          const sn = await getDoc(ref), d = sn.exists() ? sn.data() : null;
+          await setDoc(ref, { uids:c.cid.split('_'), sent:Object.assign({}, d && d.sent, { [me.uid]: serverTimestamp() }), count:d ? (d.count || 0) : 0, ...(d && d.anchor ? { anchor:d.anchor } : {}) });
+        }catch(_){}
+      }
+      return null;
+    });
+    if(r && r >= 2) toast('🔥 ' + r + '-day streak!');
+  }catch(e){}
+}
+
 /* ───────── people row (top of the inbox) ─────────
    People you follow, most recently active first (green dot = active now). If you follow nobody yet, rising
    creators are suggested instead. Reads are kept small: the follow list + profiles are remembered for 30 minutes
    and last-active times for 5, so a visit usually costs nothing.
    */
+let _peopleTry = 0;
 let people = [], peopleMode = 'follow', followingIds = new Set(), peopleAct = {}, peopleState = 'idle', _peopleSig = '';
 const PEOPLE_KEY = u => 'msb_people_v1_' + u;
 const firstName = n => String(n || '').trim().split(/\s+/)[0] || 'User';
@@ -3380,8 +3527,6 @@ function renderPeople(){
   if(!el || !me || filter === 'unread' || inboxQ){ if(el) el.hidden = true; return; }
   const list = visiblePeople();
   if(!list.length && peopleState === 'idle'){ el.hidden = false; return; }          // the skeleton strip from the HTML stays until loadPeople() starts
-  if(!list.length && peopleState === 'ready'){ el.hidden = true; return; }
-  if(!list.length && peopleState !== 'loading'){ el.hidden = true; return; }
   const sig = peopleMode + '|' + peopleState + '|' + list.map(p => p.uid + (isActiveNow(peopleAct[p.uid]) ? '*' : '')).join(',');
   el.hidden = false;
   if(sig === _peopleSig) return;                      // nothing changed — don't disturb the scroll position
@@ -3390,7 +3535,8 @@ function renderPeople(){
   const head = `<div class="people-head"><span>${peopleMode === 'suggest' ? 'Suggested creators' : 'Start a chat'}</span><button class="pp-all" data-all="1">See all</button></div>`;
   const track = inner => head + '<div class="people-track">' + inner + '</div>';
   if(!list.length){
-    el.innerHTML = track(add + Array(5).fill('<div class="pp"><div class="skel c" style="width:58px;height:58px;margin:0 auto"></div><div class="skel" style="height:10px;width:44px;margin:8px auto 0"></div></div>').join(''));
+    // still loading → placeholder circles; nothing to show (or the load failed) → the strip stays, with just the "New" button
+    el.innerHTML = track(add + (peopleState === 'loading' ? Array(5).fill('<div class="pp"><div class="skel c" style="width:58px;height:58px;margin:0 auto"></div><div class="skel" style="height:10px;width:44px;margin:8px auto 0"></div></div>').join('') : ''));
     return;
   }
   el.innerHTML = track(add + list.map(p => `<button class="pp" data-uid="${esc(p.uid)}" data-mode="${peopleMode}">
@@ -3449,10 +3595,13 @@ async function loadPeople(){
       peopleAct = {}; ps.docs.forEach(d => { peopleAct[d.id] = ms(d.data().lastActive); });
       actT = Date.now();
     }
-    peopleState = 'ready';
+    peopleState = 'ready'; _peopleTry = 0;
     savePeopleCache({ t:t || Date.now(), actT:actT || 0 });
     renderPeople(); refreshNewList();
-  }catch(e){ peopleState = 'ready'; renderPeople(); }
+  }catch(e){
+    peopleState = 'ready'; _peopleTry++; renderPeople();
+    if(_peopleTry <= 3) setTimeout(loadPeople, 4000 * _peopleTry);      // a flaky connection shouldn't leave the strip empty: try again shortly
+  }
 }
 
 /* "+ New" → a full screen: search at the top, people below.
@@ -3601,7 +3750,7 @@ const [{ initializeApp }, { getAuth, onAuthStateChanged }, fsdk] = await Promise
   import(FB + 'firebase-app.js'), import(FB + 'firebase-auth.js'), import(FB + 'firebase-firestore.js')
 ]);
 const { getFirestore, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, collection, query, where, orderBy, limit, startAfter,
-        onSnapshot, writeBatch, serverTimestamp, increment, documentId, deleteField, arrayUnion } = fsdk;
+        onSnapshot, writeBatch, serverTimestamp, increment, documentId, deleteField, arrayUnion, runTransaction } = fsdk;
 const app  = initializeApp({
   apiKey:"AIzaSyDTn70s1_uIiSOR6lPLY_nKh8Ff1FViFCs",
   authDomain:"mindshiftbooks-c4451.firebaseapp.com",
@@ -3622,7 +3771,7 @@ onAuthStateChanged(auth, async user => {
   pingActive();
   loadFollowMapCache();         // remembered "do I follow them?" answers
   loadBlocks();                 // who I've blocked (1 small query)
-  loadSettings().finally(loadPeople);   // my switches first (they decide whether presence is even fetched), then the circles at the top
+  startStreaks(); loadSettings().finally(loadPeople);   // my switches first (they decide whether presence is even fetched), then the circles at the top
   const withUid = new URLSearchParams(location.search).get('with');
   if(withUid) openChat(withUid, { push:false });
   else if(new URLSearchParams(location.search).get('new')){ history.replaceState({ new:true }, '', '/messages?new=1'); startInbox(); showNew(false); }
