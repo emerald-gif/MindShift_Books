@@ -5971,6 +5971,13 @@ const ANNOUNCEMENTS = [
     message: 'You can now message anyone on MindShift Books. Go say hi to a writer you love.',
     ctaLabel: 'Open Messages',
     ctaUrl: '/messages'
+  },
+  {
+    id: 'whats-new-2026-10',
+    title: 'New on MindShift Books 🎉',
+    message: 'Messages with voice notes and photos, videos you can swipe through reel-style, a better search, and polls. See everything that just landed.',
+    ctaLabel: 'See what\'s new',
+    ctaUrl: '/whats-new'
   }
 ];
 
