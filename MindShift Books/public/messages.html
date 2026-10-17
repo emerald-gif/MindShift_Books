@@ -239,6 +239,19 @@ mark{background:#e0e7ff;color:inherit;border-radius:3px;padding:0 1px}
 .intro-follow svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
 .intro-follow{color:var(--p);background:#eef0ff}
 .vp:active{background:#dde2ec}
+.msg.share{padding:5px 5px 6px;width:min(78%,290px)}
+.msg.share .t{padding:0 6px}
+.scard{display:block;width:100%;text-align:left;border-radius:14px;overflow:hidden;background:#fff;color:var(--txt);padding:0;border:1px solid rgba(15,23,42,.06)}
+.scard:active{opacity:.92}
+.scard .si{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;background:#e5e7eb}
+.scard .sb{display:block;padding:9px 12px 11px}
+.scard .sb>span{display:block}
+.scard .sk{display:flex!important;align-items:center;gap:5px;font-size:11.5px;font-weight:800;color:var(--p)}
+.scard .sk svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.scard .stt{font-size:14.5px;font-weight:700;line-height:1.3;margin-top:4px;display:-webkit-box!important;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--txt)}
+.scard .sxt{font-size:13px;line-height:1.35;color:var(--sub);margin-top:3px;display:-webkit-box!important;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.scard .sby{font-size:12px;color:var(--mute);margin-top:6px}
+.msg.share .cap{padding:7px 8px 1px}
 .tobot{position:absolute;right:14px;bottom:12px;z-index:4;width:44px;height:44px;border-radius:50%;border:1px solid #e3e6ee;background:#fff;color:#0f172a;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(15,23,42,.2);opacity:0;transform:translateY(10px) scale(.9);pointer-events:none;transition:opacity .18s,transform .18s;padding:0}
 .tobot.on{opacity:1;transform:none;pointer-events:auto}
 .tobot:active{transform:scale(.93);background:#f4f5fa}
@@ -956,9 +969,10 @@ function hlText(text, q, snippet){
 const PV_ICONS = {
   '📷':'<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3.2"/>',
   '🎥':'<rect x="2" y="6" width="13" height="12" rx="3"/><path d="m15 10 6-3.2v10.4L15 14"/>',
+  '🔗':'<path d="M10 13a5 5 0 007.5.5l3-3a5 5 0 00-7-7l-1.7 1.7M14 11a5 5 0 00-7.5-.5l-3 3a5 5 0 007 7l1.7-1.7"/>',
   '🎤':'<rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3.5"/>'
 };
-const pvIcons = h => String(h).replace(/^(📷|🎥|🎤)\uFE0F?\s?/, (m, e) => '<svg class="pv-ic" viewBox="0 0 24 24" aria-hidden="true">' + PV_ICONS[e] + '</svg>');
+const pvIcons = h => String(h).replace(/^(📷|🎥|🎤|🔗)\uFE0F?\s?/, (m, e) => '<svg class="pv-ic" viewBox="0 0 24 24" aria-hidden="true">' + PV_ICONS[e] + '</svg>');
 function previewOf(t){ return (t && t.clearedAt && ms(t.lastAt) <= ms(t.clearedAt)) ? '' : String((t && t.lastText) || ''); }
 const threadMatches = (t, q) => (String(t.name || 'MindShift Books User') + ' ' + previewOf(t)).toLowerCase().includes(q);
 function bindReqRow(){ const b = $('reqRow'); if(b) b.onclick = () => showRequests(true); }
@@ -1098,7 +1112,8 @@ async function fetchOtherExtras(c){
 function toMsg(d){
   const x = d.data({ serverTimestamps:'estimate' });
   return { id:d.id, senderUid:x.senderUid, text:x.text, replyTo:x.replyTo || null, reactions:x.reactions || {}, edited:!!x.edited, deleted:x.deleted === true, ts: ms(x.createdAt), raw:x.createdAt, confirmed: !d.metadata.hasPendingWrites,
-           type:(x.type === 'voice' || x.type === 'image' || x.type === 'video') ? x.type : '', audioUrl:x.audioUrl || '', duration:Math.min(86400, Math.max(0, Number(x.duration) || 0)), wf:typeof x.wf === 'string' ? x.wf : '', mime:typeof x.mime === 'string' ? x.mime : '',
+           type:(x.type === 'voice' || x.type === 'image' || x.type === 'video' || x.type === 'share') ? x.type : '',
+           sk:x.sk === 'article' ? 'article' : 'post', sid:typeof x.sid === 'string' ? x.sid.slice(0, 64) : '', st:typeof x.st === 'string' ? x.st.slice(0, 160) : '', sx:typeof x.sx === 'string' ? x.sx.slice(0, 240) : '', si:(typeof x.si === 'string' && /^https:\/\//.test(x.si)) ? x.si.slice(0, 500) : '', sa:typeof x.sa === 'string' ? x.sa.slice(0, 80) : '', audioUrl:x.audioUrl || '', duration:Math.min(86400, Math.max(0, Number(x.duration) || 0)), wf:typeof x.wf === 'string' ? x.wf : '', mime:typeof x.mime === 'string' ? x.mime : '',
            mediaUrl:typeof x.mediaUrl === 'string' ? x.mediaUrl : '', w:Math.max(0, Number(x.w) || 0), h:Math.max(0, Number(x.h) || 0), ph:typeof x.ph === 'string' ? x.ph : '', cap:typeof x.cap === 'string' ? x.cap : '',
            gid:typeof x.gid === 'string' ? x.gid.slice(0, 40) : '', gi:Math.max(0, Math.min(99, Number(x.gi) || 0)) };      // gid/gi: photos sent together share a gid and show as one grid
 }
@@ -1169,7 +1184,7 @@ function renderMsgs(stick){
     const qm = m.replyTo && chat.msgs.get(m.replyTo.id), qDel = !!(qm && qm.deleted);   // a quote of an unsent message must not leak its text
     const q = m.replyTo ? `<div class="quote" data-qid="${esc(m.replyTo.id)}"><div class="q-name">${esc(m.replyTo.senderUid === me.uid ? 'You' : chat.other.name)}</div><div class="q-text">${esc(qDel ? 'Message deleted' : m.replyTo.text)}</div></div>` : '';
     const rx = rxHtml(m);
-    html += `<div class="msg ${mine?'me':'them'} ${m.pendingLocal && !m.failed && !m.silent && !chat.ack.has(m.id)?'pending':''} ${m.failed?'failed':''} ${rx?'has-rx':''} ${m.type==='voice'?'voice':''} ${isMedia(m)?'media '+(m.cap?'hascap':'nocap')+(m.uploading?' up':''):''}" data-mid="${esc(m.id)}">${q}${m.type==='voice'?voiceHtml(m):isMedia(m)?mediaHtml(m):esc(m.text)}<span class="t">${time}${m.edited ? ' · edited' : ''}${st && !st.err ? ' · ' + esc(st.text) : ''}</span>${rx}</div>`;
+    html += `<div class="msg ${mine?'me':'them'} ${m.pendingLocal && !m.failed && !m.silent && !chat.ack.has(m.id)?'pending':''} ${m.failed?'failed':''} ${rx?'has-rx':''} ${m.type==='voice'?'voice':''} ${m.type==='share'?'share':''} ${isMedia(m)?'media '+(m.cap?'hascap':'nocap')+(m.uploading?' up':''):''}" data-mid="${esc(m.id)}">${q}${m.type==='voice'?voiceHtml(m):isMedia(m)?mediaHtml(m):m.type==='share'?shareHtml(m):esc(m.text)}<span class="t">${time}${m.edited ? ' · edited' : ''}${st && !st.err ? ' · ' + esc(st.text) : ''}</span>${rx}</div>`;
     if(st && st.err) html += `<div class="stat err" data-retry="${esc(m.id)}">${esc(st.text)}</div>`;
   });
   box.innerHTML = html;
@@ -1362,7 +1377,7 @@ async function markRead(){
 /* ───────── reply to a specific message (swipe right on it) ───────── */
 function setReply(m){
   if(!chat) return;
-  chat.reply = { id:m.id, senderUid:m.senderUid, text:m.type === 'voice' ? VOICE_LABEL + ' (' + fmtDur(m.duration) + ')' : isMedia(m) ? ((m.type === 'image' ? '📷 ' : '🎥 ') + (m.cap || (m.type === 'image' ? 'Photo' : 'Video'))).slice(0, 140) : String(m.text || '').slice(0, 140) };
+  chat.reply = { id:m.id, senderUid:m.senderUid, text:m.type === 'voice' ? VOICE_LABEL + ' (' + fmtDur(m.duration) + ')' : isMedia(m) ? ((m.type === 'image' ? '📷 ' : '🎥 ') + (m.cap || (m.type === 'image' ? 'Photo' : 'Video'))).slice(0, 140) : m.type === 'share' ? ('🔗 ' + (m.st || 'Shared ' + m.sk)).slice(0, 140) : String(m.text || '').slice(0, 140) };
   $('rbName').textContent = m.senderUid === me.uid ? 'Replying to yourself' : 'Replying to ' + chat.other.name;
   $('rbText').textContent = chat.reply.text;
   $('replyBar').hidden = false;
@@ -1485,6 +1500,8 @@ function openMsgMenu(el){
     add(ICON_SELECT, 'Select text', () => openSelectText(m));
   } else if(isMedia(m) && m.cap){
     add(ICON_COPY, 'Copy caption', () => copyText(m.cap));
+  } else if(m.type === 'share' && !del){
+    add(ICON_COPY, 'Copy link', () => copyText(location.origin + shareUrl(m)));
   }
   add(ICON_TRASH, 'Delete for you', () => deleteForMe(m), true);
   if(mine && saved && !del) add(ICON_TRASH, 'Delete for everyone', () => unsendMsg(m), true);
@@ -2287,6 +2304,17 @@ function overlayBack(){
   OV.stack.pop().close(true); return true;
 }
 
+/* ── shared posts / articles: a card in the chat (sent from the post / article page via /share-to-chat.js) ── */
+const SHARE_PATH = { post:'/post-read?id=', article:'/article-read?id=' };         // where a card opens: change here if your page URLs differ
+const shareUrl = m => (SHARE_PATH[m.sk] || SHARE_PATH.post) + encodeURIComponent(m.sid);
+const LINK_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 007.5.5l3-3a5 5 0 00-7-7l-1.7 1.7M14 11a5 5 0 00-7.5-.5l-3 3a5 5 0 007 7l1.7-1.7"/></svg>';
+function shareHtml(m){
+  const img = m.si ? '<img class="si" src="' + esc(m.si) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">' : '';
+  return '<button type="button" class="scard" data-url="' + esc(shareUrl(m)) + '">' + img + '<span class="sb"><span class="sk">' + LINK_SVG + (m.sk === 'article' ? 'Article' : 'Post') + '</span>' +
+    '<span class="stt">' + esc(m.st || (m.sk === 'article' ? 'Article' : 'Post')) + '</span>' + (m.sx ? '<span class="sxt">' + esc(m.sx) + '</span>' : '') + (m.sa ? '<span class="sby">by ' + esc(m.sa) + '</span>' : '') + '</span></button>' +
+    (m.cap ? '<div class="cap">' + esc(m.cap) + '</div>' : '');
+}
+$('msgs').addEventListener('click', e => { const c = e.target.closest('.scard'); if(c && c.dataset.url) location.href = c.dataset.url; });
 /* ── bubble ── */
 function mediaThumb(m){
   const p = pendingOf(m.id) || m;
