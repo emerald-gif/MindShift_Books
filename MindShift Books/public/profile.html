@@ -2520,7 +2520,7 @@ window.msbImgEngage = {
     const img = (s.images && s.images[0]) || s.thumbnailUrl || '';
     MSBShare.open({
       url: `${location.origin}/post-read?id=${id}`, text: s.text || '', author: s.authorName || profileData.name, thumb: img,
-      chat: s.type === 'article' ? null : { kind:'post', id, snippet:s.text, image:img, author:s.authorName || profileData.name, authorPhoto:s.authorPhoto || profileData.photo },
+      chat: s.type === 'article' ? null : { kind:'post', id, snippet:s.text, meta:(s.videoUrl ? 'Video' : (s.images && s.images.length > 1) ? s.images.length + ' photos' : ''), image:img, author:s.authorName || profileData.name, authorPhoto:s.authorPhoto || profileData.photo },
       onImage: typeof openShareImageCard === 'function'
         ? () => openShareImageCard({ type:'post', id, author:s.authorName||profileData.name, avatar:s.authorPhoto||profileData.photo, publishedAt:s.publishedAt, text:s.text, image:img })
         : null

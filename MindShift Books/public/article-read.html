@@ -1876,7 +1876,7 @@ window.openShare=function(){
     url: location.href, heading:'Share this article', title: article ? article.title : 'Article',
     text: article ? article.title : 'Article', author: article && article.author,
     thumb: article && (article.img || article.coverImage),
-    chat: article ? { kind:'article', id:artId, title:article.title, snippet:article.brief, image:(article.img || article.coverImage), author:article.author, authorPhoto:article.avatar } : null,
+    chat: article ? { kind:'article', id:artId, title:article.title, snippet:article.brief, meta:[article.cat && (c=>c?c.charAt(0).toUpperCase()+c.slice(1).toLowerCase():'')(article.cat), article.read].filter(Boolean).join(' · '), image:(article.img || article.coverImage), author:article.author, authorPhoto:article.avatar } : null,
     onShare: () => { if(artId){ const shRef=doc(db,'articleShares',artId); updateDoc(shRef,{count:increment(1)}).catch(()=>setDoc(shRef,{count:1},{merge:true}).catch(()=>{})); } },
     onImage: (typeof openShareImageCard==='function' && article) ? () => openShareAsImageFromArticle() : null
   });

@@ -2135,7 +2135,7 @@ window.openShare=function(){
     text: (article && article.text) ? article.text : 'A post',
     author: article && article.author,
     thumb: article && (article.videoUrl ? article.thumbnailUrl : (article.images && article.images[0])),
-    chat: article ? { kind:'post', id:artId, snippet:article.text, image:(article.videoUrl ? article.thumbnailUrl : (article.images && article.images[0])), author:article.author, authorPhoto:article.avatar } : null,
+    chat: article ? { kind:'post', id:artId, snippet:article.text, meta:(article.videoUrl ? 'Video' : (article.images && article.images.length > 1) ? article.images.length + ' photos' : ''), image:(article.videoUrl ? article.thumbnailUrl : (article.images && article.images[0])), author:article.author, authorPhoto:article.avatar } : null,
     onShare: () => bumpShareCount(artId),
     onImage: (typeof openShareImageCard==='function' && article) ? () => openShareAsImageFromArticle() : null
   });

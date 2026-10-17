@@ -239,21 +239,23 @@ mark{background:#e0e7ff;color:inherit;border-radius:3px;padding:0 1px}
 .intro-follow svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
 .intro-follow{color:var(--p);background:#eef0ff}
 .vp:active{background:#dde2ec}
-.msg.share{padding:5px 5px 6px;width:min(78%,290px)}
 .msg.share .t{padding:0 6px}
-.scard{display:block;width:100%;text-align:left;border-radius:14px;overflow:hidden;background:#fff;color:var(--txt);padding:0;border:1px solid rgba(15,23,42,.06);cursor:pointer}
-.scard:active{opacity:.92}
-.scard .sh{display:flex;align-items:center;gap:8px;padding:9px 11px 8px}
-.scard .sav{width:26px;height:26px;border-radius:50%;object-fit:cover;flex:none;background:linear-gradient(135deg,#6366f1,#06b6d4);color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center}
-.scard .snm{flex:1;min-width:0;font-size:13px;font-weight:700;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.scard .sk{display:inline-flex!important;align-items:center;gap:4px;flex:none;font-size:10.5px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;color:var(--p);background:#eef0ff;padding:3px 8px;border-radius:99px}
-.scard .sk svg{width:11px;height:11px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
-.scard .si{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;background:#e5e7eb}
-.scard .sb{display:block;padding:9px 12px 4px}
+.msg.share{padding:5px 5px 6px;width:min(82%,310px)}
+.scard{display:block;width:100%;text-align:left;border-radius:14px;overflow:hidden;background:#fff;color:var(--txt);padding:0;border:1px solid rgba(15,23,42,.08);cursor:pointer}
+.scard:active{opacity:.93}
+.scard .si{display:block;width:100%;aspect-ratio:16/10;object-fit:cover;background:#e5e7eb}
+.scard .sb{display:block;padding:11px 13px 6px}
 .scard .sb>span{display:block}
-.scard .stt{font-size:14.5px;font-weight:700;line-height:1.3;display:-webkit-box!important;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--txt)}
-.scard .sxt{font-size:13px;line-height:1.35;color:var(--sub);margin-top:3px;display:-webkit-box!important;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.scard .sgo{display:block;margin:8px 10px 10px;padding:9px 0;border-radius:10px;text-align:center;font-size:13.5px;font-weight:800;color:#fff;background:linear-gradient(135deg,#4f46e5,#06b6d4)}
+.scard .smeta{display:flex!important;align-items:center;gap:6px;flex-wrap:wrap;font-size:11.5px;font-weight:700;color:var(--mute);margin-bottom:6px}
+.scard .sk{display:inline-flex!important;align-items:center;gap:4px;font-size:10.5px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:var(--p);background:#eef0ff;padding:3px 8px;border-radius:99px}
+.scard .sk svg{width:11px;height:11px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.scard .stt{font-size:16px;font-weight:800;line-height:1.28;letter-spacing:-.01em;display:-webkit-box!important;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;color:var(--txt)}
+.scard .sxt{font-size:13.5px;line-height:1.42;color:var(--sub);margin-top:5px;display:-webkit-box!important;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.scard .spost{font-size:14.5px;line-height:1.42;color:var(--txt);display:-webkit-box!important;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-line}
+.scard .sf{display:flex;align-items:center;gap:8px;padding:9px 13px 11px;border-top:1px solid rgba(15,23,42,.06);margin-top:8px}
+.scard .sav{width:24px;height:24px;border-radius:50%;object-fit:cover;flex:none;background:linear-gradient(135deg,#6366f1,#06b6d4);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.scard .snm{flex:1;min-width:0;font-size:12.5px;font-weight:700;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.scard .sgo{flex:none;font-size:13px;font-weight:800;color:var(--p)}
 .msg.share .cap{padding:7px 8px 1px}
 .tobot{position:absolute;right:14px;bottom:12px;z-index:4;width:44px;height:44px;border-radius:50%;border:1px solid #e3e6ee;background:#fff;color:#0f172a;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(15,23,42,.2);opacity:0;transform:translateY(10px) scale(.9);pointer-events:none;transition:opacity .18s,transform .18s;padding:0}
 .tobot.on{opacity:1;transform:none;pointer-events:auto}
@@ -1116,7 +1118,7 @@ function toMsg(d){
   const x = d.data({ serverTimestamps:'estimate' });
   return { id:d.id, senderUid:x.senderUid, text:x.text, replyTo:x.replyTo || null, reactions:x.reactions || {}, edited:!!x.edited, deleted:x.deleted === true, ts: ms(x.createdAt), raw:x.createdAt, confirmed: !d.metadata.hasPendingWrites,
            type:(x.type === 'voice' || x.type === 'image' || x.type === 'video' || x.type === 'share') ? x.type : '',
-           sk:x.sk === 'article' ? 'article' : 'post', sid:typeof x.sid === 'string' ? x.sid.slice(0, 64) : '', st:typeof x.st === 'string' ? x.st.slice(0, 160) : '', sx:typeof x.sx === 'string' ? x.sx.slice(0, 240) : '', si:(typeof x.si === 'string' && /^https:\/\//.test(x.si)) ? x.si.slice(0, 500) : '', sa:typeof x.sa === 'string' ? x.sa.slice(0, 80) : '', sp:(typeof x.sp === 'string' && /^https:\/\//.test(x.sp)) ? x.sp.slice(0, 500) : '', audioUrl:x.audioUrl || '', duration:Math.min(86400, Math.max(0, Number(x.duration) || 0)), wf:typeof x.wf === 'string' ? x.wf : '', mime:typeof x.mime === 'string' ? x.mime : '',
+           sk:x.sk === 'article' ? 'article' : 'post', sid:typeof x.sid === 'string' ? x.sid.slice(0, 64) : '', st:typeof x.st === 'string' ? x.st.slice(0, 160) : '', sx:typeof x.sx === 'string' ? x.sx.slice(0, 240) : '', si:(typeof x.si === 'string' && /^https:\/\//.test(x.si)) ? x.si.slice(0, 500) : '', sa:typeof x.sa === 'string' ? x.sa.slice(0, 80) : '', sp:(typeof x.sp === 'string' && /^https:\/\//.test(x.sp)) ? x.sp.slice(0, 500) : '', sm:typeof x.sm === 'string' ? x.sm.slice(0, 80) : '', audioUrl:x.audioUrl || '', duration:Math.min(86400, Math.max(0, Number(x.duration) || 0)), wf:typeof x.wf === 'string' ? x.wf : '', mime:typeof x.mime === 'string' ? x.mime : '',
            mediaUrl:typeof x.mediaUrl === 'string' ? x.mediaUrl : '', w:Math.max(0, Number(x.w) || 0), h:Math.max(0, Number(x.h) || 0), ph:typeof x.ph === 'string' ? x.ph : '', cap:typeof x.cap === 'string' ? x.cap : '',
            gid:typeof x.gid === 'string' ? x.gid.slice(0, 40) : '', gi:Math.max(0, Math.min(99, Number(x.gi) || 0)) };      // gid/gi: photos sent together share a gid and show as one grid
 }
@@ -2316,10 +2318,12 @@ function shareHtml(m){
   const img = m.si ? '<img class="si" src="' + esc(m.si) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">' : '';
   const ini = esc((m.sa || '?').trim().charAt(0).toUpperCase() || '?');
   const av = m.sp ? '<img class="sav" src="' + esc(m.sp) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.outerHTML=\'<span class=sav>' + ini + '</span>\'">' : '<span class="sav">' + ini + '</span>';
-  const head = '<span class="sh">' + av + '<span class="snm">' + esc(m.sa || 'MindShift Books') + '</span><span class="sk">' + LINK_SVG + (art ? 'Article' : 'Post') + '</span></span>';
-  return '<div class="scard" role="link" tabindex="0" data-url="' + esc(shareUrl(m)) + '">' + head + img + '<span class="sb">' +
-    '<span class="stt">' + esc(m.st || (art ? 'Article' : 'Post')) + '</span>' + (m.sx ? '<span class="sxt">' + esc(m.sx) + '</span>' : '') + '</span>' +
-    '<span class="sgo">' + (art ? 'View Article' : 'Open Post') + '</span></div>' +
+  const meta = '<span class="smeta"><span class="sk">' + LINK_SVG + (art ? 'Article' : 'Post') + '</span>' + (m.sm ? '<span>' + esc(m.sm) + '</span>' : '') + '</span>';
+  const body = art
+    ? '<span class="stt">' + esc(m.st || 'Article') + '</span>' + (m.sx ? '<span class="sxt">' + esc(m.sx) + '</span>' : '')
+    : '<span class="spost">' + esc([m.st, m.sx].filter(Boolean).join(' ')) + '</span>';
+  return '<div class="scard" role="link" tabindex="0" data-url="' + esc(shareUrl(m)) + '">' + img + '<span class="sb">' + meta + body + '</span>' +
+    '<span class="sf">' + av + '<span class="snm">' + esc(m.sa || 'MindShift Books') + '</span><span class="sgo">' + (art ? 'Read article →' : 'Open post →') + '</span></span></div>' +
     (m.cap ? '<div class="cap">' + esc(m.cap) + '</div>' : '');
 }
 $('msgs').addEventListener('click', e => { const c = e.target.closest('.scard'); if(c && c.dataset.url) location.href = c.dataset.url; });
@@ -4012,35 +4016,67 @@ async function bumpStreak(c){                                          // called
    and last-active times for 5, so a visit usually costs nothing.
    */
 let _peopleTry = 0;
-let people = [], peopleMode = 'follow', followingIds = new Set(), peopleAct = {}, peopleState = 'idle', _peopleSig = '';
+let people = [], peopleMode = 'follow', followingIds = new Set(), peopleAct = {}, peopleState = 'idle', _peopleSig = '', _eff = 'follow', _sug = null, _sugLoading = false;
 const PEOPLE_KEY = u => 'msb_people_v1_' + u;
 const firstName = n => String(n || '').trim().split(/\s+/)[0] || 'User';
 const isActiveNow = t => settings.showActivity && !!t && (Date.now() - t) < 7 * 60000;
 function visiblePeople(){
   const inChat = new Set(threads.map(t => t.otherUid));
-  const list = people.filter(p => p.uid !== (me && me.uid) && !inChat.has(p.uid) && !blockedSet.has(p.uid) && p.name);
-  return list.sort((a, b) => (peopleAct[b.uid] || 0) - (peopleAct[a.uid] || 0)).slice(0, 15);
+  const ok = p => p.uid !== (me && me.uid) && !inChat.has(p.uid) && !blockedSet.has(p.uid) && p.name;
+  const list = people.filter(ok).sort((a, b) => (peopleAct[b.uid] || 0) - (peopleAct[a.uid] || 0)).slice(0, 15);
+  _eff = peopleMode;
+  // nobody left to start a chat with (you already chat with everyone you follow, or follow no one) → suggest creators instead of an empty strip
+  if(!list.length && peopleMode === 'follow' && peopleState === 'ready'){
+    if(_sug){ const alt = _sug.filter(ok).slice(0, 15); if(alt.length){ _eff = 'suggest'; return alt; } }
+    else loadSuggestions();
+  }
+  return list;
+}
+async function fetchSuggestions(){
+  let snap = null;
+  try{ snap = await getDocs(query(collection(db,'users'), orderBy('followerCount','desc'), limit(24))); }catch(e){}
+  if(!snap || snap.empty) snap = await getDocs(query(collection(db,'users'), limit(24)));
+  const all = snap.docs.map(d => { const x = d.data(); return { uid:d.id, name:x.name || '', photo:x.photo || '', jobTitle:x.jobTitle || '', username:x.username || '',
+    _score: ((x.photo || x.photoURL) ? 1 : 0) + (x.cover ? 1 : 0) + ((x.bio && String(x.bio).trim()) ? 1 : 0) + ((Array.isArray(x.categories) && x.categories.length) ? 1 : 0) + (x.username ? 1 : 0) }; })
+    .filter(p => p.uid !== (me && me.uid) && p.uid !== 'official' && !p.uid.includes('_') && p.name);
+  const good = all.filter(p => p._score >= 2 && p.photo);
+  return (good.length ? good : all).slice(0, 15);        // never end up with nothing just because profiles are sparse
+}
+async function loadSuggestions(){
+  if(_sugLoading || _sug || !dbReady || !me) return;
+  _sugLoading = true;
+  const key = PEOPLE_KEY(me.uid) + '_sug';
+  try{
+    let c = null; try{ c = JSON.parse(localStorage.getItem(key)); }catch(e){}
+    if(c && Array.isArray(c.p) && c.p.length && Date.now() - c.t < 6 * 3600000) _sug = c.p;      // remembered for 6 hours: no repeat reads
+    else{
+      _sug = await fetchSuggestions();
+      if(_sug.length) try{ localStorage.setItem(key, JSON.stringify({ t:Date.now(), p:_sug })); }catch(e){}
+    }
+  }catch(e){ _sug = null; }
+  _sugLoading = false;
+  _peopleSig = ''; renderPeople();
 }
 function renderPeople(){
   const el = $('people');
   if(!el || !me || filter === 'unread' || inboxQ){ if(el) el.hidden = true; return; }
   const list = visiblePeople();
   if(!list.length && peopleState === 'idle'){ el.hidden = false; return; }          // the skeleton strip from the HTML stays until loadPeople() starts
-  const sig = peopleMode + '|' + peopleState + '|' + list.map(p => p.uid + (isActiveNow(peopleAct[p.uid]) ? '*' : '')).join(',');
+  const sig = _eff + '|' + peopleState + '|' + list.map(p => p.uid + (isActiveNow(peopleAct[p.uid]) ? '*' : '')).join(',');
   el.hidden = false;
   if(sig === _peopleSig) return;                      // nothing changed — don't disturb the scroll position
   _peopleSig = sig;
   const add = `<button class="pp add" data-add="1" aria-label="New message"><div class="av"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div><div class="pp-name">New</div></button>`;
-  const head = `<div class="people-head"><span>${peopleMode === 'suggest' ? 'Suggested creators' : 'Start a chat'}</span><button class="pp-all" data-all="1">See all</button></div>`;
+  const head = `<div class="people-head"><span>${_eff === 'suggest' ? 'Suggested creators' : 'Start a chat'}</span><button class="pp-all" data-all="1">See all</button></div>`;
   const track = inner => head + '<div class="people-track">' + inner + '</div>';
   if(!list.length){
     // still loading → placeholder circles; nothing to show (or the load failed) → the strip stays, with just the "New" button
     el.innerHTML = track(add + (peopleState === 'loading' ? Array(5).fill('<div class="pp"><div class="skel c" style="width:58px;height:58px;margin:0 auto"></div><div class="skel" style="height:10px;width:44px;margin:8px auto 0"></div></div>').join('') : ''));
     return;
   }
-  el.innerHTML = track(add + list.map(p => `<button class="pp" data-uid="${esc(p.uid)}" data-mode="${peopleMode}">
+  el.innerHTML = track(add + list.map(p => `<button class="pp" data-uid="${esc(p.uid)}" data-mode="${_eff}">
     <div class="av">${avatarHtml(p.name, p.photo)}${isActiveNow(peopleAct[p.uid]) ? '<span class="on-dot"></span>' : ''}</div>
-    <div class="pp-name">${esc(firstName(p.name))}</div>${peopleMode === 'suggest' ? '<div class="pp-sub">Creator</div>' : ''}</button>`).join(''));
+    <div class="pp-name">${esc(firstName(p.name))}</div>${_eff === 'suggest' ? '<div class="pp-sub">Creator</div>' : ''}</button>`).join(''));
 }
 $('people').addEventListener('click', e => {
   const b = e.target.closest('.pp, .pp-all'); if(!b) return;
@@ -4064,8 +4100,8 @@ async function loadPeople(){
   if(!dbReady || !me) return;
   let cache = null;
   try{ cache = JSON.parse(localStorage.getItem(PEOPLE_KEY(me.uid))); }catch(e){}
-  const listFresh = cache && cache.people && Date.now() - cache.t < 30 * 60000;
-  if(cache && cache.people){ people = cache.people; peopleMode = cache.mode || 'follow'; followingIds = new Set(cache.following || []); peopleAct = cache.act || {}; peopleState = 'ready'; renderPeople(); refreshNewList(); }
+  const listFresh = cache && cache.people && cache.people.length && Date.now() - cache.t < 30 * 60000;
+  if(cache && cache.people && cache.people.length){ people = cache.people; peopleMode = cache.mode || 'follow'; followingIds = new Set(cache.following || []); peopleAct = cache.act || {}; peopleState = 'ready'; renderPeople(); refreshNewList(); }
   else { peopleState = 'loading'; renderPeople(); }
   try{
     let t = cache && cache.t, actT = cache && cache.actT;
@@ -4078,12 +4114,7 @@ async function loadPeople(){
         people = await fetchProfiles(ids);
       } else {
         peopleMode = 'suggest';
-        let snap = null;
-        try{ snap = await getDocs(query(collection(db,'users'), orderBy('followerCount','desc'), limit(24))); }catch(e){}
-        if(!snap || snap.empty) snap = await getDocs(query(collection(db,'users'), limit(24)));
-        people = snap.docs.map(d => { const x = d.data(); return { uid:d.id, name:x.name || '', photo:x.photo || '', jobTitle:x.jobTitle || '', username:x.username || '',
-                 _score: ((x.photo || x.photoURL) ? 1 : 0) + (x.cover ? 1 : 0) + ((x.bio && String(x.bio).trim()) ? 1 : 0) + ((Array.isArray(x.categories) && x.categories.length) ? 1 : 0) + (x.username ? 1 : 0) }; })
-          .filter(p => p.uid !== me.uid && p._score >= 2 && p.photo).slice(0, 15);
+        people = await fetchSuggestions();
       }
       t = Date.now(); actT = 0; peopleAct = {};
     }
@@ -4095,7 +4126,7 @@ async function loadPeople(){
       actT = Date.now();
     }
     peopleState = 'ready'; _peopleTry = 0;
-    savePeopleCache({ t:t || Date.now(), actT:actT || 0 });
+    if(people.length) savePeopleCache({ t:t || Date.now(), actT:actT || 0 });
     renderPeople(); refreshNewList();
   }catch(e){
     peopleState = 'ready'; _peopleTry++; renderPeople();
@@ -4193,7 +4224,7 @@ function saveChatCacheSoon(){
   _cacheTimers.c = setTimeout(() => {
     try{
       const msgs = [...c.msgs.values()].filter(m => m.ts && m.confirmed).sort((a,b) => a.ts - b.ts).slice(-PAGE)
-        .map(m => ({ id:m.id, senderUid:m.senderUid, text:m.text, replyTo:m.replyTo || null, reactions:m.reactions || {}, edited:!!m.edited, deleted:!!m.deleted, ts:m.ts, type:m.type || '', audioUrl:m.audioUrl || '', duration:m.duration || 0, wf:m.wf || '', mime:m.mime || '', mediaUrl:m.mediaUrl || '', w:m.w || 0, h:m.h || 0, ph:m.ph || '', cap:m.cap || '', gid:m.gid || '', gi:m.gi || 0, sk:m.sk || '', sid:m.sid || '', st:m.st || '', sx:m.sx || '', si:m.si || '', sa:m.sa || '', sp:m.sp || '' }));
+        .map(m => ({ id:m.id, senderUid:m.senderUid, text:m.text, replyTo:m.replyTo || null, reactions:m.reactions || {}, edited:!!m.edited, deleted:!!m.deleted, ts:m.ts, type:m.type || '', audioUrl:m.audioUrl || '', duration:m.duration || 0, wf:m.wf || '', mime:m.mime || '', mediaUrl:m.mediaUrl || '', w:m.w || 0, h:m.h || 0, ph:m.ph || '', cap:m.cap || '', gid:m.gid || '', gi:m.gi || 0, sk:m.sk || '', sid:m.sid || '', st:m.st || '', sx:m.sx || '', si:m.si || '', sa:m.sa || '', sp:m.sp || '', sm:m.sm || '' }));
       localStorage.setItem(CHAT_KEY(c.cid), JSON.stringify({ msgs, hasMore:c.hasMore, t:Date.now() }));
       const idx = JSON.parse(localStorage.getItem('msb_chat_idx') || '[]').filter(x => x !== c.cid); idx.push(c.cid);
       while(idx.length > 8) localStorage.removeItem(CHAT_KEY(idx.shift()));      // keep only the 8 most recent chats
@@ -4202,7 +4233,7 @@ function saveChatCacheSoon(){
   }, 600);
 }
 function loadChatCache(cid){
-  try{ const v = JSON.parse(localStorage.getItem(CHAT_KEY(cid))); if(v && Array.isArray(v.msgs) && Date.now() - v.t < 14*86400000) return v; }catch(e){}
+  try{ const v = JSON.parse(localStorage.getItem(CHAT_KEY(cid))); if(v && Array.isArray(v.msgs) && Date.now() - v.t < 14*86400000){ v.msgs = v.msgs.filter(m => m.type !== 'share' || (m.sid && m.st)); return v; } }catch(e){}
   return null;
 }
 function clearMsgCaches(){
@@ -4237,7 +4268,7 @@ function earlyPaint(){
     if(rows && rows.length){ threads = rows; show('list'); renderList(); }
     try{
       const pc = JSON.parse(localStorage.getItem(PEOPLE_KEY(uid)));
-      if(pc && pc.people){ people = pc.people; peopleMode = pc.mode || 'follow'; followingIds = new Set(pc.following || []); peopleAct = pc.act || {}; peopleState = 'ready'; renderPeople(); }
+      if(pc && pc.people && pc.people.length){ people = pc.people; peopleMode = pc.mode || 'follow'; followingIds = new Set(pc.following || []); peopleAct = pc.act || {}; peopleState = 'ready'; renderPeople(); }
     }catch(e){}
   }
 }

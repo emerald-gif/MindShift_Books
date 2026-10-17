@@ -3096,7 +3096,7 @@ window.shareItemDrawer = function(id){
       url: `${location.origin}/post-read?id=${id}`,
       text: post.text, author: post.author,
       thumb: post.videoUrl ? post.thumbnailUrl : (post.images && post.images[0]),
-      chat: { kind:'post', id, snippet:post.text, image:(post.videoUrl ? post.thumbnailUrl : (post.images && post.images[0])), author:post.author, authorPhoto:post.avatar },
+      chat: { kind:'post', id, snippet:post.text, meta:(post.videoUrl ? 'Video' : (post.images && post.images.length > 1) ? post.images.length + ' photos' : ''), image:(post.videoUrl ? post.thumbnailUrl : (post.images && post.images[0])), author:post.author, authorPhoto:post.avatar },
       onImage: () => shareAsImage(id, 'post')
     });
     return;
@@ -4871,7 +4871,7 @@ window.openShare = function(id){
     heading: 'Share this article',
     title: art ? art.title : 'Article', text: art ? art.title : 'Article',
     thumb: art ? (art.img || art.coverImage) : '', author: art ? art.author : '',
-    chat: art ? { kind:'article', id, title:art.title, snippet:art.brief, image:(art.img || art.coverImage), author:art.author, authorPhoto:art.avatar } : null,
+    chat: art ? { kind:'article', id, title:art.title, snippet:art.brief, meta:[art.cat && (c=>c?c.charAt(0).toUpperCase()+c.slice(1).toLowerCase():'')(art.cat), art.read].filter(Boolean).join(' · '), image:(art.img || art.coverImage), author:art.author, authorPhoto:art.avatar } : null,
     onImage: () => shareAsImage(id, 'article')
   });
 };

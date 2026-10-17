@@ -56,7 +56,7 @@ export function makeCard(item){
     sk:kind, sid:id,
     st:clip(title, 160) || (kind === 'article' ? 'Article' : 'Post'),
     sx:clip(snippet, 240), sa:clip(item.author, 80),
-    si:httpsUrl(absUrl(item.image)), sp:httpsUrl(absUrl(item.authorPhoto))
+    si:httpsUrl(absUrl(item.image)), sp:httpsUrl(absUrl(item.authorPhoto)), sm:clip(item.meta, 80)
   };
 }
 
@@ -116,7 +116,7 @@ export async function sendCard(card, people, note){
   const results = await Promise.allSettled(people.slice(0, MAX_PICK).map(async p => {
     const ref = doc(collection(db, 'conversations', cidOf(user.uid, p.uid), 'messages'));
     const payload = { senderUid:user.uid, text, createdAt:serverTimestamp(), type:'share', sk:card.sk, sid:card.sid, st:card.st };
-    if(card.sx) payload.sx = card.sx; if(card.sa) payload.sa = card.sa; if(card.si) payload.si = card.si; if(card.sp) payload.sp = card.sp; if(cap) payload.cap = cap;
+    if(card.sx) payload.sx = card.sx; if(card.sa) payload.sa = card.sa; if(card.si) payload.si = card.si; if(card.sp) payload.sp = card.sp; if(card.sm) payload.sm = card.sm; if(cap) payload.cap = cap;
     const b = writeBatch(db);
     b.set(ref, payload);
     b.set(doc(db, 'inbox', user.uid, 'threads', p.uid), { otherUid:p.uid, name:p.name || '', photo:p.photo || '', lastText:text, lastAt:serverTimestamp(), lastSender:user.uid, unread:0, accepted:true }, { merge:true });
