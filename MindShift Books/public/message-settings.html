@@ -33,6 +33,10 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .sw[aria-checked="true"]{background:var(--p)}
 .sw[aria-checked="true"]::after{transform:translateX(22px)}
 .sw:focus-visible{outline:3px solid rgba(79,70,229,.35);outline-offset:2px}
+.eg{display:flex;gap:6px;margin-top:9px;flex-wrap:wrap}
+.eg span{font-size:12px;font-weight:700;padding:4px 11px;border-radius:99px;background:#f1f5f9;color:var(--sub)}
+.eg .live{background:#e6f7f0;color:#059669}
+.eg .live::before{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;background:#10b981;margin-right:6px;vertical-align:1px}
 .note{font-size:12.5px;color:var(--mute);line-height:1.5;margin:4px 6px 0}
 .empty{padding:80px 28px;text-align:center;color:var(--sub)}
 .empty h2{font-size:18px;font-weight:800;color:var(--txt);margin-bottom:6px}
@@ -62,9 +66,24 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
     <div class="item">
       <div class="txt">
         <div class="name">Activity status</div>
-        <div class="desc">Show when you’re active and when you were last active. If you turn this off, you won’t see other people’s activity status either.</div>
+        <div class="desc">Show when you’re online (“Active now”) and when you were last active (for example “Active 2h ago”). If you turn this off, nobody can see either one for you, and you won’t see them for anyone else.</div>
+        <div class="eg" aria-hidden="true"><span class="live">Active now</span><span>Active 2h ago</span></div>
       </div>
       <button class="sw" id="swActivity" role="switch" aria-checked="true" aria-label="Activity status"></button>
+    </div>
+    <div class="item">
+      <div class="txt">
+        <div class="name">Typing indicator</div>
+        <div class="desc">Let people see “typing…” while you write to them. If you turn this off, you won’t see when others are typing either.</div>
+      </div>
+      <button class="sw" id="swTyping" role="switch" aria-checked="true" aria-label="Typing indicator"></button>
+    </div>
+    <div class="item">
+      <div class="txt">
+        <div class="name">Recording indicator</div>
+        <div class="desc">Let people see “recording audio…” while you record a voice message. If you turn this off, you won’t see it for others either.</div>
+      </div>
+      <button class="sw" id="swRecording" role="switch" aria-checked="true" aria-label="Recording indicator"></button>
     </div>
   </div>
 
@@ -76,7 +95,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 <script type="module">
 const $ = id => document.getElementById(id);
 const SETTINGS_KEY = u => 'msb_settings_v1_' + u;
-let state = { readReceipts:true, showActivity:true };
+let state = { readReceipts:true, showActivity:true, showTyping:true, showRecording:true };
 let uid = null, ready = false, pending = {};
 let db = null, fs = null;
 
@@ -84,6 +103,8 @@ function toast(t){ const el = $('toast'); el.textContent = t; el.classList.add('
 function paint(){
   $('swReceipts').setAttribute('aria-checked', String(state.readReceipts));
   $('swActivity').setAttribute('aria-checked', String(state.showActivity));
+  $('swTyping').setAttribute('aria-checked', String(state.showTyping));
+  $('swRecording').setAttribute('aria-checked', String(state.showRecording));
 }
 function cacheSave(){ if(uid){ try{ localStorage.setItem(SETTINGS_KEY(uid), JSON.stringify({ t:Date.now(), ...state })); }catch(e){} } }
 function signedOut(){
@@ -99,7 +120,7 @@ try{
   const hint = localStorage.getItem('mindshift_hero_last_uid');
   if(hint && hint !== 'guest'){
     const c = JSON.parse(localStorage.getItem(SETTINGS_KEY(hint)));
-    if(c){ state = { readReceipts:c.readReceipts !== false, showActivity:c.showActivity !== false }; paint(); }
+    if(c){ state = { readReceipts:c.readReceipts !== false, showActivity:c.showActivity !== false, showTyping:c.showTyping !== false, showRecording:c.showRecording !== false }; paint(); }
   }
 }catch(e){}
 
@@ -129,6 +150,8 @@ function flip(key){
 }
 $('swReceipts').onclick = () => flip('readReceipts');
 $('swActivity').onclick = () => flip('showActivity');
+$('swTyping').onclick = () => flip('showTyping');
+$('swRecording').onclick = () => flip('showRecording');
 
 // load Firebase after the page has painted
 const FB = 'https://www.gstatic.com/firebasejs/10.11.0/';
@@ -154,6 +177,8 @@ onAuthStateChanged(getAuth(app), async user => {
     // don't clobber a switch the person already flipped while this was loading
     if(!('readReceipts' in pending)) state.readReceipts = d.readReceipts !== false;
     if(!('showActivity' in pending)) state.showActivity = d.showActivity !== false;
+    if(!('showTyping' in pending)) state.showTyping = d.showTyping !== false;
+    if(!('showRecording' in pending)) state.showRecording = d.showRecording !== false;
     paint(); cacheSave();
   }catch(e){}
   flush();

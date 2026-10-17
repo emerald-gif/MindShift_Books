@@ -757,7 +757,7 @@ const PAGE = 30;
 let me = null;                 // { uid, name, photo }
 let themes = { all:'classic', chats:{}, allW:'none', chatsW:{}, inbox:'' };   // my chat themes + wallpapers (see the chat themes section)
 let _mine = '', _mineAt = 0, _idle = 0, _hb = 0;   // my typing / recording state (see the typing indicators section)
-let settings = { readReceipts:true, showActivity:true };   // my message settings (saved in messageSettings/{uid}; page: /message-settings)
+let settings = { readReceipts:true, showActivity:true, showTyping:true, showRecording:true };   // my message settings (saved in messageSettings/{uid}; page: /message-settings)
 let dbReady = false;           // true once the Firebase SDK has loaded (the page paints from saved copies before that)
 let threads = [];              // current inbox rows
 let unsubInbox = null, unsubPinned = null;
@@ -1073,7 +1073,7 @@ function paintOther(){
   applyChatTheme();
   $('chatName').textContent = chat.other.name;
   const lab = settings.showActivity ? activeLabel(chat.other.lastActive) : { text:'', live:false };   // activity off = I don't see theirs either
-  const ty = settings.showActivity ? chat.tyState : '';
+  const ty = tyShown();
   if(ty){ $('chatSub').innerHTML = (ty === 'recording' ? 'recording audio' : 'typing') + '<span class="ty-d"><i>.</i><i>.</i><i>.</i></span>'; }
   else $('chatSub').textContent = lab.text;
   $('chatSub').classList.toggle('ty', !!ty);
@@ -3541,17 +3541,26 @@ async function checkTheyFollowMe(){
 
 /* ───────── my message settings ─────────
    readReceipts: send "Seen" to others — and see theirs.   showActivity: show my "Active now / last active" — and see theirs.
+   showTyping / showRecording: show "typing…" / "recording audio…" while I do it — and see theirs. (All four work both ways, each on its own.)
    Stored privately in messageSettings/{uid}; remembered on this device for an hour (the settings page updates it at once). */
 const SETTINGS_KEY = u => 'msb_settings_v1_' + u;
-function applySettingsObj(o){ settings = { readReceipts: !o || o.readReceipts !== false, showActivity: !o || o.showActivity !== false }; }
+function applySettingsObj(o){ settings = { readReceipts: !o || o.readReceipts !== false, showActivity: !o || o.showActivity !== false, showTyping: !o || o.showTyping !== false, showRecording: !o || o.showRecording !== false }; }
+/* Activity status off = invisible BOTH ways: I don't see anyone's, and nobody sees mine. "Mine" lives in presence/{uid}, which stays in the database
+   until it's removed — so when my switch is off I delete it (otherwise people keep seeing the last time I was active, frozen). Tried once per hour at most. */
+function hideMyPresence(){
+  if(!me || !dbReady || settings.showActivity) return;
+  try{ const k = 'msb_presdel_v1_' + me.uid; if(Date.now() - Number(localStorage.getItem(k) || 0) < 3600000) return; localStorage.setItem(k, String(Date.now())); }catch(e){}
+  deleteDoc(doc(db,'presence',me.uid)).catch(() => {});
+}
 async function loadSettings(){
   let c = null;
   try{ c = JSON.parse(localStorage.getItem(SETTINGS_KEY(me.uid))); }catch(e){}
   if(c) applySettingsObj(c);
-  if(c && Date.now() - c.t < 3600000) return;
+  if(c && Date.now() - c.t < 3600000){ hideMyPresence(); return; }
   try{
     const sn = await getDoc(doc(db,'messageSettings',me.uid));
     applySettingsObj(sn.exists() ? sn.data() : {});
+    hideMyPresence();
     localStorage.setItem(SETTINGS_KEY(me.uid), JSON.stringify({ t:Date.now(), ...settings }));
     _peopleSig = ''; renderPeople(); renderList();
     if(chat){ paintOther(); renderMsgs(false); }
@@ -3829,9 +3838,11 @@ function openThemePicker(scope){
 /* ───────── typing / recording indicators ─────────
    typing/{cid} holds { [uid]: { s:'typing'|'recording'|'', at } }. I write my own entry (about every 2.5s while it's true, and once when it stops);
    the other person's phone shows it for a few seconds after the last update, so a closed tab or lost signal can't leave "typing…" stuck.
-   Off if activity status is off for me (just like I don't see theirs). */
+   Each has its own switch in Message settings (Typing indicator / Recording indicator) and works both ways: switch it off and I neither show mine nor see theirs. */
+const tyShown = () => { const st = chat && chat.tyState; return (st === 'typing' && settings.showTyping) || (st === 'recording' && settings.showRecording) ? st : ''; };
 function setMine(st){
-  if(!dbReady || !chat || !me || chat.blocked || !settings.showActivity){ _mine = ''; return; }
+  if(!dbReady || !chat || !me || chat.blocked){ _mine = ''; return; }
+  if((st === 'typing' && !settings.showTyping) || (st === 'recording' && !settings.showRecording)) st = '';      // my switch is off → I never announce it
   const now = Date.now();
   if(st === _mine && (st === '' || now - _mineAt < 2500)) return;
   _mine = st; _mineAt = now;
@@ -3875,7 +3886,7 @@ function stopTypingWatch(){
 }
 function paintTypingBubble(){
   const box = $('msgs'); if(!box || !chat) return;
-  const st = settings.showActivity ? chat.tyState : '', old = $('tyBub');
+  const st = tyShown(), old = $('tyBub');
   if(!st){ if(old) old.remove(); return; }
   if(old && old.dataset.s === st) return;
   const near = box.scrollHeight - box.scrollTop - box.clientHeight < 170;
