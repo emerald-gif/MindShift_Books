@@ -7,7 +7,7 @@ export function openShareToChat(item){
   item = item || {};
   const go = () => window.MSBShare.open({
     url: location.origin + (item.kind === 'article' ? '/article-read?id=' : '/post-read?id=') + encodeURIComponent(item.id || ''),
-    title: item.title, text: item.title || item.snippet, author: item.author, thumb: item.image,
+    title: item.title, text: item.title || item.snippet, author: item.author, thumb: item.image, heading: item.heading,
     chat: item
   });
   if(window.MSBShare) return go();

@@ -1447,6 +1447,7 @@ function jumpTo(id){
 
 /* ───────── hold a message: reactions + Reply / Copy / Delete for you (background blurs) ───────── */
 const REACTIONS = ['❤️','😂','😮','😢','😡','👍'];
+const ICON_FWD = '<svg viewBox="0 0 24 24"><path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 00-6 6v3"/></svg>';
 const ICON_REPLY = '<svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 016 6v3"/></svg>';
 const ICON_COPY  = '<svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 012-2h9"/></svg>';
 const ICON_EDIT  = '<svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>';
@@ -1506,6 +1507,7 @@ function openMsgMenu(el){
   } else if(isMedia(m) && m.cap){
     add(ICON_COPY, 'Copy caption', () => copyText(m.cap));
   } else if(m.type === 'share' && !del){
+    if(m.sid && interactive) add(ICON_FWD, 'Forward', () => import('/share-to-chat.js?v=3').then(x => x.openShareToChat({ kind:m.sk, id:m.sid, title:m.st, snippet:m.sx, image:m.si, author:m.sa, authorPhoto:m.sp, meta:m.sm, heading:'Forward to' })).catch(() => toast && toast('Couldn’t open Forward')));
     add(ICON_COPY, 'Copy link', () => copyText(location.origin + shareUrl(m)));
   }
   add(ICON_TRASH, 'Delete for you', () => deleteForMe(m), true);
