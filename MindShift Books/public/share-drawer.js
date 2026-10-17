@@ -18,65 +18,65 @@
 #msbShare{position:fixed;inset:0;z-index:100010;background:rgba(15,23,42,.55);opacity:0;transition:opacity .22s;font-family:inherit;
   -webkit-tap-highlight-color:transparent}
 #msbShare.in{opacity:1}
-#msbShare .ms-sheet{position:absolute;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;max-height:88vh;overflow-y:auto;background:#fff;color:#0f172a;
+#msbShare .msd-sheet{position:absolute;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;max-height:88vh;overflow-y:auto;background:#fff;color:#0f172a;
   border-radius:22px 22px 0 0;padding:8px 18px calc(max(18px,env(safe-area-inset-bottom)) + 6px);transform:translateY(100%);
   transition:transform .26s cubic-bezier(.2,.8,.2,1);box-shadow:0 -10px 40px rgba(0,0,0,.3);overscroll-behavior:contain}
-#msbShare.in .ms-sheet{transform:translateY(0)}
-#msbShare .ms-sheet.drag{transition:none}
-#msbShare .ms-bar{width:40px;height:4px;border-radius:2px;background:#cbd5e1;margin:4px auto 10px}
-#msbShare .ms-x{position:absolute;top:10px;right:12px;width:34px;height:34px;border:0;border-radius:50%;background:#f1f5f9;color:#475569;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:3;padding:0}
-#msbShare .ms-x:active{background:#e2e8f0}
-#msbShare .ms-x svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round}
-#msbShare .ms-hd{font-size:17px;font-weight:800;text-align:center;margin-bottom:12px}
-#msbShare .ms-prev{display:flex;gap:11px;align-items:center;padding:10px;border:1px solid #e2e8f0;border-radius:14px;margin-bottom:16px;background:#f8fafc}
-#msbShare .ms-prev img{width:46px;height:46px;border-radius:9px;object-fit:cover;background:linear-gradient(135deg,#4f46e5,#06b6d4);flex:none}
-#msbShare .ms-prev div{min-width:0}
-#msbShare .ms-prev b{display:block;font-size:13.5px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#msbShare .ms-prev span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:12.5px;color:#64748b;line-height:1.35;margin-top:2px;word-break:break-word}
-#msbShare .ms-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px 6px}
-#msbShare .ms-app{background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:7px;font-family:inherit;font-size:12px;font-weight:700;color:#334155;cursor:pointer;padding:0}
-#msbShare .ms-app i{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:transform .12s}
-#msbShare .ms-app:active i{transform:scale(.9)}
-#msbShare .ms-app svg{width:26px;height:26px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-#msbShare .ms-link{display:flex;gap:8px;margin-top:18px;align-items:center;background:#f1f5f9;border-radius:12px;padding:6px 6px 6px 14px}
-#msbShare .ms-link input{flex:1;min-width:0;border:none;background:none;font-size:13px;color:#475569;font-family:inherit;outline:none}
-#msbShare .ms-link button{border:none;background:#4f46e5;color:#fff;font-weight:800;font-size:13px;padding:9px 16px;border-radius:9px;cursor:pointer;font-family:inherit;white-space:nowrap}
-#msbShare .ms-link button.ok{background:#16a34a}
+#msbShare.in .msd-sheet{transform:translateY(0)}
+#msbShare .msd-sheet.drag{transition:none}
+#msbShare .msd-bar{width:40px;height:4px;border-radius:2px;background:#cbd5e1;margin:4px auto 10px}
+#msbShare .msd-x{position:absolute;top:10px;right:12px;width:34px;height:34px;border:0;border-radius:50%;background:#f1f5f9;color:#475569;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:3;padding:0}
+#msbShare .msd-x:active{background:#e2e8f0}
+#msbShare .msd-x svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round}
+#msbShare .msd-hd{font-size:17px;font-weight:800;text-align:center;margin-bottom:12px}
+#msbShare .msd-prev{display:flex;gap:11px;align-items:center;padding:10px;border:1px solid #e2e8f0;border-radius:14px;margin-bottom:16px;background:#f8fafc}
+#msbShare .msd-prev img{width:46px;height:46px;border-radius:9px;object-fit:cover;background:linear-gradient(135deg,#4f46e5,#06b6d4);flex:none}
+#msbShare .msd-prev div{min-width:0}
+#msbShare .msd-prev b{display:block;font-size:13.5px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#msbShare .msd-prev span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:12.5px;color:#64748b;line-height:1.35;margin-top:2px;word-break:break-word}
+#msbShare .msd-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px 6px}
+#msbShare .msd-app{background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:7px;font-family:inherit;font-size:12px;font-weight:700;color:#334155;cursor:pointer;padding:0}
+#msbShare .msd-app i{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:transform .12s}
+#msbShare .msd-app:active i{transform:scale(.9)}
+#msbShare .msd-app svg{width:26px;height:26px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#msbShare .msd-link{display:flex;gap:8px;margin-top:18px;align-items:center;background:#f1f5f9;border-radius:12px;padding:6px 6px 6px 14px}
+#msbShare .msd-link input{flex:1;min-width:0;border:none;background:none;font-size:13px;color:#475569;font-family:inherit;outline:none}
+#msbShare .msd-link button{border:none;background:#4f46e5;color:#fff;font-weight:800;font-size:13px;padding:9px 16px;border-radius:9px;cursor:pointer;font-family:inherit;white-space:nowrap}
+#msbShare .msd-link button.ok{background:#16a34a}
 
-#msbShare .ms-sheet.chat{display:flex;flex-direction:column;height:min(88vh,700px);max-height:88vh;overflow:hidden;padding:8px 0 0}
-#msbShare .chat .ms-bar,#msbShare .chat .ms-hd{flex:none}
-#msbShare .chat .ms-hd{margin-bottom:8px}
-#msbShare .ms-srch{flex:none;margin:0 16px 6px}
-#msbShare .ms-srch input{width:100%;height:42px;border-radius:21px;border:1.5px solid transparent;background:#f1f5f9;padding:0 16px;font:inherit;font-size:16px;outline:0;color:inherit}
-#msbShare .ms-srch input:focus{background:#fff;border-color:#a5b4fc}
-#msbShare .ms-list{flex:1;min-height:0;overflow-y:auto;padding:2px 8px 6px;overscroll-behavior:contain}
-#msbShare .ms-gh{font-size:12.5px;font-weight:700;color:#64748b;padding:10px 12px 4px}
-#msbShare .ms-row{display:flex;align-items:center;gap:12px;width:100%;padding:8px 10px;border-radius:14px;text-align:left;background:none;border:0;font:inherit;color:inherit;cursor:pointer}
-#msbShare .ms-row:active{background:#f4f5fa}
-#msbShare .ms-av{width:44px;height:44px;border-radius:50%;object-fit:cover;flex:none;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:16px;background:linear-gradient(135deg,#6366f1,#06b6d4)}
-#msbShare .ms-nm{flex:1;min-width:0}
-#msbShare .ms-nm b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#msbShare .ms-nm small{display:block;font-size:12.5px;color:#64748b}
-#msbShare .ms-ck{width:24px;height:24px;border-radius:50%;border:2px solid #cbd0dc;flex:none;display:flex;align-items:center;justify-content:center;transition:all .12s}
-#msbShare .ms-row.on .ms-ck{background:#4f46e5;border-color:#4f46e5}
-#msbShare .ms-row.on .ms-ck::after{content:'';width:6px;height:11px;border:solid #fff;border-width:0 2.5px 2.5px 0;transform:rotate(45deg) translate(-1px,-1px)}
-#msbShare .ms-empty{padding:30px 24px;text-align:center;color:#64748b;font-size:14.5px;line-height:1.5}
-#msbShare .ms-empty a{color:#4f46e5;font-weight:800}
-#msbShare .ms-sk{height:58px;margin:6px 10px;border-radius:14px;background:linear-gradient(90deg,#f1f5f9,#e8ebf4,#f1f5f9);background-size:200% 100%;animation:msSk 1.2s infinite}
-@keyframes msSk{to{background-position:-200% 0}}
-#msbShare .ms-send{flex:none;display:none;gap:10px;align-items:center;padding:10px 14px;border-top:1px solid #eceef5;background:#fff}
-#msbShare .ms-send.on{display:flex}
-#msbShare .ms-send input{flex:1;min-width:0;height:44px;border-radius:22px;border:1.5px solid transparent;background:#f1f5f9;padding:0 16px;font:inherit;font-size:16px;outline:0;color:inherit}
-#msbShare .ms-send input:focus{background:#fff;border-color:#a5b4fc}
-#msbShare .ms-send button{height:44px;padding:0 22px;border:0;border-radius:22px;background:linear-gradient(135deg,#4f46e5,#06b6d4);color:#fff;font:inherit;font-weight:800;font-size:15px;white-space:nowrap;cursor:pointer}
-#msbShare .ms-send button:disabled{opacity:.5}
-#msbShare .ms-apps{flex:none;display:flex;gap:14px;overflow-x:auto;padding:12px 16px calc(max(12px,env(safe-area-inset-bottom)) + 4px);border-top:1px solid #eceef5;background:#fff;-webkit-overflow-scrolling:touch;scrollbar-width:none}
-#msbShare .ms-apps::-webkit-scrollbar{display:none}
-#msbShare .ms-apps .ms-app{flex:none;width:62px}
-#msbShare .ms-apps .ms-app i{width:48px;height:48px}
-#msbShare .ms-apps .ms-app svg{width:23px;height:23px}
-#msbShare .ms-url{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;left:-9999px}
-#msbShare .ms-toast{position:absolute;left:50%;bottom:calc(30px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#0f172a;color:#fff;padding:11px 18px;border-radius:99px;font-weight:600;font-size:14px;max-width:88vw;text-align:center;z-index:2}
+#msbShare .msd-sheet.chat{display:flex;flex-direction:column;height:min(88vh,700px);max-height:88vh;overflow:hidden;padding:8px 0 0}
+#msbShare .chat .msd-bar,#msbShare .chat .msd-hd{flex:none}
+#msbShare .chat .msd-hd{margin-bottom:8px}
+#msbShare .msd-srch{flex:none;margin:0 16px 6px}
+#msbShare .msd-srch input{width:100%;height:42px;border-radius:21px;border:1.5px solid transparent;background:#f1f5f9;padding:0 16px;font:inherit;font-size:16px;outline:0;color:inherit}
+#msbShare .msd-srch input:focus{background:#fff;border-color:#a5b4fc}
+#msbShare .msd-list{flex:1;min-height:0;overflow-y:auto;padding:2px 8px 6px;overscroll-behavior:contain}
+#msbShare .msd-gh{font-size:12.5px;font-weight:700;color:#64748b;padding:10px 12px 4px}
+#msbShare .msd-row{display:flex;align-items:center;gap:12px;width:100%;padding:8px 10px;border-radius:14px;text-align:left;background:none;border:0;font:inherit;color:inherit;cursor:pointer}
+#msbShare .msd-row:active{background:#f4f5fa}
+#msbShare .msd-av{width:44px;height:44px;border-radius:50%;object-fit:cover;flex:none;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:16px;background:linear-gradient(135deg,#6366f1,#06b6d4)}
+#msbShare .msd-nm{flex:1;min-width:0}
+#msbShare .msd-nm b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#msbShare .msd-nm small{display:block;font-size:12.5px;color:#64748b}
+#msbShare .msd-ck{width:24px;height:24px;border-radius:50%;border:2px solid #cbd0dc;flex:none;display:flex;align-items:center;justify-content:center;transition:all .12s}
+#msbShare .msd-row.on .msd-ck{background:#4f46e5;border-color:#4f46e5}
+#msbShare .msd-row.on .msd-ck::after{content:'';width:6px;height:11px;border:solid #fff;border-width:0 2.5px 2.5px 0;transform:rotate(45deg) translate(-1px,-1px)}
+#msbShare .msd-empty{padding:30px 24px;text-align:center;color:#64748b;font-size:14.5px;line-height:1.5}
+#msbShare .msd-empty a{color:#4f46e5;font-weight:800}
+#msbShare .msd-sk{height:58px;margin:6px 10px;border-radius:14px;background:linear-gradient(90deg,#f1f5f9,#e8ebf4,#f1f5f9);background-size:200% 100%;animation:msdSk 1.2s infinite}
+@keyframes msdSk{to{background-position:-200% 0}}
+#msbShare .msd-send{flex:none;display:none;gap:10px;align-items:center;padding:10px 14px;border-top:1px solid #eceef5;background:#fff}
+#msbShare .msd-send.on{display:flex}
+#msbShare .msd-send input{flex:1;min-width:0;height:44px;border-radius:22px;border:1.5px solid transparent;background:#f1f5f9;padding:0 16px;font:inherit;font-size:16px;outline:0;color:inherit}
+#msbShare .msd-send input:focus{background:#fff;border-color:#a5b4fc}
+#msbShare .msd-send button{height:44px;padding:0 22px;border:0;border-radius:22px;background:linear-gradient(135deg,#4f46e5,#06b6d4);color:#fff;font:inherit;font-weight:800;font-size:15px;white-space:nowrap;cursor:pointer}
+#msbShare .msd-send button:disabled{opacity:.5}
+#msbShare .msd-apps{flex:none;display:flex;gap:14px;overflow-x:auto;padding:12px 16px calc(max(12px,env(safe-area-inset-bottom)) + 4px);border-top:1px solid #eceef5;background:#fff;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+#msbShare .msd-apps::-webkit-scrollbar{display:none}
+#msbShare .msd-apps .msd-app{flex:none;width:62px}
+#msbShare .msd-apps .msd-app i{width:48px;height:48px}
+#msbShare .msd-apps .msd-app svg{width:23px;height:23px}
+#msbShare .msd-url{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;left:-9999px}
+#msbShare .msd-toast{position:absolute;left:50%;bottom:calc(30px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#0f172a;color:#fff;padding:11px 18px;border-radius:99px;font-weight:600;font-size:14px;max-width:88vw;text-align:center;z-index:2}
 `;
   var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
 
@@ -108,34 +108,34 @@
     el = document.createElement('div'); el.id = 'msbShare';
     var chatOn = !!(o.chat && o.chat.id);
     var appsRow = order.map(function(k){ var a = APPS[k];
-        return '<button type="button" class="ms-app" data-s="'+k+'"><i style="background:'+a.bg+'">'+a.svg+'</i><em style="font-style:normal">'+a.label+'</em></button>'; }).join('');
+        return '<button type="button" class="msd-app" data-s="'+k+'"><i style="background:'+a.bg+'">'+a.svg+'</i><em style="font-style:normal">'+a.label+'</em></button>'; }).join('');
     if(chatOn){
       var cc = o.chat;
-      el.innerHTML = '<div class="ms-sheet chat" role="dialog" aria-label="Share"><div class="ms-bar"></div>'+
-        '<div class="ms-hd">'+esc(o.heading || 'Share')+'</div>'+
-        '<div class="ms-srch"><input type="search" placeholder="Search anyone on MindShift" aria-label="Search people" autocomplete="off"></div>'+
-        '<div class="ms-list"><div class="ms-sk"></div><div class="ms-sk"></div><div class="ms-sk"></div></div>'+
-        '<div class="ms-send"><input type="text" maxlength="400" placeholder="Add a message (optional)" aria-label="Add a message"><button type="button" class="ms-sendbtn">Send</button></div>'+
-        '<div class="ms-apps">'+appsRow+'</div>'+
-        '<input class="ms-url" readonly tabindex="-1" aria-hidden="true" value="'+esc(url)+'"></div>';
+      el.innerHTML = '<div class="msd-sheet chat" role="dialog" aria-label="Share"><div class="msd-bar"></div>'+
+        '<div class="msd-hd">'+esc(o.heading || 'Share')+'</div>'+
+        '<div class="msd-srch"><input type="search" placeholder="Search anyone on MindShift" aria-label="Search people" autocomplete="off"></div>'+
+        '<div class="msd-list"><div class="msd-sk"></div><div class="msd-sk"></div><div class="msd-sk"></div></div>'+
+        '<div class="msd-send"><input type="text" maxlength="400" placeholder="Add a message (optional)" aria-label="Add a message"><button type="button" class="msd-sendbtn">Send</button></div>'+
+        '<div class="msd-apps">'+appsRow+'</div>'+
+        '<input class="msd-url" readonly tabindex="-1" aria-hidden="true" value="'+esc(url)+'"></div>';
       document.body.appendChild(el);
       chatInit(el, o);
     } else
-    el.innerHTML = '<div class="ms-sheet" role="dialog" aria-label="Share"><div class="ms-bar"></div>'+
-      '<div class="ms-hd">'+esc(o.heading || 'Share')+'</div>'+
-      '<div class="ms-prev">'+(o.thumb ? '<img src="'+esc(o.thumb)+'" alt="" onerror="this.removeAttribute(\'src\')">' : '')+
+    el.innerHTML = '<div class="msd-sheet" role="dialog" aria-label="Share"><div class="msd-bar"></div>'+
+      '<div class="msd-hd">'+esc(o.heading || 'Share')+'</div>'+
+      '<div class="msd-prev">'+(o.thumb ? '<img src="'+esc(o.thumb)+'" alt="" onerror="this.removeAttribute(\'src\')">' : '')+
         '<div>'+(o.author ? '<b>'+esc(o.author)+'</b>' : '')+'<span>'+esc(text)+'</span></div></div>'+
-      '<div class="ms-grid">'+order.map(function(k){ var a = APPS[k];
-        return '<button type="button" class="ms-app" data-s="'+k+'"><i style="background:'+a.bg+'">'+a.svg+'</i><em style="font-style:normal">'+a.label+'</em></button>'; }).join('')+'</div>'+
-      '<div class="ms-link"><input readonly value="'+esc(url)+'"><button type="button" data-s="copy">Copy</button></div></div>';
+      '<div class="msd-grid">'+order.map(function(k){ var a = APPS[k];
+        return '<button type="button" class="msd-app" data-s="'+k+'"><i style="background:'+a.bg+'">'+a.svg+'</i><em style="font-style:normal">'+a.label+'</em></button>'; }).join('')+'</div>'+
+      '<div class="msd-link"><input readonly value="'+esc(url)+'"><button type="button" data-s="copy">Copy</button></div></div>';
     if(!chatOn) document.body.appendChild(el);
     prevOv = document.body.style.overflow; document.body.style.overflow = 'hidden';
     isOpen = true;
     requestAnimationFrame(function(){ requestAnimationFrame(function(){ el && el.classList.add('in'); }); });
     history.pushState({ msbShare:1 }, ''); pushed = true;
 
-    var sheet = el.querySelector('.ms-sheet');
-    var xb = document.createElement('button'); xb.type = 'button'; xb.className = 'ms-x'; xb.setAttribute('data-x', '1'); xb.setAttribute('aria-label', 'Close');
+    var sheet = el.querySelector('.msd-sheet');
+    var xb = document.createElement('button'); xb.type = 'button'; xb.className = 'msd-x'; xb.setAttribute('data-x', '1'); xb.setAttribute('aria-label', 'Close');
     xb.innerHTML = '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>'; sheet.appendChild(xb);
     el.addEventListener('click', function(e){
       if(e.target === el || e.target.closest('[data-x]')){ close(); return; }
@@ -147,7 +147,7 @@
     var y0 = null, dy = 0;
     sheet.addEventListener('touchstart', function(e){
       if(sheet.scrollTop > 0 || e.target.closest('input')) return;
-      if(sheet.classList.contains('chat') && !e.target.closest('.ms-bar,.ms-hd')) return;   // chat layout: its list scrolls inside, so only the handle / title drags
+      if(sheet.classList.contains('chat') && !e.target.closest('.msd-bar,.msd-hd')) return;   // chat layout: its list scrolls inside, so only the handle / title drags
       y0 = e.touches[0].clientY; dy = 0; sheet.classList.add('drag');
     }, { passive:true });
     sheet.addEventListener('touchmove', function(e){
@@ -160,15 +160,15 @@
   }
 
   function chatInit(root, o){
-    var c = o.chat, sheet = root.querySelector('.ms-sheet');
-    var list = root.querySelector('.ms-list'), search = root.querySelector('.ms-srch input');
-    var sendBar = root.querySelector('.ms-send'), note = sendBar.querySelector('input'), sendBtn = sendBar.querySelector('button');
+    var c = o.chat, sheet = root.querySelector('.msd-sheet');
+    var list = root.querySelector('.msd-list'), search = root.querySelector('.msd-srch input');
+    var sendBar = root.querySelector('.msd-send'), note = sendBar.querySelector('input'), sendBtn = sendBar.querySelector('button');
     var picked = new Map(), base = [], found = [], sending = false, seq = 0, timer = 0, signedIn = true, loading = true, searching = false;
     var corePromise = import('/share-core.js');
     var MAX = 10;
 
     function say(t){
-      var d = document.createElement('div'); d.className = 'ms-toast'; d.textContent = t; sheet.appendChild(d);
+      var d = document.createElement('div'); d.className = 'msd-toast'; d.textContent = t; sheet.appendChild(d);
       setTimeout(function(){ d.remove(); }, 2600);
     }
     function paintBtn(){
@@ -177,30 +177,30 @@
       sendBtn.textContent = sending ? 'Sending…' : picked.size > 1 ? 'Send to ' + picked.size : 'Send';
     }
     function row(p){
-      var av = p.photo ? '<img class="ms-av" src="'+esc(p.photo)+'" alt="" referrerpolicy="no-referrer" onerror="this.outerHTML=\'<span class=ms-av>'+esc((p.name||'?').trim().charAt(0).toUpperCase())+'</span>\'">'
-                       : '<span class="ms-av">'+esc((p.name||'?').trim().charAt(0).toUpperCase())+'</span>';
-      return '<button type="button" class="ms-row'+(picked.has(p.uid)?' on':'')+'" data-uid="'+esc(p.uid)+'">'+av+
-        '<span class="ms-nm"><b>'+esc(p.name || 'MindShift Books User')+'</b>'+(p.username ? '<small>@'+esc(p.username)+'</small>' : '')+'</span><span class="ms-ck"></span></button>';
+      var av = p.photo ? '<img class="msd-av" src="'+esc(p.photo)+'" alt="" referrerpolicy="no-referrer" onerror="this.outerHTML=\'<span class=msd-av>'+esc((p.name||'?').trim().charAt(0).toUpperCase())+'</span>\'">'
+                       : '<span class="msd-av">'+esc((p.name||'?').trim().charAt(0).toUpperCase())+'</span>';
+      return '<button type="button" class="msd-row'+(picked.has(p.uid)?' on':'')+'" data-uid="'+esc(p.uid)+'">'+av+
+        '<span class="msd-nm"><b>'+esc(p.name || 'MindShift Books User')+'</b>'+(p.username ? '<small>@'+esc(p.username)+'</small>' : '')+'</span><span class="msd-ck"></span></button>';
     }
     function paint(){
-      if(!signedIn){ list.innerHTML = '<div class="ms-empty">Log in to send this to people on MindShift Books.<br><br><a href="/signup?returnTo='+encodeURIComponent(location.pathname+location.search)+'">Log in or sign up</a><br><br>You can still share it with the apps below.</div>'; return; }
+      if(!signedIn){ list.innerHTML = '<div class="msd-empty">Log in to send this to people on MindShift Books.<br><br><a href="/signup?returnTo='+encodeURIComponent(location.pathname+location.search)+'">Log in or sign up</a><br><br>You can still share it with the apps below.</div>'; return; }
       if(loading){ return; }
       var q = search.value.trim().replace(/^@/, '').toLowerCase(), rows;
       if(q){
         var local = base.filter(function(p){ return (p.name+' '+(p.username||'')).toLowerCase().indexOf(q) > -1; });
         var have = {}; local.forEach(function(p){ have[p.uid] = 1; });
         rows = local.concat(found.filter(function(p){ return !have[p.uid]; }));
-        if(!rows.length){ list.innerHTML = '<div class="ms-empty">'+(searching ? 'Searching…' : q.length < 2 ? 'Type at least 2 letters to search everyone.' : 'No one found for “'+esc(search.value.trim())+'”.')+'</div>'; return; }
+        if(!rows.length){ list.innerHTML = '<div class="msd-empty">'+(searching ? 'Searching…' : q.length < 2 ? 'Type at least 2 letters to search everyone.' : 'No one found for “'+esc(search.value.trim())+'”.')+'</div>'; return; }
       } else {
         rows = base;
-        if(!rows.length){ list.innerHTML = '<div class="ms-empty">No chats yet.<br>Search for anyone above to send this to them.</div>'; return; }
+        if(!rows.length){ list.innerHTML = '<div class="msd-empty">No chats yet.<br>Search for anyone above to send this to them.</div>'; return; }
       }
       var html = '', grp = '';
-      rows.forEach(function(p){ if(p.group !== grp){ grp = p.group; html += '<div class="ms-gh">'+esc(grp)+'</div>'; } html += row(p); });
+      rows.forEach(function(p){ if(p.group !== grp){ grp = p.group; html += '<div class="msd-gh">'+esc(grp)+'</div>'; } html += row(p); });
       list.innerHTML = html;
     }
     list.addEventListener('click', function(e){
-      var b = e.target.closest('.ms-row'); if(!b || sending) return;
+      var b = e.target.closest('.msd-row'); if(!b || sending) return;
       var uid = b.getAttribute('data-uid');
       var p = base.concat(found).filter(function(x){ return x.uid === uid; })[0]; if(!p) return;
       if(picked.has(uid)) picked.delete(uid);
@@ -270,14 +270,14 @@
     }
     if(kind === 'copy'){
       var done = function(){
-        var cb = el && el.querySelector('.ms-link button'); if(cb){ cb.textContent = 'Copied ✓'; cb.classList.add('ok'); }
+        var cb = el && el.querySelector('.msd-link button'); if(cb){ cb.textContent = 'Copied ✓'; cb.classList.add('ok'); }
         var lbl = btn && btn.querySelector && btn.querySelector('em'); if(lbl) lbl.textContent = 'Copied ✓';
         setTimeout(close, 850);
       };
       if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done).catch(fallback);
       else fallback();
       function fallback(){
-        var inp = el && el.querySelector('.ms-url, .ms-link input'); if(!inp) return;
+        var inp = el && el.querySelector('.msd-url, .msd-link input'); if(!inp) return;
         inp.select(); inp.setSelectionRange(0, 9999);
         try{ document.execCommand('copy') ? done() : (inp.focus()); }catch(_){}
       }

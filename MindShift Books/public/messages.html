@@ -1507,7 +1507,7 @@ function openMsgMenu(el){
   } else if(isMedia(m) && m.cap){
     add(ICON_COPY, 'Copy caption', () => copyText(m.cap));
   } else if(m.type === 'share' && !del){
-    if(m.sid && interactive) add(ICON_FWD, 'Forward', () => import('/share-to-chat.js?v=3').then(x => x.openShareToChat({ kind:m.sk, id:m.sid, title:m.st, snippet:m.sx, image:m.si, author:m.sa, authorPhoto:m.sp, meta:m.sm, heading:'Forward to' })).catch(() => toast && toast('Couldn’t open Forward')));
+    if(m.sid && interactive) add(ICON_FWD, 'Forward', () => import('/share-to-chat.js?v=4').then(x => x.openShareToChat({ kind:m.sk, id:m.sid, title:m.st, snippet:m.sx, image:m.si, author:m.sa, authorPhoto:m.sp, meta:m.sm, heading:'Forward to' })).catch(() => toast && toast('Couldn’t open Forward')));
     add(ICON_COPY, 'Copy link', () => copyText(location.origin + shareUrl(m)));
   }
   add(ICON_TRASH, 'Delete for you', () => deleteForMe(m), true);
