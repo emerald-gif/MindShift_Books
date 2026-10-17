@@ -1,0 +1,258 @@
+/* ============================================================================
+   MindShift Books — Design System v1
+   Apple clarity  ·  Google Material states & motion  ·  Spotify boldness
+
+   HOW IT WORKS
+   One stylesheet, loaded LAST on a page (just before </head>). It re-tunes the shared
+   tokens (--bg, --border, --txt …) and restyles the shared components. Nothing here
+   changes the HEIGHT of a bar or the structure of a page, because some pages measure
+   their header with JavaScript (books.html pads <main> to clear it).
+   To revert any page: delete its <link href="/design.css">.
+
+   THE THREE INFLUENCES
+   Apple   → quiet hairlines, grouped grey backdrop, frosted-glass bars, big rounded
+             media, springy press feedback, tight tracking on headlines.
+   Google  → tonal (tinted) fills for hover/selected, 48dp-ish touch targets,
+             elevation tokens, accessible focus rings, calm easing curves.
+   Spotify → heavy headline weights, chip filters ("selected = ink"), pill CTAs with a
+             glow, cover art that floats on a soft shadow, cards that lift on hover.
+   ============================================================================ */
+
+/* ─── 1. TOKENS ─────────────────────────────────────────────────────────────
+   Same names the pages already use, retuned. Brand colours are unchanged. */
+:root{
+  --ds-font:'Inter',-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,system-ui,sans-serif;
+
+  /* surfaces (Apple "grouped" grey behind white content) */
+  --bg:#f5f6fa;
+  --card:#ffffff;
+  --border:#eaecf3;
+  --border2:#e0e4ee;
+  --ds-hairline:rgba(15,23,42,.08);
+  --ds-fill:rgba(15,23,42,.055);      /* chips, inputs, icon-button hover (Apple quaternary fill) */
+  --ds-fill-2:rgba(15,23,42,.09);     /* pressed / stronger fill */
+
+  /* ink — deeper text, secondary/muted raised for contrast (muted was 2.5:1) */
+  --txt:#0b1220;
+  --primary:#0b1220;
+  --sub:#566074;
+  --mute:#8791a3;
+
+  /* tonal container colours (Material 3) */
+  --ds-tonal:#eef0ff;
+  --ds-tonal-2:#e2e6ff;
+
+  /* shape */
+  --ds-r-sm:10px;
+  --ds-r-md:14px;
+  --ds-r-lg:18px;
+  --ds-r-xl:24px;
+
+  /* elevation */
+  --ds-e1:0 1px 2px rgba(15,23,42,.06),0 1px 1px rgba(15,23,42,.04);
+  --ds-e2:0 2px 6px rgba(15,23,42,.06),0 10px 28px -10px rgba(15,23,42,.16);
+  --ds-e3:0 0 0 .5px rgba(15,23,42,.08),0 16px 48px -10px rgba(15,23,42,.32);
+
+  /* motion */
+  --ds-ease:cubic-bezier(.2,0,0,1);
+  --ds-spring:cubic-bezier(.34,1.4,.64,1);
+}
+
+/* ─── 2. BASE TYPE & ACCESSIBILITY ─────────────────────────────────────────── */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{
+  font-family:var(--ds-font);
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+  text-rendering:optimizeLegibility;
+  letter-spacing:-.006em;
+}
+button,input,textarea,select{font-family:inherit}
+::selection{background:rgba(79,70,229,.18)}
+:where(a,button,[role="button"],summary,[tabindex]):focus-visible{outline:2.5px solid rgba(79,70,229,.5);outline-offset:2px}
+:where(a,button,[role="button"]){touch-action:manipulation}
+
+/* Headlines: heavy + tight (Spotify weight, Apple tracking) */
+.sec-title{font-size:20px;font-weight:800;letter-spacing:-.025em}
+header h1{font-weight:800;letter-spacing:-.03em}
+.art-title{font-size:30px;font-weight:800;line-height:1.14;letter-spacing:-.03em}
+
+/* Numbers don't jitter when counts change */
+.acard-like,.acard-save,.acard-repost,.pcard-comment,.act-btn,.xvid-like,.rating-avg,.rating-summary-num{font-variant-numeric:tabular-nums}
+
+/* ─── 3. SHARED PRESS / HOVER FEEL ─────────────────────────────────────────── */
+.icon-btn,.hbg-btn,.back-btn,.acard-like,.acard-save,.acard-repost,.acard-share,.pcard-comment,.acard-menu-btn,
+.act-btn,.fpill,.follow-author-btn,.acard-follow,.rating-submit,.c-post-btn,.ptf-follow,.msb-cat-pill,.xs-chip,.xs-topic-pill{
+  transition:transform .22s var(--ds-spring),background-color .18s var(--ds-ease),color .18s var(--ds-ease),
+             border-color .18s var(--ds-ease),box-shadow .2s var(--ds-ease),opacity .18s var(--ds-ease);
+}
+.icon-btn:active,.hbg-btn:active,.back-btn:active,.acard-like:active,.acard-save:active,.acard-repost:active,.acard-share:active,
+.pcard-comment:active,.acard-menu-btn:active,.act-btn:active,.fpill:active,.follow-author-btn:active,.acard-follow:active,
+.rating-submit:active,.c-post-btn:active,.ptf-follow:active,.msb-cat-pill:active,.xs-chip:active,.xs-topic-pill:active{transform:scale(.94)}
+
+/* ─── 4. TOP BARS — frosted glass ──────────────────────────────────────────────
+   `ds-glass` is set on <body> only where the header already has a transform
+   (articles, books) so blur can't change how fixed children are positioned. */
+header{box-shadow:0 .5px 0 var(--ds-hairline),0 12px 32px -24px rgba(15,23,42,.3)}
+body.ds-glass header{
+  background:rgba(255,255,255,.84);
+  -webkit-backdrop-filter:saturate(180%) blur(22px);backdrop-filter:saturate(180%) blur(22px);
+}
+.hdr{
+  background:rgba(255,255,255,.84);
+  -webkit-backdrop-filter:saturate(180%) blur(22px);backdrop-filter:saturate(180%) blur(22px);
+  border-bottom:.5px solid var(--ds-hairline);
+}
+.icon-btn:hover{background-color:var(--ds-fill);color:var(--p)}
+.icon-btn:active{background-color:var(--ds-fill-2)}
+.back-btn{width:36px;height:36px;border:none;background:var(--ds-fill);color:var(--txt)}
+.back-btn:hover{border-color:transparent;background:var(--ds-fill-2);color:var(--txt)}
+.hbg-btn{border:none;background:var(--ds-fill)}
+.hbg-btn:hover{border-color:transparent;background:var(--ds-tonal);color:var(--p)}
+
+/* Search field in the header: soft grey well → white with a halo when focused */
+.search-inp{background:var(--ds-fill);border-color:transparent;border-radius:14px}
+.search-inp:focus{background:#fff;border-color:var(--p);box-shadow:0 0 0 4px rgba(79,70,229,.12)}
+
+/* ─── 5. MENUS & SHEETS ─────────────────────────────────────────────────────── */
+.hbg-drop,.acard-menu-drop{
+  border:none;border-radius:var(--ds-r-lg);padding:6px;
+  background:rgba(255,255,255,.94);
+  -webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);
+  box-shadow:var(--ds-e3);
+}
+.hbg-item,.acard-menu-item{border-radius:12px}
+.hbg-item:hover,.acard-menu-item:hover{background:var(--ds-tonal);color:var(--p)}
+.hbg-div{background:var(--ds-hairline)}
+.sheet-bar{width:36px;height:5px;border-radius:3px;background:rgba(15,23,42,.16)}
+.toast{
+  background:rgba(17,24,39,.92);
+  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  border-radius:16px;font-weight:600;letter-spacing:-.005em;box-shadow:var(--ds-e3);
+}
+
+/* ─── 6. FILTERS & TABS (Spotify chips: unselected = tint, selected = ink) ─────── */
+.filter-row{padding:12px 16px;border-bottom:.5px solid var(--ds-hairline)}
+.fpill{border:none;background:var(--ds-fill);color:var(--txt);font-size:13px;font-weight:700;padding:8px 16px}
+.fpill.active{background:var(--txt);color:#fff}
+.msb-cat-pill{border:none;background:var(--ds-fill);color:var(--txt);font-weight:700}
+.msb-cat-pill.is-active{background:var(--txt);color:#fff}
+.xs-chip.active{background:var(--txt);color:#fff}
+@media (hover:hover){
+  .fpill:not(.active):hover,.msb-cat-pill:not(.is-active):hover{background:var(--ds-fill-2);border-color:transparent}
+}
+.feed-tabs{border-bottom:.5px solid var(--ds-hairline)}
+.feed-tab{font-weight:700;letter-spacing:-.01em;color:var(--sub)}
+.feed-tab.active{color:var(--txt);border-bottom-color:var(--p)}
+
+/* ─── 7. FEED CARDS ─────────────────────────────────────────────────────────── */
+.grid{background:var(--card)}
+.acard{padding:18px 16px 12px;border-bottom:.5px solid var(--ds-hairline)}
+@media (hover:hover){ .acard:hover{background:#fbfbfe} }
+.acard-av{width:30px;height:30px;border:none;box-shadow:0 0 0 1px var(--ds-hairline)}
+.acard-author-name{font-size:13.5px;font-weight:700;letter-spacing:-.01em}
+.acard-author-dot,.acard-author-date{font-size:12.5px}
+.acard-title{font-size:18px;font-weight:800;letter-spacing:-.022em;line-height:1.28}
+.acard-img{border-radius:var(--ds-r-lg);box-shadow:0 1px 2px rgba(15,23,42,.08),0 12px 30px -14px rgba(15,23,42,.45)}
+.pcard-text{font-size:15.5px;line-height:1.5;letter-spacing:-.011em}
+.pcard-slide,.pcard-video,.pcard-single img{border-radius:var(--ds-r-lg)}
+.pcard-slide,.pcard-video{box-shadow:0 0 0 1px var(--ds-hairline)}
+.pcard-count,.pcard-video-dur{-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+
+/* Action row: round tonal hit-areas (Material state layers), calmer icon colour */
+.acard-like,.acard-save,.acard-repost,.acard-share,.pcard-comment,.acard-menu-btn{border-radius:999px;padding:8px 11px;color:var(--mute)}
+.acard-like,.acard-repost,.pcard-comment,.acard-save{font-size:13px}
+@media (hover:hover){
+  .acard-like:hover{background:var(--red-bg,#fff1f1)}
+  .acard-save:hover,.acard-share:hover,.pcard-comment:hover,.acard-menu-btn:hover{background:var(--ds-tonal)}
+  .acard-repost:hover{background:#ecfdf5}
+}
+.acard-foot{gap:4px}   /* buttons got bigger tap areas, so the gap shrinks — row width stays the same */
+.acard-read{margin-right:8px}
+.acard-follow{height:28px;font-weight:700}
+
+/* People & suggestion cards */
+.ptf-card,.sug-card{border:none;border-radius:var(--ds-r-xl);box-shadow:0 0 0 1px var(--ds-hairline),var(--ds-e2)}
+
+/* Loading skeleton: neutral shimmer */
+.skel{background:linear-gradient(90deg,#eef0f6 25%,#e4e7f0 50%,#eef0f6 75%);background-size:200% 100%}
+
+/* ─── 8. PRIMARY CTAs — pill with a coloured glow (Spotify) ─────────────────── */
+.rating-submit,.c-post-btn,.hbg-signup,.ptf-follow,.sidebar-auth-signup,.buy-btn{
+  font-weight:700;letter-spacing:-.005em;box-shadow:0 8px 20px -8px rgba(79,70,229,.6);
+}
+.rating-submit:disabled,.c-post-btn:disabled{box-shadow:none}
+.follow-author-btn{font-weight:700}
+.follow-author-btn.following{background:var(--ds-tonal);color:var(--ps);border-color:transparent}
+.follow-author-btn.following:hover{background:var(--ds-tonal-2);color:var(--ps);border-color:transparent}
+
+/* ─── 9. READING PAGES (article-read / post-read) ───────────────────────────── */
+.art-wrap{padding-left:22px;padding-right:22px}
+.art-hero{border-radius:20px;box-shadow:0 1px 2px rgba(15,23,42,.08),0 14px 36px -16px rgba(15,23,42,.4)}
+.art-cat{letter-spacing:.06em}
+.author-row-wrap{border-bottom:.5px solid var(--ds-hairline)}
+.post-text{font-size:17px;line-height:1.6;letter-spacing:-.012em}
+.art-body{font-size:17.5px;line-height:1.75;color:#1c2433;letter-spacing:-.011em}
+.art-body h2{font-size:23px;font-weight:800;letter-spacing:-.026em;margin:36px 0 12px}
+.art-body h3{font-size:18.5px;letter-spacing:-.018em}
+.art-body img{border-radius:var(--ds-r-lg)}
+.art-body .pull-quote{border-radius:0 var(--ds-r-md) var(--ds-r-md) 0;background:var(--ds-tonal);font-style:normal;font-weight:500;font-size:16.5px;letter-spacing:-.012em}
+.art-body .key-box{border-radius:var(--ds-r-md)}
+
+/* Engagement bar: roomy round buttons instead of cramped bare icons */
+.action-bar{gap:6px;padding:8px 0 10px;border-bottom:.5px solid var(--ds-hairline)}
+.act-btn{padding:9px 13px;border-radius:999px;font-weight:600;color:var(--sub)}
+.act-btn svg{width:20px;height:20px}
+@media (hover:hover){ .act-btn:hover{background:var(--ds-tonal);color:var(--p)} }
+.act-like.liked{color:var(--red)}
+@media (hover:hover){ .act-like.liked:hover{background:var(--red-bg,#fff1f1);color:var(--red)} }
+
+/* "More" cards float on a soft shadow and lift on hover */
+.more-card{border:none;border-radius:var(--ds-r-lg);background:var(--card);box-shadow:0 0 0 1px var(--ds-hairline),var(--ds-e1)}
+@media (hover:hover){
+  .more-card:hover{background:var(--card);transform:translateY(-2px);box-shadow:0 0 0 1px var(--ds-hairline),var(--ds-e2)}
+}
+
+/* Comments */
+.comment-item{border-bottom:.5px solid var(--ds-hairline)}
+.c-name{letter-spacing:-.01em}
+.post-comment-bar{
+  background:rgba(255,255,255,.88);
+  -webkit-backdrop-filter:saturate(180%) blur(22px);backdrop-filter:saturate(180%) blur(22px);
+  border-top:none;box-shadow:0 -.5px 0 var(--ds-hairline),0 -14px 34px -22px rgba(15,23,42,.4);
+}
+.post-comment-bar-input{background:var(--ds-fill);border-radius:22px;padding:11px 16px}
+
+/* ─── 10. STORE (books.html) — cover art floats, cards lift ───────────────────── */
+.product-card{border:none;border-radius:var(--ds-r-xl);box-shadow:var(--ds-e2)}
+.ebook-cover,.our-cover,.swiper-card .ebook-cover{
+  border-radius:10px;
+  box-shadow:0 1px 2px rgba(15,23,42,.12),0 14px 30px -12px rgba(15,23,42,.5);
+}
+.price{font-weight:800;letter-spacing:-.02em}
+.buy-btn{border-radius:999px}
+@media (hover:hover){
+  .product-card{transition:transform .25s var(--ds-ease),box-shadow .25s var(--ds-ease)}
+  .product-card:hover{transform:translateY(-4px);box-shadow:0 2px 6px rgba(15,23,42,.06),0 22px 44px -14px rgba(15,23,42,.28)}
+}
+
+/* ─── 11. SIDEBAR (iOS-Settings style: white grouped lists on a grey sheet) ──────
+   The sidebar's own CSS is injected at runtime AFTER this file, so these selectors
+   are intentionally one notch more specific. */
+html body .sidebar-overlay{background:rgba(11,18,32,.42);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+html body .sidebar{background:var(--bg);border-radius:0 26px 26px 0;box-shadow:0 0 0 .5px var(--ds-hairline),14px 0 56px -14px rgba(15,23,42,.38)}
+html body .sidebar .sb-top{border-bottom:none;padding:22px 16px 8px 20px}
+html body .sidebar .sb-brand{font-size:16px;font-weight:800;letter-spacing:-.02em}
+html body .sidebar .logo-row img{border-radius:10px}
+html body .sidebar .sb-group{background:var(--card);border:none;border-radius:var(--ds-r-lg);box-shadow:var(--ds-e1)}
+html body .sidebar .sb-group li{padding:15px 16px;font-size:15px;font-weight:600;letter-spacing:-.01em;border-bottom:.5px solid var(--ds-hairline)}
+html body .sidebar .sb-group li:last-child{border-bottom:none}
+html body .sidebar .sb-group li:active{background:var(--ds-fill)}
+html body .sidebar .sb-ico svg{width:21px;height:21px}
+html body .sidebar .sb-section-label{letter-spacing:.06em}
+html body .sidebar .sidebar-auth-cta{background:var(--card);box-shadow:var(--ds-e1);border-radius:var(--ds-r-lg)}
+html body .sidebar .sidebar-close-btn{background:var(--ds-fill)}
+
+/* ─── 12. RESPECT "REDUCE MOTION" ─────────────────────────────────────────────── */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
