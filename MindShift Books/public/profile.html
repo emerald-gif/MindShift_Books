@@ -683,7 +683,7 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
 <script src="/sidebar-nav.js?v=3"></script>
 <script type="module" src="/messages-nav.js?v=1"></script>
 <script src="/share-image.js"></script>
-<script src="/share-drawer.js?v=1"></script>
+<script src="/share-drawer.js?v=2"></script>
 <script src="/poll.js?v=1"></script>
 <script src="/reels.js?v=8"></script>
 <script src="/image-viewer.js?v=2"></script>
@@ -2520,6 +2520,7 @@ window.msbImgEngage = {
     const img = (s.images && s.images[0]) || s.thumbnailUrl || '';
     MSBShare.open({
       url: `${location.origin}/post-read?id=${id}`, text: s.text || '', author: s.authorName || profileData.name, thumb: img,
+      chat: s.type === 'article' ? null : { kind:'post', id, snippet:s.text, image:img, author:s.authorName || profileData.name, authorPhoto:s.authorPhoto || profileData.photo },
       onImage: typeof openShareImageCard === 'function'
         ? () => openShareImageCard({ type:'post', id, author:s.authorName||profileData.name, avatar:s.authorPhoto||profileData.photo, publishedAt:s.publishedAt, text:s.text, image:img })
         : null

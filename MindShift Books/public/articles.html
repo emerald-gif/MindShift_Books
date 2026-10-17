@@ -22,7 +22,7 @@
 <meta name="twitter:title" content="MindShift Books" />
 <meta name="twitter:description" content="Discover articles, ideas, insights, and stories on mindset, money, productivity, relationships, wellness, career, purpose, and personal growth from the MindShift Books community."/>
 
-<script src="/share-drawer.js?v=1"></script>
+<script src="/share-drawer.js?v=2"></script>
 <script src="/poll.js?v=1"></script>
 <script src="/reels.js?v=8"></script>
 <script src="/image-viewer.js?v=2"></script>
@@ -3096,6 +3096,7 @@ window.shareItemDrawer = function(id){
       url: `${location.origin}/post-read?id=${id}`,
       text: post.text, author: post.author,
       thumb: post.videoUrl ? post.thumbnailUrl : (post.images && post.images[0]),
+      chat: { kind:'post', id, snippet:post.text, image:(post.videoUrl ? post.thumbnailUrl : (post.images && post.images[0])), author:post.author, authorPhoto:post.avatar },
       onImage: () => shareAsImage(id, 'post')
     });
     return;
@@ -4870,6 +4871,7 @@ window.openShare = function(id){
     heading: 'Share this article',
     title: art ? art.title : 'Article', text: art ? art.title : 'Article',
     thumb: art ? (art.img || art.coverImage) : '', author: art ? art.author : '',
+    chat: art ? { kind:'article', id, title:art.title, snippet:art.brief, image:(art.img || art.coverImage), author:art.author, authorPhoto:art.avatar } : null,
     onImage: () => shareAsImage(id, 'article')
   });
 };

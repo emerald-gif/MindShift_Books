@@ -444,6 +444,7 @@ body.msb-reels-open .rp-sheet{z-index:100005!important}
     }
     MSBShare.open({
       url:url, text:item.text || 'Watch this on MindShift Books', thumb:item.thumbnailUrl, author:item.author,
+      chat:{ kind:'post', id:item.id, snippet:item.text, image:item.thumbnailUrl, author:item.author, authorPhoto:item.avatar },
       onShare: cfg && cfg.onShare ? function(k){ cfg.onShare(item, k); } : null,
       onImage: cfg && cfg.shareImage ? function(){ cfg.shareImage(item); } : null
     });

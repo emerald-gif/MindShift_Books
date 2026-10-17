@@ -704,7 +704,7 @@ body{padding-bottom:64px} /* room for the fixed comment bar on post-read */
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
 <script src="/mentions.js"></script>
 <script src="/link-card.js"></script>
-<script src="/share-drawer.js?v=1"></script>
+<script src="/share-drawer.js?v=2"></script>
 <script src="/poll.js?v=1"></script>
 <script src="/reels.js?v=8"></script>
 <script type="module">
@@ -2135,6 +2135,7 @@ window.openShare=function(){
     text: (article && article.text) ? article.text : 'A post',
     author: article && article.author,
     thumb: article && (article.videoUrl ? article.thumbnailUrl : (article.images && article.images[0])),
+    chat: article ? { kind:'post', id:artId, snippet:article.text, image:(article.videoUrl ? article.thumbnailUrl : (article.images && article.images[0])), author:article.author, authorPhoto:article.avatar } : null,
     onShare: () => bumpShareCount(artId),
     onImage: (typeof openShareImageCard==='function' && article) ? () => openShareAsImageFromArticle() : null
   });

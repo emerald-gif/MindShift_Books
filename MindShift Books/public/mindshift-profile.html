@@ -317,7 +317,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 
 <div class="toast" id="toast"></div>
 
-<script src="/share-drawer.js?v=1"></script>
+<script src="/share-drawer.js?v=2"></script>
 <script src="/poll.js?v=1"></script>
 <script src="/reels.js?v=8"></script>
 <script src="/image-viewer.js?v=2"></script>
@@ -635,6 +635,7 @@ window.msbImgEngage = {
     const img = (p.images && p.images[0]) || p.thumbnailUrl || '';
     MSBShare.open({
       url: `${location.origin}/post-read?id=${id}`, text: p.text || '', author: 'MindShift Books', thumb: img,
+      chat: { kind:'post', id, snippet:p.text, image:img, author:'MindShift Books', authorPhoto:document.getElementById('kvAvatarImg')?.src || '' },
       onImage: typeof openShareImageCard === 'function'
         ? () => openShareImageCard({ type:'post', id, author:'MindShift Books', avatar:document.getElementById('kvAvatarImg')?.src||'logo.jpg', publishedAt:p.publishedAt, text:p.text, image:img })
         : null

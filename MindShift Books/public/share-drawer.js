@@ -5,7 +5,10 @@
      thumb, author,  // optional preview thumbnail + author line
      heading,        // optional drawer title (default "Share")
      onImage,        // optional fn — adds a "Share as image" tile
-     onShare(kind)   // optional fn — called when the user picks any app / copy (for share counters)
+     onShare(kind),  // optional fn — called when the user picks any app / copy / 'chat' (for share counters)
+   chat            // optional { kind:'post'|'article', id, title, snippet, image, author, authorPhoto }
+                   //   -> turns on the people list (tick boxes + search of everyone) and the Send button.
+                   //      Omit it (profiles, plain links) and the drawer stays the classic apps-only sheet.
    })
    Back button / Esc / tapping outside / dragging down all close it. Sits above every other layer. */
 (function(){
@@ -36,6 +39,41 @@
 #msbShare .ms-link input{flex:1;min-width:0;border:none;background:none;font-size:13px;color:#475569;font-family:inherit;outline:none}
 #msbShare .ms-link button{border:none;background:#4f46e5;color:#fff;font-weight:800;font-size:13px;padding:9px 16px;border-radius:9px;cursor:pointer;font-family:inherit;white-space:nowrap}
 #msbShare .ms-link button.ok{background:#16a34a}
+
+#msbShare .ms-sheet.chat{display:flex;flex-direction:column;height:min(88vh,700px);max-height:88vh;overflow:hidden;padding:8px 0 0}
+#msbShare .chat .ms-bar,#msbShare .chat .ms-hd{flex:none}
+#msbShare .chat .ms-hd{margin-bottom:8px}
+#msbShare .ms-srch{flex:none;margin:0 16px 6px}
+#msbShare .ms-srch input{width:100%;height:42px;border-radius:21px;border:1.5px solid transparent;background:#f1f5f9;padding:0 16px;font:inherit;font-size:16px;outline:0;color:inherit}
+#msbShare .ms-srch input:focus{background:#fff;border-color:#a5b4fc}
+#msbShare .ms-list{flex:1;min-height:0;overflow-y:auto;padding:2px 8px 6px;overscroll-behavior:contain}
+#msbShare .ms-gh{font-size:12.5px;font-weight:700;color:#64748b;padding:10px 12px 4px}
+#msbShare .ms-row{display:flex;align-items:center;gap:12px;width:100%;padding:8px 10px;border-radius:14px;text-align:left;background:none;border:0;font:inherit;color:inherit;cursor:pointer}
+#msbShare .ms-row:active{background:#f4f5fa}
+#msbShare .ms-av{width:44px;height:44px;border-radius:50%;object-fit:cover;flex:none;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:16px;background:linear-gradient(135deg,#6366f1,#06b6d4)}
+#msbShare .ms-nm{flex:1;min-width:0}
+#msbShare .ms-nm b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#msbShare .ms-nm small{display:block;font-size:12.5px;color:#64748b}
+#msbShare .ms-ck{width:24px;height:24px;border-radius:50%;border:2px solid #cbd0dc;flex:none;display:flex;align-items:center;justify-content:center;transition:all .12s}
+#msbShare .ms-row.on .ms-ck{background:#4f46e5;border-color:#4f46e5}
+#msbShare .ms-row.on .ms-ck::after{content:'';width:6px;height:11px;border:solid #fff;border-width:0 2.5px 2.5px 0;transform:rotate(45deg) translate(-1px,-1px)}
+#msbShare .ms-empty{padding:30px 24px;text-align:center;color:#64748b;font-size:14.5px;line-height:1.5}
+#msbShare .ms-empty a{color:#4f46e5;font-weight:800}
+#msbShare .ms-sk{height:58px;margin:6px 10px;border-radius:14px;background:linear-gradient(90deg,#f1f5f9,#e8ebf4,#f1f5f9);background-size:200% 100%;animation:msSk 1.2s infinite}
+@keyframes msSk{to{background-position:-200% 0}}
+#msbShare .ms-send{flex:none;display:none;gap:10px;align-items:center;padding:10px 14px;border-top:1px solid #eceef5;background:#fff}
+#msbShare .ms-send.on{display:flex}
+#msbShare .ms-send input{flex:1;min-width:0;height:44px;border-radius:22px;border:1.5px solid transparent;background:#f1f5f9;padding:0 16px;font:inherit;font-size:16px;outline:0;color:inherit}
+#msbShare .ms-send input:focus{background:#fff;border-color:#a5b4fc}
+#msbShare .ms-send button{height:44px;padding:0 22px;border:0;border-radius:22px;background:linear-gradient(135deg,#4f46e5,#06b6d4);color:#fff;font:inherit;font-weight:800;font-size:15px;white-space:nowrap;cursor:pointer}
+#msbShare .ms-send button:disabled{opacity:.5}
+#msbShare .ms-apps{flex:none;display:flex;gap:14px;overflow-x:auto;padding:12px 16px calc(max(12px,env(safe-area-inset-bottom)) + 4px);border-top:1px solid #eceef5;background:#fff;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+#msbShare .ms-apps::-webkit-scrollbar{display:none}
+#msbShare .ms-apps .ms-app{flex:none;width:62px}
+#msbShare .ms-apps .ms-app i{width:48px;height:48px}
+#msbShare .ms-apps .ms-app svg{width:23px;height:23px}
+#msbShare .ms-url{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;left:-9999px}
+#msbShare .ms-toast{position:absolute;left:50%;bottom:calc(30px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#0f172a;color:#fff;padding:11px 18px;border-radius:99px;font-weight:600;font-size:14px;max-width:88vw;text-align:center;z-index:2}
 `;
   var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
 
@@ -65,6 +103,21 @@
     var order = [navigator.share ? 'native' : null, 'whatsapp','telegram','x','facebook','linkedin','email','sms', o.onImage ? 'image' : null, 'copy'].filter(Boolean);
 
     el = document.createElement('div'); el.id = 'msbShare';
+    var chatOn = !!(o.chat && o.chat.id);
+    var appsRow = order.map(function(k){ var a = APPS[k];
+        return '<button type="button" class="ms-app" data-s="'+k+'"><i style="background:'+a.bg+'">'+a.svg+'</i><em style="font-style:normal">'+a.label+'</em></button>'; }).join('');
+    if(chatOn){
+      var cc = o.chat;
+      el.innerHTML = '<div class="ms-sheet chat" role="dialog" aria-label="Share"><div class="ms-bar"></div>'+
+        '<div class="ms-hd">'+esc(o.heading || 'Share')+'</div>'+
+        '<div class="ms-srch"><input type="search" placeholder="Search anyone on MindShift" aria-label="Search people" autocomplete="off"></div>'+
+        '<div class="ms-list"><div class="ms-sk"></div><div class="ms-sk"></div><div class="ms-sk"></div></div>'+
+        '<div class="ms-send"><input type="text" maxlength="400" placeholder="Add a message (optional)" aria-label="Add a message"><button type="button" class="ms-sendbtn">Send</button></div>'+
+        '<div class="ms-apps">'+appsRow+'</div>'+
+        '<input class="ms-url" readonly tabindex="-1" aria-hidden="true" value="'+esc(url)+'"></div>';
+      document.body.appendChild(el);
+      chatInit(el, o);
+    } else
     el.innerHTML = '<div class="ms-sheet" role="dialog" aria-label="Share"><div class="ms-bar"></div>'+
       '<div class="ms-hd">'+esc(o.heading || 'Share')+'</div>'+
       '<div class="ms-prev">'+(o.thumb ? '<img src="'+esc(o.thumb)+'" alt="" onerror="this.removeAttribute(\'src\')">' : '')+
@@ -72,7 +125,7 @@
       '<div class="ms-grid">'+order.map(function(k){ var a = APPS[k];
         return '<button type="button" class="ms-app" data-s="'+k+'"><i style="background:'+a.bg+'">'+a.svg+'</i><em style="font-style:normal">'+a.label+'</em></button>'; }).join('')+'</div>'+
       '<div class="ms-link"><input readonly value="'+esc(url)+'"><button type="button" data-s="copy">Copy</button></div></div>';
-    document.body.appendChild(el);
+    if(!chatOn) document.body.appendChild(el);
     prevOv = document.body.style.overflow; document.body.style.overflow = 'hidden';
     isOpen = true;
     requestAnimationFrame(function(){ requestAnimationFrame(function(){ el && el.classList.add('in'); }); });
@@ -89,6 +142,7 @@
     var y0 = null, dy = 0;
     sheet.addEventListener('touchstart', function(e){
       if(sheet.scrollTop > 0 || e.target.closest('input')) return;
+      if(sheet.classList.contains('chat') && !e.target.closest('.ms-bar,.ms-hd')) return;   // chat layout: its list scrolls inside, so only the handle / title drags
       y0 = e.touches[0].clientY; dy = 0; sheet.classList.add('drag');
     }, { passive:true });
     sheet.addEventListener('touchmove', function(e){
@@ -98,6 +152,93 @@
       if(y0 == null) return; y0 = null; sheet.classList.remove('drag');
       if(dy > 90) close(); else sheet.style.transform = '';
     });
+  }
+
+  function chatInit(root, o){
+    var c = o.chat, sheet = root.querySelector('.ms-sheet');
+    var list = root.querySelector('.ms-list'), search = root.querySelector('.ms-srch input');
+    var sendBar = root.querySelector('.ms-send'), note = sendBar.querySelector('input'), sendBtn = sendBar.querySelector('button');
+    var picked = new Map(), base = [], found = [], sending = false, seq = 0, timer = 0, signedIn = true, loading = true, searching = false;
+    var corePromise = import('/share-core.js');
+    var MAX = 10;
+
+    function say(t){
+      var d = document.createElement('div'); d.className = 'ms-toast'; d.textContent = t; sheet.appendChild(d);
+      setTimeout(function(){ d.remove(); }, 2600);
+    }
+    function paintBtn(){
+      sendBar.classList.toggle('on', picked.size > 0);
+      sendBtn.disabled = sending || !picked.size;
+      sendBtn.textContent = sending ? 'Sending…' : picked.size > 1 ? 'Send to ' + picked.size : 'Send';
+    }
+    function row(p){
+      var av = p.photo ? '<img class="ms-av" src="'+esc(p.photo)+'" alt="" referrerpolicy="no-referrer" onerror="this.outerHTML=\'<span class=ms-av>'+esc((p.name||'?').trim().charAt(0).toUpperCase())+'</span>\'">'
+                       : '<span class="ms-av">'+esc((p.name||'?').trim().charAt(0).toUpperCase())+'</span>';
+      return '<button type="button" class="ms-row'+(picked.has(p.uid)?' on':'')+'" data-uid="'+esc(p.uid)+'">'+av+
+        '<span class="ms-nm"><b>'+esc(p.name || 'MindShift Books User')+'</b>'+(p.username ? '<small>@'+esc(p.username)+'</small>' : '')+'</span><span class="ms-ck"></span></button>';
+    }
+    function paint(){
+      if(!signedIn){ list.innerHTML = '<div class="ms-empty">Log in to send this to people on MindShift Books.<br><br><a href="/signup?returnTo='+encodeURIComponent(location.pathname+location.search)+'">Log in or sign up</a><br><br>You can still share it with the apps below.</div>'; return; }
+      if(loading){ return; }
+      var q = search.value.trim().replace(/^@/, '').toLowerCase(), rows;
+      if(q){
+        var local = base.filter(function(p){ return (p.name+' '+(p.username||'')).toLowerCase().indexOf(q) > -1; });
+        var have = {}; local.forEach(function(p){ have[p.uid] = 1; });
+        rows = local.concat(found.filter(function(p){ return !have[p.uid]; }));
+        if(!rows.length){ list.innerHTML = '<div class="ms-empty">'+(searching ? 'Searching…' : q.length < 2 ? 'Type at least 2 letters to search everyone.' : 'No one found for “'+esc(search.value.trim())+'”.')+'</div>'; return; }
+      } else {
+        rows = base;
+        if(!rows.length){ list.innerHTML = '<div class="ms-empty">No chats yet.<br>Search for anyone above to send this to them.</div>'; return; }
+      }
+      var html = '', grp = '';
+      rows.forEach(function(p){ if(p.group !== grp){ grp = p.group; html += '<div class="ms-gh">'+esc(grp)+'</div>'; } html += row(p); });
+      list.innerHTML = html;
+    }
+    list.addEventListener('click', function(e){
+      var b = e.target.closest('.ms-row'); if(!b || sending) return;
+      var uid = b.getAttribute('data-uid');
+      var p = base.concat(found).filter(function(x){ return x.uid === uid; })[0]; if(!p) return;
+      if(picked.has(uid)) picked.delete(uid);
+      else { if(picked.size >= MAX){ say('You can send to up to ' + MAX + ' people at once'); return; } picked.set(uid, p); }
+      b.classList.toggle('on', picked.has(uid)); paintBtn();
+    });
+    search.addEventListener('input', function(){
+      clearTimeout(timer);
+      var q = search.value.trim().replace(/^@/, '');
+      var my = ++seq;
+      if(q.length < 2){ found = []; searching = false; paint(); return; }
+      searching = true; paint();
+      timer = setTimeout(function(){
+        corePromise.then(function(core){ return core.searchPeople(q); }).then(function(r){
+          if(my !== seq) return; found = r || []; searching = false; paint();
+        }).catch(function(){ if(my !== seq) return; found = []; searching = false; paint(); });
+      }, 320);
+    });
+    sendBtn.addEventListener('click', function(){
+      if(sending || !picked.size) return;
+      sending = true; paintBtn();
+      var people = Array.from(picked.values());
+      corePromise.then(function(core){ return core.sendCard(core.makeCard(c), people, note.value); }).then(function(r){
+        sending = false;
+        if(r.ok){
+          try{ o.onShare && o.onShare('chat'); }catch(_){}
+          var msg = !r.bad ? (r.ok === 1 ? 'Sent to ' + people[0].name : 'Sent to ' + r.ok + ' people') : 'Sent to ' + r.ok + ', but ' + r.bad + ' couldn’t be reached';
+          close(); flash(msg);
+        } else { paintBtn(); say('Couldn’t send. Check your connection and try again.'); }
+      }).catch(function(){ sending = false; paintBtn(); say('Couldn’t send. Check your connection and try again.'); });
+    });
+
+    corePromise.then(function(core){ return core.currentUser().then(function(u){
+      if(!u){ signedIn = false; loading = false; paint(); return; }
+      return core.loadPeople().then(function(r){ base = r || []; loading = false; paint(); });
+    }); }).catch(function(){ loading = false; paint(); });
+    paintBtn();
+  }
+  /* small toast that outlives the drawer */
+  function flash(t){
+    var d = document.createElement('div');
+    d.style.cssText = 'position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:100020;background:#0f172a;color:#fff;padding:11px 18px;border-radius:99px;font:600 14px system-ui,sans-serif;max-width:88vw;text-align:center';
+    d.textContent = t; document.body.appendChild(d); setTimeout(function(){ d.remove(); }, 2800);
   }
 
   function hide(){
@@ -131,7 +272,7 @@
       if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done).catch(fallback);
       else fallback();
       function fallback(){
-        var inp = el && el.querySelector('input'); if(!inp) return;
+        var inp = el && el.querySelector('.ms-url, .ms-link input'); if(!inp) return;
         inp.select(); inp.setSelectionRange(0, 9999);
         try{ document.execCommand('copy') ? done() : (inp.focus()); }catch(_){}
       }
