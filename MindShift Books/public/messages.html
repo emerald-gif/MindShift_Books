@@ -29,15 +29,15 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .view.on{display:flex}
 
 /* ── top bar ── */
-.bar{display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top)) 12px 10px;background:#fff;border-bottom:1px solid var(--border);flex-shrink:0}
+.bar{display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top)) 12px 10px;background:var(--cbg1,#fff);border-bottom:1px solid var(--border);flex-shrink:0}
 .back{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--txt)}
 .back:active{background:#f1f5f9}
 .back svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .bar-title{font-size:20px;font-weight:800;letter-spacing:-.02em}
 
 /* ── inbox ── */
-.lscroll{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;background:#fff;position:relative;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch}
-.list{flex:1 0 auto;background:#fff}
+.lscroll{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;background:linear-gradient(180deg,var(--cbg1,#fff),var(--cbg2,#fff));position:relative;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch}
+.list{flex:1 0 auto;background:transparent}
 .ptr{position:absolute;left:50%;top:0;z-index:5;width:38px;height:38px;border-radius:50%;background:#fff;box-shadow:0 3px 14px rgba(15,23,42,.18);display:flex;align-items:center;justify-content:center;transform:translate(-50%,-44px);opacity:0;pointer-events:none;color:#94a3b8}
 .ptr.go{color:var(--g, #4f46e5)}
 .ptr svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
@@ -106,6 +106,18 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .wl-tile.on{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--p,#4f46e5)}
 .wl-tile .wl-plus{position:absolute;inset:0 0 22px;display:flex;align-items:center;justify-content:center;color:var(--sub)}
 .wl-tile .wl-plus svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.ib-prev{border:1px solid var(--border);border-radius:16px;overflow:hidden;background:linear-gradient(180deg,var(--cbg1,#fff),var(--cbg2,#fff))}
+.ib-top{padding:10px 14px 6px;font-weight:800;font-size:15px;border-bottom:1px solid var(--border);background:var(--cbg1,#fff)}
+.ib-s{margin:10px 12px 6px;height:28px;border-radius:99px;background:#f1f3f9}
+.ib-tabs{display:flex;gap:6px;padding:4px 12px 8px}
+.ib-tabs span{padding:4px 12px;border-radius:99px;background:#f1f5f9;font-size:11.5px;font-weight:700;color:var(--sub)}
+.ib-tabs span.on{background:var(--pt,#eef2ff);color:var(--p,#4f46e5)}
+.ib-r{display:flex;align-items:center;gap:10px;padding:8px 14px;border-top:1px solid rgba(15,23,42,.05)}
+.ib-r i{width:32px;height:32px;border-radius:50%;background:#cbd5e1;flex:none}
+.ib-r div{flex:1;min-width:0}
+.ib-r b{display:block;font-size:12.5px}
+.ib-r small{display:block;font-size:11.5px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ib-r em{font-style:normal;min-width:18px;height:18px;border-radius:9px;padding:0 5px;background:var(--g,linear-gradient(135deg,#4f46e5,#06b6d4));color:#fff;font-size:10.5px;font-weight:800;display:flex;align-items:center;justify-content:center}
 .th-card{padding:14px 14px 16px}
 .th-prev{border-radius:16px;padding:16px 12px;display:flex;flex-direction:column;gap:7px;border:1px solid var(--border)}
 .th-b{max-width:78%;padding:9px 13px;border-radius:18px;font-size:14.5px;line-height:1.35}
@@ -130,16 +142,16 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .blockbar{padding:14px 16px calc(14px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid var(--border);text-align:center;font-size:14px;color:var(--sub);flex-shrink:0}
 .blockbar[hidden]{display:none}
 .blockbar button{margin-left:8px;font-weight:800;color:var(--p)}
-.isearch{padding:10px 14px 6px;background:#fff;flex-shrink:0}
+.isearch{padding:10px 14px 6px;background:transparent;flex-shrink:0}
 .isearch[hidden]{display:none}
 .isearch-in{display:flex;align-items:center;gap:10px;height:42px;padding:0 8px 0 14px;border-radius:99px;background:#f1f3f9;border:1.5px solid transparent;transition:background .15s,border-color .15s,box-shadow .2s}
-.isearch-in:focus-within{background:#fff;border-color:#a5b4fc;box-shadow:0 0 0 4px rgba(79,70,229,.10)}
+.isearch-in:focus-within{background:#fff;border-color:var(--pb,#a5b4fc);box-shadow:0 0 0 4px var(--pt,rgba(79,70,229,.10))}
 .isearch-in > svg{width:19px;height:19px;fill:none;stroke:var(--mute);stroke-width:2.2;stroke-linecap:round;flex-shrink:0}
 .isearch-in input{flex:1;min-width:0;border:none;outline:none;background:transparent;font:inherit;font-size:16px;color:var(--txt);-webkit-appearance:none;appearance:none}
 .isearch-in input::-webkit-search-cancel-button,.isearch-in input::-webkit-search-decoration{-webkit-appearance:none;display:none}
 .isearch-in input::placeholder{color:#98a2b3}
 mark{background:#e0e7ff;color:inherit;border-radius:3px;padding:0 1px}
-.people{background:#fff;padding:8px 0 4px;border-bottom:1px solid #f1f5f9;flex-shrink:0}
+.people{background:transparent;padding:8px 0 4px;border-bottom:1px solid #f1f5f9;flex-shrink:0}
 .people-head{display:flex;align-items:center;justify-content:space-between;padding:0 18px 6px;font-size:13px;font-weight:700;color:var(--sub)}
 .pp-all{font-size:13px;font-weight:700;color:var(--p);padding:4px 0 4px 12px}
 .people-track{display:flex;gap:12px;overflow-x:auto;padding:2px 16px 8px;scroll-padding-inline:16px;scrollbar-width:none;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 10px,#000 calc(100% - 26px),transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 10px,#000 calc(100% - 26px),transparent 100%)}
@@ -149,7 +161,7 @@ mark{background:#e0e7ff;color:inherit;border-radius:3px;padding:0 1px}
 .pp{flex:0 0 auto;width:62px;text-align:center;scroll-snap-align:start}
 .pp .av{width:58px;height:58px;margin:0 auto;font-size:20px;overflow:visible}
 .pp .av img{border-radius:50%}
-.pp.add .av{background:#eef2ff;color:var(--p);border:2px dashed #c7d2fe}
+.pp.add .av{background:var(--pt,#eef2ff);color:var(--p);border:2px dashed var(--pb,#c7d2fe)}
 .pp.add .av svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
 .pp-name{font-size:12px;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--txt)}
 .pp-sub{font-size:10.5px;color:var(--mute);margin-top:-1px}
@@ -188,9 +200,9 @@ mark{background:#e0e7ff;color:inherit;border-radius:3px;padding:0 1px}
 .rq-btn.primary{background:var(--g);color:#fff}
 .rq-btn.danger{color:var(--red)}
 .rq-btn:active{opacity:.85}
-.tabs{display:flex;gap:8px;padding:10px 16px;background:#fff;border-bottom:1px solid #f1f5f9;flex-shrink:0}
+.tabs{display:flex;gap:8px;padding:10px 16px;background:transparent;border-bottom:1px solid #f1f5f9;flex-shrink:0}
 .tab{padding:7px 16px;border-radius:99px;background:#f1f5f9;font-size:13.5px;font-weight:700;color:var(--sub);transition:all .15s}
-.tab.on{background:#eef2ff;color:var(--p)}
+.tab.on{background:var(--pt,#eef2ff);color:var(--p)}
 .tab .n{margin-left:6px;font-weight:800}
 
 /* ── chat ── */
@@ -741,7 +753,7 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp
 const PAGE = 30;
 
 let me = null;                 // { uid, name, photo }
-let themes = { all:'classic', chats:{}, allW:'none', chatsW:{} };   // my chat themes + wallpapers (see the chat themes section)
+let themes = { all:'classic', chats:{}, allW:'none', chatsW:{}, inbox:'' };   // my chat themes + wallpapers (see the chat themes section)
 let _mine = '', _mineAt = 0, _idle = 0, _hb = 0;   // my typing / recording state (see the typing indicators section)
 let settings = { readReceipts:true, showActivity:true };   // my message settings (saved in messageSettings/{uid}; page: /message-settings)
 let dbReady = false;           // true once the Firebase SDK has loaded (the page paints from saved copies before that)
@@ -3062,21 +3074,25 @@ function saveSilent(c){
    The page behind goes blurred and dim, one spot stays sharp with a ring around it, and a card with an arrow explains it.
    "Continue" moves the spotlight (and the arrow) to the next thing. Shown once per person per device (inbox tour, chat tour);
    "Show me around" in the ⋮ menus plays it again. Steps whose target isn't on screen (no chats yet, etc.) are skipped. */
-const TOUR_KEY = (u, k) => 'msb_tour_v1_' + u + '_' + k;
+const TOUR_KEY = (u, k) => 'msb_tour_v2_' + u + '_' + k;   // v2: the tour was updated for the new features, so everyone sees it once more
 const TOURS = {
   inbox: [
-    { title:'Welcome to Messages 👋', text:'Chat privately with creators and readers. Here’s a quick look around — it takes about 20 seconds.' },
+    { title:'Messages just got an upgrade 👋', text:'Voice notes, photos, streaks, themes and more. Here’s a quick look around — about 30 seconds.' },
+    { sel:'#isearch', title:'Search your messages', text:'Type a name or part of a message to find a conversation fast.' },
     { sel:'#people', title:'Start a chat', text:'Tap anyone here to open a conversation, or tap New to find someone.' },
     { sel:'#tabs', title:'Filter your inbox', text:'See all your chats, or switch to Unread to catch up fast.' },
     { sel:'#list .row[data-uid]', title:'Your conversations', text:'Tap one to open it. Press and hold a chat to pin it, mark it read, delete it or block someone.' },
-    { sel:'#listMenuBtn', title:'More options', text:'Mark everything as read, manage blocked people and open your message settings.' }
+    { sel:'#list .stk', title:'Streaks 🔥', text:'Keep chatting back and forth and your streak grows. The flame turns to ⏳ when time is running out, so send a message to keep it.' },
+    { sel:'#listMenuBtn', title:'More options', text:'Mark everything as read, change the look of your inbox and chats under Appearance, manage blocked people and open your message settings.' }
   ],
   chat: [
-    { sel:'#chatHead', title:'Who you’re talking to', text:'Tap their name or photo to open their profile.' },
-    { sel:'#attachBtn', title:'Photos & videos', text:'Send a photo or video — you can add a caption before it goes out.' },
+    { sel:'#chatHead', title:'Who you’re talking to', text:'Tap their name or photo to open their profile. You’ll see when they’re typing or recording a voice note.' },
+    { sel:'#chatName .stk', title:'Your streak', text:'This shows how many days in a row you’ve both been chatting. Keep it going!' },
+    { sel:'#input', title:'Write a message', text:'They see “typing…” while you write. You can turn that off by hiding your activity status in message settings.' },
+    { sel:'#attachBtn', title:'Photos & videos', text:'Send photos or videos, even several at once as an album. On the preview, tap the pencil to crop, rotate, add text or draw before it goes out.' },
     { sel:'#micBtn', title:'Voice messages', text:'Press and hold to record. Slide left to cancel, or slide up to lock it and go hands-free.' },
     { sel:'#msgs .msg:not(.deleted)', last:true, title:'Press and hold a message', text:'React, reply or copy. On your own messages you can edit within 15 minutes, or delete for you or for everyone.' },
-    { sel:'#chatMenuBtn', title:'Chat options', text:'Pin, clear or delete this chat, or block the person.' }
+    { sel:'#chatMenuBtn', title:'Chat options', text:'Give this chat its own theme and wallpaper, pin, clear or delete it, or block the person.' }
   ]
 };
 let TOUR = null;
@@ -3175,6 +3191,7 @@ const SI = {
   ban:'<circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/>',
   sliders:'<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>',
   image:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>',
+  palette:'<circle cx="13.5" cy="6.5" r="1"/><circle cx="17.5" cy="10.5" r="1"/><circle cx="8.5" cy="7.5" r="1"/><circle cx="6.5" cy="12.5" r="1"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.6-.7 1.6-1.6 0-.4-.2-.8-.4-1.1-.3-.3-.5-.7-.5-1.1 0-.9.7-1.6 1.6-1.6H16c3.1 0 5.5-2.4 5.5-5.5C21.5 6 17.2 2 12 2z"/>',
   camera:'<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3"/>',
   send:'<path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/>',
   x:'<path d="M18 6 6 18M6 6l12 12"/>',
@@ -3363,7 +3380,7 @@ function openBlockedList(){
 function openListMenu(){
   openSheet('', [
     { label:'Mark all as read', run:markAllRead },
-    { label:'Chat theme', hint:'All chats', run:() => openThemePicker('all') },
+    { label:'Appearance', icon:'palette', run:openAppearanceMenu },
     { label:'Blocked users', run:openBlockedList },
     { label:'Message settings', run:() => { location.href = '/message-settings'; } },
     { label:'Show me around', icon:'compass', run:() => setTimeout(() => startTour('inbox', true), 300) }
@@ -3375,7 +3392,7 @@ function openChatMenu(){
   openSheet(chat.other.name, [
     { label: pinned ? 'Unpin chat' : 'Pin chat', run:() => setPinned(uid, !pinned) },
     { label:'View profile', run:() => { location.href = `/profile?uid=${encodeURIComponent(uid)}`; } },
-    { label:'Chat theme', run:() => openThemePicker('chat') },
+    { label:'Chat theme', icon:'palette', run:() => openThemePicker('chat') },
     { label:'Clear chat', run:clearChat },
     { label:'How this chat works', icon:'compass', run:() => setTimeout(() => startTour('chat', true), 300) },
     { label:'Delete chat', danger:true, run:() => deleteChat(uid) },
@@ -3544,7 +3561,7 @@ const THEMES = {
   gold:     { name:'Gold',     gm:'linear-gradient(135deg,#f59e0b,#d97706)', accent:'#d97706', bg:['#fffbeb','#fff1cc'], dot:'rgba(217,119,6,.10)' },
   graphite: { name:'Graphite', gm:'linear-gradient(135deg,#475569,#1e293b)', accent:'#334155', bg:['#f4f5f7','#e9ebef'], dot:'rgba(51,65,85,.08)' }
 };
-const WALLS = { none:'None', doodles:'Doodles', waves:'Waves', stars:'Stars', paper:'Paper', hills:'Hills', aurora:'Aurora' };
+const WALLS = { none:'None', doodles:'Doodles', books:'Books', leaves:'Leaves', waves:'Waves', stars:'Stars', bubbles:'Bubbles', confetti:'Confetti', paper:'Paper', diamonds:'Diamonds', hex:'Honeycomb', topo:'Contours', hills:'Hills', mountains:'Mountains', sunrise:'Sunrise', clouds:'Clouds', aurora:'Aurora' };
 const THEME_KEY = u => 'msb_themes_v2_' + u, THEME_VARS = ['--gm','--g','--p','--cbg1','--cbg2','--cdot','--cwi','--cws','--cwp','--cwr'];
 const themeIdFor = uid => { const id = (themes.chats && themes.chats[uid]) || themes.all || 'classic'; return THEMES[id] ? id : 'classic'; };
 const wallIdFor  = uid => { const id = (themes.chatsW && themes.chatsW[uid]) || themes.allW || 'none'; return (WALLS[id] || id === 'photo') ? id : 'none'; };
@@ -3572,6 +3589,44 @@ function wallCss(id, t){
   }
   if(id === 'paper') return { img:svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28"><path d="M28 0H0v28" fill="none" stroke="${c}" stroke-opacity=".10"/></svg>`), size:'28px 28px' };
   if(id === 'hills') return { img:svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="800" viewBox="0 0 400 800" preserveAspectRatio="xMidYMax slice"><path d="M0 650C90 600 170 610 250 650S360 690 400 640V800H0z" fill="${g[0]}" fill-opacity=".10"/><path d="M0 700C100 650 190 690 270 715S370 700 400 685V800H0z" fill="${g[1]}" fill-opacity=".13"/><path d="M0 750C120 715 220 745 300 760S380 750 400 742V800H0z" fill="${c}" fill-opacity=".16"/></svg>`), size:'cover', pos:'center bottom', rep:'no-repeat' };
+  if(id === 'books'){
+    const ic = {
+      book:'M4 5a2 2 0 012-2h13v16H6a2 2 0 00-2 2zM4 19a2 2 0 012-2h13',
+      mark:'M6 3h12v18l-6-4-6 4z',
+      glasses:'M2 15a4 4 0 108 0 4 4 0 10-8 0zM14 15a4 4 0 108 0 4 4 0 10-8 0zM10 15h4',
+      open:'M2 5c3-1.5 7-1 10 1 3-2 7-2.5 10-1v14c-3-1.5-7-1-10 1-3-2-7-2.5-10-1zM12 6v14',
+      pen:'M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z',
+      bulb:'M9 18h6M10 21h4M12 3a6 6 0 00-3.5 10.9c.6.5 1 1.3 1 2.1h5c0-.8.4-1.6 1-2.1A6 6 0 0012 3z'
+    };
+    const at = [['open',8,10,-10],['mark',96,6,12],['glasses',54,50,6],['book',112,62,-14],['pen',14,96,16],['bulb',78,104,-6]];
+    const body = at.map(([k,x,y,r]) => `<g transform="translate(${x} ${y}) rotate(${r} 12 12) scale(.9)"><path d="${ic[k]}"/></g>`).join('');
+    return { img:svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 150 150"><g fill="none" stroke="${c}" stroke-opacity=".15" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${body}</g></svg>`), size:'150px 150px' };
+  }
+  if(id === 'leaves'){
+    const lf = 'M5 19c0-8 5-13 14-14 0 9-5 14-14 14zM5 19c2-4 5-7 9-9';
+    const at = [[6,8,-20,1],[70,4,25,.8],[34,52,60,1.1],[92,58,-35,.9],[10,92,40,.8],[64,98,-10,1]];
+    const body = at.map(([x,y,r,k]) => `<g transform="translate(${x} ${y}) rotate(${r} 12 12) scale(${k})"><path d="${lf}"/></g>`).join('');
+    return { img:svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" width="124" height="124" viewBox="0 0 124 124"><g fill="none" stroke="${c}" stroke-opacity=".16" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${body}</g></svg>`), size:'124px 124px' };
+  }
+  if(id === 'bubbles') return { img:svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" width="140" height="140" viewBox="0 0 140 140"><g fill="none" stroke="${c}" stroke-opacity=".16" stroke-width="1.6"><circle cx="30" cy="30" r="14"/><circle cx="98" cy="22" r="8"/><circle cx="68" cy="76" r="19"/><circle cx="120" cy="112" r="11"/><circle cx="24" cy="108" r="9"/></g><g fill="${c}" fill-opacity=".12"><circle cx="58" cy="24" r="3"/><circle cx="124" cy="64" r="4"/><circle cx="40" cy="64" r="2.5"/><circle cx="96" cy="128" r="3"/></g></svg>`), size:'140px 140px' };
+  if(id === 'confetti'){
+    const col = [c, g[0], g[1]], bits = [[14,18,0],[62,10,1],[104,30,2],[34,60,1],[84,70,0],[122,92,1],[18,104,2],[64,112,0]];
+    const b = bits.map(([x,y,k],i) => i % 2 ? `<circle cx="${x}" cy="${y}" r="3.2" fill="${col[k]}"/>` : `<rect x="${x}" y="${y}" width="9" height="3.4" rx="1.7" fill="${col[k]}" transform="rotate(${i*37} ${x+4} ${y+2})"/>`).join('');
+    return { img:svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" width="136" height="128" viewBox="0 0 136 128"><g fill-opacity=".24">${b}</g></svg>`), size:'136px 128px' };
+  }
+  if(id === 'diamonds') return { img:svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 44 44"><path d="M22 2L42 22 22 42 2 22z" fill="none" stroke="${c}" stroke-opacity=".12" stroke-width="1.4"/><circle cx="22" cy="22" r="2" fill="${c}" fill-opacity=".14"/></svg>`), size:'44px 44px' };
+  if(id === 'hex') return { img:svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" width="56" height="100" viewBox="0 0 56 100"><g fill="none" stroke="${c}" stroke-opacity=".12" stroke-width="1.4"><path d="M28 66L0 50V16L28 0l28 16v34L28 66v34"/><path d="M28 0v34L0 50v34l28 16 28-16V50L28 34"/></g></svg>`), size:'56px 100px' };
+  if(id === 'topo'){
+    const ring = 'M20 100C18 52 58 22 102 24S182 62 178 102 148 178 100 180 22 150 20 100z';
+    const rs = [1,.8,.62,.46,.3].map(k => `<path d="${ring}" transform="translate(100 100) scale(${k}) translate(-100 -100)"/>`).join('');
+    return { img:svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><g fill="none" stroke="${c}" stroke-opacity=".14" stroke-width="1.5">${rs}</g></svg>`), size:'200px 200px' };
+  }
+  if(id === 'mountains') return { img:svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="800" viewBox="0 0 400 800" preserveAspectRatio="xMidYMax slice"><path d="M0 610L70 540 120 580 200 480 270 570 330 520 400 590V800H0z" fill="${g[0]}" fill-opacity=".10"/><path d="M0 680L80 610 150 660 230 580 310 665 370 630 400 655V800H0z" fill="${g[1]}" fill-opacity=".13"/><path d="M0 740L100 690 180 735 270 695 400 745V800H0z" fill="${c}" fill-opacity=".17"/></svg>`), size:'cover', pos:'center bottom', rep:'no-repeat' };
+  if(id === 'sunrise') return { img:svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="800" viewBox="0 0 400 800" preserveAspectRatio="xMidYMax slice"><g fill="${g[1]}"><circle cx="200" cy="610" r="150" fill-opacity=".07"/><circle cx="200" cy="610" r="110" fill-opacity=".09"/><circle cx="200" cy="610" r="70" fill-opacity=".16"/></g><path d="M0 650C100 620 300 620 400 650V800H0z" fill="${g[0]}" fill-opacity=".14"/><path d="M0 720C120 690 280 700 400 725V800H0z" fill="${c}" fill-opacity=".16"/></svg>`), size:'cover', pos:'center bottom', rep:'no-repeat' };
+  if(id === 'clouds'){
+    const cl = (x,y,k) => `<g transform="translate(${x} ${y}) scale(${k})"><circle cx="0" cy="0" r="26"/><circle cx="30" cy="-12" r="32"/><circle cx="68" cy="2" r="26"/><rect x="-26" y="0" width="120" height="26" rx="13"/></g>`;
+    return { img:svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="800" viewBox="0 0 400 800" preserveAspectRatio="xMidYMin slice"><g fill="${c}" opacity=".085">${cl(40,110,1.1)}${cl(230,60,.9)}${cl(170,260,1.2)}${cl(-10,400,.9)}${cl(260,470,1)}</g></svg>`), size:'cover', pos:'center top', rep:'no-repeat' };
+  }
   if(id === 'aurora') return { img:svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="800" viewBox="0 0 400 800" preserveAspectRatio="xMidYMid slice"><defs><filter id="b" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="55"/></filter></defs><g filter="url(#b)"><circle cx="70" cy="110" r="130" fill="${g[0]}" fill-opacity=".30"/><circle cx="350" cy="330" r="150" fill="${g[1]}" fill-opacity=".26"/><circle cx="120" cy="680" r="170" fill="${c}" fill-opacity=".22"/></g></svg>`), size:'cover', pos:'center', rep:'no-repeat' };
   return null;
 }
@@ -3610,22 +3665,68 @@ async function applyChatTheme(){
   if(!chat || chat.other.uid !== uid) return;
   paintTheme(v, tid, url ? 'photo' : (wid === 'photo' ? 'none' : wid), url); v.dataset.theme = sig;
 }
+/* the inbox has its own look (Appearance → Inbox theme): accent colours (tabs, unread badges, links, "+ New") and a soft tinted background.
+   Until I pick one for the inbox it simply follows my "all chats" colour. */
+const inboxThemeId = () => { const id = themes.inbox || themes.all || 'classic'; return THEMES[id] ? id : 'classic'; };
+function paintInbox(el, id){
+  ['--p','--g','--cbg1','--cbg2','--pt','--pb'].forEach(k => el.style.removeProperty(k));
+  if(id === 'classic' || !THEMES[id]) return;
+  const t = THEMES[id];
+  el.style.setProperty('--p', t.accent); el.style.setProperty('--g', t.gm); el.style.setProperty('--cbg1', t.bg[0]); el.style.setProperty('--cbg2', t.bg[1]);
+  el.style.setProperty('--pt', t.accent + '1f'); el.style.setProperty('--pb', t.accent + '66');
+}
+function applyInboxTheme(){
+  const v = $('listView'); if(!v) return;
+  const id = inboxThemeId(); if(v.dataset.theme === id) return;
+  v.dataset.theme = id; paintInbox(v, id);
+}
+function openAppearanceMenu(){
+  openSheet('Appearance', [
+    { label:'Inbox theme', hint:THEMES[inboxThemeId()].name, icon:'palette', run:openInboxThemePicker },
+    { label:'Chat theme', hint:'All chats', icon:'palette', run:() => openThemePicker('all') }
+  ]);
+}
+function openInboxThemePicker(){
+  if(!me) return;
+  let pick = inboxThemeId();
+  $('sheetTitle').textContent = 'Inbox theme'; $('sheetTitle').style.display = '';
+  const body = $('sheetBody'); body.innerHTML = '';
+  const card = sheetCard(); card.classList.add('th-card');
+  card.innerHTML = '<div class="ib-prev" id="ibPrev"><div class="ib-top">Messages</div><div class="ib-s"></div><div class="ib-tabs"><span class="on">All</span><span>Unread</span></div>' +
+    '<div class="ib-r"><i></i><div><b>Ada Okafor</b><small>Loved your latest post</small></div><em>2</em></div><div class="ib-r"><i></i><div><b>Becoming Better</b><small>You: Thank you!</small></div></div></div>' +
+    '<div class="th-h">Colour</div><div class="th-grid" id="thGrid"></div>';
+  body.appendChild(card);
+  const prev = card.querySelector('#ibPrev'), grid = card.querySelector('#thGrid');
+  const paint = () => { paintInbox(prev, pick); grid.querySelectorAll('.th-sw').forEach(b => b.classList.toggle('on', b.dataset.id === pick)); };
+  Object.entries(THEMES).forEach(([id, t]) => {
+    const b = document.createElement('button'); b.className = 'th-sw'; b.dataset.id = id; b.setAttribute('aria-label', t.name);
+    b.innerHTML = '<span style="background:' + t.gm + '"></span><small>' + t.name + '</small>';
+    b.onclick = () => { pick = id; paint(); };
+    grid.appendChild(b);
+  });
+  const acts = sheetCard();
+  const ok = document.createElement('button'); ok.className = 'sheet-item confirm'; ok.style.color = 'var(--p)'; ok.textContent = 'Apply to inbox';
+  ok.onclick = async () => { closeSheet(); themes.inbox = pick; applyInboxTheme(); toast('Inbox theme applied'); await saveThemes(); };
+  acts.appendChild(ok); body.appendChild(acts);
+  paint();
+  $('sheetBg').onclick = closeSheet; $('sheetBg').hidden = false; $('sheet').hidden = false;
+}
 async function loadThemes(){
   if(!me) return;
-  const take = d => { themes = { all:d.all || 'classic', chats:d.chats || {}, allW:d.allW || 'none', chatsW:d.chatsW || {} }; };
+  const take = d => { themes = { all:d.all || 'classic', chats:d.chats || {}, allW:d.allW || 'none', chatsW:d.chatsW || {}, inbox:d.inbox || '' }; };
   let c = null; try{ c = JSON.parse(localStorage.getItem(THEME_KEY(me.uid))); }catch(_){}
-  if(c){ take(c); applyChatTheme(); if(Date.now() - (c.t || 0) < 3600000) return; }
+  if(c){ take(c); applyChatTheme(); applyInboxTheme(); if(Date.now() - (c.t || 0) < 3600000) return; }
   if(!dbReady) return;
   try{
     const sn = await getDoc(doc(db,'messageThemes',me.uid));
     if(sn.exists()) take(sn.data());
     localStorage.setItem(THEME_KEY(me.uid), JSON.stringify({ t:Date.now(), ...themes }));
-    applyChatTheme();
+    applyChatTheme(); applyInboxTheme();
   }catch(_){}
 }
 async function saveThemes(){
   try{ localStorage.setItem(THEME_KEY(me.uid), JSON.stringify({ t:Date.now(), ...themes })); }catch(_){}
-  try{ await setDoc(doc(db,'messageThemes',me.uid), { all:themes.all, chats:themes.chats, allW:themes.allW, chatsW:themes.chatsW }); }
+  try{ await setDoc(doc(db,'messageThemes',me.uid), { all:themes.all, chats:themes.chats, allW:themes.allW, chatsW:themes.chatsW, inbox:themes.inbox || '' }); }
   catch(e){ toast('Saved on this phone only — couldn’t reach the server'); }
 }
 function openThemePicker(scope){
@@ -3699,7 +3800,7 @@ function openThemePicker(scope){
       }
     }catch(e){ toast('Couldn’t save that photo on this phone'); }
     if($('chatView')) $('chatView').dataset.theme = '';
-    applyChatTheme(); toast('Theme applied');
+    applyChatTheme(); applyInboxTheme(); toast('Theme applied');
     await saveThemes();
   };
   acts.appendChild(ok);
