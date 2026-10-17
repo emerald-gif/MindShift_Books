@@ -328,6 +328,8 @@ mark{background:#e0e7ff;color:inherit;border-radius:3px;padding:0 1px}
 .stat.err{color:var(--red);font-weight:700;cursor:pointer}
 .msg.failed{border:1.5px solid var(--red);opacity:1}
 .empty-chat{margin:auto;text-align:center;color:var(--mute);font-size:14px;padding:20px}
+.say-hi{align-self:center;margin-top:10px;padding:10px 22px;border-radius:99px;background:var(--g);color:#fff;font-weight:700;font-size:14.5px;box-shadow:0 4px 14px rgba(79,70,229,.25)}
+.say-hi:active{transform:scale(.97)}
 .empty-chat.hi{margin:16px auto 0;align-self:center;max-width:86%;padding:10px 18px;background:#fff;border:1px solid var(--border);border-radius:99px;color:var(--sub);font-size:13.5px;line-height:1.35;box-shadow:0 1px 2px rgba(15,23,42,.04)}
 
 .composer{position:relative;z-index:3;display:flex;align-items:flex-end;gap:10px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid #eef0f5;flex-shrink:0}
@@ -973,7 +975,8 @@ function renderList(){
   if(inboxQ) shown = shown.filter(t => threadMatches(t, inboxQ));
   if(!threads.length){
     el.innerHTML = reqRowHtml() + `<div class="empty"><div class="ic"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg></div>
-      <h2>No messages yet</h2><p>Tap someone in the row above, or the + to find anyone, to start a conversation.</p></div>`;
+      <h2>Welcome to Messages</h2><p>Chat privately with writers, creators and other readers. Send text, voice notes, photos and videos.</p><button class="btn" id="emptyNew" type="button">Start your first chat</button></div>`;
+    const en = $('emptyNew'); if(en) en.onclick = () => showNew(true);
     renderPeople(); bindReqRow();
     return;
   }
@@ -1142,7 +1145,7 @@ function renderMsgs(stick){
     </div>${chat.reqNote && !ms(chat.row && chat.row.seenAt) && ![...chat.msgs.values()].some(m => m.senderUid !== me.uid) ? `<div class="req-note">${esc(chat.other.name)} doesn’t follow you, so your first message goes to their message requests until they accept.</div>` : ''}`;
   if(!items.length) html += chat.clearedAt
     ? `<div class="empty-chat hi">Chat cleared · new messages will show up here</div>`
-    : `<div class="empty-chat hi">No messages yet · say hi to ${esc(chat.other.name)} 👋</div>`;
+    : `<div class="empty-chat hi">No messages yet · say hi to ${esc(chat.other.name)} 👋</div><button class="say-hi" id="sayHi" type="button">👋 Say hi</button>`;
   let lastDay = '';
   // photos/videos sent together (same gid, same sender) are drawn as ONE grid bubble, at the spot of the first one
   const gkey = m => m.gid && (isMedia(m) || m.deleted) ? (m.deleted ? 'd|' : 'm|') + m.senderUid + '|' + m.gid : '';
@@ -1200,6 +1203,7 @@ function updateToBot(){
   n.hidden = !c; if(c) n.textContent = c > 99 ? '99+' : c;
 }
 $('msgs').addEventListener('scroll', () => { if(_tbRaf) return; _tbRaf = requestAnimationFrame(() => { _tbRaf = 0; updateToBot(); }); }, { passive:true });
+$('msgs').addEventListener('click', e => { if(e.target.closest('#sayHi')){ input.value = 'Hi 👋'; send(); } });
 $('toBot').onclick = () => { const box = $('msgs'); box.scrollTo({ top:box.scrollHeight, behavior:'smooth' }); };
 // Messages query for the open chat. If the chat was cleared/deleted, only messages after that moment are ever read.
 function mq(...constraints){
@@ -3085,6 +3089,13 @@ const TOURS = {
     { sel:'#list .stk', title:'Streaks 🔥', text:'Keep chatting back and forth and your streak grows. The flame turns to ⏳ when time is running out, so send a message to keep it.' },
     { sel:'#listMenuBtn', title:'More options', text:'Mark everything as read, change the look of your inbox and chats under Appearance, manage blocked people and open your message settings.' }
   ],
+  inboxNew: [
+    { title:'Welcome to Messages 👋', text:'Chat privately with writers, creators and other readers. Here’s a quick look around — about 20 seconds.' },
+    { sel:'#people .pp.add', title:'Start your first chat', text:'Tap New to find anyone on MindShift Books, or tap one of the people suggested here.' },
+    { sel:'#isearch', title:'Search your messages', text:'Once you have conversations, type a name or part of a message to find one fast.' },
+    { sel:'#listMenuBtn', title:'Make it yours', text:'Under Appearance you can change the look of your inbox and chats. Message settings lets you choose who sees when you’re active.' },
+    { title:'You’re all set', text:'Send text, voice notes, photos and videos, react to messages and build streaks 🔥 with the people you chat with. Say hi to someone today!' }
+  ],
   chat: [
     { sel:'#chatHead', title:'Who you’re talking to', text:'Tap their name or photo to open their profile. You’ll see when they’re typing or recording a voice note.' },
     { sel:'#chatName .stk', title:'Your streak', text:'This shows how many days in a row you’ve both been chatting. Keep it going!' },
@@ -3116,7 +3127,8 @@ function tourSoon(kind){
 }
 function startTour(kind, force){
   if(TOUR || !me) return;
-  const steps = TOURS[kind].filter(s => !s.sel || tourTarget(s));
+  const fresh = kind === 'inbox' && !force && !threads.length && (() => { try{ return !localStorage.getItem('msb_tour_v1_' + me.uid + '_inbox'); }catch(e){ return false; } })();   // first time ever, no chats yet → the welcome version
+  const steps = TOURS[fresh ? 'inboxNew' : kind].filter(s => !s.sel || tourTarget(s));
   if(steps.length < 2) return;
   tourMark(kind);
   const root = document.createElement('div');
@@ -3765,7 +3777,7 @@ function openThemePicker(scope){
   pt.innerHTML = '<span class="wl-plus"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span><small>My photo</small>';
   pt.onclick = () => { if(photoUrl){ pickW = 'photo'; paint(); } else fileIn.click(); };
   pt.addEventListener('contextmenu', e => e.preventDefault());
-  row.appendChild(pt);
+  row.insertBefore(pt, row.firstChild);          // "My photo" comes first so it's easy to find
   const showPhotoTile = () => { if(photoUrl){ pt.style.backgroundImage = 'url("' + photoUrl + '")'; pt.style.backgroundSize = 'cover'; pt.style.backgroundPosition = 'center'; pt.querySelector('.wl-plus').style.display = 'none'; pt.querySelector('small').textContent = 'My photo'; } };
   fileIn.onchange = async () => {
     const f = fileIn.files && fileIn.files[0]; fileIn.value = ''; if(!f) return;
