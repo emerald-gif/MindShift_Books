@@ -11,6 +11,6 @@ export function openShareToChat(item){
     chat: item
   });
   if(window.MSBShare) return go();
-  const sc = document.createElement('script'); sc.src = '/share-drawer.js?v=2'; sc.onload = go; document.head.appendChild(sc);
+  const sc = document.createElement('script'); sc.src = '/share-drawer.js?v=3'; sc.onload = go; document.head.appendChild(sc);
 }
 if(typeof window !== 'undefined') window.openShareToChat = openShareToChat;

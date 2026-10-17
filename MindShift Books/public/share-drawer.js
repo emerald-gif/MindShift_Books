@@ -24,6 +24,9 @@
 #msbShare.in .ms-sheet{transform:translateY(0)}
 #msbShare .ms-sheet.drag{transition:none}
 #msbShare .ms-bar{width:40px;height:4px;border-radius:2px;background:#cbd5e1;margin:4px auto 10px}
+#msbShare .ms-x{position:absolute;top:10px;right:12px;width:34px;height:34px;border:0;border-radius:50%;background:#f1f5f9;color:#475569;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:3;padding:0}
+#msbShare .ms-x:active{background:#e2e8f0}
+#msbShare .ms-x svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round}
 #msbShare .ms-hd{font-size:17px;font-weight:800;text-align:center;margin-bottom:12px}
 #msbShare .ms-prev{display:flex;gap:11px;align-items:center;padding:10px;border:1px solid #e2e8f0;border-radius:14px;margin-bottom:16px;background:#f8fafc}
 #msbShare .ms-prev img{width:46px;height:46px;border-radius:9px;object-fit:cover;background:linear-gradient(135deg,#4f46e5,#06b6d4);flex:none}
@@ -132,8 +135,10 @@
     history.pushState({ msbShare:1 }, ''); pushed = true;
 
     var sheet = el.querySelector('.ms-sheet');
+    var xb = document.createElement('button'); xb.type = 'button'; xb.className = 'ms-x'; xb.setAttribute('data-x', '1'); xb.setAttribute('aria-label', 'Close');
+    xb.innerHTML = '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>'; sheet.appendChild(xb);
     el.addEventListener('click', function(e){
-      if(e.target === el){ close(); return; }
+      if(e.target === el || e.target.closest('[data-x]')){ close(); return; }
       var b = e.target.closest('[data-s]'); if(!b) return;
       e.stopPropagation();
       act(b.getAttribute('data-s'), url, text, b);
