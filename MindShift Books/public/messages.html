@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content"/>
 <meta name="robots" content="noindex, nofollow"/>
 <meta name="theme-color" content="#ffffff"/>
 <title>Messages | MindShift Books</title>
@@ -25,7 +25,7 @@ html,body{height:100%}
 body{font-family:'Segoe UI',system-ui,-apple-system,Roboto,sans-serif;background:var(--bg);color:var(--txt);-webkit-font-smoothing:antialiased;overflow:hidden}
 button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
 
-.view{display:none;height:100dvh;flex-direction:column;background:var(--bg)}
+.view{display:none;height:var(--vvh,100dvh);flex-direction:column;background:var(--bg)}
 .view.on{display:flex}
 
 /* ── top bar ── */
@@ -2880,6 +2880,26 @@ $('edTools').addEventListener('click', e => { const b = e.target.closest('.ed-to
 window.addEventListener('resize', () => { if(ED.open) edLayout(); });
 function edFit(){ const e = $('ed'), v = window.visualViewport; if(!ED.open) return; if(v){ e.style.top = v.offsetTop + 'px'; e.style.height = v.height + 'px'; } }
 if(window.visualViewport){ visualViewport.addEventListener('resize', edFit); visualViewport.addEventListener('scroll', edFit); }
+
+/* Keyboard handling for the chat. Android Chrome (without resizes-content) and iOS keep the page full-height under the keyboard,
+   so the browser used to scroll the whole page up: header gone, text box hidden until the keyboard finished. Now the screen is sized
+   to the part you can actually see (--vvh), the page never scrolls, and the newest messages stay in view while you type. */
+(function(){
+  const v = window.visualViewport; if(!v) return;
+  let lastH = v.height;
+  function fit(){
+    const h = Math.round(v.height);
+    document.documentElement.style.setProperty('--vvh', h + 'px');
+    if(window.scrollY || document.documentElement.scrollTop || v.offsetTop){ window.scrollTo(0, 0); }
+    if(h < lastH - 80){                                   // keyboard opened: keep the end of the conversation visible
+      const box = document.getElementById('msgs');
+      if(box && document.activeElement === input) requestAnimationFrame(() => { box.scrollTop = box.scrollHeight; });
+    }
+    lastH = h;
+  }
+  v.addEventListener('resize', fit); v.addEventListener('scroll', fit);
+  fit();
+})();
 if(window.ResizeObserver) new ResizeObserver(() => { if(ED.open) edLayout(); }).observe($('edStage'));
 /* sub-bar controls */
 $('edSub').addEventListener('click', e => {
