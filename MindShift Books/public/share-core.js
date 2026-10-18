@@ -69,17 +69,31 @@ async function fetchProfiles(ids){
   return out;
 }
 
-/* people already in my inbox first, then people I follow. Two small queries, done once per drawer open. */
+/* Read-saving: the people list is remembered on the phone for 10 minutes (it only changes when you start a chat or follow someone),
+ * and each search text is remembered for the life of the page. Opening the drawer a second time costs 0 reads. */
+const PEOPLE_TTL = 10 * 60000;
+const pkey = uid => 'msb_sharepeople_v1_' + uid;
+const searchMemo = new Map();
+
 export async function loadPeople(){
   const user = await currentUser(); if(!user) return [];
+  try{ const c = JSON.parse(localStorage.getItem(pkey(user.uid))); if(c && Array.isArray(c.list) && c.list.length && Date.now() - c.t < PEOPLE_TTL) return c.list; }catch(e){}
+  const list = await loadPeopleFresh(user);
+  if(list.length) try{ localStorage.setItem(pkey(user.uid), JSON.stringify({ t:Date.now(), list })); }catch(e){}
+  return list;
+}
+/* call after you start a chat with someone new / follow someone, so the next open re-reads */
+export function forgetPeople(){ try{ const u = auth && auth.currentUser; if(u) localStorage.removeItem(pkey(u.uid)); }catch(e){} }
+
+async function loadPeopleFresh(user){
   const seen = new Set([user.uid]), list = [];
   try{
-    const ts = await getDocs(query(collection(db, 'inbox', user.uid, 'threads'), orderBy('lastAt', 'desc'), limit(30)));
+    const ts = await getDocs(query(collection(db, 'inbox', user.uid, 'threads'), orderBy('lastAt', 'desc'), limit(20)));
     ts.docs.forEach(d => { const x = d.data(), uid = x.otherUid || d.id; if(x.deleted === true || seen.has(uid) || uid === 'official') return; seen.add(uid); list.push({ uid, name:x.name || '', photo:x.photo || '', username:'', group:'Recent chats' }); });
   }catch(e){}
   try{
-    const fs = await getDocs(query(collection(db, 'follows'), where('followerId', '==', user.uid), limit(40)));
-    const ids = [...new Set(fs.docs.map(d => d.data().followingId).filter(id => id && !seen.has(id) && id !== 'official' && !id.includes('_')))];
+    const fs = await getDocs(query(collection(db, 'follows'), where('followerId', '==', user.uid), limit(30)));
+    const ids = [...new Set(fs.docs.map(d => d.data().followingId).filter(id => id && !seen.has(id) && id !== 'official' && !id.includes('_')))].slice(0, 20);   // the drawer shows a short list; search finds the rest
     if(ids.length) (await fetchProfiles(ids)).forEach(p => { if(p.name && !seen.has(p.uid)){ seen.add(p.uid); list.push({ ...p, group:'People you follow' }); } });
   }catch(e){}
   return list;
@@ -88,18 +102,23 @@ export async function loadPeople(){
 /* anyone on the platform, by @username or name (same prefix search the "new message" screen uses) */
 export async function searchPeople(text){
   const user = await currentUser(); if(!user) return [];
-  const q = String(text || '').trim().replace(/^@/, '');
+  const raw = String(text || '').trim(), q = raw.replace(/^@/, '');
   if(q.length < 2) return [];
+  const memoKey = raw.toLowerCase();
+  if(searchMemo.has(memoKey)) return searchMemo.get(memoKey);
   const title = q.replace(/\b\w/g, c => c.toUpperCase());
-  const range = (field, v) => getDocs(query(collection(db, 'users'), where(field, '>=', v), where(field, '<=', v + '\uf8ff'), limit(8))).catch(() => null);
-  const [u1, n1, n2] = await Promise.all([range('username', q.toLowerCase()), range('name', q), title !== q ? range('name', title) : Promise.resolve(null)]);
+  const range = (field, v) => getDocs(query(collection(db, 'users'), where(field, '>=', v), where(field, '<=', v + '\uf8ff'), limit(5))).catch(() => null);
+  const byHandle = raw.charAt(0) === '@';        // "@ada" is a username search — no need to also scan names
+  const [u1, n1, n2] = await Promise.all([range('username', q.toLowerCase()), byHandle ? null : range('name', q), (!byHandle && title !== q) ? range('name', title) : null]);
   const seen = new Map();
   [u1, n1, n2].forEach(sn => sn && sn.docs.forEach(d => {
     if(d.id === user.uid || d.id === 'official' || seen.has(d.id)) return;
     const x = d.data(); if(!x.name) return;
     seen.set(d.id, { uid:d.id, name:x.name || '', photo:x.photo || x.photoURL || '', username:x.username || '', group:'On MindShift' });
   }));
-  return [...seen.values()].slice(0, 20);
+  const out = [...seen.values()].slice(0, 15);
+  searchMemo.set(memoKey, out);
+  return out;
 }
 
 /* the single sending routine: one message + both inbox rows per person, all-or-nothing per person */

@@ -4274,8 +4274,14 @@ function ensureUsersCache(){
   if(_usersCachePromise) return _usersCachePromise;
   _usersCachePromise = (async () => {
     try{
+      // 200 reads is a lot to repeat on every visit: keep the (trimmed) list for 15 minutes in this tab
+      try{ const c = JSON.parse(sessionStorage.getItem('msb_users_v1')); if(c && Array.isArray(c.u) && c.u.length && Date.now() - c.t < 15 * 60000){ _allUsersCache = c.u; return _allUsersCache; } }catch(e){}
       const snap = await rgetDocs(query(collection(db,'users'), limit(200)));
       _allUsersCache = snap.docs.map(d=>({uid:d.id,...d.data()}));
+      try{
+        const slim = _allUsersCache.map(u => ({ uid:u.uid, name:u.name || '', displayName:u.displayName || '', username:u.username || '', jobTitle:u.jobTitle || '', category:u.category || '', isMindshift:!!u.isMindshift, photo:u.photo || '', photoURL:u.photoURL || '' }));
+        sessionStorage.setItem('msb_users_v1', JSON.stringify({ t:Date.now(), u:slim }));
+      }catch(e){}
     }catch(e){ _allUsersCache = []; }
     return _allUsersCache;
   })();
