@@ -256,3 +256,29 @@ html body .sidebar .sidebar-close-btn{background:var(--ds-fill)}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
 }
+
+/* ─── 13. ENGAGEMENT ROW — one look on every page ─────────────────────────────
+   Like · Comment · Repost · Share ………… Save   (cards in the feed + profiles, and the action bar on the article / post readers)
+   Same order, same icon size, same tap area, same colours and states everywhere. */
+.acard-foot,.action-bar{display:flex;align-items:center;gap:2px}
+.acard-like,.pcard-comment,.acard-repost,.acard-share,.acard-save,.act-btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  min-width:40px;min-height:40px;padding:8px 12px;margin:0;border:none;border-radius:999px;background:none;
+  color:var(--sub);font-size:13px;font-weight:600;line-height:1;letter-spacing:0;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;font-variant-numeric:tabular-nums;
+}
+.acard-like svg,.pcard-comment svg,.acard-repost svg,.acard-share svg,.acard-save svg,.act-btn svg{
+  width:20px;height:20px;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;
+}
+.acard-like.liked,.act-like.liked{color:var(--red)}
+.acard-like.liked svg,.act-like.liked svg{fill:var(--red);stroke:var(--red)}
+.acard-save.saved,.act-save.saved{color:var(--p)}
+.acard-save.saved svg,.act-save.saved svg{fill:var(--p);stroke:var(--p)}
+.acard-repost.reposted,.act-repost.reposted{color:#059669}
+.acard-save,.act-save{margin-left:auto}          /* Save sits alone on the far right */
+.acard-share{margin-left:0}
+@media (hover:hover){
+  .acard-like:hover,.act-like:hover{background:var(--red-bg,#fff1f1);color:var(--red)}
+  .pcard-comment:hover,.acard-share:hover,.acard-save:hover,.act-btn:hover{background:var(--ds-tonal);color:var(--p)}
+  .acard-repost:hover,.act-repost:hover{background:#ecfdf5;color:#059669}
+}

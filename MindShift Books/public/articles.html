@@ -417,23 +417,24 @@ main{max-width:1100px;margin:0 auto}
    For You and Following feeds. Same underlying data/logic as .sug-card
    (real users collection, real follows collection) — just a different
    layout so it reads well as a compact row instead of a stacked list. */
-.ptf-wrap{padding:14px 0 4px;border-bottom:8px solid var(--bg,#f8fafc)}
-.ptf-hdr{padding:0 16px 10px;display:flex;align-items:center;justify-content:space-between}
-.ptf-hdr span{font-size:15px;font-weight:800;color:var(--txt)}
+.ptf-wrap{padding:16px 0 6px;border-bottom:8px solid var(--bg,#f8fafc)}
+.ptf-hdr{padding:0 16px 6px;display:flex;align-items:center;justify-content:space-between}
+.ptf-hdr span{font-size:18px;font-weight:800;letter-spacing:-.02em;color:var(--txt)}
 .ptf-hdr a{font-size:13px;font-weight:700;color:var(--p);text-decoration:none;cursor:pointer}
-.ptf-scroll{display:flex;gap:12px;overflow-x:auto;padding:0 16px 8px;scrollbar-width:none}
+.ptf-scroll{display:flex;gap:12px;overflow-x:auto;padding:8px 16px 16px;scrollbar-width:none;scroll-snap-type:x proximity;scroll-padding:0 16px;-webkit-overflow-scrolling:touch}
+.ptf-scroll::after{content:'';flex:0 0 4px}   /* keeps a little breathing room after the last card */
 .ptf-scroll::-webkit-scrollbar{display:none}
-.ptf-card{flex:0 0 168px;width:168px;min-width:168px;max-width:168px;overflow:hidden;
-  border:1.5px solid var(--border);border-radius:16px;padding:18px 14px;
+.ptf-card{flex:0 0 clamp(138px,calc((100vw - 72px)/2),190px);width:clamp(138px,calc((100vw - 72px)/2),190px);min-width:0;max-width:190px;overflow:hidden;scroll-snap-align:start;   /* two full cards + a peek of the third on any phone */
+  border:1.5px solid var(--border);border-radius:16px;padding:18px 10px 14px;
   display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;background:var(--card)}
-.ptf-dismiss{position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;border:none;
+.ptf-dismiss{position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;border:none;
   background:#f1f5f9;color:var(--mute);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px}
 .ptf-av{width:76px;height:76px;border-radius:50%;background:var(--g);color:#fff;display:flex;
   align-items:center;justify-content:center;font-size:24px;font-weight:800;overflow:hidden;margin-bottom:12px;cursor:pointer;flex-shrink:0}
 .ptf-av img{width:100%;height:100%;object-fit:cover;display:block}
-.ptf-name{width:100%;font-size:14.5px;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.ptf-name{width:100%;font-size:14px;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
 .ptf-handle{width:100%;font-size:12.5px;color:var(--mute);font-weight:600;margin:3px 0 14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ptf-follow{width:100%;padding:10px 0;background:var(--g);color:#fff;border:none;border-radius:99px;
+.ptf-follow{width:100%;margin-top:auto;padding:10px 0;background:var(--g);color:#fff;border:none;border-radius:99px;
   font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0}
 .ptf-follow.following-btn{background:var(--card);color:var(--txt);border:1.5px solid var(--border)}
 /* See more banner (at end of following feed) */
@@ -784,7 +785,7 @@ main{max-width:1100px;margin:0 auto}
 <script src="/article-categories.js"></script>
 <script src="/currency.js?v=5"></script>
 <meta name="theme-color" content="#ffffff">
-<link rel="stylesheet" href="/design.css?v=1">
+<link rel="stylesheet" href="/design.css?v=2">
 </head>
 <body class="ds-glass">
 
@@ -2534,6 +2535,7 @@ function buildAcard(a){
           <svg viewBox="0 0 24 24"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
           <span id="rc-${a.id}"></span>
         </button>
+        <button class="acard-share" onclick="event.stopPropagation();shareItemDrawer('${a.id}')" title="Share" aria-label="Share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
         <button class="acard-save ${savedSet.has(a.id)?'saved':''}" id="sv-${a.id}" onclick="event.stopPropagation();handleSave('${a.id}')">
           <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
         </button>
@@ -3220,6 +3222,7 @@ function buildPostCardHtml(p){
           <svg viewBox="0 0 24 24"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
           <span id="rc-${p.id}"></span>
         </button>
+        <button class="acard-share" onclick="event.stopPropagation();shareItemDrawer('${p.id}')" title="Share" aria-label="Share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
         <button class="acard-save ${savedSet.has(p.id)?'saved':''}" id="sv-${p.id}" onclick="event.stopPropagation();handleSave('${p.id}')" title="Save post">
           <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
         </button>
@@ -3320,6 +3323,7 @@ function buildRepostCardHtmlLegacy(r){
           <svg viewBox="0 0 24 24"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
           <span id="rc-${tid}"></span>
         </button>
+        <button class="acard-share" onclick="event.stopPropagation();shareItemDrawer('${tid}')" title="Share" aria-label="Share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
         <button class="acard-save ${savedSet.has(tid)?'saved':''}" id="sv-${tid}" onclick="event.stopPropagation();handleSave('${tid}')" title="Save">
           <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
         </button>
@@ -3405,6 +3409,7 @@ function buildRepostCardHtml(r){
           ${RP_ICON}
           <span id="rc-${tid}"></span>
         </button>
+        <button class="acard-share" onclick="event.stopPropagation();shareItemDrawer('${tid}')" title="Share" aria-label="Share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
         <button class="acard-save ${savedSet.has(tid)?'saved':''}" id="sv-${tid}" onclick="event.stopPropagation();handleSave('${tid}')" title="Save">
           <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
         </button>
@@ -3548,6 +3553,7 @@ function renderGrid(){
             <svg viewBox="0 0 24 24"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
             <span id="rc-${a.id}"></span>
           </button>
+          <button class="acard-share" onclick="event.stopPropagation();shareItemDrawer('${a.id}')" title="Share" aria-label="Share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
           <button class="acard-save ${savedSet.has(a.id)?'saved':''}" id="sv-${a.id}" onclick="event.stopPropagation();handleSave('${a.id}')" title="Save article">
             <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
           </button>
