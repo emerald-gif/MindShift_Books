@@ -9,8 +9,8 @@ import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/
 import { getFirestore, collection, query, where, getCountFromServer, doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
 
 const CACHE_KEY = 'msb_unread_v1';
-// "New" pill beside Messages — shows until this date (local time), then disappears on its own. Change the date to extend/shorten.
-const NEW_UNTIL = new Date('2026-10-30T00:00:00');
+// "New" pill beside Messages — its end date lives in new-badge.js (shared with the Messages screen header, so both leave together).
+import { isNewActive, makeNewPill } from '/new-badge.js';
 const CHAT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>';
 
 let unread = 0, row = null, badge = null, dot = null;
@@ -69,13 +69,7 @@ function install(){
   badge.style.cssText = 'display:none;min-width:20px;height:20px;padding:0 6px;margin-left:8px;border-radius:99px;background:linear-gradient(135deg,#4f46e5,#06b6d4);color:#fff;font-size:11.5px;font-weight:800;align-items:center;justify-content:center;flex-shrink:0';
   (lab ? lab.parentElement : clone).insertBefore(badge, lab ? lab.nextSibling : null);
   // "New" pill (sits between the label and the unread count) — only until NEW_UNTIL
-  if(Date.now() < NEW_UNTIL.getTime()){
-    const np = document.createElement('span');
-    np.textContent = 'New';
-    np.setAttribute('data-msb-new', '1');
-    np.style.cssText = 'margin-left:8px;padding:2px 7px;border-radius:99px;background:#dbeafe;color:#1d4ed8;font-size:10.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;line-height:1.5;flex-shrink:0';
-    badge.parentElement.insertBefore(np, badge);
-  }
+  if(isNewActive()) badge.parentElement.insertBefore(makeNewPill(), badge);
   clone.addEventListener('click', e => { e.preventDefault(); location.href = '/messages'; });
   src.parentElement.insertBefore(clone, src.nextSibling);
   // follow the original row's visibility (the menu shows it for signed-in users only)

@@ -625,7 +625,7 @@ mark{background:#e0e7ff;color:inherit;border-radius:3px;padding:0 1px}
 <section class="view on" id="listView">
   <div class="bar">
     <button class="back" id="listBack" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
-    <div class="bar-title">Messages</div>
+    <div class="bar-title">Messages<span id="newPillSlot"></span></div>
     <button class="kebab" id="listMenuBtn" aria-label="More options"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>
   </div>
   <div class="lscroll" id="lscroll"><div class="ptr" id="ptr" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 11-3-6.7L21 8M21 3v5h-5"/></svg></div>
@@ -4357,6 +4357,13 @@ onAuthStateChanged(auth, async user => {
   else showList();
   if($('listView').classList.contains('on')) startInbox();             // e.g. they tapped back before we finished loading
 });
+</script>
+<script>
+/* "New" pill beside the Messages title — same pill and same end date as the sidebar (both come from /new-badge.js) */
+import('/new-badge.js').then(function(m){
+  var slot = document.getElementById('newPillSlot');
+  if(slot && m.isNewActive()) slot.appendChild(m.makeNewPill());
+}).catch(function(){});
 </script>
 </body>
 </html>
