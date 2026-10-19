@@ -100,8 +100,8 @@
         .catch(function(){ clearTimeout(t); return null; });
     }
     window.__msbDV=dv;
-    var a=run('articles',true,'publishedAt',15);   // first page only (15/15/20) — the rest arrives on scroll; keep in step with the *_PAGE_SIZE constants below
-    window.__msbPF={articles:a, posts:run('posts',true,'publishedAt',15), reposts:run('reposts',false,'createdAt',20)};
+    var a=run('articles',true,'publishedAt',60);
+    window.__msbPF={articles:a, posts:run('posts',true,'publishedAt',60), reposts:run('reposts',false,'createdAt',60)};
     window.__msbPFok=false;
     a.then(function(s){ if(s && !s.empty) window.__msbPFok=true; });
   }catch(e){}
@@ -1186,24 +1186,6 @@ function paintCachedCounts(prefix, ids){
 }
 async function getCountDocs(coll, ids){
   const out = new Array(ids.length).fill(null);
-  // 1) Ask our own server first: it reads each counter once and shares it with everyone for ~45s, so the Firestore
-  //    bill no longer grows with every person who opens the feed. (Any problem → fall through to the direct read below.)
-  try{
-    const byId = new Map();
-    for(let i=0; i<ids.length; i+=100){
-      const chunk = ids.slice(i, i+100);
-      const ctl = window.AbortController ? new AbortController() : null;
-      const tm = setTimeout(()=>{ if(ctl) ctl.abort(); }, 5000);
-      let res;
-      try{ res = await fetch('/api/counts?c='+encodeURIComponent(coll)+'&ids='+chunk.map(encodeURIComponent).join(','), { signal: ctl ? ctl.signal : undefined }); }
-      finally{ clearTimeout(tm); }
-      if(!res.ok) throw new Error('http '+res.status);
-      const j = await res.json();
-      if(!j || !j.ok || !j.counts) throw new Error('bad payload');
-      for(const id in j.counts) byId.set(id, j.counts[id]);
-    }
-    return ids.map(id => { const o = byId.get(id); return { exists: () => !!o, data: () => o || {} }; });
-  }catch(e){ /* server unavailable — use the direct path */ }
   try{
     const dv = window.__msbDV;
     if(!dv) throw new Error('no decoder');
@@ -1432,11 +1414,7 @@ let _suppressAutoRender = false;
    category tab's client-side filter comes up thin on what's loaded so far.
    The feed still looks and scrolls exactly the same — this only changes how
    many reads happen behind it. */
-const ARTICLES_PAGE_SIZE = 15;   // was 60: a phone shows ~5 cards, and every card also costs 3 count reads
-const POSTS_PAGE_SIZE = 15;
-const REPOSTS_PAGE_SIZE = 20;
-let _postsLastDoc = null, _postsLastId = null, _postsExhausted = false, _postsLoadingMore = false;
-let _repostsLastDoc = null, _repostsLastId = null, _repostsExhausted = false, _repostsLoadingMore = false;
+const ARTICLES_PAGE_SIZE = 60;
 let _articlesLastDoc = null;
 let _articlesLastId = null;   // set instead of _articlesLastDoc when the first page came from the early prefetch
 let _articlesExhausted = false;
@@ -1995,7 +1973,7 @@ async function refreshForYou(){
     );
     // No `kind` filter here either — same reasoning as loadRecentReposts:
     // filtering client-side avoids needing a composite index.
-    const repostQ = query(collection(db,'reposts'), orderBy('createdAt','desc'), limit(REPOSTS_PAGE_SIZE));
+    const repostQ = query(collection(db,'reposts'), orderBy('createdAt','desc'), limit(60));
     const [snap, repostSnap] = await Promise.all([getDocs(q), getDocs(repostQ)]);
     if(!snap.empty){
       const fresh = snap.docs.map(d=>{
@@ -2781,7 +2759,7 @@ function observeLoadMoreSentinel(){
   if(!sentinel) return;
   if(!_loadMoreObserver){
     _loadMoreObserver = new IntersectionObserver((entries)=>{
-      if(entries.some(e=>e.isIntersecting)) loadMoreFeed();
+      if(entries.some(e=>e.isIntersecting)) loadMoreArticles();
     }, { rootMargin: '600px' });
   } else {
     _loadMoreObserver.disconnect();
@@ -4090,7 +4068,7 @@ async function loadPublishedArticles(){
 // Pulls the next page and appends it — used by infinite scroll, and by the
 // filter-tab handler when a category's client-side filter comes up thin.
 // Returns the number of new articles added (0 if exhausted or already loading).
-async function loadMoreArticles(opts){
+async function loadMoreArticles(){
   if(_articlesLoadingMore || _articlesExhausted) return 0;
   if(!_articlesLastDoc && _articlesLastId){
     // First page came from the early prefetch, so there's no snapshot to page from yet — fetch just that one doc.
@@ -4121,7 +4099,8 @@ async function loadMoreArticles(opts){
       const newOnes = snap.docs.map(mapArticleDoc).map(a=>({...a, type:'article'}));
       mergedFeedOrder = mergedFeedOrder.concat(newOnes);
     }
-    if(!(opts && opts.noRender)){ renderGrid(); _xDiscoverBuilt = false; }
+    renderGrid();
+    _xDiscoverBuilt = false;
     return snap.docs.length;
   }catch(e){ console.error('Firestore load-more articles error:',e); return 0; }
   finally{ _articlesLoadingMore = false; }
@@ -4141,70 +4120,42 @@ async function ensureFilteredResultsFilled(){
 }
 
 /* ── LOAD PUBLISHED POSTS FROM FIRESTORE ── */
-function mapPostDoc(d){
-  const x = d.data();
-  return {
-    id: d.id,
-    type: 'post',
-    text: x.text||'',
-    images: Array.isArray(x.images) ? x.images.slice(0,5) : [],
-    videoUrl: x.videoUrl||'',
-    thumbnailUrl: x.thumbnailUrl||'',
-    duration: x.duration||0,
-    publishedAt: x.publishedAt||x.createdAt||null,
-    author: x.authorName||'MindShift Books User',
-    avatar: x.authorPhoto||'logo.jpg',
-    authorUid: x.authorUid||null,
-    isMindshift: x.authorUid==='official',
-    commentsOff: !!x.commentsOff,
-    hideLikeCount: !!x.hideLikeCount,
-    quotedFrom: x.quotedFrom||null,
-    quotedSnapshot: x.quotedSnapshot||null,
-    mentions: Array.isArray(x.mentions) ? x.mentions : [],
-    linkPreview: x.linkPreview||null,
-    poll: x.poll||null
-  };
-}
 async function loadPublishedPosts(){
   try{
     const q = query(
       collection(db,'posts'),
       where('status','==','published'),
       orderBy('publishedAt','desc'),
-      limit(POSTS_PAGE_SIZE)
+      limit(60)
     );
     const snap = (await takePrefetch('posts')) || await rgetDocs(q, { tries: 2, timeoutMs: 7000 });
-    POSTS = snap.docs.map(mapPostDoc);
-    const last = snap.docs[snap.docs.length-1];
-    if(snap.__rest){ _postsLastDoc = null; _postsLastId = last ? last.id : null; } else { _postsLastDoc = last || null; _postsLastId = null; }
-    _postsExhausted = snap.docs.length < POSTS_PAGE_SIZE;
+    POSTS = snap.docs.map(d=>{
+      const x = d.data();
+      return {
+        id: d.id,
+        type: 'post',
+        text: x.text||'',
+        images: Array.isArray(x.images) ? x.images.slice(0,5) : [],
+        videoUrl: x.videoUrl||'',
+        thumbnailUrl: x.thumbnailUrl||'',
+        duration: x.duration||0,
+        publishedAt: x.publishedAt||x.createdAt||null,
+        author: x.authorName||'MindShift Books User',
+        avatar: x.authorPhoto||'logo.jpg',
+        authorUid: x.authorUid||null,
+        isMindshift: x.authorUid==='official',
+        commentsOff: !!x.commentsOff,
+        hideLikeCount: !!x.hideLikeCount,
+        quotedFrom: x.quotedFrom||null,
+        quotedSnapshot: x.quotedSnapshot||null,
+        mentions: Array.isArray(x.mentions) ? x.mentions : [],
+        linkPreview: x.linkPreview||null,
+        poll: x.poll||null
+      };
+    });
     if(!_suppressAutoRender){ rebuildMergedFeedOrder(); renderGrid(); }
     return true;
   }catch(e){ console.error('Firestore posts error:',e); return false; }
-}
-// Infinite scroll for posts (same append-only approach as loadMoreArticles — cards already on screen never move).
-async function loadMorePosts(opts){
-  if(_postsLoadingMore || _postsExhausted) return 0;
-  if(!_postsLastDoc && _postsLastId){
-    _postsLoadingMore = true;
-    try{ const ls = await rgetDoc(doc(db,'posts',_postsLastId)); if(ls.exists()) _postsLastDoc = ls; }
-    catch(e){} finally{ _postsLoadingMore = false; }
-  }
-  if(!_postsLastDoc) return 0;
-  _postsLoadingMore = true;
-  try{
-    const snap = await rgetDocs(query(collection(db,'posts'), where('status','==','published'), orderBy('publishedAt','desc'), startAfter(_postsLastDoc), limit(POSTS_PAGE_SIZE)));
-    if(snap.empty){ _postsExhausted = true; return 0; }
-    const have = new Set(POSTS.map(p=>p.id));
-    const fresh = snap.docs.map(mapPostDoc).filter(p=>!have.has(p.id));
-    POSTS = POSTS.concat(fresh);
-    _postsLastDoc = snap.docs[snap.docs.length-1];
-    _postsExhausted = snap.docs.length < POSTS_PAGE_SIZE;
-    if(activeFilter==='all' && !searchQuery) mergedFeedOrder = mergedFeedOrder.concat(fresh);
-    if(!(opts && opts.noRender)) renderGrid();
-    return fresh.length;
-  }catch(e){ console.error('Firestore load-more posts error:',e); return 0; }
-  finally{ _postsLoadingMore = false; }
 }
 
 // Plain reposts only (see REPOSTS comment above) — merged into the main
@@ -4214,73 +4165,32 @@ async function loadMorePosts(opts){
 // orderBy it would need a composite index (kind + createdAt) to exist
 // before this ever works; a lone orderBy never does. Filtering kind
 // client-side instead keeps this query index-free out of the box.
-function mapRepostDoc(x){
-  return {
-    id: x.id,
-    type: 'repost',
-    reposterUid: x.reposterUid||null,
-    reposterName: x.reposterName||'Someone',
-    reposterPhoto: x.reposterPhoto||'logo.jpg',
-    targetType: x.targetType||'post',
-    targetId: x.targetId||'',
-    targetSnapshot: x.targetSnapshot||null,
-    publishedAt: x.createdAt||null
-  };
-}
 async function loadRecentReposts(){
   try{
     const q = query(
       collection(db,'reposts'),
       orderBy('createdAt','desc'),
-      limit(REPOSTS_PAGE_SIZE)
+      limit(60)
     );
     const snap = (await takePrefetch('reposts')) || await rgetDocs(q, { tries: 2, timeoutMs: 7000 });
     REPOSTS = snap.docs
       .map(d=>({ id:d.id, ...d.data() }))
       .filter(x=>x.kind==='plain')
-      .map(mapRepostDoc);
-    const last = snap.docs[snap.docs.length-1];
-    if(snap.__rest){ _repostsLastDoc = null; _repostsLastId = last ? last.id : null; } else { _repostsLastDoc = last || null; _repostsLastId = null; }
-    _repostsExhausted = snap.docs.length < REPOSTS_PAGE_SIZE;
+      .slice(0,40)
+      .map(x=>({
+        id: x.id,
+        type: 'repost',
+        reposterUid: x.reposterUid||null,
+        reposterName: x.reposterName||'Someone',
+        reposterPhoto: x.reposterPhoto||'logo.jpg',
+        targetType: x.targetType||'post',
+        targetId: x.targetId||'',
+        targetSnapshot: x.targetSnapshot||null,
+        publishedAt: x.createdAt||null
+      }));
     if(!_suppressAutoRender){ rebuildMergedFeedOrder(); renderGrid(); }
     return true;
   }catch(e){ console.error('Firestore reposts error:',e); return false; }
-}
-async function loadMoreReposts(opts){
-  if(_repostsLoadingMore || _repostsExhausted) return 0;
-  if(!_repostsLastDoc && _repostsLastId){
-    _repostsLoadingMore = true;
-    try{ const ls = await rgetDoc(doc(db,'reposts',_repostsLastId)); if(ls.exists()) _repostsLastDoc = ls; }
-    catch(e){} finally{ _repostsLoadingMore = false; }
-  }
-  if(!_repostsLastDoc) return 0;
-  _repostsLoadingMore = true;
-  try{
-    const snap = await rgetDocs(query(collection(db,'reposts'), orderBy('createdAt','desc'), startAfter(_repostsLastDoc), limit(REPOSTS_PAGE_SIZE)));
-    if(snap.empty){ _repostsExhausted = true; return 0; }
-    _repostsLastDoc = snap.docs[snap.docs.length-1];
-    _repostsExhausted = snap.docs.length < REPOSTS_PAGE_SIZE;
-    const haveIds = new Set(REPOSTS.map(r=>r.id));
-    const onScreen = new Set(mergedFeedOrder.map(it => it.type==='repost' ? 'r:'+it.targetId : it.id));   // never show something twice
-    const fresh = snap.docs.map(d=>({ id:d.id, ...d.data() })).filter(x=>x.kind==='plain' && !haveIds.has(x.id)).map(mapRepostDoc)
-      .filter(r => !onScreen.has(r.targetId) && !onScreen.has('r:'+r.targetId));
-    REPOSTS = REPOSTS.concat(snap.docs.map(d=>({ id:d.id, ...d.data() })).filter(x=>x.kind==='plain' && !haveIds.has(x.id)).map(mapRepostDoc));
-    if(activeFilter==='all' && !searchQuery) mergedFeedOrder = mergedFeedOrder.concat(fresh);
-    if(!(opts && opts.noRender)) renderGrid();
-    return fresh.length;
-  }catch(e){ console.error('Firestore load-more reposts error:',e); return 0; }
-  finally{ _repostsLoadingMore = false; }
-}
-// One scroll → one page of each source, one re-render.
-let _feedMoreBusy = false;
-async function loadMoreFeed(){
-  if(_feedMoreBusy) return;
-  if(_articlesExhausted && _postsExhausted && _repostsExhausted) return;
-  _feedMoreBusy = true;
-  try{
-    const r = await Promise.all([loadMoreArticles({noRender:true}), loadMorePosts({noRender:true}), loadMoreReposts({noRender:true})]);
-    if(r.some(n => n > 0)){ renderGrid(); _xDiscoverBuilt = false; }
-  }finally{ _feedMoreBusy = false; }
 }
 
 // Fires several of the loaders above together and renders exactly once,
