@@ -142,10 +142,6 @@ const payLimiter = rateLimit({
   legacyHeaders: false
 });
 
-// Feed counters (likes / reposts / comments) — mounted BEFORE the shared /api/ limiter on purpose, it has its own
-// higher limit (see server/counts.js): the feed calls it a few times per open and phones on one network share an address.
-app.use(require('./server/counts'));
-
 // General API limit (catches everything else)
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
