@@ -80,24 +80,25 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .btn-follow svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round}
 
 /* Name */
-.name-row{display:flex;align-items:center;gap:7px;margin-bottom:3px;flex-wrap:wrap;padding-left:2px}
-.profile-name{font-size:22px;font-weight:900;color:var(--txt);letter-spacing:-.3px}
+.name-row{display:flex;align-items:center;gap:9px;margin-bottom:4px;flex-wrap:wrap;padding-left:2px}
+.profile-name{font-size:30px;font-weight:900;color:var(--txt);letter-spacing:-.7px;line-height:1.1;min-width:0}
 
 /* ── VERIFIED BADGE (brand standard, matches feed cards) ── */
 .vbadge{display:inline-flex;align-items:center;justify-content:center;
-  width:19px;height:19px;border-radius:50%;background:var(--g);flex-shrink:0;
+  width:24px;height:24px;border-radius:50%;background:var(--g);flex-shrink:0;
   box-shadow:0 1px 6px rgba(37,99,235,.4)}
-.vbadge svg{width:10px;height:10px;fill:none;stroke:#fff;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}
+.vbadge svg{width:13px;height:13px;fill:none;stroke:#fff;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}
 
 /* Official chip */
-.official-chip{display:inline-flex;align-items:center;gap:4px;
-  background:#eef2ff;border:1.5px solid #e0e7ff;color:var(--p);
-  font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;letter-spacing:.2px;margin-top:5px;
-  box-shadow:0 2px 8px -2px rgba(79,70,229,.25)}
-.official-chip svg{width:10px;height:10px}
+.official-chip{display:inline-flex;align-items:center;gap:7px;
+  background:linear-gradient(135deg,#eef2ff,#e0f2fe);color:#3730a3;
+  font-size:12px;font-weight:800;padding:6px 13px 6px 7px;border-radius:99px;letter-spacing:.2px;margin-top:10px}
+.official-chip .oc-ic{width:18px;height:18px;border-radius:50%;background:var(--g);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.official-chip .oc-ic svg{width:10px;height:10px;fill:none;stroke:#fff;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}
 
-.profile-tagline{font-size:13.5px;color:var(--p);font-weight:600;margin-bottom:8px}
-.profile-bio{font-size:14px;color:var(--sub);line-height:1.65;margin-bottom:14px}
+.profile-tagline{font-size:15.5px;color:var(--p);font-weight:700;margin-bottom:2px;letter-spacing:-.1px}
+.profile-bio{font-size:15px;color:var(--txt);line-height:1.75;margin:14px 0 18px;padding:13px 15px;
+  background:#f6f7ff;border:1px solid #e8eaff;border-radius:16px;overflow-wrap:anywhere}
 
 /* ── STATS ── */
 .stats-row{display:flex;border-top:1px solid var(--border);padding-top:14px;gap:0}
@@ -226,11 +227,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
     MindShift Books
     <span class="hdr-badge"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>
   </div>
-  <div class="hdr-r">
-    <a class="btn-back" href="/books" title="Bookstore" aria-label="Bookstore">
-      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-    </a>
-  </div>
+  <div class="hdr-r"></div>
 </header>
 
 <!-- COVER -->
@@ -267,12 +264,12 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   <div class="profile-tagline" id="kvTagline">Your Career, Elevated.</div>
   <div>
     <span class="official-chip">
-      <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20A10 10 0 0012 2zm0 0"/><polyline points="9 12 11 14 15 10" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+      <span class="oc-ic"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>
       Official Account
     </span>
   </div>
 
-  <div class="profile-bio" id="kvBio" style="margin-top:10px;white-space:pre-line">📚 A community for readers, creators &amp; curious minds.
+  <div class="profile-bio" id="kvBio" style="white-space:pre-line">📚 A community for readers, creators &amp; curious minds.
 🧠 Share ideas. Discover people.
 ✨ Find books worth reading.</div>
 
