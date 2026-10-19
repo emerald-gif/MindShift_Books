@@ -421,21 +421,21 @@ main{max-width:1100px;margin:0 auto}
 .ptf-hdr{padding:0 16px 6px;display:flex;align-items:center;justify-content:space-between}
 .ptf-hdr span{font-size:18px;font-weight:800;letter-spacing:-.02em;color:var(--txt)}
 .ptf-hdr a{font-size:13px;font-weight:700;color:var(--p);text-decoration:none;cursor:pointer}
-.ptf-scroll{display:flex;gap:12px;overflow-x:auto;padding:8px 16px 16px;scrollbar-width:none;scroll-snap-type:x proximity;scroll-padding:0 16px;-webkit-overflow-scrolling:touch}
+.ptf-scroll{display:flex;gap:10px;overflow-x:auto;padding:6px 16px 14px;scrollbar-width:none;scroll-snap-type:x proximity;scroll-padding:0 16px;-webkit-overflow-scrolling:touch}
 .ptf-scroll::after{content:'';flex:0 0 4px}   /* keeps a little breathing room after the last card */
 .ptf-scroll::-webkit-scrollbar{display:none}
-.ptf-card{flex:0 0 clamp(138px,calc((100vw - 72px)/2),190px);width:clamp(138px,calc((100vw - 72px)/2),190px);min-width:0;max-width:190px;overflow:hidden;scroll-snap-align:start;   /* two full cards + a peek of the third on any phone */
-  border:1.5px solid var(--border);border-radius:16px;padding:18px 10px 14px;
+.ptf-card{flex:0 0 clamp(128px,calc((100vw - 72px)/2),160px);width:clamp(128px,calc((100vw - 72px)/2),160px);min-width:0;max-width:160px;overflow:hidden;scroll-snap-align:start;   /* two full cards + a peek of the third on any phone */
+  border:1px solid var(--border);border-radius:10px;padding:14px 10px 12px;
   display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;background:var(--card)}
-.ptf-dismiss{position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;border:none;
-  background:#f1f5f9;color:var(--mute);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px}
-.ptf-av{width:76px;height:76px;border-radius:50%;background:var(--g);color:#fff;display:flex;
-  align-items:center;justify-content:center;font-size:24px;font-weight:800;overflow:hidden;margin-bottom:12px;cursor:pointer;flex-shrink:0}
+.ptf-dismiss{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;border:none;
+  background:transparent;color:var(--mute);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px}
+.ptf-av{width:56px;height:56px;border-radius:50%;background:var(--g);color:#fff;display:flex;
+  align-items:center;justify-content:center;font-size:20px;font-weight:700;overflow:hidden;margin-bottom:8px;cursor:pointer;flex-shrink:0}
 .ptf-av img{width:100%;height:100%;object-fit:cover;display:block}
-.ptf-name{width:100%;font-size:14px;font-weight:800;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
-.ptf-handle{width:100%;font-size:12.5px;color:var(--mute);font-weight:600;margin:3px 0 14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ptf-follow{width:100%;margin-top:auto;padding:10px 0;background:var(--g);color:#fff;border:none;border-radius:99px;
-  font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0}
+.ptf-name{width:100%;font-size:13.5px;font-weight:700;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.ptf-handle{width:100%;font-size:12px;color:var(--mute);font-weight:500;margin:2px 0 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ptf-follow{width:100%;margin-top:auto;padding:7px 0;background:var(--g);color:#fff;border:none;border-radius:8px;
+  font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;flex-shrink:0}
 .ptf-follow.following-btn{background:var(--card);color:var(--txt);border:1.5px solid var(--border)}
 /* See more banner (at end of following feed) */
 .see-more-banner{margin:20px 16px;background:linear-gradient(135deg,#eef2ff,#eef2ff);
@@ -2354,7 +2354,7 @@ function renderSugList(users, list){
           <div class="sug-handle">${sub}</div>
         </div>
       </div>
-      <button class="sug-follow msb-follow-btn" data-follow-uid="${u.uid}" onclick="event.stopPropagation();toggleSugFollow('${u.uid}','${esc(u.name||u.displayName||'User')}')">Follow</button>
+      <button class="sug-follow msb-follow-btn" data-follow-uid="${u.uid}" data-name="${esc(u.name||u.displayName||'User')}" onclick="event.stopPropagation();toggleSugFollow('${u.uid}')">Follow</button>
       <button class="sug-dismiss" onclick="event.stopPropagation();dismissSug('${u.uid}')" title="Remove">✕</button>
     </div>`;
   }).join('');
@@ -2363,6 +2363,9 @@ function renderSugList(users, list){
 window.toggleSugFollow=async function(uid,name){
   if(!currentUser){openAuth();return;}
   const btns=document.querySelectorAll(`[data-follow-uid="${uid}"]`);
+  // The name is read from data-name (an attribute can hold an apostrophe safely); putting it inside the
+  // onclick="…('name')" string broke the whole handler for names like God'spower.
+  if(!name) name = (btns[0] && btns[0].dataset.name) || 'User';
   const wasFollowing=btns.length && btns[0].classList.contains('following-btn');
   btns.forEach(btn=>{btn.textContent=wasFollowing?'Follow':'Following';btn.classList.toggle('following-btn',!wasFollowing);});
   const followId = `${currentUser.uid}_${uid}`;
@@ -2477,7 +2480,7 @@ function renderPtfRow(users, scroll){
       <div class="ptf-av" onclick="goAuthor('${u.uid}',false)">${ph?`<img src="${ph}" alt="" onerror="this.style.display='none'">`:ini}</div>
       <div class="ptf-name" onclick="goAuthor('${u.uid}',false)">${esc(u.name||u.displayName||'MindShift Books User')}</div>
       <div class="ptf-handle">${sub}</div>
-      <button class="ptf-follow msb-follow-btn" data-follow-uid="${u.uid}" onclick="toggleSugFollow('${u.uid}','${esc(u.name||u.displayName||'User')}')">Follow</button>
+      <button class="ptf-follow msb-follow-btn" data-follow-uid="${u.uid}" data-name="${esc(u.name||u.displayName||'User')}" onclick="toggleSugFollow('${u.uid}')">Follow</button>
     </div>`;
   }).join('');
 }
