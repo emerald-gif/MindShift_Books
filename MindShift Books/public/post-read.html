@@ -747,6 +747,18 @@ const fbApp = initializeApp({
   measurementId: "G-CHPJDQ4W08"
 });
 const auth = getAuth(fbApp);
+// Tell the server this page just changed, so the next visitor gets the new version immediately instead of
+// after the 60-second saved-copy window (see server/seo.js). Never blocks for long and never throws.
+async function seoRefresh(kind, id){
+  try{
+    const u = auth.currentUser; if(!u || !id) return;
+    const t = await u.getIdToken();
+    await Promise.race([
+      fetch('/api/seo/refresh', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+t }, body: JSON.stringify({ kind, id }) }),
+      new Promise(r => setTimeout(r, 2500))
+    ]);
+  }catch(_){}
+}
 const db   = getFirestore(fbApp, 'default');
 const { resilient, reconnectFirestore } = createResilient({ db, enableNetwork, disableNetwork });
 const notif = initNotificationUI({
@@ -2238,6 +2250,7 @@ window.onManageCommentsToggle=async function(checked){
   if(!article) return;
   try{
     await updateDoc(doc(db,'posts',article.id),{ commentsOff: checked });
+    seoRefresh('post', article.id);
     article.commentsOff = checked;
     showToast(checked ? 'Comments turned off' : 'Comments turned back on');
     renderArticle();
@@ -2252,6 +2265,7 @@ window.onManageLikeCountToggle=async function(checked){
   if(!article) return;
   try{
     await updateDoc(doc(db,'posts',article.id),{ hideLikeCount: checked });
+    seoRefresh('post', article.id);
     article.hideLikeCount = checked;
     showToast(checked ? 'Like count hidden from others' : 'Like count is visible again');
     syncLikeUI();
@@ -2278,6 +2292,7 @@ window.doDeletePost=async function(){
   const id = article.id;
   try{
     await deleteDoc(doc(db,'posts',id));
+    seoRefresh('post', id);
     deleteDoc(doc(db,'articleLikes',id)).catch(()=>{});
     deleteDoc(doc(db,'postMeta',id)).catch(()=>{});
     deleteDoc(doc(db,'postViews',id)).catch(()=>{});

@@ -360,6 +360,18 @@ const fbApp = initializeApp({
   measurementId: "G-CHPJDQ4W08"
 });
 const auth = getAuth(fbApp);
+// Tell the server this page just changed, so the next visitor gets the new version immediately instead of
+// after the 60-second saved-copy window (see server/seo.js). Never blocks for long and never throws.
+async function seoRefresh(kind, id){
+  try{
+    const u = auth.currentUser; if(!u || !id) return;
+    const t = await u.getIdToken();
+    await Promise.race([
+      fetch('/api/seo/refresh', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+t }, body: JSON.stringify({ kind, id }) }),
+      new Promise(r => setTimeout(r, 2500))
+    ]);
+  }catch(_){}
+}
 const db   = getFirestore(fbApp, 'default');
 const { resilient, reconnectFirestore } = createResilient({ db, enableNetwork, disableNetwork });
 
@@ -1455,6 +1467,7 @@ window.submitPost = async function(){
         linkPreview,                       // null clears it when the link was removed / replaced by media
         updatedAt: serverTimestamp()
       }, { merge: true });
+      await seoRefresh('post', editId);
       await notifyMentioned(mentions, editId, text);
       images.forEach(i => { if(i.baseUrl && i.baseUrl !== i.url) discardUpload(i.baseUrl); });
       flushDiscards(true);
@@ -1483,6 +1496,7 @@ window.submitPost = async function(){
       createdAt: serverTimestamp(),
       publishedAt: serverTimestamp()
     });
+    await seoRefresh('post', id);
     await notifyMentioned(mentions, id, text);
     // Published — the draft has served its purpose. Stop autosave first so a
     // pending timer can't write it straight back.

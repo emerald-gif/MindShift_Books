@@ -595,6 +595,18 @@ const fbApp = initializeApp({
   measurementId: "G-CHPJDQ4W08"
 });
 const auth = getAuth(fbApp);
+// Tell the server this page just changed, so the next visitor gets the new version immediately instead of
+// after the 60-second saved-copy window (see server/seo.js). Never blocks for long and never throws.
+async function seoRefresh(kind, id){
+  try{
+    const u = auth.currentUser; if(!u || !id) return;
+    const t = await u.getIdToken();
+    await Promise.race([
+      fetch('/api/seo/refresh', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+t }, body: JSON.stringify({ kind, id }) }),
+      new Promise(r => setTimeout(r, 2500))
+    ]);
+  }catch(_){}
+}
 const db   = getFirestore(fbApp, 'default');
 const { resilient, reconnectFirestore } = createResilient({ db, enableNetwork, disableNetwork });
 
@@ -1772,6 +1784,7 @@ window.submitArticle = async function(){
         readTime,
         updatedAt: serverTimestamp()
       }, { merge: true });
+      await seoRefresh('article', editId);
       await notifyMentioned(mentions, editId, title);
       localStorage.removeItem('mindshift_draft');
       if(window._cover && window._cover.baseUrl && window._cover.baseUrl !== cover) discardUpload(window._cover.baseUrl);
@@ -1796,6 +1809,7 @@ window.submitArticle = async function(){
       createdAt: serverTimestamp(),
       publishedAt: serverTimestamp()
     });
+    await seoRefresh('article', id);
     await notifyMentioned(mentions, id, title);
     // clear draft
     localStorage.removeItem('mindshift_draft');

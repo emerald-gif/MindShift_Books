@@ -1123,6 +1123,18 @@ const fbApp = initializeApp({
   measurementId: "G-CHPJDQ4W08"
 });
 const auth = getAuth(fbApp);
+// Tell the server this page just changed, so the next visitor gets the new version immediately instead of
+// after the 60-second saved-copy window (see server/seo.js). Never blocks for long and never throws.
+async function seoRefresh(kind, id){
+  try{
+    const u = auth.currentUser; if(!u || !id) return;
+    const t = await u.getIdToken();
+    await Promise.race([
+      fetch('/api/seo/refresh', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+t }, body: JSON.stringify({ kind, id }) }),
+      new Promise(r => setTimeout(r, 2500))
+    ]);
+  }catch(_){}
+}
 const db   = getFirestore(fbApp, 'default');
 const notif = initNotificationUI({
   db, getCurrentUser: () => currentUser, getMyProfile: () => myProfile,
@@ -3192,6 +3204,7 @@ async function setPinned(pin){
   renderArticles();
   try{
     await setDoc(doc(db,'users',currentUser.uid), { pinned: pin }, { merge:true });
+    seoRefresh('profile', currentUser.uid);
     showToast(pin ? 'Pinned to your profile' : 'Unpinned');
   }catch(e){
     console.error('pin update failed:', e);
@@ -3321,7 +3334,7 @@ window.doDeleteConfirmed = async function(){
     allSubmissions = allSubmissions.filter(a=>a.id!==id);
     if(profileData.pinned && profileData.pinned.id===id){
       profileData.pinned = null; _pinnedFetched = null;
-      setDoc(doc(db,'users',currentUser.uid),{ pinned:null },{merge:true}).catch(()=>{});
+      setDoc(doc(db,'users',currentUser.uid),{ pinned:null },{merge:true}).then(()=>seoRefresh('profile', currentUser.uid)).catch(()=>{});
     }
     const statEl = document.getElementById(type==='post' ? 'statPosts' : 'statArticles');
     if(statEl){
@@ -3771,6 +3784,7 @@ window.saveProfile = async function(){
 
     // ── 2. Save profile to Firestore ──
     await setDoc(doc(db,'users',currentUser.uid), data, {merge:true});
+    await seoRefresh('profile', currentUser.uid);
 
     // ── 3. Sync Firebase Auth displayName so account.html stays in sync ──
     if(data.name && data.name !== currentUser.displayName){
