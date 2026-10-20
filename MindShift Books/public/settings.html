@@ -144,6 +144,14 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .details-field input{width:100%;padding:11px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;color:var(--txt);background:var(--card)}
 .details-field input:disabled{background:#f8fafc;color:var(--sub)}
 .details-save-note{display:none;text-align:center;font-size:12.5px;font-weight:700;color:#10b981;margin-top:10px}
+
+/* ── PROFILE BLOCK at the top of Settings (big photo, name, @username) ── */
+.me{display:flex;flex-direction:column;align-items:center;text-align:center;padding:22px 20px 4px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.me-av{width:104px;height:104px;border-radius:50%;background:var(--g);color:#fff;display:flex;align-items:center;justify-content:center;
+  font-size:40px;font-weight:800;overflow:hidden;flex-shrink:0;box-shadow:0 6px 18px rgba(79,70,229,.18)}
+.me-av img{width:100%;height:100%;object-fit:cover;display:block}
+.me-name{margin-top:14px;font-size:20px;font-weight:800;color:var(--txt);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.me-handle{margin-top:3px;font-size:14px;color:var(--sub);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -185,6 +193,13 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 <!-- ══ /SHARED HEADER + SIDEBAR ══ -->
 
 <div id="settingsMain">
+<!-- PROFILE BLOCK -->
+<div class="me" id="meBlock" onclick="openMyProfile()">
+  <div class="me-av" id="meAv"></div>
+  <div class="me-name" id="meName"></div>
+  <div class="me-handle" id="meHandle"></div>
+</div>
+
 <!-- ACTIVITY -->
 <div class="section">
   <div class="section-title">Activity</div>
@@ -401,12 +416,17 @@ onAuthStateChanged(auth, async user => {
   currentUid  = user.uid;
   currentName = user.displayName || '';
   document.getElementById('userEmail').textContent = user.email || '—';
+  paintMe({ name: currentName || (user.email||'').split('@')[0], username: '', photo: user.photoURL || '' });   // instant, from the login
   _authReadyResolve();
 
   // Load username from Firestore so shareProfile() generates a clean @username URL
   try{
     const snap = await resilient(()=>getDoc(doc(db, 'users', user.uid)), {tries:2});
-    if(snap.exists()) currentUsername = snap.data().username || '';
+    if(snap.exists()){
+      const d = snap.data();
+      currentUsername = d.username || '';
+      paintMe({ name: d.name || currentName || (user.email||'').split('@')[0], username: currentUsername, photo: d.photo || user.photoURL || '' });
+    }
   }catch(e){ console.warn('Could not load username:', e.message); }
 
   const provider = user.providerData?.[0]?.providerId || '';
@@ -419,6 +439,16 @@ onAuthStateChanged(auth, async user => {
     connectedEl.innerHTML = `<span class="provider-badge" style="color:var(--p)">${EMAIL_ICON} Email &amp; Password</span>`;
   }
 });
+
+function paintMe({name, username, photo}){
+  const av = document.getElementById('meAv');
+  const initial = (name||'M').trim().charAt(0).toUpperCase() || 'M';
+  if(photo){ av.innerHTML = '<img alt="">'; const im = av.firstChild; im.onerror = ()=>{ av.textContent = initial; }; im.src = photo; }
+  else av.textContent = initial;
+  document.getElementById('meName').textContent = name || '';
+  document.getElementById('meHandle').textContent = username ? '@'+username : '';
+}
+window.openMyProfile = function(){ window.location.href = currentUsername ? '/profile/@'+encodeURIComponent(currentUsername) : '/profile'; };
 
 window.doSignOut = async function(){
   await signOut(auth);
