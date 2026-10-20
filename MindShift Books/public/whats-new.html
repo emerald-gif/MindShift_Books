@@ -147,6 +147,10 @@ button,a{font:inherit;color:inherit}
 .go:active{background:var(--indigo-d);transform:scale(.99)}
 .alt{height:52px;padding:0 18px;border-radius:16px;background:#fff;border:1.5px solid var(--line);font-weight:700;text-decoration:none;display:flex;align-items:center;justify-content:center;color:#334155}
 :focus-visible{outline:3px solid #a5b4fc;outline-offset:2px}
+.pick{display:flex;align-items:center;gap:10px;margin-top:18px;font-size:13.5px;font-weight:700;color:#334155}
+.pick select{flex:1;min-width:0;appearance:none;-webkit-appearance:none;height:44px;padding:0 38px 0 14px;border-radius:12px;border:1.5px solid #d9ddf7;color:var(--ink);font:inherit;font-weight:700;font-size:14.5px;
+  background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234338ca' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center/16px}
+[hidden]{display:none!important}
 @media (min-width:600px){.hero h1{font-size:40px}}
 </style>
 </head>
@@ -162,7 +166,13 @@ button,a{font:inherit;color:inherit}
   <section class="hero">
     <h1>New on MindShift Books</h1>
     <p>We’ve been building for you. Here’s everything that just landed.</p>
-    <nav class="jump" aria-label="Jump to a feature"><a href="#messages">Messages</a><a href="#reels">Reels</a><a href="#search">Search</a><a href="#polls">Polls</a></nav>
+    <label class="pick" for="era">Showing
+      <select id="era" aria-label="Choose which update to view">
+        <option value="latest">Latest · 20 Oct 2026</option>
+        <option value="oct">Earlier · Oct 2026</option>
+      </select></label>
+    <nav class="jump" data-g="latest" aria-label="Jump to a feature"><a href="#links">Link previews</a><a href="#images">Images</a><a href="#sharechat">Share to chat</a></nav>
+    <nav class="jump" data-g="oct" aria-label="Jump to a feature" hidden><a href="#messages">Messages</a><a href="#reels">Reels</a><a href="#search">Search</a><a href="#polls">Polls</a></nav>
 
     <div class="chat" aria-hidden="true">
       <div class="b them">Did you finish chapter 3?</div>
@@ -181,6 +191,39 @@ button,a{font:inherit;color:inherit}
   </section>
 
   <section class="features">
+    <div data-g="latest">
+
+    <article class="sec" id="links">
+      <div class="sh"><div class="ic t-cyan"><svg viewBox="0 0 24 24"><path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1"/></svg></div><h2>Link previews in posts</h2></div>
+      <p>Paste a link into a post and it turns into a clean preview card with the title, image and site, right in the composer and on the post.</p>
+      <div class="how"><b>How to use it</b>
+        <ol>
+          <li>Start a new post.</li>
+          <li>Paste any link.</li>
+          <li>The preview card appears. Publish as usual.</li>
+        </ol>
+      </div>
+    </article>
+
+    <article class="sec" id="images">
+      <div class="sh"><div class="ic t-rose"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="1.6"/><path d="M21 15l-5-5L5 21"/></svg></div><h2>Tap any image to view it</h2></div>
+      <p>Tap a photo in a post and it opens full screen, with the like, comment and share buttons right there so you never have to go back.</p>
+    </article>
+
+    <article class="sec" id="sharechat">
+      <div class="sh"><div class="ic t-indigo"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg></div><h2>Share posts straight to a chat</h2></div>
+      <p>Found something a friend should see? Send a post or article to someone directly in Messages.</p>
+      <div class="how"><b>How to use it</b>
+        <ol>
+          <li>Tap the share icon on a post or article.</li>
+          <li>Choose a chat.</li>
+          <li>It lands in their conversation.</li>
+        </ol>
+      </div>
+    </article>
+    </div>
+
+    <div data-g="oct" hidden>
 
     <article class="sec" id="messages">
       <div class="sh"><div class="ic t-indigo"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.4 8.4 0 01-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.4 8.4 0 013.8-.9h.5a8.5 8.5 0 018 8z"/></svg></div><h2>Messages</h2></div>
@@ -237,17 +280,31 @@ button,a{font:inherit;color:inherit}
       </div>
     </article>
 
+    </div>
+
   </section>
 </main>
 
 <nav class="cta" aria-label="Next steps">
   <div class="in">
     <a class="alt" href="/" id="later">Later</a>
-    <a class="go" href="/messages">Try Messages now</a>
+    <a class="go" id="cta" href="/create-post">Try a link preview</a>
   </div>
 </nav>
 
 <script>
+  // Which update is on screen decides the button too. "latest" is always the default.
+  var ERAS = { latest:{ t:'Try a link preview', h:'/create-post' }, oct:{ t:'Try Messages now', h:'/messages' } };
+  var sel = document.getElementById('era'), cta = document.getElementById('cta');
+  function show(k){
+    if(!ERAS[k]) k = 'latest';
+    sel.value = k;
+    document.querySelectorAll('[data-g]').forEach(function(el){ el.hidden = el.getAttribute('data-g') !== k; });
+    cta.textContent = ERAS[k].t; cta.setAttribute('href', ERAS[k].h);
+  }
+  sel.addEventListener('change', function(){ show(sel.value); window.scrollTo(0,0); });
+  // a link like /whats-new#messages opens the group that contains it
+  (function(){ var t = location.hash && document.querySelector(location.hash); var g = t && t.closest('[data-g]'); show(g ? g.getAttribute('data-g') : 'latest'); })();
   document.getElementById('back').onclick = function(){ if(history.length > 1) history.back(); else location.href = '/'; };
 </script>
 </body>
