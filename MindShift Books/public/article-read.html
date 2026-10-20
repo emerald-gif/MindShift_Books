@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js">
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js">
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js">
+<link rel="modulepreload" href="/resilient.js">
 <link rel="icon" href="/MINDSHIFT.jpg">
 
 <meta charset="UTF-8"/>
@@ -513,7 +518,7 @@ header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 <!-- ══ SHARED MINDSHIFT HEADER + SIDEBAR (matches articles.html / index.html) ══ -->
 <div class="sticky-header-stack">
 <header class="hdr">
-  <button class="back-btn" onclick="history.back()">
+  <button class="back-btn" onclick="(function(){var s=false;try{s=!!document.referrer&&new URL(document.referrer).origin===location.origin}catch(e){}if(history.length>1&&s)history.back();else location.href='/'})()" aria-label="Back">
     <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
   </button>
   <div class="hdr-title" id="hdrTitle"></div>
@@ -714,8 +719,24 @@ header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 <div class="toast" id="toast"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+<script>
+// pdfmake + its fonts are ~2 MB. They were loaded before the page could start, which is what made the
+// article/post pages hang on "Loading…" on slow networks. Now they load only when someone taps Download PDF.
+(function(){
+  var p=null;
+  function add(src){return new Promise(function(res,rej){var s=document.createElement('script');s.src=src;s.onload=res;s.onerror=function(){rej(new Error('pdf lib failed'))};document.head.appendChild(s);});}
+  window.ensurePdfMake=function(){
+    if(window.pdfMake&&window.pdfMake.vfs) return Promise.resolve();
+    if(!p){
+      if(window.showToast) window.showToast('Preparing your PDF…');
+      p=add('https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js')
+        .then(function(){return add('https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js');})
+        .catch(function(e){p=null;throw e;});
+    }
+    return p;
+  };
+})();
+</script>
 <script src="/share-drawer.js?v=4"></script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
@@ -833,15 +854,35 @@ article = ARTICLES.find(a=>a.id===artId);
 // array). A network failure is NOT "not found": retry, then offer Try again.
 let _artLoadState = 'idle'; // 'loading' | 'ok' | 'error'
 const _notFoundHtml = `<div style="text-align:center;padding:60px 20px"><h2>Article not found</h2><a href="/articles" style="color:var(--p)">← Back</a></div>`;
+// The server already read this document (see server/seo.js) and embedded it in the page, so we can render with
+// NO Firestore round trip. Used once; retries and tab-returns fetch fresh.
+function _revivePre(v){
+  if(v==null||typeof v!=='object') return v;
+  if(Array.isArray(v)) return v.map(_revivePre);
+  if(typeof v.__ts==='number'){ const ms=v.__ts; return { seconds:Math.floor(ms/1000), nanoseconds:0, toDate:()=>new Date(ms), toMillis:()=>ms }; }
+  const o={}; for(const k in v) o[k]=_revivePre(v[k]); return o;
+}
+function _takePreload(kind){
+  const pre=window.__PRELOAD__; window.__PRELOAD__=null;
+  if(!pre||pre.kind!==kind||pre.id!==artId||!pre.data) return null;
+  return { exists:()=>true, id:pre.id, data:()=>_revivePre(pre.data) };
+}
 async function loadArticleFromFirestore(){
   const box = document.getElementById('artContent');
   if(!artId){ _artLoadState='ok'; box.innerHTML = _notFoundHtml; return; }
   _artLoadState = 'loading';
   _articleRendered = false;
-  box.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--mute)">Loading…</div>';
+  const _preSnap = _takePreload('article');
+  if(!_preSnap) box.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--mute)">Loading…</div>';
+  // On a slow network the retries below can take a while. After 6s say so, and offer a manual retry.
+  if(!_preSnap) setTimeout(()=>{
+    if(_artLoadState==='loading' && !_articleRendered && box.firstElementChild && /Loading/.test(box.textContent)){
+      box.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--mute)">Still loading… your connection looks slow.<br><button onclick="retryArticleLoad()" style="margin-top:14px;padding:10px 20px;border:none;border-radius:10px;background:var(--p);color:#fff;font-weight:700;font-family:inherit;cursor:pointer">Try again</button></div>';
+    }
+  }, 6000);
   {
     try{
-      const snap = await resilient(()=>getDoc(doc(db,'articles',artId)));
+      const snap = _preSnap || await resilient(()=>getDoc(doc(db,'articles',artId)));
       if(snap.exists()){
         const x = snap.data();
         article = {
@@ -2204,6 +2245,7 @@ function htmlToPdfContent(html){
 
 /* ── BUILD & DOWNLOAD PDF ── */
 async function generateArticlePdf(){
+  await window.ensurePdfMake();
   const logoData = await getLogoBase64();
   const dateStr = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
   const bodyContent = htmlToPdfContent(article.content);
