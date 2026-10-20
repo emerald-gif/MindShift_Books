@@ -64,9 +64,9 @@ function plainDoc(v) {
   if (typeof v === 'object') { const o = {}; for (const k of Object.keys(v)) o[k] = plainDoc(v[k]); return o; }
   return v;
 }
-function preloadScript(kind, id, data) {
+function preloadScript(kind, id, data, extra) {
   try {
-    const json = JSON.stringify({ kind, id, data: plainDoc(data) });
+    const json = JSON.stringify(Object.assign({ kind, id, data: plainDoc(data) }, extra || {}));
     if (json.length > PRELOAD_MAX) return '';
     return json.replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
   } catch (_) { return ''; }
@@ -88,6 +88,19 @@ function postFirstPaint(x) {
   return '<div class="art-wrap">' + authorRowHtml(x.authorName || 'MindShift Books User', x.authorPhoto, '') +
     (x.text ? '<div class="post-text">' + esc(x.text) + '</div>' : '') +
     (img ? '<div class="post-single"><img src="' + esc(img) + '" alt=""></div>' : '') + '</div>';
+}
+
+// Profile first screen: swap the grey placeholders for the real name / picture / cover. Each swap is an exact
+// string match, so if profile.html's markup is ever edited the swap quietly does nothing and the page behaves as before.
+function profileSwaps(x) {
+  const name = String(x.name || 'MindShift Books User');
+  const photo = safeUrl(x.photo), cover = safeUrl(x.cover);
+  const sw = [];
+  sw.push(['<div class="skel skel-name" id="nameSkel"></div>', '<span id="nameSkel">' + esc(name) + '</span>']);
+  sw.push(['<div class="skel skel-avatar" id="avatarSkel" style="border:3px solid var(--card)"></div>',
+    '<div class="avatar-photo-wrap" id="avatarSkel">' + (photo ? '<img src="' + esc(photo) + '" alt="">' : '<span>' + esc(name.slice(0, 1).toUpperCase() || 'U') + '</span>') + '</div>']);
+  if (cover) sw.push(['<img id="coverImg" src="" alt="" style="display:none">', '<img id="coverImg" src="' + esc(cover) + '" alt="" style="display:block">']);
+  return sw;
 }
 
 function registerSeo(app, { publicDir }) {
@@ -217,7 +230,9 @@ function registerSeo(app, { publicDir }) {
       title: `${name}${handle ? ` (@${handle})` : ''} · MindShift Books`,
       description: clean(x.bio, 200) || `Follow ${name} on MindShift Books for articles, posts and videos.`,
       image: x.photo || '', type: 'profile',
-      url: handle ? `${site()}/profile/@${encodeURIComponent(handle)}` : `${site()}/profile?uid=${encodeURIComponent(theUid)}`
+      url: handle ? `${site()}/profile/@${encodeURIComponent(handle)}` : `${site()}/profile?uid=${encodeURIComponent(theUid)}`,
+      swaps: profileSwaps(x),
+      preload: preloadScript('profile', theUid, x, { username: String(handle || u || '').toLowerCase() })
     };
   }
 
@@ -239,6 +254,10 @@ function registerSeo(app, { publicDir }) {
           out = out.replace('<div id="artContent"></div>', () =>
             '<div id="artContent">' + meta.firstPaint + '</div>' +
             (meta.preload ? '<script>window.__PRELOAD__=' + meta.preload + ';</script>' : ''));
+        }
+        if (meta.swaps) {
+          for (const [from, to] of meta.swaps) out = out.replace(from, () => to);
+          if (meta.preload) out = out.replace('</head>', () => '<script>window.__PRELOAD__=' + meta.preload + ';</script></head>');
         }
         return res.send(out);
       } catch (e) {
