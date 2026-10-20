@@ -1,7 +1,7 @@
 {
   "name": "mindshift-books",
   "version": "1.0.0",
-  "description": "MindShift Books — Multi-ebook Store with Paystack + Firebase",
+  "description": "MindShift Books \u2014 Multi-ebook Store with Paystack + Firebase",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -16,12 +16,19 @@
     "cors": "^2.8.5",
     "helmet": "^7.1.0",
     "@google-cloud/monitoring": "^4.1.0",
-    "express-rate-limit": "^7.3.1"
+    "express-rate-limit": "^7.3.1",
+    "compression": "^1.7.4"
   },
   "engines": {
     "node": "20.x"
   },
-  "keywords": ["ebooks", "paystack", "mindshift", "store", "firebase"],
+  "keywords": [
+    "ebooks",
+    "paystack",
+    "mindshift",
+    "store",
+    "firebase"
+  ],
   "author": "Tomiwa",
   "license": "MIT"
 }

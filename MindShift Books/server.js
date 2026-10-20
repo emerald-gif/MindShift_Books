@@ -14,6 +14,10 @@ const crypto = require('crypto');
 const fs = require('fs');
 
 const app = express();
+// gzip/brotli-style compression for HTML, JS and JSON: the article and post pages are ~150 KB of HTML each,
+// which is ~35 KB compressed — a big difference on a slow phone connection. Optional: if the package isn't
+// installed yet the server just runs without it.
+try { app.use(require('compression')()); } catch (e) { console.warn('[compression] not installed — run npm install'); }
 const PORT = process.env.PORT || 3000;
 
 // Render (and most PaaS hosts) sit the app behind a reverse proxy, so the
