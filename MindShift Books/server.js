@@ -216,6 +216,9 @@ app.get(/\.html$/, (req, res, next) => {
 // /profile/@:username route and express.static below so it wins over both;
 // on any problem it falls through to the normal page / static sitemap.
 require('./server/seo')(app, { publicDir: path.join(__dirname, 'public') });
+// Tell the saved-page cache (server/seo.js) that something changed, here and on any other running copy of the server.
+// kind: 'profile' | 'article' | 'post' (with an id), or 'all' to clear everything (used after bulk jobs).
+const seoForget = (kind, id) => { try { return app.locals.seoInvalidate && app.locals.seoInvalidate(kind, id); } catch (_) { return 0; } };
 
 // ── Homepage: Articles, not the bookstore ──────────────────────────────────
 // mindshiftbooks.shop's default landing page is now the article ecosystem.
@@ -2103,6 +2106,7 @@ async function maybeRunFoundingCreatorCheck() {
     await adoptFoundingCreatorSchedules();
     const result = await runFoundingCreatorWeeklyCycle();
     if (result.checked) {
+      seoForget('all');   // badges just changed status for many people
       await db.collection('meta').doc('foundingCreatorSchedule').set({ lastRunAt: admin.firestore.Timestamp.now(), lastRunResult: result }, { merge: true });
       console.log('[founding-creator] per-creator Monday run:', result);
     }
@@ -2145,6 +2149,7 @@ async function maybeActivatePendingFoundingCreators() {
       } catch (err) { console.error('[founding-creator] activate-pending failed for', doc.id, err); }
     }
     await graceRef.set({ activated: true, activatedAt: admin.firestore.Timestamp.now(), activatedCount: activated }, { merge: true });
+    seoForget('all');
     console.log('[founding-creator] launch grace period ended — activated', activated, 'pending badges');
   } catch (err) {
     console.error('[founding-creator] activate-pending run failed', err);
@@ -2874,6 +2879,7 @@ async function grantFoundingCreatorIfNeeded(uid, userRef, userData) {
   if (userData.foundingCreator && userData.foundingCreator.status) return userData.foundingCreator;
   const foundingCreator = await buildFoundingCreatorRecord(uid, lagosNow());
   await userRef.set({ foundingCreator }, { merge: true });
+  seoForget('profile', uid);
   return foundingCreator;
 }
 app.post('/api/rewards/claim-profile-voucher', requireUser, async (req, res) => {
@@ -3524,6 +3530,7 @@ app.patch('/api/account', requireUser, async (req, res) => {
     if (!name || !String(name).trim()) return res.status(400).json({ error: 'Name is required' });
     if (String(name).trim().length > 120) return res.status(400).json({ error: 'Name too long' });
     await db.collection('users').doc(req.uid).set({ name: String(name).trim() }, { merge: true });
+    seoForget('profile', req.uid);
     return res.json({ ok: true });
   } catch (err) {
     console.error('PATCH /api/account error', err);
