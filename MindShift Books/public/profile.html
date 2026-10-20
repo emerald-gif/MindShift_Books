@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js">
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js">
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js">
 <link rel="icon" href="/MINDSHIFT.jpg">
 
 <meta charset="UTF-8">
@@ -1139,6 +1143,17 @@ const profileUid = params.get('uid');      // legacy / direct uid link
 // Support both ?username=foo  AND  clean URL /profile/@foo
 const _pathUsername = location.pathname.match(/\/profile\/@([^/?#]+)/)?.[1];
 const profileUsername = _pathUsername || params.get('username');
+// The server already read this profile (server/seo.js) and embedded it, so a visitor needs neither the
+// username lookup nor the profile read. Never used for the owner's own profile (that always reads fresh,
+// because the owner sync below writes back to this document), and used once only — retries fetch fresh.
+let _profilePre = (window.__PRELOAD__ && window.__PRELOAD__.kind === 'profile') ? window.__PRELOAD__ : null;
+window.__PRELOAD__ = null;
+function _revivePre(v){
+  if(v==null||typeof v!=='object') return v;
+  if(Array.isArray(v)) return v.map(_revivePre);
+  if(typeof v.__ts==='number'){ const ms=v.__ts; return { seconds:Math.floor(ms/1000), nanoseconds:0, toDate:()=>new Date(ms), toMillis:()=>ms }; }
+  const o={}; for(const k in v) o[k]=_revivePre(v[k]); return o;
+}
 let currentUser = null;
 let myProfile = null;
 let isOwner = false;
@@ -1317,6 +1332,7 @@ async function bootProfile(user){
   try{
   // ── Resolve uid: support both ?uid= (legacy) and ?username= (new) ──
   let resolvedUid = profileUid;
+  if (!resolvedUid && _profilePre && profileUsername && String(_profilePre.username||'') === profileUsername.toLowerCase()) resolvedUid = _profilePre.id;
   if (!resolvedUid && profileUsername) {
     let lookupFailed = false;
     try {
@@ -1409,7 +1425,13 @@ async function loadProfile(uid){
   // sync below would write the Google name/photo over the real ones in
   // Firestore. Retry, and if it still fails bail out to the error state.
   try{
-    const snap = await resilient(()=>getDoc(doc(db,'users',uid)));
+    let snap = null;
+    if(_profilePre && _profilePre.id === uid && !isOwner && _profilePre.data){
+      const d = _revivePre(_profilePre.data);
+      snap = { exists:()=>true, data:()=>d };
+    }
+    _profilePre = null;                       // single use
+    if(!snap) snap = await resilient(()=>getDoc(doc(db,'users',uid)));
     profileData = snap.exists() ? {uid,...snap.data()} : {uid, name: 'MindShift Books User'};
   }catch(e){
     console.error('loadProfile failed:', e?.code, e?.message);
