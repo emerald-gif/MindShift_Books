@@ -129,6 +129,7 @@ function registerSeo(app, { publicDir }) {
   // Forget what we saved for one item so the very next visit reads it fresh. Returns how many entries went.
   function invalidate(kind, id) {
     let n = 0;
+    if (kind === 'all') { n = cache.size; cache.clear(); return n; }
     if (kind === 'article' || kind === 'post') {
       const k = (kind === 'article' ? 'article-read.html' : 'post-read.html') + '|' + JSON.stringify(id);
       if (cache.delete(k)) n++;
@@ -140,7 +141,54 @@ function registerSeo(app, { publicDir }) {
     }
     return n;
   }
-  app.locals.seoInvalidate = invalidate;   // other server code (admin tools etc.) can call this too
+  // ── Several server copies ───────────────────────────────────────────────────
+  // Each running copy of the server keeps its own saved pages. So a change is also written as a tiny note in
+  // Firestore (seoInvalidations), and every copy listens for new notes and clears its own saved page. With one
+  // server this costs one extra write per edit; with more it keeps them all in step.
+  const INSTANCE_ID = Math.random().toString(36).slice(2) + Date.now().toString(36);
+  function forget(kind, id) {                       // clear here AND tell the other copies
+    const n = invalidate(kind, id);
+    try {
+      const { db, admin } = getShared();
+      if (db && admin) {
+        const key = (kind === 'all' ? 'all' : kind + '__' + id).replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 200);
+        db.collection('seoInvalidations').doc(key).set({
+          kind, id: String(id || ''), by: INSTANCE_ID, at: admin.firestore.FieldValue.serverTimestamp()
+        }).catch((e) => console.warn('[seo] could not post invalidation:', e.message));
+      }
+    } catch (_) {}
+    return n;
+  }
+  app.locals.seoInvalidate = forget;               // other server code (admin tools, crons) can call this too
+
+  function listenForInvalidations() {
+    try {
+      const { db, admin } = getShared();
+      if (!db || !admin) return;
+      const since = admin.firestore.Timestamp.fromMillis(Date.now() - 10000);
+      db.collection('seoInvalidations').where('at', '>=', since).onSnapshot((snap) => {
+        snap.docChanges().forEach((c) => {
+          if (c.type === 'removed') return;
+          const d = c.doc.data() || {};
+          if (d.by === INSTANCE_ID) return;        // we already cleared our own
+          invalidate(d.kind, d.id);
+        });
+      }, (err) => {
+        console.warn('[seo] invalidation listener stopped, retrying in 30s:', err && err.message);
+        setTimeout(listenForInvalidations, 30000).unref();
+      });
+      // tidy up old notes once in a while
+      setInterval(async () => {
+        try {
+          const old = await db.collection('seoInvalidations')
+            .where('at', '<', admin.firestore.Timestamp.fromMillis(Date.now() - 24 * 3600 * 1000)).limit(200).get();
+          if (old.empty) return;
+          const batch = db.batch(); old.docs.forEach((d) => batch.delete(d.ref)); await batch.commit();
+        } catch (_) {}
+      }, 6 * 3600 * 1000).unref();
+    } catch (e) { console.warn('[seo] listener not started:', e.message); }
+  }
+  setTimeout(listenForInvalidations, 3000).unref();
 
   // ── HTML template (re-read only when the file changes) ───────────────────
   const tpl = {};
@@ -320,14 +368,14 @@ function registerSeo(app, { publicDir }) {
       if (!/^[A-Za-z0-9_-]{4,128}$/.test(id)) return res.status(400).json({ ok: false });
       if (kind === 'profile') {
         if (id !== req.uid) return res.status(403).json({ ok: false });
-        return res.json({ ok: true, cleared: invalidate('profile', id) });
+        return res.json({ ok: true, cleared: forget('profile', id) });
       }
       if (kind !== 'article' && kind !== 'post') return res.status(400).json({ ok: false });
       const { db } = getShared();
       const snap = await db.collection(kind === 'article' ? 'articles' : 'posts').doc(id).get();
       // a deleted item has no owner left to check, and clearing its entry is harmless
       if (snap.exists && (snap.data().authorUid || snap.data().userId) !== req.uid) return res.status(403).json({ ok: false });
-      return res.json({ ok: true, cleared: invalidate(kind, id) });
+      return res.json({ ok: true, cleared: forget(kind, id) });
     } catch (e) {
       return res.status(500).json({ ok: false });
     }
