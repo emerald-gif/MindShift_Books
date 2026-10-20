@@ -5982,6 +5982,13 @@ const ANNOUNCEMENTS = [
     message: 'Messages with voice notes and photos, videos you can swipe through reel-style, a better search, and polls. See everything that just landed.',
     ctaLabel: 'See what\'s new',
     ctaUrl: '/whats-new'
+  },
+  {
+    id: 'update-2026-10-20',
+    title: 'Fresh updates on MindShift Books ✨',
+    message: 'Paste a link in a post and it becomes a rich preview card. Tap any image to view it full screen, and share posts straight to a chat.',
+    ctaLabel: 'See what\'s new',
+    ctaUrl: '/whats-new'
   }
 ];
 
