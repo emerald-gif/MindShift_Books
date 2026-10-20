@@ -146,12 +146,26 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .details-save-note{display:none;text-align:center;font-size:12.5px;font-weight:700;color:#10b981;margin-top:10px}
 
 /* ── PROFILE BLOCK at the top of Settings (big photo, name, @username) ── */
-.me{display:flex;flex-direction:column;align-items:center;text-align:center;padding:22px 20px 4px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.me{display:flex;flex-direction:column;align-items:center;text-align:center;padding:26px 20px 2px;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .me-av{width:104px;height:104px;border-radius:50%;background:var(--g);color:#fff;display:flex;align-items:center;justify-content:center;
-  font-size:40px;font-weight:800;overflow:hidden;flex-shrink:0;box-shadow:0 6px 18px rgba(79,70,229,.18)}
+  font-size:40px;font-weight:800;overflow:hidden;flex-shrink:0;box-shadow:0 0 0 3px var(--card),0 0 0 4px var(--ds-hairline,#e5e7eb),0 14px 30px -14px rgba(15,23,42,.45)}
 .me-av img{width:100%;height:100%;object-fit:cover;display:block}
-.me-name{margin-top:14px;font-size:20px;font-weight:800;color:var(--txt);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.me-handle{margin-top:3px;font-size:14px;color:var(--sub);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.me-av.is-loading{background:linear-gradient(90deg,#eef0f6 25%,#e4e7f0 50%,#eef0f6 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;color:transparent}
+.me-name{margin-top:16px;min-height:28px;font-size:22px;font-weight:800;letter-spacing:-.025em;color:var(--txt);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.me-handle{margin-top:3px;min-height:20px;font-size:14.5px;color:var(--sub);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.me-name .skel,.me-handle .skel{margin:0 auto}
+</style>
+<link rel="stylesheet" href="/design.css?v=2">
+<style>
+/* Settings × design system: grouped white lists on the grey backdrop, hairlines instead of heavy borders */
+.section-title{letter-spacing:.06em}
+.settings-card{border:none;border-radius:var(--ds-r-lg);box-shadow:0 0 0 .5px var(--ds-hairline),var(--ds-e1)}
+.settings-row{border-bottom:.5px solid var(--ds-hairline)}
+.settings-row:last-child{border-bottom:none}
+.settings-row.link:active,.settings-row.action:active{background:var(--ds-fill)}
+.row-label{font-weight:700;letter-spacing:-.01em}
+.btn-logout{border-radius:var(--ds-r-lg);border:none;box-shadow:0 0 0 .5px var(--ds-hairline),var(--ds-e1)}
+.order-card,.details-card{border:none;border-radius:var(--ds-r-lg);box-shadow:0 0 0 .5px var(--ds-hairline),var(--ds-e1)}
 </style>
 </head>
 <body>
@@ -195,9 +209,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 <div id="settingsMain">
 <!-- PROFILE BLOCK -->
 <div class="me" id="meBlock" onclick="openMyProfile()">
-  <div class="me-av" id="meAv"></div>
-  <div class="me-name" id="meName"></div>
-  <div class="me-handle" id="meHandle"></div>
+  <div class="me-av is-loading" id="meAv"></div>
+  <div class="me-name" id="meName"><div class="skel" style="width:170px;height:22px;border-radius:8px"></div></div>
+  <div class="me-handle" id="meHandle"><div class="skel" style="width:110px;height:13px"></div></div>
 </div>
 
 <!-- ACTIVITY -->
@@ -416,7 +430,12 @@ onAuthStateChanged(auth, async user => {
   currentUid  = user.uid;
   currentName = user.displayName || '';
   document.getElementById('userEmail').textContent = user.email || '—';
-  paintMe({ name: currentName || (user.email||'').split('@')[0], username: '', photo: user.photoURL || '' });   // instant, from the login
+  // Show the REAL profile (name / @username / photo from the users document). The login's own name and picture
+  // are only a last resort, because they are often different from what the person set on their profile.
+  const _cached = readMeCache(user.uid);
+  if(_cached) paintMe(_cached);                                     // repeat visit: instant, then refreshed below
+  const _authMe = { name: currentName || (user.email||'').split('@')[0], username: '', photo: user.photoURL || '' };
+  const _fallbackTimer = setTimeout(()=>{ if(!_mePainted) paintMe(_authMe); }, 8000);   // never leave the skeleton forever
   _authReadyResolve();
 
   // Load username from Firestore so shareProfile() generates a clean @username URL
@@ -425,9 +444,11 @@ onAuthStateChanged(auth, async user => {
     if(snap.exists()){
       const d = snap.data();
       currentUsername = d.username || '';
-      paintMe({ name: d.name || currentName || (user.email||'').split('@')[0], username: currentUsername, photo: d.photo || user.photoURL || '' });
-    }
-  }catch(e){ console.warn('Could not load username:', e.message); }
+      const me = { name: d.name || _authMe.name, username: currentUsername, photo: d.photo || user.photoURL || '' };
+      paintMe(me); writeMeCache(user.uid, me);
+    } else if(!_mePainted) paintMe(_authMe);
+  }catch(e){ console.warn('Could not load username:', e.message); if(!_mePainted) paintMe(_authMe); }
+  clearTimeout(_fallbackTimer);
 
   const provider = user.providerData?.[0]?.providerId || '';
   const connectedEl = document.getElementById('connectedAccount');
@@ -440,13 +461,21 @@ onAuthStateChanged(auth, async user => {
   }
 });
 
+let _mePainted = false;
+function readMeCache(uid){ try{ const c = JSON.parse(localStorage.getItem('msb_me')||'null'); return c && c.uid===uid ? c.me : null; }catch(_){ return null; } }
+function writeMeCache(uid, me){ try{ localStorage.setItem('msb_me', JSON.stringify({ uid, me })); }catch(_){} }
 function paintMe({name, username, photo}){
+  _mePainted = true;
   const av = document.getElementById('meAv');
   const initial = (name||'M').trim().charAt(0).toUpperCase() || 'M';
-  if(photo){ av.innerHTML = '<img alt="">'; const im = av.firstChild; im.onerror = ()=>{ av.textContent = initial; }; im.src = photo; }
-  else av.textContent = initial;
+  const showInitial = ()=>{ av.classList.remove('is-loading'); av.textContent = initial; };
   document.getElementById('meName').textContent = name || '';
   document.getElementById('meHandle').textContent = username ? '@'+username : '';
+  if(!photo){ showInitial(); return; }
+  const im = new Image(); im.alt = '';
+  im.onload = ()=>{ av.classList.remove('is-loading'); av.textContent = ''; av.appendChild(im); };   // the grey shimmer stays until the picture is really there
+  im.onerror = showInitial;
+  im.src = photo;
 }
 window.openMyProfile = function(){ window.location.href = currentUsername ? '/profile/@'+encodeURIComponent(currentUsername) : '/profile'; };
 
