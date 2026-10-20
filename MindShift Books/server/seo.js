@@ -118,10 +118,29 @@ function registerSeo(app, { publicDir }) {
   // ── tiny TTL cache ────────────────────────────────────────────────────────
   const cache = new Map();
   const cget = (k) => { const v = cache.get(k); if (v && v.exp > Date.now()) return v.val; cache.delete(k); return undefined; };
-  const cset = (k, val) => {
+  const cset = (k, val, ttl) => {
     if (cache.size >= MAX_CACHE) cache.delete(cache.keys().next().value);
-    cache.set(k, { val, exp: Date.now() + TTL_MS });
+    cache.set(k, { val, exp: Date.now() + (ttl || TTL_MS) });
   };
+  // "Not found / not published" is remembered only briefly, so a post that has just been published
+  // doesn't keep answering "not found" for a minute.
+  const NEG_TTL_MS = 5 * 1000;
+
+  // Forget what we saved for one item so the very next visit reads it fresh. Returns how many entries went.
+  function invalidate(kind, id) {
+    let n = 0;
+    if (kind === 'article' || kind === 'post') {
+      const k = (kind === 'article' ? 'article-read.html' : 'post-read.html') + '|' + JSON.stringify(id);
+      if (cache.delete(k)) n++;
+    } else if (kind === 'profile') {
+      // a profile can be cached under its username AND its uid, so match on the uid inside
+      for (const [k, v] of cache) {
+        if (k.startsWith('profile.html|') && v.val && v.val.uid === id) { cache.delete(k); n++; }
+      }
+    }
+    return n;
+  }
+  app.locals.seoInvalidate = invalidate;   // other server code (admin tools etc.) can call this too
 
   // ── HTML template (re-read only when the file changes) ───────────────────
   const tpl = {};
@@ -231,6 +250,7 @@ function registerSeo(app, { publicDir }) {
       description: clean(x.bio, 200) || `Follow ${name} on MindShift Books for articles, posts and videos.`,
       image: x.photo || '', type: 'profile',
       url: handle ? `${site()}/profile/@${encodeURIComponent(handle)}` : `${site()}/profile?uid=${encodeURIComponent(theUid)}`,
+      uid: theUid,
       swaps: profileSwaps(x),
       preload: preloadScript('profile', theUid, x, { username: String(handle || u || '').toLowerCase() })
     };
@@ -244,7 +264,7 @@ function registerSeo(app, { publicDir }) {
         if (!key) return next();
         const ck = file + '|' + JSON.stringify(key);
         let meta = cget(ck);
-        if (meta === undefined) { meta = await lookup(key); cset(ck, meta || null); }
+        if (meta === undefined) { meta = await lookup(key); cset(ck, meta || null, meta ? 0 : NEG_TTL_MS); }
         if (!meta) return next();            // nothing found / not public → normal page
         res.set('Content-Type', 'text/html; charset=utf-8');
         res.set('Cache-Control', 'no-cache');
@@ -281,6 +301,37 @@ function registerSeo(app, { publicDir }) {
     if (/^[A-Za-z0-9_]{3,20}$/.test(username)) return { username };
     return null;                              // own profile (no params) → normal page
   }, profileMeta));
+
+
+  // ── "I just edited this" ──────────────────────────────────────────────────
+  // The pages call this right after a save. Only the owner may refresh an item, and each person is limited,
+  // so it can't be used to make the server re-read things over and over.
+  const refreshHits = new Map();   // uid -> [timestamps]
+  app.post('/api/seo/refresh', (req, res, next) => getShared().requireUser(req, res, next), async (req, res) => {
+    try {
+      const now = Date.now();
+      const hits = (refreshHits.get(req.uid) || []).filter((t) => now - t < 60000);
+      if (hits.length >= 30) return res.status(429).json({ ok: false });
+      hits.push(now); refreshHits.set(req.uid, hits);
+      if (refreshHits.size > 5000) refreshHits.delete(refreshHits.keys().next().value);
+
+      const kind = String((req.body && req.body.kind) || '');
+      const id = String((req.body && req.body.id) || '').trim();
+      if (!/^[A-Za-z0-9_-]{4,128}$/.test(id)) return res.status(400).json({ ok: false });
+      if (kind === 'profile') {
+        if (id !== req.uid) return res.status(403).json({ ok: false });
+        return res.json({ ok: true, cleared: invalidate('profile', id) });
+      }
+      if (kind !== 'article' && kind !== 'post') return res.status(400).json({ ok: false });
+      const { db } = getShared();
+      const snap = await db.collection(kind === 'article' ? 'articles' : 'posts').doc(id).get();
+      // a deleted item has no owner left to check, and clearing its entry is harmless
+      if (snap.exists && (snap.data().authorUid || snap.data().userId) !== req.uid) return res.status(403).json({ ok: false });
+      return res.json({ ok: true, cleared: invalidate(kind, id) });
+    } catch (e) {
+      return res.status(500).json({ ok: false });
+    }
+  });
 
   // ── dynamic sitemap ───────────────────────────────────────────────────────
   let sm = { xml: '', exp: 0 };
