@@ -22,7 +22,8 @@ const fs = require('fs');
 const path = require('path');
 
 const TTL_MS = 60 * 1000;          // per-item metadata cache (crawlers hit the same link in bursts)
-const MAX_CACHE = 800;
+const MAX_CACHE = 400;           // entries now also hold the page's content, so keep the count modest
+const PRELOAD_MAX = 150 * 1024;  // bigger documents just skip the preload (the page fetches them itself)
 const SITEMAP_TTL_MS = 60 * 60 * 1000;
 const SITEMAP_LIMIT = 2000;        // newest N articles / posts, plus all usernames up to PROFILE_LIMIT
 const PROFILE_LIMIT = 5000;
@@ -35,6 +36,58 @@ function esc(s) {
 function clean(s, max) {
   const t = String(s == null ? '' : s).replace(/\s+/g, ' ').trim();
   return t.length > max ? t.slice(0, max - 1).trimEnd() + '…' : t;
+}
+
+
+// ── Instant-load helpers ───────────────────────────────────────────────────
+// The article/post pages used to wait for the Firebase SDK to download, connect and fetch the document before
+// showing anything. We already read the document here (for link previews), so we ALSO:
+//   1) paint a plain first screen straight into the HTML (title, author, picture, first lines — text only), and
+//   2) embed the document itself, so the page can render without asking Firestore again.
+// Everything below is escaped / text-only: nothing user-written is ever put into the page as raw HTML.
+function toPlain(html) {
+  return String(html == null ? '' : html)
+    .replace(/<(script|style)[\s\S]*?<\/\1>/gi, ' ')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/g, ' ').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&')
+    .replace(/\s+/g, ' ').trim();
+}
+function safeUrl(u) {
+  const t = String(u == null ? '' : u).trim();
+  return /^https?:\/\//i.test(t) || /^\/[^/]/.test(t) ? t : '';
+}
+// Firestore Timestamp → {__ts: ms}; the page turns it back into something with toDate().
+function plainDoc(v) {
+  if (v == null) return v;
+  if (typeof v.toMillis === 'function') return { __ts: v.toMillis() };
+  if (Array.isArray(v)) return v.map(plainDoc);
+  if (typeof v === 'object') { const o = {}; for (const k of Object.keys(v)) o[k] = plainDoc(v[k]); return o; }
+  return v;
+}
+function preloadScript(kind, id, data) {
+  try {
+    const json = JSON.stringify({ kind, id, data: plainDoc(data) });
+    if (json.length > PRELOAD_MAX) return '';
+    return json.replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
+  } catch (_) { return ''; }
+}
+function authorRowHtml(name, photo, meta, badge) {
+  return '<div class="author-row-wrap"><div class="author-row"><img class="author-logo" src="' + esc(safeUrl(photo) || 'logo.jpg') + '" alt="">' +
+    '<div><div class="author-name"><span>' + esc(name) + '</span></div><div class="author-meta">' + esc(meta) + '</div></div></div></div>';
+}
+function articleFirstPaint(x) {
+  const paras = String(x.body || '').split('</p>').map(toPlain).filter(Boolean).slice(0, 2);
+  const body = (paras.length ? paras : [toPlain(x.body).slice(0, 400)].filter(Boolean)).map((t) => '<p>' + esc(t) + '</p>').join('');
+  const hero = safeUrl(x.cover || x.img);
+  return '<div class="art-wrap"><span class="art-cat">' + esc(x.cat || '') + '</span><h1 class="art-title">' + esc(x.title || '') + '</h1>' +
+    authorRowHtml(x.authorName || 'MindShift Books', x.authorPhoto, x.readTime || x.read || '') +
+    (hero ? '<img class="art-hero" src="' + esc(hero) + '" alt="">' : '') + '<div class="art-body">' + body + '</div></div>';
+}
+function postFirstPaint(x) {
+  const img = safeUrl((Array.isArray(x.images) && x.images[0]) || x.thumbnailUrl);
+  return '<div class="art-wrap">' + authorRowHtml(x.authorName || 'MindShift Books User', x.authorPhoto, '') +
+    (x.text ? '<div class="post-text">' + esc(x.text) + '</div>' : '') +
+    (img ? '<div class="post-single"><img src="' + esc(img) + '" alt=""></div>' : '') + '</div>';
 }
 
 function registerSeo(app, { publicDir }) {
@@ -126,7 +179,8 @@ function registerSeo(app, { publicDir }) {
       description,
       image, type: isVideo ? 'video.other' : 'article',
       url: `${site()}/post-read?id=${encodeURIComponent(id)}`,
-      publishedTime: iso(x.publishedAt || x.createdAt)
+      publishedTime: iso(x.publishedAt || x.createdAt),
+      firstPaint: postFirstPaint(x), preload: preloadScript('post', id, x)
     };
   }
   async function articleMeta(id) {
@@ -140,7 +194,8 @@ function registerSeo(app, { publicDir }) {
       description: clean(x.brief, 200) || `Read this article by ${x.authorName || 'MindShift Books'} on MindShift Books.`,
       image: x.cover || x.img || '', type: 'article',
       url: `${site()}/article-read?id=${encodeURIComponent(id)}`,
-      publishedTime: iso(x.publishedAt || x.createdAt)
+      publishedTime: iso(x.publishedAt || x.createdAt),
+      firstPaint: articleFirstPaint(x), preload: preloadScript('article', id, x)
     };
   }
   async function profileMeta({ username, uid }) {
@@ -178,7 +233,14 @@ function registerSeo(app, { publicDir }) {
         if (!meta) return next();            // nothing found / not public → normal page
         res.set('Content-Type', 'text/html; charset=utf-8');
         res.set('Cache-Control', 'no-cache');
-        return res.send(inject(template(file), meta));
+        let out = inject(template(file), meta);
+        if (meta.firstPaint) {
+          // function replacement on purpose: a "$" in a post must not be read as a replace pattern
+          out = out.replace('<div id="artContent"></div>', () =>
+            '<div id="artContent">' + meta.firstPaint + '</div>' +
+            (meta.preload ? '<script>window.__PRELOAD__=' + meta.preload + ';</script>' : ''));
+        }
+        return res.send(out);
       } catch (e) {
         console.warn('[seo] preview skipped:', file, e && e.message);
         return next();
