@@ -196,13 +196,6 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 <div id="sidebar-slot"></div>
 <script src="/sidebar-nav.js?v=3"></script>
 <script>
-  function toggleSidebar(){
-    const sidebar = document.getElementById('sidebar');
-    const open = sidebar.getAttribute('data-open') === 'true';
-    sidebar.setAttribute('data-open', open ? 'false' : 'true');
-    sidebar.style.left = open ? '-300px' : '0px';
-    sidebar.setAttribute('aria-hidden', open ? 'true' : 'false');
-  }
 </script>
 <!-- ══ /SHARED HEADER + SIDEBAR ══ -->
 

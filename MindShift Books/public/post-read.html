@@ -596,13 +596,6 @@ body{padding-bottom:64px} /* room for the fixed comment bar on post-read */
 <script src="/author-live.js"></script>
 <script src="/share-image.js"></script>
 <script>
-  function toggleSidebar(){
-    const sidebar = document.getElementById('sidebar');
-    const open = sidebar.getAttribute('data-open') === 'true';
-    sidebar.setAttribute('data-open', open ? 'false' : 'true');
-    sidebar.style.left = open ? '-300px' : '0px';
-    sidebar.setAttribute('aria-hidden', open ? 'true' : 'false');
-  }
 </script>
 <!-- ══ /SHARED HEADER + SIDEBAR ══ -->
 
