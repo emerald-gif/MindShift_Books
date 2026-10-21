@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>(function(){try{var c=localStorage.getItem('msb_theme'),d=c==='dark'||(c!=='light'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches),r=document.documentElement;r.setAttribute('data-theme',d?'dark':'light');r.style.colorScheme=d?'dark':'light'}catch(e){}})()</script>
+<script src="/theme.js" defer></script>
 <link rel="icon" href="/MINDSHIFT.jpg">
 
 <meta charset="UTF-8">
@@ -23,7 +25,7 @@
   --bg:#f4f4fb;--card:#fff;--border2:#edeef5;
   --green:#10b981;--red:#ef4444;--amber:#f59e0b;--radius:20px;
   --shadow:0 1px 2px rgba(15,23,42,.04),0 10px 28px -12px rgba(76,60,190,.16);
-  --shadow-sm:0 1px 2px rgba(15,23,42,.04),0 4px 14px -6px rgba(15,23,42,.08);
+  --shadow-sm:0 1px 2px rgba(15,23,42,.04),0 4px 14px -6px var(--ds-hairline,rgba(15,23,42,.08));
 }
 body{font-family:'Segoe UI',system-ui,sans-serif;color:var(--txt);min-height:100vh;
   background:
@@ -46,14 +48,14 @@ body{font-family:'Segoe UI',system-ui,sans-serif;color:var(--txt);min-height:100
 /* ── SHARED MINDSHIFT HEADER / SIDEBAR (copied verbatim from profile.html/articles.html —
    keep all copies in sync if styles.css changes) ── */
 .sticky-header-stack{position:sticky;top:0;z-index:1000}
-.sticky-header-stack header:first-child{position:relative;left:0;right:0;background:white;display:flex;flex-direction:column;gap:10px;padding:16px 20px 18px;box-shadow:0 2px 12px rgba(0,0,0,0.06)}
+.sticky-header-stack header:first-child{position:relative;left:0;right:0;background:var(--c-bg,white);display:flex;flex-direction:column;gap:10px;padding:16px 20px 18px;box-shadow:0 2px 12px rgba(0,0,0,0.06)}
 .sticky-header-stack .header-top{display:flex;align-items:center;justify-content:space-between;width:100%;flex-wrap:nowrap;gap:8px}
 .sticky-header-stack header:first-child h1{font-size:1.45rem;font-weight:700;display:flex;align-items:center;gap:10px;min-width:0;overflow:hidden;margin:0}
 .sticky-header-stack header:first-child h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .header-icon-group{display:flex;align-items:center;gap:4px;flex-shrink:0}
-.icon-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;border:none;background:transparent;color:#1e293b;cursor:pointer;transition:background-color 150ms ease,color 150ms ease;padding:0}
-.icon-btn:hover{background-color:#f1f5f9;color:#4f46e5}
-.icon-btn:active{background-color:#e6e9ee}
+.icon-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;border:none;background:transparent;color:var(--c-ink,#1e293b);cursor:pointer;transition:background-color 150ms ease,color 150ms ease;padding:0}
+.icon-btn:hover{background-color:var(--c-surface,#f1f5f9);color:var(--c-ind,#4f46e5)}
+.icon-btn:active{background-color:var(--c-surface,#e6e9ee)}
 /* Sidebar styles now live in /sidebar-nav.js (injected once, shared across
    every page) instead of being duplicated here. */
 /* ── /SHARED HEADER ── */
@@ -62,7 +64,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;color:var(--txt);min-height:100
 .profile-row{display:flex;align-items:center;gap:12px;padding:16px 16px 4px}
 
 /* ── PERMANENT COMMENT CENTER CARD (always visible, hub-level) ── */
-.cm-center-card{margin:14px 16px 4px;border-radius:20px;background:#fff;
+.cm-center-card{margin:14px 16px 4px;border-radius:20px;background:var(--c-bg,#fff);
   box-shadow:0 1px 2px rgba(15,23,42,.04),0 10px 28px -12px rgba(76,60,190,.16);
   padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer}
 .cm-center-icon{width:38px;height:38px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;
@@ -70,13 +72,13 @@ body{font-family:'Segoe UI',system-ui,sans-serif;color:var(--txt);min-height:100
 .cm-center-icon svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .cm-center-body{flex:1;min-width:0}
 .cm-center-lbl{font-size:11.5px;font-weight:800;color:var(--p,#6366f1);text-transform:uppercase;letter-spacing:.3px;margin-bottom:3px}
-.cm-center-txt{font-size:13.5px;color:#0f172a;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cm-center-txt{font-size:13.5px;color:var(--c-ink,#0f172a);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .cm-center-txt b{font-weight:800}
 .cm-center-txt.big{font-size:15px;font-weight:800;line-height:1.3}
-.cm-center-sub{font-size:12.5px;color:#475569;font-weight:600;line-height:1.4;margin-top:2px}
-.cm-center-chev{width:18px;height:18px;flex-shrink:0;color:#94a3b8}
+.cm-center-sub{font-size:12.5px;color:var(--c-sub,#475569);font-weight:600;line-height:1.4;margin-top:2px}
+.cm-center-chev{width:18px;height:18px;flex-shrink:0;color:var(--c-mute,#94a3b8)}
 .cm-center-chev svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
-.pr-avatar{width:44px;height:44px;border-radius:50%;object-fit:cover;background:#e0e7ff;flex-shrink:0}
+.pr-avatar{width:44px;height:44px;border-radius:50%;object-fit:cover;background:var(--c-tonal2,#e0e7ff);flex-shrink:0}
 .pr-info{flex:1;min-width:0}
 .pr-name{font-size:15px;font-weight:900;color:var(--txt)}
 .pr-followers{font-size:12.5px;color:var(--mute);font-weight:600;margin-top:1px}
@@ -135,15 +137,15 @@ body{font-family:'Segoe UI',system-ui,sans-serif;color:var(--txt);min-height:100
 .stat-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;
   background:transparent;border:1.5px solid var(--border2)}
 .stat-icon svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.stat-icon.followers,.stat-icon.articles,.stat-icon.views,.stat-icon.engagement{color:#1e293b}
+.stat-icon.followers,.stat-icon.articles,.stat-icon.views,.stat-icon.engagement{color:var(--c-ink,#1e293b)}
 .stat-value-row{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
 .stat-value{font-size:22px;font-weight:900;color:var(--txt)}
 .stat-label{font-size:11.5px;color:var(--mute);font-weight:600}
 .stat-pill{display:inline-flex;align-items:center;gap:3px;font-size:10.5px;font-weight:800;
   padding:2px 7px;border-radius:99px}
 .stat-pill svg{width:10px;height:10px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
-.stat-pill.up{background:#d1fae5;color:#059669}
-.stat-pill.down{background:#fee2e2;color:#dc2626}
+.stat-pill.up{background:var(--c-ok-bg,#d1fae5);color:var(--c-ok-txt,#059669)}
+.stat-pill.down{background:var(--c-red-bg,#fee2e2);color:var(--c-red-txt,#dc2626)}
 .stat-pill.flat{background:var(--border2);color:var(--mute)}
 
 /* ── BEST ARTICLE CARD ── */
@@ -192,7 +194,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;color:var(--txt);min-height:100
 .perf-meta{display:flex;gap:14px}
 .perf-meta-item{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--mute);font-weight:600}
 .perf-pin{margin-left:6px;font-size:11px}
-.perf-nudge{margin-left:auto;font-size:11px;font-weight:800;color:#b45309;background:#fffbeb;border:1px solid #fde68a;padding:2px 8px;border-radius:99px}
+.perf-nudge{margin-left:auto;font-size:11px;font-weight:800;color:var(--c-warn-txt,#b45309);background:var(--c-warn-bg,#fffbeb);border:1px solid #fde68a;padding:2px 8px;border-radius:99px}
 .perf-meta-item svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 
 /* ── ACTIVITY FEED ── */
@@ -200,10 +202,10 @@ body{font-family:'Segoe UI',system-ui,sans-serif;color:var(--txt);min-height:100
 .activity-row:last-child{border-bottom:none}
 .activity-icon{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .activity-icon svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.activity-icon.like{background:#fee2e2;color:#dc2626}
-.activity-icon.comment{background:#fef3c7;color:#d97706}
-.activity-icon.follow{background:#e0e7ff;color:#4f46e5}
-.activity-icon.view{background:#e0e7ff;color:var(--p)}
+.activity-icon.like{background:var(--c-red-bg,#fee2e2);color:var(--c-red-txt,#dc2626)}
+.activity-icon.comment{background:var(--c-warn-bg,#fef3c7);color:#d97706}
+.activity-icon.follow{background:var(--c-tonal2,#e0e7ff);color:var(--c-ind,#4f46e5)}
+.activity-icon.view{background:var(--c-tonal2,#e0e7ff);color:var(--p)}
 .activity-body{flex:1;min-width:0}
 .activity-text{font-size:13px;color:var(--txt);line-height:1.45}
 .activity-text b{font-weight:800}
@@ -211,7 +213,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;color:var(--txt);min-height:100
 
 /* ── EMPTY STATE ── */
 .empty-state{text-align:center;padding:40px 24px}
-.empty-state svg{width:42px;height:42px;color:#d1d5db;margin:0 auto 12px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.empty-state svg{width:42px;height:42px;color:var(--c-faint,#d1d5db);margin:0 auto 12px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
 .empty-state p{font-size:13.5px;color:var(--mute);line-height:1.6;margin-bottom:4px}
 .card-empty{background:var(--card);border-radius:18px;box-shadow:var(--shadow-sm)}
 
@@ -227,6 +229,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;color:var(--txt);min-height:100
 .bottom-pad{height:24px}
 </style>
 
+<link rel="stylesheet" href="/theme.css?v=1">
 </head>
 <body>
 
@@ -669,7 +672,7 @@ async function loadInsights(uid){
       emptyState(ICONS.eye, `Activity unavailable.`);
     const cmCenterBody = document.querySelector('#cmCenterCard .cm-center-body');
     if (cmCenterBody) cmCenterBody.innerHTML = `<div class="cm-center-lbl">Your comments</div>
-      <div class="cm-center-txt" style="color:#94a3b8">Couldn't load your comments. Check your connection and try again.</div>`;
+      <div class="cm-center-txt" style="color:var(--c-mute,#94a3b8)">Couldn't load your comments. Check your connection and try again.</div>`;
     const fcSectionEl = document.getElementById('fcSection');
     if(fcSectionEl) fcSectionEl.style.display = 'none';
   }
@@ -1052,7 +1055,7 @@ function renderCommentCenter(enriched, needs){
 
   if (!enriched.length) {
     body.innerHTML = `<div class="cm-center-lbl">Your comments</div>
-      <div class="cm-center-txt" style="color:#94a3b8">No comments yet. When someone comments on your posts or articles, you'll see it here.</div>`;
+      <div class="cm-center-txt" style="color:var(--c-mute,#94a3b8)">No comments yet. When someone comments on your posts or articles, you'll see it here.</div>`;
     card.onclick = null;
     return;
   }

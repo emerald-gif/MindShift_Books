@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>(function(){try{var c=localStorage.getItem('msb_theme'),d=c==='dark'||(c!=='light'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches),r=document.documentElement;r.setAttribute('data-theme',d?'dark':'light');r.style.colorScheme=d?'dark':'light'}catch(e){}})()</script>
+<script src="/theme.js" defer></script>
 <link rel="icon" href="/MINDSHIFT.jpg">
 
 <meta charset="UTF-8">
@@ -117,7 +119,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .acard{display:flex;flex-direction:row;align-items:flex-start;gap:14px;
   background:var(--card);padding:18px 16px;cursor:pointer;
   border-bottom:1px solid var(--border);transition:background .18s}
-.acard:active{background:#eef2ff}
+.acard:active{background:var(--c-tonal,#eef2ff)}
 .acard-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
 .acard-cat{display:inline-flex;align-items:center;background:rgba(37,99,235,.1);
   color:var(--p);font-size:9.5px;font-weight:800;padding:3px 9px;
@@ -142,12 +144,12 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden}
 .pcard-single{margin-top:8px;display:flex;justify-content:center}
 .pcard-single img{max-width:100%;max-height:340px;width:auto;height:auto;object-fit:contain;
-  border-radius:14px;display:block;cursor:pointer;background:#f1f5f9}
+  border-radius:14px;display:block;cursor:pointer;background:var(--c-surface,#f1f5f9)}
 .pcard-carousel{position:relative;margin-top:8px;max-width:100%;overflow:hidden}
 .pcard-track{display:flex;gap:4px;overflow-x:auto;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;
   scrollbar-width:none;height:340px;max-height:60vh}
 .pcard-track::-webkit-scrollbar{display:none}
-.pcard-slide{flex:0 0 auto;height:100%;scroll-snap-align:start;border-radius:14px;overflow:hidden;background:#f1f5f9}
+.pcard-slide{flex:0 0 auto;height:100%;scroll-snap-align:start;border-radius:14px;overflow:hidden;background:var(--c-surface,#f1f5f9)}
 .pcard-slide img{height:100%;width:auto;max-width:none;object-fit:contain;display:block;cursor:pointer}
 .pcard-count{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.55);color:#fff;font-size:11px;
   font-weight:700;padding:2px 8px;border-radius:99px}
@@ -163,10 +165,10 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   font-weight:700;padding:2px 8px;border-radius:99px}
 .acard-foot{display:flex;align-items:center;gap:8px;margin-top:10px}
 .acard-like,.pcard-comment{display:flex;align-items:center;gap:4px;background:none;border:none;cursor:pointer;padding:4px 6px;font-size:12px;font-weight:700;color:var(--mute);transition:color .18s;border-radius:8px;-webkit-tap-highlight-color:transparent}
-.acard-like:hover{color:#e11d48;background:#fff1f1}
-.pcard-comment:hover{color:var(--p);background:#eef2ff}
+.acard-like:hover{color:var(--c-red-txt,#e11d48);background:var(--c-red-bg,#fff1f1)}
+.pcard-comment:hover{color:var(--p);background:var(--c-tonal,#eef2ff)}
 .acard-like svg,.pcard-comment svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;transition:all .2s;flex-shrink:0}
-.acard-like.liked{color:#e11d48}
+.acard-like.liked{color:var(--c-red-txt,#e11d48)}
 .acard-like.liked svg{fill:#e11d48;stroke:#e11d48}
 .acard-save{background:none;border:none;cursor:pointer;padding:4px 6px;border-radius:8px;color:var(--mute);-webkit-tap-highlight-color:transparent}
 .acard-save svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2}
@@ -183,7 +185,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 
 /* ── EMPTY ── */
 .empty{text-align:center;padding:60px 24px}
-.empty svg{width:44px;height:44px;color:#d1d5db;margin:0 auto 14px;display:block}
+.empty svg{width:44px;height:44px;color:var(--c-faint,#d1d5db);margin:0 auto 14px;display:block}
 .empty p{font-size:14px;color:var(--mute);line-height:1.6}
 
 /* ── TOAST ── */
@@ -212,9 +214,10 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   background:transparent;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;
   transition:all .2s;flex-shrink:0}
 .follow-btn:hover{border-color:var(--p);color:var(--p)}
-.follow-btn.ing{border-color:var(--p);color:var(--p);background:#eef2ff}
+.follow-btn.ing{border-color:var(--p);color:var(--p);background:var(--c-tonal,#eef2ff)}
 </style>
 <link rel="stylesheet" href="/design.css?v=2">
+<link rel="stylesheet" href="/theme.css?v=1">
 </head>
 <body>
 
