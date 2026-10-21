@@ -1,0 +1,158 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   MindShift Books — theme.css  (dark mode)
+   Load LAST on a page (after design.css), next to /theme.js in <head>.
+
+   HOW IT WORKS
+   • theme.js puts  data-theme="dark"  on <html>.  Nothing below applies in light mode, so light is untouched.
+   • Pages colour themselves with shared variables (--bg, --card, --txt …) and with  var(--c-xxx, #original)
+     for the one-off greys/tints they used to hard-code. Dark mode only has to redefine those variables.
+   • To theme a NEW page:  link theme.js + theme.css, and write colours as variables. No other work.
+   To make a new colour themeable: write  var(--c-surface,#f1f5f9)  (token first, old colour as fallback).
+   ═══════════════════════════════════════════════════════════════════════ */
+html[data-theme="dark"]{
+  color-scheme:dark;
+
+  /* ── page tokens (names every page already uses) ── */
+  --bg:#0a0d14;             /* the backdrop behind cards */
+  --card:#12161f;           /* surfaces: cards, sheets, bars */
+  --border:#232a38;
+  --border2:#2b3445;
+  --txt:#e8ebf2;
+  --primary:#e8ebf2;
+  --sub:#a4adbd;
+  --mute:#7b8497;
+  --p:#7377f4;              /* brand indigo, lifted so it reads on dark */
+  --ps:#a5b4fc;
+  --save:#8b8ff8;
+  --save-bg:rgba(99,102,241,.18);
+  --red:#f87171;
+  --red-bg:rgba(239,68,68,.16);
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px -12px rgba(0,0,0,.7);
+  --shadow-sm:0 1px 2px rgba(0,0,0,.35),0 4px 14px -6px rgba(0,0,0,.6);
+
+  /* ── design.css tokens ── */
+  --ds-hairline:rgba(255,255,255,.09);
+  --ds-fill:rgba(255,255,255,.07);
+  --ds-fill-2:rgba(255,255,255,.12);
+  --ds-tonal:rgba(99,102,241,.2);
+  --ds-tonal-2:rgba(99,102,241,.3);
+  --ds-e1:0 1px 2px rgba(0,0,0,.45);
+  --ds-e2:0 2px 6px rgba(0,0,0,.35),0 10px 28px -10px rgba(0,0,0,.65);
+  --ds-e3:0 0 0 .5px rgba(255,255,255,.1),0 16px 48px -10px rgba(0,0,0,.75);
+  --glass-rgb:18,22,31;      /* frosted bars / menus: rgba(var(--glass-rgb,255,255,255), .85) */
+
+  /* ── swept one-off colours (see the sweep: var(--c-x, #old)) ── */
+  --c-bg:#12161f;            /* was white */
+  --c-bg2:#0a0d14;           /* was the faint page grey (#f8fafc …) */
+  --c-surface:#1b212d;       /* chips, inputs, tracks (#f1f5f9 …) */
+  --c-tonal:rgba(99,102,241,.16);
+  --c-tonal2:rgba(99,102,241,.26);
+  --c-cyan-bg:rgba(6,182,212,.14);
+  --c-red-bg:rgba(239,68,68,.15);
+  --c-warn-bg:rgba(245,158,11,.15);
+  --c-ok-bg:rgba(16,185,129,.15);
+  --c-ink-bg:#2a3245;        /* dark pills / toasts */
+  --c-ink:#e8ebf2;           /* text that was near-black */
+  --c-sub:#b4bccb;
+  --c-sub2:#a0a9bb;
+  --c-mute:#7b8497;
+  --c-faint:#5a6376;
+  --c-ind:#a5b4fc;           /* indigo text */
+  --c-warn-txt:#fbbf24;
+  --c-ok-txt:#34d399;
+  --c-cyan-txt:#22d3ee;
+  --c-red-txt:#f87171;
+  --c-line:#232a38;
+  --c-line2:#323a4c;
+  --c-line-ind:#3a4166;
+  --c-line-red:#5b2a2f;
+  --c-handle:rgba(255,255,255,.22);   /* sheet drag handles */
+}
+
+/* ── base ── */
+html[data-theme="dark"] body{background:var(--bg);color:var(--txt)}
+html[data-theme="dark"] ::selection{background:rgba(124,127,247,.35)}
+html[data-theme="dark"] ::placeholder{color:var(--mute);opacity:1}
+html[data-theme="dark"] input,html[data-theme="dark"] textarea,html[data-theme="dark"] select{color:var(--txt);caret-color:var(--p)}
+html[data-theme="dark"] input:-webkit-autofill{-webkit-text-fill-color:var(--txt);-webkit-box-shadow:0 0 0 40px #1b212d inset}
+html[data-theme="dark"] hr{border-color:var(--border)}
+
+/* ── design.css pieces that carry their own light colours ── */
+html[data-theme="dark"] .hdr,
+html[data-theme="dark"] body.ds-glass header{background:rgba(var(--glass-rgb),.84)}
+html[data-theme="dark"] .hbg-drop,
+html[data-theme="dark"] .acard-menu-drop{background:rgba(var(--glass-rgb),.96)}
+html[data-theme="dark"] .search-inp:focus{background:var(--card)}
+html[data-theme="dark"] .acard:hover{background:#151a25}
+html[data-theme="dark"] .art-body{color:#d6dbe6}
+html[data-theme="dark"] .toast{background:rgba(42,50,69,.95);color:#fff}
+html[data-theme="dark"] .skel{background:linear-gradient(90deg,#1b212d 25%,#262e3f 50%,#1b212d 75%);background-size:200% 100%}
+
+/* chips / pills that are "ink on selected": ink is light in dark mode, so their text flips to dark */
+html[data-theme="dark"] .fpill.active,
+html[data-theme="dark"] .msb-cat-pill.is-active,
+html[data-theme="dark"] .xs-chip.active,
+html[data-theme="dark"] .xacc-follow-btn.following,
+html[data-theme="dark"] .day-pill.active,
+html[data-theme="dark"] .pill.active{color:#0a0d14}
+
+/* photos: the same picture, a touch calmer on a dark screen; logos/avatars untouched */
+html[data-theme="dark"] .art-hero,
+html[data-theme="dark"] .acard-img,
+html[data-theme="dark"] .pcard-slide img,
+html[data-theme="dark"] .pcard-single img{filter:brightness(.92)}
+
+
+/* ═════ per-page leftovers: light gradients and page-private colour names ═════ */
+html[data-theme="dark"]{
+  --cbg1:#12161f; --cbg2:#0a0d14;                       /* Messages: the default ("classic") chat background; chat themes still override */
+  --ink:#e8ebf2; --line:#262d3c;                         /* whats-new names */
+}
+/* What's new has its own colour names */
+html[data-theme="dark"] .hero{background:linear-gradient(180deg,rgba(99,102,241,.16) 0%,var(--card) 100%)}
+html[data-theme="dark"] .cta{background:linear-gradient(180deg,rgba(var(--glass-rgb),0),var(--card) 38%)}
+html[data-theme="dark"]{--indigo:#8b8ff8;--indigo-d:#a5b4fc;--indigo-soft:rgba(99,102,241,.18);--green:#34d399;--green-soft:rgba(16,185,129,.16);
+  --amber:#fbbf24;--amber-soft:rgba(245,158,11,.16);--rose:#fb7185;--rose-soft:rgba(244,63,94,.16);--cyan:#22d3ee;--cyan-soft:rgba(6,182,212,.16)}
+html[data-theme="dark"] select{background-color:var(--card);color:var(--txt)}
+
+/* feed */
+html[data-theme="dark"] .acard-img,
+html[data-theme="dark"] .saved-card-img,
+html[data-theme="dark"] .xcard{background:linear-gradient(135deg,#1e2440,#171c30)}
+html[data-theme="dark"] .guest-bar{background:linear-gradient(135deg,rgba(99,102,241,.2),rgba(139,92,246,.14));border-color:rgba(129,140,248,.28)}
+html[data-theme="dark"] .feed-setup-banner,
+html[data-theme="dark"] .setup-banner{background:linear-gradient(135deg,rgba(249,115,22,.15),rgba(236,72,153,.12))}
+html[data-theme="dark"] .see-more-banner{background:rgba(99,102,241,.14)}
+html[data-theme="dark"] .xs-skel,
+html[data-theme="dark"] .composer-name.skel{background:linear-gradient(90deg,#1b212d 25%,#262e3f 50%,#1b212d 75%);background-size:200% 100%}
+
+/* reading pages */
+html[data-theme="dark"] .art-fade{background:linear-gradient(to bottom,transparent,var(--card))}
+html[data-theme="dark"] .dl-preview,
+html[data-theme="dark"] .art-gate{background:linear-gradient(160deg,rgba(6,182,212,.14),var(--card))}
+html[data-theme="dark"] .c-pinned-card{background:linear-gradient(180deg,rgba(245,158,11,.13),rgba(245,158,11,.06))}
+html[data-theme="dark"] .rt-body blockquote,
+html[data-theme="dark"] .art-body blockquote,
+html[data-theme="dark"] .art-body .pull-quote{background:linear-gradient(90deg,rgba(99,102,241,.2),rgba(99,102,241,.07));color:#c7d2fe}
+
+/* profile / settings / insights / misc */
+html[data-theme="dark"] .pin-wrap{background:linear-gradient(180deg,rgba(99,102,241,.12) 0,var(--card) 90px)}
+html[data-theme="dark"] .verified-card{background:linear-gradient(135deg,rgba(99,102,241,.22),rgba(236,72,153,.14))}
+html[data-theme="dark"] .me-av.is-loading{background:linear-gradient(90deg,#1b212d 25%,#262e3f 50%,#1b212d 75%);background-size:200% 100%}
+html[data-theme="dark"] .mention-intro{background:linear-gradient(135deg,rgba(99,102,241,.16),rgba(6,182,212,.12))}
+html[data-theme="dark"] .cm-center-icon,
+html[data-theme="dark"] .cm-link-icon,
+html[data-theme="dark"] .metric-icon.comment{background:linear-gradient(135deg,rgba(245,158,11,.28),rgba(245,158,11,.16))}
+html[data-theme="dark"] .metric-icon.like{background:linear-gradient(135deg,rgba(239,68,68,.28),rgba(239,68,68,.16))}
+html[data-theme="dark"] .official-chip{background:linear-gradient(135deg,rgba(99,102,241,.22),rgba(6,182,212,.16))}
+
+/* ── the Settings "Appearance" control (also used in the sidebar) ── */
+.msb-seg{display:flex;gap:4px;padding:4px;border-radius:14px;background:var(--ds-fill,rgba(15,23,42,.055))}
+.msb-seg button{flex:1;border:none;background:transparent;color:var(--sub,#6b7280);font:inherit;font-size:13.5px;font-weight:700;
+  padding:9px 6px;border-radius:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;
+  transition:background .18s,color .18s,box-shadow .18s;-webkit-tap-highlight-color:transparent}
+.msb-seg button svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.msb-seg button.on{background:var(--card,#fff);color:var(--txt,#0f172a);box-shadow:0 0 0 .5px var(--ds-hairline,rgba(15,23,42,.08)),0 2px 8px rgba(15,23,42,.1)}
+html[data-theme="dark"] .msb-seg button.on{box-shadow:0 0 0 .5px rgba(255,255,255,.1),0 2px 8px rgba(0,0,0,.5)}
+
+@media (prefers-reduced-motion:reduce){.msb-seg button{transition:none}}

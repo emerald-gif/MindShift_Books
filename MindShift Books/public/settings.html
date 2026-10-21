@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>(function(){try{var c=localStorage.getItem('msb_theme'),d=c==='dark'||(c!=='light'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches),r=document.documentElement;r.setAttribute('data-theme',d?'dark':'light');r.style.colorScheme=d?'dark':'light'}catch(e){}})()</script>
+<script src="/theme.js" defer></script>
 <link rel="icon" href="/MINDSHIFT.jpg">
 
 <meta charset="UTF-8">
@@ -31,14 +33,14 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 /* ── SHARED MINDSHIFT HEADER / SIDEBAR (copied verbatim from profile.html/articles.html —
    keep all copies in sync if styles.css changes) ── */
 .sticky-header-stack{position:sticky;top:0;z-index:1000}
-.sticky-header-stack header:first-child{position:relative;left:0;right:0;background:white;display:flex;flex-direction:column;gap:10px;padding:16px 20px 18px;box-shadow:0 2px 12px rgba(0,0,0,0.06)}
+.sticky-header-stack header:first-child{position:relative;left:0;right:0;background:var(--c-bg,white);display:flex;flex-direction:column;gap:10px;padding:16px 20px 18px;box-shadow:0 2px 12px rgba(0,0,0,0.06)}
 .sticky-header-stack .header-top{display:flex;align-items:center;justify-content:space-between;width:100%;flex-wrap:nowrap;gap:8px}
 .sticky-header-stack header:first-child h1{font-size:1.45rem;font-weight:700;display:flex;align-items:center;gap:10px;min-width:0;overflow:hidden;margin:0}
 .sticky-header-stack header:first-child h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .header-icon-group{display:flex;align-items:center;gap:4px;flex-shrink:0}
-.icon-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;border:none;background:transparent;color:#1e293b;cursor:pointer;transition:background-color 150ms ease,color 150ms ease;padding:0}
-.icon-btn:hover{background-color:#f1f5f9;color:#4f46e5}
-.icon-btn:active{background-color:#e6e9ee}
+.icon-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;border:none;background:transparent;color:var(--c-ink,#1e293b);cursor:pointer;transition:background-color 150ms ease,color 150ms ease;padding:0}
+.icon-btn:hover{background-color:var(--c-surface,#f1f5f9);color:var(--c-ind,#4f46e5)}
+.icon-btn:active{background-color:var(--c-surface,#e6e9ee)}
 /* Sidebar styles now live in /sidebar-nav.js (injected once, shared across
    every page) instead of being duplicated here. */
 /* nested page-level .hdr sits inside the same sticky stack as the brand header, so let the
@@ -62,12 +64,12 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .row-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;
   justify-content:center;flex-shrink:0}
 .row-icon svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.row-icon.email{background:#e0e7ff;color:var(--p)}
-.row-icon.account{background:#e0e7ff;color:#4f46e5}
-.row-icon.privacy{background:#d1fae5;color:#059669}
-.row-icon.terms{background:#fef3c7;color:#d97706}
-.row-icon.support{background:#fce7f3;color:#db2777}
-.row-icon.logout{background:#fee2e2;color:var(--red)}
+.row-icon.email{background:var(--c-tonal2,#e0e7ff);color:var(--p)}
+.row-icon.account{background:var(--c-tonal2,#e0e7ff);color:var(--c-ind,#4f46e5)}
+.row-icon.privacy{background:var(--c-ok-bg,#d1fae5);color:var(--c-ok-txt,#059669)}
+.row-icon.terms{background:var(--c-warn-bg,#fef3c7);color:#d97706}
+.row-icon.support{background:var(--c-red-bg,#fce7f3);color:#db2777}
+.row-icon.logout{background:var(--c-red-bg,#fee2e2);color:var(--red)}
 .row-text{flex:1;min-width:0}
 .row-label{font-size:13.5px;font-weight:700;color:var(--txt)}
 .row-value{font-size:12px;color:var(--mute);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -84,20 +86,20 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   display:flex;align-items:flex-start;gap:14px}
 .verified-deco{position:absolute;top:-20px;right:-16px;width:90px;height:90px;opacity:.10}
 .verified-deco svg{width:100%;height:100%;fill:none;stroke:var(--p);stroke-width:1.4}
-.verified-icon{width:42px;height:42px;border-radius:12px;background:#fff;
+.verified-icon{width:42px;height:42px;border-radius:12px;background:var(--c-bg,#fff);
   display:flex;align-items:center;justify-content:center;flex-shrink:0;
   box-shadow:0 4px 10px rgba(37,99,235,.12)}
 .verified-icon svg{width:20px;height:20px;fill:none;stroke:var(--p);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .verified-body{flex:1;position:relative;z-index:1}
 .verified-title-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px}
 .verified-title{font-size:14px;font-weight:900;color:var(--txt)}
-.soon-pill{font-size:10px;font-weight:800;color:var(--p);background:#fff;
+.soon-pill{font-size:10px;font-weight:800;color:var(--p);background:var(--c-bg,#fff);
   border:1px solid #bfdbfe;padding:3px 9px;border-radius:99px;letter-spacing:.3px;text-transform:uppercase}
 .verified-sub{font-size:12.5px;color:var(--sub);line-height:1.5}
 
 /* ── LOGOUT ── */
-.btn-logout{width:100%;padding:14px;border-radius:14px;border:1.5px solid #fecaca;
-  background:#fff;color:var(--red);font-size:14px;font-weight:800;font-family:inherit;
+.btn-logout{width:100%;padding:14px;border-radius:14px;border:1.5px solid var(--c-line-red,#fecaca);
+  background:var(--c-bg,#fff);color:var(--red);font-size:14px;font-weight:800;font-family:inherit;
   display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
 .btn-logout svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 
@@ -118,7 +120,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 
 /* ── TOGGLE SWITCH (notification preferences) ── */
 .switch{position:relative;width:46px;height:28px;border-radius:99px;border:none;background:#cbd5e1;cursor:pointer;flex-shrink:0;padding:0;transition:background .2s;-webkit-tap-highlight-color:transparent}
-.switch::after{content:'';position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}
+.switch::after{content:'';position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--c-bg,#fff);box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}
 .switch[aria-checked="true"]{background:var(--p)}
 .switch[aria-checked="true"]::after{transform:translateX(18px)}
 .switch:disabled{opacity:.55;cursor:default}
@@ -132,17 +134,17 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .order-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin:0 16px 12px}
 .order-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .order-top .ref{font-size:11.5px;color:var(--sub);font-weight:600}
-.order-top .pill{font-size:12px;font-weight:800;color:var(--p);background:#eef2ff;padding:3px 10px;border-radius:99px}
+.order-top .pill{font-size:12px;font-weight:800;color:var(--p);background:var(--c-tonal,#eef2ff);padding:3px 10px;border-radius:99px}
 .order-item-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--border)}
 .order-item-row:first-of-type{border-top:none}
-.order-item-cover{width:34px;height:46px;object-fit:cover;border-radius:4px;flex-shrink:0;background:#f1f5f9}
+.order-item-cover{width:34px;height:46px;object-fit:cover;border-radius:4px;flex-shrink:0;background:var(--c-surface,#f1f5f9)}
 .order-item-title{flex:1;font-size:13px;font-weight:600;color:var(--txt)}
 .order-item-row .download{font-size:12px;font-weight:700;color:var(--p);text-decoration:none;flex-shrink:0}
 .details-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 16px;margin:0 16px}
 .details-field{margin-bottom:16px}
 .details-field label{display:block;font-size:12px;font-weight:700;color:var(--sub);margin-bottom:6px}
 .details-field input{width:100%;padding:11px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;color:var(--txt);background:var(--card)}
-.details-field input:disabled{background:#f8fafc;color:var(--sub)}
+.details-field input:disabled{background:var(--c-bg2,#f8fafc);color:var(--sub)}
 .details-save-note{display:none;text-align:center;font-size:12.5px;font-weight:700;color:#10b981;margin-top:10px}
 
 /* ── PROFILE BLOCK at the top of Settings (big photo, name, @username) ── */
@@ -167,6 +169,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .btn-logout{border-radius:var(--ds-r-lg);border:none;box-shadow:0 0 0 .5px var(--ds-hairline),var(--ds-e1)}
 .order-card,.details-card{border:none;border-radius:var(--ds-r-lg);box-shadow:0 0 0 .5px var(--ds-hairline),var(--ds-e1)}
 </style>
+<link rel="stylesheet" href="/theme.css?v=1">
 </head>
 <body>
 
@@ -205,6 +208,19 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   <div class="me-av is-loading" id="meAv"></div>
   <div class="me-name" id="meName"><div class="skel" style="width:170px;height:22px;border-radius:8px"></div></div>
   <div class="me-handle" id="meHandle"><div class="skel" style="width:110px;height:13px"></div></div>
+</div>
+
+<!-- APPEARANCE -->
+<div class="section" id="appearanceSection">
+  <div class="section-title">Appearance</div>
+  <div class="settings-card" style="padding:12px">
+    <div class="msb-seg" id="themeSeg" role="group" aria-label="Theme">
+      <button type="button" data-theme-choice="system"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 010 17z" fill="currentColor"/></svg>Auto</button>
+      <button type="button" data-theme-choice="light"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></svg>Light</button>
+      <button type="button" data-theme-choice="dark"><svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>Dark</button>
+    </div>
+    <div class="row-value" style="margin:10px 4px 2px" id="themeHint">Auto follows your phone's light or dark setting.</div>
+  </div>
 </div>
 
 <!-- ACTIVITY -->
@@ -453,6 +469,22 @@ onAuthStateChanged(auth, async user => {
     connectedEl.innerHTML = `<span class="provider-badge" style="color:var(--p)">${EMAIL_ICON} Email &amp; Password</span>`;
   }
 });
+
+// Appearance: Auto / Light / Dark (the switch itself lives in /theme.js — this only drives the buttons)
+(function(){
+  const seg = document.getElementById('themeSeg'); if(!seg) return;
+  if(!window.MSBTheme){ document.getElementById('appearanceSection').style.display = 'none'; return; }
+  const hints = { system:"Auto follows your phone's light or dark setting.", light:'Always light.', dark:'Always dark.' };
+  function sync(){
+    const c = window.MSBTheme.get();
+    seg.querySelectorAll('[data-theme-choice]').forEach(b=>{
+      const on = b.dataset.themeChoice === c; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    document.getElementById('themeHint').textContent = hints[c] || '';
+  }
+  seg.addEventListener('click', e=>{ const b = e.target.closest('[data-theme-choice]'); if(b){ window.MSBTheme.set(b.dataset.themeChoice); } });
+  window.addEventListener('msb-theme', sync); sync();
+})();
 
 let _mePainted = false;
 function readMeCache(uid){ try{ const c = JSON.parse(localStorage.getItem('msb_me')||'null'); return c && c.uid===uid ? c.me : null; }catch(_){ return null; } }

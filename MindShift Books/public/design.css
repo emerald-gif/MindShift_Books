@@ -51,7 +51,7 @@
   /* elevation */
   --ds-e1:0 1px 2px rgba(15,23,42,.06),0 1px 1px rgba(15,23,42,.04);
   --ds-e2:0 2px 6px rgba(15,23,42,.06),0 10px 28px -10px rgba(15,23,42,.16);
-  --ds-e3:0 0 0 .5px rgba(15,23,42,.08),0 16px 48px -10px rgba(15,23,42,.32);
+  --ds-e3:0 0 0 .5px var(--ds-hairline,rgba(15,23,42,.08)),0 16px 48px -10px rgba(15,23,42,.32);
 
   /* motion */
   --ds-ease:cubic-bezier(.2,0,0,1);
@@ -94,11 +94,11 @@ header h1{font-weight:800;letter-spacing:-.03em}
    (articles, books) so blur can't change how fixed children are positioned. */
 header{box-shadow:0 .5px 0 var(--ds-hairline),0 12px 32px -24px rgba(15,23,42,.3)}
 body.ds-glass header{
-  background:rgba(255,255,255,.84);
+  background:rgba(var(--glass-rgb,255,255,255),.84);
   -webkit-backdrop-filter:saturate(180%) blur(22px);backdrop-filter:saturate(180%) blur(22px);
 }
 .hdr{
-  background:rgba(255,255,255,.84);
+  background:rgba(var(--glass-rgb,255,255,255),.84);
   -webkit-backdrop-filter:saturate(180%) blur(22px);backdrop-filter:saturate(180%) blur(22px);
   border-bottom:.5px solid var(--ds-hairline);
 }
@@ -111,19 +111,19 @@ body.ds-glass header{
 
 /* Search field in the header: soft grey well → white with a halo when focused */
 .search-inp{background:var(--ds-fill);border-color:transparent;border-radius:14px}
-.search-inp:focus{background:#fff;border-color:var(--p);box-shadow:0 0 0 4px rgba(79,70,229,.12)}
+.search-inp:focus{background:var(--c-bg,#fff);border-color:var(--p);box-shadow:0 0 0 4px rgba(79,70,229,.12)}
 
 /* ─── 5. MENUS & SHEETS ─────────────────────────────────────────────────────── */
 .hbg-drop,.acard-menu-drop{
   border:none;border-radius:var(--ds-r-lg);padding:6px;
-  background:rgba(255,255,255,.94);
+  background:rgba(var(--glass-rgb,255,255,255),.94);
   -webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);
   box-shadow:var(--ds-e3);
 }
 .hbg-item,.acard-menu-item{border-radius:12px}
 .hbg-item:hover,.acard-menu-item:hover{background:var(--ds-tonal);color:var(--p)}
 .hbg-div{background:var(--ds-hairline)}
-.sheet-bar{width:36px;height:5px;border-radius:3px;background:rgba(15,23,42,.16)}
+.sheet-bar{width:36px;height:5px;border-radius:3px;background:var(--c-handle,rgba(15,23,42,.16))}
 .toast{
   background:rgba(17,24,39,.92);
   -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
@@ -147,12 +147,12 @@ body.ds-glass header{
 /* ─── 7. FEED CARDS ─────────────────────────────────────────────────────────── */
 .grid{background:var(--card)}
 .acard{padding:18px 16px 12px;border-bottom:.5px solid var(--ds-hairline)}
-@media (hover:hover){ .acard:hover{background:#fbfbfe} }
+@media (hover:hover){ .acard:hover{background:var(--c-bg2,#fbfbfe)} }
 .acard-av{width:30px;height:30px;border:none;box-shadow:0 0 0 1px var(--ds-hairline)}
 .acard-author-name{font-size:13.5px;font-weight:700;letter-spacing:-.01em}
 .acard-author-dot,.acard-author-date{font-size:12.5px}
 .acard-title{font-size:18px;font-weight:800;letter-spacing:-.022em;line-height:1.28}
-.acard-img{border-radius:var(--ds-r-lg);box-shadow:0 1px 2px rgba(15,23,42,.08),0 12px 30px -14px rgba(15,23,42,.45)}
+.acard-img{border-radius:var(--ds-r-lg);box-shadow:0 1px 2px var(--ds-hairline,rgba(15,23,42,.08)),0 12px 30px -14px rgba(15,23,42,.45)}
 .pcard-text{font-size:15.5px;line-height:1.5;letter-spacing:-.011em}
 .pcard-slide,.pcard-video,.pcard-single img{border-radius:var(--ds-r-lg)}
 .pcard-slide,.pcard-video{box-shadow:0 0 0 1px var(--ds-hairline)}
@@ -164,7 +164,7 @@ body.ds-glass header{
 @media (hover:hover){
   .acard-like:hover{background:var(--red-bg,#fff1f1)}
   .acard-save:hover,.acard-share:hover,.pcard-comment:hover,.acard-menu-btn:hover{background:var(--ds-tonal)}
-  .acard-repost:hover{background:#ecfdf5}
+  .acard-repost:hover{background:var(--c-ok-bg,#ecfdf5)}
 }
 .acard-foot{gap:4px}   /* buttons got bigger tap areas, so the gap shrinks — row width stays the same */
 .acard-read{margin-right:8px}
@@ -187,11 +187,11 @@ body.ds-glass header{
 
 /* ─── 9. READING PAGES (article-read / post-read) ───────────────────────────── */
 .art-wrap{padding-left:22px;padding-right:22px}
-.art-hero{border-radius:20px;box-shadow:0 1px 2px rgba(15,23,42,.08),0 14px 36px -16px rgba(15,23,42,.4)}
+.art-hero{border-radius:20px;box-shadow:0 1px 2px var(--ds-hairline,rgba(15,23,42,.08)),0 14px 36px -16px rgba(15,23,42,.4)}
 .art-cat{letter-spacing:.06em}
 .author-row-wrap{border-bottom:.5px solid var(--ds-hairline)}
 .post-text{font-size:17px;line-height:1.6;letter-spacing:-.012em}
-.art-body{font-size:17.5px;line-height:1.75;color:#1c2433;letter-spacing:-.011em}
+.art-body{font-size:17.5px;line-height:1.75;color:var(--c-ink,#1c2433);letter-spacing:-.011em}
 .art-body h2{font-size:23px;font-weight:800;letter-spacing:-.026em;margin:36px 0 12px}
 .art-body h3{font-size:18.5px;letter-spacing:-.018em}
 .art-body img{border-radius:var(--ds-r-lg)}
@@ -216,7 +216,7 @@ body.ds-glass header{
 .comment-item{border-bottom:.5px solid var(--ds-hairline)}
 .c-name{letter-spacing:-.01em}
 .post-comment-bar{
-  background:rgba(255,255,255,.88);
+  background:rgba(var(--glass-rgb,255,255,255),.88);
   -webkit-backdrop-filter:saturate(180%) blur(22px);backdrop-filter:saturate(180%) blur(22px);
   border-top:none;box-shadow:0 -.5px 0 var(--ds-hairline),0 -14px 34px -22px rgba(15,23,42,.4);
 }
@@ -274,11 +274,11 @@ html body .sidebar .sidebar-close-btn{background:var(--ds-fill)}
 .acard-like.liked svg,.act-like.liked svg{fill:var(--red);stroke:var(--red)}
 .acard-save.saved,.act-save.saved{color:var(--p)}
 .acard-save.saved svg,.act-save.saved svg{fill:var(--p);stroke:var(--p)}
-.acard-repost.reposted,.act-repost.reposted{color:#059669}
+.acard-repost.reposted,.act-repost.reposted{color:var(--c-ok-txt,#059669)}
 .acard-save,.act-save{margin-left:auto}          /* Save sits alone on the far right */
 .acard-share{margin-left:0}
 @media (hover:hover){
   .acard-like:hover,.act-like:hover{background:var(--red-bg,#fff1f1);color:var(--red)}
   .pcard-comment:hover,.acard-share:hover,.acard-save:hover,.act-btn:hover{background:var(--ds-tonal);color:var(--p)}
-  .acard-repost:hover,.act-repost:hover{background:#ecfdf5;color:#059669}
+  .acard-repost:hover,.act-repost:hover{background:var(--c-ok-bg,#ecfdf5);color:var(--c-ok-txt,#059669)}
 }

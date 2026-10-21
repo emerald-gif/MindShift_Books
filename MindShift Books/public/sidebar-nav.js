@@ -52,6 +52,7 @@
     help: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 115.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
     shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
     receipt: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2h16v20l-3-2-2 2-2-2-2 2-2-2-2 2-3-2z"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="16" y2="11"/></svg>',
+    moon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>',
     currency: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M15 9.5c0-1.4-1.3-2.5-3-2.5s-3 1.1-3 2.5 1.3 2.2 3 2.5 3 1.1 3 2.5-1.3 2.5-3 2.5-3-1.1-3-2.5"/><line x1="12" y1="5" x2="12" y2="7"/><line x1="12" y1="17" x2="12" y2="19"/></svg>',
     chevron: '<svg class="sb-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>'
   };
@@ -75,6 +76,24 @@
         '<span class="sb-cur-seg" role="group" aria-label="Currency">' +
           '<button type="button" data-cur="NGN" aria-label="Naira">\u20A6</button>' +
           '<button type="button" data-cur="USD" aria-label="US dollars">$</button>' +
+        '</span>' +
+      '</li>'
+    );
+  }
+
+  // Theme row: Auto (follow the phone) / Light / Dark. Hidden on pages that don't load /theme.js.
+  var T_AUTO  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17" /><path d="M12 3.5a8.5 8.5 0 010 17z" fill="currentColor"/></svg>';
+  var T_LIGHT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></svg>';
+  var T_DARK  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>';
+  function themeRow() {
+    return (
+      '<li class="sb-cur-row" id="sbThemeRow">' +
+        '<span class="sb-ico">' + ICONS.moon + '</span>' +
+        '<span class="sb-label">Theme</span>' +
+        '<span class="sb-cur-seg sb-theme-seg" role="group" aria-label="Theme">' +
+          '<button type="button" data-theme-choice="system" aria-label="Match my phone">' + T_AUTO + '</button>' +
+          '<button type="button" data-theme-choice="light" aria-label="Light">' + T_LIGHT + '</button>' +
+          '<button type="button" data-theme-choice="dark" aria-label="Dark">' + T_DARK + '</button>' +
         '</span>' +
       '</li>'
     );
@@ -117,6 +136,7 @@
         '<ul class="sb-group">' +
           item(null, ICONS.gear, 'Settings', "window.location.href='/settings'") +
           currencyRow() +
+          themeRow() +
           item(null, ICONS.help, 'Support', "window.location.href='/support'") +
           item(null, ICONS.shield, 'Terms &amp; Privacy', "window.location.href='/legal'") +
         '</ul>' +
@@ -163,6 +183,8 @@
     '.sidebar .sb-group li.sb-cur-row:active{background:transparent}' +
     '.sidebar .sb-cur-seg{display:inline-flex;background:var(--bg,#f1f5f9);border:1px solid var(--border,#e2e8f0);border-radius:999px;padding:2px;flex-shrink:0}' +
     '.sidebar .sb-cur-seg button{border:0;background:transparent;color:var(--sub,#6b7280);font-family:inherit;font-weight:700;font-size:13px;line-height:1;min-width:36px;height:28px;border-radius:999px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .2s,color .2s}' +
+    '.sidebar .sb-theme-seg button{min-width:34px;display:inline-flex;align-items:center;justify-content:center;padding:0}' +
+    '.sidebar .sb-theme-seg button svg{width:16px;height:16px}' +
     '.sidebar .sb-cur-seg button.on{background:linear-gradient(135deg,#4f46e5,#06b6d4);color:#fff}' +
     '.sidebar .sb-cur-seg button:focus-visible{outline:2px solid #06b6d4;outline-offset:2px}' +
     '.sidebar .sidebar-logout{color:var(--red,#ef4444)}' +
@@ -174,7 +196,7 @@
     '.sidebar-auth-cta .btn{display:block;width:100%;padding:10px 10px;font-size:.8rem;text-decoration:none;margin-bottom:8px;text-align:center;border-radius:10px;font-weight:700;box-sizing:border-box}' +
     '.sidebar-auth-cta .btn:last-child{margin-bottom:0}' +
     '.sidebar-auth-signup{background:var(--g,linear-gradient(90deg,#4f46e5,#06b6d4));color:#fff}' +
-    '.sidebar-auth-login{background:#fff;color:var(--txt,#0f172a);border:1.5px solid var(--border,#e2e8f0)!important}' +
+    '.sidebar-auth-login{background:var(--c-bg,#fff);color:var(--txt,#0f172a);border:1.5px solid var(--border,#e2e8f0)!important}' +
     '.sidebar-auth-login:hover{background:var(--bg,#f8fafc)}';
 
   var styleTag = document.createElement('style');
@@ -227,6 +249,33 @@
   curSync();
   window.addEventListener('load', curSync);
   window.addEventListener('msb-currency-changed', curSync);
+
+  // ── Theme switch (Auto / Light / Dark) ── uses window.MSBTheme from /theme.js
+  var thRow = document.getElementById('sbThemeRow');
+  function thSync() {
+    if (!window.MSBTheme) return;
+    var c = window.MSBTheme.get();
+    var btns = document.querySelectorAll('#sbThemeRow [data-theme-choice]');
+    for (var i = 0; i < btns.length; i++) {
+      var on = btns[i].getAttribute('data-theme-choice') === c;
+      btns[i].classList.toggle('on', on);
+      btns[i].setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+  }
+  if (thRow) {
+    // theme.js is deferred, so it may not exist yet: decide once the page has finished parsing
+    var thReady = function () { thRow.style.display = window.MSBTheme ? '' : 'none'; thSync(); };
+    thRow.style.display = 'none';
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', thReady); else thReady();
+    thRow.addEventListener('click', function (e) {
+      var b = e.target.closest ? e.target.closest('[data-theme-choice]') : null;
+      if (!b || !window.MSBTheme) return;
+      window.MSBTheme.set(b.getAttribute('data-theme-choice'));
+      thSync();
+    });
+  }
+  thSync();
+  window.addEventListener('msb-theme', thSync);
 
   // ── Optimistic auth-item display ──
   // This script normally runs near the top of the page, well before auth.js
@@ -363,12 +412,12 @@
     var css = document.createElement('style');
     css.textContent =
       '.ng-flag{display:inline-flex;flex-shrink:0;width:24px;height:16px;border-radius:3px;overflow:hidden;font-style:normal;' +
-        'box-shadow:0 0 0 1px rgba(15,23,42,.16),0 1px 3px rgba(15,23,42,.12)}' +
+        'box-shadow:0 0 0 1px var(--c-handle,rgba(15,23,42,.16)),0 1px 3px rgba(15,23,42,.12)}' +
       '.ng-flag.big{width:34px;height:23px;border-radius:4px}' +
       '.ng-side{display:flex;align-items:center;gap:12px;margin:0 0 14px;padding:12px 14px;border-radius:14px;' +
         'background:linear-gradient(135deg,#e8f7ef,#fff);border:1.5px solid rgba(0,135,81,.28)}' +
       '.ng-side .ng-t{font-size:13.5px;font-weight:800;color:#006b40;line-height:1.25}' +
-      '.ng-side .ng-s{font-size:12px;color:#4b5563;margin-top:2px}';
+      '.ng-side .ng-s{font-size:12px;color:var(--c-sub,#4b5563);margin-top:2px}';
     document.head.appendChild(css);
 
     function ordinal(n) {
