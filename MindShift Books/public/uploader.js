@@ -23,12 +23,10 @@
   var MARKUP = '' +
     '<div id="kv-up-bd">' +
     '  <div id="kv-up-sheet">' +
-    '    <div class="kv-up-bar"></div>' +
     '    <div class="kv-up-drag"></div>' +
     '    <div class="kv-up-hdr">' +
     '      <div class="kv-up-brand">' +
-    '        <div class="kv-up-klogo"><span class="kv-up-klogo-k">K</span></div>' +
-    '        <span class="kv-up-ttl" id="kv-up-ttl">Upload Image</span>' +
+    '        <div><div class="kv-up-ttl" id="kv-up-ttl">Upload Image</div><div class="kv-up-sub" id="kv-up-sub">Choose where the photo comes from</div></div>' +
     '      </div>' +
     '      <button class="kv-up-close" id="kv-up-close" aria-label="Close">' +
     '        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
@@ -70,6 +68,9 @@
 
   // Extra rule for the optional "Crop & edit photo" button.
   STYLE += "\n.kv-up-edit{display:flex;align-items:center;justify-content:center;gap:8px;width:calc(100% - 40px);margin:12px 20px 0;padding:12px;border:1.5px solid #e0e7ff;background:#eef2ff;color:#4f46e5;font-weight:700;font-size:14px;border-radius:12px;cursor:pointer;font-family:inherit}\n.kv-up-edit:active{background:#e0e7ff}\n";
+
+// ── v2 look (matches design.css): bigger sheet radius, quiet handle, tonal close, card tiles with gradient icons ──
+STYLE += "\n#kv-up-bd{background:rgba(11,18,32,.45);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}\n#kv-up-sheet{border-radius:28px 28px 0 0;transition:transform .42s cubic-bezier(.2,.9,.25,1);box-shadow:0 0 0 .5px rgba(15,23,42,.08),0 -18px 60px -12px rgba(15,23,42,.35)}\n.kv-up-bar{display:none}\n.kv-up-drag{width:36px;height:5px;border-radius:3px;background:rgba(15,23,42,.16);margin:10px auto 0}\n.kv-up-hdr{align-items:flex-start;padding:16px 20px 4px}\n.kv-up-ttl{font-size:23px;font-weight:800;letter-spacing:-.03em;color:#0b1220;line-height:1.15}\n.kv-up-sub{font-size:14px;color:#566074;margin-top:3px}\n.kv-up-close{width:34px;height:34px;border:none;background:rgba(15,23,42,.055);color:#566074}\n.kv-up-close:hover{background:rgba(15,23,42,.09);color:#566074}\n.kv-up-close:active{transform:scale(.9)}\n.kv-up-line{display:none}\n.kv-up-tiles{gap:12px;padding:16px 16px 6px}\n.kv-up-tile{border:none;border-radius:22px;background:#fff;padding:22px 10px 20px;gap:11px;box-shadow:0 0 0 1px rgba(15,23,42,.08),0 2px 6px rgba(15,23,42,.05);transition:transform .22s cubic-bezier(.34,1.4,.64,1),box-shadow .2s;-webkit-tap-highlight-color:transparent}\n.kv-up-tile:hover{border:none;background:#fff;transform:none;box-shadow:0 0 0 1px rgba(15,23,42,.08),0 2px 6px rgba(15,23,42,.05)}\n.kv-up-tile:active{transform:scale(.96);background:#f8f9fd}\n.kv-up-tile-ico{width:62px;height:62px;border-radius:20px;background:linear-gradient(135deg,#4f46e5,#06b6d4);box-shadow:0 12px 22px -10px rgba(79,70,229,.7)}\n#kv-up-cam-btn .kv-up-tile-ico{background:linear-gradient(135deg,#7c3aed,#ec4899);box-shadow:0 12px 22px -10px rgba(124,58,237,.65)}\n.kv-up-tile-ico svg{width:28px;height:28px;stroke:#fff;stroke-width:1.8}\n.kv-up-tile-lbl{font-size:16px;font-weight:800;letter-spacing:-.02em;color:#0b1220}\n.kv-up-tile-sub{font-size:12.5px;color:#566074;line-height:1.45}\n.kv-up-prev-img-wrap{border-radius:22px;box-shadow:0 0 0 1px rgba(15,23,42,.08),0 14px 30px -14px rgba(15,23,42,.45)}\n.kv-up-cta{border-radius:999px;font-weight:800;letter-spacing:-.005em;box-shadow:0 12px 24px -10px rgba(79,70,229,.7)}\n.kv-up-change{font-weight:600;color:#566074}\n.kv-up-edit{border-radius:999px}\n";
   var styleEl = document.createElement('style');
   styleEl.textContent = STYLE;
   document.head.appendChild(styleEl);

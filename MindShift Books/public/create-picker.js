@@ -17,35 +17,44 @@
 
     var style = document.createElement('style');
     style.textContent = `
-#cpk-fab{position:fixed;right:16px;bottom:max(env(safe-area-inset-bottom,0px),16px);width:48px;height:48px;border-radius:14px;
+#cpk-fab{position:fixed;right:16px;bottom:max(env(safe-area-inset-bottom,0px),16px);width:52px;height:52px;border-radius:16px;
   background:linear-gradient(135deg,#4f46e5,#06b6d4);border:none;cursor:pointer;z-index:900;
-  display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(79,70,229,.4);
-  transition:transform .15s}
+  display:flex;align-items:center;justify-content:center;box-shadow:0 10px 24px -8px rgba(79,70,229,.65);
+  transition:transform .22s cubic-bezier(.34,1.4,.64,1)}
 #cpk-fab:active{transform:scale(.92)}
-#cpk-fab svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
-#cpk-overlay{position:fixed;inset:0;background:rgba(15,10,30,.55);z-index:9998;opacity:0;pointer-events:none;transition:opacity .25s;backdrop-filter:blur(3px)}
+#cpk-fab svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+#cpk-overlay{position:fixed;inset:0;background:rgba(11,18,32,.45);z-index:9998;opacity:0;pointer-events:none;transition:opacity .28s ease;
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
 #cpk-overlay.on{opacity:1;pointer-events:all}
-#cpk-sheet{position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#fff;border-radius:22px 22px 0 0;
-  max-width:480px;margin:0 auto;transform:translateY(100%);transition:transform .35s cubic-bezier(.22,1,.36,1);
-  padding:0 0 max(env(safe-area-inset-bottom,0px),18px);box-shadow:0 -8px 40px rgba(37,99,235,.16)}
+#cpk-sheet{position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#fff;border-radius:28px 28px 0 0;
+  max-width:480px;margin:0 auto;transform:translateY(100%);transition:transform .42s cubic-bezier(.2,.9,.25,1);
+  padding:0 0 max(env(safe-area-inset-bottom,0px),14px);box-shadow:0 0 0 .5px rgba(15,23,42,.08),0 -18px 60px -12px rgba(15,23,42,.35)}
 #cpk-sheet.on{transform:translateY(0)}
-.cpk-bar{height:3px;background:linear-gradient(90deg,#4f46e5,#06b6d4 55%,#ec4899);border-radius:22px 22px 0 0}
-.cpk-drag{width:36px;height:4px;border-radius:2px;background:#e5e7eb;margin:12px auto 4px}
-.cpk-title{font-size:15px;font-weight:800;color:#0f172a;text-align:center;padding:8px 20px 14px}
-.cpk-opts{display:flex;flex-direction:column;gap:10px;padding:0 18px}
-.cpk-opt{display:flex;align-items:center;gap:14px;width:100%;text-align:left;border:1.5px solid #e5e7eb;
-  border-radius:16px;background:#fff;padding:14px 16px;cursor:pointer;font-family:inherit;transition:all .15s}
-.cpk-opt:hover{border-color:#4f46e5;background:#eef2ff}
-.cpk-opt:active{transform:scale(.98)}
-.cpk-opt-ico{width:44px;height:44px;border-radius:13px;background:linear-gradient(135deg,#e0e7ff,#eef2ff);
-  display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.cpk-opt-ico svg{width:22px;height:22px;stroke:#4f46e5;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.cpk-opt-txt{flex:1}
-.cpk-opt-lbl{font-size:14.5px;font-weight:800;color:#0f172a}
-.cpk-opt-sub{font-size:12px;color:#9ca3af;margin-top:2px;line-height:1.4}
-.cpk-opt-arrow{color:#c7d2fe;flex-shrink:0}
-.cpk-cancel{display:block;width:calc(100% - 36px);margin:14px 18px 0;padding:13px;border:none;border-radius:14px;
-  background:#f1f5f9;color:#6b7280;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
+.cpk-drag{width:36px;height:5px;border-radius:3px;background:rgba(15,23,42,.16);margin:10px auto 0}
+.cpk-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:16px 20px 6px}
+.cpk-title{font-size:23px;font-weight:800;letter-spacing:-.03em;color:#0b1220;line-height:1.15}
+.cpk-subtitle{font-size:14px;color:#566074;margin-top:3px;letter-spacing:-.005em}
+.cpk-x{width:34px;height:34px;border-radius:50%;border:none;background:rgba(15,23,42,.055);color:#566074;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;flex-shrink:0;transition:transform .2s cubic-bezier(.34,1.4,.64,1),background .15s}
+.cpk-x:active{transform:scale(.9);background:rgba(15,23,42,.09)}
+.cpk-opts{display:flex;flex-direction:column;gap:12px;padding:14px 16px 0}
+.cpk-opt{position:relative;display:flex;align-items:center;gap:15px;width:100%;text-align:left;border:none;border-radius:20px;background:#fff;
+  padding:15px 14px 15px 15px;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent;
+  box-shadow:0 0 0 1px rgba(15,23,42,.08),0 2px 6px rgba(15,23,42,.05);
+  transition:transform .22s cubic-bezier(.34,1.4,.64,1),box-shadow .2s,background .15s}
+.cpk-opt:active{transform:scale(.975);background:#f8f9fd}
+.cpk-opt-ico{width:54px;height:54px;border-radius:17px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cpk-opt-ico.post{background:linear-gradient(135deg,#4f46e5,#06b6d4);box-shadow:0 10px 20px -8px rgba(79,70,229,.7)}
+.cpk-opt-ico.article{background:linear-gradient(135deg,#7c3aed,#ec4899);box-shadow:0 10px 20px -8px rgba(124,58,237,.65)}
+.cpk-opt-ico svg{width:26px;height:26px;stroke:#fff;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.cpk-opt-txt{flex:1;min-width:0}
+.cpk-opt-lbl{font-size:17px;font-weight:800;letter-spacing:-.02em;color:#0b1220}
+.cpk-opt-sub{font-size:13px;color:#566074;margin-top:3px;line-height:1.4}
+.cpk-opt-arrow{width:30px;height:30px;border-radius:50%;background:rgba(15,23,42,.055);color:#566074;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cpk-cancel{display:block;margin:10px auto 0;padding:12px 28px;border:none;border-radius:999px;background:none;color:#566074;
+  font-size:14.5px;font-weight:700;cursor:pointer;font-family:inherit}
+.cpk-cancel:active{background:rgba(15,23,42,.055)}
+@media (prefers-reduced-motion:reduce){#cpk-sheet,#cpk-overlay,.cpk-opt{transition-duration:.01ms}}
 `;
     document.head.appendChild(style);
 
@@ -57,19 +66,21 @@
     var sheet = document.createElement('div');
     sheet.id = 'cpk-sheet';
     sheet.innerHTML =
-      '<div class="cpk-bar"></div>' +
       '<div class="cpk-drag"></div>' +
-      '<div class="cpk-title">What do you want to create?</div>' +
+      '<div class="cpk-head">' +
+        '<div><div class="cpk-title">Create</div><div class="cpk-subtitle">What do you want to share?</div></div>' +
+        '<button class="cpk-x" aria-label="Close" onclick="window.closeCreatePicker()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>' +
+      '</div>' +
       '<div class="cpk-opts">' +
         '<button class="cpk-opt" onclick="window.location.href=\'/create-post\'">' +
-          '<div class="cpk-opt-ico"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>' +
-          '<div class="cpk-opt-txt"><div class="cpk-opt-lbl">Post</div><div class="cpk-opt-sub">Quick text update — attach up to 5 photos</div></div>' +
-          '<svg class="cpk-opt-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>' +
+          '<div class="cpk-opt-ico post"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.6"/><polyline points="21 15 16 10 5 21"/></svg></div>' +
+          '<div class="cpk-opt-txt"><div class="cpk-opt-lbl">Post</div><div class="cpk-opt-sub">A quick update with up to 5 photos</div></div>' +
+          '<div class="cpk-opt-arrow"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>' +
         '</button>' +
         '<button class="cpk-opt" onclick="window.location.href=\'/write\'">' +
-          '<div class="cpk-opt-ico"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>' +
-          '<div class="cpk-opt-txt"><div class="cpk-opt-lbl">Article</div><div class="cpk-opt-sub">Full write-up with a cover image and category</div></div>' +
-          '<svg class="cpk-opt-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>' +
+          '<div class="cpk-opt-ico article"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></div>' +
+          '<div class="cpk-opt-txt"><div class="cpk-opt-lbl">Article</div><div class="cpk-opt-sub">A full write-up with a cover image</div></div>' +
+          '<div class="cpk-opt-arrow"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>' +
         '</button>' +
       '</div>' +
       '<button class="cpk-cancel" onclick="window.closeCreatePicker()">Cancel</button>';
