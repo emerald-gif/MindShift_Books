@@ -416,12 +416,12 @@
   const style = document.createElement('style');
   style.textContent = `
     .acct-menu{position:relative;display:inline-block;}
-    .acct-icon-btn{color:#1e293b;}
-    .acct-dropdown{position:absolute;right:0;top:calc(100% + 8px);background:#fff;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.15);min-width:180px;padding:8px;display:none;z-index:50;}
+    .acct-icon-btn{color:var(--c-ink,#1e293b);}
+    .acct-dropdown{position:absolute;right:0;top:calc(100% + 8px);background:var(--c-bg,#fff);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.15);min-width:180px;padding:8px;display:none;z-index:50;}
     .acct-dropdown.show{display:block;}
-    .acct-dropdown a, .acct-dropdown button{display:block;width:100%;text-align:left;padding:9px 10px;border-radius:8px;border:none;background:none;font-size:0.85rem;font-weight:600;color:#334155;cursor:pointer;text-decoration:none;}
-    .acct-dropdown a:hover, .acct-dropdown button:hover{background:#f1f5f9;}
-    .acct-dropdown .acct-email{padding:8px 10px;font-size:0.72rem;color:#94a3b8;border-bottom:1px solid #f1f5f9;margin-bottom:4px;font-weight:600;word-break:break-all;}
+    .acct-dropdown a, .acct-dropdown button{display:block;width:100%;text-align:left;padding:9px 10px;border-radius:8px;border:none;background:none;font-size:0.85rem;font-weight:600;color:var(--c-sub,#334155);cursor:pointer;text-decoration:none;}
+    .acct-dropdown a:hover, .acct-dropdown button:hover{background:var(--c-surface,#f1f5f9);}
+    .acct-dropdown .acct-email{padding:8px 10px;font-size:0.72rem;color:var(--c-mute,#94a3b8);border-bottom:1px solid var(--c-line,#f1f5f9);margin-bottom:4px;font-weight:600;word-break:break-all;}
   `;
   document.head.appendChild(style);
 

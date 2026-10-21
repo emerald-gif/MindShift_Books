@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>(function(){try{var c=localStorage.getItem('msb_theme'),d=c==='dark'||(c!=='light'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches),r=document.documentElement;r.setAttribute('data-theme',d?'dark':'light');r.style.colorScheme=d?'dark':'light'}catch(e){}})()</script>
+<script src="/theme.js" defer></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>My Library · MindShift Books</title>
@@ -18,14 +20,14 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 
 /* ── SHARED MINDSHIFT HEADER (matches profile.html / articles.html) ── */
 .sticky-header-stack{position:sticky;top:0;z-index:1000}
-.sticky-header-stack header:first-child{position:relative;left:0;right:0;background:white;display:flex;flex-direction:column;gap:10px;padding:16px 20px 18px;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+.sticky-header-stack header:first-child{position:relative;left:0;right:0;background:var(--c-bg,white);display:flex;flex-direction:column;gap:10px;padding:16px 20px 18px;box-shadow:0 2px 12px rgba(0,0,0,.06)}
 .sticky-header-stack .header-top{display:flex;align-items:center;justify-content:space-between;width:100%;flex-wrap:nowrap;gap:8px}
 .sticky-header-stack header:first-child h1{font-size:1.45rem;font-weight:700;display:flex;align-items:center;gap:10px;min-width:0;overflow:hidden;margin:0}
 .sticky-header-stack header:first-child h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .header-icon-group{display:flex;align-items:center;gap:4px;flex-shrink:0}
-.icon-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;border:none;background:transparent;color:#1e293b;cursor:pointer;transition:background-color 150ms ease,color 150ms ease;padding:0}
-.icon-btn:hover{background-color:#f1f5f9;color:#4f46e5}
-.icon-btn:active{background-color:#e6e9ee}
+.icon-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;border:none;background:transparent;color:var(--c-ink,#1e293b);cursor:pointer;transition:background-color 150ms ease,color 150ms ease;padding:0}
+.icon-btn:hover{background-color:var(--c-surface,#f1f5f9);color:var(--c-ind,#4f46e5)}
+.icon-btn:active{background-color:var(--c-surface,#e6e9ee)}
 
 /* ── TABS ── */
 .tab-bar{display:flex;gap:8px;padding:16px 16px 4px}
@@ -38,7 +40,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 
 /* ── EMPTY STATE ── */
 .lib-empty{text-align:center;padding:56px 24px}
-.lib-empty svg{width:40px;height:40px;margin:0 auto 12px;color:#d1d5db;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.lib-empty svg{width:40px;height:40px;margin:0 auto 12px;color:var(--c-faint,#d1d5db);fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
 .lib-empty p{font-size:14.5px;font-weight:800;color:var(--txt);margin-bottom:4px}
 .lib-empty span{font-size:12.5px;color:var(--mute);line-height:1.5;display:block;max-width:260px;margin:0 auto}
 .lib-empty a{display:inline-block;margin-top:18px;padding:11px 24px;border-radius:99px;background:var(--g);color:#fff;font-size:13px;font-weight:800;text-decoration:none}
@@ -52,7 +54,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 /* ── SAVED LIST ── */
 .saved-row{display:flex;gap:12px;align-items:center;padding:12px;border:1.5px solid var(--border);
   border-radius:16px;background:var(--card);margin-bottom:10px;cursor:pointer}
-.saved-row-img{width:56px;height:56px;border-radius:10px;object-fit:cover;flex-shrink:0;background:#e0e7ff;
+.saved-row-img{width:56px;height:56px;border-radius:10px;object-fit:cover;flex-shrink:0;background:var(--c-tonal2,#e0e7ff);
   display:flex;align-items:center;justify-content:center;color:var(--p)}
 .saved-row-img svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8}
 .saved-row-body{flex:1;min-width:0}
@@ -66,9 +68,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 /* ── BOOK GRID (Wishlist + Books tabs) ── */
 .book-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
 .book-card{position:relative;border:1.5px solid var(--border);border-radius:16px;background:var(--card);overflow:hidden;display:flex;flex-direction:column}
-.book-card-cover{width:100%;aspect-ratio:3/4;object-fit:cover;background:#e0e7ff;cursor:pointer;display:block}
-.book-card-heart{position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.92);
-  display:flex;align-items:center;justify-content:center;cursor:pointer;color:#dc2626;border:none}
+.book-card-cover{width:100%;aspect-ratio:3/4;object-fit:cover;background:var(--c-tonal2,#e0e7ff);cursor:pointer;display:block}
+.book-card-heart{position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:50%;background:rgba(var(--glass-rgb,255,255,255),.92);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--c-red-txt,#dc2626);border:none}
 .book-card-heart svg{width:15px;height:15px}
 .book-card-body{padding:10px 12px 12px}
 .book-card-title{font-size:12.5px;font-weight:800;color:var(--txt);line-height:1.3;margin-bottom:6px;min-height:32px;
@@ -84,6 +86,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .bottom-pad{height:24px}
 </style>
 <link rel="stylesheet" href="/design.css?v=2">
+<link rel="stylesheet" href="/theme.css?v=1">
 </head>
 <body>
 
@@ -385,7 +388,7 @@ function errorHtml(tab){
   return `<div class="lib-empty" style="grid-column:1/-1"><svg viewBox="0 0 24 24">${ICONS.doc}</svg><p>Couldn't load</p><span>Check your connection and try again.</span><a href="#" onclick="retryTab('${tab}');return false">Try again</a></div>`;
 }
 function partialNoteHtml(tab){
-  return `<div style="text-align:center;padding:14px;font-size:12.5px;color:#9ca3af">Some items couldn't be loaded. <a href="#" onclick="retryTab('${tab}');return false" style="color:#4f46e5;font-weight:700">Try again</a></div>`;
+  return `<div style="text-align:center;padding:14px;font-size:12.5px;color:var(--c-mute,#9ca3af)">Some items couldn't be loaded. <a href="#" onclick="retryTab('${tab}');return false" style="color:var(--c-ind,#4f46e5);font-weight:700">Try again</a></div>`;
 }
 window.retryTab = async function(tab){
   const el = document.getElementById(TAB_EL[tab]);

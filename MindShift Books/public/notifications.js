@@ -48,14 +48,14 @@ function injectStylesOnce() {
 .notif-sheet{position:fixed;inset:0;z-index:2500;background:var(--bg,#f8fafc);display:flex;flex-direction:column;overflow:hidden;transform:translateX(100%);transition:transform .32s cubic-bezier(.32,0,.15,1);visibility:hidden}
 .notif-sheet.on{transform:none;visibility:visible}
 
-.notif-sheet-top{display:flex;align-items:center;gap:12px;padding:calc(12px + env(safe-area-inset-top,0px)) 16px 12px;flex-shrink:0;background:rgba(255,255,255,.88);-webkit-backdrop-filter:saturate(180%) blur(14px);backdrop-filter:saturate(180%) blur(14px);border-bottom:1px solid rgba(15,23,42,.06);position:relative;z-index:2}
-.notif-back-btn{width:38px;height:38px;border-radius:50%;background:#f1f5f9;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--txt,#0f172a);flex-shrink:0;transition:background .15s,transform .15s}
-.notif-back-btn:active{transform:scale(.92);background:#e2e8f0}
+.notif-sheet-top{display:flex;align-items:center;gap:12px;padding:calc(12px + env(safe-area-inset-top,0px)) 16px 12px;flex-shrink:0;background:rgba(var(--glass-rgb,255,255,255),.88);-webkit-backdrop-filter:saturate(180%) blur(14px);backdrop-filter:saturate(180%) blur(14px);border-bottom:1px solid rgba(15,23,42,.06);position:relative;z-index:2}
+.notif-back-btn{width:38px;height:38px;border-radius:50%;background:var(--c-surface,#f1f5f9);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--txt,#0f172a);flex-shrink:0;transition:background .15s,transform .15s}
+.notif-back-btn:active{transform:scale(.92);background:var(--c-surface,#e2e8f0)}
 .notif-sheet-titles{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
 .notif-sheet-title{font-size:19px;font-weight:900;color:var(--txt,#0f172a);letter-spacing:-.3px;line-height:1.15}
 .notif-sheet-sub{font-size:12px;font-weight:700;color:var(--p,#4f46e5);display:none}
-.notif-mark-all-btn{font-size:12px;font-weight:800;color:var(--p,#4f46e5);background:#eef2ff;border:none;cursor:pointer;padding:8px 13px;border-radius:99px;white-space:nowrap;transition:background .15s,transform .15s}
-.notif-mark-all-btn:hover{background:#e0e7ff}
+.notif-mark-all-btn{font-size:12px;font-weight:800;color:var(--p,#4f46e5);background:var(--c-tonal,#eef2ff);border:none;cursor:pointer;padding:8px 13px;border-radius:99px;white-space:nowrap;transition:background .15s,transform .15s}
+.notif-mark-all-btn:hover{background:var(--c-tonal2,#e0e7ff)}
 .notif-mark-all-btn:active{transform:scale(.95)}
 
 .notif-list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:4px 0 calc(28px + env(safe-area-inset-bottom,0px));overscroll-behavior:contain}
@@ -67,8 +67,8 @@ function injectStylesOnce() {
 .notif-empty-ttl{font-size:17px;font-weight:900;color:var(--txt,#0f172a);margin-bottom:8px;letter-spacing:-.2px}
 .notif-empty-sub{font-size:13.5px;color:var(--mute,#94a3b8);line-height:1.65;max-width:280px;margin:0 auto}
 
-.notif-item{display:flex;align-items:flex-start;gap:13px;margin:4px 12px;padding:13px 14px;cursor:pointer;transition:background .15s,transform .15s,box-shadow .15s;position:relative;background:#fff;border-radius:16px;border:1px solid rgba(15,23,42,.05);animation:nitemin .35s ease both;-webkit-tap-highlight-color:transparent}
-.notif-item:active{transform:scale(.985);background:#f8fafc}
+.notif-item{display:flex;align-items:flex-start;gap:13px;margin:4px 12px;padding:13px 14px;cursor:pointer;transition:background .15s,transform .15s,box-shadow .15s;position:relative;background:var(--c-bg,#fff);border-radius:16px;border:1px solid rgba(15,23,42,.05);animation:nitemin .35s ease both;-webkit-tap-highlight-color:transparent}
+.notif-item:active{transform:scale(.985);background:var(--c-bg2,#f8fafc)}
 .notif-item.unread{background:linear-gradient(90deg,#eef2ff 0%,#f5f8ff 100%);border-color:rgba(79,70,229,.14);box-shadow:0 2px 10px rgba(79,70,229,.07)}
 .notif-item.unread::before{content:'';position:absolute;left:0;top:14px;bottom:14px;width:3px;border-radius:0 3px 3px 0;background:var(--p,#4f46e5)}
 @keyframes nitemin{0%{opacity:0;transform:translateY(8px)}100%{opacity:1;transform:none}}
@@ -95,11 +95,11 @@ function injectStylesOnce() {
 .notif-type.warn{background:#f59e0b}
 .notif-type.info{background:#64748b}
 .notif-type.mention{background:#7c3aed}
-.notif-snip{color:#64748b}
-.notif-item.unread .notif-snip{color:#475569}
+.notif-snip{color:var(--c-sub2,#64748b)}
+.notif-item.unread .notif-snip{color:var(--c-sub,#475569)}
 
 .notif-body{flex:1;min-width:0;padding-top:1px;padding-right:14px}
-.notif-msg{font-size:14px;color:#334155;line-height:1.5;word-wrap:break-word;overflow-wrap:anywhere}
+.notif-msg{font-size:14px;color:var(--c-sub,#334155);line-height:1.5;word-wrap:break-word;overflow-wrap:anywhere}
 .notif-msg strong{font-weight:800;color:var(--txt,#0f172a)}
 .notif-item.unread .notif-msg{color:var(--txt,#0f172a)}
 .notif-time{font-size:11.5px;color:var(--mute,#94a3b8);margin-top:4px;font-weight:700}
@@ -111,7 +111,7 @@ function injectStylesOnce() {
 .notif-spinner{width:26px;height:26px;border:3px solid var(--border2,#e2e8f0);border-top-color:var(--p,#4f46e5);border-radius:50%;animation:nspin .7s linear infinite}
 @keyframes nspin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
 
-.notif-skel{display:flex;gap:13px;margin:4px 12px;padding:14px;background:#fff;border-radius:16px;border:1px solid rgba(15,23,42,.05)}
+.notif-skel{display:flex;gap:13px;margin:4px 12px;padding:14px;background:var(--c-bg,#fff);border-radius:16px;border:1px solid rgba(15,23,42,.05)}
 .notif-skel-av,.notif-skel-l1,.notif-skel-l2{background:linear-gradient(90deg,#eef2f7 25%,#f8fafc 50%,#eef2f7 75%);background-size:200% 100%;animation:nshimmer 1.3s linear infinite}
 .notif-skel-av{width:46px;height:46px;border-radius:50%;flex-shrink:0}
 .notif-skel-lines{flex:1;display:flex;flex-direction:column;gap:9px;padding-top:6px}

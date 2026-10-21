@@ -74,38 +74,38 @@ function injectStylesOnce() {
   style.textContent = `
 .rp-overlay{position:fixed;inset:0;z-index:301;background:rgba(15,23,42,.5);opacity:0;pointer-events:none;transition:opacity .25s}
 .rp-overlay.on{opacity:1;pointer-events:auto}
-.rp-sheet{position:fixed;left:0;right:0;bottom:0;z-index:302;background:#fff;border-radius:24px 24px 0 0;padding:10px 20px 34px;transform:translateY(100%);transition:transform .3s cubic-bezier(.32,0,.15,1);max-height:82vh;overflow-y:auto;box-sizing:border-box}
+.rp-sheet{position:fixed;left:0;right:0;bottom:0;z-index:302;background:var(--c-bg,#fff);border-radius:24px 24px 0 0;padding:10px 20px 34px;transform:translateY(100%);transition:transform .3s cubic-bezier(.32,0,.15,1);max-height:82vh;overflow-y:auto;box-sizing:border-box}
 .rp-sheet.on{transform:none}
-.rp-sheet .sheet-bar{width:36px;height:4px;border-radius:99px;background:#e5e7eb;margin:0 auto 14px}
-.rp-close{position:absolute;top:14px;right:16px;width:30px;height:30px;border-radius:50%;border:none;background:#f4f4f6;color:#6b7280;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+.rp-sheet .sheet-bar{width:36px;height:4px;border-radius:99px;background:var(--c-surface,#e5e7eb);margin:0 auto 14px}
+.rp-close{position:absolute;top:14px;right:16px;width:30px;height:30px;border-radius:50%;border:none;background:var(--c-surface,#f4f4f6);color:var(--c-sub2,#6b7280);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
 .rp-close svg{width:15px;height:15px}
-.rp-sheet h4{font-size:15px;font-weight:800;text-align:center;margin:0 0 16px;color:#0f172a}
+.rp-sheet h4{font-size:15px;font-weight:800;text-align:center;margin:0 0 16px;color:var(--c-ink,#0f172a)}
 .rp-opt{display:flex;align-items:center;gap:12px;width:100%;padding:13px 12px;border:none;background:none;text-align:left;cursor:pointer;border-radius:14px;transition:background .15s;font-family:inherit}
-.rp-opt:active{background:#f4f4f6}
+.rp-opt:active{background:var(--c-surface,#f4f4f6)}
 .rp-opt-ico{width:38px;height:38px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:50%}
 .rp-opt-ico svg{width:18px;height:18px}
 .rp-opt-ico-plain{background:#fff1e0;color:#ea8a1f}
-.rp-opt-ico-quote{background:#eef2ff;color:#4f46e5}
+.rp-opt-ico-quote{background:var(--c-tonal,#eef2ff);color:var(--c-ind,#4f46e5)}
 .rp-opt-txt{display:flex;flex-direction:column;gap:2px}
-.rp-opt-txt b{font-size:14px;font-weight:700;color:#0f172a}
-.rp-opt-txt small{font-size:12px;color:#9ca3af;font-weight:500}
-.rp-caption{width:100%;min-height:90px;border:1.5px solid #e5e7eb;border-radius:14px;padding:12px 14px;font-size:14px;font-family:inherit;resize:none;margin-bottom:12px;box-sizing:border-box;color:#0f172a}
+.rp-opt-txt b{font-size:14px;font-weight:700;color:var(--c-ink,#0f172a)}
+.rp-opt-txt small{font-size:12px;color:var(--c-mute,#9ca3af);font-weight:500}
+.rp-caption{width:100%;min-height:90px;border:1.5px solid var(--c-line,#e5e7eb);border-radius:14px;padding:12px 14px;font-size:14px;font-family:inherit;resize:none;margin-bottom:12px;box-sizing:border-box;color:var(--c-ink,#0f172a)}
 .rp-caption:focus{outline:none;border-color:#4f46e5}
 .rp-submit{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;border-radius:14px;border:none;background:linear-gradient(135deg,#4f46e5,#06b6d4);color:#fff;font-size:14.5px;font-weight:800;cursor:pointer;font-family:inherit}
 .rp-submit:disabled{opacity:.55;cursor:wait}
-.rp-back{text-align:center;margin-top:12px;font-size:13px;color:#9ca3af;cursor:pointer;font-weight:600}
-.rp-embed{border:1.5px solid #e5e7eb;border-radius:14px;overflow:hidden;cursor:pointer;background:#fff;margin:4px 0 2px}
+.rp-back{text-align:center;margin-top:12px;font-size:13px;color:var(--c-mute,#9ca3af);cursor:pointer;font-weight:600}
+.rp-embed{border:1.5px solid var(--c-line,#e5e7eb);border-radius:14px;overflow:hidden;cursor:pointer;background:var(--c-bg,#fff);margin:4px 0 2px}
 .rp-embed-author{display:flex;align-items:center;gap:8px;padding:10px 12px 6px}
 .rp-embed-author img{width:22px;height:22px;border-radius:50%;object-fit:cover;flex-shrink:0}
-.rp-embed-author span{font-size:12.5px;font-weight:700;color:#0f172a}
-.rp-embed-title{font-size:13.5px;font-weight:700;color:#0f172a;padding:0 12px 8px;line-height:1.4}
-.rp-embed-text{font-size:13px;color:#374151;padding:0 12px 10px;line-height:1.5;white-space:pre-wrap}
-.rp-embed-img{width:100%;max-height:220px;overflow:hidden;background:#f4f4f6}
+.rp-embed-author span{font-size:12.5px;font-weight:700;color:var(--c-ink,#0f172a)}
+.rp-embed-title{font-size:13.5px;font-weight:700;color:var(--c-ink,#0f172a);padding:0 12px 8px;line-height:1.4}
+.rp-embed-text{font-size:13px;color:var(--c-sub,#374151);padding:0 12px 10px;line-height:1.5;white-space:pre-wrap}
+.rp-embed-img{width:100%;max-height:220px;overflow:hidden;background:var(--c-surface,#f4f4f6)}
 .rp-embed-img img{width:100%;height:100%;object-fit:cover;display:block;max-height:220px}
-.rp-embed-more{font-size:11.5px;color:#9ca3af;padding:0 12px 10px;font-weight:600}
-.rp-label{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#6b7280;margin-bottom:6px}
+.rp-embed-more{font-size:11.5px;color:var(--c-mute,#9ca3af);padding:0 12px 10px;font-weight:600}
+.rp-label{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--c-sub2,#6b7280);margin-bottom:6px}
 .rp-label svg{width:14px;height:14px}
-.act-repost.reposted{color:#059669}
+.act-repost.reposted{color:var(--c-ok-txt,#059669)}
 .act-repost.reposted svg{fill:#059669;stroke:#059669}
 `;
   document.head.appendChild(style);
@@ -304,7 +304,7 @@ export function initRepost({ db, fs, getCurrentUser, getMyProfile, notif, openAu
   // whatever the embedded item itself might be quoting (see spec — a card
   // shows at most one embedded card, however deep the real chain is).
   function buildEmbedCardHtml(snap) {
-    if (!snap) return `<div class="rp-embed" style="padding:14px;color:#9ca3af;font-size:12.5px">Original post unavailable</div>`;
+    if (!snap) return `<div class="rp-embed" style="padding:14px;color:var(--c-mute,#9ca3af);font-size:12.5px">Original post unavailable</div>`;
     const idx = (window._msbRepostSnaps = window._msbRepostSnaps || []).push(snap) - 1;
     const clickAttr = `onclick="event.stopPropagation();window._msbRepostGoEmbed(window._msbRepostSnaps[${idx}])"`;
     const authorRow = `<div class="rp-embed-author"><img src="${esc(snap.avatar || 'logo.jpg')}" alt="" onerror="this.style.background='linear-gradient(135deg,#4f46e5,#06b6d4)'"><span>${esc(snap.author || 'MindShift Books')}</span></div>`;

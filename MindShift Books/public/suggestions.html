@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>(function(){try{var c=localStorage.getItem('msb_theme'),d=c==='dark'||(c!=='light'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches),r=document.documentElement;r.setAttribute('data-theme',d?'dark':'light');r.style.colorScheme=d?'dark':'light'}catch(e){}})()</script>
+<script src="/theme.js" defer></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Suggestions · MindShift Books</title>
@@ -45,7 +47,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .sg-follow.following-btn{background:var(--card);color:var(--txt);border:1.5px solid var(--border)}
 .sg-dismiss{width:30px;height:30px;border-radius:50%;border:none;background:none;
   color:var(--mute);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.sg-dismiss:hover{background:#f1f5f9;color:var(--txt)}
+.sg-dismiss:hover{background:var(--c-surface,#f1f5f9);color:var(--txt)}
 
 .load-more{display:block;width:calc(100% - 32px);margin:18px 16px;padding:13px;border:1.5px solid var(--border);
   border-radius:14px;background:var(--card);color:var(--p);font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit}
@@ -60,9 +62,10 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .skel-line{height:12px;border-radius:6px;margin-bottom:8px}
 
 .empty-state{text-align:center;padding:60px 24px}
-.empty-state svg{width:42px;height:42px;color:#d1d5db;margin:0 auto 12px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.empty-state svg{width:42px;height:42px;color:var(--c-faint,#d1d5db);margin:0 auto 12px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
 .empty-state p{font-size:13.5px;color:var(--mute);line-height:1.6}
 </style>
+<link rel="stylesheet" href="/theme.css?v=1">
 </head>
 <body>
 
