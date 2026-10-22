@@ -68,6 +68,8 @@ html[data-theme="dark"]{
   --c-line-red:#5b2a2f;
   --c-handle:rgba(255,255,255,.22);   /* sheet drag handles */
   --c-pink-txt:#f472b6;
+  --c-line-warn:rgba(251,191,36,.38);
+  --c-line-ok:rgba(52,211,153,.34);
   --c-elev:#151921;                   /* layer above the page: sheets, menus, popovers */
   --elev-ring:0 0 0 .5px rgba(255,255,255,.08),0 24px 60px -12px rgba(0,0,0,.8);
 }

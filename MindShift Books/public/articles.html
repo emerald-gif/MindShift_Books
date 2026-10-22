@@ -356,7 +356,7 @@ main{max-width:1100px;margin:0 auto}
 .fsb-ring{position:relative;width:40px;height:40px;flex-shrink:0;filter:drop-shadow(0 2px 4px rgba(244,114,182,.25))}
 .fsb-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
 .fsb-ring circle{fill:none;stroke-width:3.5}
-.fsb-track{stroke:#fde8cc}
+.fsb-track{stroke:var(--c-line2,#fde8cc)}
 .fsb-fill{stroke:url(#fsbRingGrad);stroke-linecap:round;transition:stroke-dashoffset .3s ease}
 .fsb-ring span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--c-warn-txt,#c2410c)}
 .fsb-giftbadge{position:absolute;bottom:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--c-bg,#fff);
@@ -452,7 +452,7 @@ main{max-width:1100px;margin:0 auto}
 .smb-follow-btn:hover{transform:translateY(-1px);box-shadow:0 5px 18px rgba(37,99,235,.4)}
 
 /* Invite friends card (shown inline in feed) */
-.invite-card{position:relative;margin:0;background:var(--c-bg,#fff);border-top:8px solid #eef2ff;border-bottom:8px solid #eef2ff;padding:28px 20px 26px;text-align:center}
+.invite-card{position:relative;margin:0;background:var(--c-bg,#fff);border-top:8px solid var(--c-line,#eef2ff);border-bottom:8px solid var(--c-line,#eef2ff);padding:28px 20px 26px;text-align:center}
 .invite-close{position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:50%;background:var(--c-surface,#f4f4f6);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--sub)}
 .invite-close svg{width:14px;height:14px}
 .invite-close:active{background:var(--c-surface,#e9e9ee)}
@@ -464,7 +464,7 @@ main{max-width:1100px;margin:0 auto}
 .invite-btn:active{transform:scale(.97)}
 /* Book promo card (shown inline in feed) — same shell as invite-card, own class
    so tweaking one visually doesn't silently affect the other. */
-.book-promo-card{position:relative;margin:0;background:var(--c-bg,#fff);border-top:8px solid #eef2ff;border-bottom:8px solid #eef2ff;padding:28px 20px 26px;text-align:center}
+.book-promo-card{position:relative;margin:0;background:var(--c-bg,#fff);border-top:8px solid var(--c-line,#eef2ff);border-bottom:8px solid var(--c-line,#eef2ff);padding:28px 20px 26px;text-align:center}
 .book-promo-close{position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:50%;background:var(--c-surface,#f4f4f6);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--sub)}
 .book-promo-close svg{width:14px;height:14px}
 .book-promo-close:active{background:var(--c-surface,#e9e9ee)}
@@ -758,8 +758,8 @@ main{max-width:1100px;margin:0 auto}
 
 
 /* ══ WEEKLY UI POLISH — feed (CSS only: no markup, script or behaviour changes) ══ */
-.filter-row{gap:8px;padding:12px 16px;border-bottom:1px solid #eef2f7}
-.fpill{padding:8px 16px;font-size:12.5px;font-weight:700;border:1px solid #e6eaf1;background:var(--c-bg2,#f8fafc);color:var(--c-sub,#475569);transition:background .18s,color .18s,box-shadow .18s,transform .12s}
+.filter-row{gap:8px;padding:12px 16px;border-bottom:1px solid var(--c-line,#eef2f7)}
+.fpill{padding:8px 16px;font-size:12.5px;font-weight:700;border:1px solid var(--c-line,#e6eaf1);background:var(--c-bg2,#f8fafc);color:var(--c-sub,#475569);transition:background .18s,color .18s,box-shadow .18s,transform .12s}
 .fpill:hover{background:var(--c-tonal,#eef2ff);color:var(--p);border-color:var(--c-line-ind,#dfe4fb)}
 .fpill:active{transform:scale(.96)}
 .fpill.active{background:var(--g);border-color:transparent;color:#fff;box-shadow:0 4px 12px -3px rgba(79,70,229,.45)}
@@ -767,7 +767,7 @@ main{max-width:1100px;margin:0 auto}
 .acard{padding:18px 16px;gap:16px;border-bottom:1px solid var(--c-line2,#cbd5e1)}
 .acard:active:not(:has(button:active,.acard-author:active)){background:var(--c-bg2,#f5f7ff)}
 .acard-author{gap:8px;margin-bottom:9px}
-.acard-av{width:26px;height:26px;border:2px solid #fff;box-shadow:0 0 0 1px #e6eaf1}
+.acard-av{width:26px;height:26px;border:2px solid var(--c-bg,#fff);box-shadow:0 0 0 1px var(--c-line,#e6eaf1)}
 .acard-author-name{font-size:13px;font-weight:700;color:var(--c-ink,#0f172a)}
 .acard-author-dot,.acard-author-date{font-size:12px;color:var(--c-mute,#94a3b8)}
 .acard-title{font-size:17.5px;line-height:1.32;letter-spacing:-.35px;margin-bottom:0}

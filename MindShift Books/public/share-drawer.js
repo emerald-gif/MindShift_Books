@@ -57,20 +57,20 @@
 #msbShare .msd-nm{flex:1;min-width:0}
 #msbShare .msd-nm b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #msbShare .msd-nm small{display:block;font-size:12.5px;color:var(--c-sub2,#64748b)}
-#msbShare .msd-ck{width:24px;height:24px;border-radius:50%;border:2px solid #cbd0dc;flex:none;display:flex;align-items:center;justify-content:center;transition:all .12s}
+#msbShare .msd-ck{width:24px;height:24px;border-radius:50%;border:2px solid var(--c-line,#cbd0dc);flex:none;display:flex;align-items:center;justify-content:center;transition:all .12s}
 #msbShare .msd-row.on .msd-ck{background:#4f46e5;border-color:#4f46e5}
-#msbShare .msd-row.on .msd-ck::after{content:'';width:6px;height:11px;border:solid #fff;border-width:0 2.5px 2.5px 0;transform:rotate(45deg) translate(-1px,-1px)}
+#msbShare .msd-row.on .msd-ck::after{content:'';width:6px;height:11px;border:solid var(--c-bg,#fff);border-width:0 2.5px 2.5px 0;transform:rotate(45deg) translate(-1px,-1px)}
 #msbShare .msd-empty{padding:30px 24px;text-align:center;color:var(--c-sub2,#64748b);font-size:14.5px;line-height:1.5}
 #msbShare .msd-empty a{color:var(--c-ind,#4f46e5);font-weight:800}
 #msbShare .msd-sk{height:58px;margin:6px 10px;border-radius:14px;background:linear-gradient(90deg,#f1f5f9,#e8ebf4,#f1f5f9);background-size:200% 100%;animation:msdSk 1.2s infinite}
 @keyframes msdSk{to{background-position:-200% 0}}
-#msbShare .msd-send{flex:none;display:none;gap:10px;align-items:center;padding:10px 14px;border-top:1px solid #eceef5;background:var(--c-bg,#fff)}
+#msbShare .msd-send{flex:none;display:none;gap:10px;align-items:center;padding:10px 14px;border-top:1px solid var(--c-line,#eceef5);background:var(--c-bg,#fff)}
 #msbShare .msd-send.on{display:flex}
 #msbShare .msd-send input{flex:1;min-width:0;height:44px;border-radius:22px;border:1.5px solid transparent;background:var(--c-surface,#f1f5f9);padding:0 16px;font:inherit;font-size:16px;outline:0;color:inherit}
 #msbShare .msd-send input:focus{background:var(--c-bg,#fff);border-color:var(--c-line-ind,#a5b4fc)}
 #msbShare .msd-send button{height:44px;padding:0 22px;border:0;border-radius:22px;background:linear-gradient(135deg,#4f46e5,#06b6d4);color:#fff;font:inherit;font-weight:800;font-size:15px;white-space:nowrap;cursor:pointer}
 #msbShare .msd-send button:disabled{opacity:.5}
-#msbShare .msd-apps{flex:none;display:flex;gap:14px;overflow-x:auto;padding:12px 16px calc(max(12px,env(safe-area-inset-bottom)) + 4px);border-top:1px solid #eceef5;background:var(--c-bg,#fff);-webkit-overflow-scrolling:touch;scrollbar-width:none}
+#msbShare .msd-apps{flex:none;display:flex;gap:14px;overflow-x:auto;padding:12px 16px calc(max(12px,env(safe-area-inset-bottom)) + 4px);border-top:1px solid var(--c-line,#eceef5);background:var(--c-bg,#fff);-webkit-overflow-scrolling:touch;scrollbar-width:none}
 #msbShare .msd-apps::-webkit-scrollbar{display:none}
 #msbShare .msd-apps .msd-app{flex:none;width:62px}
 #msbShare .msd-apps .msd-app i{width:48px;height:48px}

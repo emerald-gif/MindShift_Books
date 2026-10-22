@@ -21,7 +21,7 @@ function paint(){
   if(tgl){
     if(!dot){
       dot = document.createElement('span');
-      dot.style.cssText = 'position:absolute;top:6px;right:6px;width:10px;height:10px;border-radius:50%;background:#ef4444;border:2px solid #fff;display:none;pointer-events:none';
+      dot.style.cssText = 'position:absolute;top:6px;right:6px;width:10px;height:10px;border-radius:50%;background:#ef4444;border:2px solid var(--c-bg,#fff);display:none;pointer-events:none';
       if(getComputedStyle(tgl).position === 'static') tgl.style.position = 'relative';
       tgl.appendChild(dot);
     }

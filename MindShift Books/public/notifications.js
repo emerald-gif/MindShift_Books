@@ -42,7 +42,7 @@ function injectStylesOnce() {
   const style = document.createElement('style');
   style.textContent = `
 .notif-wrap{position:relative;flex-shrink:0}
-.notif-badge{position:absolute;top:2px;right:2px;background:linear-gradient(135deg,#f43f5e,#ef4444);color:#fff;font-size:10px;font-weight:800;min-width:17px;height:17px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 4px;border:2px solid #fff;line-height:1;pointer-events:none;box-shadow:0 2px 6px rgba(239,68,68,.4);animation:nbadgepop .35s cubic-bezier(.34,1.56,.64,1)}
+.notif-badge{position:absolute;top:2px;right:2px;background:linear-gradient(135deg,#f43f5e,#ef4444);color:#fff;font-size:10px;font-weight:800;min-width:17px;height:17px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 4px;border:2px solid var(--c-bg,#fff);line-height:1;pointer-events:none;box-shadow:0 2px 6px rgba(239,68,68,.4);animation:nbadgepop .35s cubic-bezier(.34,1.56,.64,1)}
 @keyframes nbadgepop{0%{transform:scale(0)}100%{transform:scale(1)}}
 
 .notif-sheet{position:fixed;inset:0;z-index:2500;background:var(--bg,#f8fafc);display:flex;flex-direction:column;overflow:hidden;transform:translateX(100%);transition:transform .32s cubic-bezier(.32,0,.15,1);visibility:hidden}
@@ -77,15 +77,15 @@ function injectStylesOnce() {
 .notif-unread-dot.invisible{display:none}
 
 .notif-lead{position:relative;flex-shrink:0}
-.notif-av{width:46px;height:46px;border-radius:50%;background:var(--g,linear-gradient(90deg,#4f46e5,#06b6d4));display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;color:#fff;flex-shrink:0;overflow:hidden;border:2px solid #fff;box-shadow:0 1px 4px rgba(15,23,42,.12)}
+.notif-av{width:46px;height:46px;border-radius:50%;background:var(--g,linear-gradient(90deg,#4f46e5,#06b6d4));display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;color:#fff;flex-shrink:0;overflow:hidden;border:2px solid var(--c-bg,#fff);box-shadow:0 1px 4px rgba(15,23,42,.12)}
 .notif-av img{width:100%;height:100%;object-fit:cover;display:block}
 .notif-av-stack{display:flex;flex-shrink:0;width:62px;height:46px;position:relative}
-.notif-av-stack .notif-av-stacked{position:absolute;top:6px;width:34px;height:34px;border:2px solid #fff;font-size:13px}
+.notif-av-stack .notif-av-stacked{position:absolute;top:6px;width:34px;height:34px;border:2px solid var(--c-bg,#fff);font-size:13px}
 .notif-av-stack .notif-av-stacked:nth-child(1){left:28px;z-index:3}
 .notif-av-stack .notif-av-stacked:nth-child(2){left:14px;z-index:2}
 .notif-av-stack .notif-av-stacked:nth-child(3){left:0;z-index:1}
 
-.notif-type{position:absolute;right:-3px;bottom:-3px;width:21px;height:21px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid #fff;color:#fff;z-index:5}
+.notif-type{position:absolute;right:-3px;bottom:-3px;width:21px;height:21px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid var(--c-bg,#fff);color:#fff;z-index:5}
 .notif-type svg{width:11px;height:11px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
 .notif-type.like{background:#ef4444}.notif-type.like svg{fill:currentColor;stroke:none}
 .notif-type.follow{background:#4f46e5}

@@ -201,7 +201,7 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
   filter:drop-shadow(0 2px 4px rgba(244,114,182,.25))}
 .setup-banner-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
 .setup-banner-ring circle{fill:none;stroke-width:3.5}
-.setup-banner-ring .track{stroke:#fde8cc}
+.setup-banner-ring .track{stroke:var(--c-line2,#fde8cc)}
 .setup-banner-ring .fill{stroke:url(#setupRingGrad);stroke-linecap:round;transition:stroke-dashoffset .3s ease}
 .setup-banner-ring span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
   font-size:11px;font-weight:800;color:var(--c-warn-txt,#c2410c)}
@@ -217,12 +217,12 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
 
 /* ── PUBLISH-YOUR-BOOK TEASER (owner-only, "coming soon" — links to /publish) ── */
 .publish-banner{display:flex;align-items:center;gap:14px;position:relative;overflow:hidden;width:100%;text-align:left;
-  background:linear-gradient(120deg,#ffffff 0%,#eef4ff 55%,#dbe8ff 100%);border:1.5px solid #c7d9ff;border-radius:16px;
+  background:linear-gradient(120deg,#ffffff 0%,#eef4ff 55%,#dbe8ff 100%);border:1.5px solid var(--c-line-ind,#c7d9ff);border-radius:16px;
   padding:16px;margin-bottom:14px;cursor:pointer;font-family:inherit;color:var(--c-ink,#1b1f2a);box-shadow:0 2px 10px rgba(79,70,229,.08)}
 .publish-banner:focus-visible{outline:2px solid var(--p);outline-offset:2px}
 .publish-banner-art{position:absolute;right:8px;bottom:4px;width:130px;height:auto;pointer-events:none}
 .publish-banner-icon{position:relative;z-index:1;flex-shrink:0;width:46px;height:46px;border-radius:50%;
-  background:var(--c-bg,#fff);border:1.5px solid #c7d9ff;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(79,70,229,.12)}
+  background:var(--c-bg,#fff);border:1.5px solid var(--c-line-ind,#c7d9ff);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(79,70,229,.12)}
 .publish-banner-icon svg{width:22px;height:22px;fill:none;stroke:#4f46e5;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 .publish-banner-txt{position:relative;z-index:1;flex:1;min-width:0;max-width:56%}
 .publish-banner-pill{display:inline-block;font-size:9.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
@@ -410,7 +410,7 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
 .loc-marker{position:relative;width:40px;height:40px}
 .loc-pulse{position:absolute;inset:0;border-radius:50%;background:rgba(79,70,229,.28);animation:locPulse 2.2s ease-out infinite}
 @keyframes locPulse{0%{transform:scale(.45);opacity:.9}100%{transform:scale(1.25);opacity:0}}
-.loc-dot{position:absolute;left:5px;top:5px;width:30px;height:30px;border-radius:50%;border:3px solid #fff;
+.loc-dot{position:absolute;left:5px;top:5px;width:30px;height:30px;border-radius:50%;border:3px solid var(--c-bg,#fff);
   background:linear-gradient(135deg,#4f46e5,#06b6d4);box-shadow:0 4px 12px rgba(79,70,229,.45);display:flex;align-items:center;justify-content:center}
 .loc-dot svg{width:14px;height:14px;fill:none;stroke:#fff;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
 @media (prefers-reduced-motion:reduce){.loc-pulse{animation:none;opacity:.5;transform:scale(.9)}.loc-spin{animation-duration:1.6s}}
@@ -436,7 +436,7 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
   -webkit-mask:radial-gradient(circle,#000 0,#000 55%,transparent 100%);mask:radial-gradient(circle,#000 0,#000 55%,transparent 100%);
   animation:locSweep 1.7s linear infinite}
 @keyframes locSweep{to{transform:rotate(360deg)}}
-.loc-radar em{position:absolute;left:50%;top:50%;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;border:3px solid #fff;
+.loc-radar em{position:absolute;left:50%;top:50%;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;border:3px solid var(--c-bg,#fff);
   background:linear-gradient(135deg,#4f46e5,#06b6d4);box-shadow:0 2px 8px rgba(79,70,229,.5)}
 .loc-detect-chip{position:absolute;z-index:6;left:50%;bottom:12px;transform:translateX(-50%);display:flex;align-items:center;gap:8px;
   max-width:calc(100% - 24px);padding:7px 14px 7px 10px;border-radius:99px;background:var(--c-bg,#fff);box-shadow:0 4px 14px var(--c-handle,rgba(15,23,42,.16));
