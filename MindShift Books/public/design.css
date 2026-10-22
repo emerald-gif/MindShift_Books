@@ -174,7 +174,7 @@ body.ds-glass header{
 .ptf-card,.sug-card{border:none;border-radius:var(--ds-r-xl);box-shadow:0 0 0 1px var(--ds-hairline),var(--ds-e2)}
 
 /* Loading skeleton: neutral shimmer */
-.skel{background:linear-gradient(90deg,#eef0f6 25%,#e4e7f0 50%,#eef0f6 75%);background-size:200% 100%}
+.skel{background:linear-gradient(90deg,var(--c-surface,#eef0f6) 25%,var(--c-surface,#e4e7f0) 50%,var(--c-surface,#eef0f6) 75%);background-size:200% 100%}
 
 /* ─── 8. PRIMARY CTAs — pill with a coloured glow (Spotify) ─────────────────── */
 .rating-submit,.c-post-btn,.hbg-signup,.ptf-follow,.sidebar-auth-signup,.buy-btn{

@@ -220,7 +220,7 @@ main{max-width:1100px;margin:0 auto}
 .acard-cat{display:inline-flex;align-items:center;background:rgba(37,99,235,.1);color:var(--p);font-size:9.5px;font-weight:800;padding:3px 9px;border-radius:99px;letter-spacing:.3px;text-transform:uppercase}
 .acard-title{font-size:17px;font-weight:800;color:#fff;line-height:1.35;letter-spacing:-.3px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:0;text-shadow:0 1px 4px rgba(0,0,0,.45)}
 .acard-brief{display:none}
-.acard-img{width:100%;border-radius:14px;overflow:hidden;background:linear-gradient(135deg,#e0e7ff,#eef2ff);margin:8px 0 0;position:relative}
+.acard-img{width:100%;border-radius:14px;overflow:hidden;background:linear-gradient(135deg,var(--c-tonal,#e0e7ff),var(--c-surface,#eef2ff));margin:8px 0 0;position:relative}
 .acard-img img{width:100%;aspect-ratio:16/9;height:auto;object-fit:cover;display:block}
 .acard-img-ov{position:absolute;left:0;right:0;bottom:0;padding:14px 14px 12px;background:linear-gradient(to top,rgba(0,0,0,.85),rgba(0,0,0,.4) 60%,transparent)}
 .acard-img-meta{display:flex;align-items:center;gap:8px;margin-bottom:7px}
@@ -272,7 +272,7 @@ main{max-width:1100px;margin:0 auto}
 .pcard-comment svg{width:18px;height:18px;flex-shrink:0}
 /* ── SKELETON ── */
 @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
-.skel{background:linear-gradient(90deg,#eef2ff 25%,#e0e7ff 50%,#eef2ff 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:8px}
+.skel{background:linear-gradient(90deg,var(--c-surface,#eef2ff) 25%,var(--c-tonal,#e0e7ff) 50%,var(--c-surface,#eef2ff) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:8px}
 .skel-card{display:flex;flex-direction:column;background:var(--c-bg,#fff);padding:20px 16px;border-bottom:1px solid var(--border);pointer-events:none}
 .skel-head{display:flex;align-items:center;gap:7px}
 .skel-av{width:24px;height:24px;border-radius:50%;flex-shrink:0}
@@ -330,7 +330,7 @@ main{max-width:1100px;margin:0 auto}
    can stack under it (see .feed-tabs top). Hidden with display:none on
    #guestBar for logged-in users — the tabs then snap back up automatically. ── */
 .guest-bar-wrap{position:sticky;top:var(--hdr-h,56px);z-index:60;background:var(--bg);padding:8px 12px;transition:transform 0.28s ease;will-change:transform}
-.guest-bar{display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,#eef2ff,#f5f3ff);border:1px solid rgba(79,70,229,.14);border-radius:14px;padding:7px 8px 7px 10px;animation:guestBarIn .35s cubic-bezier(.2,.8,.2,1) both}
+.guest-bar{display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,var(--c-surface,#eef2ff),var(--c-surface,#f5f3ff));border:1px solid rgba(79,70,229,.14);border-radius:14px;padding:7px 8px 7px 10px;animation:guestBarIn .35s cubic-bezier(.2,.8,.2,1) both}
 @keyframes guestBarIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 @media (prefers-reduced-motion:reduce){.guest-bar{animation:none}}
 .guest-bar-ic{width:32px;height:32px;border-radius:10px;flex-shrink:0;background:var(--g);display:flex;align-items:center;justify-content:center}
@@ -343,7 +343,7 @@ main{max-width:1100px;margin:0 auto}
 .gbs:active{transform:scale(.97);filter:brightness(.96)}
 
 .feed-setup-banner{display:flex;align-items:center;gap:12px;margin:0 16px 16px;padding:12px 14px;position:relative;
-  background:linear-gradient(135deg,#fff7ed,#fdf2f8);border:1.5px dashed #fbbf24;border-radius:16px;
+  background:linear-gradient(135deg,var(--c-bg,#fff7ed),var(--c-surface,#fdf2f8));border:1.5px dashed #fbbf24;border-radius:16px;
   cursor:pointer;box-shadow:0 2px 10px rgba(251,191,36,.14);overflow:visible}
 .feed-setup-banner::before,.feed-setup-banner::after{content:'';position:absolute;top:50%;transform:translateY(-50%);
   width:14px;height:14px;border-radius:50%;background:var(--c-bg2,#f8fafc);z-index:1}
@@ -442,7 +442,7 @@ main{max-width:1100px;margin:0 auto}
   font-size:14.5px;font-weight:600;cursor:pointer;font-family:inherit;flex-shrink:0}
 .ptf-follow.following-btn{background:transparent;color:var(--txt);border:1px solid var(--border)}
 /* See more banner (at end of following feed) */
-.see-more-banner{margin:20px 16px;background:linear-gradient(135deg,#eef2ff,#eef2ff);
+.see-more-banner{margin:20px 16px;background:linear-gradient(135deg,var(--c-surface,#eef2ff),var(--c-surface,#eef2ff));
   border:1.5px solid var(--border2);border-radius:16px;padding:18px 16px;text-align:center}
 .see-more-banner p{font-size:13px;font-weight:700;color:var(--txt);margin-bottom:10px}
 .see-more-banner span{font-size:12px;color:var(--sub);display:block;margin-bottom:14px;line-height:1.5}
@@ -532,7 +532,7 @@ main{max-width:1100px;margin:0 auto}
 .saved-list{display:flex;flex-direction:column;gap:10px}
 .saved-card{display:flex;gap:10px;align-items:center;padding:10px;border-radius:14px;border:1px solid var(--border);background:var(--c-bg,#fff);cursor:pointer;transition:all .2s}
 .saved-card:hover{border-color:var(--p);background:var(--c-tonal,#eef2ff)}
-.saved-card-img{width:60px;height:54px;border-radius:9px;object-fit:cover;flex-shrink:0;background:linear-gradient(135deg,#e0e7ff,#eef2ff)}
+.saved-card-img{width:60px;height:54px;border-radius:9px;object-fit:cover;flex-shrink:0;background:linear-gradient(135deg,var(--c-tonal,#e0e7ff),var(--c-surface,#eef2ff))}
 .saved-card-body{flex:1;min-width:0}
 .saved-card-cat{font-size:9px;font-weight:800;color:var(--p);text-transform:uppercase;letter-spacing:.3px;margin-bottom:3px}
 .saved-card-ttl{font-size:12.5px;font-weight:700;color:var(--txt);line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -622,7 +622,7 @@ main{max-width:1100px;margin:0 auto}
 .xs-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .xs-section-lbl{padding:14px 16px 8px;font-size:12px;font-weight:800;color:var(--mute);text-transform:uppercase;letter-spacing:.4px}
 .xgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:6px}
-.xcard{position:relative;border-radius:12px;overflow:hidden;cursor:pointer;background:linear-gradient(135deg,#e0e7ff,#eef2ff);aspect-ratio:3/4;-webkit-tap-highlight-color:transparent;transition:transform .1s}
+.xcard{position:relative;border-radius:12px;overflow:hidden;cursor:pointer;background:linear-gradient(135deg,var(--c-tonal,#e0e7ff),var(--c-surface,#eef2ff));aspect-ratio:3/4;-webkit-tap-highlight-color:transparent;transition:transform .1s}
 .xcard:active{transform:scale(.97)}
 .xcard.big{grid-column:span 2;aspect-ratio:16/9}
 .xcard img{width:100%;height:100%;object-fit:cover;display:block}
@@ -743,7 +743,7 @@ main{max-width:1100px;margin:0 auto}
 .xs-empty p{font-size:13.5px;font-weight:500;color:var(--sub);line-height:1.5;margin-bottom:18px}
 .xs-empty .xs-topics{justify-content:center;margin-bottom:6px}
 .xs-skel-row{display:flex;gap:12px;align-items:center;padding:12px 16px}
-.xs-skel{background:linear-gradient(90deg,#f1f5f9 25%,#e8edf3 37%,#f1f5f9 63%);background-size:400% 100%;animation:xsShimmer 1.3s ease infinite;border-radius:8px}
+.xs-skel{background:linear-gradient(90deg,var(--c-surface,#f1f5f9) 25%,var(--c-surface,#e8edf3) 37%,var(--c-surface,#f1f5f9) 63%);background-size:400% 100%;animation:xsShimmer 1.3s ease infinite;border-radius:8px}
 @keyframes xsShimmer{0%{background-position:100% 0}100%{background-position:0 0}}
 .xs-skel.c{width:42px;height:42px;border-radius:50%;flex:none}
 .xs-skel.l{height:12px}
@@ -992,7 +992,7 @@ main{max-width:1100px;margin:0 auto}
 
 <!-- EXPLORE FEED -->
 <div id="exploreFeed" style="display:none;padding:40px 16px 80px;text-align:center">
-  <div style="width:64px;height:64px;background:linear-gradient(135deg,#e0e7ff,#bfdbfe);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+  <div style="width:64px;height:64px;background:linear-gradient(135deg,var(--c-tonal,#e0e7ff),var(--c-tonal,#bfdbfe));border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
     <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="#4f46e5" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35"/></svg>
   </div>
   <p style="font-size:17px;font-weight:800;color:var(--c-ink,#0f0e17);margin-bottom:8px">Explore is coming soon</p>

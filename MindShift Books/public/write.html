@@ -179,7 +179,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .tb-letter{font-size:14px;font-weight:800;line-height:1}
 .tb-color-bar{position:absolute;bottom:4px;left:7px;right:7px;height:3px;border-radius:2px;
   background:var(--txt)}
-#backColorBar{background:repeating-linear-gradient(45deg,#fef08a,#fef08a 3px,#fde047 3px,#fde047 6px)}
+#backColorBar{background:repeating-linear-gradient(45deg,var(--c-warn-bg,#fef08a),var(--c-warn-bg,#fef08a) 3px,var(--c-warn-bg,#fde047) 3px,var(--c-warn-bg,#fde047) 6px)}
 
 .color-popover{position:absolute;z-index:50;background:var(--c-bg,#fff);border:1px solid var(--border);
   border-radius:14px;box-shadow:0 8px 28px rgba(37,99,235,.15);padding:14px;display:none;
@@ -294,7 +294,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   max-width:360px;width:100%;transform:scale(.9) translateY(20px);
   transition:transform .4s cubic-bezier(.34,1.56,.64,1)}
 .success-overlay.show .success-card{transform:scale(1) translateY(0)}
-.success-icon{width:72px;height:72px;background:linear-gradient(135deg,#d1fae5,#a7f3d0);
+.success-icon{width:72px;height:72px;background:linear-gradient(135deg,var(--c-ok-bg,#d1fae5),var(--c-ok-bg,#a7f3d0));
   border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
 .success-icon svg{width:32px;height:32px;color:var(--green)}
 .success-card h3{font-size:20px;font-weight:900;margin-bottom:8px}
@@ -320,7 +320,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .tb-at.fresh .tb-new{display:block;animation:atpulse 2s ease-in-out infinite}
 .tb-at.fresh{color:var(--p)}
 @keyframes atpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
-.mention-intro{display:none;align-items:center;gap:12px;margin:0 0 14px;padding:11px 10px 11px 12px;border-radius:16px;background:linear-gradient(135deg,#eef2ff 0%,#ecfeff 100%);border:1px solid var(--c-line-ind,#dfe4fb);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .12s}
+.mention-intro{display:none;align-items:center;gap:12px;margin:0 0 14px;padding:11px 10px 11px 12px;border-radius:16px;background:linear-gradient(135deg,var(--c-surface,#eef2ff) 0%,var(--c-bg,#ecfeff) 100%);border:1px solid var(--c-line-ind,#dfe4fb);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .12s}
 .mention-intro.show{display:flex;animation:mpop .25s ease-out}
 .mention-intro:active{transform:scale(.99)}
 .mi-ico{width:34px;height:34px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,#4f46e5,#06b6d4);color:#fff;font-size:17px;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 10px -3px rgba(79,70,229,.5)}

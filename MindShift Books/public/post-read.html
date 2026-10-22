@@ -64,12 +64,12 @@ header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* ── RATING SECTION ── */
 .rating-card{
   margin:24px 0 0;
-  background:linear-gradient(135deg,#ecfeff,#cffafe);
+  background:linear-gradient(135deg,var(--c-bg,#ecfeff),var(--c-cyan-bg,#cffafe));
   border-radius:20px;
   border:1.5px solid var(--border);
   padding:24px 20px 28px;
 }
-.rating-card.done{background:linear-gradient(135deg,#f0fdf4,#dcfce7)}
+.rating-card.done{background:linear-gradient(135deg,var(--c-bg,#f0fdf4),var(--c-ok-bg,#dcfce7))}
 
 .rating-dismiss{position:absolute;top:12px;right:14px;background:none;border:none;font-size:18px;cursor:pointer;color:var(--mute);line-height:1;padding:4px}
 
@@ -141,7 +141,7 @@ header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 
 /* ── HERO IMG ── */
-.art-hero{width:100%;height:220px;object-fit:cover;display:block;background:linear-gradient(135deg,#cffafe,#ecfeff);border-radius:14px;margin:2px 0 22px}
+.art-hero{width:100%;height:220px;object-fit:cover;display:block;background:linear-gradient(135deg,var(--c-cyan-bg,#cffafe),var(--c-bg,#ecfeff));border-radius:14px;margin:2px 0 22px}
 /* ── POST (vs. article) content ── */
 .post-text{font-size:16.5px;line-height:1.6;color:var(--txt);white-space:pre-wrap;word-break:break-word;margin:16px 0}
 /* ── Horizontal peek carousel: images keep their natural aspect ratio, scaled to a shared height ── */
@@ -250,7 +250,7 @@ body{padding-bottom:64px} /* room for the fixed comment bar on post-read */
 .art-body s{color:var(--sub)}
 
 /* auth gate */
-.art-gate{background:linear-gradient(160deg,#ecfeff,#fff);border:1.5px solid var(--border2);border-radius:20px;padding:32px 24px;text-align:center;margin:28px 0}
+.art-gate{background:linear-gradient(160deg,var(--c-bg,#ecfeff),var(--c-bg,#fff));border:1.5px solid var(--border2);border-radius:20px;padding:32px 24px;text-align:center;margin:28px 0}
 .art-gate-ico{font-size:40px;margin-bottom:12px}
 .art-gate h3{font-size:20px;font-weight:900;color:var(--txt);margin-bottom:6px}
 .art-gate p{font-size:14px;color:var(--sub);line-height:1.65;margin-bottom:22px}
@@ -259,7 +259,7 @@ body{padding-bottom:64px} /* room for the fixed comment bar on post-read */
 .gate-li{background:var(--c-bg,#fff);border:1.5px solid var(--border2);color:var(--txt)}
 .gate-su{background:var(--g);color:#fff;box-shadow:0 4px 16px rgba(37,99,235,.28)}
 .gate-su:hover{opacity:.9}
-.art-fade{height:80px;background:linear-gradient(to bottom,transparent,#fff);margin-bottom:-4px;pointer-events:none}
+.art-fade{height:80px;background:linear-gradient(to bottom,transparent,var(--c-bg,#fff));margin-bottom:-4px;pointer-events:none}
 
 /* ── MORE ARTICLES ── */
 .more-section{padding:28px 20px 16px;border-top:1px solid var(--c-line,#f3f4f6);margin-top:20px}
@@ -267,7 +267,7 @@ body{padding-bottom:64px} /* room for the fixed comment bar on post-read */
 .more-list{display:flex;flex-direction:column;gap:12px}
 .more-card{display:flex;gap:12px;align-items:flex-start;cursor:pointer;padding:12px;border-radius:14px;border:1px solid var(--border);background:var(--c-bg,#fff);transition:all .2s}
 .more-card:hover{border-color:var(--p);background:var(--c-cyan-bg,#ecfeff)}
-.more-img{width:72px;height:64px;border-radius:10px;object-fit:cover;flex-shrink:0;background:linear-gradient(135deg,#cffafe,#ecfeff)}
+.more-img{width:72px;height:64px;border-radius:10px;object-fit:cover;flex-shrink:0;background:linear-gradient(135deg,var(--c-cyan-bg,#cffafe),var(--c-bg,#ecfeff))}
 .more-body{flex:1;min-width:0}
 .more-cat{font-size:10px;font-weight:800;color:var(--p);text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}
 .more-ttl{font-size:13px;font-weight:700;color:var(--txt);line-height:1.38;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -332,7 +332,7 @@ body{padding-bottom:64px} /* room for the fixed comment bar on post-read */
 /* ── DOWNLOAD SHEET ── */
 .download-sheet{position:fixed;left:0;right:0;bottom:0;z-index:302;background:var(--c-bg,#fff);border-radius:24px 24px 0 0;padding:18px 20px 40px;transform:translateY(100%);transition:transform .3s cubic-bezier(.32,0,.15,1)}
 .download-sheet.on{transform:none}
-.dl-preview{background:linear-gradient(160deg,#ecfeff,#fff);border:1.5px solid var(--border2);border-radius:18px;padding:18px;margin-bottom:14px}
+.dl-preview{background:linear-gradient(160deg,var(--c-bg,#ecfeff),var(--c-bg,#fff));border:1.5px solid var(--border2);border-radius:18px;padding:18px;margin-bottom:14px}
 .dl-preview-top{display:flex;align-items:center;gap:8px;margin-bottom:10px}
 .dl-preview-badge{display:inline-flex;align-items:center;gap:5px;background:var(--g);color:#fff;font-size:10px;font-weight:800;padding:4px 10px;border-radius:99px;letter-spacing:.5px}
 .dl-preview-badge svg{width:11px;height:11px}
@@ -379,7 +379,7 @@ body{padding-bottom:64px} /* room for the fixed comment bar on post-read */
 
 /* ── SKELETON ── */
 @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
-.skel{background:linear-gradient(90deg,#f1f0f9 25%,#e0ecff 50%,#f1f0f9 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:8px}
+.skel{background:linear-gradient(90deg,var(--c-surface,#f1f0f9) 25%,var(--c-tonal,#e0ecff) 50%,var(--c-surface,#f1f0f9) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:8px}
 .skel-hero{width:100%;height:220px;border-radius:14px}
 .skel-art-wrap{max-width:680px;margin:0 auto;padding:24px 20px;display:flex;flex-direction:column;gap:14px}
 .skel-author-row{display:flex;align-items:center;gap:10px;margin:4px 0 8px}
@@ -475,7 +475,7 @@ body{padding-bottom:64px} /* room for the fixed comment bar on post-read */
 .comments-list-empty-ico{font-size:32px;margin-bottom:8px;opacity:.5}
 .comments-list-empty-txt{font-size:13px;font-weight:600}
 
-.c-pinned-card{background:linear-gradient(180deg,#fffdf7,#fffbeb);border:1.5px solid var(--c-line-warn,#fde68a);border-radius:16px;padding:14px 16px 12px;margin-bottom:16px}
+.c-pinned-card{background:linear-gradient(180deg,var(--c-bg,#fffdf7),var(--c-bg,#fffbeb));border:1.5px solid var(--c-line-warn,#fde68a);border-radius:16px;padding:14px 16px 12px;margin-bottom:16px}
 .c-pinned-card .comment-item{padding:0;border-bottom:none}
 .c-pinned-card .c-more-btn{top:0}
 
