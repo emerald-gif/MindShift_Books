@@ -1246,7 +1246,7 @@ body.src-lock { overflow: hidden; }
 .src-clear {
   flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; border: none;
   display: inline-flex; align-items: center; justify-content: center;
-  background: #cbd5e1; color: #fff; cursor: pointer; padding: 0;
+  background: var(--c-line2,#cbd5e1); color: #fff; cursor: pointer; padding: 0;
 }
 
 .src-body { flex: 1; overflow-y: auto; padding: 18px 16px 40px; -webkit-overflow-scrolling: touch; }

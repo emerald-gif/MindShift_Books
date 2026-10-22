@@ -14,7 +14,7 @@
    ═══════════════════════════════════════════════════════════════════════ */
 (function () {
   var KEY = 'msb_theme';
-  var BAR = { light: '#ffffff', dark: '#0a0d14' };
+  var BAR = { light: '#ffffff', dark: '#0f1217' };
   var mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
 
   function read() {
@@ -56,7 +56,10 @@
     set: function (choice) {
       if (choice !== 'light' && choice !== 'dark') choice = 'system';
       try { if (choice === 'system') localStorage.removeItem(KEY); else localStorage.setItem(KEY, choice); } catch (e) {}
+      var root = document.documentElement;
+      root.classList.add('msb-theme-anim');                 // cross-fade only for a deliberate switch
       apply(); fire();
+      setTimeout(function () { root.classList.remove('msb-theme-anim'); }, 420);
     }
   };
 })();

@@ -13,14 +13,14 @@ html[data-theme="dark"]{
   color-scheme:dark;
 
   /* ── page tokens (names every page already uses) ── */
-  --bg:#0a0d14;             /* the backdrop behind cards */
-  --card:#12161f;           /* surfaces: cards, sheets, bars */
-  --border:#232a38;
-  --border2:#2b3445;
-  --txt:#e8ebf2;
-  --primary:#e8ebf2;
-  --sub:#a4adbd;
-  --mute:#7b8497;
+  --bg:#0a0c10;             /* the backdrop behind cards */
+  --card:#0f1217;           /* surfaces: cards, sheets, bars */
+  --border:#1d222b;
+  --border2:#272d38;
+  --txt:#e7e9ee;
+  --primary:#e7e9ee;
+  --sub:#9ba3b0;
+  --mute:#6e7684;
   --p:#7377f4;              /* brand indigo, lifted so it reads on dark */
   --ps:#a5b4fc;
   --save:#8b8ff8;
@@ -39,34 +39,37 @@ html[data-theme="dark"]{
   --ds-e1:0 1px 2px rgba(0,0,0,.45);
   --ds-e2:0 2px 6px rgba(0,0,0,.35),0 10px 28px -10px rgba(0,0,0,.65);
   --ds-e3:0 0 0 .5px rgba(255,255,255,.1),0 16px 48px -10px rgba(0,0,0,.75);
-  --glass-rgb:18,22,31;      /* frosted bars / menus: rgba(var(--glass-rgb,255,255,255), .85) */
+  --glass-rgb:15,18,23;      /* frosted bars / menus: rgba(var(--glass-rgb,255,255,255), .85) */
 
   /* ── swept one-off colours (see the sweep: var(--c-x, #old)) ── */
-  --c-bg:#12161f;            /* was white */
-  --c-bg2:#0a0d14;           /* was the faint page grey (#f8fafc …) */
-  --c-surface:#1b212d;       /* chips, inputs, tracks (#f1f5f9 …) */
+  --c-bg:#0f1217;            /* was white */
+  --c-bg2:#0a0c10;           /* was the faint page grey (#f8fafc …) */
+  --c-surface:#181c24;       /* chips, inputs, tracks (#f1f5f9 …) */
   --c-tonal:rgba(99,102,241,.16);
   --c-tonal2:rgba(99,102,241,.26);
   --c-cyan-bg:rgba(6,182,212,.14);
   --c-red-bg:rgba(239,68,68,.15);
   --c-warn-bg:rgba(245,158,11,.15);
   --c-ok-bg:rgba(16,185,129,.15);
-  --c-ink-bg:#2a3245;        /* dark pills / toasts */
-  --c-ink:#e8ebf2;           /* text that was near-black */
-  --c-sub:#b4bccb;
-  --c-sub2:#a0a9bb;
-  --c-mute:#7b8497;
-  --c-faint:#5a6376;
+  --c-ink-bg:#232834;        /* dark pills / toasts */
+  --c-ink:#e7e9ee;           /* text that was near-black */
+  --c-sub:#aab2bf;
+  --c-sub2:#9ba3b0;
+  --c-mute:#6e7684;
+  --c-faint:#525a68;
   --c-ind:#a5b4fc;           /* indigo text */
   --c-warn-txt:#fbbf24;
   --c-ok-txt:#34d399;
   --c-cyan-txt:#22d3ee;
   --c-red-txt:#f87171;
-  --c-line:#232a38;
-  --c-line2:#323a4c;
-  --c-line-ind:#3a4166;
+  --c-line:#1d222b;
+  --c-line2:#2f3642;
+  --c-line-ind:#2f3558;
   --c-line-red:#5b2a2f;
   --c-handle:rgba(255,255,255,.22);   /* sheet drag handles */
+  --c-pink-txt:#f472b6;
+  --c-elev:#151921;                   /* layer above the page: sheets, menus, popovers */
+  --elev-ring:0 0 0 .5px rgba(255,255,255,.08),0 24px 60px -12px rgba(0,0,0,.8);
 }
 
 /* ── base ── */
@@ -74,7 +77,7 @@ html[data-theme="dark"] body{background:var(--bg);color:var(--txt)}
 html[data-theme="dark"] ::selection{background:rgba(124,127,247,.35)}
 html[data-theme="dark"] ::placeholder{color:var(--mute);opacity:1}
 html[data-theme="dark"] input,html[data-theme="dark"] textarea,html[data-theme="dark"] select{color:var(--txt);caret-color:var(--p)}
-html[data-theme="dark"] input:-webkit-autofill{-webkit-text-fill-color:var(--txt);-webkit-box-shadow:0 0 0 40px #1b212d inset}
+html[data-theme="dark"] input:-webkit-autofill{-webkit-text-fill-color:var(--txt);-webkit-box-shadow:0 0 0 40px #181c24 inset}
 html[data-theme="dark"] hr{border-color:var(--border)}
 
 /* ── design.css pieces that carry their own light colours ── */
@@ -83,10 +86,10 @@ html[data-theme="dark"] body.ds-glass header{background:rgba(var(--glass-rgb),.8
 html[data-theme="dark"] .hbg-drop,
 html[data-theme="dark"] .acard-menu-drop{background:rgba(var(--glass-rgb),.96)}
 html[data-theme="dark"] .search-inp:focus{background:var(--card)}
-html[data-theme="dark"] .acard:hover{background:#151a25}
-html[data-theme="dark"] .art-body{color:#d6dbe6}
-html[data-theme="dark"] .toast{background:rgba(42,50,69,.95);color:#fff}
-html[data-theme="dark"] .skel{background:linear-gradient(90deg,#1b212d 25%,#262e3f 50%,#1b212d 75%);background-size:200% 100%}
+html[data-theme="dark"] .acard:hover{background:#12161d}
+html[data-theme="dark"] .art-body{color:#d3d8e0}
+html[data-theme="dark"] .toast{background:rgba(35,40,52,.96);color:#fff}
+html[data-theme="dark"] .skel{background:linear-gradient(90deg,#181c24 25%,#20252f 50%,#181c24 75%);background-size:200% 100%}
 
 /* chips / pills that are "ink on selected": ink is light in dark mode, so their text flips to dark */
 html[data-theme="dark"] .fpill.active,
@@ -94,7 +97,7 @@ html[data-theme="dark"] .msb-cat-pill.is-active,
 html[data-theme="dark"] .xs-chip.active,
 html[data-theme="dark"] .xacc-follow-btn.following,
 html[data-theme="dark"] .day-pill.active,
-html[data-theme="dark"] .pill.active{color:#0a0d14}
+html[data-theme="dark"] .pill.active{color:#0a0c10}
 
 /* photos: the same picture, a touch calmer on a dark screen; logos/avatars untouched */
 html[data-theme="dark"] .art-hero,
@@ -105,9 +108,9 @@ html[data-theme="dark"] .pcard-single img{filter:brightness(.92)}
 
 /* ═════ per-page leftovers: light gradients and page-private colour names ═════ */
 html[data-theme="dark"]{
-  --cbg1:#12161f; --cbg2:#0a0d14;                       /* Messages: the default ("classic") chat background; chat themes still override */
-  --ink:#e8ebf2; --line:#262d3c;                         /* whats-new names */
-  --paper:#0a0d14; --soft:#1b212d;                       /* login / signup / publish names */
+  --cbg1:#0f1217; --cbg2:#0a0c10;                       /* Messages: the default ("classic") chat background; chat themes still override */
+  --ink:#e7e9ee; --line:#1d222b;                         /* whats-new names */
+  --paper:#0a0c10; --soft:#181c24;                       /* login / signup / publish names */
 }
 /* What's new has its own colour names */
 html[data-theme="dark"] .hero{background:linear-gradient(180deg,rgba(99,102,241,.16) 0%,var(--card) 100%)}
@@ -119,13 +122,13 @@ html[data-theme="dark"] select{background-color:var(--card);color:var(--txt)}
 /* feed */
 html[data-theme="dark"] .acard-img,
 html[data-theme="dark"] .saved-card-img,
-html[data-theme="dark"] .xcard{background:linear-gradient(135deg,#1e2440,#171c30)}
+html[data-theme="dark"] .xcard{background:linear-gradient(135deg,#1a1f33,#141829)}
 html[data-theme="dark"] .guest-bar{background:linear-gradient(135deg,rgba(99,102,241,.2),rgba(139,92,246,.14));border-color:rgba(129,140,248,.28)}
 html[data-theme="dark"] .feed-setup-banner,
 html[data-theme="dark"] .setup-banner{background:linear-gradient(135deg,rgba(249,115,22,.15),rgba(236,72,153,.12))}
 html[data-theme="dark"] .see-more-banner{background:rgba(99,102,241,.14)}
 html[data-theme="dark"] .xs-skel,
-html[data-theme="dark"] .composer-name.skel{background:linear-gradient(90deg,#1b212d 25%,#262e3f 50%,#1b212d 75%);background-size:200% 100%}
+html[data-theme="dark"] .composer-name.skel{background:linear-gradient(90deg,#181c24 25%,#20252f 50%,#181c24 75%);background-size:200% 100%}
 
 /* reading pages */
 html[data-theme="dark"] .art-fade{background:linear-gradient(to bottom,transparent,var(--card))}
@@ -139,7 +142,7 @@ html[data-theme="dark"] .art-body .pull-quote{background:linear-gradient(90deg,r
 /* profile / settings / insights / misc */
 html[data-theme="dark"] .pin-wrap{background:linear-gradient(180deg,rgba(99,102,241,.12) 0,var(--card) 90px)}
 html[data-theme="dark"] .verified-card{background:linear-gradient(135deg,rgba(99,102,241,.22),rgba(236,72,153,.14))}
-html[data-theme="dark"] .me-av.is-loading{background:linear-gradient(90deg,#1b212d 25%,#262e3f 50%,#1b212d 75%);background-size:200% 100%}
+html[data-theme="dark"] .me-av.is-loading{background:linear-gradient(90deg,#181c24 25%,#20252f 50%,#181c24 75%);background-size:200% 100%}
 html[data-theme="dark"] .mention-intro{background:linear-gradient(135deg,rgba(99,102,241,.16),rgba(6,182,212,.12))}
 html[data-theme="dark"] .cm-center-icon,
 html[data-theme="dark"] .cm-link-icon,
@@ -155,12 +158,49 @@ html[data-theme="dark"] .ab-skel,
 html[data-theme="dark"] .fe-skel,
 html[data-theme="dark"] .skel-img,
 html[data-theme="dark"] .skel-line,
-html[data-theme="dark"] .skel-btn{background-image:linear-gradient(90deg,#1b212d 25%,#262e3f 40%,#1b212d 63%)}
+html[data-theme="dark"] .skel-btn{background-image:linear-gradient(90deg,#181c24 25%,#20252f 40%,#181c24 63%)}
 html[data-theme="dark"] .voucher-page-banner,
 html[data-theme="dark"] .reward-teaser,
 html[data-theme="dark"] .cart-voucher-row{background:linear-gradient(135deg,rgba(245,158,11,.14),rgba(236,72,153,.1));border-color:rgba(251,191,36,.4)}
 html[data-theme="dark"] .our-standout .card-cover-wrap{background:linear-gradient(160deg,rgba(99,102,241,.2),rgba(6,182,212,.12))}
 html[data-theme="dark"] .bk-about.is-clamped::after{background:linear-gradient(180deg,rgba(10,13,20,0),var(--bg) 85%)}
+
+
+/* ═════ premium finish (dark) ═════ */
+/* layers: sheets, menus and the sidebar sit one step above the page, with a hairline ring instead of a drop shadow */
+html[data-theme="dark"] #cpk-sheet,
+html[data-theme="dark"] #kv-up-sheet,
+html[data-theme="dark"] .sidebar,
+html[data-theme="dark"] .hbg-drop,
+html[data-theme="dark"] .acard-menu-drop,
+html[data-theme="dark"] .share-sheet,
+html[data-theme="dark"] .sheet{background:var(--c-elev)}
+html[data-theme="dark"] #cpk-sheet,
+html[data-theme="dark"] #kv-up-sheet{box-shadow:var(--elev-ring)}
+html[data-theme="dark"] #cpk-overlay,
+html[data-theme="dark"] #kv-up-bd{background:rgba(0,0,0,.6)}
+/* keyboard / accessibility focus */
+html[data-theme="dark"] :focus-visible{outline:2px solid rgba(124,131,255,.7);outline-offset:2px}
+html[data-theme="dark"] input:focus-visible,
+html[data-theme="dark"] textarea:focus-visible{outline:none}
+/* quiet, thin scrollbars */
+html[data-theme="dark"]{scrollbar-color:#2a303b transparent}
+html[data-theme="dark"] *::-webkit-scrollbar{width:8px;height:8px}
+html[data-theme="dark"] *::-webkit-scrollbar-thumb{background:#2a303b;border-radius:8px}
+/* gradient brand buttons glow instead of casting a grey shadow */
+html[data-theme="dark"] .btn-primary,
+html[data-theme="dark"] .go,
+html[data-theme="dark"] .cpk-opt-ico,
+html[data-theme="dark"] .kv-up-tile-ico{box-shadow:0 10px 26px -10px rgba(99,102,241,.6)}
+/* polls: result bars read clearly on dark */
+html[data-theme="dark"] .mp-opt:hover{background:rgba(99,102,241,.14)}
+html[data-theme="dark"] .mp-bar{background:rgba(124,131,255,.16)}
+html[data-theme="dark"] .mp-res.lead .mp-bar{background:rgba(124,131,255,.32)}
+/* smooth cross-fade when the person switches theme (class is added for a moment by theme.js, never on page load) */
+html.msb-theme-anim,
+html.msb-theme-anim *,
+html.msb-theme-anim *::before,
+html.msb-theme-anim *::after{transition:background-color .28s ease,border-color .28s ease,color .28s ease,fill .28s ease,stroke .28s ease,box-shadow .28s ease!important}
 
 /* ── the Settings "Appearance" control (also used in the sidebar) ── */
 .msb-seg{display:flex;gap:4px;padding:4px;border-radius:14px;background:var(--ds-fill,rgba(15,23,42,.055))}

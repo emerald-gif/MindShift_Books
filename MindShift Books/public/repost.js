@@ -84,7 +84,7 @@ function injectStylesOnce() {
 .rp-opt:active{background:var(--c-surface,#f4f4f6)}
 .rp-opt-ico{width:38px;height:38px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:50%}
 .rp-opt-ico svg{width:18px;height:18px}
-.rp-opt-ico-plain{background:#fff1e0;color:#ea8a1f}
+.rp-opt-ico-plain{background:var(--c-warn-bg,#fff1e0);color:#ea8a1f}
 .rp-opt-ico-quote{background:var(--c-tonal,#eef2ff);color:var(--c-ind,#4f46e5)}
 .rp-opt-txt{display:flex;flex-direction:column;gap:2px}
 .rp-opt-txt b{font-size:14px;font-weight:700;color:var(--c-ink,#0f172a)}

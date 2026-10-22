@@ -7,6 +7,6 @@ export function makeNewPill(){
   const np = document.createElement('span');
   np.textContent = 'New';
   np.setAttribute('data-msb-new', '1');
-  np.style.cssText = 'margin-left:8px;padding:2px 7px;border-radius:99px;background:#dbeafe;color:#1d4ed8;font-size:10.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;line-height:1.5;flex-shrink:0;vertical-align:middle;white-space:nowrap';
+  np.style.cssText = 'margin-left:8px;padding:2px 7px;border-radius:99px;background:var(--c-tonal,#dbeafe);color:var(--c-ind,#1d4ed8);font-size:10.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;line-height:1.5;flex-shrink:0;vertical-align:middle;white-space:nowrap';
   return np;
 }

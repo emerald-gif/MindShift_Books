@@ -23,7 +23,7 @@
   transition:transform .26s cubic-bezier(.2,.8,.2,1);box-shadow:0 -10px 40px rgba(0,0,0,.3);overscroll-behavior:contain}
 #msbShare.in .msd-sheet{transform:translateY(0)}
 #msbShare .msd-sheet.drag{transition:none}
-#msbShare .msd-bar{width:40px;height:4px;border-radius:2px;background:#cbd5e1;margin:4px auto 10px}
+#msbShare .msd-bar{width:40px;height:4px;border-radius:2px;background:var(--c-line2,#cbd5e1);margin:4px auto 10px}
 #msbShare .msd-x{position:absolute;top:10px;right:12px;width:34px;height:34px;border:0;border-radius:50%;background:var(--c-surface,#f1f5f9);color:var(--c-sub,#475569);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:3;padding:0}
 #msbShare .msd-x:active{background:var(--c-surface,#e2e8f0)}
 #msbShare .msd-x svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round}

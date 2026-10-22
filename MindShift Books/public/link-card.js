@@ -8,7 +8,7 @@
     var st = document.createElement('style'); st.id = 'msb-linkcard-css';
     st.textContent =
       '.lcard{position:relative;display:block;margin:12px 0 4px;border:1px solid var(--border,#e5e7eb);border-radius:14px;overflow:hidden;background:var(--card,#fff);color:var(--txt,#0f172a);text-decoration:none;-webkit-tap-highlight-color:transparent;transition:background .15s,border-color .15s}' +
-      'a.lcard:hover{border-color:#c7d2fe}a.lcard:active{background:rgba(79,70,229,.05)}' +
+      'a.lcard:hover{border-color:var(--c-line-ind,#c7d2fe)}a.lcard:active{background:rgba(79,70,229,.05)}' +
       '.lcard-img{display:block;width:100%;aspect-ratio:1.91/1;object-fit:cover;background:linear-gradient(135deg,#eef2ff,#ecfeff);border-bottom:1px solid var(--border,#e5e7eb)}' +
       '.lcard-body{padding:10px 13px 11px;min-width:0}' +
       '.lcard-site{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;letter-spacing:.02em;color:var(--sub,#6b7280);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +

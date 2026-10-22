@@ -416,7 +416,7 @@
       '.ng-flag.big{width:34px;height:23px;border-radius:4px}' +
       '.ng-side{display:flex;align-items:center;gap:12px;margin:0 0 14px;padding:12px 14px;border-radius:14px;' +
         'background:linear-gradient(135deg,#e8f7ef,#fff);border:1.5px solid rgba(0,135,81,.28)}' +
-      '.ng-side .ng-t{font-size:13.5px;font-weight:800;color:#006b40;line-height:1.25}' +
+      '.ng-side .ng-t{font-size:13.5px;font-weight:800;color:var(--c-ok-txt,#006b40);line-height:1.25}' +
       '.ng-side .ng-s{font-size:12px;color:var(--c-sub,#4b5563);margin-top:2px}';
     document.head.appendChild(css);
 

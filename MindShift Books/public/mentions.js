@@ -5,7 +5,7 @@
 (function(){
   if(!document.getElementById('msb-mention-css')){
     var st=document.createElement('style'); st.id='msb-mention-css';
-    st.textContent='a.mention{color:#4f46e5;font-weight:700;text-decoration:none}a.mention:hover{text-decoration:underline}';
+    st.textContent='a.mention{color:var(--c-ind,#4f46e5);font-weight:700;text-decoration:none}a.mention:hover{text-decoration:underline}';
     document.head.appendChild(st);
   }
   window.msbLinkMentions=function(html, mentions){
