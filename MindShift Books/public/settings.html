@@ -410,7 +410,7 @@ const fbApp = initializeApp({
   measurementId: "G-CHPJDQ4W08"
 });
 const auth = getAuth(fbApp);
-const db   = getFirestore(fbApp);
+const db   = getFirestore(fbApp, 'default');   // the app's named database (every other page uses it); the unnamed one is empty
 const { resilient } = createResilient({ db, enableNetwork, disableNetwork });
 let currentUid = null;
 let currentName = '';
