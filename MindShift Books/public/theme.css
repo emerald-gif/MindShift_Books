@@ -107,11 +107,12 @@ html[data-theme="dark"] .pcard-single img{filter:brightness(.92)}
 html[data-theme="dark"]{
   --cbg1:#12161f; --cbg2:#0a0d14;                       /* Messages: the default ("classic") chat background; chat themes still override */
   --ink:#e8ebf2; --line:#262d3c;                         /* whats-new names */
+  --paper:#0a0d14; --soft:#1b212d;                       /* login / signup / publish names */
 }
 /* What's new has its own colour names */
 html[data-theme="dark"] .hero{background:linear-gradient(180deg,rgba(99,102,241,.16) 0%,var(--card) 100%)}
 html[data-theme="dark"] .cta{background:linear-gradient(180deg,rgba(var(--glass-rgb),0),var(--card) 38%)}
-html[data-theme="dark"]{--indigo:#8b8ff8;--indigo-d:#a5b4fc;--indigo-soft:rgba(99,102,241,.18);--green:#34d399;--green-soft:rgba(16,185,129,.16);
+html[data-theme="dark"]{--indigo:#6f73f3;--indigo-d:#a5b4fc;--indigo-soft:rgba(99,102,241,.18);--green:#34d399;--green-soft:rgba(16,185,129,.16);
   --amber:#fbbf24;--amber-soft:rgba(245,158,11,.16);--rose:#fb7185;--rose-soft:rgba(244,63,94,.16);--cyan:#22d3ee;--cyan-soft:rgba(6,182,212,.16)}
 html[data-theme="dark"] select{background-color:var(--card);color:var(--txt)}
 
@@ -145,6 +146,21 @@ html[data-theme="dark"] .cm-link-icon,
 html[data-theme="dark"] .metric-icon.comment{background:linear-gradient(135deg,rgba(245,158,11,.28),rgba(245,158,11,.16))}
 html[data-theme="dark"] .metric-icon.like{background:linear-gradient(135deg,rgba(239,68,68,.28),rgba(239,68,68,.16))}
 html[data-theme="dark"] .official-chip{background:linear-gradient(135deg,rgba(99,102,241,.22),rgba(6,182,212,.16))}
+
+
+/* ═════ store / account pages ═════ */
+html[data-theme="dark"] .help-hero{background:linear-gradient(180deg,#151b28 0%,#10151f 100%);border-color:var(--border)}
+html[data-theme="dark"] .help-quicknav .cat-icon{background:linear-gradient(135deg,rgba(99,102,241,.24),rgba(6,182,212,.16))}
+html[data-theme="dark"] .ab-skel,
+html[data-theme="dark"] .fe-skel,
+html[data-theme="dark"] .skel-img,
+html[data-theme="dark"] .skel-line,
+html[data-theme="dark"] .skel-btn{background-image:linear-gradient(90deg,#1b212d 25%,#262e3f 40%,#1b212d 63%)}
+html[data-theme="dark"] .voucher-page-banner,
+html[data-theme="dark"] .reward-teaser,
+html[data-theme="dark"] .cart-voucher-row{background:linear-gradient(135deg,rgba(245,158,11,.14),rgba(236,72,153,.1));border-color:rgba(251,191,36,.4)}
+html[data-theme="dark"] .our-standout .card-cover-wrap{background:linear-gradient(160deg,rgba(99,102,241,.2),rgba(6,182,212,.12))}
+html[data-theme="dark"] .bk-about.is-clamped::after{background:linear-gradient(180deg,rgba(10,13,20,0),var(--bg) 85%)}
 
 /* ── the Settings "Appearance" control (also used in the sidebar) ── */
 .msb-seg{display:flex;gap:4px;padding:4px;border-radius:14px;background:var(--ds-fill,rgba(15,23,42,.055))}
