@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>(function(){try{var c=localStorage.getItem('msb_theme'),d=c==='dark'||(c!=='light'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches),r=document.documentElement;r.setAttribute('data-theme',d?'dark':'light');r.style.colorScheme=d?'dark':'light'}catch(e){}})()</script>
+<script src="/theme.js" defer></script>
 <link rel="icon" href="/MINDSHIFT.jpg">
 
   <meta charset="UTF-8"/>
@@ -28,10 +30,10 @@
       font-size: 1.5rem; font-weight: 800; color: var(--primary);
       letter-spacing: -0.01em; margin: 0 0 6px;
     }
-    .legal-hero p { color: #64748b; font-size: 0.92rem; }
+    .legal-hero p { color: var(--c-sub2,#64748b); font-size: 0.92rem; }
 
     .legal-card {
-      background: #fff; border-radius: 16px;
+      background: var(--c-bg,#fff); border-radius: 16px;
       box-shadow: 0 18px 40px rgba(0,0,0,0.06);
       padding: 28px 24px; margin-bottom: 20px;
     }
@@ -44,15 +46,16 @@
       background: linear-gradient(180deg, #4f46e5, #06b6d4);
     }
     .legal-card p, .legal-card li {
-      font-size: 0.91rem; line-height: 1.7; color: #475569; margin: 0 0 10px;
+      font-size: 0.91rem; line-height: 1.7; color: var(--c-sub,#475569); margin: 0 0 10px;
     }
     .legal-card ul { padding-left: 18px; margin: 8px 0; }
     .legal-card li { margin-bottom: 6px; }
-    .legal-card a { color: #4f46e5; font-weight: 600; }
+    .legal-card a { color: var(--c-ind,#4f46e5); font-weight: 600; }
     .legal-updated {
-      font-size: 0.8rem; color: #94a3b8; text-align: center; margin-bottom: 30px;
+      font-size: 0.8rem; color: var(--c-mute,#94a3b8); text-align: center; margin-bottom: 30px;
     }
   </style>
+<link rel="stylesheet" href="/theme.css?v=1">
 </head>
 <body>
 
@@ -196,7 +199,7 @@
   </div>
 
   <div class="legal-updated" style="margin-top:8px;">
-    Questions? Email us at <a href="mailto:contact@mindshiftbooks.shop" style="color:#4f46e5;font-weight:700;">contact@mindshiftbooks.shop</a>
+    Questions? Email us at <a href="mailto:contact@mindshiftbooks.shop" style="color:var(--c-ind,#4f46e5);font-weight:700;">contact@mindshiftbooks.shop</a>
   </div>
 
 </main>

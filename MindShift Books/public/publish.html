@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>(function(){try{var c=localStorage.getItem('msb_theme'),d=c==='dark'||(c!=='light'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches),r=document.documentElement;r.setAttribute('data-theme',d?'dark':'light');r.style.colorScheme=d?'dark':'light'}catch(e){}})()</script>
+<script src="/theme.js" defer></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Publish your book · MindShift Books</title>
@@ -19,19 +21,19 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .hdr{position:sticky;top:0;z-index:100;background:var(--navy);padding:0 16px;height:56px;display:flex;align-items:center;gap:12px}
 .btn-back{width:36px;height:36px;border-radius:50%;border:1.5px solid rgba(255,255,255,.25);background:transparent;
   display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;flex-shrink:0}
-.btn-back:focus-visible,.cta:focus-visible,summary:focus-visible{outline:2px solid #a5b4fc;outline-offset:2px}
+.btn-back:focus-visible,.cta:focus-visible,summary:focus-visible{outline:2px solid var(--c-line-ind,#a5b4fc);outline-offset:2px}
 .btn-back svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
 .hdr-logo{display:flex;flex-shrink:0}
 .hdr-logo img{width:32px;height:32px;border-radius:6px;display:block}
 .hdr-title{font-size:15px;font-weight:800;color:#fff;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hdr-tag{font-size:11px;font-weight:800;color:var(--p);background:#fff;padding:3px 9px;border-radius:99px}
+.hdr-tag{font-size:11px;font-weight:800;color:var(--p);background:var(--c-bg,#fff);padding:3px 9px;border-radius:99px}
 
 /* hero */
 .hero{background:linear-gradient(135deg,#312e81 0%,#4f46e5 60%,#0891b2 100%);color:#fff;padding:36px 22px 40px}
 .hero .hdr-tag{display:inline-block;margin-bottom:14px}
 .hero h1{font-size:30px;line-height:1.15;font-weight:900;margin-bottom:12px;max-width:16ch}
 .hero p{font-size:15px;line-height:1.6;color:#e0e7ff;max-width:44ch;margin-bottom:22px}
-.cta{display:block;width:100%;max-width:340px;padding:14px;border-radius:10px;border:none;background:#fff;
+.cta{display:block;width:100%;max-width:340px;padding:14px;border-radius:10px;border:none;background:var(--c-bg,#fff);
   color:var(--p);font:inherit;font-size:15px;font-weight:800;text-align:center;cursor:not-allowed;opacity:.92}
 .hero-note{font-size:12px;color:#c7d2fe;margin-top:10px}
 
@@ -41,17 +43,17 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .section-lead{font-size:13.5px;color:var(--sub);line-height:1.55;margin-bottom:18px}
 .feats{display:grid;gap:14px}
 .feat{display:flex;gap:14px;align-items:flex-start;padding:16px;border:1px solid var(--border);border-radius:var(--radius)}
-.feat-icon{width:40px;height:40px;border-radius:10px;background:#eef2ff;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.feat-icon{width:40px;height:40px;border-radius:10px;background:var(--c-tonal,#eef2ff);flex-shrink:0;display:flex;align-items:center;justify-content:center}
 .feat-icon svg{width:20px;height:20px;fill:none;stroke:var(--amber-d);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .feat b{display:block;font-size:14.5px;margin-bottom:3px}
 .feat span{font-size:13px;color:var(--sub);line-height:1.55}
 
 /* steps (a real sequence, so numbered) */
-.steps{background:#eef2ff;margin-top:32px;padding:30px 20px}
+.steps{background:var(--c-tonal,#eef2ff);margin-top:32px;padding:30px 20px}
 .step-list{list-style:none;display:grid;gap:0;position:relative}
 .step{display:flex;gap:14px;padding-bottom:20px;position:relative}
 .step:last-child{padding-bottom:0}
-.step:not(:last-child)::before{content:'';position:absolute;left:15px;top:32px;bottom:2px;width:2px;background:#c7d2fe}
+.step:not(:last-child)::before{content:'';position:absolute;left:15px;top:32px;bottom:2px;width:2px;background:var(--c-tonal2,#c7d2fe)}
 .step-n{width:32px;height:32px;border-radius:50%;background:var(--navy);color:#fff;font-size:14px;font-weight:800;
   display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .step b{display:block;font-size:14.5px;margin:4px 0 2px}
@@ -74,6 +76,7 @@ details p{font-size:13px;color:var(--sub);line-height:1.6;padding:0 0 15px}
   .feat{flex-direction:column}
 }
 </style>
+<link rel="stylesheet" href="/theme.css?v=1">
 </head>
 <body>
 

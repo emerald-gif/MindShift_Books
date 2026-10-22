@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>(function(){try{var c=localStorage.getItem('msb_theme'),d=c==='dark'||(c!=='light'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches),r=document.documentElement;r.setAttribute('data-theme',d?'dark':'light');r.style.colorScheme=d?'dark':'light'}catch(e){}})()</script>
+<script src="/theme.js" defer></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Founding Creator · MindShift Books</title>
@@ -17,7 +19,7 @@
 }
 body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;padding-bottom:50px}
 
-.hdr{position:sticky;top:0;z-index:100;background:rgba(248,247,255,.92);backdrop-filter:blur(12px);
+.hdr{position:sticky;top:0;z-index:100;background:rgba(var(--glass-rgb,248,247,255),.92);backdrop-filter:blur(12px);
   border-bottom:1px solid var(--border);padding:0 16px;height:56px;
   display:flex;align-items:center;gap:12px}
 .btn-back{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--border);
@@ -57,7 +59,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 
 .tips-list{display:flex;flex-direction:column;gap:10px}
 .tip{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px}
-.tip-icon{width:34px;height:34px;border-radius:10px;background:#eef2ff;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.tip-icon{width:34px;height:34px;border-radius:10px;background:var(--c-tonal,#eef2ff);flex-shrink:0;display:flex;align-items:center;justify-content:center}
 .tip-icon svg{width:17px;height:17px;fill:none;stroke:var(--p);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .tip-txt{font-size:13px;color:var(--txt);line-height:1.5;padding-top:2px}
 .tip-txt b{display:block;font-size:13.5px;margin-bottom:2px}
@@ -70,6 +72,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 </style>
 <script src="/currency.js?v=5"></script>
+<link rel="stylesheet" href="/theme.css?v=1">
 </head>
 <body>
 

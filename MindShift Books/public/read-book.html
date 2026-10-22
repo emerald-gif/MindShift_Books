@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>(function(){try{var c=localStorage.getItem('msb_theme'),d=c==='dark'||(c!=='light'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches),r=document.documentElement;r.setAttribute('data-theme',d?'dark':'light');r.style.colorScheme=d?'dark':'light'}catch(e){}})()</script>
+<script src="/theme.js" defer></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Reading · MindShift Books</title>
@@ -15,7 +17,7 @@
 body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh}
 
 /* ── HEADER (matches content-insights.html's back-button header) ── */
-.hdr{position:sticky;top:0;z-index:100;background:rgba(248,247,255,.95);backdrop-filter:blur(12px);
+.hdr{position:sticky;top:0;z-index:100;background:rgba(var(--glass-rgb,248,247,255),.95);backdrop-filter:blur(12px);
   border-bottom:1px solid var(--border);padding:0 16px;height:56px;
   display:flex;align-items:center;justify-content:space-between;gap:8px}
 .btn-back,.hdr-open{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--border);
@@ -29,7 +31,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 
 /* ── PDF VIEWER (technique matches escape-preview.html) ── */
 .pdf-viewer{max-width:700px;margin:0 auto;padding:20px 14px 40px}
-.page-wrap{margin-bottom:16px;border-radius:12px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.1);background:#fff;position:relative}
+.page-wrap{margin-bottom:16px;border-radius:12px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.1);background:var(--c-bg,#fff);position:relative}
 .page-wrap canvas{display:block;width:100%;height:auto}
 /* Overlay to prevent long-press save on mobile */
 .page-wrap::after{content:'';position:absolute;inset:0;z-index:2;cursor:default}
@@ -45,11 +47,12 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .page-pill.visible{opacity:1}
 
 .dl-empty{text-align:center;padding:70px 24px}
-.dl-empty svg{width:40px;height:40px;margin:0 auto 12px;color:#d1d5db;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.dl-empty svg{width:40px;height:40px;margin:0 auto 12px;color:var(--c-faint,#d1d5db);fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
 .dl-empty p{font-size:14.5px;font-weight:800;color:var(--txt);margin-bottom:4px}
 .dl-empty span{font-size:12.5px;color:var(--mute)}
 .dl-empty a{display:inline-block;margin-top:16px;padding:10px 22px;border-radius:99px;background:var(--g);color:#fff;font-size:13px;font-weight:800;text-decoration:none}
 </style>
+<link rel="stylesheet" href="/theme.css?v=1">
 </head>
 <body>
 
