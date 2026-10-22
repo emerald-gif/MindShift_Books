@@ -68,7 +68,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .row-icon.account{background:var(--c-tonal2,#e0e7ff);color:var(--c-ind,#4f46e5)}
 .row-icon.privacy{background:var(--c-ok-bg,#d1fae5);color:var(--c-ok-txt,#059669)}
 .row-icon.terms{background:var(--c-warn-bg,#fef3c7);color:#d97706}
-.row-icon.support{background:var(--c-red-bg,#fce7f3);color:#db2777}
+.row-icon.support{background:var(--c-red-bg,#fce7f3);color:var(--c-pink-txt,#db2777)}
 .row-icon.logout{background:var(--c-red-bg,#fee2e2);color:var(--red)}
 .row-text{flex:1;min-width:0}
 .row-label{font-size:13.5px;font-weight:700;color:var(--txt)}
@@ -119,7 +119,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .toast.on{transform:translateX(-50%) translateY(0)}
 
 /* ── TOGGLE SWITCH (notification preferences) ── */
-.switch{position:relative;width:46px;height:28px;border-radius:99px;border:none;background:#cbd5e1;cursor:pointer;flex-shrink:0;padding:0;transition:background .2s;-webkit-tap-highlight-color:transparent}
+.switch{position:relative;width:46px;height:28px;border-radius:99px;border:none;background:var(--c-line2,#cbd5e1);cursor:pointer;flex-shrink:0;padding:0;transition:background .2s;-webkit-tap-highlight-color:transparent}
 .switch::after{content:'';position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--c-bg,#fff);box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}
 .switch[aria-checked="true"]{background:var(--p)}
 .switch[aria-checked="true"]::after{transform:translateX(18px)}

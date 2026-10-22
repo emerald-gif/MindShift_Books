@@ -255,8 +255,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   font-size:11px;font-weight:700;letter-spacing:.2px}
 .badge svg{width:10px;height:10px}
 .badge-pending{background:var(--c-warn-bg,#fef3c7);color:var(--c-warn-txt,#92400e)}
-.badge-approved{background:var(--c-ok-bg,#d1fae5);color:#065f46}
-.badge-rejected{background:var(--c-red-bg,#fee2e2);color:#991b1b}
+.badge-approved{background:var(--c-ok-bg,#d1fae5);color:var(--c-ok-txt,#065f46)}
+.badge-rejected{background:var(--c-red-bg,#fee2e2);color:var(--c-red-txt,#991b1b)}
 
 /* pending pulse */
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
@@ -325,7 +325,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .mention-intro:active{transform:scale(.99)}
 .mi-ico{width:34px;height:34px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,#4f46e5,#06b6d4);color:#fff;font-size:17px;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 10px -3px rgba(79,70,229,.5)}
 .mi-txt{flex:1;min-width:0;font-size:12.5px;line-height:1.4;color:var(--c-sub,#475569)}
-.mi-txt b{font-size:13.5px;font-weight:800;color:#312e81}
+.mi-txt b{font-size:13.5px;font-weight:800;color:var(--c-ind,#312e81)}
 .mi-new{display:inline-block;margin-right:7px;vertical-align:1px;background:#4f46e5;color:#fff;font-size:9px;font-weight:800;letter-spacing:.5px;padding:2px 6px;border-radius:99px}
 .mi-x{flex-shrink:0;width:28px;height:28px;border:none;background:rgba(var(--glass-rgb,255,255,255),.7);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--c-sub2,#64748b)}
 .mi-x svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
@@ -642,7 +642,7 @@ function showEditLoadError(what, retryFn){
   if(!b){
     b = document.createElement('div');
     b.id = 'editLoadBanner';
-    b.style.cssText = 'position:fixed;left:12px;right:12px;top:64px;z-index:400;background:var(--c-red-bg,#fff1f2);border:1.5px solid #fecdd3;color:#9f1239;border-radius:14px;padding:12px 14px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:10px;box-shadow:0 6px 24px rgba(0,0,0,.12)';
+    b.style.cssText = 'position:fixed;left:12px;right:12px;top:64px;z-index:400;background:var(--c-red-bg,#fff1f2);border:1.5px solid #fecdd3;color:var(--c-red-txt,#9f1239);border-radius:14px;padding:12px 14px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:10px;box-shadow:0 6px 24px rgba(0,0,0,.12)';
     document.body.appendChild(b);
   }
   b.innerHTML = `<span style="flex:1">Couldn't load your ${what}. Saving is disabled until it loads.</span><button style="background:#e11d48;color:#fff;border:none;padding:8px 14px;border-radius:99px;font-size:12.5px;font-weight:700;cursor:pointer">Try again</button>`;
