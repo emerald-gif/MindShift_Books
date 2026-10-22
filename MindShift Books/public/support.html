@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>(function(){try{var c=localStorage.getItem('msb_theme'),d=c==='dark'||(c!=='light'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches),r=document.documentElement;r.setAttribute('data-theme',d?'dark':'light');r.style.colorScheme=d?'dark':'light'}catch(e){}})()</script>
+<script src="/theme.js" defer></script>
 <link rel="icon" href="/MINDSHIFT.jpg">
 
   <meta charset="UTF-8"/>
@@ -28,19 +30,19 @@
       font-size: 1.55rem; font-weight: 800; color: var(--primary);
       letter-spacing: -0.01em; margin: 0 0 8px;
     }
-    .help-hero p { color: #64748b; font-size: 0.92rem; max-width: 440px; margin: 0 auto; }
+    .help-hero p { color: var(--c-sub2,#64748b); font-size: 0.92rem; max-width: 440px; margin: 0 auto; }
 
     .faq-search-wrap { position: relative; margin: 22px auto 0; max-width: 460px; }
     .faq-search-wrap input {
       width: 100%; padding: 14px 16px 14px 44px; border-radius: 14px;
-      border: 1px solid rgba(15,23,42,0.08); background: #fff;
+      border: 1px solid rgba(15,23,42,0.08); background: var(--c-bg,#fff);
       font-size: 0.95rem; color: var(--primary); outline: none;
       box-shadow: 0 12px 28px rgba(0,0,0,0.07);
     }
     .faq-search-wrap input:focus { border-color: var(--accent); }
     .faq-search-wrap svg {
       position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
-      color: #94a3b8; pointer-events: none;
+      color: var(--c-mute,#94a3b8); pointer-events: none;
     }
 
     /* ---------------- QUICK CATEGORY NAV ---------------- */
@@ -49,25 +51,25 @@
       gap: 12px; margin-bottom: 36px;
     }
     .help-quicknav a {
-      display: block; background: #fff; border-radius: 14px; padding: 18px 16px;
+      display: block; background: var(--c-bg,#fff); border-radius: 14px; padding: 18px 16px;
       text-decoration: none; box-shadow: 0 14px 32px rgba(0,0,0,0.05);
       border: 1px solid #eef2f7; transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
     .help-quicknav a:hover { transform: translateY(-2px); box-shadow: 0 18px 38px rgba(79,70,229,0.12); }
     .help-quicknav .cat-icon {
       width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
-      background: linear-gradient(135deg, #eef2ff, #ecfeff); color: #4f46e5; margin-bottom: 12px;
+      background: linear-gradient(135deg, #eef2ff, #ecfeff); color: var(--c-ind,#4f46e5); margin-bottom: 12px;
     }
     .help-quicknav .cat-title { font-size: 0.88rem; font-weight: 700; color: var(--primary); margin-bottom: 3px; }
-    .help-quicknav .cat-sub { font-size: 0.78rem; color: #94a3b8; }
+    .help-quicknav .cat-sub { font-size: 0.78rem; color: var(--c-mute,#94a3b8); }
 
     /* ---------------- FAQ SECTIONS ---------------- */
     .faq-category { margin-bottom: 30px; scroll-margin-top: 90px; }
     .section-head .cat-head-icon {
       width: 26px; height: 26px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center;
-      background: #eef2ff; color: #4f46e5; flex-shrink: 0;
+      background: var(--c-tonal,#eef2ff); color: var(--c-ind,#4f46e5); flex-shrink: 0;
     }
-    .faq-list { background: #fff; border-radius: 16px; box-shadow: 0 18px 40px rgba(0,0,0,0.06); overflow: hidden; }
+    .faq-list { background: var(--c-bg,#fff); border-radius: 16px; box-shadow: 0 18px 40px rgba(0,0,0,0.06); overflow: hidden; }
 
     .faq-item { border-bottom: 1px solid #eef2f7; }
     .faq-item:last-child { border-bottom: none; }
@@ -78,20 +80,20 @@
       padding: 17px 18px; font-family: 'Inter', sans-serif; font-weight: 700;
       font-size: 0.93rem; color: var(--primary); transition: color 0.15s ease;
     }
-    .faq-question:hover { color: #4f46e5; }
-    .faq-question .chev { flex-shrink: 0; transition: transform 0.2s ease; color: #94a3b8; }
+    .faq-question:hover { color: var(--c-ind,#4f46e5); }
+    .faq-question .chev { flex-shrink: 0; transition: transform 0.2s ease; color: var(--c-mute,#94a3b8); }
     .faq-item.open .faq-question .chev { transform: rotate(180deg); color: var(--accent); }
-    .faq-item.open .faq-question { color: #4f46e5; }
+    .faq-item.open .faq-question { color: var(--c-ind,#4f46e5); }
 
     .faq-answer { max-height: 0; overflow: hidden; transition: max-height 0.25s ease; }
-    .faq-answer-inner { padding: 0 18px 17px; font-size: 0.9rem; line-height: 1.6; color: #475569; }
+    .faq-answer-inner { padding: 0 18px 17px; font-size: 0.9rem; line-height: 1.6; color: var(--c-sub,#475569); }
     .faq-item.open .faq-answer { max-height: 400px; }
 
-    .faq-empty { display: none; text-align: center; padding: 26px; color: #94a3b8; font-size: 0.9rem; }
+    .faq-empty { display: none; text-align: center; padding: 26px; color: var(--c-mute,#94a3b8); font-size: 0.9rem; }
 
     /* ---------------- BOTTOM CTA ---------------- */
     .support-cta {
-      background: #0f172a; border-radius: 18px; padding: 30px 24px; text-align: center;
+      background: var(--c-ink-bg,#0f172a); border-radius: 18px; padding: 30px 24px; text-align: center;
       margin-top: 12px; margin-bottom: 30px; position: relative; overflow: hidden;
     }
     .support-cta::before {
@@ -99,7 +101,7 @@
       background: radial-gradient(circle at 50% 0%, rgba(6,182,212,0.16), transparent 60%);
     }
     .support-cta h3 { color: #fff; font-size: 1.08rem; margin: 0 0 6px; position: relative; }
-    .support-cta p { color: #94a3b8; font-size: 0.88rem; margin: 0 0 18px; position: relative; }
+    .support-cta p { color: var(--c-mute,#94a3b8); font-size: 0.88rem; margin: 0 0 18px; position: relative; }
     .support-cta-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; position: relative; }
     .support-cta-row .btn { width: auto; padding: 11px 20px; }
     .support-cta-row .cta-secondary {
@@ -125,6 +127,7 @@
   <meta name="twitter:description" content="Answers to common questions about your account, writing and reading articles, buying eBooks, and the affiliate program." />
   <meta name="twitter:image" content="https://mindshiftbooks.shop/og-image.jpg" />
   <link rel="canonical" href="https://mindshiftbooks.shop/support" />
+<link rel="stylesheet" href="/theme.css?v=1">
 </head>
 <body>
 
@@ -240,7 +243,7 @@
           <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </button>
         <div class="faq-answer"><div class="faq-answer-inner">
-          Tap the menu and choose "Sign Up" or "Log In," or head straight to <a href="/signup" style="color:#4f46e5;font-weight:700;">/signup</a>. You can sign up with an email and password, or continue with your Google account — whichever's faster.
+          Tap the menu and choose "Sign Up" or "Log In," or head straight to <a href="/signup" style="color:var(--c-ind,#4f46e5);font-weight:700;">/signup</a>. You can sign up with an email and password, or continue with your Google account — whichever's faster.
         </div></div>
       </div>
 
@@ -326,7 +329,7 @@
           <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </button>
         <div class="faq-answer"><div class="faq-answer-inner">
-          Go to <a href="/profile" style="color:#4f46e5;font-weight:700;">My Profile</a> from the menu and tap edit to update your photo, cover image, and bio. This is also where your articles, posts, and follower count live.
+          Go to <a href="/profile" style="color:var(--c-ind,#4f46e5);font-weight:700;">My Profile</a> from the menu and tap edit to update your photo, cover image, and bio. This is also where your articles, posts, and follower count live.
         </div></div>
       </div>
 
@@ -336,7 +339,7 @@
           <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </button>
         <div class="faq-answer"><div class="faq-answer-inner">
-          Open "My Insights" in the menu (or Profile Insights in <a href="/settings" style="color:#4f46e5;font-weight:700;">Settings</a>) to see how your profile is doing over time — views, follower growth, and how your articles are performing.
+          Open "My Insights" in the menu (or Profile Insights in <a href="/settings" style="color:var(--c-ind,#4f46e5);font-weight:700;">Settings</a>) to see how your profile is doing over time — views, follower growth, and how your articles are performing.
         </div></div>
       </div>
 
@@ -346,7 +349,7 @@
           <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </button>
         <div class="faq-answer"><div class="faq-answer-inner">
-          In <a href="/settings" style="color:#4f46e5;font-weight:700;">Settings</a>, tap "Share Profile" to copy your profile link — it points straight to your public page at <span style="color:#475569;font-weight:600;">/profile/@yourusername</span>.
+          In <a href="/settings" style="color:var(--c-ind,#4f46e5);font-weight:700;">Settings</a>, tap "Share Profile" to copy your profile link — it points straight to your public page at <span style="color:var(--c-sub,#475569);font-weight:600;">/profile/@yourusername</span>.
         </div></div>
       </div>
 
@@ -369,7 +372,7 @@
           <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </button>
         <div class="faq-answer"><div class="faq-answer-inner">
-          Head to the <a href="/books" style="color:#4f46e5;font-weight:700;">Bookstore</a> and tap a cover to open its Book Details page, or hit "Add to Cart" directly. Open your cart and tap "Proceed to Payment" — checkout completes securely through Paystack.
+          Head to the <a href="/books" style="color:var(--c-ind,#4f46e5);font-weight:700;">Bookstore</a> and tap a cover to open its Book Details page, or hit "Add to Cart" directly. Open your cart and tap "Proceed to Payment" — checkout completes securely through Paystack.
         </div></div>
       </div>
 
@@ -409,7 +412,7 @@
           <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </button>
         <div class="faq-answer"><div class="faq-answer-inner">
-          Sign in and open <a href="/settings#orders" style="color:#4f46e5;font-weight:700;">Order History in Settings</a> — everything tied to your account shows up there, no need to search by email.
+          Sign in and open <a href="/settings#orders" style="color:var(--c-ind,#4f46e5);font-weight:700;">Order History in Settings</a> — everything tied to your account shows up there, no need to search by email.
         </div></div>
       </div>
 
@@ -452,7 +455,7 @@
           <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </button>
         <div class="faq-answer"><div class="faq-answer-inner">
-          First, check your spam/junk or promotions folder — that's the most common cause. Still not there? Sign in and open <a href="/settings#orders" style="color:#4f46e5;font-weight:700;">Order History in Settings</a> and your download link(s) will show up there. If your order still isn't showing, email us at <a href="mailto:contact@mindshiftbooks.shop" style="color:#4f46e5;font-weight:700;">contact@mindshiftbooks.shop</a> with your order reference, or the email you used to pay, and we'll sort it out.
+          First, check your spam/junk or promotions folder — that's the most common cause. Still not there? Sign in and open <a href="/settings#orders" style="color:var(--c-ind,#4f46e5);font-weight:700;">Order History in Settings</a> and your download link(s) will show up there. If your order still isn't showing, email us at <a href="mailto:contact@mindshiftbooks.shop" style="color:var(--c-ind,#4f46e5);font-weight:700;">contact@mindshiftbooks.shop</a> with your order reference, or the email you used to pay, and we'll sort it out.
         </div></div>
       </div>
 
@@ -462,7 +465,7 @@
           <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </button>
         <div class="faq-answer"><div class="faq-answer-inner">
-          Yes — sign in and open <a href="/settings#orders" style="color:#4f46e5;font-weight:700;">Order History in Settings</a>, and your past purchases (with download links) will be right there. If you bought before you had an account, signing up with the same email you paid with automatically links those past orders to your new account.
+          Yes — sign in and open <a href="/settings#orders" style="color:var(--c-ind,#4f46e5);font-weight:700;">Order History in Settings</a>, and your past purchases (with download links) will be right there. If you bought before you had an account, signing up with the same email you paid with automatically links those past orders to your new account.
         </div></div>
       </div>
 
@@ -482,7 +485,7 @@
           <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </button>
         <div class="faq-answer"><div class="faq-answer-inner">
-          Tap the heart icon on any book to save it to <a href="/wishlist" style="color:#4f46e5;font-weight:700;">My Wishlist</a> for later — it's just a shortlist, nothing is charged until you actually add a book to your cart and check out.
+          Tap the heart icon on any book to save it to <a href="/wishlist" style="color:var(--c-ind,#4f46e5);font-weight:700;">My Wishlist</a> for later — it's just a shortlist, nothing is charged until you actually add a book to your cart and check out.
         </div></div>
       </div>
 
@@ -492,7 +495,7 @@
           <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </button>
         <div class="faq-answer"><div class="faq-answer-inner">
-          A rotating shelf of titles you can download at no cost, no payment step involved. Find them under <a href="/free-ebooks" style="color:#4f46e5;font-weight:700;">Free eBooks</a> in the menu.
+          A rotating shelf of titles you can download at no cost, no payment step involved. Find them under <a href="/free-ebooks" style="color:var(--c-ind,#4f46e5);font-weight:700;">Free eBooks</a> in the menu.
         </div></div>
       </div>
 
@@ -525,7 +528,7 @@
           <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </button>
         <div class="faq-answer"><div class="faq-answer-inner">
-          Tap "Become an Affiliate" in the menu or footer, or go straight to <a href="/affiliate" style="color:#4f46e5;font-weight:700;">/affiliate</a> and hit "Become an affiliate." Sign in (or create a free account) and your unique referral link is generated instantly — no application review, no minimum followers.
+          Tap "Become an Affiliate" in the menu or footer, or go straight to <a href="/affiliate" style="color:var(--c-ind,#4f46e5);font-weight:700;">/affiliate</a> and hit "Become an affiliate." Sign in (or create a free account) and your unique referral link is generated instantly — no application review, no minimum followers.
         </div></div>
       </div>
 
@@ -565,7 +568,7 @@
           <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </button>
         <div class="faq-answer"><div class="faq-answer-inner">
-          Sign in and open <a href="/affiliate/dashboard" style="color:#4f46e5;font-weight:700;">your affiliate dashboard</a> — it shows your link, clicks, sign-ups, books sold, and running balance in real time. Your bank details and payout history live under <a href="/affiliate/payout" style="color:#4f46e5;font-weight:700;">Payout</a>.
+          Sign in and open <a href="/affiliate/dashboard" style="color:var(--c-ind,#4f46e5);font-weight:700;">your affiliate dashboard</a> — it shows your link, clicks, sign-ups, books sold, and running balance in real time. Your bank details and payout history live under <a href="/affiliate/payout" style="color:var(--c-ind,#4f46e5);font-weight:700;">Payout</a>.
         </div></div>
       </div>
 
@@ -608,7 +611,7 @@
           <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </button>
         <div class="faq-answer"><div class="faq-answer-inner">
-          Since each purchase unlocks an instant digital download, refund requests are reviewed case by case. Email us at <a href="mailto:contact@mindshiftbooks.shop" style="color:#4f46e5;font-weight:700;">contact@mindshiftbooks.shop</a> with your order reference and what happened, and we'll take it from there.
+          Since each purchase unlocks an instant digital download, refund requests are reviewed case by case. Email us at <a href="mailto:contact@mindshiftbooks.shop" style="color:var(--c-ind,#4f46e5);font-weight:700;">contact@mindshiftbooks.shop</a> with your order reference and what happened, and we'll take it from there.
         </div></div>
       </div>
 
@@ -618,7 +621,7 @@
           <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </button>
         <div class="faq-answer"><div class="faq-answer-inner">
-          Email <a href="mailto:contact@mindshiftbooks.shop" style="color:#4f46e5;font-weight:700;">contact@mindshiftbooks.shop</a>, or tap "Contact Us" in the menu — we typically reply within a day.
+          Email <a href="mailto:contact@mindshiftbooks.shop" style="color:var(--c-ind,#4f46e5);font-weight:700;">contact@mindshiftbooks.shop</a>, or tap "Contact Us" in the menu — we typically reply within a day.
         </div></div>
       </div>
 
