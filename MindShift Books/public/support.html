@@ -18,7 +18,7 @@
     .help-hero {
       text-align: center; padding: 36px 20px 32px; margin: 0 0 28px;
       background: linear-gradient(180deg, #ffffff 0%, #f4f7fb 100%);
-      border-radius: 20px; border: 1px solid #eef2f7;
+      border-radius: 20px; border: 1px solid var(--c-line,#eef2f7);
     }
     .help-hero .eyebrow {
       display: inline-flex; align-items: center; gap: 6px;
@@ -53,7 +53,7 @@
     .help-quicknav a {
       display: block; background: var(--c-bg,#fff); border-radius: 14px; padding: 18px 16px;
       text-decoration: none; box-shadow: 0 14px 32px rgba(0,0,0,0.05);
-      border: 1px solid #eef2f7; transition: transform 0.15s ease, box-shadow 0.15s ease;
+      border: 1px solid var(--c-line,#eef2f7); transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
     .help-quicknav a:hover { transform: translateY(-2px); box-shadow: 0 18px 38px rgba(79,70,229,0.12); }
     .help-quicknav .cat-icon {
@@ -71,7 +71,7 @@
     }
     .faq-list { background: var(--c-bg,#fff); border-radius: 16px; box-shadow: 0 18px 40px rgba(0,0,0,0.06); overflow: hidden; }
 
-    .faq-item { border-bottom: 1px solid #eef2f7; }
+    .faq-item { border-bottom: 1px solid var(--c-line,#eef2f7); }
     .faq-item:last-child { border-bottom: none; }
     .faq-item.open { background: var(--c-tonal,#fafbfd); }
     .faq-question {

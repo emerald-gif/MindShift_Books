@@ -104,7 +104,7 @@ body{font-family:'Inter',sans-serif;color:var(--primary);min-height:100vh;overfl
 .submit-btn:disabled{ opacity:0.6; cursor:default; transform:none; }
 .submit-btn:disabled::before{
   content:''; width:15px; height:15px; border-radius:50%; flex-shrink:0;
-  border:2px solid rgba(255,255,255,0.4); border-top-color:#fff;
+  border:2px solid rgba(255,255,255,0.4); border-top-color:var(--c-bg,#fff);
   animation: spin 0.7s linear infinite;
 }
 @keyframes spin{ to{ transform:rotate(360deg); } }
