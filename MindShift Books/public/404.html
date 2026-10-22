@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>(function(){try{var c=localStorage.getItem('msb_theme'),d=c==='dark'||(c!=='light'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches),r=document.documentElement;r.setAttribute('data-theme',d?'dark':'light');r.style.colorScheme=d?'dark':'light'}catch(e){}})()</script>
+<script src="/theme.js" defer></script>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Page Not Found | MindShift Books</title>
@@ -22,12 +24,13 @@
       margin-bottom: 10px;
     }
     .notfound-sub {
-      color: #64748b; font-size: 0.92rem; max-width: 320px;
+      color: var(--c-sub2,#64748b); font-size: 0.92rem; max-width: 320px;
       line-height: 1.6; margin-bottom: 28px;
     }
     .notfound-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
     .notfound-actions .btn { width: auto; padding: 12px 22px; }
   </style>
+<link rel="stylesheet" href="/theme.css?v=1">
 </head>
 <body>
 

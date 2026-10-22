@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>(function(){try{var c=localStorage.getItem('msb_theme'),d=c==='dark'||(c!=='light'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches),r=document.documentElement;r.setAttribute('data-theme',d?'dark':'light');r.style.colorScheme=d?'dark':'light'}catch(e){}})()</script>
+<script src="/theme.js" defer></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Complete Your Profile · MindShift Books</title>
@@ -16,7 +18,7 @@
 }
 body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;padding-bottom:40px}
 
-.hdr{position:sticky;top:0;z-index:100;background:rgba(248,247,255,.92);backdrop-filter:blur(12px);
+.hdr{position:sticky;top:0;z-index:100;background:rgba(var(--glass-rgb,248,247,255),.92);backdrop-filter:blur(12px);
   border-bottom:1px solid var(--border);padding:0 16px;height:56px;
   display:flex;align-items:center;gap:12px}
 .btn-back{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--border);
@@ -38,8 +40,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .reward-teaser.hide{display:none}
 .reward-teaser-emoji{font-size:28px;flex-shrink:0;animation:teaserGiftBounce 2.2s ease-in-out infinite}
 @keyframes teaserGiftBounce{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-3px) rotate(-8deg)}}
-.reward-teaser-title{font-size:14.5px;font-weight:900;color:#9a3412}
-.reward-teaser-sub{font-size:11.5px;color:#c2410c;margin-top:2px;opacity:.85}
+.reward-teaser-title{font-size:14.5px;font-weight:900;color:var(--c-warn-txt,#9a3412)}
+.reward-teaser-sub{font-size:11.5px;color:var(--c-warn-txt,#c2410c);margin-top:2px;opacity:.85}
 
 .progress-wrap{padding:18px 20px 4px}
 .progress-bar{height:8px;border-radius:99px;background:var(--border);overflow:hidden}
@@ -76,7 +78,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 @keyframes finishGiftPop{0%{transform:scale(0) rotate(-20deg)}60%{transform:scale(1.2) rotate(8deg)}100%{transform:scale(1) rotate(0deg)}}
 .finish-banner h3{font-size:17px;font-weight:900;margin-bottom:4px}
 .finish-banner p{font-size:12.5px;opacity:.95;line-height:1.4}
-.finish-cta{margin-top:16px;padding:11px 22px;border-radius:99px;border:none;background:#fff;color:#c026d3;
+.finish-cta{margin-top:16px;padding:11px 22px;border-radius:99px;border:none;background:var(--c-bg,#fff);color:#c026d3;
   font-size:13.5px;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 4px 12px rgba(0,0,0,.15)}
 
 .skel{background:linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%);
@@ -84,6 +86,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 </style>
 <script src="/currency.js?v=5"></script>
+<link rel="stylesheet" href="/theme.css?v=1">
 </head>
 <body>
 

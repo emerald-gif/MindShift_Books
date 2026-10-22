@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>(function(){try{var c=localStorage.getItem('msb_theme'),d=c==='dark'||(c!=='light'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches),r=document.documentElement;r.setAttribute('data-theme',d?'dark':'light');r.style.colorScheme=d?'dark':'light'}catch(e){}})()</script>
+<script src="/theme.js" defer></script>
 <base href="/">
 <link rel="icon" href="/MINDSHIFT.jpg">
 
@@ -26,15 +28,15 @@
       position: sticky; top: 0; z-index: 20;
       display: flex; align-items: center; gap: 10px;
       margin: 0 -16px 10px; padding: 12px 16px;
-      background: rgba(248,250,252,0.94);
+      background: rgba(var(--glass-rgb,248,250,252),0.94);
       -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
     }
     .ab-back-btn { flex-shrink: 0; }
     .ab-search-wrap {
       position: relative; flex: 1; display: flex; align-items: center;
-      background: #eef2f6; border-radius: 999px; padding: 0 14px;
+      background: var(--c-surface,#eef2f6); border-radius: 999px; padding: 0 14px;
     }
-    .ab-search-wrap svg { color: #94a3b8; flex-shrink: 0; }
+    .ab-search-wrap svg { color: var(--c-mute,#94a3b8); flex-shrink: 0; }
     .ab-search-wrap input {
       flex: 1; border: none; outline: none; background: transparent;
       font-size: 0.92rem; padding: 11px 8px; color: var(--primary); font-family: inherit;
@@ -50,12 +52,12 @@
     .msb-cat-bar::-webkit-scrollbar { display: none; }
     .msb-cat-pill {
       flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px;
-      padding: 8px 16px; border-radius: 999px; border: 1.5px solid #e2e8f0;
-      background: #fff; color: #475569; font-size: 0.86rem; font-weight: 600;
+      padding: 8px 16px; border-radius: 999px; border: 1.5px solid var(--c-line,#e2e8f0);
+      background: var(--c-bg,#fff); color: var(--c-sub,#475569); font-size: 0.86rem; font-weight: 600;
       cursor: pointer; white-space: nowrap; transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
     }
-    .msb-cat-pill:hover { border-color: #cbd5e1; }
-    .msb-cat-pill.is-active { background: var(--primary); border-color: var(--primary); color: #fff; }
+    .msb-cat-pill:hover { border-color: var(--c-line2,#cbd5e1); }
+    .msb-cat-pill.is-active { background: var(--c-ink-bg,var(--primary)); border-color: var(--primary); color: #fff; }
 
     /* ---- Row list ---- */
     .ab-list { display: flex; flex-direction: column; }
@@ -73,13 +75,13 @@
       font-weight: 700; font-size: 0.98rem; color: var(--primary);
       line-height: 1.3; cursor: pointer;
     }
-    .ab-row-author { font-size: 0.82rem; color: #64748b; font-weight: 600; margin: 2px 0 8px; }
+    .ab-row-author { font-size: 0.82rem; color: var(--c-sub2,#64748b); font-weight: 600; margin: 2px 0 8px; }
     .ab-row-price-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
     .ab-row-price { font-weight: 800; font-size: 1rem; color: var(--primary); }
-    .ab-row-price-old { font-size: 0.82rem; color: #9ca3af; text-decoration: line-through; }
+    .ab-row-price-old { font-size: 0.82rem; color: var(--c-mute,#9ca3af); text-decoration: line-through; }
     .ab-row-discount {
-      background: #fef2f2; color: #dc2626; font-size: 0.7rem; font-weight: 700;
-      padding: 2px 8px; border-radius: 20px; border: 1px solid #fecaca;
+      background: var(--c-red-bg,#fef2f2); color: var(--c-red-txt,#dc2626); font-size: 0.7rem; font-weight: 700;
+      padding: 2px 8px; border-radius: 20px; border: 1px solid var(--c-line-red,#fecaca);
     }
     .ab-row-add {
       background: linear-gradient(90deg,#4f46e5,#06b6d4); color: #fff; border: none;
@@ -89,7 +91,7 @@
     /* Details + round cart-icon button, side by side under the price */
     .ab-row-actions { display: flex; align-items: center; gap: 8px; }
     .ab-row-details {
-      flex: 1; border: 2px solid rgba(15,23,42,0.06); background: #fff;
+      flex: 1; border: 2px solid rgba(15,23,42,0.06); background: var(--c-bg,#fff);
       color: var(--primary); font-weight: 700; font-size: 0.85rem;
       padding: 9px 10px; border-radius: 10px; cursor: pointer; font-family: inherit;
     }
@@ -105,12 +107,12 @@
     .ab-skeleton-row .ab-skel-line { height: 12px; }
     @keyframes ab-shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
 
-    .ab-error { padding: 40px 20px; text-align: center; color: #64748b; font-size: 0.92rem; }
+    .ab-error { padding: 40px 20px; text-align: center; color: var(--c-sub2,#64748b); font-size: 0.92rem; }
     .ab-error button {
       margin-top: 12px; background: linear-gradient(90deg,#4f46e5,#06b6d4); color: #fff; border: none;
       padding: 10px 20px; border-radius: 10px; font-weight: 700; font-size: 0.85rem; cursor: pointer;
     }
-    .ab-empty { padding: 40px 0; text-align: center; color: #94a3b8; font-size: 0.92rem; }
+    .ab-empty { padding: 40px 0; text-align: center; color: var(--c-mute,#94a3b8); font-size: 0.92rem; }
 
     /* Sticky checkout bar — appears as soon as something is in the cart */
     .ab-cartbar {
@@ -125,10 +127,11 @@
     .ab-cartbar-info { font-size: 0.82rem; font-weight: 600; line-height: 1.25; opacity: 0.95; }
     .ab-cartbar-info strong { display: block; font-size: 1.02rem; font-weight: 800; opacity: 1; }
     .ab-cartbar-btn {
-      background: #fff; color: #4f46e5; border: none; border-radius: 11px;
+      background: var(--c-bg,#fff); color: var(--c-ind,#4f46e5); border: none; border-radius: 11px;
       padding: 11px 18px; font-weight: 800; font-size: 0.88rem; cursor: pointer; white-space: nowrap;
     }
   </style>
+<link rel="stylesheet" href="/theme.css?v=1">
 </head>
 <body>
 
@@ -389,7 +392,7 @@
           You'll be redirected after payment and your PDFs will be emailed automatically — or check anytime under My Account.
         </div>
         <div class="muted" style="margin-top:6px;text-align:center;font-size:0.82rem;">
-          <a href="/support#faq-payment-methods" style="color:#4f46e5;font-weight:700;">Questions about payment?</a>
+          <a href="/support#faq-payment-methods" style="color:var(--c-ind,#4f46e5);font-weight:700;">Questions about payment?</a>
         </div>
       </div>
 

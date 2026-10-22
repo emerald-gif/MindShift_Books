@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>(function(){try{var c=localStorage.getItem('msb_theme'),d=c==='dark'||(c!=='light'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches),r=document.documentElement;r.setAttribute('data-theme',d?'dark':'light');r.style.colorScheme=d?'dark':'light'}catch(e){}})()</script>
+<script src="/theme.js" defer></script>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
 <title>Writing Guide · MindShift Books</title>
@@ -21,7 +23,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   min-height:100vh;-webkit-font-smoothing:antialiased}
 
 /* ── HEADER ── */
-.hdr{position:sticky;top:0;z-index:100;background:rgba(248,247,255,.92);backdrop-filter:blur(12px);
+.hdr{position:sticky;top:0;z-index:100;background:rgba(var(--glass-rgb,248,247,255),.92);backdrop-filter:blur(12px);
   border-bottom:1px solid var(--border);padding:0 16px;height:56px;
   display:flex;align-items:center;gap:12px}
 .btn-back{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--border);background:var(--card);
@@ -65,14 +67,14 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .feat-desc{font-size:13px;color:var(--sub);line-height:1.5}
 .feat-hint{display:inline-flex;align-items:center;gap:5px;margin-top:8px;font-size:11.5px;
   font-weight:700;color:var(--ps);background:#f8f5ff;padding:4px 10px;border-radius:99px}
-.feat-hint kbd{background:#fff;border:1px solid var(--border2);border-radius:5px;
+.feat-hint kbd{background:var(--c-bg,#fff);border:1px solid var(--border2);border-radius:5px;
   padding:1px 6px;font-family:'SF Mono',Consolas,monospace;font-size:11px;color:var(--p)}
 .feat-demo{background:var(--bg);border:1px solid var(--border);border-radius:11px;
   padding:14px 16px;font-size:14.5px}
 
 /* ── art-body clone — used inside demos & the anatomy mockup so they match
    article-read.html's rendering exactly, not an approximation ── */
-.art-body{line-height:1.75;color:#374151}
+.art-body{line-height:1.75;color:var(--c-sub,#374151)}
 .art-body p{margin-bottom:10px}
 .art-body h2{font-size:18px;font-weight:900;color:var(--txt);line-height:1.3;margin:4px 0 8px;letter-spacing:-.3px}
 .art-body h3{font-size:15.5px;font-weight:800;color:var(--txt);margin:4px 0 6px}
@@ -81,8 +83,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .art-body strong{color:var(--txt);font-weight:800}
 .art-body em{font-style:italic;color:var(--sub)}
 .art-body s{color:var(--sub)}
-.art-body code{font-size:12.5px;background:#f1f5f9;padding:2px 7px;border-radius:5px;
-  font-family:'SF Mono',Consolas,monospace;color:#0f172a}
+.art-body code{font-size:12.5px;background:var(--c-surface,#f1f5f9);padding:2px 7px;border-radius:5px;
+  font-family:'SF Mono',Consolas,monospace;color:var(--c-ink,#0f172a)}
 .art-body hr{border:none;border-top:2px solid #ece9f5;margin:14px 0}
 .art-body blockquote{background:#f8f5ff;border-left:4px solid var(--p);border-radius:0 10px 10px 0;
   padding:10px 14px;margin:10px 0;font-style:italic;color:var(--ps)}
@@ -103,7 +105,7 @@ kbd{background:var(--bg);border:1px solid var(--border2);border-radius:6px;paddi
 /* ── SMART FEATURE CARDS ── */
 .smart-card{display:flex;gap:14px;background:var(--card);border:1.5px solid var(--border2);
   border-radius:16px;padding:16px;margin-bottom:10px}
-.smart-icon{width:38px;height:38px;border-radius:11px;background:#ecfdf5;color:#059669;
+.smart-icon{width:38px;height:38px;border-radius:11px;background:var(--c-ok-bg,#ecfdf5);color:var(--c-ok-txt,#059669);
   display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .smart-icon svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;
   stroke-linecap:round;stroke-linejoin:round}
@@ -126,7 +128,7 @@ kbd{background:var(--bg);border:1px solid var(--border2);border-radius:6px;paddi
 .an-title{font-size:22px;font-weight:900;line-height:1.22;letter-spacing:-.5px;color:var(--txt);margin-bottom:14px}
 /* .author-row-wrap / .author-row clone */
 .an-author-row{display:flex;align-items:center;justify-content:space-between;gap:12px;
-  padding-bottom:14px;border-bottom:1px solid #f3f4f6;margin-bottom:0}
+  padding-bottom:14px;border-bottom:1px solid var(--c-line,#f3f4f6);margin-bottom:0}
 .an-author-left{display:flex;align-items:center;gap:10px}
 .an-avatar{width:34px;height:34px;border-radius:50%;background:var(--g);flex-shrink:0;border:2px solid var(--border)}
 .an-author-name{font-size:14px;font-weight:700;color:var(--txt);display:flex;align-items:center;gap:5px}
@@ -135,7 +137,7 @@ kbd{background:var(--bg);border:1px solid var(--border2);border-radius:6px;paddi
 .an-vbadge svg{width:9px;height:9px;stroke:#fff;stroke-width:3;fill:none}
 .an-author-meta{font-size:12px;color:var(--mute)}
 /* .action-bar clone — same 6 icons, same order, save pushed right */
-.an-actions{display:flex;align-items:center;gap:24px;padding:14px 0 16px;border-bottom:1px solid #f3f4f6;
+.an-actions{display:flex;align-items:center;gap:24px;padding:14px 0 16px;border-bottom:1px solid var(--c-line,#f3f4f6);
   margin-bottom:16px;overflow-x:hidden}
 .an-act-btn{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--sub)}
 .an-act-btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;flex-shrink:0}
@@ -157,7 +159,7 @@ kbd{background:var(--bg);border:1px solid var(--border2);border-radius:6px;paddi
   margin-top:10px}
 .cta h3{font-size:18px;font-weight:900;margin-bottom:6px}
 .cta p{font-size:13px;opacity:.92;margin-bottom:16px;line-height:1.5}
-.cta a{display:inline-flex;align-items:center;gap:6px;background:#fff;color:var(--p);
+.cta a{display:inline-flex;align-items:center;gap:6px;background:var(--c-bg,#fff);color:var(--p);
   font-size:14px;font-weight:800;padding:11px 22px;border-radius:99px;text-decoration:none}
 
 @media(max-width:420px){
@@ -165,6 +167,7 @@ kbd{background:var(--bg);border:1px solid var(--border2);border-radius:6px;paddi
   .feat-top{flex-wrap:wrap}
 }
 </style>
+<link rel="stylesheet" href="/theme.css?v=1">
 </head>
 <body>
 
@@ -278,7 +281,7 @@ kbd{background:var(--bg);border:1px solid var(--border2);border-radius:6px;paddi
             <div class="feat-desc">Pick from preset colors or any custom shade.</div>
           </div>
         </div>
-        <div class="feat-demo art-body">Make a <span style="color:#dc2626;font-weight:700">warning</span> or <span style="color:#059669;font-weight:700">key takeaway</span> visually distinct.</div>
+        <div class="feat-demo art-body">Make a <span style="color:var(--c-red-txt,#dc2626);font-weight:700">warning</span> or <span style="color:var(--c-ok-txt,#059669);font-weight:700">key takeaway</span> visually distinct.</div>
       </div>
 
       <div class="feat-card">
