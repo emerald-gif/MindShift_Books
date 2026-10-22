@@ -9,7 +9,7 @@
     st.textContent =
       '.lcard{position:relative;display:block;margin:12px 0 4px;border:1px solid var(--border,#e5e7eb);border-radius:14px;overflow:hidden;background:var(--card,#fff);color:var(--txt,#0f172a);text-decoration:none;-webkit-tap-highlight-color:transparent;transition:background .15s,border-color .15s}' +
       'a.lcard:hover{border-color:var(--c-line-ind,#c7d2fe)}a.lcard:active{background:rgba(79,70,229,.05)}' +
-      '.lcard-img{display:block;width:100%;aspect-ratio:1.91/1;object-fit:cover;background:linear-gradient(135deg,#eef2ff,#ecfeff);border-bottom:1px solid var(--border,#e5e7eb)}' +
+      '.lcard-img{display:block;width:100%;aspect-ratio:1.91/1;object-fit:cover;background:linear-gradient(135deg,var(--c-surface,#eef2ff),var(--c-bg,#ecfeff));border-bottom:1px solid var(--border,#e5e7eb)}' +
       '.lcard-body{padding:10px 13px 11px;min-width:0}' +
       '.lcard-site{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;letter-spacing:.02em;color:var(--sub,#6b7280);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
       '.lcard-site svg{width:12px;height:12px;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}' +
@@ -19,7 +19,7 @@
       '.lcard-x svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}' +
       '.lcard.noimg .lcard-x{top:6px;right:6px;background:rgba(100,116,139,.16);color:var(--sub,#6b7280)}' +
       '.lcard.noimg .lcard-body{padding-right:44px}' +
-      '.lcard.skel .sk{border-radius:6px;background:linear-gradient(90deg,#eef0f4 25%,#f6f7fa 50%,#eef0f4 75%);background-size:200% 100%;animation:lcsk 1.2s infinite}' +
+      '.lcard.skel .sk{border-radius:6px;background:linear-gradient(90deg,var(--c-surface,#eef0f4) 25%,var(--c-bg,#f6f7fa) 50%,var(--c-surface,#eef0f4) 75%);background-size:200% 100%;animation:lcsk 1.2s infinite}' +
       '@keyframes lcsk{to{background-position:-200% 0}}' +
       '@media (prefers-color-scheme:dark){html[data-theme=dark] .lcard{background:var(--card,#14141f)}}';
     document.head.appendChild(st);

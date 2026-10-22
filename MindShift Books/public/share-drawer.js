@@ -62,7 +62,7 @@
 #msbShare .msd-row.on .msd-ck::after{content:'';width:6px;height:11px;border:solid var(--c-bg,#fff);border-width:0 2.5px 2.5px 0;transform:rotate(45deg) translate(-1px,-1px)}
 #msbShare .msd-empty{padding:30px 24px;text-align:center;color:var(--c-sub2,#64748b);font-size:14.5px;line-height:1.5}
 #msbShare .msd-empty a{color:var(--c-ind,#4f46e5);font-weight:800}
-#msbShare .msd-sk{height:58px;margin:6px 10px;border-radius:14px;background:linear-gradient(90deg,#f1f5f9,#e8ebf4,#f1f5f9);background-size:200% 100%;animation:msdSk 1.2s infinite}
+#msbShare .msd-sk{height:58px;margin:6px 10px;border-radius:14px;background:linear-gradient(90deg,var(--c-surface,#f1f5f9),var(--c-surface,#e8ebf4),var(--c-surface,#f1f5f9));background-size:200% 100%;animation:msdSk 1.2s infinite}
 @keyframes msdSk{to{background-position:-200% 0}}
 #msbShare .msd-send{flex:none;display:none;gap:10px;align-items:center;padding:10px 14px;border-top:1px solid var(--c-line,#eceef5);background:var(--c-bg,#fff)}
 #msbShare .msd-send.on{display:flex}

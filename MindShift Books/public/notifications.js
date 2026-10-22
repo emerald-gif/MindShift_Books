@@ -62,14 +62,14 @@ function injectStylesOnce() {
 .notif-group-label{font-size:11.5px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:var(--mute,#94a3b8);padding:18px 20px 8px}
 
 .notif-empty{text-align:center;padding:72px 32px 40px}
-.notif-empty-ico{width:84px;height:84px;margin:0 auto 18px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:linear-gradient(135deg,#eef2ff,#e0f2fe);box-shadow:0 8px 24px rgba(79,70,229,.12)}
+.notif-empty-ico{width:84px;height:84px;margin:0 auto 18px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:linear-gradient(135deg,var(--c-surface,#eef2ff),var(--c-tonal,#e0f2fe));box-shadow:0 8px 24px rgba(79,70,229,.12)}
 .notif-empty-ico svg{stroke:var(--p,#4f46e5)!important}
 .notif-empty-ttl{font-size:17px;font-weight:900;color:var(--txt,#0f172a);margin-bottom:8px;letter-spacing:-.2px}
 .notif-empty-sub{font-size:13.5px;color:var(--mute,#94a3b8);line-height:1.65;max-width:280px;margin:0 auto}
 
 .notif-item{display:flex;align-items:flex-start;gap:13px;margin:4px 12px;padding:13px 14px;cursor:pointer;transition:background .15s,transform .15s,box-shadow .15s;position:relative;background:var(--c-bg,#fff);border-radius:16px;border:1px solid rgba(15,23,42,.05);animation:nitemin .35s ease both;-webkit-tap-highlight-color:transparent}
 .notif-item:active{transform:scale(.985);background:var(--c-bg2,#f8fafc)}
-.notif-item.unread{background:linear-gradient(90deg,#eef2ff 0%,#f5f8ff 100%);border-color:rgba(79,70,229,.14);box-shadow:0 2px 10px rgba(79,70,229,.07)}
+.notif-item.unread{background:linear-gradient(90deg,var(--c-surface,#eef2ff) 0%,var(--c-bg,#f5f8ff) 100%);border-color:rgba(79,70,229,.14);box-shadow:0 2px 10px rgba(79,70,229,.07)}
 .notif-item.unread::before{content:'';position:absolute;left:0;top:14px;bottom:14px;width:3px;border-radius:0 3px 3px 0;background:var(--p,#4f46e5)}
 @keyframes nitemin{0%{opacity:0;transform:translateY(8px)}100%{opacity:1;transform:none}}
 
@@ -112,7 +112,7 @@ function injectStylesOnce() {
 @keyframes nspin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
 
 .notif-skel{display:flex;gap:13px;margin:4px 12px;padding:14px;background:var(--c-bg,#fff);border-radius:16px;border:1px solid rgba(15,23,42,.05)}
-.notif-skel-av,.notif-skel-l1,.notif-skel-l2{background:linear-gradient(90deg,#eef2f7 25%,#f8fafc 50%,#eef2f7 75%);background-size:200% 100%;animation:nshimmer 1.3s linear infinite}
+.notif-skel-av,.notif-skel-l1,.notif-skel-l2{background:linear-gradient(90deg,var(--c-surface,#eef2f7) 25%,var(--c-bg,#f8fafc) 50%,var(--c-surface,#eef2f7) 75%);background-size:200% 100%;animation:nshimmer 1.3s linear infinite}
 .notif-skel-av{width:46px;height:46px;border-radius:50%;flex-shrink:0}
 .notif-skel-lines{flex:1;display:flex;flex-direction:column;gap:9px;padding-top:6px}
 .notif-skel-l1{height:11px;border-radius:6px;width:88%}

@@ -415,7 +415,7 @@
         'box-shadow:0 0 0 1px var(--c-handle,rgba(15,23,42,.16)),0 1px 3px rgba(15,23,42,.12)}' +
       '.ng-flag.big{width:34px;height:23px;border-radius:4px}' +
       '.ng-side{display:flex;align-items:center;gap:12px;margin:0 0 14px;padding:12px 14px;border-radius:14px;' +
-        'background:linear-gradient(135deg,#e8f7ef,#fff);border:1.5px solid rgba(0,135,81,.28)}' +
+        'background:linear-gradient(135deg,var(--c-surface,#e8f7ef),var(--c-bg,#fff));border:1.5px solid rgba(0,135,81,.28)}' +
       '.ng-side .ng-t{font-size:13.5px;font-weight:800;color:var(--c-ok-txt,#006b40);line-height:1.25}' +
       '.ng-side .ng-s{font-size:12px;color:var(--c-sub,#4b5563);margin-top:2px}';
     document.head.appendChild(css);
