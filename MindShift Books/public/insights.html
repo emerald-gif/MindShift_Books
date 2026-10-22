@@ -68,7 +68,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;color:var(--txt);min-height:100
   box-shadow:0 1px 2px rgba(15,23,42,.04),0 10px 28px -12px rgba(76,60,190,.16);
   padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer}
 .cm-center-icon{width:38px;height:38px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;
-  background:linear-gradient(135deg,#fef3c7,#fde68a);color:#d97706}
+  background:linear-gradient(135deg,var(--c-warn-bg,#fef3c7),var(--c-warn-bg,#fde68a));color:#d97706}
 .cm-center-icon svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .cm-center-body{flex:1;min-width:0}
 .cm-center-lbl{font-size:11.5px;font-weight:800;color:var(--p,#6366f1);text-transform:uppercase;letter-spacing:.3px;margin-bottom:3px}
@@ -185,7 +185,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;color:var(--txt);min-height:100
 .perf-row{display:flex;align-items:center;gap:12px;padding:14px;border-radius:16px;margin-bottom:10px;
   background:var(--card);box-shadow:var(--shadow-sm);cursor:pointer;transition:transform .15s}
 .perf-row:active{transform:scale(.985)}
-.perf-rank{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#e0e7ff,#ddd6fe);
+.perf-rank{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--c-tonal,#e0e7ff),var(--c-tonal,#ddd6fe));
   display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12.5px;
   color:var(--p);flex-shrink:0}
 .perf-info{flex:1;min-width:0}
@@ -218,7 +218,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;color:var(--txt);min-height:100
 .card-empty{background:var(--card);border-radius:18px;box-shadow:var(--shadow-sm)}
 
 /* ── SKELETON ── */
-.skel{background:linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%);
+.skel{background:linear-gradient(90deg,var(--c-surface,#f0f0f0) 25%,var(--c-surface,#e0e0e0) 50%,var(--c-surface,#f0f0f0) 75%);
   background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:8px}
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 .skel-stat-val{height:22px;width:50px;border-radius:6px}

@@ -87,9 +87,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;color:var(--txt);min-height:100
 .metric-row:last-child{border-bottom:none}
 .metric-icon{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .metric-icon svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.metric-icon.like{background:linear-gradient(135deg,#fee2e2,#fecaca);color:var(--c-red-txt,#dc2626)}
-.metric-icon.comment{background:linear-gradient(135deg,#fef3c7,#fde68a);color:#d97706}
-.metric-icon.repost{background:linear-gradient(135deg,#cffafe,#a5f3fc);color:var(--c-cyan-txt,#0891b2)}
+.metric-icon.like{background:linear-gradient(135deg,var(--c-red-bg,#fee2e2),var(--c-red-bg,#fecaca));color:var(--c-red-txt,#dc2626)}
+.metric-icon.comment{background:linear-gradient(135deg,var(--c-warn-bg,#fef3c7),var(--c-warn-bg,#fde68a));color:#d97706}
+.metric-icon.repost{background:linear-gradient(135deg,var(--c-cyan-bg,#cffafe),var(--c-cyan-bg,#a5f3fc));color:var(--c-cyan-txt,#0891b2)}
 .metric-label{flex:1;font-size:13.5px;font-weight:700;color:var(--txt)}
 .metric-value{font-size:15px;font-weight:900;color:var(--txt)}
 
@@ -111,7 +111,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;color:var(--txt);min-height:100
 .cm-link-card{margin:0 16px 16px;border-radius:var(--radius);background:var(--card);box-shadow:var(--shadow);
   padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer}
 .cm-link-icon{width:38px;height:38px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;
-  background:linear-gradient(135deg,#fef3c7,#fde68a);color:#d97706}
+  background:linear-gradient(135deg,var(--c-warn-bg,#fef3c7),var(--c-warn-bg,#fde68a));color:#d97706}
 .cm-link-icon svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .cm-link-body{flex:1;min-width:0}
 .cm-link-top{display:flex;align-items:center;gap:6px;margin-bottom:2px}
@@ -130,7 +130,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;color:var(--txt);min-height:100
 .empty-state strong{display:block;font-size:15px;font-weight:800;color:var(--txt);margin-bottom:6px}
 
 /* ── SKELETON ── */
-.skel{background:linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%);
+.skel{background:linear-gradient(90deg,var(--c-surface,#f0f0f0) 25%,var(--c-surface,#e0e0e0) 50%,var(--c-surface,#f0f0f0) 75%);
   background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:8px}
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 .skel-stat-val{height:22px;width:50px;border-radius:6px}

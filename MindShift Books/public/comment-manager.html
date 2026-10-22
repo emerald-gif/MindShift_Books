@@ -90,7 +90,7 @@ button:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible
 .cm.picked{box-shadow:0 0 0 2.5px var(--p),var(--shadow-sm)}
 body.sel-on .cm{cursor:pointer}
 .cm-top{display:flex;gap:11px;align-items:flex-start}
-.av{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#e0e7ff,#c7d2fe);color:var(--p);
+.av{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--c-tonal,#e0e7ff),var(--c-tonal,#c7d2fe));color:var(--p);
   font-weight:800;font-size:15px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0}
 .av img{width:100%;height:100%;object-fit:cover}
 .cm-body{flex:1;min-width:0}
@@ -184,7 +184,7 @@ body.sel-on .toast{bottom:160px}
 .empty button{margin-top:14px}
 .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--c-ink-bg,#0f172a);color:#fff;padding:12px 20px;border-radius:99px;font-size:13.5px;font-weight:600;opacity:0;pointer-events:none;transition:all .25s;z-index:600;max-width:90vw;text-align:center}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
-.skel{background:linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:14px;height:110px;margin-bottom:12px}
+.skel{background:linear-gradient(90deg,var(--c-surface,#f0f0f0) 25%,var(--c-surface,#e0e0e0) 50%,var(--c-surface,#f0f0f0) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:14px;height:110px;margin-bottom:12px}
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
 /* bulk reply sheet */

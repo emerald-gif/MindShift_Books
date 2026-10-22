@@ -93,7 +93,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 
 /* Official chip */
 .official-chip{display:inline-flex;align-items:center;gap:7px;
-  background:linear-gradient(135deg,#eef2ff,#e0f2fe);color:var(--c-ind,#3730a3);
+  background:linear-gradient(135deg,var(--c-surface,#eef2ff),var(--c-tonal,#e0f2fe));color:var(--c-ind,#3730a3);
   font-size:12px;font-weight:800;padding:6px 13px 6px 7px;border-radius:99px;letter-spacing:.2px;margin-top:10px}
 .official-chip .oc-ic{width:18px;height:18px;border-radius:50%;background:var(--g);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
 .official-chip .oc-ic svg{width:10px;height:10px;fill:none;stroke:#fff;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}
@@ -131,7 +131,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .acard-read{font-size:11px;color:var(--mute);font-weight:600;margin-top:6px}
 .acard-img{width:90px;height:80px;border-radius:10px;overflow:hidden;
-  flex-shrink:0;background:linear-gradient(135deg,#e0e7ff,#eef2ff);align-self:flex-start}
+  flex-shrink:0;background:linear-gradient(135deg,var(--c-tonal,#e0e7ff),var(--c-surface,#eef2ff));align-self:flex-start}
 .acard-img img{width:100%;height:100%;object-fit:cover;display:block}
 
 /* ── POST CARD (matches profile.html's own post rendering) ── */
@@ -176,7 +176,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .acard-save.saved svg{fill:var(--p);stroke:var(--p)}
 
 /* ── SKELETON ── */
-.skel{background:linear-gradient(90deg,#f3f4f6 25%,#e9eaec 50%,#f3f4f6 75%);
+.skel{background:linear-gradient(90deg,var(--c-surface,#f3f4f6) 25%,var(--c-surface,#e9eaec) 50%,var(--c-surface,#f3f4f6) 75%);
   background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:6px}
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 .skel-card{display:flex;gap:14px;padding:18px 16px;border-bottom:1px solid var(--border)}
