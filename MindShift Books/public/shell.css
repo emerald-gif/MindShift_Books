@@ -78,7 +78,7 @@ html[data-layout] .sheet,html[data-layout] .welcome-nudge,html[data-layout] .ed{
 
   /* fixed things that used to hug the phone screen now hug the column */
   html[data-layout] #cpk-fab{right:auto;left:calc(var(--shell-left) + var(--rail-w) + var(--col-w) - 72px)}
-  html[data-layout] .post-comment-bar,html[data-layout] .bulk-bar,html[data-layout] .cta{
+  html[data-layout] .post-comment-bar,html[data-layout] .bulk-bar,html[data-layout] nav.cta{
     left:calc(var(--shell-left) + var(--rail-w))!important;right:auto!important;margin:0!important;
     width:var(--col-w);max-width:calc(100vw - var(--rail-w))}
 
