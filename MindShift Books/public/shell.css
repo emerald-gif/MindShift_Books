@@ -1,0 +1,161 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   MindShift Books — shell.css  (desktop & tablet layout)
+   Loaded with  media="(min-width:720px)"  so phones never download or apply any of it.
+
+   The idea: every page is still the same mobile page. On a big screen we put it in a centred COLUMN, turn the
+   sidebar into a permanent left RAIL, and add a RIGHT rail on feed / reading / profile pages — the way X,
+   Instagram and YouTube do it. Nothing is rebuilt per page.
+
+   Which kind of page it is comes from  <html data-layout="…">, set by the tiny script in each page's <head>:
+     feed      600px column  + right rail      (home feed)
+     read      720px column  + right rail      (article / post pages)
+     profile   680px column  + right rail
+     compose   680px column                    (create post / write article)
+     narrow    640px column                    (settings)
+     messages  720px column
+     manage    720px column                    (insights, library, comments, what's new …)
+     wide     1040px column                    (book lists)
+   Pages with no data-layout are untouched.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── sizes per layout ── */
+html[data-layout]{--col-w:640px;--right-w:0px;--right-gap:0px;--rail-w:0px;--right-total:0px;
+  --shell-left:0px}
+html[data-layout="feed"]{--col-w:600px;--right-w:320px;--right-gap:32px}
+html[data-layout="read"]{--col-w:720px;--right-w:320px;--right-gap:32px}
+html[data-layout="profile"]{--col-w:680px;--right-w:320px;--right-gap:32px}
+html[data-layout="compose"]{--col-w:680px}
+html[data-layout="narrow"]{--col-w:640px}
+html[data-layout="messages"]{--col-w:1040px}
+html[data-layout="manage"]{--col-w:720px}
+html[data-layout="wide"]{--col-w:1040px}
+
+/* ── tablet (720–1023): same column, centred, hamburger menu kept ── */
+html[data-layout]{background:var(--bg,#f8fafc)}
+html[data-layout] body{width:100%;max-width:var(--col-w);margin-left:auto;margin-right:auto;min-height:100vh;
+  box-shadow:0 0 0 1px var(--ds-hairline,rgba(15,23,42,.08))}
+
+/* sheets and drawers stop stretching across the whole screen */
+html[data-layout] .auth-sheet,html[data-layout] .share-sheet,html[data-layout] .saved-sheet,
+html[data-layout] .save-drawer,html[data-layout] .download-sheet,html[data-layout] .comment-sheet,
+html[data-layout] .sheet,html[data-layout] .welcome-nudge,html[data-layout] .ed{
+  max-width:520px;margin-left:auto;margin-right:auto}
+
+/* hover feedback that only makes sense with a mouse */
+@media (hover:hover){
+  html[data-layout] .acard,html[data-layout] .pcard,html[data-layout] .xcard{cursor:pointer}
+  html[data-layout] .acard:hover,html[data-layout] .pcard:hover{background:var(--ds-fill,rgba(15,23,42,.035))}
+}
+
+/* ═══════════════ desktop (≥1024): permanent left rail ═══════════════ */
+@media (min-width:1024px){
+  html[data-layout]{--rail-w:76px;
+    --shell-left:max(0px,calc((100vw - var(--rail-w) - var(--col-w) - var(--right-total)) / 2))}
+  html[data-layout] body{margin-left:calc(var(--shell-left) + var(--rail-w));margin-right:0;width:var(--col-w);
+    max-width:calc(100vw - var(--rail-w))}
+
+  /* the sidebar stops being a drawer */
+  html[data-layout] .sidebar-overlay{display:none!important}
+  html[data-layout] .sidebar{left:var(--shell-left)!important;width:var(--rail-w);height:100vh;top:0;transform:none!important;
+    background:transparent;box-shadow:none;border:none;z-index:40;visibility:visible!important}
+  html[data-layout] .sidebar .sidebar-close-btn{display:none}
+  html[data-layout] [onclick*="toggleSidebar"]:not(.sidebar-close-btn):not(.sidebar-overlay){display:none!important}
+  html[data-layout] .sidebar .sb-top{border:none;padding:18px 14px 10px;justify-content:center}
+  html[data-layout] .sidebar .sb-scroll{padding:6px 10px 24px}
+  html[data-layout] .sidebar .sb-group{border:none;background:none;box-shadow:none;border-radius:0;margin:0 0 6px;overflow:visible}
+  html[data-layout] .sidebar .sb-group li{border:none;border-radius:999px;padding:12px;gap:14px;font-size:16px;font-weight:600;
+    justify-content:center;margin:2px 0;transition:background .15s;line-height:1.25}
+  html[data-layout] .sidebar .sb-group li:hover{background:var(--ds-fill,rgba(15,23,42,.06))}
+  html[data-layout] .sidebar .sb-ico{width:26px;height:26px}
+  html[data-layout] .sidebar .sb-ico svg{width:24px;height:24px}
+  html[data-layout] .sidebar .sb-chev,html[data-layout] .sidebar .sb-section-label{display:none}
+  html[data-layout] .sidebar .sb-group li.is-active{font-weight:800;color:var(--txt,#0f172a)}
+  html[data-layout] .sidebar .sb-group li.is-active .sb-ico{color:var(--p,#4f46e5)}
+  /* icon-only rail on smaller desktops */
+  html[data-layout] .sidebar .sb-label,html[data-layout] .sidebar .sb-brand,html[data-layout] .sidebar .sb-cur-row,
+  html[data-layout] .sidebar .sidebar-auth-cta{display:none}
+  html[data-layout] .sidebar .logo-row img{width:38px;height:38px}
+
+  /* fixed things that used to hug the phone screen now hug the column */
+  html[data-layout] #cpk-fab{right:auto;left:calc(var(--shell-left) + var(--rail-w) + var(--col-w) - 72px)}
+  html[data-layout] .post-comment-bar,html[data-layout] .bulk-bar,html[data-layout] .cta{
+    left:calc(var(--shell-left) + var(--rail-w))!important;right:auto!important;margin:0!important;
+    width:var(--col-w);max-width:calc(100vw - var(--rail-w))}
+
+  /* keyboard focus is visible on desktop */
+  html[data-layout] a:focus-visible,html[data-layout] button:focus-visible{outline:2px solid var(--p,#4f46e5);outline-offset:2px}
+}
+
+/* ═══════════════ wide desktop (≥1280): labelled rail + right rail ═══════════════ */
+@media (min-width:1280px){
+  html[data-layout]{--rail-w:244px;--right-total:calc(var(--right-w) + var(--right-gap))}
+  html[data-layout] .sidebar .sb-label,html[data-layout] .sidebar .sb-brand{display:block}
+  html[data-layout] .sidebar .sb-cur-row{display:flex}
+  html[data-layout] .sidebar .sb-top{justify-content:flex-start;padding:18px 20px 10px}
+  html[data-layout] .sidebar .sb-group li{justify-content:flex-start;padding:12px 18px}
+  html[data-layout] .sidebar .sb-group li.sb-cur-row{padding:8px 18px;gap:12px;font-size:15px}
+  html[data-layout] .sidebar .sb-cur-row .sb-label{display:none!important}   /* the icon says it; keeps the control from being squeezed */
+  html[data-layout] .sidebar .sb-cur-row .sb-cur-seg{margin-left:auto}
+  html[data-layout] .sidebar .sb-section-label{display:block;padding:14px 18px 6px}
+  html[data-layout] .sidebar .sidebar-auth-cta{display:block;margin:10px 8px}
+}
+
+
+/* ═══════════════ desktop extras ═══════════════ */
+@media (min-width:1024px){
+  /* Messages: chat list on the left, conversation on the right (WhatsApp Web / Instagram DMs) */
+  html[data-layout="messages"] body{display:flex;flex-direction:row;overflow:hidden}
+  html[data-layout="messages"] #listView{display:flex!important;flex:0 0 380px;width:380px;max-width:380px;
+    border-right:1px solid var(--ds-hairline,rgba(15,23,42,.08))}
+  html[data-layout="messages"] .view.on:not(#listView){flex:1 1 auto;min-width:0}
+  html[data-layout="messages"] #listBack,html[data-layout="messages"] #chatBack{display:none}
+  #msgEmpty{display:none}
+  html[data-layout="messages"] #msgEmpty{display:flex;flex:1 1 auto;min-width:0;flex-direction:column;align-items:center;justify-content:center;
+    gap:10px;text-align:center;padding:40px;color:var(--sub,#6b7280);background:var(--bg,#f8fafc)}
+  html[data-layout="messages"] body:has(#chatView.on,#newView.on,#reqView.on) #msgEmpty{display:none}
+  #msgEmpty .me-ic{width:76px;height:76px;border-radius:24px;display:flex;align-items:center;justify-content:center;
+    background:var(--c-tonal,#eef2ff);color:var(--c-ind,#4f46e5);margin-bottom:6px}
+  #msgEmpty .me-ic svg{width:34px;height:34px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  #msgEmpty h2{margin:0;font-size:22px;font-weight:800;letter-spacing:-.025em;color:var(--txt,#0f172a)}
+  #msgEmpty p{margin:0;max-width:320px;font-size:14.5px;line-height:1.55}
+
+  /* book lists: two columns instead of one long stripe */
+  html[data-layout="wide"] .ab-list,html[data-layout="wide"] .fe-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:28px}
+}
+
+/* ═══════════════ right rail (injected by shell.js) ═══════════════ */
+#shell-right{display:none}
+@media (min-width:1280px){
+  html[data-layout="feed"] #shell-right,html[data-layout="read"] #shell-right,html[data-layout="profile"] #shell-right{
+    display:flex;flex-direction:column;gap:14px;position:fixed;top:0;bottom:0;overflow-y:auto;padding:14px 0 28px;z-index:20;
+    left:calc(var(--shell-left) + var(--rail-w) + var(--col-w) + var(--right-gap));width:var(--right-w);scrollbar-width:none}
+  #shell-right::-webkit-scrollbar{display:none}
+  .sr-search{display:flex;align-items:center;gap:10px;height:46px;padding:0 16px;border-radius:999px;background:var(--ds-fill,rgba(15,23,42,.06));
+    color:var(--sub,#6b7280);font-size:15px;cursor:text;border:none;font-family:inherit;width:100%;text-align:left}
+  .sr-search:hover{background:var(--ds-fill-2,rgba(15,23,42,.09))}
+  .sr-search svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;flex-shrink:0}
+  .sr-search kbd{margin-left:auto;font:inherit;font-size:12px;padding:2px 7px;border-radius:6px;background:var(--card,#fff);box-shadow:0 0 0 1px var(--ds-hairline,rgba(15,23,42,.1))}
+  .sr-card{background:var(--card,#fff);border-radius:20px;padding:16px 18px;box-shadow:0 0 0 1px var(--ds-hairline,rgba(15,23,42,.08))}
+  .sr-card h3{margin:0 0 10px;font-size:18px;font-weight:800;letter-spacing:-.02em;color:var(--txt,#0f172a)}
+  .sr-card p{margin:0 0 12px;font-size:14px;line-height:1.5;color:var(--sub,#6b7280)}
+  .sr-row{display:flex;align-items:center;gap:12px;width:100%;padding:10px 6px;margin:0 -6px;border:none;background:none;border-radius:12px;
+    font:inherit;font-size:15px;font-weight:600;color:var(--txt,#0f172a);cursor:pointer;text-align:left;text-decoration:none;box-sizing:content-box}
+  .sr-row:hover{background:var(--ds-fill,rgba(15,23,42,.05))}
+  .sr-row .sr-ic{width:34px;height:34px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    background:var(--c-tonal,#eef2ff);color:var(--c-ind,#4f46e5)}
+  .sr-row .sr-ic svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+  .sr-row small{display:block;font-weight:500;font-size:12.5px;color:var(--mute,#9ca3af);margin-top:1px}
+  .sr-btn{display:block;width:100%;border:none;border-radius:999px;padding:11px 14px;font:inherit;font-size:14.5px;font-weight:800;color:#fff;text-align:center;
+    background:var(--g,linear-gradient(135deg,#4f46e5,#06b6d4));cursor:pointer;text-decoration:none;box-shadow:0 10px 22px -12px rgba(79,70,229,.7)}
+  .sr-btn.alt{background:var(--ds-fill,rgba(15,23,42,.06));color:var(--txt,#0f172a);box-shadow:none;margin-top:8px}
+  .sr-person{display:flex;align-items:center;gap:12px;padding:9px 6px;margin:0 -6px;border-radius:12px;text-decoration:none;color:inherit}
+  .sr-person:hover{background:var(--ds-fill,rgba(15,23,42,.05))}
+  .sr-person .av{width:42px;height:42px;border-radius:50%;object-fit:cover;flex-shrink:0;background:var(--c-surface,#f1f5f9)}
+  .sr-person b{display:block;font-size:15px;font-weight:700;color:var(--txt,#0f172a);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sr-person small{display:block;font-size:13px;color:var(--mute,#9ca3af);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sr-person .t{min-width:0;flex:1}
+  .sr-skel{height:42px;margin:9px 0;border-radius:12px;background:linear-gradient(90deg,var(--c-surface,#f1f5f9) 25%,var(--ds-fill-2,#e8ebf2) 40%,var(--c-surface,#f1f5f9) 63%);background-size:300% 100%;animation:shimmer 1.4s infinite}
+  .sr-more{display:block;padding:10px 0 2px;font-size:14px;font-weight:700;color:var(--c-ind,#4f46e5);text-decoration:none}
+  .sr-foot{padding:4px 8px;font-size:12.5px;line-height:1.8;color:var(--mute,#9ca3af)}
+  .sr-foot a{color:inherit;text-decoration:none;margin-right:10px}.sr-foot a:hover{text-decoration:underline}
+}
