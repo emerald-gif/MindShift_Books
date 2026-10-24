@@ -72,7 +72,7 @@ function preloadScript(kind, id, data, extra) {
   } catch (_) { return ''; }
 }
 function authorRowHtml(name, photo, meta, badge) {
-  return '<div class="author-row-wrap"><div class="author-row"><img class="author-logo" src="' + esc(safeUrl(photo) || 'logo.jpg') + '" alt="">' +
+  return '<div class="author-row-wrap"><div class="author-row"><img class="author-logo" data-author-photo src="' + esc(safeUrl(photo) || 'logo.jpg') + '" alt="' + esc(name) + '">' +
     '<div><div class="author-name"><span>' + esc(name) + '</span></div><div class="author-meta">' + esc(meta) + '</div></div></div></div>';
 }
 function articleFirstPaint(x) {
@@ -378,6 +378,33 @@ function registerSeo(app, { publicDir }) {
       return res.json({ ok: true, cleared: forget(kind, id) });
     } catch (e) {
       return res.status(500).json({ ok: false });
+    }
+  });
+
+
+  // ── "Who to follow" for the desktop right rail ──────────────────────────────
+  // One cached list for everybody (refreshed at most every 5 minutes), so the rail costs a few reads an hour
+  // however many people have it open. Public profile fields only.
+  let wtfCache = { at: 0, list: [] };
+  app.get('/api/who-to-follow', async (req, res) => {
+    try {
+      if (Date.now() - wtfCache.at > 5 * 60 * 1000 || !wtfCache.list.length) {
+        const { db } = getShared();
+        const snap = await db.collection('users').orderBy('followerCount', 'desc').limit(30).get();
+        const list = [];
+        snap.forEach((d) => {
+          const x = d.data() || {};
+          const name = String(x.name || '').trim();
+          if (!name || name === 'MindShift Books User' || !x.username) return;
+          list.push({ uid: d.id, name: name.slice(0, 60), username: String(x.username).slice(0, 40), photo: safeUrl(x.photo),
+                      followers: Number(x.followerCount) || 0, bio: toPlain(x.bio || x.jobTitle || '').slice(0, 70) });
+        });
+        wtfCache = { at: Date.now(), list: list.slice(0, 16) };
+      }
+      res.set('Cache-Control', 'public, max-age=300');
+      return res.json({ ok: true, people: wtfCache.list });
+    } catch (e) {
+      return res.status(200).json({ ok: false, people: [] });
     }
   });
 
