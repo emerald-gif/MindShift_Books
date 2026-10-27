@@ -204,6 +204,24 @@ html.msb-theme-anim *,
 html.msb-theme-anim *::before,
 html.msb-theme-anim *::after{transition:background-color .28s ease,border-color .28s ease,color .28s ease,fill .28s ease,stroke .28s ease,box-shadow .28s ease!important}
 
+
+/* ═════ toggle switches ═════
+   The sweep had turned each white knob into the card colour, so knobs vanished on their dark tracks.
+   A switch keeps the same look in both themes: white knob, visible grey "off" track, brand colour when on. */
+html[data-theme="dark"] .manage-switch-track,
+html[data-theme="dark"] .sw,
+html[data-theme="dark"] .switch{background:#3b4352}
+html[data-theme="dark"] .manage-switch-track::before,
+html[data-theme="dark"] .sw::after,
+html[data-theme="dark"] .switch::after{background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.5)}
+html[data-theme="dark"] .manage-switch input:checked + .manage-switch-track,
+html[data-theme="dark"] .sw[aria-checked="true"],
+html[data-theme="dark"] .switch[aria-checked="true"]{background:var(--p)}
+html[data-theme="dark"] .pv-progress-fill::after{background:#fff}   /* the scrub dot on video progress bars */
+html[data-theme="dark"] .manage-switch input:focus-visible + .manage-switch-track,
+html[data-theme="dark"] .sw:focus-visible,
+html[data-theme="dark"] .switch:focus-visible{outline:2px solid rgba(124,131,255,.7);outline-offset:2px}
+
 /* ── the Settings "Appearance" control (also used in the sidebar) ── */
 .msb-seg{display:flex;gap:4px;padding:4px;border-radius:14px;background:var(--ds-fill,rgba(15,23,42,.055))}
 .msb-seg button{flex:1;border:none;background:transparent;color:var(--sub,#6b7280);font:inherit;font-size:13.5px;font-weight:700;
