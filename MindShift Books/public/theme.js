@@ -176,3 +176,108 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SWIPE-TO-DISMISS for full-screen viewers (same gesture as Instagram / X / Photos)
+   Drag the picture up or down: it follows your finger while the dark background fades out.
+   Let go past about 110px, or flick quickly, and the viewer closes. Let go early and it springs back.
+   Sideways swipes are left alone (they still move between photos), and two-finger gestures are ignored.
+
+     MSBSwipeDismiss.attach(rootEl, { content, fade, skip, onClose })
+       content  element that follows the finger (default: the first <img> / track inside root)
+       fade     elements that fade while dragging (close button, counter, bottom bar …)
+       skip     CSS selector for areas that must NOT start a drag (e.g. the action bar)
+       onClose  called when the viewer should close
+   The old viewers that share <div id="imgViewerBg"> (profile, post, article pages) are attached automatically.
+   ═══════════════════════════════════════════════════════════════════════ */
+(function () {
+  if (window.MSBSwipeDismiss) return;
+  var CLOSE_DIST = 110, FLICK_V = 0.4, FLICK_MIN = 40, AXIS_LOCK = 8;
+
+  function parseRgba(c) {
+    var m = /rgba?\(([^)]+)\)/.exec(c || ''); if (!m) return [10, 8, 20, 0.95];
+    var p = m[1].split(',').map(function (x) { return parseFloat(x); });
+    return [p[0] || 0, p[1] || 0, p[2] || 0, p.length > 3 ? p[3] : 1];
+  }
+
+  function attach(root, opts) {
+    if (!root || root._msbSwipe) return; root._msbSwipe = true; opts = opts || {};
+    try { root.style.touchAction = 'pan-x'; } catch (e) {}
+    var sx = 0, sy = 0, dy = 0, mode = '', base = null, samples = [], t0 = 0, tid = 0;
+
+    function content() { return typeof opts.content === 'function' ? opts.content() : (opts.content || root.querySelector('#imgViewerImg,#imgViewerTrack,.iv-track,img')); }
+    function fades() { var f = typeof opts.fade === 'function' ? opts.fade() : (opts.fade || []); return f.filter(Boolean); }
+    function apply(d, animate) {
+      var c = content(); if (!c) return;
+      var prog = Math.min(Math.abs(d) / (window.innerHeight * 0.45), 1);
+      var tr = animate ? 'transform .22s cubic-bezier(.2,.8,.3,1),opacity .22s,background-color .22s' : 'none';
+      c.style.transition = tr; c.style.willChange = 'transform';
+      c.style.transform = 'translate3d(0,' + d + 'px,0) scale(' + (1 - Math.min(Math.abs(d) / 1400, 0.16)) + ')';
+      root.style.transition = animate ? 'background-color .22s, opacity .2s' : 'none';
+      root.style.backgroundColor = 'rgba(' + base[0] + ',' + base[1] + ',' + base[2] + ',' + (base[3] * (1 - prog)).toFixed(3) + ')';
+      var o = Math.max(0, 1 - prog * 1.6);
+      fades().forEach(function (e) { e.style.transition = animate ? 'opacity .2s' : 'none'; e.style.opacity = o; });
+    }
+    function reset() {
+      var c = content(); clearTimeout(tid);
+      if (c) { c.style.transition = ''; c.style.transform = ''; c.style.willChange = ''; }
+      root.style.transition = ''; root.style.backgroundColor = '';
+      fades().forEach(function (e) { e.style.transition = ''; e.style.opacity = ''; });
+      mode = ''; dy = 0;
+    }
+
+    root.addEventListener('touchstart', function (e) {
+      if (e.touches.length !== 1) { mode = 'ignore'; return; }
+      if (opts.skip && e.target.closest && e.target.closest(opts.skip)) { mode = 'ignore'; return; }
+      var t = e.touches[0]; sx = t.clientX; sy = t.clientY; t0 = Date.now(); samples = [{ y: sy, t: t0 }]; dy = 0; mode = '';
+      base = parseRgba(getComputedStyle(root).backgroundColor);
+    }, { passive: true });
+
+    root.addEventListener('touchmove', function (e) {
+      if (mode === 'ignore' || mode === 'h') return;
+      if (e.touches.length !== 1) { if (mode === 'v') { apply(0, true); } mode = 'ignore'; return; }
+      var t = e.touches[0], ddx = t.clientX - sx, ddy = t.clientY - sy;
+      if (!mode) {
+        if (Math.abs(ddx) < AXIS_LOCK && Math.abs(ddy) < AXIS_LOCK) return;
+        mode = (Math.abs(ddy) > Math.abs(ddx) * 1.15) ? 'v' : 'h';
+        if (mode === 'h') return;
+      }
+      e.preventDefault();
+      dy = ddy;
+      var now = Date.now(); samples.push({ y: t.clientY, t: now }); while (samples.length > 2 && now - samples[0].t > 120) samples.shift();
+      apply(dy, false);
+    }, { passive: false });
+
+    function end() {
+      if (mode !== 'v') { mode = ''; return; }
+      var vel = 0, a = samples[0], z = samples[samples.length - 1];            // speed over the last ~120ms of the drag
+      if (a && z && samples.length > 1) vel = (z.y - a.y) / Math.max(z.t - a.t, 16);
+      var dur = Date.now() - t0;                                               // a short, quick swipe counts as a flick even if it ends slowly
+      if (dur < 300) { var avg = dy / Math.max(dur, 16); if (Math.abs(avg) > Math.abs(vel)) vel = avg; }
+      var far = Math.abs(dy) > CLOSE_DIST || (Math.abs(vel) > FLICK_V && Math.abs(dy) > FLICK_MIN);
+      if (far) {
+        var dir = (dy < 0 || (dy === 0 && vel < 0)) ? -1 : 1;
+        apply(dir * window.innerHeight, true);
+        tid = setTimeout(function () {
+          if (opts.onClose) opts.onClose();
+          setTimeout(reset, 350);                  // reset only once the viewer is fully hidden, so nothing flashes back
+        }, 200);
+      } else { apply(0, true); tid = setTimeout(reset, 260); }
+      mode = '';
+    }
+    root.addEventListener('touchend', end, { passive: true });
+    root.addEventListener('touchcancel', end, { passive: true });
+  }
+
+  window.MSBSwipeDismiss = { attach: attach };
+
+  // viewers that share the old markup (profile photo/cover, post pages, article pages)
+  function auto() {
+    var bg = document.getElementById('imgViewerBg');
+    if (bg) attach(bg, {
+      fade: function () { return [].slice.call(bg.querySelectorAll('.img-viewer-close,.img-viewer-count')); },
+      onClose: function () { if (typeof window.closeImageViewer === 'function') window.closeImageViewer(); }
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', auto); else auto();
+})();

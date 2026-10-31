@@ -1,5 +1,5 @@
 /* MindShift Books — full-screen image viewer for feed/profile post images.
-   Swipe sideways between photos, "1/3" counter, tap the dark area or ✕ to close (also back button / Esc).
+   Swipe sideways between photos, "1/3" counter, swipe up/down, tap the dark area or ✕ to close (also back button / Esc).
    If the page defines window.msbImgEngage, a bottom bar appears with like / comment / repost / save / share
    and the post's author + caption — same actions as the post page, mirrored from the on-page card.
 
@@ -81,6 +81,13 @@ body.msb-imgv-open .save-drawer-backdrop{z-index:100006!important}
     document.body.appendChild(el);
     track = el.querySelector('.iv-track'); countEl = el.querySelector('.iv-count');
     el.addEventListener('click', function(){ close(); });
+    // swipe up/down to dismiss (shared gesture, see theme.js). The action bar is excluded so taps/drags on it stay normal.
+    if(window.MSBSwipeDismiss) window.MSBSwipeDismiss.attach(el, {
+      content: function(){ return track; },
+      fade: function(){ return [el.querySelector('.iv-close'), countEl, el.querySelector('.iv-foot')]; },
+      skip: '.iv-foot',
+      onClose: close
+    });
     track.addEventListener('scroll', updateCount, { passive:true });
     var foot = el.querySelector('.iv-foot');
     foot.addEventListener('click', function(e){
