@@ -1399,7 +1399,7 @@ async function proceedCartToPayment(guestInfo) {
       closeCartOverlay();
       showToast('Your voucher covered it all! 🎉 Your book will be emailed to you shortly.', 'success', 6000);
       fetchVoucherStatus(); // it's used now — refreshes the banner/toggle for next time
-      window.location.href = '/';
+      window.location.href = '/books?paid=1';
       return;
     }
 
@@ -1418,7 +1418,7 @@ async function proceedCartToPayment(guestInfo) {
       amount: Math.round(Number(amount) * 100),
       currency: 'NGN',
       ref: reference,
-      callback_url: window.location.origin + '/',
+      callback_url: window.location.origin + '/books',
       metadata: {
         custom_fields: [
           {
@@ -1480,7 +1480,7 @@ async function verifyCartPayment(reference, purchaserEmail) {
       closeCartOverlay();
       showToast('Payment successful! 🎉 Your book will be emailed to you shortly.', 'success', 6000);
       fetchVoucherStatus(); // refreshes the banner/toggle in case this order used the voucher
-      window.location.href = '/';
+      window.location.href = '/books?paid=1';
     } else {
       console.warn('verify failed', data);
       showToast('Verification failed. Please contact support.', 'error');
@@ -1523,6 +1523,18 @@ if (document.readyState === 'loading') {
 } else {
   _wireCartButtons();
 }
+
+// After a successful payment we land on the bookstore (/books?paid=1) — confirm it there.
+(function showPaidToast() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('paid') !== '1') return;
+    params.delete('paid');
+    const qs = params.toString();
+    window.history.replaceState({}, document.title, window.location.pathname + (qs ? '?' + qs : ''));
+    setTimeout(() => showToast('Payment successful! 🎉 Your book is being emailed to you now.', 'success', 7000), 400);
+  } catch (e) {}
+})();
 
 // ── Paystack redirect mode handler ──────────────────────────────────────────
 // On mobile, Paystack sometimes redirects to this page instead of calling the
