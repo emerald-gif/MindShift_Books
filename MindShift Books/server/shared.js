@@ -147,10 +147,28 @@ async function requireUser(req, res, next) {
     req.uid = decoded.uid;
     req.userEmail = (decoded.email || '').toLowerCase();
     req.userName = decoded.name || null;
+    req.emailVerified = decoded.email_verified === true;
     next();
   } catch (err) {
     return res.status(401).json({ error: 'Your session has expired. Please sign in again.' });
   }
+}
+
+// Like requireUser, but a missing/invalid token is NOT an error — the request
+// just continues as a guest (req.uid stays undefined). Used by guest checkout.
+async function optionalUser(req, res, next) {
+  try {
+    const header = req.headers.authorization || '';
+    const [scheme, token] = header.split(' ');
+    if (scheme === 'Bearer' && token) {
+      const decoded = await admin.auth().verifyIdToken(token);
+      req.uid = decoded.uid;
+      req.userEmail = (decoded.email || '').toLowerCase();
+      req.userName = decoded.name || null;
+      req.emailVerified = decoded.email_verified === true;
+    }
+  } catch (err) { /* expired/invalid token -> treat as guest */ }
+  next();
 }
 
 // Lagos is UTC+1 year-round (no DST) — fixed-offset clock, no timezone
@@ -187,7 +205,7 @@ module.exports = {
   PAYSTACK_SECRET_KEY, PAYSTACK_PUBLIC_KEY, PUBLIC_PDF_URL, derivePublicUrl,
   CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET,
   extractImageBuffer, uploadImageToCloudinary, uploadBannerImageToCloudinary,
-  requireUser,
+  requireUser, optionalUser,
   lagosNow, nextMondayISO, AFFILIATE_MIN_PAYOUT,
   _adminReadCache
 };
