@@ -300,7 +300,7 @@ const {
   derivePublicUrl,
   CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET,
   extractImageBuffer, uploadImageToCloudinary, uploadBannerImageToCloudinary,
-  requireUser,
+  requireUser, optionalUser,
   lagosNow, nextMondayISO, AFFILIATE_MIN_PAYOUT,
   _adminReadCache
 } = shared;
@@ -2590,10 +2590,12 @@ app.post('/api/account/init', requireUser, async (req, res) => {
 
     // Claim legacy orders: any past `my_order` doc with a matching email but
     // no uid yet gets tagged with this account.
-    if (req.userEmail) {
-      const legacySnap = await db.collection('my_order').where('email', '==', req.userEmail).get();
-      const toClaim = legacySnap.docs.filter(d => !d.data().uid);
-      await Promise.all(toClaim.map(d => d.ref.update({ uid: req.uid }).catch(() => null)));
+    // Only for a VERIFIED email (Google/Facebook sign-ins are; email+password
+    // sign-ups become verified once they click the Firebase link, and the claim
+    // retries on every later sign-in). Without this, anyone could sign up with
+    // someone else's email and take over their guest purchases.
+    if (req.userEmail && req.emailVerified) {
+      await claimGuestOrders(req.uid, req.userEmail);
     }
 
     // Welcome email — only on the very first account/init call for this uid.
@@ -3803,14 +3805,29 @@ app.post('/api/challenge/reflection', requireUser, async (req, res) => {
 
 // /api/pay - initialize Paystack for one or more products (cart checkout)
 // Requires a signed-in account (browsing/preview stays public — only paying does not).
-app.post('/api/pay', requireUser, payLimiter, async (req, res) => {
+app.post('/api/pay', optionalUser, payLimiter, async (req, res) => {
   try {
-    const { email, name, productId, productIds, applyVoucher } = req.body;
+    const { name, productId, productIds, applyVoucher } = req.body;
+    // Signed-in buyers: req.uid is set. Guests: req.uid is undefined and the
+    // order is recorded against the email they typed (see fulfillOrder).
+    const authUid = req.uid || null;
+    const email = String((req.body && req.body.email) || '').trim().toLowerCase();
     if (!email) return res.status(400).json({ error: 'Email required' });
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'Invalid email address' });
     if (!name || !String(name).trim()) return res.status(400).json({ error: 'Name required' });
     if (String(name).trim().length > 120) return res.status(400).json({ error: 'Name too long' });
     const buyerName = String(name).trim();
+
+    // Guest whose email already belongs to a VERIFIED account: attach the order
+    // to that account (no duplicate guest record). Unverified accounts are not
+    // matched, so typing someone else's email can't link anything to them.
+    let orderUid = authUid;
+    if (!authUid) {
+      try {
+        const acct = await admin.auth().getUserByEmail(email);
+        if (acct && acct.emailVerified) orderUid = acct.uid;
+      } catch (e) { /* no account with this email -> true guest */ }
+    }
 
     // Accept either a single productId (legacy) or an array productIds (cart)
     let ids = Array.isArray(productIds) ? productIds : (productId ? [productId] : []);
@@ -3842,9 +3859,9 @@ app.post('/api/pay', requireUser, payLimiter, async (req, res) => {
     // used on ANY order it's applied to, so the unspent ₦1,500 would just be
     // lost rather than saved for later.
     let voucherAmount = 0;
-    if (applyVoucher && db && req.uid) {
+    if (applyVoucher && db && authUid) {
       try {
-        const userDoc = await db.collection('users').doc(req.uid).get();
+        const userDoc = await db.collection('users').doc(authUid).get();
         const voucher = userDoc.exists ? userDoc.data().ebookVoucher : null;
         if (voucher && voucher.claimed && !voucher.used && Number(voucher.amount) > 0 && ngnAmount >= Number(voucher.amount)) {
           voucherAmount = Math.min(Number(voucher.amount), ngnAmount);
@@ -3858,7 +3875,7 @@ app.post('/api/pay', requireUser, payLimiter, async (req, res) => {
     // buyer_name travels inside Paystack's own metadata (set at initialize time)
     // rather than the inline-popup metadata, since that's the copy that's
     // actually still attached to the transaction when we verify it later.
-    const metadata = { productIds: ids, items, usd_total: usdTotal, fx_rate: fxRate, ngn_charged: finalAmount, buyer_name: buyerName, uid: req.uid, voucherApplied: voucherAmount > 0, voucherAmount };
+    const metadata = { productIds: ids, items, usd_total: usdTotal, fx_rate: fxRate, ngn_charged: finalAmount, buyer_name: buyerName, uid: orderUid, guest: !orderUid, voucherApplied: voucherAmount > 0, voucherAmount };
 
     // The voucher fully covers this order — nothing for Paystack to charge,
     // and Paystack can't process a ₦0 transaction anyway. Skip it entirely
@@ -3866,12 +3883,12 @@ app.post('/api/pay', requireUser, payLimiter, async (req, res) => {
     // record, same delivery email as a paid purchase, just ₦0 charged.
     if (voucherAmount > 0 && finalAmount === 0) {
       const publicBase = process.env.PUBLIC_URL ? process.env.PUBLIC_URL.replace(/\/$/, '') : derivePublicUrl(req);
-      const freeRef = `FREE-${req.uid}-${Date.now()}`;
+      const freeRef = `FREE-${authUid}-${Date.now()}`;
       const { record } = await fulfillOrder({
         reference: freeRef,
         email,
         buyerName,
-        uid: req.uid,
+        uid: authUid,
         productIds: ids,
         ngnAmountPaid: 0,
         usdTotal,
@@ -3946,11 +3963,13 @@ async function fulfillOrder({ reference, email, buyerName, uid, productIds, ngnA
     };
   }).filter(Boolean);
 
+  const emailNorm = String(email || '').trim().toLowerCase();
   const record = {
     reference,
-    email,
+    email: emailNorm,
     buyerName,
     uid: uid || null,
+    isGuest: !uid,
     status: 'success',
     usd_total: usdTotal || 0,
     ngn_amount: ngnAmountPaid,
@@ -4022,6 +4041,23 @@ async function fulfillOrder({ reference, email, buyerName, uid, productIds, ngnA
 
   if (db && !alreadyProcessed) {
     await db.collection('my_order').add(record).catch(() => null);
+
+    // Guest buyer: keep one record per email so we can follow up later and
+    // move them to a normal user when they sign up with the same email.
+    if (!uid && emailNorm) {
+      try {
+        const gRef = db.collection('guests').doc(emailNorm);
+        const nowTs = admin.firestore.Timestamp.now();
+        await db.runTransaction(async t => {
+          const g = await t.get(gRef);
+          if (!g.exists) {
+            t.set(gRef, { email: emailNorm, name: buyerName || null, status: 'guest', orderCount: 1, firstOrderAt: nowTs, lastOrderAt: nowTs, lastReference: reference, convertedUid: null, convertedAt: null });
+          } else {
+            t.update(gRef, { name: buyerName || g.data().name || null, orderCount: admin.firestore.FieldValue.increment(1), lastOrderAt: nowTs, lastReference: reference });
+          }
+        });
+      } catch (e) { console.error('[fulfillOrder] guest record upsert failed', { emailNorm, reference }, e); }
+    }
     if (affiliateCode && commissionAmount > 0) {
       db.collection('affiliates').doc(affiliateCode).update({
         sales: admin.firestore.FieldValue.increment(1),
@@ -4225,6 +4261,138 @@ app.get('/reset-password', (req, res) => {
 
 app.get('/signup', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'signup.html'));
+});
+
+// Moves every unclaimed order placed with this email onto the account and marks
+// the guest record converted. ONLY call for an email that is verified.
+async function claimGuestOrders(uid, email) {
+  const emailNorm = String(email || '').trim().toLowerCase();
+  if (!db || !uid || !emailNorm) return 0;
+  let claimed = 0;
+  const legacySnap = await db.collection('my_order').where('email', '==', emailNorm).get();
+  const toClaim = legacySnap.docs.filter(d => !d.data().uid);
+  await Promise.all(toClaim.map(d => d.ref.update({ uid }).then(() => { claimed++; }).catch(() => null)));
+  // Guest -> normal user (the future reminder emails check this to stop reminding converted users).
+  try {
+    const gRef = db.collection('guests').doc(emailNorm);
+    const g = await gRef.get();
+    if (g.exists && g.data().status !== 'converted') {
+      await gRef.update({ status: 'converted', convertedUid: uid, convertedAt: admin.firestore.Timestamp.now() });
+    }
+  } catch (e) { console.warn('[claimGuestOrders] guest conversion failed', e.message || e); }
+  return claimed;
+}
+
+// ── Email verification by 6-digit code (email + password sign-ups) ──────────
+// Mirrors the affiliate bank-details OTP: code is stored hashed, expires in 10
+// minutes, 5 wrong tries burns it, 60s between sends, max 5 sends an hour.
+const BREVO_VERIFY_TEMPLATE_ID = Number(process.env.BREVO_VERIFY_TEMPLATE_ID || 11);
+const VERIFY_TTL_MS = 10 * 60 * 1000;
+const VERIFY_COOLDOWN_MS = 60 * 1000;
+const VERIFY_MAX_SENDS_PER_HOUR = 5;
+const VERIFY_MAX_ATTEMPTS = 5;
+
+function maskEmailForDisplay(email) {
+  const [user, domain] = String(email || '').split('@');
+  if (!user || !domain) return email || '';
+  const visible = user.slice(0, Math.min(2, user.length));
+  return `${visible}${'*'.repeat(Math.max(1, user.length - visible.length))}@${domain}`;
+}
+
+async function sendVerifyEmail(email, name, code) {
+  if (!BREVO_API_KEY || !email) return { ok: false, error: 'Email delivery is not configured.' };
+  try {
+    const r = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: { accept: 'application/json', 'api-key': BREVO_API_KEY, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        sender: { name: BREVO_SENDER_NAME, email: BREVO_SENDER_EMAIL },
+        to: [{ email, name: name || undefined }],
+        templateId: BREVO_VERIFY_TEMPLATE_ID,
+        params: { name: name || 'there', code }
+      })
+    });
+    if (!r.ok) { console.error('Brevo verify email error', r.status, await r.text().catch(() => '')); return { ok: false, error: 'We could not send the code. Please try again.' }; }
+    return { ok: true };
+  } catch (e) { console.warn('Brevo verify email failed', e.message || e); return { ok: false, error: 'We could not send the code. Please try again.' }; }
+}
+
+app.post('/api/verify-email/send', requireUser, async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    if (!req.userEmail) return res.status(400).json({ error: 'No email is on file for this account.' });
+    if (req.emailVerified) return res.json({ ok: true, alreadyVerified: true });
+
+    const ref = db.collection('emailVerifications').doc(req.uid);
+    const snap = await ref.get();
+    const prev = snap.exists ? snap.data() : {};
+    const nowMs = Date.now();
+
+    const lastMs = prev.requestedAt && prev.requestedAt.toMillis ? prev.requestedAt.toMillis() : 0;
+    const waitLeft = VERIFY_COOLDOWN_MS - (nowMs - lastMs);
+    if (waitLeft > 0) return res.status(429).json({ error: `Please wait ${Math.ceil(waitLeft / 1000)}s before requesting another code.`, retryAfter: Math.ceil(waitLeft / 1000) });
+
+    const windowStartMs = prev.windowStart && prev.windowStart.toMillis ? prev.windowStart.toMillis() : 0;
+    const inWindow = nowMs - windowStartMs < 60 * 60 * 1000;
+    const sendCount = inWindow ? (prev.sendCount || 0) : 0;
+    if (sendCount >= VERIFY_MAX_SENDS_PER_HOUR) return res.status(429).json({ error: 'Too many codes requested. Please try again in a little while.' });
+
+    const code = String(crypto.randomInt(100000, 999999));
+    const hash = crypto.createHash('sha256').update(code).digest('hex');
+    const sent = await sendVerifyEmail(req.userEmail, req.userName, code);
+    if (!sent.ok) return res.status(502).json({ error: sent.error });
+
+    await ref.set({
+      hash,
+      email: req.userEmail,
+      expiresAt: admin.firestore.Timestamp.fromMillis(nowMs + VERIFY_TTL_MS),
+      requestedAt: admin.firestore.Timestamp.fromMillis(nowMs),
+      attempts: 0,
+      sendCount: sendCount + 1,
+      windowStart: inWindow ? prev.windowStart : admin.firestore.Timestamp.fromMillis(nowMs)
+    });
+    return res.json({ ok: true, sentTo: maskEmailForDisplay(req.userEmail), expiresInSeconds: VERIFY_TTL_MS / 1000, cooldownSeconds: VERIFY_COOLDOWN_MS / 1000 });
+  } catch (err) {
+    console.error('/api/verify-email/send error', err);
+    return res.status(500).json({ error: 'Could not send a verification code. Please try again.' });
+  }
+});
+
+app.post('/api/verify-email/confirm', requireUser, async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const code = String((req.body && req.body.code) || '').trim();
+    if (!/^\d{6}$/.test(code)) return res.status(400).json({ error: 'Enter the 6-digit code from your email.' });
+    if (req.emailVerified) return res.json({ ok: true, alreadyVerified: true });
+
+    const ref = db.collection('emailVerifications').doc(req.uid);
+    const snap = await ref.get();
+    if (!snap.exists || !snap.data().hash) return res.status(400).json({ error: 'Request a verification code first.', code: 'no_code' });
+    const v = snap.data();
+    if (v.email !== req.userEmail) return res.status(400).json({ error: 'Request a new code for this email.', code: 'no_code' });
+    const expiresMs = v.expiresAt && v.expiresAt.toMillis ? v.expiresAt.toMillis() : 0;
+    if (Date.now() > expiresMs) return res.status(400).json({ error: 'That code has expired. Request a new one.', code: 'expired' });
+    if ((v.attempts || 0) >= VERIFY_MAX_ATTEMPTS) return res.status(429).json({ error: 'Too many incorrect attempts. Request a new code.', code: 'locked' });
+
+    const supplied = crypto.createHash('sha256').update(code).digest('hex');
+    if (supplied !== v.hash) {
+      await ref.update({ attempts: admin.firestore.FieldValue.increment(1) });
+      const left = Math.max(0, VERIFY_MAX_ATTEMPTS - (v.attempts || 0) - 1);
+      return res.status(400).json({ error: left > 0 ? `That code is incorrect. ${left} ${left === 1 ? 'try' : 'tries'} left.` : 'Too many incorrect attempts. Request a new code.', code: left > 0 ? 'wrong' : 'locked', attemptsLeft: left });
+    }
+
+    await admin.auth().updateUser(req.uid, { emailVerified: true });
+    await ref.delete().catch(() => null);
+    const claimed = await claimGuestOrders(req.uid, req.userEmail).catch(e => { console.warn('claim after verify failed', e.message || e); return 0; });
+    return res.json({ ok: true, claimedOrders: claimed });
+  } catch (err) {
+    console.error('/api/verify-email/confirm error', err);
+    return res.status(500).json({ error: 'Could not verify that code. Please try again.' });
+  }
+});
+
+app.get('/verify-email', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'verify-email.html'));
 });
 
 app.get('/welcome', (req, res) => {
