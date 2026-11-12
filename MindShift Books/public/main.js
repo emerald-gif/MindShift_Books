@@ -1340,7 +1340,10 @@ window.msbResumeCheckout = function () {
 
 // ------------------ CART CHECKOUT (one payment for the whole cart) ------------------
 
-async function proceedCartToPayment() {
+async function proceedCartToPayment(guestInfo) {
+  // guestInfo = { name, email } when buying without an account; the click-handler
+  // passes an Event instead, which has no .email, so it counts as a normal checkout.
+  const isGuest = !!(guestInfo && typeof guestInfo.email === 'string' && guestInfo.email);
   // Viewing in dollars? USD checkout isn't available yet — show the friendly
   // message (with a one-tap switch to ₦) instead of starting a payment.
   if (window.MSBCurrency && !window.MSBCurrency.guardCheckout()) return;
@@ -1351,13 +1354,13 @@ async function proceedCartToPayment() {
   // (see msbResumeCheckout below). In normal use this button isn't even
   // visible when signed out (see updateCartCheckoutGate), but this stays as
   // a safety net for the msbResumeCheckout() auto-resume path.
-  if (!window.MSBAuth || !window.MSBAuth.requireSignIn()) {
+  if (!isGuest && (!window.MSBAuth || !window.MSBAuth.requireSignIn())) {
     return;
   }
 
-  const user = window.MSBAuth.getUser();
-  const email = (user && user.email || '').trim();
-  const name  = (user && user.displayName || (email ? email.split('@')[0] : '')).trim();
+  const user = isGuest ? null : window.MSBAuth.getUser();
+  const email = (isGuest ? guestInfo.email : (user && user.email || '')).trim().toLowerCase();
+  const name  = (isGuest ? guestInfo.name : (user && user.displayName || (email ? email.split('@')[0] : ''))).trim();
   const cartIds = getCart();
 
   if (!cartIds.length) {
@@ -1365,22 +1368,24 @@ async function proceedCartToPayment() {
     return;
   }
   if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
-    showToast('We could not read your account email. Please sign in again.', 'error');
+    showToast(isGuest ? 'Please enter a valid email address.' : 'We could not read your account email. Please sign in again.', 'error');
     return;
   }
 
-  const btn = document.getElementById('cartProceedBtn');
+  const btn = document.getElementById(isGuest ? 'cartGuestPayBtn' : 'cartProceedBtn');
+  const idleLabel = isGuest ? 'Continue as Guest' : 'Proceed to Payment';
   if (btn) {
     btn.disabled = true;
     btn.textContent = 'Preparing...';
   }
 
   try {
-    const idToken = await window.MSBAuth.getIdToken();
+    const headers = { 'Content-Type': 'application/json' };
+    if (!isGuest) headers.Authorization = `Bearer ${await window.MSBAuth.getIdToken()}`;
     const resp = await fetch('/api/pay', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
-      body: JSON.stringify({ email, name, productIds: cartIds, applyVoucher: !!(userVoucher && applyVoucherFlag) })
+      headers,
+      body: JSON.stringify({ email, name, productIds: cartIds, applyVoucher: !isGuest && !!(userVoucher && applyVoucherFlag) })
     });
 
     const data = await resp.json();
@@ -1430,7 +1435,7 @@ async function proceedCartToPayment() {
       onClose: function() {
         if (btn) {
           btn.disabled = false;
-          btn.textContent = 'Proceed to Payment';
+          btn.textContent = idleLabel;
         }
         showToast('Payment was closed. Try again when ready.', 'info');
       }
@@ -1445,9 +1450,19 @@ async function proceedCartToPayment() {
   } finally {
     if (btn) {
       btn.disabled = false;
-      btn.textContent = 'Proceed to Payment';
+      btn.textContent = idleLabel;
     }
   }
+}
+
+// Guest checkout: validates the name/email typed into the cart, then runs the
+// same payment flow without an account.
+function proceedCartAsGuest() {
+  const name = (document.getElementById('cartGuestName')?.value || '').trim();
+  const email = (document.getElementById('cartGuestEmail')?.value || '').trim();
+  if (!name) { showToast('Please enter your name.', 'warning'); return; }
+  if (!/^\S+@\S+\.\S+$/.test(email)) { showToast('Please enter a valid email address.', 'warning'); return; }
+  proceedCartToPayment({ name, email });
 }
 
 async function verifyCartPayment(reference, purchaserEmail) {
@@ -1489,7 +1504,8 @@ function goToCartAuth(path) {
 function _wireCartButtons() {
   document.getElementById('cartIcon')?.addEventListener('click', openCartOverlay);
   document.getElementById('cartCloseBtn')?.addEventListener('click', closeCartOverlay);
-  document.getElementById('cartProceedBtn')?.addEventListener('click', proceedCartToPayment);
+  document.getElementById('cartProceedBtn')?.addEventListener('click', () => proceedCartToPayment());
+  document.getElementById('cartGuestPayBtn')?.addEventListener('click', proceedCartAsGuest);
   document.getElementById('cartSignInBtn')?.addEventListener('click', () => goToCartAuth('/login'));
   document.getElementById('cartSignUpBtn')?.addEventListener('click', () => goToCartAuth('/signup'));
   document.getElementById('cartSwitchAccountBtn')?.addEventListener('click', () => {

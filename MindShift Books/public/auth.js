@@ -290,6 +290,15 @@
     const isNew = lastAccountInit ? lastAccountInit.isNewAccount : (window.location.pathname === '/signup');
     if (isNew) {
       const uname = (lastAccountInit && lastAccountInit.username) || '';
+      // Email + password sign-ups confirm their email with a 6-digit code first
+      // (Google/Facebook emails already come verified).
+      const fbUser = auth.currentUser;
+      const pd = (fbUser && fbUser.providerData) || [];
+      if (fbUser && !fbUser.emailVerified && pd.length && pd.every(x => x.providerId === 'password')) {
+        window.location.href = '/verify-email?new=1&returnTo=' + encodeURIComponent(getReturnTo()) +
+          (uname ? '&u=' + encodeURIComponent(uname) : '');
+        return;
+      }
       window.location.href = '/welcome?returnTo=' + encodeURIComponent(getReturnTo()) +
         (uname ? '&u=' + encodeURIComponent(uname) : '');
       return;

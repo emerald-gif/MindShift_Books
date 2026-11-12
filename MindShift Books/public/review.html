@@ -401,6 +401,14 @@
   <meta name="twitter:image" content="https://mindshiftbooks.shop/og-image.jpg" />
   <link rel="canonical" href="https://mindshiftbooks.shop/review" />
 <link rel="stylesheet" href="/theme.css?v=1">
+
+<style id="cart-guest-css">
+.cart-guest-box{margin-top:16px;padding-top:14px;border-top:1px solid #eef2f7;display:flex;flex-direction:column;gap:10px;text-align:left}
+.cart-guest-or{text-align:center;font-size:12px;color:#94a3b8;font-weight:600}
+.cart-guest-input{width:100%;box-sizing:border-box;padding:12px 14px;border:1px solid #e2e8f0;border-radius:12px;font:inherit;font-size:14px;outline:none}
+.cart-guest-input:focus{border-color:#4f46e5}
+.cart-guest-note{margin:0;font-size:11.5px;color:#94a3b8;line-height:1.45;text-align:center}
+</style>
 </head>
 <body>
 
@@ -544,6 +552,14 @@
           <div class="cart-auth-gate-actions">
             <button type="button" class="btn buy-btn" id="cartSignUpBtn">Create Account</button>
             <button type="button" class="cart-auth-secondary" id="cartSignInBtn">Sign In</button>
+          </div>
+
+          <div class="cart-guest-box" id="cartGuestBox">
+            <div class="cart-guest-or"><span>or buy without an account</span></div>
+            <input type="text" id="cartGuestName" class="cart-guest-input" placeholder="Your name" autocomplete="name" maxlength="120">
+            <input type="email" id="cartGuestEmail" class="cart-guest-input" placeholder="Email to send your book to" autocomplete="email" inputmode="email">
+            <button type="button" class="btn buy-btn" id="cartGuestPayBtn">Continue as Guest</button>
+            <p class="cart-guest-note">Your book is emailed to this address. Sign up later with the same email to see it in your library.</p>
           </div>
         </div>
       </div>
