@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Unsubscribe | MindShift Books</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="/MINDSHIFT.jpg">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',Arial,sans-serif;background:#f8fafc;color:#0f172a;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.card{width:100%;max-width:420px;background:#fff;border:1px solid #e2e8f0;border-radius:20px;padding:30px 24px;text-align:center;box-shadow:0 12px 40px rgba(15,23,42,.06)}
+.brand{display:flex;align-items:center;justify-content:center;gap:8px;font-weight:800;font-size:13px;margin-bottom:22px}
+.brand img{width:26px;height:26px;border-radius:6px}
+h1{font-size:22px;font-weight:800;letter-spacing:-.02em;margin-bottom:10px}
+p{font-size:14px;line-height:1.6;color:#64748b;margin-bottom:22px}
+.btn{width:100%;border:none;border-radius:14px;padding:14px;font:inherit;font-size:15px;font-weight:700;color:#fff;cursor:pointer;background:linear-gradient(90deg,#4f46e5,#06b6d4)}
+.btn:disabled{opacity:.5}
+.link{display:inline-block;margin-top:16px;font-size:13px;font-weight:600;color:#4f46e5;text-decoration:none}
+.err{color:#dc2626;font-size:13px;font-weight:600;margin-top:12px}
+</style>
+</head>
+<body>
+<main class="card">
+  <div class="brand"><img src="/MINDSHIFT.jpg" alt="">MINDSHIFT BOOKS</div>
+  <div id="ask">
+    <h1>Unsubscribe from reminders?</h1>
+    <p>You'll stop getting follow-up emails about your books. Your purchase receipts and download links are not affected.</p>
+    <button class="btn" id="go">Yes, unsubscribe me</button>
+    <div class="err" id="err"></div>
+  </div>
+  <div id="done" style="display:none">
+    <h1>You're unsubscribed</h1>
+    <p>We won't send you any more reminders. Your books are still yours to download anytime.</p>
+  </div>
+  <a class="link" href="/">Back to MindShift Books</a>
+</main>
+<script>
+(function(){
+  var q=new URLSearchParams(location.search), e=q.get('e'), t=q.get('t');
+  var btn=document.getElementById('go'), err=document.getElementById('err');
+  if(!e||!t){ document.getElementById('ask').innerHTML='<h1>Link not valid</h1><p>This unsubscribe link looks incomplete. Use the link in your latest email, or reply to it and we will remove you.</p>'; return; }
+  btn.addEventListener('click', async function(){
+    btn.disabled=true; btn.textContent='Unsubscribing…'; err.textContent='';
+    try{
+      var r=await fetch('/api/unsubscribe?e='+encodeURIComponent(e)+'&t='+encodeURIComponent(t),{method:'POST'});
+      var d=await r.json().catch(function(){return {}});
+      if(r.ok){ document.getElementById('ask').style.display='none'; document.getElementById('done').style.display=''; }
+      else { err.textContent=d.error||'Something went wrong. Please try again.'; btn.disabled=false; btn.textContent='Yes, unsubscribe me'; }
+    }catch(x){ err.textContent='Network problem. Please try again.'; btn.disabled=false; btn.textContent='Yes, unsubscribe me'; }
+  });
+})();
+</script>
+</body>
+</html>

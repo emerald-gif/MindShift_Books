@@ -279,6 +279,8 @@ body{font-family:'Inter',sans-serif;color:var(--primary);min-height:100vh;overfl
 <script>
   const params = new URLSearchParams(location.search);
   const returnTo = params.get('returnTo') || '/';
+  // Guest follow-up emails link here with ?email= so they sign up with the same address.
+  (function(){ var pe=params.get('email'); var el=document.getElementById('email'); if(pe&&el&&!el.value) el.value=pe; })();
   document.getElementById('toLoginLink').href = '/login?returnTo=' + encodeURIComponent(returnTo);
 
   // Referral code — either auto-detected from a shared affiliate link
