@@ -4050,10 +4050,14 @@ async function fulfillOrder({ reference, email, buyerName, uid, productIds, ngnA
         const nowTs = admin.firestore.Timestamp.now();
         await db.runTransaction(async t => {
           const g = await t.get(gRef);
+          const nextReminder = admin.firestore.Timestamp.fromMillis(nowTs.toMillis() + GUEST_REMINDER_DAYS[0] * 86400000);
           if (!g.exists) {
-            t.set(gRef, { email: emailNorm, name: buyerName || null, status: 'guest', orderCount: 1, firstOrderAt: nowTs, lastOrderAt: nowTs, lastReference: reference, convertedUid: null, convertedAt: null });
+            t.set(gRef, { email: emailNorm, name: buyerName || null, status: 'guest', orderCount: 1, firstOrderAt: nowTs, lastOrderAt: nowTs, lastReference: reference, productIds: items.map(it => it.productId), convertedUid: null, convertedAt: null, unsubscribed: false, reminderStep: 0, nextReminderAt: nextReminder });
           } else {
-            t.update(gRef, { name: buyerName || g.data().name || null, orderCount: admin.firestore.FieldValue.increment(1), lastOrderAt: nowTs, lastReference: reference });
+            const upd = { name: buyerName || g.data().name || null, orderCount: admin.firestore.FieldValue.increment(1), lastOrderAt: nowTs, lastReference: reference, productIds: admin.firestore.FieldValue.arrayUnion(...items.map(it => it.productId)) };
+            // A new purchase restarts the reminder sequence (unless they opted out or already converted).
+            if (!g.data().unsubscribed && g.data().status === 'guest') { upd.reminderStep = 0; upd.reminderFailures = 0; upd.nextReminderAt = nextReminder; }
+            t.update(gRef, upd);
           }
         });
       } catch (e) { console.error('[fulfillOrder] guest record upsert failed', { emailNorm, reference }, e); }
@@ -4277,7 +4281,7 @@ async function claimGuestOrders(uid, email) {
     const gRef = db.collection('guests').doc(emailNorm);
     const g = await gRef.get();
     if (g.exists && g.data().status !== 'converted') {
-      await gRef.update({ status: 'converted', convertedUid: uid, convertedAt: admin.firestore.Timestamp.now() });
+      await gRef.update({ status: 'converted', convertedUid: uid, convertedAt: admin.firestore.Timestamp.now(), nextReminderAt: admin.firestore.FieldValue.delete() });
     }
   } catch (e) { console.warn('[claimGuestOrders] guest conversion failed', e.message || e); }
   return claimed;
@@ -4286,6 +4290,210 @@ async function claimGuestOrders(uid, email) {
 // ── Email verification by 6-digit code (email + password sign-ups) ──────────
 // Mirrors the affiliate bank-details OTP: code is stored hashed, expires in 10
 // minutes, 5 wrong tries burns it, 60s between sends, max 5 sends an hour.
+const GUEST_REMINDER_DAYS = [1, 3, 6, 14];
+
+// ── Guest reminder emails ───────────────────────────────────────────────────
+// 4 emails (days 1, 3, 6, 14 after the last purchase), then it stops. One Brevo
+// template (ID 12) — the server renders the body blocks per step, so the
+// template stays a simple frame. Stops on: converted, unsubscribed, all 4
+// sent, or 3 failed sends. A new purchase restarts it (see fulfillOrder).
+// Only guests with nextReminderAt set are ever read (single-field range
+// query, no composite index needed); the field is deleted when they stop.
+const BREVO_GUEST_TEMPLATE_ID = Number(process.env.BREVO_GUEST_TEMPLATE_ID || 12);
+const GUEST_REMINDER_MAX_PER_TICK = 100;
+const GUEST_REMINDER_HOURS = { start: 9, end: 19 }; // Lagos time
+
+function _unsubSecret() { return process.env.UNSUBSCRIBE_SECRET || crypto.createHash('sha256').update('unsub|' + (BREVO_API_KEY || 'dev')).digest('hex'); }
+function guestUnsubToken(email) { return crypto.createHmac('sha256', _unsubSecret()).update(String(email).toLowerCase()).digest('hex').slice(0, 32); }
+function guestUnsubLink(email) {
+  return `${PUBLIC_SITE_URL}/unsubscribe?e=${Buffer.from(String(email).toLowerCase()).toString('base64url')}&t=${guestUnsubToken(email)}`;
+}
+function verifyUnsub(eB64, t) {
+  try {
+    const email = Buffer.from(String(eB64 || ''), 'base64url').toString('utf8').trim().toLowerCase();
+    if (!email || !t || String(t).length !== 32) return null;
+    const ok = crypto.timingSafeEqual(Buffer.from(guestUnsubToken(email)), Buffer.from(String(t)));
+    return ok ? email : null;
+  } catch (e) { return null; }
+}
+
+const _esc = (v) => String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const _F = "font-family:'Inter',Arial,sans-serif;";
+const _btn = (label, url) => `<a href="${_esc(url)}" style="background-color:#4f46e5;background-image:linear-gradient(90deg,#4f46e5,#06b6d4);color:#ffffff;text-decoration:none;${_F}font-weight:700;font-size:12.5px;padding:9px 16px;border-radius:999px;display:inline-block;">${_esc(label)}</a>`;
+
+function _bookRow({ title, sub, cover, btnLabel, url }, idx) {
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:14px 0;${idx > 0 ? 'border-top:1px solid #eef2f7;' : ''}"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+    ${cover ? `<td style="width:44px;padding-right:12px;vertical-align:middle;"><img src="${_esc(cover)}" width="44" alt="" style="display:block;width:44px;border-radius:6px;border:1px solid #eef2f7;"></td>` : ''}
+    <td style="vertical-align:middle;"><div style="${_F}font-weight:700;font-size:14.5px;color:#0f172a;">${_esc(title)}</div><div style="${_F}font-size:12px;color:#94a3b8;padding-top:2px;">${_esc(sub)}</div></td>
+    <td align="right" style="white-space:nowrap;vertical-align:middle;">${_btn(btnLabel, url)}</td></tr></table></td></tr></table>`;
+}
+const _section = (title, inner) => `<div style="${_F}font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#94a3b8;padding:22px 0 4px;">${_esc(title)}</div>${inner}`;
+
+const GUEST_GENRE_TO_ARTICLE_KEYWORD = {
+  'Personal Development': 'mindset', 'Personal Finance': 'money', 'Business & Marketing': 'career',
+  'Faith & Spirituality': 'purpose', 'Psychology': 'relationship', 'Self-Help & Productivity': 'productiv'
+};
+
+let _guestArticlesCache = { at: 0, items: [] };
+async function getRecentPublishedArticles() {
+  if (Date.now() - _guestArticlesCache.at < 6 * 60 * 60 * 1000 && _guestArticlesCache.items.length) return _guestArticlesCache.items;
+  try {
+    const snap = await db.collection('articles').where('status', '==', 'published').limit(40).get();
+    const items = snap.docs.map(d => { const a = d.data(); return { id: d.id, title: a.title, brief: a.brief || '', cover: a.cover || null, cat: a.cat || '', readTime: a.readTime || '', ms: a.publishedAt && a.publishedAt.toMillis ? a.publishedAt.toMillis() : 0 }; })
+      .filter(a => a.title).sort((x, y) => y.ms - x.ms).slice(0, 15);
+    _guestArticlesCache = { at: Date.now(), items };
+    return items;
+  } catch (e) { console.warn('[guest-reminder] articles load failed', e.message || e); return _guestArticlesCache.items; }
+}
+
+function recommendBooksFor(ownedIds, max = 3) {
+  const owned = new Set(ownedIds);
+  const genres = new Set(ownedIds.map(id => PRODUCTS[id] && PRODUCTS[id].genre).filter(Boolean));
+  return Object.values(PRODUCTS)
+    .filter(p => p.category === 'ours' && !owned.has(p.id) && p.priceNGN)
+    .map((p, i) => ({ p, score: (genres.has(p.genre) ? 2 : 0), i }))
+    .sort((a, b) => b.score - a.score || a.i - b.i)
+    .slice(0, max).map(x => x.p);
+}
+
+const _coverUrl = (p) => p && p.coverPath ? `${PUBLIC_SITE_URL}/${String(p.coverPath).replace(/^\/+/, '')}` : null;
+
+const GUEST_PLATFORM_HTML = () => _section('More than a bookstore', `
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="${_F}font-size:13.5px;line-height:1.55;color:#475569;">
+    <tr><td style="padding:6px 0;"><b style="color:#0f172a;">Articles &amp; insights</b> on mindset, money, faith, relationships and growth, written by creators and readers like you.</td></tr>
+    <tr><td style="padding:6px 0;"><b style="color:#0f172a;">Creators to follow</b> and a community to discuss what you're reading.</td></tr>
+    <tr><td style="padding:6px 0;"><b style="color:#0f172a;">Your own profile</b> to share your thoughts, post and grow.</td></tr>
+  </table>`);
+
+async function buildGuestReminder(g, step) {
+  const first = String(g.name || 'there').trim().split(/\s+/)[0] || 'there';
+  const owned = Array.isArray(g.productIds) ? g.productIds.filter(id => PRODUCTS[id]) : [];
+  const ownedProducts = owned.map(id => PRODUCTS[id]);
+  const signupUrl = `${PUBLIC_SITE_URL}/signup?email=${encodeURIComponent(g.email)}`;
+  const downloadRows = () => ownedProducts.slice(0, 4).map((p, i) => _bookRow({ title: p.title, sub: 'PDF · eBook', cover: _coverUrl(p), btnLabel: 'Download', url: `${PUBLIC_SITE_URL}/dl/${mintDownloadToken(p.id)}` }, i)).join('');
+  const bookNames = ownedProducts.map(p => p.title);
+  const lastTitle = bookNames[bookNames.length - 1] || 'your book';
+  const voucher = nairaFmt(NUDGE_VOUCHER_FALLBACK);
+
+  const out = { step, headline: '', intro: '', blocks: '', cta_label: '', cta_link: '', subject: '' };
+
+  if (step === 0) {
+    out.subject = 'Your MindShift book is ready';
+    out.headline = `Your book is ready, ${first}.`;
+    out.intro = `Thanks for picking up ${_esc(lastTitle)}. Here are your download links again, so you never have to hunt for them. Create a free account with this same email and every book you buy lives in one organised library you can open anytime.`;
+    out.blocks = _section('Your books', downloadRows()) + GUEST_PLATFORM_HTML();
+    out.cta_label = 'Create your free account'; out.cta_link = signupUrl;
+  } else if (step === 1) {
+    out.subject = 'More to read, picked for you';
+    out.headline = `More to read, ${first}`;
+    out.intro = ownedProducts.length ? `Since you enjoyed ${_esc(lastTitle)}, these are the books we think you'll want next.` : 'A few books worth your time.';
+    const recs = recommendBooksFor(owned, 3);
+    out.blocks = recs.length ? _section('Recommended books', recs.map((p, i) => _bookRow({ title: p.title, sub: `${nairaFmt(p.priceNGN)}${p.genre ? ' · ' + p.genre : ''}`, cover: _coverUrl(p), btnLabel: 'View', url: `${PUBLIC_SITE_URL}/review?id=${encodeURIComponent(p.id)}` }, i)).join('')) : '';
+    const articles = await getRecentPublishedArticles();
+    const kw = ownedProducts.map(p => GUEST_GENRE_TO_ARTICLE_KEYWORD[p.genre]).filter(Boolean);
+    const matched = articles.filter(a => kw.some(k => String(a.cat).toLowerCase().includes(k)));
+    const picks = [...matched, ...articles.filter(a => !matched.includes(a))].slice(0, 2);
+    if (picks.length) out.blocks += _section('Also on MindShift: worth a read', picks.map((a, i) => _bookRow({ title: a.title, sub: [a.readTime, a.cat].filter(Boolean).join(' · '), cover: null, btnLabel: 'Read', url: `${PUBLIC_SITE_URL}/article-read?id=${encodeURIComponent(a.id)}` }, i)).join(''));
+    out.cta_label = 'Browse all books'; out.cta_link = `${PUBLIC_SITE_URL}/books`;
+  } else if (step === 2) {
+    out.subject = 'Your library on MindShift';
+    out.headline = 'Keep every book in one place';
+    out.intro = `Your account turns your purchases into a library you can organise and re-download anytime. Finish your profile and you unlock ${voucher} off your next book too.`;
+    out.blocks = _section('Your books', downloadRows()) + GUEST_PLATFORM_HTML();
+    out.cta_label = 'Create your free account'; out.cta_link = signupUrl;
+  } else {
+    out.subject = 'A last note about your account';
+    out.headline = `One last thing, ${first}`;
+    out.intro = 'Your books are safe and the download links above always work. Create your free account when you are ready and they will be waiting in your library. This is our last reminder.';
+    out.blocks = _section('Your books', downloadRows());
+    out.cta_label = 'Create your free account'; out.cta_link = signupUrl;
+  }
+  return out;
+}
+
+async function sendGuestReminderEmail(g, step) {
+  if (!BREVO_API_KEY) return { ok: false, error: 'missing key' };
+  try {
+    const r = await buildGuestReminder(g, step);
+    const unsub = guestUnsubLink(g.email);
+    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: { accept: 'application/json', 'api-key': BREVO_API_KEY, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        sender: { name: BREVO_SENDER_NAME, email: BREVO_SENDER_EMAIL },
+        to: [{ email: g.email, name: g.name || undefined }],
+        subject: r.subject,
+        templateId: BREVO_GUEST_TEMPLATE_ID,
+        tags: ['guest-reminder'],
+        headers: { 'List-Unsubscribe': `<${unsub}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' },
+        params: { first_name: String(g.name || 'there').trim().split(/\s+/)[0] || 'there', preview_text: r.intro.replace(/&[a-z]+;/g, '').slice(0, 110), headline: r.headline, intro: r.intro, blocks_html: r.blocks, cta_label: r.cta_label, cta_link: r.cta_link, unsubscribe_link: unsub, step: step + 1 }
+      })
+    });
+    if (!res.ok) { const txt = await res.text().catch(() => ''); return { ok: false, error: `Brevo ${res.status}: ${txt.slice(0, 160)}` }; }
+    return { ok: true };
+  } catch (e) { return { ok: false, error: e.message }; }
+}
+
+let guestReminderRunning = false;
+async function maybeRunGuestReminders() {
+  if (!db || !BREVO_API_KEY || guestReminderRunning) return;
+  guestReminderRunning = true;
+  try {
+    const hour = lagosNow().getUTCHours();
+    if (hour < GUEST_REMINDER_HOURS.start || hour >= GUEST_REMINDER_HOURS.end) return;
+    const snap = await db.collection('guests').where('nextReminderAt', '<=', admin.firestore.Timestamp.now()).limit(GUEST_REMINDER_MAX_PER_TICK).get();
+    let sent = 0, failed = 0;
+    for (const doc of snap.docs) {
+      const g = doc.data();
+      if (g.status !== 'guest' || g.unsubscribed || !g.email) { await doc.ref.update({ nextReminderAt: admin.firestore.FieldValue.delete() }).catch(() => null); continue; }
+      const step = Number(g.reminderStep || 0);
+      if (step >= GUEST_REMINDER_DAYS.length) { await doc.ref.update({ nextReminderAt: admin.firestore.FieldValue.delete() }).catch(() => null); continue; }
+      const result = await sendGuestReminderEmail(g, step);
+      if (result.ok) {
+        sent++;
+        const nextStep = step + 1;
+        const upd = { reminderStep: nextStep, lastReminderAt: admin.firestore.Timestamp.now() };
+        if (nextStep >= GUEST_REMINDER_DAYS.length) upd.nextReminderAt = admin.firestore.FieldValue.delete();
+        else {
+          const base = g.lastOrderAt && g.lastOrderAt.toMillis ? g.lastOrderAt.toMillis() : Date.now();
+          // never bunch emails up after a long sleep: at least 2 days after this one
+          upd.nextReminderAt = admin.firestore.Timestamp.fromMillis(Math.max(base + GUEST_REMINDER_DAYS[nextStep] * 86400000, Date.now() + 2 * 86400000));
+        }
+        await doc.ref.update(upd).catch(() => null);
+      } else {
+        failed++;
+        console.error('[guest-reminder] send failed', doc.id, result.error);
+        const fails = Number(g.reminderFailures || 0) + 1;
+        await doc.ref.update(fails >= 3 ? { reminderFailures: fails, nextReminderAt: admin.firestore.FieldValue.delete() } : { reminderFailures: fails, nextReminderAt: admin.firestore.Timestamp.fromMillis(Date.now() + 6 * 3600000) }).catch(() => null);
+      }
+      await new Promise(r => setTimeout(r, 250));
+    }
+    if (sent || failed) console.log('[guest-reminder]', { sent, failed });
+  } catch (err) {
+    console.error('[guest-reminder] run failed', err);
+  } finally { guestReminderRunning = false; }
+}
+if (db) {
+  setTimeout(maybeRunGuestReminders, 60 * 1000);
+  setInterval(maybeRunGuestReminders, 60 * 60 * 1000);
+}
+
+// One-click unsubscribe (also used by the List-Unsubscribe header).
+async function handleGuestUnsubscribe(req, res) {
+  try {
+    const email = verifyUnsub((req.query && req.query.e) || (req.body && req.body.e), (req.query && req.query.t) || (req.body && req.body.t));
+    if (!email) return res.status(400).json({ error: 'This unsubscribe link is not valid.' });
+    if (db) await db.collection('guests').doc(email).set({ unsubscribed: true, unsubscribedAt: admin.firestore.Timestamp.now(), nextReminderAt: admin.firestore.FieldValue.delete() }, { merge: true });
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('unsubscribe error', err);
+    return res.status(500).json({ error: 'Could not unsubscribe. Please try again.' });
+  }
+}
+app.post('/api/unsubscribe', handleGuestUnsubscribe);
+app.post('/unsubscribe', handleGuestUnsubscribe);
+app.get('/unsubscribe', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'unsubscribe.html')); });
+
 const BREVO_VERIFY_TEMPLATE_ID = Number(process.env.BREVO_VERIFY_TEMPLATE_ID || 11);
 const VERIFY_TTL_MS = 10 * 60 * 1000;
 const VERIFY_COOLDOWN_MS = 60 * 1000;
