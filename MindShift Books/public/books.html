@@ -173,11 +173,15 @@
 <link rel="stylesheet" href="/theme.css?v=1">
 
 <style id="cart-guest-css">
-.cart-guest-box{margin-top:16px;padding-top:14px;border-top:1px solid #eef2f7;display:flex;flex-direction:column;gap:10px;text-align:left}
-.cart-guest-or{text-align:center;font-size:12px;color:#94a3b8;font-weight:600}
+.cart-guest-box{margin-top:18px;display:flex;flex-direction:column;gap:10px;text-align:left}
 .cart-guest-input{width:100%;box-sizing:border-box;padding:12px 14px;border:1px solid #e2e8f0;border-radius:12px;font:inherit;font-size:14px;outline:none}
 .cart-guest-input:focus{border-color:#4f46e5}
 .cart-guest-note{margin:0;font-size:11.5px;color:#94a3b8;line-height:1.45;text-align:center}
+.cart-signin-promo{margin-top:20px;padding-top:16px;border-top:1px solid #eef2f7;text-align:center}
+.cart-signin-gift{font-size:12.5px;color:#475569;line-height:1.5;background:linear-gradient(90deg,rgba(79,70,229,.08),rgba(6,182,212,.08));border-radius:10px;padding:9px 12px}
+.cart-signin-gift b{color:#4f46e5}
+.cart-signin-links{display:flex;justify-content:center;align-items:center;gap:10px;margin-top:10px;color:#94a3b8}
+.cart-auth-link{background:none;border:none;font:inherit;font-size:13px;font-weight:700;color:#4f46e5;cursor:pointer;padding:4px 2px}
 </style>
 </head>
 <body class="ds-glass">
@@ -714,21 +718,25 @@
       <div id="cartCheckoutSignedOut" style="display:none;">
         <div class="cart-auth-gate">
           <div class="cart-auth-gate-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="M3 7l9 6 9-6"></path></svg>
           </div>
-          <h3>Sign in to check out</h3>
-          <p>Create a free account or sign in so we know exactly where to send your eBooks.</p>
-          <div class="cart-auth-gate-actions">
-            <button type="button" class="btn buy-btn" id="cartSignUpBtn">Create Account</button>
-            <button type="button" class="cart-auth-secondary" id="cartSignInBtn">Sign In</button>
-          </div>
+          <h3>Where should we send your book?</h3>
+          <p>No account needed. Your eBook is emailed to you right after payment.</p>
 
           <div class="cart-guest-box" id="cartGuestBox">
-            <div class="cart-guest-or"><span>or buy without an account</span></div>
             <input type="text" id="cartGuestName" class="cart-guest-input" placeholder="Your name" autocomplete="name" maxlength="120">
             <input type="email" id="cartGuestEmail" class="cart-guest-input" placeholder="Email to send your book to" autocomplete="email" inputmode="email">
             <button type="button" class="btn buy-btn" id="cartGuestPayBtn">Continue as Guest</button>
-            <p class="cart-guest-note">Your book is emailed to this address. Sign up later with the same email to see it in your library.</p>
+            <p class="cart-guest-note">Sign up later with the same email and your book will be waiting in your library.</p>
+          </div>
+
+          <div class="cart-signin-promo">
+            <div class="cart-signin-gift">🎁 Create a free account and unlock <b>₦2,000 off</b> your first purchase</div>
+            <div class="cart-signin-links">
+              <button type="button" class="cart-auth-link" id="cartSignUpBtn">Create Account</button>
+              <span aria-hidden="true">·</span>
+              <button type="button" class="cart-auth-link" id="cartSignInBtn">Sign In</button>
+            </div>
           </div>
         </div>
       </div>
