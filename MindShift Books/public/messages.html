@@ -2892,19 +2892,29 @@ if(window.visualViewport){ visualViewport.addEventListener('resize', edFit); vis
    to the part you can actually see (--vvh), the page never scrolls, and the newest messages stay in view while you type. */
 (function(){
   const v = window.visualViewport; if(!v) return;
-  let lastH = v.height;
+  const root = document.documentElement;
+  let lastH = v.height, appliedH = -1, appliedT = -1, raf = 0;
+  const editing = () => { const t = (document.activeElement || {}).tagName; return t === 'TEXTAREA' || t === 'INPUT'; };
   function fit(){
+    raf = 0;
     const h = Math.round(v.height);
-    document.documentElement.style.setProperty('--vvh', h + 'px');
-    document.documentElement.style.setProperty('--vvt', Math.round(v.offsetTop) + 'px');
-    if(window.scrollY || document.documentElement.scrollTop || v.offsetTop){ window.scrollTo(0, 0); }
+    // Only follow Safari's pan while someone is actually typing. Once the keyboard is gone the offset is always 0,
+    // so a stale mid-animation value can never leave a blank gap at the top.
+    const top = editing() ? Math.max(0, Math.round(v.offsetTop)) : 0;
+    if(h !== appliedH){ root.style.setProperty('--vvh', h + 'px'); appliedH = h; }
+    if(top !== appliedT){ root.style.setProperty('--vvt', top + 'px'); appliedT = top; }
+    if(!editing() && window.scrollY){ window.scrollTo(0, 0); }
     if(h < lastH - 80){                                   // keyboard opened: keep the end of the conversation visible
       const box = document.getElementById('msgs');
       if(box && document.activeElement === input) requestAnimationFrame(() => { box.scrollTop = box.scrollHeight; });
     }
     lastH = h;
   }
-  v.addEventListener('resize', fit); v.addEventListener('scroll', fit);
+  const schedule = () => { if(!raf) raf = requestAnimationFrame(fit); };
+  // Safari animates the keyboard for ~0.4s and its numbers settle late, so re-check a few times after focus changes.
+  const settle = () => { schedule(); [120, 350, 700].forEach(ms => setTimeout(schedule, ms)); };
+  v.addEventListener('resize', schedule); v.addEventListener('scroll', schedule);
+  document.addEventListener('focusin', settle); document.addEventListener('focusout', settle);
   fit();
 })();
 if(window.ResizeObserver) new ResizeObserver(() => { if(ED.open) edLayout(); }).observe($('edStage'));
