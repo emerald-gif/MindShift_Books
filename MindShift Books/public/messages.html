@@ -28,7 +28,8 @@ html,body{height:100%}
 body{font-family:'Segoe UI',system-ui,-apple-system,Roboto,sans-serif;background:var(--bg);color:var(--txt);-webkit-font-smoothing:antialiased;overflow:hidden}
 button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
 
-.view{display:none;height:var(--vvh,100dvh);flex-direction:column;background:var(--bg)}
+/* Pinned to the part of the screen you can actually see (--vvt/--vvh follow the visual viewport), so iOS can't pan the chat away when the keyboard opens */
+.view{display:none;position:fixed;left:0;right:0;top:var(--vvt,0px);height:var(--vvh,100dvh);flex-direction:column;background:var(--bg)}
 .view.on{display:flex}
 
 /* ── top bar ── */
@@ -2895,6 +2896,7 @@ if(window.visualViewport){ visualViewport.addEventListener('resize', edFit); vis
   function fit(){
     const h = Math.round(v.height);
     document.documentElement.style.setProperty('--vvh', h + 'px');
+    document.documentElement.style.setProperty('--vvt', Math.round(v.offsetTop) + 'px');
     if(window.scrollY || document.documentElement.scrollTop || v.offsetTop){ window.scrollTo(0, 0); }
     if(h < lastH - 80){                                   // keyboard opened: keep the end of the conversation visible
       const box = document.getElementById('msgs');

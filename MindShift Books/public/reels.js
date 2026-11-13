@@ -13,8 +13,12 @@
 #msbReels{position:fixed;inset:0;z-index:99999;background:#000;display:none;color:#fff;
   font-family:inherit;-webkit-user-select:none;user-select:none}
 #msbReels.open{display:block}
+/* iOS Safari's floating toolbar sits below the fixed layer, so the page used to show through there.
+   The black layer now reaches 160px past the bottom edge, and the page behind goes black and stops scrolling. */
+html.msb-reels-open,html.msb-reels-open body{background:#000 !important;overflow:hidden !important;overscroll-behavior:none}
+#msbReels{inset:auto;top:0;left:0;right:0;bottom:-160px}
 #msbReels *{-webkit-tap-highlight-color:transparent}
-#msbReels .rl-scroller{position:absolute;inset:0;overflow-y:scroll;scroll-snap-type:y mandatory;overscroll-behavior:contain;
+#msbReels .rl-scroller{position:absolute;top:0;left:0;right:0;height:100vh;height:100dvh;overflow-y:scroll;scroll-snap-type:y mandatory;overscroll-behavior:contain;
   -webkit-overflow-scrolling:touch;scrollbar-width:none}
 #msbReels .rl-scroller::-webkit-scrollbar{display:none}
 #msbReels .rl-slide{position:relative;height:100vh;height:100dvh;width:100%;scroll-snap-align:start;scroll-snap-stop:always;background:#000;overflow:hidden}
@@ -315,7 +319,7 @@ body.msb-reels-open .rp-sheet{z-index:100005!important}
         '<button class="rl-chip" id="rlMuteBtn" data-a="mute" aria-label="Sound">'+muteIcon()+'</button>'+
       '</div></div>'+
       '<div class="rl-scroller">'+items.map(slideHtml).join('')+'</div>';
-    ov.classList.add('open');
+    ov.classList.add('open'); document.documentElement.classList.add('msb-reels-open');
     prevOv = [document.documentElement.style.overflow, document.body.style.overflow];
     document.documentElement.style.overflow = 'hidden'; document.body.style.overflow = 'hidden';
     document.body.classList.add('msb-reels-open');
@@ -461,7 +465,7 @@ body.msb-reels-open .rp-sheet{z-index:100005!important}
     if(observer){ observer.disconnect(); observer = null; }
     clearInterval(syncTimer); syncTimer = null; activeId = null;
     ov.querySelectorAll('video').forEach(function(v){ v.pause(); v.removeAttribute('src'); v.load(); });
-    ov.classList.remove('open'); ov.innerHTML = ''; ov.onclick = null;
+    ov.classList.remove('open'); document.documentElement.classList.remove('msb-reels-open'); ov.innerHTML = ''; ov.onclick = null;
     document.documentElement.style.overflow = prevOv[0]; document.body.style.overflow = prevOv[1];
     document.body.classList.remove('msb-reels-open');
     // Resume whichever feed videos are actually on screen (muted, like before).
