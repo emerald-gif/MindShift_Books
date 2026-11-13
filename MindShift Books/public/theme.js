@@ -281,3 +281,68 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', auto); else auto();
 })();
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Edge lock — full-screen viewers/screens on iPhone Safari.
+   Safari's floating toolbar sits below the fixed layer, so while a full-screen image viewer / search screen / editor was open the
+   page behind it showed through the strip under the toolbar. While one of these is open we pin the page to the visible screen
+   height (nothing is painted below it) and colour that strip like the overlay. Closing restores the exact scroll position.
+   The reels viewer does the same thing itself (reels.js).
+   ═══════════════════════════════════════════════════════════════════════ */
+(function () {
+  if (window.__msbEdgeLock) return; window.__msbEdgeLock = true;
+  var SEL = ['#msbImgV', '.img-viewer-bg', '.search-screen', '.edit-screen', '.follow-screen', '.search-overlay', '.lb',
+             '.shareimg-overlay', '.preview-modal', '#kv-pe', '#pe-te'].join(',');
+  var root = document.documentElement, locked = false, savedY = 0, timer = 0;
+
+  function parse(c) { var m = /rgba?\(([^)]+)\)/.exec(c || ''); if (!m) return null; var p = m[1].split(',').map(parseFloat); return { r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1 }; }
+  function bgOf(el) {
+    var c = parse(getComputedStyle(el).backgroundColor);
+    if (!c || c.a === 0) return '#000';
+    var lum = (0.299 * c.r + 0.587 * c.g + 0.114 * c.b) / 255, base = lum < 0.5 ? 0 : 255;
+    function mix(x) { return Math.round(x * c.a + base * (1 - c.a)); }
+    return 'rgb(' + mix(c.r) + ',' + mix(c.g) + ',' + mix(c.b) + ')';
+  }
+  function openOne() {
+    var els = document.querySelectorAll(SEL), vw = window.innerWidth, vh = window.innerHeight;
+    for (var i = 0; i < els.length; i++) {
+      var el = els[i], cs = getComputedStyle(el);
+      if (cs.display === 'none' || cs.visibility === 'hidden' || parseFloat(cs.opacity) < 0.5 || cs.position !== 'fixed') continue;
+      var r = el.getBoundingClientRect();
+      var w = Math.min(r.right, vw) - Math.max(r.left, 0), h = Math.min(r.bottom, vh) - Math.max(r.top, 0);
+      if (w >= vw * 0.9 && h >= vh * 0.8) return el;
+    }
+    return null;
+  }
+  function check() {
+    timer = 0;
+    var el = openOne();
+    if (el && !locked) {
+      locked = true; savedY = window.pageYOffset || 0;
+      root.style.setProperty('--msb-edge-y', savedY + 'px');
+      root.style.setProperty('--msb-edge-bg', bgOf(el));
+      root.classList.add('msb-edge-lock');
+    } else if (el && locked) {
+      root.style.setProperty('--msb-edge-bg', bgOf(el));
+    } else if (!el && locked) {
+      locked = false;
+      root.classList.remove('msb-edge-lock'); root.style.removeProperty('--msb-edge-y'); root.style.removeProperty('--msb-edge-bg');
+      try { window.scrollTo({ top: savedY, left: 0, behavior: 'instant' }); } catch (e) { window.scrollTo(0, savedY); }
+    }
+  }
+  function later() { if (!timer) timer = setTimeout(check, 60); }
+
+  function start() {
+    var st = document.createElement('style');
+    st.textContent = 'html.msb-edge-lock{height:100%!important;overflow:hidden!important;background:var(--msb-edge-bg,#000)!important}' +
+      'html.msb-edge-lock body{position:fixed!important;left:0!important;right:0!important;width:100%!important;height:100%!important;overflow:hidden!important;top:calc(-1 * var(--msb-edge-y,0px))!important}';
+    document.head.appendChild(st);
+    try {
+      new MutationObserver(later).observe(root, { subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'style', 'hidden', 'open'] });
+    } catch (e) {}
+    ['transitionend', 'animationend'].forEach(function (ev) { document.addEventListener(ev, later, true); });
+    window.addEventListener('resize', later);
+    later();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+})();
