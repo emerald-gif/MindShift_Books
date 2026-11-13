@@ -346,3 +346,17 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();
+
+
+/* Photo viewers: put the slide strip on photo #i, exactly centred. Setting scrollLeft once, straight after the viewer is shown, is too early on
+   iPhone Safari (layout isn't settled and scroll-snap can pull it elsewhere), so the photo opened off-centre. We switch snapping off, set the position,
+   and re-apply it a few times while the viewer finishes laying out. */
+window.MSBPlaceTrack = function (track, index) {
+  if (!track) return;
+  var go = function () {
+    track.style.scrollSnapType = 'none';
+    track.scrollLeft = (index || 0) * track.clientWidth;
+    track.style.scrollSnapType = '';
+  };
+  go(); requestAnimationFrame(go); setTimeout(go, 120); setTimeout(go, 320);
+};

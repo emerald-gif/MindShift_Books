@@ -19,10 +19,10 @@
 #msbImgV .iv-close svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
 #msbImgV .iv-count{position:absolute;top:max(22px,calc(env(safe-area-inset-top) + 6px));left:50%;transform:translateX(-50%);background:rgba(0,0,0,.55);color:#fff;
   font-size:12.5px;font-weight:700;padding:5px 13px;border-radius:99px;z-index:3;letter-spacing:.2px}
-#msbImgV .iv-track{display:flex;width:100vw;height:100vh;height:100dvh;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+#msbImgV .iv-track{display:flex;width:100%;height:100%;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 #msbImgV .iv-track::-webkit-scrollbar{display:none}
-#msbImgV .iv-slide{flex:0 0 100vw;scroll-snap-align:center;scroll-snap-stop:always;display:flex;align-items:center;justify-content:center}
-#msbImgV .iv-slide img{max-width:94vw;max-height:86vh;max-height:86dvh;object-fit:contain;border-radius:8px;-webkit-user-select:none;user-select:none}
+#msbImgV .iv-slide{flex:0 0 100%;min-width:0;box-sizing:border-box;scroll-snap-align:start;scroll-snap-stop:always;display:flex;align-items:center;justify-content:center}
+#msbImgV .iv-slide img{max-width:94%;max-height:86vh;max-height:86dvh;object-fit:contain;border-radius:8px;-webkit-user-select:none;user-select:none}
 #msbImgV.has-bar .iv-slide{padding-bottom:96px}
 #msbImgV.has-bar.has-info .iv-slide{padding-bottom:150px}
 #msbImgV.has-bar .iv-slide img{max-height:calc(100dvh - 190px)}
@@ -165,7 +165,7 @@ body.msb-imgv-open .save-drawer-backdrop{z-index:100006!important}
     prevOv = document.body.style.overflow; document.body.style.overflow = 'hidden';
     document.body.classList.add('msb-imgv-open');
     el.classList.add('show');
-    track.scrollLeft = (start || 0) * track.clientWidth;
+    (window.MSBPlaceTrack || function(t, i){ t.scrollLeft = i * t.clientWidth; })(track, start || 0);
     updateCount();
     clearInterval(syncTimer); syncTimer = setInterval(sync, 400);
     if(!pushed){ history.pushState({ msbImgV:1 }, ''); pushed = true; }

@@ -448,11 +448,11 @@ header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .img-viewer-close svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
 .img-viewer-count{position:absolute;top:22px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.55);
   color:#fff;font-size:12.5px;font-weight:700;padding:5px 13px;border-radius:99px;z-index:2201;letter-spacing:.2px}
-.img-viewer-track{display:flex;width:100vw;height:100vh;overflow-x:auto;scroll-snap-type:x mandatory;
+.img-viewer-track{display:flex;width:100%;height:100%;overscroll-behavior-x:contain;overflow-x:auto;scroll-snap-type:x mandatory;
   -webkit-overflow-scrolling:touch;scrollbar-width:none}
 .img-viewer-track::-webkit-scrollbar{display:none}
-.img-viewer-slide{flex:0 0 100vw;scroll-snap-align:center;display:flex;align-items:center;justify-content:center}
-.img-viewer-slide img{max-width:92vw;max-height:85vh;object-fit:contain;border-radius:8px}
+.img-viewer-slide{flex:0 0 100%;min-width:0;box-sizing:border-box;scroll-snap-align:start;display:flex;align-items:center;justify-content:center}
+.img-viewer-slide img{max-width:92%;max-height:85vh;object-fit:contain;border-radius:8px}
 .art-hero{cursor:pointer}
 /* ══ WEEKLY UI POLISH — article reader (CSS only: no markup, script or behaviour changes) ══ */
 .art-wrap{padding:0 20px 72px}
@@ -2366,7 +2366,7 @@ window.openImageViewer = function(list, startIndex){
   countEl.style.display = imgViewerCount>1 ? '' : 'none';
   document.getElementById('imgViewerBg').classList.add('show');
   document.body.style.overflow='hidden';
-  track.scrollLeft = (startIndex||0) * track.clientWidth;
+  (window.MSBPlaceTrack || function(t,i){ t.scrollLeft = i * t.clientWidth; })(track, startIndex||0);
   updateImgViewerCount();
 };
 window.onImgViewerScroll = function(){ updateImgViewerCount(); };
