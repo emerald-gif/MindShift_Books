@@ -42,6 +42,9 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 /* ── inbox ── */
 .lscroll{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;background:linear-gradient(180deg,var(--cbg1,var(--c-bg,#fff)),var(--cbg2,#fff));position:relative;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch}
 .list{flex:1 0 auto;background:transparent}
+/* New-message and message-requests screens: the people list is its own scroller (it used to just overflow the screen, which Safari
+   then tried to scroll as the whole page — that was the jumpy, sticky scrolling, worst with the keyboard open). */
+#newView>.list,#reqView>.list{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding-bottom:calc(28px + env(safe-area-inset-bottom))}
 .ptr{position:absolute;left:50%;top:0;z-index:5;width:38px;height:38px;border-radius:50%;background:var(--c-bg,#fff);box-shadow:0 3px 14px rgba(15,23,42,.18);display:flex;align-items:center;justify-content:center;transform:translate(-50%,-44px);opacity:0;pointer-events:none;color:var(--c-mute,#94a3b8)}
 .ptr.go{color:var(--g, #4f46e5)}
 .ptr svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
@@ -4243,6 +4246,11 @@ function showNew(push){
   renderNewList(null);
   setTimeout(() => $('newQ').focus(), 60);
 }
+/* Dragging the list closes the keyboard (like Instagram / iMessage), so the list gets the whole screen back. */
+(function(){ const l = $('newList'); let y0 = 0;
+  l.addEventListener('touchstart', e => { y0 = e.touches[0].clientY; }, { passive: true });
+  l.addEventListener('touchmove', e => { if(document.activeElement === $('newQ') && Math.abs(e.touches[0].clientY - y0) > 14) $('newQ').blur(); }, { passive: true });
+})();
 $('newClear').onclick = () => { $('newQ').value = ''; $('newClear').hidden = true; ++_newSeq; renderNewList(null); $('newQ').focus(); };
 $('newQ').addEventListener('input', () => {
   clearTimeout(_newTimer);

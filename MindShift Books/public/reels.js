@@ -16,6 +16,9 @@
 /* iOS Safari's floating toolbar sits below the fixed layer, so the page used to show through there.
    The black layer now reaches 160px past the bottom edge, and the page behind goes black and stops scrolling. */
 html.msb-reels-open,html.msb-reels-open body{background:#000 !important;overflow:hidden !important;overscroll-behavior:none}
+/* Scroll-lock: pin the page to exactly the visible screen height so nothing is painted below it (Safari's toolbar strip stays black). */
+html.msb-reels-open{height:100% !important}
+html.msb-reels-open body{position:fixed !important;left:0 !important;right:0 !important;width:100% !important;height:100% !important;top:calc(-1 * var(--rl-y,0px)) !important}
 #msbReels{inset:auto;top:0;left:0;right:0;bottom:-160px}
 #msbReels *{-webkit-tap-highlight-color:transparent}
 #msbReels .rl-scroller{position:absolute;top:0;left:0;right:0;height:100vh;height:100dvh;overflow-y:scroll;scroll-snap-type:y mandatory;overscroll-behavior:contain;
@@ -144,7 +147,7 @@ body.msb-reels-open .rp-sheet{z-index:100005!important}
   function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
   function fmt(t){ t = Math.max(0, Math.floor(t||0)); return Math.floor(t/60)+':'+String(t%60).padStart(2,'0'); }
 
-  var scrollerEl = null, loadingMore = false, exhausted = false, endFlashed = false, prevOv = ['',''], muted = false, speed = 1, observer = null, pushed = false, syncTimer = null, cfg = null, activeId = null, items = [];
+  var scrollerEl = null, loadingMore = false, exhausted = false, endFlashed = false, prevOv = ['',''], savedY = 0, muted = false, speed = 1, observer = null, pushed = false, syncTimer = null, cfg = null, activeId = null, items = [];
   var SPEEDS = [1, 1.5, 2, 0.5];
 
   function muteIcon(){
@@ -319,6 +322,8 @@ body.msb-reels-open .rp-sheet{z-index:100005!important}
         '<button class="rl-chip" id="rlMuteBtn" data-a="mute" aria-label="Sound">'+muteIcon()+'</button>'+
       '</div></div>'+
       '<div class="rl-scroller">'+items.map(slideHtml).join('')+'</div>';
+    savedY = window.pageYOffset || document.documentElement.scrollTop || 0;
+    document.documentElement.style.setProperty('--rl-y', savedY + 'px');
     ov.classList.add('open'); document.documentElement.classList.add('msb-reels-open');
     prevOv = [document.documentElement.style.overflow, document.body.style.overflow];
     document.documentElement.style.overflow = 'hidden'; document.body.style.overflow = 'hidden';
@@ -466,6 +471,8 @@ body.msb-reels-open .rp-sheet{z-index:100005!important}
     clearInterval(syncTimer); syncTimer = null; activeId = null;
     ov.querySelectorAll('video').forEach(function(v){ v.pause(); v.removeAttribute('src'); v.load(); });
     ov.classList.remove('open'); document.documentElement.classList.remove('msb-reels-open'); ov.innerHTML = ''; ov.onclick = null;
+    document.documentElement.style.removeProperty('--rl-y');
+    try { window.scrollTo({ top: savedY, left: 0, behavior: 'instant' }); } catch(e) { window.scrollTo(0, savedY); }
     document.documentElement.style.overflow = prevOv[0]; document.body.style.overflow = prevOv[1];
     document.body.classList.remove('msb-reels-open');
     // Resume whichever feed videos are actually on screen (muted, like before).
