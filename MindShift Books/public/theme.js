@@ -283,17 +283,18 @@
 })();
 
 /* ═══════════════════════════════════════════════════════════════════════
-   Edge lock — full-screen viewers/screens on iPhone Safari.
+   Edge cover — full-screen viewers/screens on iPhone Safari.
    Safari's floating toolbar sits below the fixed layer, so while a full-screen image viewer / search screen / editor was open the
-   page behind it showed through the strip under the toolbar. While one of these is open we pin the page to the visible screen
-   height (nothing is painted below it) and colour that strip like the overlay. Closing restores the exact scroll position.
-   The reels viewer does the same thing itself (reels.js).
+   page behind it showed through the strip under the toolbar. While one is open we make the page content behind it invisible and
+   colour the canvas like the overlay. Nothing about layout or scrolling changes (the feed keeps its exact scroll position and
+   its own scroll logic keeps working) — only visibility, which is flipped back when the viewer closes.
+   MSBEdge.on(overlayEl, color) / MSBEdge.off() are also used by the reels viewer (reels.js).
    ═══════════════════════════════════════════════════════════════════════ */
 (function () {
-  if (window.__msbEdgeLock) return; window.__msbEdgeLock = true;
+  if (window.MSBEdge) return;
   var SEL = ['#msbImgV', '.img-viewer-bg', '.search-screen', '.edit-screen', '.follow-screen', '.search-overlay', '.lb',
              '.shareimg-overlay', '.preview-modal', '#kv-pe', '#pe-te'].join(',');
-  var root = document.documentElement, locked = false, savedY = 0, timer = 0;
+  var root = document.documentElement, on = false, hiddenEls = [], timer = 0, manual = false;
 
   function parse(c) { var m = /rgba?\(([^)]+)\)/.exec(c || ''); if (!m) return null; var p = m[1].split(',').map(parseFloat); return { r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1 }; }
   function bgOf(el) {
@@ -303,6 +304,31 @@
     function mix(x) { return Math.round(x * c.a + base * (1 - c.a)); }
     return 'rgb(' + mix(c.r) + ',' + mix(c.g) + ',' + mix(c.b) + ')';
   }
+  function hidePage(overlay) {
+    var kids = document.body.children;
+    for (var i = 0; i < kids.length; i++) {
+      var k = kids[i], tn = k.tagName;
+      if (tn === 'SCRIPT' || tn === 'STYLE' || tn === 'LINK' || tn === 'NOSCRIPT') continue;
+      if (overlay && k.contains(overlay)) continue;
+      if (k.hasAttribute('data-edge-hid')) continue;
+      if (getComputedStyle(k).position === 'fixed') continue;          // overlays, sheets, toasts, the + button stay as they are
+      k.setAttribute('data-edge-hid', '1'); hiddenEls.push(k);
+    }
+  }
+  function showPage() { hiddenEls.forEach(function (k) { k.removeAttribute('data-edge-hid'); }); hiddenEls = []; }
+  function enable(overlay, color) {
+    root.style.setProperty('--msb-edge-bg', color || '#000');
+    if (!on) { on = true; hidePage(overlay); root.classList.add('msb-edge-lock'); }
+  }
+  function disable() {
+    if (!on) return; on = false;
+    root.classList.remove('msb-edge-lock'); root.style.removeProperty('--msb-edge-bg'); showPage();
+  }
+  window.MSBEdge = {
+    on: function (el, color) { manual = true; enable(el, color); },
+    off: function () { manual = false; disable(); }
+  };
+
   function openOne() {
     var els = document.querySelectorAll(SEL), vw = window.innerWidth, vh = window.innerHeight;
     for (var i = 0; i < els.length; i++) {
@@ -315,40 +341,23 @@
     return null;
   }
   function check() {
-    timer = 0;
+    timer = 0; if (manual) return;
     var el = openOne();
-    if (el && !locked) {
-      locked = true; savedY = window.pageYOffset || 0;
-      root.style.setProperty('--msb-edge-y', savedY + 'px');
-      root.style.setProperty('--msb-edge-bg', bgOf(el));
-      root.classList.add('msb-edge-lock');
-    } else if (el && locked) {
-      root.style.setProperty('--msb-edge-bg', bgOf(el));
-    } else if (!el && locked) {
-      locked = false;
-      root.classList.remove('msb-edge-lock'); root.style.removeProperty('--msb-edge-y'); root.style.removeProperty('--msb-edge-bg');
-      void document.body.offsetHeight;                          // let the page lay out normally again before restoring the scroll position
-      try { window.scrollTo({ top: savedY, left: 0, behavior: 'instant' }); } catch (e) { window.scrollTo(0, savedY); }
-      if (window.MSBRepaint) window.MSBRepaint();
-    }
+    if (el) enable(el, bgOf(el)); else disable();
   }
   function later() { if (!timer) timer = setTimeout(check, 60); }
 
   function start() {
     var st = document.createElement('style');
-    st.textContent = 'html.msb-edge-lock{height:100%!important;overflow:hidden!important;background:var(--msb-edge-bg,#000)!important}' +
-      'html.msb-edge-lock body{position:fixed!important;left:0!important;right:0!important;width:100%!important;height:100%!important;overflow:hidden!important;top:calc(-1 * var(--msb-edge-y,0px))!important}';
+    st.textContent = 'html.msb-edge-lock{background:var(--msb-edge-bg,#000)!important}html.msb-edge-lock body{background:transparent!important}[data-edge-hid]{visibility:hidden!important}';
     document.head.appendChild(st);
-    try {
-      new MutationObserver(later).observe(root, { subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'style', 'hidden', 'open'] });
-    } catch (e) {}
+    try { new MutationObserver(later).observe(root, { subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'style', 'hidden', 'open'] }); } catch (e) {}
     ['transitionend', 'animationend'].forEach(function (ev) { document.addEventListener(ev, later, true); });
     window.addEventListener('resize', later);
     later();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();
-
 
 /* Photo viewers: put the slide strip on photo #i, exactly centred. Setting scrollLeft once, straight after the viewer is shown, is too early on
    iPhone Safari (layout isn't settled and scroll-snap can pull it elsewhere), so the photo opened off-centre. We switch snapping off, set the position,
