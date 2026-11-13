@@ -327,7 +327,9 @@
     } else if (!el && locked) {
       locked = false;
       root.classList.remove('msb-edge-lock'); root.style.removeProperty('--msb-edge-y'); root.style.removeProperty('--msb-edge-bg');
+      void document.body.offsetHeight;                          // let the page lay out normally again before restoring the scroll position
       try { window.scrollTo({ top: savedY, left: 0, behavior: 'instant' }); } catch (e) { window.scrollTo(0, savedY); }
+      if (window.MSBRepaint) window.MSBRepaint();
     }
   }
   function later() { if (!timer) timer = setTimeout(check, 60); }
@@ -359,4 +361,19 @@ window.MSBPlaceTrack = function (track, index) {
     track.style.scrollSnapType = '';
   };
   go(); requestAnimationFrame(go); setTimeout(go, 120); setTimeout(go, 320);
+};
+
+
+/* After a full-screen viewer closes, iPhone Safari can leave the page behind it undrawn (blank feed) until the next touch.
+   A 1px scroll nudge that is put straight back, plus a scroll event for lazy-loading code, makes it redraw immediately. */
+window.MSBRepaint = function () {
+  var y = window.pageYOffset || 0;
+  var max = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+  var d = y < max ? 1 : -1;
+  try { window.scrollTo(0, Math.max(0, y + d)); } catch (e) {}
+  requestAnimationFrame(function () {
+    try { window.scrollTo(0, y); } catch (e) {}
+    window.dispatchEvent(new Event('scroll'));
+    setTimeout(function () { window.dispatchEvent(new Event('scroll')); }, 120);
+  });
 };

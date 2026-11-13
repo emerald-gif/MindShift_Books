@@ -472,7 +472,9 @@ body.msb-reels-open .rp-sheet{z-index:100005!important}
     ov.querySelectorAll('video').forEach(function(v){ v.pause(); v.removeAttribute('src'); v.load(); });
     ov.classList.remove('open'); document.documentElement.classList.remove('msb-reels-open'); ov.innerHTML = ''; ov.onclick = null;
     document.documentElement.style.removeProperty('--rl-y');
+    void document.body.offsetHeight;
     try { window.scrollTo({ top: savedY, left: 0, behavior: 'instant' }); } catch(e) { window.scrollTo(0, savedY); }
+    if(window.MSBRepaint) window.MSBRepaint();
     document.documentElement.style.overflow = prevOv[0]; document.body.style.overflow = prevOv[1];
     document.body.classList.remove('msb-reels-open');
     // Resume whichever feed videos are actually on screen (muted, like before).
