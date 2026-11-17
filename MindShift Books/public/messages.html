@@ -688,6 +688,24 @@ mark{background:var(--c-tonal2,#e0e7ff);color:inherit;border-radius:3px;padding:
 .emo-search input,.ms-cap textarea,.psq,.isearch-in input,.nsearch input{font-size:16px}
 
 @media (prefers-reduced-motion:reduce){.msg.in,.composer.has-text .send:not([disabled]){animation:none}}
+
+/* reactions drawer */
+.rx{cursor:pointer}
+.rx::before{content:'';position:absolute;inset:-8px}
+.sheet-title.rx-title{text-align:left;font-size:19px;font-weight:800;color:var(--txt);padding:4px 6px 12px}
+.rx-chips{display:flex;gap:8px;overflow-x:auto;padding:0 2px 12px;scrollbar-width:none}
+.rx-chips::-webkit-scrollbar{display:none}
+.rx-chip{flex:0 0 auto;min-width:64px;padding:9px 16px;border-radius:99px;background:var(--c-bg,#fff);border:1.5px solid var(--border);font-size:15px;font-weight:700;color:var(--txt)}
+.rx-chip.on{background:var(--c-tonal,#eef0ff);border-color:var(--p);color:var(--p)}
+.rx-list{background:var(--c-bg,#fff);border-radius:18px;overflow:hidden;min-height:60px}
+.rx-row{display:flex;align-items:center;gap:14px;width:100%;text-align:left;padding:12px 16px;color:var(--txt)}
+.rx-row+.rx-row{border-top:1px solid var(--c-line,#eef0f3)}
+button.rx-row:active{background:var(--c-surface,#f4f5f7)}
+.rx-row .av{width:44px;height:44px;font-size:16px}
+.rx-who{flex:1;min-width:0}
+.rx-name{font-size:16.5px;font-weight:600}
+.rx-sub{font-size:13px;color:var(--mute);margin-top:1px}
+.rx-e{font-size:26px;line-height:1}
 </style>
 <link rel="stylesheet" href="/theme.css?v=1">
 <link rel="stylesheet" href="/shell.css?v=1" media="(min-width:720px)">
@@ -1319,6 +1337,8 @@ function updateToBot(){
 }
 $('msgs').addEventListener('scroll', () => { if(_tbRaf) return; _tbRaf = requestAnimationFrame(() => { _tbRaf = 0; updateToBot(); }); }, { passive:true });
 $('msgs').addEventListener('click', e => {
+  const rxp = e.target.closest('.rx');
+  if(rxp){ const b = rxp.closest('.msg'); if(b && b.dataset.mid) openReactionsSheet(b.dataset.mid); return; }
   if(e.target.closest('#sayHi')){ input.value = 'Hi 👋'; send(); return; }
   const qr = e.target.closest('[data-qr]'); if(qr){ input.value = qr.dataset.qr; send(); return; }
 });
@@ -2993,7 +3013,10 @@ if(window.visualViewport){ visualViewport.addEventListener('resize', edFit); vis
     // Only follow Safari's pan while someone is actually typing. Once the keyboard is gone the offset is always 0,
     // so a stale mid-animation value can never leave a blank gap at the top.
     const top = editing() ? Math.max(0, Math.round(v.offsetTop)) : 0;
-    if(h !== appliedH){ root.style.setProperty('--vvh', h + 'px'); appliedH = h; }
+    // Not typing = no keyboard, so use the full screen (100dvh). A stale visualViewport height used to stay behind after the
+    // keyboard closed and left an empty band under the message box.
+    const useH = editing() ? h : -1;
+    if(useH !== appliedH){ if(useH < 0) root.style.removeProperty('--vvh'); else root.style.setProperty('--vvh', useH + 'px'); appliedH = useH; }
     if(top !== appliedT){ root.style.setProperty('--vvt', top + 'px'); appliedT = top; }
     if(!editing() && window.scrollY){ window.scrollTo(0, 0); }
     if(h < lastH - 80){                                   // keyboard opened: keep the end of the conversation visible
@@ -3004,7 +3027,7 @@ if(window.visualViewport){ visualViewport.addEventListener('resize', edFit); vis
   }
   const schedule = () => { if(!raf) raf = requestAnimationFrame(fit); };
   // Safari animates the keyboard for ~0.4s and its numbers settle late, so re-check a few times after focus changes.
-  const settle = () => { schedule(); [120, 350, 700].forEach(ms => setTimeout(schedule, ms)); };
+  const settle = () => { schedule(); [120, 350, 700, 1200].forEach(ms => setTimeout(schedule, ms)); };
   v.addEventListener('resize', schedule); v.addEventListener('scroll', schedule);
   document.addEventListener('focusin', settle); document.addEventListener('focusout', settle);
   fit();
@@ -3389,7 +3412,45 @@ function startTour(kind, force){
 
 /* ───────── chat actions: pin · clear · delete · block · mark all as read ───────── */
 let _reloading = false;
-function closeSheet(){ $('sheet').hidden = true; $('sheetBg').hidden = true; }
+function closeSheet(){ $('sheet').hidden = true; $('sheetBg').hidden = true; $('sheetTitle').classList.remove('rx-title'); }
+/* Tap the reaction pill under a bubble: a drawer with who reacted with what. Filter by emoji; tap your own row to take it back. */
+function openReactionsSheet(mid){
+  const m = msgById(mid); if(!m || !chat) return;
+  const entries = Object.entries(m.reactions || {}).filter(([, e]) => typeof e === 'string' && e)
+    .sort((a, b) => (a[0] === me.uid ? -1 : 0) - (b[0] === me.uid ? -1 : 0));
+  if(!entries.length) return;
+  const counts = {}; entries.forEach(([, e]) => { counts[e] = (counts[e] || 0) + 1; });
+  const emojis = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+  let filt = 'all';
+  const canEdit = !chat.blocked && !chat.isRequest;
+  const draw = () => {
+    const t = $('sheetTitle'); t.classList.add('rx-title'); t.style.display = '';
+    t.textContent = entries.length + (entries.length === 1 ? ' Reaction' : ' Reactions');
+    const body = $('sheetBody'); body.innerHTML = '';
+    const chips = document.createElement('div'); chips.className = 'rx-chips';
+    [['all', 'All ' + entries.length], ...emojis.map(e => [e, e + ' ' + counts[e]])].forEach(([k, label]) => {
+      const b = document.createElement('button'); b.className = 'rx-chip' + (filt === k ? ' on' : ''); b.textContent = label;
+      b.onclick = () => { filt = k; draw(); };
+      chips.appendChild(b);
+    });
+    body.appendChild(chips);
+    const list = document.createElement('div'); list.className = 'rx-list';
+    entries.filter(([, e]) => filt === 'all' || e === filt).forEach(([uid, e]) => {
+      const mineR = uid === me.uid, who = mineR ? null : (uid === chat.other.uid ? chat.other : null);
+      const row = document.createElement(mineR && canEdit ? 'button' : 'div'); row.className = 'rx-row';
+      const av = mineR ? (me.photo || '') : (who ? who.photo : '');
+      const nm = mineR ? 'You' : (who ? who.name : 'Someone');
+      row.innerHTML = '<div class="av">' + avatarHtml(mineR ? (me.name || 'You') : nm, av) + '</div>'
+        + '<div class="rx-who"><div class="rx-name">' + esc(nm) + '</div>' + (mineR && canEdit ? '<div class="rx-sub">Tap to remove</div>' : '') + '</div>'
+        + '<span class="rx-e">' + esc(e) + '</span>';
+      if(mineR && canEdit) row.onclick = () => { closeSheet(); reactTo(m, e); };
+      list.appendChild(row);
+    });
+    body.appendChild(list);
+  };
+  draw();
+  $('sheetBg').onclick = closeSheet; $('sheetBg').hidden = false; $('sheet').hidden = false;
+}
 const SI = {
   pin:'<path d="M12 17v5"/><path d="M9 10.8a2 2 0 0 1-1.1 1.8l-1.8.9A2 2 0 0 0 5 15.2V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.8a2 2 0 0 0-1.1-1.8l-1.8-.9A2 2 0 0 1 15 10.8V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/>',
   unpin:'<path d="M12 17v5"/><path d="M9 10.8a2 2 0 0 1-1.1 1.8l-1.8.9A2 2 0 0 0 5 15.2V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.8a2 2 0 0 0-1.1-1.8l-1.8-.9A2 2 0 0 1 15 10.8V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/><path d="M3 3l18 18"/>',
