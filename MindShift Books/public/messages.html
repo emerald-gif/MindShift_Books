@@ -652,15 +652,10 @@ mark{background:var(--c-tonal2,#e0e7ff);color:inherit;border-radius:3px;padding:
 .msg.media.me.gp{border-top-right-radius:8px}.msg.media.them.gp{border-top-left-radius:8px}
 .msg.media.me{border-bottom-right-radius:8px}.msg.media.them{border-bottom-left-radius:8px}
 
-/* time rides on the bubble's last line; mid-cluster bubbles hide it until tapped */
-.msg:not(.media):not(.voice):not(.share) > .t{float:right;margin:7px 0 -2px 12px;line-height:1.2}
-.msg.nt:not(.show-t) > .t{display:none}
-.msg.nt.show-t > .t{display:block}
 .msg a.lnk{color:inherit;text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:2px;word-break:break-all}
 .msg.them a.lnk{color:var(--p)}
 
 .stat{margin:1px 8px 4px 0;font-size:11.5px;font-weight:600;letter-spacing:.005em}
-.stat.ok.seen{color:var(--p)}
 .stat.err{margin-top:2px}
 
 .msg.in{animation:msgIn .24s cubic-bezier(.2,.9,.3,1.12) both}
@@ -1288,9 +1283,8 @@ function renderMsgs(stick){
     const qm = m.replyTo && chat.msgs.get(m.replyTo.id), qDel = !!(qm && qm.deleted);   // a quote of an unsent message must not leak its text
     const q = m.replyTo ? `<div class="quote" data-qid="${esc(m.replyTo.id)}"><div class="q-name">${esc(m.replyTo.senderUid === me.uid ? 'You' : chat.other.name)}</div><div class="q-text">${esc(qDel ? 'Message deleted' : m.replyTo.text)}</div></div>` : '';
     const rx = rxHtml(m);
-    html += `<div class="msg ${mine?'me':'them'} ${m.pendingLocal && !m.failed && !m.silent && !chat.ack.has(m.id)?'pending':''} ${m.failed?'failed':''} ${rx?'has-rx':''} ${m.type==='voice'?'voice':''} ${m.type==='share'?'share':''} ${isMedia(m)?'media '+(m.cap?'hascap':'nocap')+(m.uploading?' up':''):''} ${gp?'gp':''} ${gn && !tr?'nt':''} ${fresh?'in':''}" data-mid="${esc(m.id)}">${q}${m.type==='voice'?voiceHtml(m):isMedia(m)?mediaHtml(m):m.type==='share'?shareHtml(m):linkify(m.text)}<span class="t">${time}${m.edited ? ' · edited' : ''}${tr ? ' · ' + esc(st.text) : ''}</span>${rx}</div>`;
+    html += `<div class="msg ${mine?'me':'them'} ${m.pendingLocal && !m.failed && !m.silent && !chat.ack.has(m.id)?'pending':''} ${m.failed?'failed':''} ${rx?'has-rx':''} ${m.type==='voice'?'voice':''} ${m.type==='share'?'share':''} ${isMedia(m)?'media '+(m.cap?'hascap':'nocap')+(m.uploading?' up':''):''} ${gp?'gp':''} ${fresh?'in':''}" data-mid="${esc(m.id)}">${q}${m.type==='voice'?voiceHtml(m):isMedia(m)?mediaHtml(m):m.type==='share'?shareHtml(m):linkify(m.text)}<span class="t">${time}${m.edited ? ' · edited' : ''}${st && !st.err ? ' · ' + esc(st.text) : ''}</span>${rx}</div>`;
     if(st && st.err) html += `<div class="stat err" data-retry="${esc(m.id)}">${esc(st.text)}</div>`;
-    else if(st && !tr && o.final) html += `<div class="stat ok${st.text === 'Seen' ? ' seen' : ''}">${esc(st.text)}</div>`;
   });
   box.innerHTML = html;
   voiceSync();
@@ -1327,11 +1321,6 @@ $('msgs').addEventListener('scroll', () => { if(_tbRaf) return; _tbRaf = request
 $('msgs').addEventListener('click', e => {
   if(e.target.closest('#sayHi')){ input.value = 'Hi 👋'; send(); return; }
   const qr = e.target.closest('[data-qr]'); if(qr){ input.value = qr.dataset.qr; send(); return; }
-  // tap a bubble to see its time when it sits in the middle of a cluster
-  const el = e.target.closest('.msg.nt');
-  if(!el || el.classList.contains('media') || el.classList.contains('voice') || el.classList.contains('share') || e.target.closest('a,.quote')) return;
-  if(window.getSelection && String(getSelection())) return;
-  el.classList.toggle('show-t');
 });
 $('toBot').onclick = () => { const box = $('msgs'); box.scrollTo({ top:box.scrollHeight, behavior:'smooth' }); };
 // Messages query for the open chat. If the chat was cleared/deleted, only messages after that moment are ever read.
@@ -2458,18 +2447,17 @@ function groupStatus(g){
 }
 function groupBubble(g, o = {}){
   const lead = g.find(x => x.cap) || g[0], last = g[g.length - 1], mine = lead.senderUid === me.uid;
-  const st = mine ? groupStatus(g) : null, tr = !!st && !st.err && /^(Sending|Waiting|Preparing|Uploading)/.test(st.text), time = last.ts ? new Date(last.ts).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}) : '';
+  const st = mine ? groupStatus(g) : null, time = last.ts ? new Date(last.ts).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}) : '';
   const rep = g.find(x => x.replyTo), rt = rep && rep.replyTo, qm = rt && chat.msgs.get(rt.id), qDel = !!(qm && qm.deleted);
   const q = rt ? `<div class="quote" data-qid="${esc(rt.id)}"><div class="q-name">${esc(rt.senderUid === me.uid ? 'You' : chat.other.name)}</div><div class="q-text">${esc(qDel ? 'Message deleted' : rt.text)}</div></div>` : '';
   const rx = rxHtml(lead), n = g.length, extra = n - 4;
   const tiles = g.slice(0, 4).map((m, i) => mediaTile(m, true, i === 3 ? extra : 0)).join('');
   const hid = g.slice(4).map(m => '<i class="mhid' + (m.uploading ? ' up' : '') + (m.failed ? ' fail' : '') + '" data-id="' + esc(m.id) + '"></i>').join('');
   const pend = g.some(x => x.pendingLocal && !x.failed && !x.silent && !chat.ack.has(x.id));
-  const cls = 'msg ' + (mine ? 'me' : 'them') + (pend ? ' pending' : '') + (g.some(x => x.failed) ? ' failed' : '') + (rx ? ' has-rx' : '') + ' media ' + (lead.cap ? 'hascap' : 'nocap') + (g.some(x => x.uploading) ? ' up' : '') + (o.gp ? ' gp' : '') + (o.gn && !tr ? ' nt' : '') + (o.fresh ? ' in' : '');
+  const cls = 'msg ' + (mine ? 'me' : 'them') + (pend ? ' pending' : '') + (g.some(x => x.failed) ? ' failed' : '') + (rx ? ' has-rx' : '') + ' media ' + (lead.cap ? 'hascap' : 'nocap') + (g.some(x => x.uploading) ? ' up' : '') + (o.gp ? ' gp' : '') + (o.fresh ? ' in' : '');
   let h = '<div class="' + cls + '" data-mid="' + esc(lead.id) + '">' + q + '<div class="mg n' + Math.min(n, 4) + '">' + tiles + '</div>' + hid + (lead.cap ? '<div class="cap">' + esc(lead.cap) + '</div>' : '')
-        + '<span class="t">' + time + (lead.edited ? ' · edited' : '') + (tr ? ' · ' + esc(st.text) : '') + '</span>' + rx + '</div>';
+        + '<span class="t">' + time + (lead.edited ? ' · edited' : '') + (st && !st.err ? ' · ' + esc(st.text) : '') + '</span>' + rx + '</div>';
   if(st && st.err) h += '<div class="stat err" data-retry="' + esc(st.id) + '">' + esc(st.text) + '</div>';
-  else if(st && !tr && o.final) h += '<div class="stat ok' + (st.text === 'Seen' ? ' seen' : '') + '">' + esc(st.text) + '</div>';
   return h;
 }
 function mediaTile(m, grid, more){
