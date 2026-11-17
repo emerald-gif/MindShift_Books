@@ -1483,7 +1483,7 @@ function bookEndCardHtml(shown){
   const top = _shelfPersonal ? shelfTopInterest() : '';
   const title = more > 0 ? `+${more} more book${more === 1 ? '' : 's'}` : 'The full bookstore';
   const sub = top ? `More on ${shelfEsc(top)} and other topics` : 'Browse every title and filter by topic';
-  return `<a class="bs-end" href="/books/all">
+  return `<a class="bs-end" href="/books">
     <div class="bs-end-box">
       <div class="bs-end-ico"><svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/><path d="M9 7h5"/></svg></div>
       <div class="bs-end-t">${title}</div>
