@@ -1891,25 +1891,31 @@ onAuthStateChanged(auth, async user => {
     checkFeedProfileSetup(user); // not awaited — nice-to-have, shouldn't block the feed rendering below
     // Load user's onboarding categories — array of MSB_CATEGORIES codes, used for "For You" + Following.
     // Falls back to a legacy singular `category` string (pre-taxonomy accounts) wrapped in an array.
+    // Interests are cached on this device for speed, but the database is the source of truth: if the cached copy is older than a day
+    // (or missing) we re-read it, so edits made on another device — or clearing every interest — are picked up here too.
+    const _catsKey = `mindshift_user_cats_${user.uid}`;
+    let _catsFresh = false;
     try{
-      const cd = JSON.parse(localStorage.getItem(`mindshift_user_cats_${user.uid}`));
-      if(Array.isArray(cd?.categories) && cd.categories.length) userCategories = cd.categories;
+      const cd = JSON.parse(localStorage.getItem(_catsKey));
+      if(Array.isArray(cd?.categories) && cd.categories.length){
+        userCategories = cd.categories;
+        _catsFresh = (Date.now() - (cd.ts || 0)) < 24 * 3600 * 1000;
+      }
     }catch(e){}
-    if(!userCategories.length){
+    const _syncCats = async () => {
       try{
         const s = await rgetDoc(doc(db,'users',user.uid));
-        if(s.exists()){
-          const ud = s.data();
-          if(Array.isArray(ud.categories) && ud.categories.length) userCategories = ud.categories;
-          else if(ud.category) userCategories = [ud.category]; // legacy single-category accounts
-          if(userCategories.length){
-            let existing={}; try{existing=JSON.parse(localStorage.getItem(`mindshift_user_cats_${user.uid}`))||{};}catch{}
-            existing.categories = userCategories; existing.ts=Date.now();
-            localStorage.setItem(`mindshift_user_cats_${user.uid}`, JSON.stringify(existing));
-          }
-        }
-      }catch(e){}
-    }
+        if(!s.exists()) return;
+        const ud = s.data();
+        const fromDb = Array.isArray(ud.categories) ? ud.categories : (ud.category ? [ud.category] : []);
+        let existing = {}; try{ existing = JSON.parse(localStorage.getItem(_catsKey)) || {}; }catch{}
+        existing.categories = fromDb; existing.ts = Date.now();
+        localStorage.setItem(_catsKey, JSON.stringify(existing));
+        userCategories = fromDb;
+      }catch(e){ /* offline or blocked: keep whatever we already have */ }
+    };
+    if(!userCategories.length) await _syncCats();     // nothing cached: wait for it (needed to build the first feed)
+    else if(!_catsFresh) _syncCats();                 // cached but over a day old: show the feed now, refresh quietly for the next load
   } else {
     if(gBar) gBar.style.display='';   // back to the stylesheet default (block) — 'flex' made the wrapper shrink-wrap the bar to its content
     if(nw) nw.style.display='block';   // bell stays visible for guests — tapping it asks them to log in / sign up

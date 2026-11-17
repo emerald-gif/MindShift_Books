@@ -3814,7 +3814,7 @@ window.saveProfile = async function(){
     if(data.location && typeof data.locationLat !== 'number'){ resolveProfileGeo().catch(()=>{}); }
 
     // ── Sync categories to localStorage (same key articles.html reads for "For You") ──
-    if(newCategories.length){
+    {   // always sync — including when every interest was removed, so no stale copy lingers on this device
       let existing={};
       try{ existing = JSON.parse(localStorage.getItem(`mindshift_user_cats_${currentUser.uid}`))||{}; }catch{}
       existing.categories = newCategories; existing.ts = Date.now();
