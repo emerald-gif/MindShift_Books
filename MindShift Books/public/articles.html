@@ -475,6 +475,36 @@ main{max-width:1100px;margin:0 auto}
 .book-promo-card p{font-size:13px;color:var(--sub);line-height:1.6;max-width:280px;margin:0 auto 18px}
 .book-promo-btn{padding:12px 32px;background:var(--g);color:#fff;border:none;border-radius:99px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(37,99,235,.32);transition:all .18s}
 .book-promo-btn:active{transform:scale(.97)}
+/* Book shelf in the feed — real books (cover, price, Buy now), not a banner */
+.book-shelf{position:relative;background:var(--c-bg,#fff);border-top:8px solid var(--c-line,#eef2ff);border-bottom:8px solid var(--c-line,#eef2ff);padding:16px 0 18px}
+.bs-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:0 16px 12px}
+.bs-title{font-size:17px;font-weight:800;color:var(--txt)}
+.bs-sub{font-size:12px;color:var(--sub);margin-top:2px}
+.bs-right{display:flex;align-items:center;gap:10px;flex:none}
+.bs-all{font-size:13px;font-weight:700;color:#4f46e5;text-decoration:none}
+.bs-x{width:28px;height:28px;border-radius:50%;border:none;background:var(--c-surface,#f4f4f6);display:flex;align-items:center;justify-content:center;color:var(--sub);cursor:pointer}
+.bs-x svg{width:13px;height:13px}
+.bs-row{display:flex;gap:12px;overflow-x:auto;padding:2px 16px 6px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;scrollbar-width:none;overscroll-behavior-x:contain}
+.bs-row::-webkit-scrollbar{display:none}
+.bs-card{flex:0 0 132px;scroll-snap-align:start;display:flex;flex-direction:column}
+.bs-cover{display:block;width:132px;aspect-ratio:2/3;border-radius:10px;overflow:hidden;background:var(--c-surface,#f1f3f9);box-shadow:0 6px 16px rgba(15,23,42,.14)}
+.bs-cover img{width:100%;height:100%;object-fit:cover;display:block}
+.bs-name{font-size:13px;font-weight:700;color:var(--txt);line-height:1.3;margin-top:9px;min-height:34px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.bs-price{font-size:13px;font-weight:800;color:var(--txt);margin-top:4px}
+.bs-price s{font-size:11px;font-weight:500;color:var(--sub);margin-left:4px}
+.bs-buy{margin-top:8px;display:block;text-align:center;padding:8px 0;border-radius:99px;background:var(--g);color:#fff;font-size:12.5px;font-weight:700;text-decoration:none}
+.bs-buy:active{transform:scale(.97)}
+.xbook-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--c-line,#eef2f7)}
+.xbook-cov{flex:none;width:52px;height:78px;border-radius:7px;overflow:hidden;background:var(--c-surface,#f1f3f9);box-shadow:0 3px 10px rgba(15,23,42,.14)}
+.xbook-cov img{width:100%;height:100%;object-fit:cover;display:block}
+.xbook-info{flex:1;min-width:0;text-decoration:none;color:inherit}
+.xbook-t{font-size:14.5px;font-weight:700;color:var(--txt);line-height:1.3}
+.xbook-s{font-size:12px;color:var(--sub);margin-top:2px}
+.xbook-p{font-size:13px;font-weight:800;color:var(--txt);margin-top:5px}
+.xbook-p s{font-size:11px;font-weight:500;color:var(--sub);margin-left:5px}
+.xbook-buy{flex:none;padding:8px 14px;border-radius:99px;background:var(--g);color:#fff;font-size:12.5px;font-weight:700;text-decoration:none}
+
+
 
 /* ── AUTH DRAWER ── */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;opacity:0;pointer-events:none;transition:opacity .25s;backdrop-filter:blur(3px)}
@@ -1100,6 +1130,7 @@ main{max-width:1100px;margin:0 auto}
   </div>
   <div class="xs-chips" id="xTabs" role="tablist">
     <button class="xs-chip active" data-xtab="top" onclick="switchXTab('top')">Top</button>
+    <button class="xs-chip" data-xtab="books" onclick="switchXTab('books')">Books<span class="xs-chip-n"></span></button>
     <button class="xs-chip" data-xtab="articles" onclick="switchXTab('articles')">Articles<span class="xs-chip-n"></span></button>
     <button class="xs-chip" data-xtab="posts" onclick="switchXTab('posts')">Posts<span class="xs-chip-n"></span></button>
     <button class="xs-chip" data-xtab="videos" onclick="switchXTab('videos')">Videos<span class="xs-chip-n"></span></button>
@@ -1360,9 +1391,9 @@ const BOOK_PROMO_AFTER_INDEX = 7; // appears after the 7th feed item — separat
 // Same once-per-calendar-day behaviour as the invite card (see above).
 let _bookPromoActive = false;
 let _bookPromoDismissed = false;
-function bookPromoCardHtml(){
+function bookPromoFallbackHtml(){
   return `
-  <div class="book-promo-card" id="bookPromoCard">
+  <div class="book-promo-card" id="bookPromoCard" data-fallback="1">
     <button class="book-promo-close" onclick="dismissBookPromoCard()" aria-label="Dismiss">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
     </button>
@@ -1374,6 +1405,107 @@ function bookPromoCardHtml(){
     <button class="book-promo-btn" onclick="handleExploreBooks()">Explore Books</button>
   </div>`;
 }
+
+// ── Real books in the feed, search and discover ────────────────────────────────
+// /api/products is served from memory on the server (no database reads) and cached for the session.
+// Picks favour the reader's saved interests (userCategories); everyone else gets a daily rotation.
+const SHELF_GENRE_CATS = {
+  'Personal Development': ['MINDSET','PRODUCTIVITY','HEALTH','EDUCATION','REFLECTIVE'],
+  'Psychology': ['MINDSET','RELATIONSHIPS'],
+  'Business & Marketing': ['CAREER','PRODUCTIVITY','MONEY'],
+  'Personal Finance': ['MONEY'],
+  'Faith & Spirituality': ['PURPOSE','REFLECTIVE'],
+  'Self-Help & Productivity': ['PRODUCTIVITY','MINDSET']
+};
+let _shelfAll = [];
+let _shelfPersonal = false;
+function shelfNgn(n){ return '₦' + String(Math.round(Number(n) || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+function shelfEsc(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function shelfBooksNow(){
+  const all = _shelfAll;
+  if(!all.length){ _shelfPersonal = false; return []; }
+  let mine; try{ mine = new Set(Array.isArray(userCategories) ? userCategories : []); }catch(e){ mine = new Set(); }
+  const d = Math.floor(Date.now() / 86400000) % all.length;
+  const rot = all.slice(d).concat(all.slice(0, d));
+  const scored = rot.map((p, i) => ({ p, i, s: (SHELF_GENRE_CATS[p.genre] || []).filter(c => mine.has(c)).length }));
+  scored.sort((x, y) => y.s - x.s || x.i - y.i);
+  _shelfPersonal = scored.some(x => x.s > 0);
+  return scored.slice(0, 6).map(x => x.p);
+}
+async function loadShelfBooks(){
+  try{
+    let list = null;
+    try{
+      const c = JSON.parse(sessionStorage.getItem('msb_shelf_products') || 'null');
+      if(c && Date.now() - c.at < 6 * 3600 * 1000) list = c.list;
+    }catch{}
+    if(!list){
+      const r = await fetch('/api/products');
+      const j = await r.json();
+      list = (j && j.products) || [];
+      try{ sessionStorage.setItem('msb_shelf_products', JSON.stringify({ at: Date.now(), list })); }catch{}
+    }
+    _shelfAll = (list || []).filter(p => p && p.category === 'ours' && p.priceNGN && p.cover);
+    // If the feed already drew the plain banner before the books arrived, swap it for the shelf.
+    const el = document.getElementById('bookPromoCard');
+    if(el && el.getAttribute('data-fallback') === '1' && _shelfAll.length) el.outerHTML = bookShelfHtml();
+    if(typeof refreshDiscoverBooks === 'function') refreshDiscoverBooks();
+  }catch(e){ /* the banner fallback stays */ }
+}
+function bookCardsHtml(books){
+  return books.map(p => {
+    const id = encodeURIComponent(p.id);
+    const was = (p.originalPriceNGN && p.originalPriceNGN > p.priceNGN) ? `<s>${shelfNgn(p.originalPriceNGN)}</s>` : '';
+    return `<div class="bs-card">
+      <a class="bs-cover" href="/review?id=${id}" aria-label="${shelfEsc(p.title)}"><img src="${shelfEsc(p.cover)}" alt="${shelfEsc(p.title)}" loading="lazy"></a>
+      <div class="bs-name">${shelfEsc(p.title)}</div>
+      <div class="bs-price">${shelfNgn(p.priceNGN)}${was}</div>
+      <a class="bs-buy" href="/books?buy=${id}">Buy now</a>
+    </div>`;
+  }).join('');
+}
+function bookShelfHtml(){
+  const books = shelfBooksNow();
+  return `<div class="book-shelf" id="bookPromoCard">
+    <div class="bs-head">
+      <div><div class="bs-title">Books for you</div><div class="bs-sub">${_shelfPersonal ? 'Picked for your interests' : 'From MindShift Books · read it today'}</div></div>
+      <div class="bs-right"><a class="bs-all" href="/books/all">See all</a>
+        <button class="bs-x" onclick="dismissBookPromoCard()" aria-label="Dismiss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    </div>
+    <div class="bs-row">${bookCardsHtml(books)}</div>
+  </div>`;
+}
+function bookPromoCardHtml(){
+  return _shelfAll.length ? bookShelfHtml() : bookPromoFallbackHtml();
+}
+// Search: match title, author, genre and the topic names the genre belongs to ("money", "mindset", "faith"…)
+function searchBooksFor(q){
+  if(!q || !_shelfAll.length) return [];
+  const cats = window.MSB_CATEGORIES || [];
+  return _shelfAll.filter(p => {
+    const labels = (SHELF_GENRE_CATS[p.genre] || []).map(c => { const x = cats.find(y => y.code === c); return x ? x.label : ''; });
+    return [p.title, p.author, p.genre].concat(labels).join(' ').toLowerCase().includes(q);
+  });
+}
+function buildXBookRow(p){
+  const id = encodeURIComponent(p.id);
+  const was = (p.originalPriceNGN && p.originalPriceNGN > p.priceNGN) ? `<s>${shelfNgn(p.originalPriceNGN)}</s>` : '';
+  return `<div class="xbook-row">
+    <a class="xbook-cov" href="/review?id=${id}"><img src="${shelfEsc(p.cover)}" alt="" loading="lazy"></a>
+    <a class="xbook-info" href="/review?id=${id}">
+      <div class="xbook-t">${hl(p.title)}</div>
+      <div class="xbook-s">${shelfEsc(p.author || 'MindShift Books')}${p.genre ? ' · ' + shelfEsc(p.genre) : ''}</div>
+      <div class="xbook-p">${shelfNgn(p.priceNGN)}${was}</div>
+    </a>
+    <a class="xbook-buy" href="/books?buy=${id}">Buy now</a>
+  </div>`;
+}
+function discoverBooksHtml(){
+  const b = shelfBooksNow();
+  return b.length ? `<div class="xs-section-lbl">${_shelfPersonal ? 'Books for you' : 'Books'}</div><div class="bs-row" style="padding-top:0">${bookCardsHtml(b)}</div>` : '';
+}
+function refreshDiscoverBooks(){ const w = document.getElementById('xbookWrap'); if(w) w.innerHTML = discoverBooksHtml(); }
+loadShelfBooks();
 function bookPromoLastShownKey(uid){ return 'mindshift_bookpromo_lastshown_day'; }
 function shouldShowBookPromo(uid){
   try{ return localStorage.getItem(bookPromoLastShownKey(uid)) !== new Date().toDateString(); }
@@ -1389,7 +1521,6 @@ function withBookPromoCard(cardsArr, uid){
   if(!_bookPromoActive){
     if(!shouldShowBookPromo(uid)) return cardsArr;
     _bookPromoActive = true;
-    markBookPromoShown(uid);
   }
   const out = cardsArr.slice();
   out.splice(BOOK_PROMO_AFTER_INDEX, 0, bookPromoCardHtml());
@@ -4648,6 +4779,7 @@ function renderDiscover(){
   // Real "People to follow" widget, reused as-is (same Firestore queries,
   // follow/dismiss logic, notifications) — just a new idSuffix so it gets
   // its own DOM ids instead of clashing with the copy already in the feed.
+  html += `<div id="xbookWrap">${discoverBooksHtml()}</div>`;
   html += `<div id="xvidWrap">${suggestedVideosHtml()}</div>`;
   html += ptfRowHtml('discover');
   if(posts.length){
@@ -4669,7 +4801,7 @@ try{ if(new URLSearchParams(location.search).get('search')) window.addEventListe
 window.openSearchScreen = function(){
   document.getElementById('searchScreen').classList.add('on');
   document.body.style.overflow = 'hidden';
-  if(!_xDiscoverBuilt){ renderDiscover(); _xDiscoverBuilt = true; } else refreshSuggestedVideos();
+  if(!_xDiscoverBuilt){ renderDiscover(); _xDiscoverBuilt = true; } else { refreshSuggestedVideos(); refreshDiscoverBooks(); }
   initSearchUX();
   renderRecentSearches();          // refreshed every open — cheap, and keeps it current
   ensureUsersCache();              // pre-warm People results so the first search this session is instant, not fired-and-forgotten
@@ -4747,7 +4879,7 @@ function renderXPosts(posts, container){
    ordered by what the query most likely means (a name that matches a person leads with People).
    Typing is debounced, only the latest query renders, and the keyboard hides when you scroll. */
 let _xToken = 0, _xDebounce = null, _xState = null;
-const _xShown = { articles:20, posts:20, videos:20, accounts:30 };
+const _xShown = { articles:20, posts:20, videos:20, accounts:30, books:20 };
 const X_CHIP_ORDER = ['top','articles','posts','videos','accounts'];
 
 window.onXSearchInput = function(){
@@ -4794,6 +4926,7 @@ async function runXSearch(){
   const postMatches = POSTS.filter(p =>
     (p.text||'').toLowerCase().includes(xQuery) || (p.author||'').toLowerCase().includes(xQuery));
   const vidMatches = postMatches.filter(p=>p.videoUrl);
+  const bookMatches = searchBooksFor(xQuery);
   window._xvLists.results = vidMatches.map(p=>p.id);   // video rows anywhere in results swipe through all matching videos
 
   if(!_allUsersCache){            // first search of the session: people list still loading
@@ -4802,9 +4935,9 @@ async function runXSearch(){
   const accMatches = await searchAccountsList(xQuery);
   if(token !== _xToken) return;   // a newer keystroke superseded this one
 
-  _xState = { art:artMatches, post:postMatches, vid:vidMatches, acc:accMatches, topics:relatedTopics(xQuery) };
+  _xState = { art:artMatches, post:postMatches, vid:vidMatches, acc:accMatches, book:bookMatches, topics:relatedTopics(xQuery) };
   Object.keys(_xShown).forEach(k=>{ _xShown[k] = k==='accounts' ? 30 : 20; });
-  const counts = { articles:artMatches.length, posts:postMatches.length, videos:vidMatches.length, accounts:accMatches.length };
+  const counts = { articles:artMatches.length, posts:postMatches.length, videos:vidMatches.length, accounts:accMatches.length, books:bookMatches.length };
   chips.querySelectorAll('.xs-chip').forEach(c=>{
     const t = c.dataset.xtab, n = counts[t];
     if(t==='top') return;
@@ -4812,7 +4945,7 @@ async function runXSearch(){
     c.classList.toggle('dim', !n);
   });
   if(_xActiveTab!=='top' && !counts[_xActiveTab]) _xActiveTab = 'top';
-  const total = counts.articles + counts.posts + counts.accounts;
+  const total = counts.articles + counts.posts + counts.accounts + counts.books;
   if(!total){ showXEmpty(); return; }
   body.scrollTop = 0;
   renderXTab();
@@ -4834,7 +4967,7 @@ function showXEmpty(){
 function renderXTab(){
   if(!_xState) return;
   const res = document.getElementById('xResults');
-  const { art, post, vid, acc, topics } = _xState;
+  const { art, post, vid, acc, book, topics } = _xState;
   document.querySelectorAll('#xTabs .xs-chip').forEach(c=>c.classList.toggle('active', c.dataset.xtab===_xActiveTab));
   let html = '';
   if(_xActiveTab==='top'){
@@ -4844,9 +4977,11 @@ function renderXTab(){
       accounts: acc.length ? ()=>xSec('People', `<div id="xTopAcc"></div>`, acc.length>3?'accounts':null) : null,
       articles: art.length ? ()=>xSec('Articles', art.slice(0,4).map(buildXArticleRow).join(''), art.length>4?'articles':null) : null,
       videos:   vid.length ? ()=>xSec('Videos', buildVideoRailHtml(vid,'results',10), vid.length>3?'videos':null) : null,
-      posts:    nonVidPosts.length ? ()=>xSec('Posts', nonVidPosts.slice(0,3).map(buildXPostRow).join(''), nonVidPosts.length>3?'posts':null) : null
+      posts:    nonVidPosts.length ? ()=>xSec('Posts', nonVidPosts.slice(0,3).map(buildXPostRow).join(''), nonVidPosts.length>3?'posts':null) : null,
+      books:    book.length ? ()=>xSec('Books', book.slice(0,3).map(buildXBookRow).join(''), book.length>3?'books':null) : null
     };
-    const order = personHit ? ['accounts','articles','videos','posts'] : ['articles','videos','posts','accounts'];
+    // Books go near the top: a reader searching a topic or title is the best moment to show what they can buy.
+    const order = personHit ? ['accounts','books','articles','videos','posts'] : ['books','articles','videos','posts','accounts'];
     if(topics.length) html += `<div class="xs-sec-hd"><span>Related topics</span></div>${topicChipsHtml(topics,true,'related')}`;
     order.forEach(k=>{ if(sections[k]) html += sections[k](); });
     html += '<div style="height:40px"></div>';
@@ -4854,6 +4989,8 @@ function renderXTab(){
     html = art.slice(0,_xShown.articles).map(buildXArticleRow).join('') + xMore('articles', art.length) + '<div style="height:30px"></div>';
   } else if(_xActiveTab==='posts'){
     html = post.slice(0,_xShown.posts).map(buildXPostRow).join('') + xMore('posts', post.length) + '<div style="height:30px"></div>';
+  } else if(_xActiveTab==='books'){
+    html = book.map(buildXBookRow).join('') + '<div style="height:30px"></div>';
   } else if(_xActiveTab==='videos'){
     html = buildVideoGridHtml(vid.slice(0,_xShown.videos),'results') + xMore('videos', vid.length);
     window._xvLists.results = vid.map(p=>p.id);

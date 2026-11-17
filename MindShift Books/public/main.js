@@ -1524,6 +1524,30 @@ if (document.readyState === 'loading') {
   _wireCartButtons();
 }
 
+// Direct buy links: /books?buy=<productId>[,<productId>] drops the book(s) into the cart and opens it, so a social post, a bio link
+// or a feed card is one tap from checkout. /books?cart=open just opens the cart. Unknown ids are ignored.
+(function directBuyLink() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const buy = params.get('buy');
+    const openOnly = params.get('cart') === 'open';
+    if (!buy && !openOnly) return;
+    params.delete('buy'); params.delete('cart');
+    const qs = params.toString();
+    window.history.replaceState({}, document.title, window.location.pathname + (qs ? '?' + qs : ''));
+    const ids = (buy || '').split(',').map(s => s.trim()).filter(Boolean).slice(0, 6);
+    const run = () => {
+      const known = new Set((window.MSB_PRODUCTS || []).map(p => p.id));
+      const cart = getCart(); let changed = false;
+      ids.forEach(id => { if (known.has(id) && !cart.includes(id)) { cart.push(id); changed = true; } });
+      if (changed) saveCart(cart);
+      openCartOverlay();
+    };
+    if (window.MSB_PRODUCTS && window.MSB_PRODUCTS.length) setTimeout(run, 300);
+    else window.addEventListener('msb-products-ready', () => setTimeout(run, 150), { once: true });
+  } catch (e) {}
+})();
+
 // After a successful payment we land on the bookstore (/books?paid=1) — confirm it there.
 (function showPaidToast() {
   try {
