@@ -147,7 +147,7 @@ function renderCatChips(){
   const scroll = document.getElementById('catScroll');
   const cats = window.MSB_CATEGORIES || [];
   scroll.innerHTML = [`<button class="cat-pill sel" data-cat="">All</button>`]
-    .concat(cats.map(c => `<button class="cat-pill" data-cat="${c.code}">${c.emoji} ${c.label}</button>`))
+    .concat(cats.map(c => `<button class="cat-pill" data-cat="${c.code}">${c.label}</button>`))
     .join('');
   scroll.querySelectorAll('.cat-pill').forEach(btn => {
     btn.addEventListener('click', () => {

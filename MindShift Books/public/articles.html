@@ -343,32 +343,26 @@ main{max-width:1100px;margin:0 auto}
 .gbs{flex-shrink:0;background:var(--g);color:#fff;font-size:13px;font-weight:800;text-decoration:none;padding:8px 14px;border-radius:10px;white-space:nowrap;transition:transform .12s,filter .15s}
 .gbs:active{transform:scale(.97);filter:brightness(.96)}
 
-.feed-setup-banner{display:flex;align-items:center;gap:12px;margin:0 16px 16px;padding:12px 14px;position:relative;
-  background:linear-gradient(135deg,var(--c-bg,#fff7ed),var(--c-surface,#fdf2f8));border:1.5px dashed #fbbf24;border-radius:16px;
-  cursor:pointer;box-shadow:0 2px 10px rgba(251,191,36,.14);overflow:visible}
-.feed-setup-banner::before,.feed-setup-banner::after{content:'';position:absolute;top:50%;transform:translateY(-50%);
-  width:14px;height:14px;border-radius:50%;background:var(--c-bg2,#f8fafc);z-index:1}
-.feed-setup-banner::before{left:-8px}
-.feed-setup-banner::after{right:-8px}
-.fsb-close{position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;border:1.5px solid #fbbf24;
-  background:var(--c-bg,#fff);color:var(--c-warn-txt,#c2410c);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2;
-  box-shadow:0 1px 4px rgba(0,0,0,.12)}
-.fsb-close svg{width:11px;height:11px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round}
-.fsb-ring{position:relative;width:40px;height:40px;flex-shrink:0;filter:drop-shadow(0 2px 4px rgba(244,114,182,.25))}
+.feed-setup-banner{display:flex;align-items:center;gap:12px;margin:12px 16px 12px;padding:14px;position:relative;
+  background:linear-gradient(135deg,rgba(79,70,229,.08),rgba(6,182,212,.08));border:1px solid rgba(79,70,229,.18);border-radius:16px;
+  cursor:pointer;overflow:hidden}
+.feed-setup-banner:active{transform:scale(.99)}
+.fsb-close{order:3;position:static;flex:none;width:26px;height:26px;border-radius:50%;border:none;background:rgba(15,23,42,.06);color:var(--sub,#64748b);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;align-self:flex-start;margin:-4px -4px 0 0}
+.fsb-close svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round}
+.fsb-ring{position:relative;width:42px;height:42px;flex-shrink:0}
 .fsb-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
 .fsb-ring circle{fill:none;stroke-width:3.5}
-.fsb-track{stroke:var(--c-line2,#fde8cc)}
+.fsb-track{stroke:rgba(79,70,229,.16)}
 .fsb-fill{stroke:url(#fsbRingGrad);stroke-linecap:round;transition:stroke-dashoffset .3s ease}
-.fsb-ring span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--c-warn-txt,#c2410c)}
-.fsb-giftbadge{position:absolute;bottom:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--c-bg,#fff);
-  display:flex;align-items:center;justify-content:center;font-size:11px;box-shadow:0 1px 3px rgba(0,0,0,.15);
-  animation:fsbGiftBounce 2.2s ease-in-out infinite}
-@keyframes fsbGiftBounce{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-2px) rotate(-8deg)}}
-.fsb-txt{flex:1;min-width:0}
-.fsb-title{font-size:13.5px;font-weight:800;color:var(--c-warn-txt,#9a3412)}
-.fsb-sub{font-size:11.5px;color:var(--c-warn-txt,#c2410c);margin-top:2px;opacity:.85}
-.fsb-arrow{color:#fb923c;flex-shrink:0}
-.fsb-arrow svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.fsb-ring span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--txt,#0f172a)}
+.fsb-giftbadge{position:absolute;bottom:-5px;right:-5px;width:19px;height:19px;border-radius:50%;background:var(--c-bg,#fff);
+  display:flex;align-items:center;justify-content:center;font-size:11px;box-shadow:0 1px 4px rgba(15,23,42,.18)}
+.fsb-txt{order:2;flex:1;min-width:0}
+.fsb-title{font-size:14px;font-weight:800;color:var(--txt,#0f172a);line-height:1.25}
+.fsb-sub{font-size:12px;color:var(--sub,#64748b);margin-top:3px;line-height:1.35}
+.fsb-sub b{color:#4f46e5;font-weight:700}
+.fsb-arrow{display:none}
 
 /* ── NO RESULTS ── */
 .no-res{display:none;text-align:center;padding:60px 20px;color:var(--mute)}
@@ -484,7 +478,8 @@ main{max-width:1100px;margin:0 auto}
 .bs-all{font-size:13px;font-weight:700;color:#4f46e5;text-decoration:none}
 .bs-x{width:28px;height:28px;border-radius:50%;border:none;background:var(--c-surface,#f4f4f6);display:flex;align-items:center;justify-content:center;color:var(--sub);cursor:pointer}
 .bs-x svg{width:13px;height:13px}
-.bs-row{display:flex;gap:12px;overflow-x:auto;padding:2px 16px 6px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;scrollbar-width:none;overscroll-behavior-x:contain}
+.bs-row{display:flex;gap:12px;overflow-x:auto;padding:2px 16px 6px;scroll-padding-left:16px;scroll-padding-right:16px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;scrollbar-width:none;overscroll-behavior-x:contain}
+.bs-row::after{content:'';flex:0 0 4px}  /* keeps the right-hand margin when scrolled to the end (Safari drops end padding in scrollers) */
 .bs-row::-webkit-scrollbar{display:none}
 .bs-card{flex:0 0 132px;scroll-snap-align:start;display:flex;flex-direction:column}
 .bs-cover{display:block;width:132px;aspect-ratio:2/3;border-radius:10px;overflow:hidden;background:var(--c-surface,#f1f3f9);box-shadow:0 6px 16px rgba(15,23,42,.14)}
@@ -913,7 +908,7 @@ main{max-width:1100px;margin:0 auto}
   </button>
   <div class="fsb-ring">
     <svg viewBox="0 0 40 40">
-      <defs><linearGradient id="fsbRingGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#f472b6"/></linearGradient></defs>
+      <defs><linearGradient id="fsbRingGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#4f46e5"/><stop offset="100%" stop-color="#06b6d4"/></linearGradient></defs>
       <circle class="fsb-track" cx="20" cy="20" r="16.5"></circle>
       <circle class="fsb-fill" id="fsbRingFill" cx="20" cy="20" r="16.5" stroke-dasharray="103.7" stroke-dashoffset="103.7"></circle>
     </svg>
@@ -921,8 +916,8 @@ main{max-width:1100px;margin:0 auto}
     <div class="fsb-giftbadge">🎁</div>
   </div>
   <div class="fsb-txt">
-    <div class="fsb-title">Finish setting up your profile</div>
-    <div class="fsb-sub" id="fsbSub">Complete these steps to get <span data-ngn="2000" data-voucher>₦2,000</span> free</div>
+    <div class="fsb-title">Complete your profile</div>
+    <div class="fsb-sub" id="fsbSub">Finish 4 steps to unlock <b><span data-ngn="2000" data-voucher>₦2,000</span> off</b> your first book</div>
   </div>
   <div class="fsb-arrow">
     <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
@@ -1832,7 +1827,7 @@ async function checkFeedProfileSetup(user){
     const CIRC = 103.7;
     document.getElementById('fsbRingFill').style.strokeDashoffset = CIRC - (CIRC * doneCount / 4);
     document.getElementById('fsbRingLabel').textContent = `${doneCount}/4`;
-    document.getElementById('fsbSub').innerHTML = `${4 - doneCount} step${4-doneCount===1?'':'s'} left to get <span data-ngn="2000" data-voucher>${window.MSBCurrency ? window.MSBCurrency.fmt(2000, { voucher: true }) : '\u20a62,000'}</span> free`;
+    document.getElementById('fsbSub').innerHTML = `${4 - doneCount} step${4-doneCount===1?'':'s'} left to unlock <b><span data-ngn="2000" data-voucher>${window.MSBCurrency ? window.MSBCurrency.fmt(2000, { voucher: true }) : '\u20a62,000'}</span> off</b> your first book`;
   }catch(e){
     console.warn('checkFeedProfileSetup failed (non-fatal):', e);
   }
