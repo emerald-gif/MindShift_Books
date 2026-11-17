@@ -624,6 +624,75 @@ mark{background:var(--c-tonal2,#e0e7ff);color:inherit;border-radius:3px;padding:
 @media (prefers-reduced-motion:reduce){.tour-p,.tour-ring,.tour-card{transition:none}.tour-ring{animation:none}}
 .toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:var(--c-ink-bg,#0f172a);color:#fff;padding:10px 18px;border-radius:99px;font-size:13.5px;font-weight:600;opacity:0;pointer-events:none;transition:all .25s;z-index:120;max-width:90vw;text-align:center}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ═══════════════ Chat screen refresh ═══════════════
+   · messages from the same person group into clusters (tight spacing, one time at the end)
+   · Delivered / Seen sits under my latest message only
+   · bubbles: softer shadows instead of borders, time tucked into the last line
+   · composer + inputs at 16px (iOS stops zooming the page on focus)                                      */
+#chatView .bar{gap:4px;padding:calc(8px + env(safe-area-inset-top)) 8px 8px 4px;border-bottom:1px solid var(--ds-hairline,rgba(15,23,42,.07))}
+#chatView .chat-head{gap:11px;padding:2px 6px 2px 2px;border-radius:14px}
+#chatView .chat-head:active{background:var(--c-surface,rgba(15,23,42,.05))}
+#chatView .chat-head .av{width:42px;height:42px;font-size:16px}
+#chatView .chat-head .av:has(.on-dot){box-shadow:0 0 0 2px var(--cbg1,var(--c-bg,#fff)),0 0 0 3.5px #10b981}
+.chat-name{font-size:16.5px;font-weight:800;letter-spacing:-.015em}
+.chat-sub{font-size:12.5px;margin-top:0}
+.on-dot{right:-1px;bottom:-1px;width:12px;height:12px}
+
+.msgs{padding:12px 12px 10px;gap:2px;scroll-padding-bottom:12px}
+.msg{max-width:80%;padding:8px 13px 7px;border-radius:20px;font-size:15.5px;line-height:1.38}
+.msg:not(.gp){margin-top:9px}
+.msg:first-child,.day + .msg{margin-top:2px}
+.msg.them{border:0;border-bottom-left-radius:6px;box-shadow:0 1px 2px rgba(15,23,42,.08),0 0 0 1px var(--ds-hairline,rgba(15,23,42,.05))}
+.msg.them.gp{border-top-left-radius:6px}
+.msg.me{border-bottom-right-radius:6px;box-shadow:0 3px 10px -3px rgba(79,70,229,.45);box-shadow:0 3px 10px -3px color-mix(in srgb,var(--p,#4f46e5) 55%,transparent)}
+.msg.me.gp{border-top-right-radius:6px}
+.msg.deleted,.msg.me.deleted,.msg.them.deleted{box-shadow:none}
+.msg.media.me,.msg.media.them{border-radius:20px}
+.msg.media.me.gp{border-top-right-radius:8px}.msg.media.them.gp{border-top-left-radius:8px}
+.msg.media.me{border-bottom-right-radius:8px}.msg.media.them{border-bottom-left-radius:8px}
+
+/* time rides on the bubble's last line; mid-cluster bubbles hide it until tapped */
+.msg:not(.media):not(.voice):not(.share) > .t{float:right;margin:7px 0 -2px 12px;line-height:1.2}
+.msg.nt:not(.show-t) > .t{display:none}
+.msg.nt.show-t > .t{display:block}
+.msg a.lnk{color:inherit;text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:2px;word-break:break-all}
+.msg.them a.lnk{color:var(--p)}
+
+.stat{margin:1px 8px 4px 0;font-size:11.5px;font-weight:600;letter-spacing:.005em}
+.stat.ok.seen{color:var(--p)}
+.stat.err{margin-top:2px}
+
+.msg.in{animation:msgIn .24s cubic-bezier(.2,.9,.3,1.12) both}
+.msg.me.in{transform-origin:100% 100%}.msg.them.in{transform-origin:0 100%}
+@keyframes msgIn{from{opacity:0;transform:translateY(10px) scale(.94)}to{opacity:1;transform:none}}
+
+.day{margin:16px 0 6px;padding:4px 13px;font-weight:600;letter-spacing:.01em}
+.older{margin:4px 0 12px;font-weight:700;color:var(--p)}
+
+.intro{padding:30px 16px 0}
+.intro .av{box-shadow:0 0 0 3px var(--c-bg,#fff),0 0 0 4.5px var(--c-line,#dfe3ec),0 10px 24px rgba(15,23,42,.10)}
+.intro::after{margin:26px 8px 6px}
+
+.empty-chat.hi{padding:9px 16px;border:0;box-shadow:0 1px 2px rgba(15,23,42,.08),0 0 0 1px var(--ds-hairline,rgba(15,23,42,.05))}
+.qr{align-self:center;display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:14px 8px 0}
+.qr-b{padding:9px 16px;border-radius:99px;background:var(--c-bg,#fff);color:var(--txt);font-size:14px;font-weight:600;box-shadow:0 1px 2px rgba(15,23,42,.08),0 0 0 1px var(--ds-hairline,rgba(15,23,42,.06));transition:transform .12s,background .15s}
+.qr-b:active{transform:scale(.96);background:var(--c-surface,#f1f5f9)}
+.qr-b.pri{background:var(--g);color:#fff;font-weight:700;box-shadow:0 4px 14px rgba(79,70,229,.28)}
+
+.replybar{padding:9px 12px 9px 14px;border-top:1px solid var(--ds-hairline,rgba(15,23,42,.07))}
+.rb-main{border-radius:2px}
+.tobot{right:14px;bottom:14px;width:42px;height:42px;border:0;box-shadow:0 6px 20px rgba(15,23,42,.22),0 0 0 1px var(--ds-hairline,rgba(15,23,42,.06))}
+
+/* composer */
+.composer{gap:8px;padding:9px 10px calc(9px + env(safe-area-inset-bottom));border-top:1px solid var(--ds-hairline,rgba(15,23,42,.07))}
+.composer textarea{font-size:16px;line-height:1.35;padding:12px 18px;border:1px solid var(--ds-hairline,rgba(15,23,42,.07))}
+.composer textarea:focus{border-color:var(--c-line-ind,#a5b4fc);box-shadow:0 0 0 4px rgba(79,70,229,.10);box-shadow:0 0 0 4px color-mix(in srgb,var(--p,#4f46e5) 13%,transparent)}
+.composer.has-text .send:not([disabled]){animation:sendPop .22s cubic-bezier(.2,.9,.3,1.35)}
+@keyframes sendPop{from{transform:scale(.7);opacity:.4}to{transform:none;opacity:1}}
+.emo-search input,.ms-cap textarea,.psq,.isearch-in input,.nsearch input{font-size:16px}
+
+@media (prefers-reduced-motion:reduce){.msg.in,.composer.has-text .send:not([disabled]){animation:none}}
 </style>
 <link rel="stylesheet" href="/theme.css?v=1">
 <link rel="stylesheet" href="/shell.css?v=1" media="(min-width:720px)">
@@ -779,6 +848,12 @@ if(/[?&]with=/.test(location.search)){ document.getElementById('listView').class
 <script type="module">
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// message text with tappable http(s) links. Everything is escaped FIRST, so the only markup in the result is the <a> we add here.
+const linkify = s => esc(s).replace(/\bhttps?:\/\/[^\s<>"]+/gi, u => {
+  let tail = ''; const t = u.match(/(?:[.,;:!?)\]]|&quot;|&#39;|&gt;)+$/);
+  if(t){ tail = t[0]; u = u.slice(0, -tail.length); }
+  return `<a class="lnk" href="${u}" target="_blank" rel="noopener noreferrer nofollow">${u}</a>${tail}`;
+});
 const PAGE = 30;
 
 let me = null;                 // { uid, name, photo }
@@ -1174,32 +1249,48 @@ function renderMsgs(stick){
     </div>${chat.reqNote && !ms(chat.row && chat.row.seenAt) && ![...chat.msgs.values()].some(m => m.senderUid !== me.uid) ? `<div class="req-note">${esc(chat.other.name)} doesn’t follow you, so your first message goes to their message requests until they accept.</div>` : ''}`;
   if(!items.length) html += chat.clearedAt
     ? `<div class="empty-chat hi">Chat cleared · new messages will show up here</div>`
-    : `<div class="empty-chat hi">No messages yet · say hi to ${esc(chat.other.name)} 👋</div><button class="say-hi" id="sayHi" type="button">👋 Say hi</button>`;
+    : `<div class="empty-chat hi">No messages yet · say hi to ${esc(chat.other.name)} 👋</div><div class="qr"><button class="qr-b pri" id="sayHi" type="button">👋 Say hi</button><button class="qr-b" type="button" data-qr="Hey, nice to meet you">Nice to meet you</button><button class="qr-b" type="button" data-qr="Quick question for you">Quick question</button></div>`;
   let lastDay = '';
   // photos/videos sent together (same gid, same sender) are drawn as ONE grid bubble, at the spot of the first one
   const gkey = m => m.gid && (isMedia(m) || m.deleted) ? (m.deleted ? 'd|' : 'm|') + m.senderUid + '|' + m.gid : '';
   const groups = new Map(), seenG = new Set();
   items.forEach(m => { const k = gkey(m); if(k && !m.deleted) (groups.get(k) || groups.set(k, []).get(k)).push(m); });
   groups.forEach((a, k) => { if(a.length < 2) groups.delete(k); else a.sort((x, y) => (x.gi || 0) - (y.gi || 0)); });
+  // the bubbles that actually get drawn, in order (a photo grid counts once) — needed to know who sits next to whom
+  const ents = [];
   items.forEach(m => {
     const gk = gkey(m);
     if(gk){ if(seenG.has(gk)) return; if(m.deleted || groups.has(gk)) seenG.add(gk); }
+    ents.push({ m, g: groups.get(gk) || null, mine: m.senderUid === me.uid });
+  });
+  // Same person, within 5 minutes = one cluster: tight spacing, one timestamp (at its end), and the Delivered/Seen line
+  // only under my latest message instead of repeated on every bubble.
+  const sameDay = (a, b) => new Date(a).toDateString() === new Date(b).toDateString();
+  const joined = (a, b) => !!(a && b && a.mine === b.mine && a.m.ts && b.m.ts && Math.abs(b.m.ts - a.m.ts) < 300000 && sameDay(a.m.ts, b.m.ts));
+  let lastMine = -1; ents.forEach((e, i) => { if(e.mine) lastMine = i; });
+  const themAfter = lastMine >= 0 && ents.slice(lastMine + 1).some(e => !e.mine);
+  const drawn = chat.drawn, nowT = Date.now();
+  ents.forEach((e, i) => {
+    const m = e.m, mine = e.mine;
+    const gp = joined(ents[i - 1], e), gn = joined(e, ents[i + 1]);
     const dk = m.ts ? new Date(m.ts).toDateString() : lastDay;
     if(dk && dk !== lastDay){ html += `<div class="day">${esc(fmtDay(m.ts))}</div>`; lastDay = dk; }
-    const mine = m.senderUid === me.uid;
-    const st = mine ? statusFor(m) : null;
     const time = m.ts ? new Date(m.ts).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}) : '';
+    const fresh = !!drawn && !chat.prepended && !drawn.has(m.id) && (!m.ts || nowT - m.ts < 20000);   // slides in once, when it first arrives
     if(m.deleted){                                   // "Delete for everyone": a placeholder for both people, no content left
-      html += `<div class="msg ${mine?'me':'them'} deleted" data-mid="${esc(m.id)}"><span class="dl">${mine ? 'You deleted this message' : 'This message was deleted'}</span><span class="t">${time}</span></div>`;
+      html += `<div class="msg ${mine?'me':'them'} deleted${gp?' gp':''}" data-mid="${esc(m.id)}"><span class="dl">${mine ? 'You deleted this message' : 'This message was deleted'}</span><span class="t">${time}</span></div>`;
       return;
     }
-    const g = groups.get(gk) || null;
-    if(g){ html += groupBubble(g); return; }
+    const o = { gp, gn, fresh, final: i === lastMine && !themAfter };
+    if(e.g){ html += groupBubble(e.g, o); return; }
+    const st = mine ? statusFor(m) : null;
+    const tr = !!st && !st.err && /^(Sending|Waiting|Preparing|Uploading)/.test(st.text);   // still on its way: say so inside the bubble
     const qm = m.replyTo && chat.msgs.get(m.replyTo.id), qDel = !!(qm && qm.deleted);   // a quote of an unsent message must not leak its text
     const q = m.replyTo ? `<div class="quote" data-qid="${esc(m.replyTo.id)}"><div class="q-name">${esc(m.replyTo.senderUid === me.uid ? 'You' : chat.other.name)}</div><div class="q-text">${esc(qDel ? 'Message deleted' : m.replyTo.text)}</div></div>` : '';
     const rx = rxHtml(m);
-    html += `<div class="msg ${mine?'me':'them'} ${m.pendingLocal && !m.failed && !m.silent && !chat.ack.has(m.id)?'pending':''} ${m.failed?'failed':''} ${rx?'has-rx':''} ${m.type==='voice'?'voice':''} ${m.type==='share'?'share':''} ${isMedia(m)?'media '+(m.cap?'hascap':'nocap')+(m.uploading?' up':''):''}" data-mid="${esc(m.id)}">${q}${m.type==='voice'?voiceHtml(m):isMedia(m)?mediaHtml(m):m.type==='share'?shareHtml(m):esc(m.text)}<span class="t">${time}${m.edited ? ' · edited' : ''}${st && !st.err ? ' · ' + esc(st.text) : ''}</span>${rx}</div>`;
+    html += `<div class="msg ${mine?'me':'them'} ${m.pendingLocal && !m.failed && !m.silent && !chat.ack.has(m.id)?'pending':''} ${m.failed?'failed':''} ${rx?'has-rx':''} ${m.type==='voice'?'voice':''} ${m.type==='share'?'share':''} ${isMedia(m)?'media '+(m.cap?'hascap':'nocap')+(m.uploading?' up':''):''} ${gp?'gp':''} ${gn && !tr?'nt':''} ${fresh?'in':''}" data-mid="${esc(m.id)}">${q}${m.type==='voice'?voiceHtml(m):isMedia(m)?mediaHtml(m):m.type==='share'?shareHtml(m):linkify(m.text)}<span class="t">${time}${m.edited ? ' · edited' : ''}${tr ? ' · ' + esc(st.text) : ''}</span>${rx}</div>`;
     if(st && st.err) html += `<div class="stat err" data-retry="${esc(m.id)}">${esc(st.text)}</div>`;
+    else if(st && !tr && o.final) html += `<div class="stat ok${st.text === 'Seen' ? ' seen' : ''}">${esc(st.text)}</div>`;
   });
   box.innerHTML = html;
   voiceSync();
@@ -1213,6 +1304,7 @@ function renderMsgs(stick){
   if(stick || nearBottom) box.scrollTop = box.scrollHeight;
   else box.scrollTop = prevTop + (box.scrollHeight - prevH) * (chat.prepended ? 1 : 0);
   chat.prepended = false;
+  chat.drawn = new Set(items.map(m => m.id));
   paintTypingBubble();
   updateToBot();
 }
@@ -1232,7 +1324,15 @@ function updateToBot(){
   n.hidden = !c; if(c) n.textContent = c > 99 ? '99+' : c;
 }
 $('msgs').addEventListener('scroll', () => { if(_tbRaf) return; _tbRaf = requestAnimationFrame(() => { _tbRaf = 0; updateToBot(); }); }, { passive:true });
-$('msgs').addEventListener('click', e => { if(e.target.closest('#sayHi')){ input.value = 'Hi 👋'; send(); } });
+$('msgs').addEventListener('click', e => {
+  if(e.target.closest('#sayHi')){ input.value = 'Hi 👋'; send(); return; }
+  const qr = e.target.closest('[data-qr]'); if(qr){ input.value = qr.dataset.qr; send(); return; }
+  // tap a bubble to see its time when it sits in the middle of a cluster
+  const el = e.target.closest('.msg.nt');
+  if(!el || el.classList.contains('media') || el.classList.contains('voice') || el.classList.contains('share') || e.target.closest('a,.quote')) return;
+  if(window.getSelection && String(getSelection())) return;
+  el.classList.toggle('show-t');
+});
 $('toBot').onclick = () => { const box = $('msgs'); box.scrollTo({ top:box.scrollHeight, behavior:'smooth' }); };
 // Messages query for the open chat. If the chat was cleared/deleted, only messages after that moment are ever read.
 function mq(...constraints){
@@ -2356,19 +2456,20 @@ function groupStatus(g){
   const up = g.filter(x => x.uploading); if(up.length) return { text:'Uploading ' + (g.length - up.length) + '/' + g.length };
   return statusFor(g[g.length - 1]);
 }
-function groupBubble(g){
+function groupBubble(g, o = {}){
   const lead = g.find(x => x.cap) || g[0], last = g[g.length - 1], mine = lead.senderUid === me.uid;
-  const st = mine ? groupStatus(g) : null, time = last.ts ? new Date(last.ts).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}) : '';
+  const st = mine ? groupStatus(g) : null, tr = !!st && !st.err && /^(Sending|Waiting|Preparing|Uploading)/.test(st.text), time = last.ts ? new Date(last.ts).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}) : '';
   const rep = g.find(x => x.replyTo), rt = rep && rep.replyTo, qm = rt && chat.msgs.get(rt.id), qDel = !!(qm && qm.deleted);
   const q = rt ? `<div class="quote" data-qid="${esc(rt.id)}"><div class="q-name">${esc(rt.senderUid === me.uid ? 'You' : chat.other.name)}</div><div class="q-text">${esc(qDel ? 'Message deleted' : rt.text)}</div></div>` : '';
   const rx = rxHtml(lead), n = g.length, extra = n - 4;
   const tiles = g.slice(0, 4).map((m, i) => mediaTile(m, true, i === 3 ? extra : 0)).join('');
   const hid = g.slice(4).map(m => '<i class="mhid' + (m.uploading ? ' up' : '') + (m.failed ? ' fail' : '') + '" data-id="' + esc(m.id) + '"></i>').join('');
   const pend = g.some(x => x.pendingLocal && !x.failed && !x.silent && !chat.ack.has(x.id));
-  const cls = 'msg ' + (mine ? 'me' : 'them') + (pend ? ' pending' : '') + (g.some(x => x.failed) ? ' failed' : '') + (rx ? ' has-rx' : '') + ' media ' + (lead.cap ? 'hascap' : 'nocap') + (g.some(x => x.uploading) ? ' up' : '');
+  const cls = 'msg ' + (mine ? 'me' : 'them') + (pend ? ' pending' : '') + (g.some(x => x.failed) ? ' failed' : '') + (rx ? ' has-rx' : '') + ' media ' + (lead.cap ? 'hascap' : 'nocap') + (g.some(x => x.uploading) ? ' up' : '') + (o.gp ? ' gp' : '') + (o.gn && !tr ? ' nt' : '') + (o.fresh ? ' in' : '');
   let h = '<div class="' + cls + '" data-mid="' + esc(lead.id) + '">' + q + '<div class="mg n' + Math.min(n, 4) + '">' + tiles + '</div>' + hid + (lead.cap ? '<div class="cap">' + esc(lead.cap) + '</div>' : '')
-        + '<span class="t">' + time + (lead.edited ? ' · edited' : '') + (st && !st.err ? ' · ' + esc(st.text) : '') + '</span>' + rx + '</div>';
+        + '<span class="t">' + time + (lead.edited ? ' · edited' : '') + (tr ? ' · ' + esc(st.text) : '') + '</span>' + rx + '</div>';
   if(st && st.err) h += '<div class="stat err" data-retry="' + esc(st.id) + '">' + esc(st.text) + '</div>';
+  else if(st && !tr && o.final) h += '<div class="stat ok' + (st.text === 'Seen' ? ' seen' : '') + '">' + esc(st.text) + '</div>';
   return h;
 }
 function mediaTile(m, grid, more){
