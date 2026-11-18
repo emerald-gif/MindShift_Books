@@ -781,6 +781,42 @@ button.rx-row:active{background:var(--c-surface,#f4f5f7)}
 .in-selbar button{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;height:50px;border-radius:99px;background:var(--red);color:#fff;font-size:16px;font-weight:800}
 .in-selbar button:disabled{opacity:.4}
 .in-selbar svg{width:21px;height:21px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* chat list: no divider lines (clean, like X) */
+#listView .bar,#newView .bar,#reqView .bar{border-bottom:0}
+.row{border-bottom:0;padding:13px 16px}
+.row:active{background:var(--c-surface,rgba(15,23,42,.05))}
+.people{border-bottom:0;padding-bottom:6px}
+.tabs{border-bottom:0;padding-bottom:6px}
+.req-intro{border-bottom:0}
+
+/* ═══════ Inbox upgrade ═══════ */
+#listView .bar-title,#newView .bar-title,#reqView .bar-title{font-size:23px;letter-spacing:-.03em}
+.isearch{padding:8px 16px 8px}
+.isearch-in{height:46px;padding:0 10px 0 16px}
+.isearch-in > svg{width:20px;height:20px}
+.people-head{padding:6px 18px 10px;font-size:14.5px;font-weight:800;color:var(--txt);letter-spacing:-.01em}
+.pp-all{font-size:13.5px}
+.people-track{gap:14px}
+.pp{width:66px}
+.pp .av{width:62px;height:62px;font-size:21px;box-shadow:0 0 0 2px var(--bg),0 0 0 3.5px var(--c-line,rgba(79,70,229,.18))}
+.pp.add .av{background:var(--g);color:#fff;border:0;box-shadow:0 8px 18px -6px rgba(79,70,229,.6)}
+.pp-name{font-weight:600;margin-top:8px}
+.tabs{gap:10px;padding:8px 16px 10px}
+.tab{padding:8px 18px;font-size:14px}
+.tab.on{background:var(--g);color:#fff;box-shadow:0 4px 12px -4px rgba(79,70,229,.55)}
+.tab.on .n{color:#fff}
+.row{gap:14px;padding:12px 18px}
+.row .av{width:56px;height:56px;font-size:20px}
+.row-name{font-size:16.5px;letter-spacing:-.012em}
+.row-last{font-size:14.5px;line-height:1.35}
+.row.unread .row-name{font-weight:800}
+.pill{min-width:22px;height:22px;font-size:12px;box-shadow:0 3px 9px -3px rgba(79,70,229,.6)}
+.row:active{background:var(--c-surface,rgba(15,23,42,.05))}
+.lscroll{padding-bottom:calc(96px + env(safe-area-inset-bottom))}
+.fab{position:absolute;right:18px;bottom:calc(20px + env(safe-area-inset-bottom));z-index:20;width:58px;height:58px;border-radius:50%;background:var(--g);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 24px -6px rgba(79,70,229,.65),0 2px 6px rgba(15,23,42,.18);transition:transform .15s}
+.fab:active{transform:scale(.92)}
+.fab svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 </style>
 <link rel="stylesheet" href="/theme.css?v=1">
 <link rel="stylesheet" href="/shell.css?v=1" media="(min-width:720px)">
@@ -809,6 +845,7 @@ button.rx-row:active{background:var(--c-surface,#f4f5f7)}
   </div>
   <div class="list" id="list"><div class="skel-row"><div class="skel c"></div><div style="flex:1"><div class="skel" style="height:14px;width:42%;margin-bottom:9px"></div><div class="skel" style="height:12px;width:78%"></div></div></div><div class="skel-row"><div class="skel c"></div><div style="flex:1"><div class="skel" style="height:14px;width:42%;margin-bottom:9px"></div><div class="skel" style="height:12px;width:78%"></div></div></div><div class="skel-row"><div class="skel c"></div><div style="flex:1"><div class="skel" style="height:14px;width:42%;margin-bottom:9px"></div><div class="skel" style="height:12px;width:78%"></div></div></div><div class="skel-row"><div class="skel c"></div><div style="flex:1"><div class="skel" style="height:14px;width:42%;margin-bottom:9px"></div><div class="skel" style="height:12px;width:78%"></div></div></div><div class="skel-row"><div class="skel c"></div><div style="flex:1"><div class="skel" style="height:14px;width:42%;margin-bottom:9px"></div><div class="skel" style="height:12px;width:78%"></div></div></div><div class="skel-row"><div class="skel c"></div><div style="flex:1"><div class="skel" style="height:14px;width:42%;margin-bottom:9px"></div><div class="skel" style="height:12px;width:78%"></div></div></div></div>
   </div>
+  <button class="fab" id="fabNew" aria-label="New message"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 01-8.5 8.5 8.6 8.6 0 01-3.6-.8L3 21l1.9-5.4A8.4 8.4 0 1121 11.5z"/><path d="M12.5 8.5v6M9.5 11.5h6"/></svg></button>
 </section>
 
 <!-- ── NEW MESSAGE (full screen) ── -->
@@ -3768,6 +3805,7 @@ function openRowMenu(t){
 }
 $('listMenuBtn').onclick = openListMenu;
 $('chatMenuBtn').onclick = openChatMenu;
+$('fabNew').onclick = () => showNew(true);
 
 /* ───────── chat info: tap the name / photo at the top of a chat ───────── */
 const INFO = { mode:'main', tab:'media', pin:null, q:'', selecting:false, sel:new Set() };
