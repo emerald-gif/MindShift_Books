@@ -136,7 +136,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 /* ── EDIT PROFILE SCREEN (full page) ── */
 .edit-screen{position:fixed;inset:0;background:var(--bg);z-index:2000;
   transform:translateX(100%);transition:transform .35s cubic-bezier(.32,0,.15,1);
-  overflow-y:auto;-webkit-overflow-scrolling:touch}
+  overflow-y:auto}
 .edit-screen.show{transform:translateX(0)}
 .edit-screen .hdr{position:sticky}
 /* While the edit-profile screen is open, hide the shared site header (logo/title/
@@ -621,6 +621,10 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
 .btn-save-profile{width:100%;padding:14px;border-radius:99px;background:var(--g);border:none;
   color:#fff;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;margin-top:4px;
   box-shadow:0 4px 20px rgba(37,99,235,.35)}
+.btn-save-profile{display:flex;align-items:center;justify-content:center;gap:10px}
+.btn-save-profile:disabled{opacity:.75;cursor:not-allowed}
+.btn-save-profile .save-spin{width:16px;height:16px;border:2.5px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:saveSpin .7s linear infinite;flex-shrink:0}
+@keyframes saveSpin{to{transform:rotate(360deg)}}
 
 /* ── FOLLOWERS SHEET ── */
 .follow-list{padding:16px}
@@ -965,7 +969,7 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
       <div class="social-card" id="socialCard"></div>
       <div class="field-hint">Add up to 5 links — tap + to add a platform. They'll show as tappable icons on your profile.</div>
     </div>
-    <button class="btn-save-profile" onclick="saveProfile()">Save Changes</button>
+    <button class="btn-save-profile" id="btnSaveProfile" onclick="saveProfile()">Save Changes</button>
   </div>
 </div>
 
@@ -3697,6 +3701,7 @@ window.confirmSaveFromDiscard = async function(){
 };
 window.saveProfile = async function(){
   if(!currentUser) return;
+  if(window._savingProfile) return; // ignore double taps while a save is running
   const newCategories = [...selectedCategories];
   const newJobTitle = document.getElementById('eTitle').value.trim();
   const oldCategories = Array.isArray(profileData.categories) ? profileData.categories : (profileData.category ? [profileData.category] : []);
@@ -3763,6 +3768,12 @@ window.saveProfile = async function(){
     showToast('That doesn\'t look like a valid phone number — check it and try again'); return;
   }
 
+  // Show a loader on the Save button until the save finishes (success or error)
+  window._savingProfile = true;
+  const saveBtn = document.getElementById('btnSaveProfile');
+  const saveBtnLabel = saveBtn ? saveBtn.textContent : '';
+  if(saveBtn){ saveBtn.disabled = true; saveBtn.innerHTML = '<span class="save-spin"></span><span>Saving…</span>'; }
+
   try{
     // ── 1. Claim new username via server if changed (Admin SDK bypasses rules) ──
     if(usernameChanged){
@@ -3823,6 +3834,10 @@ window.saveProfile = async function(){
 
     showToast(categoryChanged ? 'Profile updated — your feed will refresh ✓' : 'Profile updated ✓');
   }catch(e){ console.error('saveProfile error:', e); showToast('Could not save: ' + e.message); }
+  finally{
+    window._savingProfile = false;
+    if(saveBtn){ saveBtn.disabled = false; saveBtn.textContent = saveBtnLabel || 'Save Changes'; }
+  }
 };
 
 /* ── FOLLOWERS / FOLLOWING — FULL SCREEN (replaces the old bottom sheet) ── */
@@ -3954,7 +3969,7 @@ window.showToast = function(msg){
 
 <!-- Upload modal: shared markup/CSS/logic now lives in image-compress.js + uploader.js -->
 <script src="/image-compress.js"></script>
-<script src="/uploader.js"></script>
+<script src="/uploader.js?v=2"></script>
 
 
 <!-- Profile-setup celebration — shown once, the moment all 4 checklist
