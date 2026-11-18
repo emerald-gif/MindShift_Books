@@ -1011,28 +1011,53 @@ const linkify = s => esc(s).replace(/\bhttps?:\/\/[^\s<>"]+/gi, u => {
 // we remember answers for the session), so old messages and received messages get cards too. The sender can remove the card with the ✕ in
 // the composer — that sends the message with an invisible mark at the start (zero-width space) which means "no preview".
 const NOPREV = '\u200B';
-const LP = { cache:new Map(), q:[], active:0, dismissed:'', barUrl:'', timer:0, rerender:0 };
+const LP = { cache:new Map(), fail:new Map(), tries:new Map(), q:[], active:0, cool:0, cdTimer:0, dismissed:'', barUrl:'', timer:0, rerender:0 };
+// A half-typed link ("https://mindshiftbooks.", "https://mindshiftbooks.sh") is only worth a lookup once its ending looks like a real domain ending.
+function lpValid(u){
+  try{
+    const h = new URL(u).hostname;
+    const parts = h.split('.');
+    return parts.length >= 2 && /^(xn--[a-z0-9-]+|[a-z]{2,})$/i.test(parts[parts.length - 1]);
+  }catch(e){ return false; }
+}
 function lpUrl(text){
   if(!text || text.charCodeAt(0) === 0x200B) return '';
-  try{ return (window.msbFirstUrl && window.msbFirstUrl(text)) || ''; }catch(e){ return ''; }
+  try{ const u = (window.msbFirstUrl && window.msbFirstUrl(text)) || ''; return (u && lpValid(u)) ? u : ''; }catch(e){ return ''; }
+}
+// undefined = never asked · 'loading' · null = the page could not be read (forgotten after a minute so it is tried again) · preview object
+function lpGet(u){
+  const v = LP.cache.get(u);
+  if(v === null && Date.now() - (LP.fail.get(u) || 0) > 60000){ LP.cache.delete(u); LP.fail.delete(u); return undefined; }
+  return v;
 }
 function lpRequest(u){
-  if(!u || LP.cache.has(u)) return;
+  if(!u || lpGet(u) !== undefined) return;
   LP.cache.set(u, 'loading'); LP.q.push(u);
   if(LP.q.length > 14){ LP.cache.delete(LP.q.shift()); }       // very long histories: only the newest links get looked up
   lpPump();
 }
 function lpPump(){
+  if(Date.now() < LP.cool){                                      // the server asked us to slow down: wait, then carry on
+    clearTimeout(LP.cdTimer); LP.cdTimer = setTimeout(lpPump, LP.cool - Date.now() + 50); return;
+  }
   while(LP.active < 2 && LP.q.length){
     const u = LP.q.pop(); LP.active++;                          // newest first
     (async () => {
-      let p = null;
+      let p = null, transient = false;
       try{
         const token = await auth.currentUser.getIdToken();
         const r = await fetch('/api/link-preview?url=' + encodeURIComponent(u), { headers:{ Authorization:'Bearer ' + token } });
         if(r.ok){ const j = await r.json(); p = (window.msbCleanLink && window.msbCleanLink(j && j.preview)) || null; }
-      }catch(e){}
-      LP.cache.set(u, p); LP.active--; lpChanged(); lpPump();
+        else transient = true;                                  // too many lookups / server hiccup: not the link's fault
+      }catch(e){ transient = true; }
+      if(transient){
+        const n = (LP.tries.get(u) || 0) + 1; LP.tries.set(u, n);
+        if(n >= 3){ LP.cache.set(u, null); LP.fail.set(u, Date.now()); }   // give up for a minute
+        else { LP.cache.delete(u); LP.cool = Date.now() + 6000; }          // forget it so the next look tries again
+      }else{
+        LP.cache.set(u, p); if(p === null) LP.fail.set(u, Date.now());
+      }
+      LP.active--; lpChanged(); lpPump();
     })();
   }
 }
@@ -1046,7 +1071,7 @@ function lpChanged(){
 function lpCardFor(m){
   if(!m || m.type === 'voice' || m.type === 'share' || isMedia(m)) return null;
   const u = lpUrl(m.text); if(!u) return null;
-  const p = LP.cache.get(u);
+  const p = lpGet(u);
   if(p === undefined) lpRequest(u);
   return (p && p !== 'loading') ? p : null;
 }
@@ -2045,7 +2070,7 @@ function lpBarUpdate(){
   const u = (input.value && chat && !chat.editing) ? lpUrl(input.value) : '';
   if(!u || (LP.dismissed && window.msbSameLink(LP.dismissed, u))){ lpBarHide(); return; }
   lpRequest(u);
-  const p = LP.cache.get(u);
+  const p = lpGet(u);
   if(p === null){ lpBarHide(); return; }                        // page could not be read: no chip
   const box = $('msgs');
   const wasNear = box ? (box.scrollHeight - box.scrollTop - box.clientHeight) < 140 : false;
@@ -2064,8 +2089,14 @@ function lpBarUpdate(){
 }
 function lpBarSchedule(){
   clearTimeout(LP.timer);
-  if(!input.value || !lpUrl(input.value)){ lpBarHide(); return; }
-  LP.timer = setTimeout(lpBarUpdate, 500);                       // a short pause after typing/pasting, like the post composer
+  const u = (input.value && chat && !chat.editing) ? lpUrl(input.value) : '';
+  if(!u){ lpBarHide(); return; }
+  if(u !== LP.barUrl){
+    const p = lpGet(u);
+    if(p && p !== 'loading'){ lpBarUpdate(); return; }        // a link we already know (e.g. the letter was put back): show it straight away
+    lpBarHide();                                              // a different or half-typed link: never keep showing the old preview
+  }
+  LP.timer = setTimeout(lpBarUpdate, 550);                     // a short pause after typing/pasting, like the post composer
 }
 lpBar.addEventListener('click', e => {
   if(!e.target.closest('#lpX')) return;
