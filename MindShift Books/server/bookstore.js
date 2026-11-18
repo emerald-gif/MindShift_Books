@@ -763,7 +763,9 @@ const FALLBACK_BOOKS = [
 ];
 
 function gutenbergCoverUrl(id) {
-  return `https://www.gutenberg.org/cache/epub/${id}/pg${id}.cover.medium.jpg`;
+  // Served by our own /api/free-ebook-cover/:id (fetched once, cached on disk)
+  // instead of hotlinking gutenberg.org from every visitor's browser.
+  return `/api/free-ebook-cover/${id}`;
 }
 
 function normalizeCatalogBook(e) {
@@ -809,21 +811,76 @@ function publicBook(b) {
   return rest;
 }
 
-// Fetches a book's file straight from gutenberg.org's own predictable URLs.
+// Browser-like headers — Gutenberg (and Cloudflare in front of mirrors) reject
+// obviously-bot requests, so look like a normal browser.
+const GUT_HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+  'Accept': 'text/html,application/xhtml+xml,text/plain,image/*;q=0.9,*/*;q=0.8',
+  'Accept-Language': 'en-US,en;q=0.9'
+};
+
+async function fetchWithTimeout(url, ms, asBuffer) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), ms);
+  try {
+    const resp = await fetch(url, { headers: GUT_HEADERS, signal: ctrl.signal, redirect: 'follow' });
+    if (!resp.ok) { console.warn(`[free-ebooks] ${resp.status} from ${url}`); return null; }
+    return asBuffer ? await resp.buffer() : await resp.text();
+  } catch (e) {
+    console.warn(`[free-ebooks] fetch failed for ${url}: ${e && e.message ? e.message : e}`);
+    return null;
+  } finally { clearTimeout(t); }
+}
+
+// Fetches a book's file from gutenberg.org (and its mirror host) — tries several
+// URL patterns and logs the status of each so Render logs show the real cause.
 async function fetchGutenbergTextDirect(id) {
   const candidates = [
     `https://www.gutenberg.org/cache/epub/${id}/pg${id}-images.html`,
+    `https://www.gutenberg.org/cache/epub/${id}/pg${id}.html`,
+    `https://www.gutenberg.org/files/${id}/${id}-h/${id}-h.htm`,
     `https://www.gutenberg.org/cache/epub/${id}/pg${id}.txt`,
-    `https://www.gutenberg.org/files/${id}/${id}-h/${id}-h.htm`
+    `https://www.gutenberg.org/ebooks/${id}.txt.utf-8`,
+    `https://gutenberg.pglaf.org/cache/epub/${id}/pg${id}-images.html`,
+    `https://gutenberg.pglaf.org/cache/epub/${id}/pg${id}.txt`
   ];
   for (const url of candidates) {
-    try {
-      const resp = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; MindShiftBooks/1.0; +https://mindshiftbooks.shop)' } });
-      if (resp.ok) return { url, text: await resp.text(), isHtml: url.endsWith('.html') || url.endsWith('.htm') };
-    } catch (e) { /* try next candidate */ }
+    const text = await fetchWithTimeout(url, 20000, false);
+    if (text && text.length > 500) return { url, text, isHtml: /\.html?$/.test(url) };
   }
   return null;
 }
+
+// Cover images: fetched once from Gutenberg, cached on our disk, served from us.
+const COVER_CACHE_DIR = path.join(PROJECT_ROOT, 'cache', 'gutenberg-covers');
+router.get('/api/free-ebook-cover/:id', async (req, res) => {
+  const id = req.params.id.replace(/[^0-9]/g, '');
+  if (!id) return res.status(400).end();
+  const file = path.join(COVER_CACHE_DIR, `${id}.jpg`);
+  try {
+    if (fs.existsSync(file)) {
+      res.set({ 'Content-Type': 'image/jpeg', 'Cache-Control': 'public, max-age=604800' });
+      return fs.createReadStream(file).pipe(res);
+    }
+    const urls = [
+      `https://www.gutenberg.org/cache/epub/${id}/pg${id}.cover.medium.jpg`,
+      `https://www.gutenberg.org/cache/epub/${id}/pg${id}.cover.small.jpg`,
+      `https://gutenberg.pglaf.org/cache/epub/${id}/pg${id}.cover.medium.jpg`
+    ];
+    for (const u of urls) {
+      const buf = await fetchWithTimeout(u, 12000, true);
+      if (buf && buf.length > 500) {
+        try { fs.mkdirSync(COVER_CACHE_DIR, { recursive: true }); fs.writeFile(file, buf, () => {}); } catch (e) { /* cache is best-effort */ }
+        res.set({ 'Content-Type': 'image/jpeg', 'Cache-Control': 'public, max-age=604800' });
+        return res.send(buf);
+      }
+    }
+    // 404 -> the page's onerror shows the branded gradient cover with the title
+    res.status(404).end();
+  } catch (e) {
+    res.status(404).end();
+  }
+});
 
 router.get('/api/free-ebook-categories', (req, res) => {
   // Only list categories that actually have books, so no chip leads to an empty page.
@@ -995,7 +1052,10 @@ router.get('/read/:id', async (req, res) => {
     // No Gutendex here (Render is Cloudflare-blocked from it) — go straight
     // to gutenberg.org's own file URLs.
     const direct = await fetchGutenbergTextDirect(id);
-    if (!direct) return res.status(502).send('Could not load this book right now. Please try again.');
+    if (!direct) {
+      console.error(`[read] could not fetch book ${id} from Gutenberg (see [free-ebooks] lines above for status codes)`);
+      return res.status(502).send(`<!DOCTYPE html><meta name="viewport" content="width=device-width,initial-scale=1"><body style="font-family:system-ui;padding:32px;text-align:center"><h3>Couldn\u2019t load this book right now</h3><p>Please try again in a moment.</p><p><a href="/free-ebooks">\u2190 Back to Free eBooks</a></p></body>`);
+    }
     const known = freeCatalog.find(b => b.id === Number(id));
     let title = known ? known.title : null;
     if (known) {
