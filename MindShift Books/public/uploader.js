@@ -84,6 +84,7 @@ STYLE += "\n#kv-up-bd{background:rgba(11,18,32,.45);-webkit-backdrop-filter:blur
 
   window.MindshiftUploader = (function () {
     var _opts = {}, _dataUrl = null;
+    var _prevOverflow = '';
     var _orig = null, _editState = null, _edited = false; // for the optional "Crop & edit photo" step
     var $ = function (id) { return document.getElementById(id); };
 
@@ -97,12 +98,18 @@ STYLE += "\n#kv-up-bd{background:rgba(11,18,32,.45);-webkit-backdrop-filter:blur
       $('kv-up-cam-in').value = '';
       setState('pick');
       requestAnimationFrame(function () { $('kv-up-bd').classList.add('kv-show'); });
+      if (!document.body.classList.contains('kv-up-open')) _prevOverflow = document.body.style.overflow; // remember e.g. Edit Profile's own scroll-lock
+      document.body.classList.add('kv-up-open');
       document.body.style.overflow = 'hidden';
     }
 
     function close() {
       $('kv-up-bd').classList.remove('kv-show');
-      setTimeout(function () { document.body.style.overflow = ''; }, 400);
+      setTimeout(function () {
+        if ($('kv-up-bd').classList.contains('kv-show')) return; // re-opened during the slide-out
+        document.body.classList.remove('kv-up-open');
+        document.body.style.overflow = _prevOverflow; // restore (was blindly '' — unlocked the page under Edit Profile)
+      }, 400);
     }
 
     function setState(s) {
