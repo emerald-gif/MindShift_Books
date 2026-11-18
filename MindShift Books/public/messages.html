@@ -706,6 +706,40 @@ button.rx-row:active{background:var(--c-surface,#f4f5f7)}
 .rx-name{font-size:16.5px;font-weight:600}
 .rx-sub{font-size:13px;color:var(--mute);margin-top:1px}
 .rx-e{font-size:26px;line-height:1}
+
+/* chat info screen */
+.info{position:fixed;inset:0;z-index:55;display:flex;flex-direction:column;background:var(--bg);animation:infoIn .22s ease}
+.info[hidden]{display:none}
+@keyframes infoIn{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
+.info .bar{background:var(--bg);border-bottom:0}
+.info-scroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:0 16px calc(28px + env(safe-area-inset-bottom))}
+.in-hero{text-align:center;padding:6px 0 4px}
+.in-hero .av{width:104px;height:104px;font-size:36px;margin:0 auto 14px}
+.in-name{font-size:23px;font-weight:800;letter-spacing:-.02em}
+.in-sub{font-size:14.5px;color:var(--sub);margin-top:3px;overflow-wrap:anywhere}
+.in-acts{display:flex;justify-content:center;gap:14px;margin:22px 0 24px}
+.in-act{display:flex;flex-direction:column;align-items:center;gap:8px;width:72px}
+.in-act span{width:62px;height:62px;border-radius:50%;background:var(--c-bg,#fff);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--txt);transition:transform .12s,background .15s}
+.in-act:active span{transform:scale(.93);background:var(--c-surface,#f1f5f9)}
+.in-act svg{width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.in-act b{font-size:13.5px;font-weight:700}
+.in-card{background:var(--c-bg,#fff);border:1px solid var(--border);border-radius:22px;overflow:hidden;margin-bottom:14px}
+.in-row{display:flex;align-items:center;gap:14px;width:100%;text-align:left;padding:17px 18px;font-size:16.5px;color:var(--txt)}
+.in-row+.in-row{border-top:1px solid var(--c-line,#eef0f3)}
+.in-row:active{background:var(--c-surface,#f4f5f7)}
+.in-ri svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;display:block}
+.in-rl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.in-rv{color:var(--mute);font-size:15.5px}
+.in-rc svg{width:18px;height:18px;fill:none;stroke:var(--mute);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;display:block}
+.in-row.danger{color:var(--red)}
+.in-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;border-radius:14px;overflow:hidden}
+.in-tile{position:relative;aspect-ratio:1;background:var(--c-surface,#e5e9f0);overflow:hidden;padding:0}
+.in-tile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.in-vid{position:absolute;left:6px;bottom:6px;display:inline-flex;align-items:center;gap:4px;padding:2px 8px 2px 6px;border-radius:99px;background:rgba(15,23,42,.6);color:#fff;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums}
+.in-vid svg{width:11px;height:11px;fill:#fff}
+.in-empty{text-align:center;color:var(--mute);font-size:15px;padding:70px 20px}
+.in-more{display:block;margin:16px auto 0;padding:11px 22px;border-radius:99px;background:var(--c-surface,#f1f5f9);font-weight:700;font-size:14.5px;color:var(--p)}
+@media (prefers-reduced-motion:reduce){.info{animation:none}}
 </style>
 <link rel="stylesheet" href="/theme.css?v=1">
 <link rel="stylesheet" href="/shell.css?v=1" media="(min-width:720px)">
@@ -764,7 +798,7 @@ button.rx-row:active{background:var(--c-surface,#f4f5f7)}
 <section class="view" id="chatView">
   <div class="bar">
     <button class="back" id="chatBack" aria-label="Back to messages"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
-    <button class="chat-head" id="chatHead" aria-label="View profile">
+    <button class="chat-head" id="chatHead" aria-label="Chat info">
       <div class="av" id="chatAv"></div>
       <div class="chat-id"><div class="chat-name" id="chatName"></div><div class="chat-sub" id="chatSub"></div></div>
     </button>
@@ -798,6 +832,10 @@ button.rx-row:active{background:var(--c-surface,#f4f5f7)}
   </div>
 </section>
 
+<section class="info" id="info" hidden>
+  <div class="bar info-bar"><button class="back" id="infoBack" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button><div class="bar-title" id="infoTitle"></div></div>
+  <div class="info-scroll" id="infoBody"></div>
+</section>
 <div class="toast" id="toast"></div>
 <div class="mo" id="mo" hidden><div class="mo-bg" id="moBg"></div><div class="mo-body" id="moBody"></div></div>
 <div class="emo" id="emo" hidden>
@@ -993,7 +1031,7 @@ $('reqBack').onclick = () => {
   else { history.replaceState({}, '', '/messages'); showList(); }
 };
 $('chatBack').onclick = backToList;
-$('chatHead').onclick = () => { if(chat) location.href = `/profile?uid=${encodeURIComponent(chat.other.uid)}`; };
+$('chatHead').onclick = () => { if(chat) openInfo(); };
 window.addEventListener('popstate', e => {
   if(overlayBack()) return;                                  // Back closed the photo viewer / preview, not the chat
   const st = e.state || {};
@@ -3318,7 +3356,7 @@ const TOURS = {
     { title:'You’re all set', text:'Send text, voice notes, photos and videos, react to messages and build streaks 🔥 with the people you chat with. Say hi to someone today!' }
   ],
   chat: [
-    { sel:'#chatHead', title:'Who you’re talking to', text:'Tap their name or photo to open their profile. You’ll see when they’re typing or recording a voice note.' },
+    { sel:'#chatHead', title:'Who you’re talking to', text:'Tap their name or photo to see their info, shared photos and videos, and chat settings. You’ll see when they’re typing or recording a voice note.' },
     { sel:'#chatName .stk', title:'Your streak', text:'This shows how many days in a row you’ve both been chatting. Keep it going!' },
     { sel:'#input', title:'Write a message', text:'They see “typing…” while you write. You can turn that off by hiding your activity status in message settings.' },
     { sel:'#attachBtn', title:'Photos & videos', text:'Send photos or videos, even several at once as an album. On the preview, tap the pencil to crop, rotate, add text or draw before it goes out.' },
@@ -3681,6 +3719,86 @@ function openRowMenu(t){
 }
 $('listMenuBtn').onclick = openListMenu;
 $('chatMenuBtn').onclick = openChatMenu;
+
+/* ───────── chat info: tap the name / photo at the top of a chat ───────── */
+const INFO = { mode:'main', pin:null };
+const IC = {
+  user:'<circle cx="12" cy="7" r="4"/><path d="M19 21v-2a4 4 0 00-4-4H9a4 4 0 00-4 4v2"/>',
+  pin:'<path d="M12 17v5M9 10.8a2 2 0 01-1.1 1.8l-1.8.9A2 2 0 005 15.2V16a1 1 0 001 1h12a1 1 0 001-1v-.8a2 2 0 00-1.1-1.8l-1.8-.9A2 2 0 0115 10.8V7a1 1 0 011-1 2 2 0 000-4H8a2 2 0 000 4 1 1 0 011 1z"/>',
+  palette:'<circle cx="13.5" cy="6.5" r="1"/><circle cx="17.5" cy="10.5" r="1"/><circle cx="8.5" cy="7.5" r="1"/><circle cx="6.5" cy="12.5" r="1"/><path d="M12 2a10 10 0 000 20c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.3-.5-.8-.5-1.3 0-1.1.9-2 2-2h2.4a4.6 4.6 0 004.6-4.6C22 6 17.5 2 12 2z"/>',
+  more:'<circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>',
+  media:'<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/>',
+  eraser:'<path d="M20 20H9l-5-5a2 2 0 010-2.8l9-9a2 2 0 012.8 0l4.2 4.2a2 2 0 010 2.8L11 20"/><path d="M7 11l6 6"/>',
+  trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 002 2h6a2 2 0 002-2l1-12M9 7V4h6v3"/>',
+  block:'<circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/>',
+  chev:'<path d="M9 5l7 7-7 7"/>'
+};
+const ico = k => `<svg viewBox="0 0 24 24" aria-hidden="true">${IC[k]}</svg>`;
+function infoMedia(){
+  return [...chat.msgs.values()].filter(m => isMedia(m) && !m.deleted && !m.uploading && !m.failed).sort((a, b) => (b.ts || 0) - (a.ts || 0));
+}
+function drawInfo(){
+  if(!chat) return;
+  const o = chat.other, body = $('infoBody'), title = $('infoTitle');
+  if(INFO.mode === 'media'){
+    title.textContent = 'Shared media';
+    const list = infoMedia();
+    body.innerHTML = list.length
+      ? `<div class="in-grid">${list.map(m => { const src = mediaThumb(m);
+          return `<button class="in-tile" data-id="${esc(m.id)}" aria-label="${m.type === 'video' ? 'Video' : 'Photo'}">${src ? `<img src="${esc(src)}" alt="" loading="lazy" decoding="async">` : ''}${m.type === 'video' ? `<span class="in-vid"><svg viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 001.5.86l10.5-6.5a1 1 0 000-1.72L9.5 4.64A1 1 0 008 5.5z"/></svg>${m.duration ? fmtDur(m.duration) : ''}</span>` : ''}</button>`; }).join('')}</div>`
+      : `<div class="in-empty">No photos or videos in this chat yet</div>`;
+    if(chat.hasMore) body.insertAdjacentHTML('beforeend', `<button class="in-more" data-act="older">Load earlier media</button>`);
+    return;
+  }
+  title.textContent = '';
+  const pinned = INFO.pin != null ? INFO.pin : !!(chat.row && chat.row.pinned);
+  const sub = [o.username ? '@' + o.username : '', o.jobTitle || ''].filter(Boolean).map(esc).join(' • ');
+  const n = infoMedia().length;
+  const act = (k, ic, label) => `<button class="in-act" data-act="${k}"><span>${ico(ic)}</span><b>${label}</b></button>`;
+  const row = (k, ic, label, val, cls) => `<button class="in-row ${cls || ''}" data-act="${k}"><span class="in-ri">${ico(ic)}</span><span class="in-rl">${label}</span>${val ? `<span class="in-rv">${val}</span>` : ''}${cls === 'danger' ? '' : `<span class="in-rc">${ico('chev')}</span>`}</button>`;
+  body.innerHTML = `
+    <div class="in-hero">
+      <div class="av">${avatarHtml(o.name, o.photo)}</div>
+      <div class="in-name">${esc(o.name)}</div>
+      ${sub ? `<div class="in-sub">${sub}</div>` : ''}
+      ${o.followerCount > 0 ? `<div class="in-sub">${fmtCount(o.followerCount)} follower${o.followerCount === 1 ? '' : 's'}</div>` : ''}
+    </div>
+    <div class="in-acts">${act('profile', 'user', 'Profile')}${act('pin', 'pin', pinned ? 'Unpin' : 'Pin')}${act('theme', 'palette', 'Theme')}${act('more', 'more', 'More')}</div>
+    <div class="in-card">
+      ${row('media', 'media', 'Shared media', n ? String(n) + (chat.hasMore ? '+' : '') : '')}
+      ${row('theme', 'palette', 'Chat theme', '')}
+    </div>
+    <div class="in-card">
+      ${row('clear', 'eraser', 'Clear chat', '', 'danger')}
+      ${row('delete', 'trash', 'Delete chat', '', 'danger')}
+      ${chat.blocked ? row('unblock', 'block', 'Unblock ' + esc(o.name), '', 'danger') : row('block', 'block', 'Block ' + esc(o.name), '', 'danger')}
+    </div>`;
+}
+function openInfo(){
+  if(!chat || !$('info').hidden) return;
+  INFO.mode = 'main'; INFO.pin = null;
+  drawInfo(); $('infoBody').scrollTop = 0; $('info').hidden = false;
+  ovOpen(() => { $('info').hidden = true; });
+}
+function closeInfo(){ if($('info').hidden) return; $('info').hidden = true; ovPop(); }
+$('infoBack').onclick = () => { if(INFO.mode === 'media'){ INFO.mode = 'main'; drawInfo(); $('infoBody').scrollTop = 0; } else closeInfo(); };
+$('infoBody').onclick = async e => {
+  const t = e.target.closest('[data-act],[data-id]'); if(!t || !chat) return;
+  const uid = chat.other.uid;
+  if(t.dataset.id){ const id = t.dataset.id; closeInfo(); setTimeout(() => jumpTo(id), 350); return; }   // jump to that photo in the conversation
+  switch(t.dataset.act){
+    case 'profile': location.href = `/profile?uid=${encodeURIComponent(uid)}`; break;
+    case 'pin': { const cur = INFO.pin != null ? INFO.pin : !!(chat.row && chat.row.pinned); INFO.pin = !cur; drawInfo(); setPinned(uid, INFO.pin); break; }
+    case 'theme': openThemePicker('chat'); break;
+    case 'more': openChatMenu(); break;
+    case 'media': INFO.mode = 'media'; drawInfo(); $('infoBody').scrollTop = 0; break;
+    case 'older': { t.disabled = true; t.textContent = 'Loading…'; await loadOlder(); if(INFO.mode === 'media') drawInfo(); break; }
+    case 'clear': closeInfo(); setTimeout(clearChat, 350); break;
+    case 'delete': closeInfo(); setTimeout(() => deleteChat(uid), 350); break;
+    case 'block': { const o = chat.other; closeInfo(); setTimeout(() => blockUser(uid, o.name, o.photo), 350); break; }
+    case 'unblock': closeInfo(); setTimeout(() => unblockUser(uid), 350); break;
+  }
+};
 $('unblockBtn').onclick = () => { if(chat) unblockUser(chat.other.uid); };
 
 /* ───────── message requests ─────────
