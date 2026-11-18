@@ -50,3 +50,58 @@
     return '<div class="lcard skel noimg" aria-busy="true"><div class="lcard-body"><div class="sk" style="height:11px;width:34%"></div><div class="sk" style="height:15px;width:88%;margin-top:9px"></div><div class="sk" style="height:12px;width:64%;margin-top:7px"></div></div></div>';
   };
 })();
+
+
+/* Link detection shared with the post composer (create-post.html keeps its own copy of the same logic).
+   window.msbFirstUrl(text) → first link in some text (bare "mindshiftbooks.shop" counts, "script.sh" does not) or ''.
+   window.msbSameLink(a, b) → true when two links point to the same page.  window.msbCleanLink(p) → a safe preview object, or null. */
+(function () {
+const BARE_TLDS = 'com|org|net|edu|gov|io|co|shop|store|online|site|app|dev|ai|me|info|biz|xyz|blog|news|tv|tech|cloud|page|link|live|life|world|space|studio|agency|design|pro|club|fun|top|vip|us|uk|ca|au|in|ng|ke|gh|za|ae';
+const LINK_RE = new RegExp(
+  '(?:https?:\\/\\/|www\\.)[^\\s<>"\'`]+' +                                         // 1) https://…  or  www.…
+  '|(^|[^\\w@.\\/:\\-])((?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+(?:' + BARE_TLDS + '))(?![\\w-])' +   // 2) bare domain (not after @, /, :, . or a word char)
+  '((?::\\d{1,5})?(?:[\\/?#][^\\s<>"\'`]*)?)', 'gi');                              //    optional :port / path / query
+
+function firstUrl(text){
+  LINK_RE.lastIndex = 0;
+  let m, u = '';
+  while((m = LINK_RE.exec(text || ''))){
+    u = m[2] ? (m[2] + m[3]) : m[0];                    // bare domain: rebuild without the leading separator
+    if(m[2] && !u.trim()) continue;
+    break;
+  }
+  if(!u) return '';
+  for(;;){                                              // trailing punctuation belongs to the sentence, not the link
+    const c = u[u.length-1];
+    if('.,;:!?\'"\u201d\u2019]}'.includes(c)) u = u.slice(0,-1);
+    else if(c === ')' && (u.match(/\(/g)||[]).length < (u.match(/\)/g)||[]).length) u = u.slice(0,-1);   // keep Wikipedia_(film)
+    else break;
+  }
+  if(!/^https?:\/\//i.test(u)) u = 'https://' + u;      // "www.x.com" and "x.com" both get https (the server retries http if needed)
+  try{
+    const x = new URL(u);
+    if(x.protocol !== 'http:' && x.protocol !== 'https:') return '';
+    if(!x.hostname.includes('.')) return '';
+    x.hash = '';                                        // same normalisation the server applies
+    return x.href;
+  }catch(e){ return ''; }
+}
+
+// "Is this the same link?" — ignores http/https (the server may fall back to http), www. and a trailing slash.
+function linkKey(u){
+  try{ const x = new URL(u); return x.hostname.toLowerCase().replace(/^www\./,'') + x.pathname.replace(/\/+$/,'') + x.search; }
+  catch(e){ return String(u || ''); }
+}
+function sameLink(a, b){ return !!a && !!b && linkKey(a) === linkKey(b); }
+
+function cleanLink(p){                                  // trusts nothing — drafts / old posts / the server reply all pass through here
+  if(!p || typeof p !== 'object') return null;
+  const t = (v,n) => String(v == null ? '' : v).slice(0,n);
+  const url = t(p.url,2000), title = t(p.title,200), img = t(p.image,2000);
+  if(!/^https?:\/\//i.test(url) || !title.trim()) return null;
+  return { url, title, description: t(p.description,300), image: /^https:\/\//i.test(img) ? img : '', siteName: t(p.siteName,80), domain: t(p.domain,120) };
+}
+
+
+  window.msbFirstUrl = firstUrl; window.msbSameLink = sameLink; window.msbCleanLink = cleanLink;
+})();

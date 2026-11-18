@@ -3,6 +3,7 @@
 <head>
 <script>(function(){try{var c=localStorage.getItem('msb_theme'),d=c==='dark'||(c!=='light'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches),r=document.documentElement;r.setAttribute('data-theme',d?'dark':'light');r.style.colorScheme=d?'dark':'light';var p=(location.pathname.replace(/\/+$/,'')||'/').replace(/\.html$/,''),L={'/':'feed','/articles':'feed','/article-read':'read','/post-read':'read','/profile':'profile','/settings':'narrow','/message-settings':'narrow','/create-post':'compose','/write':'compose','/messages':'messages','/insights':'manage','/content-insights':'manage','/comment-manager':'manage','/library':'manage','/suggestions':'manage','/whats-new':'manage','/all-books':'wide','/free-ebooks':'wide'},k=L[p]||(p.indexOf('/profile/')==0?'profile':'');if(k)r.setAttribute('data-layout',k)}catch(e){}})()</script>
 <script src="/theme.js" defer></script>
+<script src="/link-card.js"></script>
 <script src="/shell.js" defer></script>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content"/>
@@ -654,6 +655,23 @@ mark{background:var(--c-tonal2,#e0e7ff);color:inherit;border-radius:3px;padding:
 
 .msg a.lnk{color:inherit;text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:2px;word-break:break-all}
 .msg.them a.lnk{color:var(--p)}
+/* Link previews: a card inside the bubble, and a small chip above the text box while typing */
+.msg.haslink{width:min(80%,330px)}
+.msg .lcard{white-space:normal;margin:8px 0 3px;box-shadow:none;-webkit-touch-callout:default;user-select:auto}
+.lpbar{padding:8px 12px 0;background:var(--c-bg,#fff)}
+.lpbar[hidden]{display:none}
+.lp-chip{display:flex;align-items:center;gap:10px;padding:8px;border-radius:14px;background:var(--c-surface,#f1f3f9);border:1px solid var(--ds-hairline,rgba(15,23,42,.08))}
+.lp-img{flex:none;width:46px;height:46px;border-radius:9px;object-fit:cover;background:var(--c-bg,#fff)}
+.lp-ico{flex:none;width:46px;height:46px;border-radius:9px;background:var(--c-bg,#fff);color:var(--p,#4f46e5);display:flex;align-items:center;justify-content:center}
+.lp-ico svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.lp-txt{flex:1;min-width:0}
+.lp-site{font-size:11.5px;font-weight:600;color:var(--sub,#64748b);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lp-title{font-size:13.5px;font-weight:700;color:var(--txt);line-height:1.3;margin-top:1px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.lp-x{flex:none;width:28px;height:28px;border-radius:50%;border:none;background:rgba(15,23,42,.08);color:var(--sub,#64748b);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.lp-x svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
+.lp-sk{height:11px;border-radius:6px;background:linear-gradient(90deg,rgba(148,163,184,.18) 25%,rgba(148,163,184,.34) 37%,rgba(148,163,184,.18) 63%);background-size:200% 100%;animation:lpsk 1.2s linear infinite}
+@keyframes lpsk{to{background-position:-200% 0}}
+
 
 .stat{margin:1px 8px 4px 0;font-size:11.5px;font-weight:600;letter-spacing:.005em}
 .stat.err{margin-top:2px}
@@ -896,6 +914,7 @@ button.rx-row:active{background:var(--c-surface,#f4f5f7)}
     <div class="reqbar-btns"><button class="rq-btn danger" id="reqBlock">Block</button><button class="rq-btn" id="reqDecline">Decline</button><button class="rq-btn primary" id="reqAccept">Accept</button></div>
   </div>
   <div class="blockbar" id="blockBar" hidden><span id="blockMsg">You blocked this user.</span><button id="unblockBtn">Unblock</button></div>
+  <div class="lpbar" id="lpBar" hidden></div>
   <div class="composer" id="composer">
     <button class="attach" id="attachBtn" aria-label="Send a photo or video"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
     <textarea id="input" rows="1" placeholder="Message…" maxlength="2000" aria-label="Type a message"></textarea>
@@ -986,6 +1005,55 @@ const linkify = s => esc(s).replace(/\bhttps?:\/\/[^\s<>"]+/gi, u => {
   if(t){ tail = t[0]; u = u.slice(0, -tail.length); }
   return `<a class="lnk" href="${u}" target="_blank" rel="noopener noreferrer nofollow">${u}</a>${tail}`;
 });
+
+// ── Link previews ───────────────────────────────────────────────────────────────
+// Nothing is stored on the message: a link in the text is looked up when the message is drawn (the server caches pages for hours, and
+// we remember answers for the session), so old messages and received messages get cards too. The sender can remove the card with the ✕ in
+// the composer — that sends the message with an invisible mark at the start (zero-width space) which means "no preview".
+const NOPREV = '\u200B';
+const LP = { cache:new Map(), q:[], active:0, dismissed:'', barUrl:'', timer:0, rerender:0 };
+function lpUrl(text){
+  if(!text || text.charCodeAt(0) === 0x200B) return '';
+  try{ return (window.msbFirstUrl && window.msbFirstUrl(text)) || ''; }catch(e){ return ''; }
+}
+function lpRequest(u){
+  if(!u || LP.cache.has(u)) return;
+  LP.cache.set(u, 'loading'); LP.q.push(u);
+  if(LP.q.length > 14){ LP.cache.delete(LP.q.shift()); }       // very long histories: only the newest links get looked up
+  lpPump();
+}
+function lpPump(){
+  while(LP.active < 2 && LP.q.length){
+    const u = LP.q.pop(); LP.active++;                          // newest first
+    (async () => {
+      let p = null;
+      try{
+        const token = await auth.currentUser.getIdToken();
+        const r = await fetch('/api/link-preview?url=' + encodeURIComponent(u), { headers:{ Authorization:'Bearer ' + token } });
+        if(r.ok){ const j = await r.json(); p = (window.msbCleanLink && window.msbCleanLink(j && j.preview)) || null; }
+      }catch(e){}
+      LP.cache.set(u, p); LP.active--; lpChanged(); lpPump();
+    })();
+  }
+}
+function lpChanged(){
+  clearTimeout(LP.rerender);
+  LP.rerender = setTimeout(() => {
+    try{ if(chat && $('chatView').classList.contains('on')) renderMsgs(false); }catch(e){}
+    lpBarUpdate();
+  }, 80);
+}
+function lpCardFor(m){
+  if(!m || m.type === 'voice' || m.type === 'share' || isMedia(m)) return null;
+  const u = lpUrl(m.text); if(!u) return null;
+  const p = LP.cache.get(u);
+  if(p === undefined) lpRequest(u);
+  return (p && p !== 'loading') ? p : null;
+}
+function textBody(m){
+  const p = lpCardFor(m);
+  return linkify(String(m.text || '').replace(/^\u200B/, '')) + (p && window.msbLinkCard ? window.msbLinkCard(p) : '');
+}
 const PAGE = 30;
 
 let me = null;                 // { uid, name, photo }
@@ -1420,7 +1488,7 @@ function renderMsgs(stick){
     const qm = m.replyTo && chat.msgs.get(m.replyTo.id), qDel = !!(qm && qm.deleted);   // a quote of an unsent message must not leak its text
     const q = m.replyTo ? `<div class="quote" data-qid="${esc(m.replyTo.id)}"><div class="q-name">${esc(m.replyTo.senderUid === me.uid ? 'You' : chat.other.name)}</div><div class="q-text">${esc(qDel ? 'Message deleted' : m.replyTo.text)}</div></div>` : '';
     const rx = rxHtml(m);
-    html += `<div class="msg ${mine?'me':'them'} ${m.pendingLocal && !m.failed && !m.silent && !chat.ack.has(m.id)?'pending':''} ${m.failed?'failed':''} ${rx?'has-rx':''} ${m.type==='voice'?'voice':''} ${m.type==='share'?'share':''} ${isMedia(m)?'media '+(m.cap?'hascap':'nocap')+(m.uploading?' up':''):''} ${gp?'gp':''} ${fresh?'in':''}" data-mid="${esc(m.id)}">${q}${m.type==='voice'?voiceHtml(m):isMedia(m)?mediaHtml(m):m.type==='share'?shareHtml(m):linkify(m.text)}<span class="t">${time}${m.edited ? ' · edited' : ''}${st && !st.err ? ' · ' + esc(st.text) : ''}</span>${rx}</div>`;
+    html += `<div class="msg ${mine?'me':'them'} ${m.pendingLocal && !m.failed && !m.silent && !chat.ack.has(m.id)?'pending':''} ${m.failed?'failed':''} ${rx?'has-rx':''} ${m.type==='voice'?'voice':''} ${m.type==='share'?'share':''} ${isMedia(m)?'media '+(m.cap?'hascap':'nocap')+(m.uploading?' up':''):''} ${gp?'gp':''} ${fresh?'in':''} ${lpCardFor(m)?'haslink':''}" data-mid="${esc(m.id)}">${q}${m.type==='voice'?voiceHtml(m):isMedia(m)?mediaHtml(m):m.type==='share'?shareHtml(m):textBody(m)}<span class="t">${time}${m.edited ? ' · edited' : ''}${st && !st.err ? ' · ' + esc(st.text) : ''}</span>${rx}</div>`;
     if(st && st.err) html += `<div class="stat err" data-retry="${esc(m.id)}">${esc(st.text)}</div>`;
   });
   box.innerHTML = html;
@@ -1758,6 +1826,7 @@ $('moBody').addEventListener('click', e => { if(e.target === $('moBody') && Date
 document.addEventListener('keydown', e => { if(e.key === 'Escape'){ if(!$('emo').hidden) closeEmojiPicker(); else if(!$('sel').hidden) closeSelect(); else closeMsgMenu(); } });
 
 async function copyText(t){
+  t = String(t == null ? '' : t).replace(/^\u200B/, '');
   try{ await navigator.clipboard.writeText(t); toast('Copied'); }
   catch(e){
     const ta = document.createElement('textarea'); ta.value = t; ta.style.cssText = 'position:fixed;opacity:0';
@@ -1968,7 +2037,42 @@ $('emoQ').addEventListener('input', () => {
 
 /* ───────── composer ───────── */
 const input = $('input'), sendBtn = $('sendBtn');
-function autosize(){ input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 120) + 'px'; input.style.overflowY = input.scrollHeight > 120 ? 'auto' : 'hidden'; const has = !!input.value.trim() || !!(chat && chat.editing && chat.editing.media); sendBtn.disabled = !has; $('composer').classList.toggle('has-text', has); }
+// ── Composer link-preview chip ──
+const lpBar = $('lpBar');
+const LP_ICON = '<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
+function lpBarHide(){ lpBar.hidden = true; lpBar.innerHTML = ''; LP.barUrl = ''; }
+function lpBarUpdate(){
+  const u = (input.value && chat && !chat.editing) ? lpUrl(input.value) : '';
+  if(!u || (LP.dismissed && window.msbSameLink(LP.dismissed, u))){ lpBarHide(); return; }
+  lpRequest(u);
+  const p = LP.cache.get(u);
+  if(p === null){ lpBarHide(); return; }                        // page could not be read: no chip
+  const box = $('msgs');
+  const wasNear = box ? (box.scrollHeight - box.scrollTop - box.clientHeight) < 140 : false;
+  if(p === 'loading' || p === undefined){
+    lpBar.innerHTML = '<div class="lp-chip"><span class="lp-ico">' + LP_ICON + '</span><div class="lp-txt"><div class="lp-sk" style="width:38%"></div><div class="lp-sk" style="width:80%;margin-top:7px"></div></div></div>';
+  }else{
+    let host = ''; try{ host = new URL(p.url).hostname.replace(/^www\./i, ''); }catch(e){}
+    lpBar.innerHTML = '<div class="lp-chip">' + (p.image ? '<img class="lp-img" src="' + esc(p.image) + '" alt="" referrerpolicy="no-referrer">' : '<span class="lp-ico">' + LP_ICON + '</span>') +
+      '<div class="lp-txt"><div class="lp-site">' + esc(p.siteName || p.domain || host) + '</div><div class="lp-title">' + esc(p.title) + '</div></div>' +
+      '<button type="button" class="lp-x" id="lpX" aria-label="Remove link preview"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>';
+    const im = lpBar.querySelector('.lp-img');
+    if(im) im.onerror = () => { im.outerHTML = '<span class="lp-ico">' + LP_ICON + '</span>'; };
+  }
+  LP.barUrl = u; lpBar.hidden = false;
+  if(wasNear && box) requestAnimationFrame(() => { box.scrollTop = box.scrollHeight; });
+}
+function lpBarSchedule(){
+  clearTimeout(LP.timer);
+  if(!input.value || !lpUrl(input.value)){ lpBarHide(); return; }
+  LP.timer = setTimeout(lpBarUpdate, 500);                       // a short pause after typing/pasting, like the post composer
+}
+lpBar.addEventListener('click', e => {
+  if(!e.target.closest('#lpX')) return;
+  LP.dismissed = LP.barUrl || lpUrl(input.value); lpBarHide(); input.focus();
+});
+
+function autosize(){ input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 120) + 'px'; input.style.overflowY = input.scrollHeight > 120 ? 'auto' : 'hidden'; const has = !!input.value.trim() || !!(chat && chat.editing && chat.editing.media); sendBtn.disabled = !has; $('composer').classList.toggle('has-text', has); lpBarSchedule(); }
 input.addEventListener('input', autosize);
 input.addEventListener('keydown', e => {
   if(e.key === 'Enter' && !e.shiftKey && matchMedia('(pointer:fine)').matches){ e.preventDefault(); send(); }
@@ -1988,7 +2092,11 @@ async function send(retryItem){
   if(chat.blocked){ toast('Unblock this user to send messages'); return; }
   let text;
   if(retryItem) text = retryItem.text;
-  else { text = input.value.trim().slice(0, 2000); if(!text) return; }
+  else {
+    text = input.value.trim().slice(0, 2000); if(!text) return;
+    if(LP.dismissed && window.msbSameLink(LP.dismissed, lpUrl(text))) text = NOPREV + text;   // sender removed the preview
+    LP.dismissed = '';
+  }
   const c = chat;
   pingActive();
   const replyTo = retryItem ? (retryItem.replyTo || null) : (c.reply || null);
@@ -2011,7 +2119,7 @@ async function send(retryItem){
     const payload = { senderUid:me.uid, text, createdAt:serverTimestamp() };
     if(replyTo) payload.replyTo = replyTo;
     batch.set(msgRef, payload);
-    const last = text.slice(0, 120);
+    const last = text.replace(/^\u200B/, '').slice(0, 120);
     batch.set(doc(db,'inbox',me.uid,'threads',c.other.uid),
       { otherUid:c.other.uid, name:c.other.name, photo:c.other.photo || '', lastText:last, lastAt:serverTimestamp(), lastSender:me.uid, unread:0, accepted:true }, { merge:true });
     batch.set(doc(db,'inbox',c.other.uid,'threads',me.uid),
