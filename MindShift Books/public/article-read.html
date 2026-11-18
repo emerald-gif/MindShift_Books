@@ -736,14 +736,16 @@ header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 })();
 </script>
 <script src="/share-drawer.js?v=4"></script>
+<script src="/mentions.js"></script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
 import { getFirestore, doc, getDoc, setDoc, deleteDoc, updateDoc, increment, onSnapshot,
          collection, query, where, orderBy, limit, startAfter, addDoc, serverTimestamp, getDocs, getCountFromServer, writeBatch, runTransaction, enableNetwork, disableNetwork } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
 import { createResilient } from '/resilient.js';
-import { initNotificationUI } from '/notifications.js';
-import { initRepost } from '/repost.js?v=2';
+import { initNotificationUI, sendMentionNotifications } from '/notifications.js';
+import { createMentionPicker } from '/mention-picker.js';
+import { initRepost } from '/repost.js?v=3';
 
 const fbApp = initializeApp({
   apiKey:"AIzaSyDTn70s1_uIiSOR6lPLY_nKh8Ff1FViFCs",
@@ -778,6 +780,12 @@ const repost = initRepost({
   openAuth: () => window.openAuth && window.openAuth(),
   showToast: (m) => window.showToast && window.showToast(m),
   fs: { doc, getDoc, setDoc, deleteDoc, addDoc, collection, updateDoc, increment, serverTimestamp }
+});
+// @mentions in comments / replies (suggestion list + verification of handles)
+const mentionPicker = createMentionPicker({ db, getCurrentUser: () => currentUser });
+document.addEventListener('focusin', e => {
+  const t = e.target;
+  if (t && t.tagName === 'TEXTAREA' && (t.id === 'mainCI' || (t.classList && t.classList.contains('r-input')))) mentionPicker.attach(t);
 });
 
 /* ── ARTICLE DATA ── */
@@ -1693,9 +1701,9 @@ function buildCHTML(c,isReply,isPinned){
   const deleteItem=isOwn?`<button class="c-menu-item danger" onclick="deleteComment('${c.id}','${cEsc(c.parentId||'')}')"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path stroke-linecap="round" d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path stroke-linecap="round" d="M10 11v6m4-6v6"/><path stroke-linecap="round" d="M9 6V4h6v2"/></svg>Delete</button>`:'';
   const moreBtn=`<button class="c-more-btn" id="mbtn-${c.id}" onclick="toggleCMenu(event,'${c.id}')" aria-label="More"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></button><div class="c-menu" id="cmenu-${c.id}"><button class="c-menu-item" onclick="shareComment('${c.id}')"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path stroke-linecap="round" d="M8.59 13.51l6.83 3.98m-.01-10.98L8.59 10.49"/></svg>Share comment</button>${deleteItem}</div>`;
   const extra=!isReply
-    ?`<div class="c-replies-wrap" id="rep-${c.id}" style="display:none"></div><div class="c-replies-wrap" id="ri-wrap-${c.id}" style="display:none"><div class="reply-input-row"><textarea class="r-input" id="ri-${c.id}" placeholder="Write a reply…" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px';document.getElementById('rpb-${c.id}').disabled=!this.value.trim()"></textarea><button class="r-post-btn" id="rpb-${c.id}" onclick="submitReply('${c.id}')" disabled>Post</button><button class="r-cancel-btn" onclick="hideRI('${c.id}')"><svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button></div></div>`
+    ?`<div class="c-replies-wrap" id="rep-${c.id}" style="display:none"></div><div class="c-replies-wrap" id="ri-wrap-${c.id}" style="display:none"><div class="reply-input-row"><textarea class="r-input" id="ri-${c.id}" placeholder="Write a reply…" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px';document.getElementById('rpb-${c.id}').disabled=!window.cHasText(this)"></textarea><button class="r-post-btn" id="rpb-${c.id}" onclick="submitReply('${c.id}')" disabled>Post</button><button class="r-cancel-btn" onclick="hideRI('${c.id}')"><svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button></div></div>`
     :'';
-  return `<div class="comment-item${isReply?' reply':''}" id="ci-${c.id}" data-author-uid="${cEsc(c.authorUid||'')}"><div class="c-av" onclick="cGo('${cEsc(c.authorUid||'')}','${cEsc(c.authorUsername||'')}')">${avIn}</div><div class="c-body"><div class="c-meta-row"><span class="c-name" data-author-name onclick="cGo('${cEsc(c.authorUid||'')}','${cEsc(c.authorUsername||'')}')">${cEsc(c.authorName||'User')}</span>${authorBadge}${pinBadge}</div><div class="c-text">${cEsc(c.text||'')}</div><div class="c-foot"><span class="c-time">${cTA(c.createdAt)}</span><span class="c-dot">·</span>${heart}${replyBtn}${vrBtn}</div>${extra}</div>${moreBtn}</div>`;
+  return `<div class="comment-item${isReply?' reply':''}" id="ci-${c.id}" data-author-uid="${cEsc(c.authorUid||'')}"><div class="c-av" onclick="cGo('${cEsc(c.authorUid||'')}','${cEsc(c.authorUsername||'')}')">${avIn}</div><div class="c-body"><div class="c-meta-row"><span class="c-name" data-author-name onclick="cGo('${cEsc(c.authorUid||'')}','${cEsc(c.authorUsername||'')}')">${cEsc(c.authorName||'User')}</span>${authorBadge}${pinBadge}</div><div class="c-text">${window.msbLinkMentions?msbLinkMentions(cEsc(c.text||''),c.mentions):cEsc(c.text||'')}</div><div class="c-foot"><span class="c-time">${cTA(c.createdAt)}</span><span class="c-dot">·</span>${heart}${replyBtn}${vrBtn}</div>${extra}</div>${moreBtn}</div>`;
 }
 
 window.onCI=function(el){el.style.height='auto';el.style.height=el.scrollHeight+'px';const b=document.getElementById('mainCPost');if(b)b.disabled=!el.value.trim();};
@@ -1712,6 +1720,31 @@ window.closeCommentDrawer=function(){
 };
 window.scrollToComments=window.openCommentDrawer;
 
+/* ── @mentions in comments ──
+   Reply pre-fill: opening a reply on someone's comment starts the box with "@theirhandle ". That person still
+   gets the normal "replied to your comment" notification — they are skipped for the separate "mentioned you in a
+   comment" one, as is the post/article author when they are already getting "commented on your …". Anyone else
+   tagged (pre-filled or typed by hand) gets "[User] mentioned you in a comment". */
+window.cHasText=function(el){const v=(el.value||'').trim();return !!v&&v!==(el.dataset.auto||'').trim();};
+window.cPrefillReply=function(el,cid){
+  if(!el||el.value) return;                       // never overwrite what the person already typed
+  const pc=cList.find(c=>c.id===cid)||(cPinnedComment&&cPinnedComment.id===cid?cPinnedComment:null);
+  if(!pc||!pc.authorUid||(currentUser&&pc.authorUid===currentUser.uid)) return;   // can't mention yourself
+  const put=function(h){
+    if(!h||el.value) return;
+    h=String(h).toLowerCase(); const t='@'+h+' ';
+    el.value=t; el.dataset.auto=t; mentionPicker.seed(h,pc.authorUid);
+    try{el.setSelectionRange(t.length,t.length);}catch(e){}
+    el.dispatchEvent(new Event('input',{bubbles:true}));
+  };
+  if(pc.authorUsername) put(pc.authorUsername);
+  else getDoc(doc(db,'users',pc.authorUid)).then(function(s){if(s.exists()) put(s.data().username);}).catch(function(){});
+};
+function cNotifyMentions(mentions,commentId,text,skip){
+  if(!mentions||!mentions.length||!currentUser) return;
+  sendMentionNotifications({db,fs:{doc,getDoc,setDoc,serverTimestamp},currentUser,profile:myProfile,mentions,targetId:artId,targetType:'comment',snippet:text,commentId,parentType:'article',skipUids:skip}).catch(function(){});
+}
+
 window.submitComment=async function(){
   if(!currentUser){openAuth();return;}
   const inp=document.getElementById('mainCI');
@@ -1719,16 +1752,18 @@ window.submitComment=async function(){
   const btn=document.getElementById('mainCPost');
   if(btn){btn.disabled=true;btn.textContent='Posting…';}
   const an=myProfile?.name||'Someone', ap=myProfile?.photo||'', au=myProfile?.username||'';
+  let mentions=[];try{mentions=await mentionPicker.resolve(text);}catch(e){mentions=[];}
   try{
-    const ref=await addDoc(collection(db,'comments'),{articleId:artId,parentId:null,authorUid:currentUser.uid,authorName:an,authorPhoto:ap,authorUsername:au,text,likeCount:0,replyCount:0,hidden:false,createdAt:serverTimestamp()});
+    const ref=await addDoc(collection(db,'comments'),{articleId:artId,parentId:null,authorUid:currentUser.uid,authorName:an,authorPhoto:ap,authorUsername:au,text,mentions,likeCount:0,replyCount:0,hidden:false,createdAt:serverTimestamp()});
     try{await updateDoc(doc(db,'articleMeta',artId),{commentCount:increment(1)});}catch{await setDoc(doc(db,'articleMeta',artId),{commentCount:1},{merge:true});}
     cCommentCount++;updateCCount();
-    const nc={id:ref.id,articleId:artId,parentId:null,authorUid:currentUser.uid,authorName:an,authorPhoto:ap,authorUsername:au,text,likeCount:0,replyCount:0,createdAt:{toDate:()=>new Date()}};
+    const nc={id:ref.id,articleId:artId,parentId:null,authorUid:currentUser.uid,authorName:an,authorPhoto:ap,authorUsername:au,text,mentions,likeCount:0,replyCount:0,createdAt:{toDate:()=>new Date()}};
     cList.push(nc);
     const le=document.getElementById('commentsList');
     if(le){const em=le.querySelector('.comments-list-empty');if(em)le.innerHTML='';le.insertAdjacentHTML('beforeend',buildCHTML(nc,false));}
     cancelCI();
     if(article&&article.authorUid&&article.authorUid!==currentUser.uid&&!article.isMindshift)notif.notifyComment({type:'new_comment',recipientUid:article.authorUid,articleId:artId,articleTitle:article.title,contentType:'article'});
+    cNotifyMentions(mentions,ref.id,text,(article&&article.authorUid&&article.authorUid!==currentUser.uid&&!article.isMindshift)?[article.authorUid]:[]);
   }catch(e){console.error('submitComment:',e);}
   finally{if(btn){btn.disabled=false;btn.textContent='Post';}}
 };
@@ -1736,7 +1771,7 @@ window.submitComment=async function(){
 window.showRI=function(cid){
   if(cActiveReplyId&&cActiveReplyId!==cid)hideRI(cActiveReplyId);
   cActiveReplyId=cid;
-  const w=document.getElementById('ri-wrap-'+cid);if(w){w.style.display='block';const i=document.getElementById('ri-'+cid);if(i)i.focus();}
+  const w=document.getElementById('ri-wrap-'+cid);if(w){w.style.display='block';const i=document.getElementById('ri-'+cid);if(i){cPrefillReply(i,cid);i.focus();}}
 };
 window.hideRI=function(cid){
   const w=document.getElementById('ri-wrap-'+cid);if(w)w.style.display='none';
@@ -1749,11 +1784,13 @@ window.submitReply=async function(parentId){
   if(!currentUser){openAuth();return;}
   const inp=document.getElementById('ri-'+parentId);
   const text=(inp&&inp.value||'').trim();if(!text)return;
+  if(inp&&inp.dataset.auto&&text===inp.dataset.auto.trim())return;
   const btn=document.getElementById('rpb-'+parentId);
   if(btn){btn.disabled=true;btn.textContent='Posting…';}
   const an=myProfile?.name||'Someone', ap=myProfile?.photo||'', au=myProfile?.username||'';
+  let mentions=[];try{mentions=await mentionPicker.resolve(text);}catch(e){mentions=[];}
   try{
-    const ref=await addDoc(collection(db,'comments'),{articleId:artId,parentId,authorUid:currentUser.uid,authorName:an,authorPhoto:ap,authorUsername:au,text,likeCount:0,replyCount:0,hidden:false,createdAt:serverTimestamp()});
+    const ref=await addDoc(collection(db,'comments'),{articleId:artId,parentId,authorUid:currentUser.uid,authorName:an,authorPhoto:ap,authorUsername:au,text,mentions,likeCount:0,replyCount:0,hidden:false,createdAt:serverTimestamp()});
     try{await updateDoc(doc(db,'comments',parentId),{replyCount:increment(1)});}catch{}
     // commentCount and creatorReplyCount go in ONE updateDoc, not two separate
     // fire-and-forget calls — two independent writes leave a real window where
@@ -1765,7 +1802,7 @@ window.submitReply=async function(parentId){
     try{await updateDoc(doc(db,'articleMeta',artId),metaUpdates);}
     catch{await setDoc(doc(db,'articleMeta',artId),{commentCount:1,...(isReplyingOwner?{creatorReplyCount:1}:{})},{merge:true}).catch(()=>{});}
     cCommentCount++;updateCCount();
-    const nr={id:ref.id,articleId:artId,parentId,authorUid:currentUser.uid,authorName:an,authorPhoto:ap,authorUsername:au,text,likeCount:0,replyCount:0,createdAt:{toDate:()=>new Date()}};
+    const nr={id:ref.id,articleId:artId,parentId,authorUid:currentUser.uid,authorName:an,authorPhoto:ap,authorUsername:au,text,mentions,likeCount:0,replyCount:0,createdAt:{toDate:()=>new Date()}};
     if(!cReplies[parentId])cReplies[parentId]=[];
     cReplies[parentId].push(nr);
     const re=document.getElementById('rep-'+parentId);
@@ -1777,6 +1814,10 @@ window.submitReply=async function(parentId){
     if(article&&article.authorUid&&article.authorUid!==currentUser.uid&&!article.isMindshift){
       if(!pc||pc.authorUid!==article.authorUid)notif.notifyComment({type:'new_comment',recipientUid:article.authorUid,articleId:artId,articleTitle:article.title,contentType:'article'});
     }
+    const _skip=[];
+    if(pc&&pc.authorUid&&pc.authorUid!==currentUser.uid)_skip.push(pc.authorUid);
+    if(article&&article.authorUid&&article.authorUid!==currentUser.uid&&!article.isMindshift&&(!pc||pc.authorUid!==article.authorUid))_skip.push(article.authorUid);
+    cNotifyMentions(mentions,ref.id,text,_skip);
   }catch(e){console.error('submitReply:',e);}
   finally{if(btn){btn.disabled=false;btn.textContent='Post';}}
 };

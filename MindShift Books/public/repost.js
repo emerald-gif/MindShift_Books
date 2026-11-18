@@ -151,6 +151,8 @@ function injectSheetOnce() {
 }
 
 import { retryRead } from '/resilient.js';
+import { sendMentionNotifications } from '/notifications.js';
+import { createMentionPicker } from '/mention-picker.js';
 
 export function initRepost({ db, fs, getCurrentUser, getMyProfile, notif, openAuth, showToast }) {
   injectStylesOnce();
@@ -159,6 +161,10 @@ export function initRepost({ db, fs, getCurrentUser, getMyProfile, notif, openAu
   const toast = (msg) => { if (typeof showToast === 'function') showToast(msg); };
 
   let _target = null; // { targetType, targetId, snapshot, recipientUid, onSuccess }
+
+  // @mentions in the caption of a repost-with-caption: suggestion list while typing, verified on post.
+  const mentionPicker = createMentionPicker({ db, getCurrentUser });
+  mentionPicker.attach(document.getElementById('rpCaptionInput'));
 
   function plainId(uid, targetType, targetId) { return `plain_${uid}_${targetType}_${targetId}`; }
 
@@ -256,8 +262,10 @@ export function initRepost({ db, fs, getCurrentUser, getMyProfile, notif, openAu
     submitBtn.disabled = true; submitBtn.textContent = 'Posting…';
     try {
       const mp = getMyProfile ? getMyProfile() : null;
+      let mentions = [];
+      try { mentions = await mentionPicker.resolve(caption); } catch (e) { mentions = []; }
       const postRef = await addDoc(collection(db, 'posts'), {
-        text: caption, images: [], videoUrl: '', thumbnailUrl: '', duration: 0,
+        text: caption, mentions, images: [], videoUrl: '', thumbnailUrl: '', duration: 0,
         authorUid: u.uid, authorName: mp?.name || u.displayName || 'Someone',
         authorPhoto: mp?.photo || u.photoURL || '', authorUsername: mp?.username || '',
         commentsOff: false, hideLikeCount: false,
@@ -273,6 +281,17 @@ export function initRepost({ db, fs, getCurrentUser, getMyProfile, notif, openAu
       });
       await bumpRepostCount(targetId, 1);
       notif && notif.notifyRepost && notif.notifyRepost({ recipientUid, targetId, targetTitle: snapshot?.title || snapshot?.text || '', targetType, kind: 'quote' });
+      // "[User] mentioned you in a repost". Whoever's content was reposted already gets the "reposted your
+      // post with a caption" notification above, so they are skipped here. Waits briefly (max 4s) so the
+      // redirect below doesn't cut the request off, but never blocks or fails the repost itself.
+      if (mentions.length) {
+        try {
+          await Promise.race([
+            sendMentionNotifications({ db, fs, currentUser: u, profile: mp, mentions, targetId: postRef.id, targetType: 'repost', snippet: caption, skipUids: recipientUid ? [recipientUid] : [] }),
+            new Promise(r => setTimeout(r, 4000))
+          ]);
+        } catch (e) { console.warn('repost mention notify failed:', e); }
+      }
       toast('Posted');
       onSuccess && onSuccess({ kind: 'quote', reposted: true, postId: postRef.id });
       closeSheet();

@@ -204,7 +204,7 @@ function notifMessage(n) {
     case 'comment_like': return `${name} liked your comment on${title}`;
     case 'new_comment':  return `${name} commented on your ${n.targetType==='post'?'post':'article'}${title}`;
     case 'comment_reply':return `${name} replied to your comment on${title}`;
-    case 'mention':      return `${name} mentioned you in ${n.targetType==='article'?'an article':'a post'}${n.targetTitle ? `<span class="notif-snip">: “${nEsc(nTrunc(n.targetTitle, 60))}”</span>` : ''}`;
+    case 'mention':      return `${name} mentioned you in ${n.targetType==='article'?'an article':n.targetType==='comment'?'a comment':n.targetType==='repost'?'a repost':'a post'}${n.targetTitle ? `<span class="notif-snip">: “${nEsc(nTrunc(n.targetTitle, 60))}”</span>` : ''}`;
     case 'repost':       return `${name} reposted your ${n.targetType==='post'?'post':'article'}${title}`;
     case 'repost_quote': return `${name} reposted your ${n.targetType==='post'?'post':'article'} with a caption${title}`;
     case 'admin_message':    return `<strong>${nEsc(nMoney(n.title || 'Message from MindShift Books'))}</strong>${n.message ? ' — ' + nEsc(nMoney(n.message)) : ''}`;
@@ -296,7 +296,12 @@ import { retryRead } from '/resilient.js';
 // page has no bell/panel, so it can't use initNotificationUI. The doc id is deterministic
 // (mention_<type>_<targetId>_<recipient>), so editing a post never notifies the same person twice —
 // only people newly added to the post get a notification.
-export async function sendMentionNotifications({ db, fs, currentUser, profile, mentions, targetId, targetType, snippet }) {
+// targetType: 'post' | 'article' (mentioned in the content itself), 'repost' (mentioned in a repost caption —
+// targetId is the quote-repost post id), or 'comment' (mentioned in a comment/reply — targetId is the post or
+// article the comment lives on, commentId the comment, parentType 'post'|'article' tells the tap where to go).
+// skipUids: people already getting a more specific notification for the same action (e.g. the author of the
+// comment being replied to gets "replied to your comment") so nobody is notified twice.
+export async function sendMentionNotifications({ db, fs, currentUser, profile, mentions, targetId, targetType, snippet, commentId, parentType, skipUids }) {
   const { doc, getDoc, setDoc, serverTimestamp } = fs;
   if (!currentUser || !targetId || !Array.isArray(mentions) || !mentions.length) return;
   const actorName = (profile && profile.name) || currentUser.displayName || 'Someone';
@@ -305,13 +310,15 @@ export async function sendMentionNotifications({ db, fs, currentUser, profile, m
   const title = String(snippet || '').replace(/\s+/g, ' ').trim().slice(0, 80);
   await Promise.all(mentions.slice(0, 10).map(async m => {
     if (!m || !m.uid || m.uid === currentUser.uid) return;
-    const id = `mention_${targetType || 'post'}_${targetId}_${m.uid}`;
+    if (Array.isArray(skipUids) && skipUids.indexOf(m.uid) !== -1) return;
+    const id = `mention_${targetType || 'post'}_${commentId || targetId}_${m.uid}`;
     try {
       const ref = doc(db, 'notifications', id);
       if ((await getDoc(ref)).exists()) return;
       await setDoc(ref, {
         recipientUid: m.uid, type: 'mention', actorUid: currentUser.uid, actorName, actorPhoto, actorUsername,
         targetId, targetTitle: title, targetType: targetType || 'post',
+        ...(targetType === 'comment' ? { commentId: commentId || null, parentType: parentType === 'article' ? 'article' : 'post' } : {}),
         read: false, createdAt: serverTimestamp(), lastAt: serverTimestamp()
       });
     } catch (e) { console.warn('mention notification failed for', m.uid, e && e.code); }
@@ -482,7 +489,12 @@ export function initNotificationUI({ db, getCurrentUser, getMyProfile, fs }) {
         else if (n.actorUsername) location.href = `/profile/@${encodeURIComponent(n.actorUsername)}`;
         break;
       case 'article_like': case 'new_comment': case 'comment_like': case 'comment_reply': case 'repost': case 'repost_quote': case 'mention':
-        if (n.targetId) location.href = (n.targetType === 'post' ? '/post-read' : '/article-read') + `?id=${n.targetId}`;
+        if (n.targetId) {
+          // a mention in a comment points at the post/article the comment lives on (parentType); a mention in a
+          // repost caption points at the quote-repost post itself.
+          const isPost = n.targetType === 'comment' ? n.parentType !== 'article' : (n.targetType === 'post' || n.targetType === 'repost');
+          location.href = (isPost ? '/post-read' : '/article-read') + `?id=${n.targetId}`;
+        }
         break;
       case 'article_approved':
         if (n.articleId) location.href = `/article-read?id=${n.articleId}`; break;
