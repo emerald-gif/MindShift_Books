@@ -270,11 +270,15 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
 
 /* ── SOCIAL LINKS (profile display) ── */
 .social-links-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
-.social-link-btn{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--border);
-  background:var(--card);display:flex;align-items:center;justify-content:center;
-  color:var(--txt);text-decoration:none;transition:all .2s;flex-shrink:0}
-.social-link-btn:hover{border-color:var(--p);color:var(--p)}
-.social-link-btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.social-link-btn{display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 14px 0 10px;
+  border-radius:999px;border:1.5px solid var(--border);background:var(--card);
+  color:var(--txt);text-decoration:none;font-size:12.5px;font-weight:700;letter-spacing:-.005em;
+  transition:transform .15s,border-color .2s,background .2s;flex-shrink:0;-webkit-tap-highlight-color:transparent}
+.social-link-btn:hover{border-color:var(--sl,var(--p))}
+.social-link-btn:active{transform:scale(.96)}
+.social-link-ico{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  background:color-mix(in srgb,var(--sl,var(--p)) 14%,transparent);color:var(--sl,var(--p));flex-shrink:0}
+.social-link-ico svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 
 /* ── SOCIAL LINKS (edit screen) ── */
 .social-counter{font-size:11px;color:var(--sub);margin-bottom:10px;font-weight:600}
@@ -297,6 +301,14 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
   font-family:inherit;outline:none;background:var(--card)}
 .social-input.show{display:block}
 .social-input:focus{border-color:var(--p)}
+.social-actions{display:none;flex-basis:100%;width:100%;align-items:center;justify-content:space-between;gap:10px;margin-top:8px}
+.social-actions.show{display:flex}
+.social-status{font-size:12px;font-weight:600;color:var(--mute,#9ca3af);display:flex;align-items:center;gap:5px;min-width:0}
+.social-status.saved{color:var(--green)}
+.social-status svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.social-save{border:none;border-radius:999px;background:var(--p);color:#fff;font-size:12.5px;font-weight:700;padding:8px 16px;cursor:pointer;font-family:inherit;flex-shrink:0;transition:opacity .15s}
+.social-save:disabled{opacity:.5;cursor:default}
+.social-save[hidden]{display:none}
 
 /* ── STATS ── */
 .stats-row{display:flex;gap:0;border-top:1px solid var(--border);padding-top:14px}
@@ -1114,7 +1126,7 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged, updateProfile } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
-import { getFirestore, doc, getDoc, setDoc, deleteDoc, updateDoc, collection, query, where, getDocs, getCountFromServer, orderBy, serverTimestamp, onSnapshot, addDoc, writeBatch, increment, limit, startAfter, runTransaction, enableNetwork, disableNetwork }
+import { getFirestore, doc, getDoc, setDoc, deleteDoc, updateDoc, collection, query, where, getDocs, getCountFromServer, orderBy, serverTimestamp, onSnapshot, addDoc, writeBatch, increment, deleteField, limit, startAfter, runTransaction, enableNetwork, disableNetwork }
   from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js';
 import { initNotificationUI } from '/notifications.js';
 import { initRepost } from '/repost.js?v=3';
@@ -1232,10 +1244,40 @@ function updateSocialCounter(){
   el.textContent = `${count} of ${MAX_SOCIAL_LINKS} links added`;
   el.classList.toggle('max', count>=MAX_SOCIAL_LINKS);
 }
-window.toggleSocialRow = function(key){
+const CHECK_SVG = '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>';
+function getSavedSocials(){
+  try{ return (profileData && profileData.socialLinks) || {}; }catch(e){ return {}; }
+}
+// Shows "Not saved yet" + Save button, or a green "Saved" tick, depending on
+// whether what's typed matches what's stored on the profile.
+function refreshSocialRow(key){
+  const input = document.getElementById(`social-${key}`);
+  const actions = document.getElementById(`socialActions-${key}`);
+  const status = document.getElementById(`socialStatus-${key}`);
+  const btn = document.getElementById(`socialSave-${key}`);
+  if(!input || !actions || !status || !btn) return;
+  const open = input.classList.contains('show');
+  actions.classList.toggle('show', open);
+  if(!open) return;
+  const cur = normalizeUrl(input.value);
+  const saved = getSavedSocials()[key] || '';
+  btn.disabled = false;
+  if(cur && cur === saved){
+    status.className = 'social-status saved';
+    status.innerHTML = CHECK_SVG + 'Saved to your profile';
+    btn.hidden = true;
+  } else {
+    status.className = 'social-status';
+    status.textContent = cur ? 'Not saved yet' : 'Paste your link';
+    btn.hidden = !cur;
+    btn.textContent = saved ? 'Update link' : 'Save link';
+  }
+}
+window.toggleSocialRow = async function(key){
   const input = document.getElementById(`social-${key}`);
   const toggle = document.getElementById(`socialToggle-${key}`);
   if(!input || !toggle) return;
+  const label = (SOCIAL_PLATFORMS.find(p=>p.key===key)||{}).label || 'Link';
   const isOpen = input.classList.contains('show');
   if(!isOpen){
     if(getActiveSocialCount() >= MAX_SOCIAL_LINKS){
@@ -1244,15 +1286,67 @@ window.toggleSocialRow = function(key){
     }
     input.classList.add('show');
     toggle.classList.add('active');
+    refreshSocialRow(key);
     input.focus();
   } else {
+    const wasSaved = !!getSavedSocials()[key];
     input.classList.remove('show');
     input.value = '';
     toggle.classList.remove('active');
+    refreshSocialRow(key);
+    // A link that was already on the profile is removed for real, right away.
+    if(wasSaved && typeof currentUser !== 'undefined' && currentUser){
+      try{
+        await updateDoc(doc(db,'users',currentUser.uid), { ['socialLinks.'+key]: deleteField(), updatedAt: serverTimestamp() });
+        delete profileData.socialLinks[key];
+        patchEditSnapshotSocial(key, '');
+        renderProfileHeader();
+        showToast(`${label} link removed ✓`);
+      }catch(e){
+        console.error('remove social link failed:', e);
+        showToast('Could not remove link: ' + e.message);
+      }
+    }
   }
   updateSocialCounter();
 };
-window.onSocialInputChange = function(){ updateSocialCounter(); };
+function patchEditSnapshotSocial(key, val){
+  try{
+    if(_editSnapshot === null) return;
+    const s = JSON.parse(_editSnapshot);
+    s.socials = s.socials || {};
+    s.socials[key] = val;
+    _editSnapshot = JSON.stringify(s);
+  }catch(e){}
+}
+window.saveSocialLink = async function(key){
+  const input = document.getElementById(`social-${key}`);
+  const btn = document.getElementById(`socialSave-${key}`);
+  const status = document.getElementById(`socialStatus-${key}`);
+  if(!input || !btn) return;
+  const label = (SOCIAL_PLATFORMS.find(p=>p.key===key)||{}).label || 'Link';
+  const url = normalizeUrl(input.value);
+  if(!url){ showToast('Paste your link first'); return; }
+  try{ const u = new URL(url); if(!u.hostname.includes('.')) throw 0; }
+  catch(e){ showToast("That doesn't look like a valid link — check it and try again"); return; }
+  if(typeof currentUser === 'undefined' || !currentUser){ showToast('Sign in again to save'); return; }
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try{
+    await updateDoc(doc(db,'users',currentUser.uid), { ['socialLinks.'+key]: url, updatedAt: serverTimestamp() });
+    profileData.socialLinks = Object.assign({}, profileData.socialLinks || {}, { [key]: url });
+    input.value = url;
+    patchEditSnapshotSocial(key, url);
+    refreshSocialRow(key);
+    renderProfileHeader();
+    showToast(`${label} link saved ✓`);
+  }catch(e){
+    console.error('save social link failed:', e);
+    btn.disabled = false;
+    refreshSocialRow(key);
+    showToast('Could not save link: ' + e.message);
+  }
+};
+window.onSocialInputChange = function(key){ updateSocialCounter(); if(key) refreshSocialRow(key); };
 function initSocialLinksUI(){
   const card = document.getElementById('socialCard');
   if(!card) return;
@@ -1263,7 +1357,11 @@ function initSocialLinksUI(){
       <button type="button" class="social-toggle" id="socialToggle-${p.key}" onclick="toggleSocialRow('${p.key}')" aria-label="Add ${p.label} link">
         <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       </button>
-      <input type="url" class="social-input" id="social-${p.key}" placeholder="${p.placeholder}" oninput="onSocialInputChange()">
+      <input type="url" class="social-input" id="social-${p.key}" placeholder="${p.placeholder}" oninput="onSocialInputChange('${p.key}')">
+      <div class="social-actions" id="socialActions-${p.key}">
+        <span class="social-status" id="socialStatus-${p.key}"></span>
+        <button type="button" class="social-save" id="socialSave-${p.key}" onclick="saveSocialLink('${p.key}')">Save link</button>
+      </div>
     </div>`).join('');
   updateSocialCounter();
 }
@@ -2135,9 +2233,10 @@ function renderProfileHeader(){
   const savedSocials = profileData.socialLinks || {};
   const activeSocials = SOCIAL_PLATFORMS.filter(p => savedSocials[p.key]);
   if(activeSocials.length){
+    const SOCIAL_COLORS = {facebook:'#1877f2',instagram:'#e1306c',tiktok:'#14b8a6',youtube:'#ff0000',linkedin:'#0a66c2',twitter:'#64748b',github:'#8b5cf6',website:'#10b981'};
     socialWrap.innerHTML = activeSocials.map(p => `
-      <a class="social-link-btn" href="${savedSocials[p.key]}" target="_blank" rel="noopener noreferrer" aria-label="${p.label}" title="${p.label}">
-        <svg viewBox="0 0 24 24">${p.icon}</svg>
+      <a class="social-link-btn" style="--sl:${SOCIAL_COLORS[p.key]||'var(--p)'}" href="${esc(savedSocials[p.key])}" target="_blank" rel="noopener noreferrer" aria-label="${p.label}">
+        <span class="social-link-ico"><svg viewBox="0 0 24 24">${p.icon}</svg></span>${p.label.split(' ')[0]}
       </a>`).join('');
     socialWrap.style.display='flex';
   } else {
@@ -3647,6 +3746,7 @@ window.openEditSheet = function(){
     input.value = val;
     if(val){ input.classList.add('show'); toggle.classList.add('active'); }
     else { input.classList.remove('show'); toggle.classList.remove('active'); }
+    refreshSocialRow(p.key);
   });
   updateSocialCounter();
   document.getElementById('editScreen').classList.add('show');
