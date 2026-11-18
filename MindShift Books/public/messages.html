@@ -3894,13 +3894,12 @@ function openInfo(){
 }
 function closeInfo(){ if($('info').hidden) return; $('info').hidden = true; ovPop(); }
 function infoTo(mode){ INFO.mode = mode; INFO.selecting = false; INFO.sel.clear(); drawInfo(); $('infoBody').scrollTop = 0; }
-/* select + delete from Shared media. Same rules as the chat: a photo grid sent together is ONE message, so picking one picks the whole grid;
+/* select + delete from Shared media. Every photo / video is picked on its own, even when it was sent in a batch (the chat grid just shrinks);
    "Delete for you" hides it on my side only, "Delete for everyone" (only my own saved messages) turns it into the usual "This message was deleted". */
 function infoExitSel(){ INFO.selecting = false; INFO.sel.clear(); drawInfo(); }
 function infoToggle(id){
   const m = chat.msgs.get(id); if(!m) return;
-  const ids = groupOf(m).filter(x => x && x.id).map(x => x.id), on = !ids.every(i => INFO.sel.has(i));
-  ids.forEach(i => on ? INFO.sel.add(i) : INFO.sel.delete(i));
+  if(INFO.sel.has(id)) INFO.sel.delete(id); else INFO.sel.add(id);          // one photo at a time, even if it was sent in a batch
   $('infoBody').querySelectorAll('.in-tile').forEach(el => el.classList.toggle('sel', INFO.sel.has(el.dataset.id)));
   syncInfoBar();
 }
