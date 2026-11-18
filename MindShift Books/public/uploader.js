@@ -88,7 +88,42 @@ STYLE += "\n#kv-up-bd{background:rgba(11,18,32,.45);-webkit-backdrop-filter:blur
     var _orig = null, _editState = null, _edited = false; // for the optional "Crop & edit photo" step
     var $ = function (id) { return document.getElementById(id); };
 
+    // Direct mode: skip the bottom sheet entirely. Opens the system file picker
+    // right away (must run inside the tap handler so the browser allows it), then
+    // compresses + uploads silently. Callers get onStart / onSuccess / onError.
+    function openDirect(opts) {
+      var input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0;width:1px;height:1px';
+      document.body.appendChild(input);
+      var cleanup = function () { setTimeout(function () { if (input.parentNode) input.parentNode.removeChild(input); }, 0); };
+      var fail = function (msg) {
+        if (opts.onError) opts.onError(msg); else alert(msg);
+      };
+      input.addEventListener('change', async function () {
+        var file = input.files && input.files[0];
+        cleanup();
+        if (!file) return;
+        if (opts.onStart) opts.onStart();
+        try {
+          var dataUrl = await window.MindshiftImage.compress(file);
+          var token = await opts.getToken();
+          var res = await fetch('/api/upload-image', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ dataUrl: dataUrl }) });
+          var json = await res.json();
+          if (!res.ok) throw new Error(json.error || 'Upload failed');
+          if (window.MindshiftUploads) window.MindshiftUploads.remember(json.url, json.deleteToken);
+          if (opts.onSuccess) opts.onSuccess(json.url, { orig: dataUrl, state: null, edited: false });
+        } catch (err) {
+          fail('Upload failed — ' + (err.message || 'please try again') + '.');
+        }
+      });
+      input.addEventListener('cancel', cleanup);
+      input.click();
+    }
+
     function open(opts) {
+      if (opts && opts.direct) return openDirect(opts);
       _opts = opts || {}; _dataUrl = null; _orig = null; _editState = null; _edited = false;
       if (wrap.parentNode !== document.body || wrap.nextSibling) document.body.appendChild(wrap); // keep it last in <body>, above any overlay opened since load
       $('kv-up-edit').style.display = 'none';

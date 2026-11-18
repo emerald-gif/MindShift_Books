@@ -3515,9 +3515,14 @@ async function uploadImageToCloudinary(file) {
 function initPickerHandlers() {
   // Photo picker — now delegates to MindshiftUploader modal
   window._kvOpenProfilePhoto = function() {
+    const label0 = document.getElementById('photoPickerLabel');
+    const prevLabel = label0 ? label0.textContent : '';
     MindshiftUploader.open({
+      direct: true,
       title: 'Update Profile Photo',
       getToken: () => currentUser.getIdToken(),
+      onStart: function() { if (label0) label0.textContent = 'Uploading…'; },
+      onError: function(msg) { if (label0) label0.textContent = prevLabel; alert(msg); },
       onSuccess: function(url) {
         document.getElementById('ePhoto').value = url;
         const thumb = document.getElementById('photoPickerThumb');
@@ -3532,9 +3537,14 @@ function initPickerHandlers() {
 
   // Cover picker — now delegates to MindshiftUploader modal
   window._kvOpenProfileCover = function() {
+    const label0 = document.getElementById('coverPickerLabel');
+    const prevLabel = label0 ? label0.textContent : '';
     MindshiftUploader.open({
+      direct: true,
       title: 'Update Cover Photo',
       getToken: () => currentUser.getIdToken(),
+      onStart: function() { if (label0) label0.textContent = 'Uploading…'; },
+      onError: function(msg) { if (label0) label0.textContent = prevLabel; alert(msg); },
       onSuccess: function(url) {
         document.getElementById('eCover').value = url;
         const thumb = document.getElementById('coverPickerThumb');
@@ -3973,7 +3983,7 @@ window.showToast = function(msg){
 
 <!-- Upload modal: shared markup/CSS/logic now lives in image-compress.js + uploader.js -->
 <script src="/image-compress.js"></script>
-<script src="/uploader.js?v=3"></script>
+<script src="/uploader.js?v=4"></script>
 
 
 <!-- Profile-setup celebration — shown once, the moment all 4 checklist
