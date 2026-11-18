@@ -181,7 +181,8 @@
       width: 116px; aspect-ratio: 2/3; object-fit: cover; border-radius: 9px; display: block;
       box-shadow: 0 8px 18px rgba(15,23,42,0.16); background: var(--c-surface,#eef2f6);
     }
-    .fe-card .fe-cover-fallback { width: 116px; }
+    .fe-card .fe-cover-fallback { width: 116px; background: linear-gradient(160deg,#4f46e5,#06b6d4); color: #fff; font-size: 0.8rem; }
+    .fe-row .fe-cover-fallback { background: linear-gradient(160deg,#4f46e5,#06b6d4); }
     .fe-card-title {
       font-size: 0.82rem; font-weight: 700; color: var(--primary); line-height: 1.25; margin-top: 8px;
       display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
@@ -326,7 +327,7 @@
   }
   function attrs(b) { return 'data-fe-detail="' + esc(b.id) + '" data-fe-title="' + esc(b.title) + '"'; }
   function coverImg(b, cls) {
-    return '<img src="' + esc(b.cover || '') + '" alt="' + esc(b.title) + '" class="' + cls + '" ' + attrs(b) + ' data-fe-cover loading="lazy">';
+    return '<img src="' + esc(b.cover || '') + '" alt="' + esc(b.title) + '" class="' + cls + '" ' + attrs(b) + ' data-fe-cover loading="lazy" referrerpolicy="no-referrer">';
   }
 
   // cover fails to load -> branded gradient cover with the title (works anywhere on the page)
