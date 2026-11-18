@@ -20,18 +20,24 @@ function injectCssOnce() {
   if (document.getElementById('msb-mpick-css')) return;
   const st = document.createElement('style'); st.id = 'msb-mpick-css';
   st.textContent = `
-.msb-mpop{position:fixed;z-index:100000;width:340px;max-width:calc(100vw - 16px);max-height:min(324px,42vh);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:var(--c-bg,#fff);border:1px solid var(--c-line,#eef1f6);border-radius:16px;box-shadow:0 14px 38px -12px rgba(15,23,42,.32);display:none;font-family:inherit}
-.msb-mpop.fixed{left:0;right:0;width:auto;max-width:none;border:none;border-top:1px solid var(--c-line,#eef1f6);border-radius:20px 20px 0 0;box-shadow:0 -12px 32px -14px rgba(15,23,42,.28)}
-.msb-mhint{padding:12px 16px 4px;font-size:12px;font-weight:800;letter-spacing:.4px;color:var(--c-mute,#94a3b8)}
-.msb-mrow{display:flex;align-items:center;gap:12px;padding:8px 16px;min-height:58px;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.msb-mrow.active{background:var(--c-tonal,#f4f6ff)}
-.msb-mav{width:42px;height:42px;border-radius:50%;flex-shrink:0;overflow:hidden;background:linear-gradient(135deg,#4f46e5,#06b6d4);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px}
+.msb-mpop{position:fixed;z-index:100000;width:340px;max-width:calc(100vw - 16px);max-height:300px;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;background:var(--c-bg,#fff);color:var(--c-ink,#0f172a);border:1px solid var(--c-line,#e2e8f0);border-radius:14px;box-shadow:0 14px 38px -12px rgba(15,23,42,.35);display:none;font-family:inherit;box-sizing:border-box}
+.msb-mhint{padding:10px 14px 4px;font-size:12px;font-weight:800;letter-spacing:.4px;color:var(--c-mute,#94a3b8)}
+.msb-mrow{display:flex;align-items:center;gap:10px;padding:7px 14px;min-height:52px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.msb-mrow.active{background:var(--c-tonal,#eef2ff)}
+.msb-mav{width:36px;height:36px;border-radius:50%;flex-shrink:0;overflow:hidden;background:linear-gradient(135deg,#4f46e5,#06b6d4);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px}
 .msb-mav img{width:100%;height:100%;object-fit:cover;display:block}
 .msb-mtxt{min-width:0;flex:1;display:flex;flex-direction:column;gap:1px}
-.msb-mname{font-size:15px;font-weight:800;color:var(--c-ink,#0f172a);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.msb-muser{font-size:14px;color:var(--c-sub2,#64748b);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.msb-mflw{flex-shrink:0;font-size:12px;font-weight:700;color:var(--c-sub2,#64748b);background:var(--c-surface,#f1f5f9);padding:4px 10px;border-radius:99px}
-.msb-mempty{padding:18px 16px;font-size:14px;color:var(--c-sub2,#64748b);text-align:center}`;
+.msb-mname{font-size:14.5px;font-weight:800;color:var(--c-ink,#0f172a);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.msb-muser{font-size:13px;color:var(--c-sub2,#64748b);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.msb-mflw{flex-shrink:0;font-size:11.5px;font-weight:700;color:var(--c-sub2,#64748b);background:var(--c-surface,#f1f5f9);padding:3px 9px;border-radius:99px}
+.msb-mempty{padding:16px;font-size:14px;color:var(--c-sub2,#64748b);text-align:center}
+/* coloured @handles while typing: the textarea's own text is made invisible and this layer draws the same
+   text on top (identical font/padding), with @handles in colour. The caret and selection still belong to the textarea. */
+textarea[data-msb-hl]{-webkit-text-fill-color:transparent}
+textarea[data-msb-hl]::placeholder{-webkit-text-fill-color:var(--c-mute,#94a3b8);color:var(--c-mute,#94a3b8);opacity:1}
+.msb-mhl{position:absolute;pointer-events:none;overflow:hidden;box-sizing:border-box;border-style:solid;border-color:transparent}
+.msb-mhl>div{white-space:pre-wrap;overflow-wrap:break-word;margin:0}
+.msb-mn{color:var(--c-ind,#4f46e5);font-weight:700}`;
   document.head.appendChild(st);
 }
 
@@ -39,7 +45,7 @@ function withTimeout(p, ms) {
   return Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
 }
 
-export function createMentionPicker({ db, getCurrentUser }) {
+export function createMentionPicker({ db, getCurrentUser, highlight = true }) {
   injectCssOnce();
   const attached = new WeakSet();
   const picked = new Map();            // username -> uid, for handles chosen from the list (or seeded)
@@ -47,7 +53,7 @@ export function createMentionPicker({ db, getCurrentUser }) {
   let following = null;                // cached "people you follow"
   const followingIds = new Set();
 
-  let pop = null, activeTa = null, list = [], activeIdx = 0, range = null, seq = 0, timer = null;
+  let pop = null, activeTa = null, list = [], activeIdx = 0, range = null, seq = 0, timer = null, interacting = false;
 
   const me = () => { const u = getCurrentUser && getCurrentUser(); return u ? u.uid : null; };
   const toItem = (id, d) => ({
@@ -81,6 +87,10 @@ export function createMentionPicker({ db, getCurrentUser }) {
     if (pop) return pop;
     pop = document.createElement('div');
     pop.className = 'msb-mpop'; pop.setAttribute('role', 'listbox'); pop.setAttribute('aria-label', 'Mention suggestions');
+    pop.addEventListener('mousedown', e => e.preventDefault());               // keep the textarea focused
+    pop.addEventListener('pointerdown', () => { interacting = true; });
+    const done = () => setTimeout(() => { interacting = false; }, 350);
+    pop.addEventListener('pointerup', done); pop.addEventListener('pointercancel', done);
     document.body.appendChild(pop);
     return pop;
   }
@@ -91,25 +101,35 @@ export function createMentionPicker({ db, getCurrentUser }) {
   function place() {
     if (!pop || pop.style.display === 'none' || !activeTa) return;
     const vv = window.visualViewport;
-    if (matchMedia('(pointer:coarse)').matches && vv) {
-      // phones: docked right above the keyboard
-      pop.classList.add('fixed'); pop.style.left = ''; pop.style.top = '';
-      pop.style.bottom = Math.max(0, window.innerHeight - (vv.height + vv.offsetTop)) + 'px';
-      return;
-    }
-    pop.classList.remove('fixed'); pop.style.bottom = '';
+    const vTop = vv ? vv.offsetTop : 0, vLeft = vv ? vv.offsetLeft : 0;
+    const vH = vv ? vv.height : window.innerHeight, vW = vv ? vv.width : window.innerWidth;
     const r = activeTa.getBoundingClientRect();
-    const w = pop.offsetWidth || 340, h = pop.offsetHeight || 0;
-    const vh = vv ? vv.height : window.innerHeight;
-    pop.style.left = Math.max(8, Math.min(r.left, window.innerWidth - w - 8)) + 'px';
-    const below = r.bottom + 6;
-    pop.style.top = (below + h > vh - 8 && r.top - h - 6 > 8 ? r.top - h - 6 : below) + 'px';
+    const GAP = 6, EDGE = 8, MAXH = 300;
+    const phone = matchMedia('(pointer:coarse)').matches;
+    // width
+    const w = phone ? vW - EDGE * 2 : Math.min(340, vW - EDGE * 2);
+    pop.style.width = w + 'px';
+    pop.style.left = Math.max(vLeft + EDGE, Math.min(phone ? vLeft + EDGE : r.left, vLeft + vW - w - EDGE)) + 'px';
+    // height: measure the list at its natural height, then fit it into the room above/below the box
+    pop.style.maxHeight = 'none';
+    const natural = Math.min(pop.scrollHeight, MAXH);
+    const above = r.top - vTop - GAP - EDGE;
+    const below = vTop + vH - r.bottom - GAP - EDGE;
+    let useBelow;
+    if (phone) useBelow = natural <= below && below >= above;      // phones: box is usually at the bottom, list goes above it
+    else useBelow = natural <= below || below >= above;            // desktop: prefer under the box
+    const room = Math.max(120, useBelow ? below : above);
+    const h = Math.min(natural, room);
+    pop.style.maxHeight = h + 'px';
+    pop.style.bottom = '';
+    pop.style.top = (useBelow ? r.bottom + GAP : Math.max(vTop + EDGE, r.top - GAP - h)) + 'px';
   }
   if (window.visualViewport) {
     visualViewport.addEventListener('resize', place);
     visualViewport.addEventListener('scroll', place);
   }
-  window.addEventListener('scroll', place, true);
+  window.addEventListener('scroll', e => { if (pop && e.target && (e.target === pop || (e.target.nodeType === 1 && pop.contains(e.target)))) return; place(); }, true);
+  window.addEventListener('resize', place);
 
   function trigger(ta) {
     if (ta.selectionStart !== ta.selectionEnd) return null;
@@ -145,7 +165,6 @@ export function createMentionPicker({ db, getCurrentUser }) {
       tx.appendChild(nm); tx.appendChild(un); row.appendChild(av); row.appendChild(tx);
       if (u.following) { const f = document.createElement('span'); f.className = 'msb-mflw'; f.textContent = 'Following'; row.appendChild(f); }
       let y0 = 0, moved = false;
-      row.addEventListener('mousedown', e => e.preventDefault());            // keep the textarea focused
       row.addEventListener('pointerdown', e => { y0 = e.clientY; moved = false; });
       row.addEventListener('pointermove', e => { if (Math.abs(e.clientY - y0) > 8) moved = true; });
       row.addEventListener('pointerup', e => { if (moved) return; e.preventDefault(); choose(i); });
@@ -191,13 +210,48 @@ export function createMentionPicker({ db, getCurrentUser }) {
     ta.dispatchEvent(new Event('input', { bubbles: true }));   // enables the Post button, grows the box
   }
 
+  function escHtml(x) { return x.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function setupHighlight(ta) {
+    if (typeof window.ResizeObserver !== 'function') return;     // very old browsers: just no colour while typing
+    const ov = document.createElement('div'); ov.className = 'msb-mhl'; ov.setAttribute('aria-hidden', 'true');
+    const inner = document.createElement('div'); ov.appendChild(inner);
+    ta.setAttribute('data-msb-hl', '1');
+    ta.after(ov);
+    function sync() {
+      if (!ta.isConnected) { ov.remove(); return; }
+      if (!ta.offsetParent) { ov.style.display = 'none'; return; }       // hidden (e.g. closed reply box)
+      const cs = getComputedStyle(ta), s = ov.style, i = inner.style;
+      s.display = 'block';
+      s.left = ta.offsetLeft + 'px'; s.top = ta.offsetTop + 'px';
+      s.width = ta.offsetWidth + 'px'; s.height = ta.offsetHeight + 'px';
+      s.paddingTop = cs.paddingTop; s.paddingRight = cs.paddingRight; s.paddingBottom = cs.paddingBottom; s.paddingLeft = cs.paddingLeft;
+      s.borderTopWidth = cs.borderTopWidth; s.borderRightWidth = cs.borderRightWidth; s.borderBottomWidth = cs.borderBottomWidth; s.borderLeftWidth = cs.borderLeftWidth;
+      ['fontFamily', 'fontSize', 'fontWeight', 'fontStyle', 'letterSpacing', 'lineHeight', 'textTransform', 'textIndent', 'wordSpacing', 'textAlign', 'direction', 'tabSize', 'wordBreak'].forEach(p => { i[p] = cs[p]; });
+      i.color = cs.color;
+      i.transform = 'translateY(' + (-ta.scrollTop) + 'px)';
+      const v = ta.value;
+      inner.innerHTML = escHtml(v).replace(/(^|[^a-z0-9_])@([a-z0-9_]{1,20})(?![a-z0-9_])/gi, (all, pre, h) => pre + '<span class="msb-mn">@' + h + '</span>')
+        + (v.endsWith('\n') ? ' ' : '');
+    }
+    // programmatic changes (clearing the box after posting, the reply pre-fill) never fire "input" — catch them too
+    const d = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value');
+    if (d && d.set) Object.defineProperty(ta, 'value', { configurable: true, get() { return d.get.call(this); }, set(v) { d.set.call(this, v); sync(); } });
+    ta.addEventListener('input', sync);
+    ta.addEventListener('scroll', sync);
+    ta.addEventListener('focus', sync);
+    new ResizeObserver(sync).observe(ta);
+    window.addEventListener('resize', sync);
+    sync();
+  }
+
   function attach(ta) {
     if (!ta || attached.has(ta)) return;
     attached.add(ta);
+    if (highlight) { try { setupHighlight(ta); } catch (e) { ta.removeAttribute('data-msb-hl'); } }
     ta.addEventListener('input', () => update(ta));
     ta.addEventListener('click', () => update(ta));
     ta.addEventListener('keyup', e => { if (!['ArrowDown', 'ArrowUp', 'Enter', 'Tab', 'Escape'].includes(e.key)) update(ta); });
-    ta.addEventListener('blur', () => setTimeout(() => { if (activeTa === ta) hide(); }, 200));
+    ta.addEventListener('blur', () => setTimeout(() => { if (activeTa === ta && !interacting) hide(); }, 200));
     ta.addEventListener('keydown', e => {
       if (!pop || pop.style.display === 'none' || !list.length || activeTa !== ta) return;
       const rows = () => pop.querySelectorAll('.msb-mrow');
