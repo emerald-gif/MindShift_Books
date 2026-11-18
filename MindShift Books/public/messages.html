@@ -765,6 +765,22 @@ button.rx-row:active{background:var(--c-surface,#f4f5f7)}
 .in-hn i{font-style:normal;font-weight:500;color:var(--mute);font-size:12.5px}
 .in-ht{display:block;margin-top:3px;font-size:15px;line-height:1.38;color:var(--txt);overflow-wrap:anywhere}
 .in-ht mark{background:rgba(250,204,21,.45);color:inherit;border-radius:3px;padding:0 1px}
+
+.in-selbtn{margin-left:auto;padding:8px 14px;border-radius:99px;font-size:15px;font-weight:700;color:var(--p)}
+.in-selbtn:active{background:var(--c-surface,#f1f5f9)}
+.in-ck{display:none;position:absolute;top:7px;right:7px;z-index:2;width:25px;height:25px;border-radius:50%;border:2px solid #fff;background:rgba(15,23,42,.35);align-items:center;justify-content:center}
+.in-ck svg{width:15px;height:15px;fill:none;stroke:#fff;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;opacity:0}
+.selecting .in-ck{display:flex}
+.in-tile.sel .in-ck{background:var(--p);border-color:var(--p)}
+.in-tile.sel .in-ck svg{opacity:1}
+.in-tile{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.in-tile img{transition:transform .15s;-webkit-user-drag:none;pointer-events:none}
+.in-tile.sel img{transform:scale(.86);border-radius:10px}
+.in-tile.sel{background:var(--c-tonal,#dfe4ff)}
+.in-selbar{padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid var(--border)}
+.in-selbar button{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;height:50px;border-radius:99px;background:var(--red);color:#fff;font-size:16px;font-weight:800}
+.in-selbar button:disabled{opacity:.4}
+.in-selbar svg{width:21px;height:21px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 </style>
 <link rel="stylesheet" href="/theme.css?v=1">
 <link rel="stylesheet" href="/shell.css?v=1" media="(min-width:720px)">
@@ -858,8 +874,9 @@ button.rx-row:active{background:var(--c-surface,#f4f5f7)}
 </section>
 
 <section class="info" id="info" hidden>
-  <div class="bar info-bar"><button class="back" id="infoBack" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button><div class="bar-title" id="infoTitle"></div></div>
+  <div class="bar info-bar"><button class="back" id="infoBack" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button><div class="bar-title" id="infoTitle"></div><button class="in-selbtn" id="infoSel" hidden>Select</button></div>
   <div class="info-scroll" id="infoBody"></div>
+  <div class="in-selbar" id="infoSelBar" hidden><button id="infoDel" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 002 2h6a2 2 0 002-2l1-12M9 7V4h6v3"/></svg><span id="infoDelN">Delete</span></button></div>
 </section>
 <div class="toast" id="toast"></div>
 <div class="mo" id="mo" hidden><div class="mo-bg" id="moBg"></div><div class="mo-body" id="moBody"></div></div>
@@ -3753,7 +3770,7 @@ $('listMenuBtn').onclick = openListMenu;
 $('chatMenuBtn').onclick = openChatMenu;
 
 /* ───────── chat info: tap the name / photo at the top of a chat ───────── */
-const INFO = { mode:'main', tab:'media', pin:null, q:'' };
+const INFO = { mode:'main', tab:'media', pin:null, q:'', selecting:false, sel:new Set() };
 const IC = {
   user:'<circle cx="12" cy="7" r="4"/><path d="M19 21v-2a4 4 0 00-4-4H9a4 4 0 00-4 4v2"/>',
   pin:'<path d="M12 17v5M9 10.8a2 2 0 01-1.1 1.8l-1.8.9A2 2 0 005 15.2V16a1 1 0 001 1h12a1 1 0 001-1v-.8a2 2 0 00-1.1-1.8l-1.8-.9A2 2 0 0115 10.8V7a1 1 0 011-1 2 2 0 000-4H8a2 2 0 000 4 1 1 0 011 1z"/>',
@@ -3772,18 +3789,33 @@ const IC = {
 const ico = k => `<svg viewBox="0 0 24 24" aria-hidden="true">${IC[k]}</svg>`;
 const byNew = (a, b) => (b.ts || 0) - (a.ts || 0);
 const profileLink = uid => location.origin + '/profile?uid=' + encodeURIComponent(uid);
+// what's actually visible in this chat: anything I deleted "for me" stays out of media, links and search too
+function visMsgs(){
+  const hidden = new Set([...((chat.row && chat.row.hiddenMsgs) || (chat.rowInfo && chat.rowInfo.hiddenMsgs) || []), ...(chat.hiddenLocal || [])]);
+  return [...chat.msgs.values()].filter(m => !hidden.has(m.id));
+}
 function infoMedia(){
-  return [...chat.msgs.values()].filter(m => isMedia(m) && !m.deleted && !m.uploading && !m.failed).sort(byNew);
+  return visMsgs().filter(m => isMedia(m) && !m.deleted && !m.uploading && !m.failed).sort(byNew);
 }
 function infoLinks(){                                   // every link written in the chat + shared posts / articles
   const out = [], host = u => { try{ return new URL(u).hostname.replace(/^www\./, ''); }catch(_){ return u; } };
-  [...chat.msgs.values()].filter(m => !m.deleted).sort(byNew).forEach(m => {
+  visMsgs().filter(m => !m.deleted).sort(byNew).forEach(m => {
     if(m.type === 'share' && m.sid) out.push({ url:shareUrl(m), title:m.st || (m.sk === 'article' ? 'Article' : 'Post'), sub:(m.sk === 'article' ? 'Article' : 'Post') + (m.sa ? ' · ' + m.sa : ''), ts:m.ts });
     else if(m.text && !isMedia(m) && m.type !== 'voice') (m.text.match(/\bhttps?:\/\/[^\s<>"]+/gi) || []).forEach(u => { u = u.replace(/[.,;:!?)\]]+$/, ''); out.push({ url:u, title:host(u), sub:u, ts:m.ts }); });
   });
   return out;
 }
-function drawInfo(){
+function drawInfo(){ drawInfoBody(); syncInfoBar(); }
+function syncInfoBar(){
+  const inMedia = INFO.mode === 'media' && INFO.tab === 'media' && !!chat && infoMedia().length > 0;
+  if(!inMedia){ INFO.selecting = false; INFO.sel.clear(); }
+  $('infoSel').hidden = !inMedia; $('infoSel').textContent = INFO.selecting ? 'Cancel' : 'Select';
+  $('infoSelBar').hidden = !(inMedia && INFO.selecting);
+  $('infoBody').classList.toggle('selecting', INFO.selecting);
+  $('infoDel').disabled = !INFO.sel.size; $('infoDelN').textContent = INFO.sel.size ? 'Delete (' + INFO.sel.size + ')' : 'Delete';
+  if(INFO.mode === 'media') $('infoTitle').textContent = INFO.selecting ? (INFO.sel.size ? INFO.sel.size + ' selected' : 'Select items') : 'Shared media';
+}
+function drawInfoBody(){
   if(!chat) return;
   const o = chat.other, body = $('infoBody'), title = $('infoTitle');
   if(INFO.mode === 'search'){
@@ -3804,7 +3836,7 @@ function drawInfo(){
       const list = infoMedia();
       body.innerHTML = tabs + (list.length
         ? `<div class="in-grid">${list.map(m => { const src = mediaThumb(m);
-            return `<button class="in-tile" data-id="${esc(m.id)}" aria-label="${m.type === 'video' ? 'Video' : 'Photo'}">${src ? `<img src="${esc(src)}" alt="" loading="lazy" decoding="async">` : ''}${m.type === 'video' ? `<span class="in-vid"><svg viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 001.5.86l10.5-6.5a1 1 0 000-1.72L9.5 4.64A1 1 0 008 5.5z"/></svg>${m.duration ? fmtDur(m.duration) : ''}</span>` : ''}</button>`; }).join('')}</div>`
+            return `<button class="in-tile${INFO.sel.has(m.id) ? ' sel' : ''}" data-id="${esc(m.id)}" aria-label="${m.type === 'video' ? 'Video' : 'Photo'}"><span class="in-ck"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>${src ? `<img src="${esc(src)}" alt="" loading="lazy" decoding="async">` : ''}${m.type === 'video' ? `<span class="in-vid"><svg viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 001.5.86l10.5-6.5a1 1 0 000-1.72L9.5 4.64A1 1 0 008 5.5z"/></svg>${m.duration ? fmtDur(m.duration) : ''}</span>` : ''}</button>`; }).join('')}</div>`
         : `<div class="in-empty">No photos or videos in this chat yet</div>`);
     }
     if(chat.hasMore) body.insertAdjacentHTML('beforeend', `<button class="in-more" data-act="older">Load earlier messages</button>`);
@@ -3844,7 +3876,7 @@ function infoResults(){
   const q = INFO.q.trim().toLowerCase();
   if(!q){ box.innerHTML = `<div class="in-empty">Search messages and photo captions</div>`; return; }
   const textOf = m => isMedia(m) ? (m.cap || '') : (m.type === 'voice' || m.type === 'share') ? '' : (m.text || '');
-  const hits = [...chat.msgs.values()].filter(m => !m.deleted && textOf(m).toLowerCase().includes(q)).sort(byNew).slice(0, 100);
+  const hits = visMsgs().filter(m => !m.deleted && textOf(m).toLowerCase().includes(q)).sort(byNew).slice(0, 100);
   const snip = t => {
     const i = t.toLowerCase().indexOf(q), st = Math.max(0, i - 28);
     return (st > 0 ? '…' : '') + esc(t.slice(st, i)) + '<mark>' + esc(t.slice(i, i + q.length)) + '</mark>' + esc(t.slice(i + q.length, i + q.length + 90));
@@ -3856,18 +3888,75 @@ function infoResults(){
 }
 function openInfo(){
   if(!chat || !$('info').hidden) return;
-  INFO.mode = 'main'; INFO.pin = null; INFO.q = ''; INFO.tab = 'media';
+  INFO.mode = 'main'; INFO.pin = null; INFO.q = ''; INFO.tab = 'media'; INFO.selecting = false; INFO.sel.clear();
   drawInfo(); $('infoBody').scrollTop = 0; $('info').hidden = false;
   ovOpen(() => { $('info').hidden = true; });
 }
 function closeInfo(){ if($('info').hidden) return; $('info').hidden = true; ovPop(); }
-function infoTo(mode){ INFO.mode = mode; drawInfo(); $('infoBody').scrollTop = 0; }
-$('infoBack').onclick = () => { if(INFO.mode !== 'main'){ if(document.activeElement) document.activeElement.blur(); infoTo('main'); } else closeInfo(); };
+function infoTo(mode){ INFO.mode = mode; INFO.selecting = false; INFO.sel.clear(); drawInfo(); $('infoBody').scrollTop = 0; }
+/* select + delete from Shared media. Same rules as the chat: a photo grid sent together is ONE message, so picking one picks the whole grid;
+   "Delete for you" hides it on my side only, "Delete for everyone" (only my own saved messages) turns it into the usual "This message was deleted". */
+function infoExitSel(){ INFO.selecting = false; INFO.sel.clear(); drawInfo(); }
+function infoToggle(id){
+  const m = chat.msgs.get(id); if(!m) return;
+  const ids = groupOf(m).filter(x => x && x.id).map(x => x.id), on = !ids.every(i => INFO.sel.has(i));
+  ids.forEach(i => on ? INFO.sel.add(i) : INFO.sel.delete(i));
+  $('infoBody').querySelectorAll('.in-tile').forEach(el => el.classList.toggle('sel', INFO.sel.has(el.dataset.id)));
+  syncInfoBar();
+}
+function infoDelete(){
+  if(!chat || !INFO.sel.size) return;
+  const ms = [...INFO.sel].map(id => chat.msgs.get(id)).filter(Boolean); if(!ms.length) return;
+  const canAll = ms.every(x => x.senderUid === me.uid && x.confirmed && !x.pendingLocal && !x.deleted);
+  openSheet(ms.length === 1 ? '1 item selected' : ms.length + ' items selected', [
+    { label:'Delete for you', danger:true, run:() => bulkDeleteForMe(ms) },
+    canAll ? { label:'Delete for everyone', danger:true, run:() => bulkUnsend(ms) } : null
+  ]);
+}
+async function bulkDeleteForMe(ms){
+  const c = chat; if(!c) return;
+  const saved = ms.filter(x => x.confirmed && !x.pendingLocal), n = saved.length; if(!n) return;
+  if(!await confirmSheet(n === 1 ? 'Delete for you?' : 'Delete ' + n + ' items for you?', 'They’re removed from this chat on your side only. ' + c.other.name + ' will still see them.', 'Delete')) return;
+  c.hiddenLocal = c.hiddenLocal || new Set(); saved.forEach(x => c.hiddenLocal.add(x.id));
+  INFO.sel.clear(); INFO.selecting = false; renderMsgs(false); if(!$('info').hidden) drawInfo();
+  try{ await updateDoc(myRow(c.other.uid), { hiddenMsgs: arrayUnion(...saved.map(x => x.id)) }); toast(n === 1 ? 'Deleted for you' : n + ' items deleted for you'); }
+  catch(e){ saved.forEach(x => c.hiddenLocal.delete(x.id)); if(chat === c){ renderMsgs(false); if(!$('info').hidden) drawInfo(); } toast('Couldn’t delete these'); }
+}
+async function bulkUnsend(ms){
+  const c = chat; if(!c) return;
+  const list = ms.filter(x => x.senderUid === me.uid && x.confirmed && !x.pendingLocal && !x.deleted), n = list.length; if(!n) return;
+  if(!await confirmSheet('Delete for everyone?', n === 1 ? 'This is removed for both of you and replaced with “This message was deleted”. Anyone who already saw it may still remember it.' : 'These ' + n + ' photos and videos are removed for both of you and replaced with “This message was deleted”. Anyone who already saw them may still remember them.', 'Delete')) return;
+  INFO.sel.clear(); INFO.selecting = false;
+  let ok = 0; for(const x of list){ if(await unsendOne(c, x)) ok++; }
+  if(chat === c && !$('info').hidden) drawInfo();
+  if(ok) toast(ok === 1 ? 'Deleted for everyone' : ok + ' items deleted for everyone');
+}
+// press and hold a photo to start selecting (like WhatsApp / Instagram)
+(function(){
+  const body = $('infoBody'); let timer = 0, sx = 0, sy = 0;
+  const stop = () => { clearTimeout(timer); timer = 0; };
+  body.addEventListener('pointerdown', e => {
+    const t = e.target.closest('.in-tile'); if(!t || !chat) return;
+    stop(); sx = e.clientX; sy = e.clientY; const id = t.dataset.id;
+    timer = setTimeout(() => {
+      timer = 0; if(INFO.selecting || !chat) return;
+      INFO.lpAt = Date.now(); INFO.selecting = true; INFO.sel.clear(); drawInfo(); infoToggle(id);
+      try{ navigator.vibrate && navigator.vibrate(12); }catch(_){}
+    }, 420);
+  });
+  body.addEventListener('pointermove', e => { if(timer && Math.hypot(e.clientX - sx, e.clientY - sy) > 8) stop(); });
+  ['pointerup', 'pointercancel', 'pointerleave', 'scroll'].forEach(ev => body.addEventListener(ev, stop, true));
+  body.addEventListener('contextmenu', e => { if(e.target.closest('.in-tile')) e.preventDefault(); });
+})();
+$('infoSel').onclick = () => { INFO.selecting = !INFO.selecting; INFO.sel.clear(); drawInfo(); };
+$('infoDel').onclick = infoDelete;
+
+$('infoBack').onclick = () => { if(INFO.selecting){ infoExitSel(); return; } if(INFO.mode !== 'main'){ if(document.activeElement) document.activeElement.blur(); infoTo('main'); } else closeInfo(); };
 $('infoBody').addEventListener('input', e => { if(e.target.id === 'inQ'){ INFO.q = e.target.value; infoResults(); } });
 $('infoBody').onclick = async e => {
   const t = e.target.closest('[data-act],[data-id],[data-hit]'); if(!t || !chat) return;
   const uid = chat.other.uid;
-  if(t.dataset.id){ openLightbox(t.dataset.id, infoMedia().map(m => m.id)); return; }   // view it right here, swipe through the rest
+  if(t.dataset.id){ if(Date.now() - (INFO.lpAt || 0) < 700) return; if(INFO.selecting){ infoToggle(t.dataset.id); return; } openLightbox(t.dataset.id, infoMedia().map(m => m.id)); return; }   // view it right here, swipe through the rest
   if(t.dataset.hit){ const id = t.dataset.hit; closeInfo(); setTimeout(() => jumpTo(id), 350); return; }   // jump to that message in the chat
   switch(t.dataset.act){
     case 'profile': location.href = `/profile?uid=${encodeURIComponent(uid)}`; break;
@@ -3876,7 +3965,7 @@ $('infoBody').onclick = async e => {
     case 'theme': openThemePicker('chat'); break;
     case 'more': openChatMenu(); break;
     case 'media': INFO.tab = 'media'; infoTo('media'); break;
-    case 'tab': INFO.tab = t.dataset.tab; drawInfo(); break;
+    case 'tab': INFO.tab = t.dataset.tab; INFO.selecting = false; INFO.sel.clear(); drawInfo(); break;
     case 'older': { t.disabled = true; t.textContent = 'Loading…'; await loadOlder(); if(INFO.mode !== 'main') drawInfo(); break; }
     case 'share': { const url = profileLink(uid); try{ if(navigator.share){ await navigator.share({ title:chat.other.name, url }); break; } }catch(err){ if(err && err.name === 'AbortError') break; }
       try{ await navigator.clipboard.writeText(url); toast('Profile link copied'); }catch(_){ toast(url); } break; }
