@@ -28,7 +28,7 @@
       background: rgba(var(--glass-rgb,248,250,252),0.94);
       -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
     }
-    .fe-back-btn { flex-shrink: 0; }
+    .fe-back-btn { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; color: var(--primary); text-decoration: none; }
     .fe-search-wrap {
       position: relative; flex: 1; display: flex; align-items: center;
       background: var(--c-surface,#eef2f6); border-radius: 999px; padding: 0 14px;
@@ -172,7 +172,7 @@
       cursor: pointer; font-family: inherit; padding: 4px 0;
     }
     .fe-swiper {
-      display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x proximity;
+      display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x proximity; scroll-padding: 0 16px;
       margin: 0 -16px; padding: 2px 16px 8px; scrollbar-width: none; -ms-overflow-style: none;
     }
     .fe-swiper::-webkit-scrollbar { display: none; }
@@ -212,10 +212,16 @@
 
 <main>
   <div class="fe-topbar">
+    <a href="/books" class="icon-btn fe-back-btn" aria-label="Back to bookstore" title="Bookstore">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><polyline points="15 18 9 12 15 6"></polyline></svg>
+    </a>
     <div class="fe-search-wrap" role="search" aria-label="Search free eBooks">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
       <input id="feSearch" type="text" placeholder="Search free eBooks..." autocomplete="off" enterkeyhint="search">
     </div>
+    <a href="/" class="icon-btn fe-back-btn" aria-label="Home" title="Home">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M3 11l9-8 9 8"></path><path d="M5 10v10h5v-6h4v6h5V10"></path></svg>
+    </a>
     <button type="button" id="sidebarToggle" class="icon-btn" onclick="toggleSidebar()" aria-label="Open menu">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="22" height="22"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
     </button>
