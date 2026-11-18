@@ -740,6 +740,31 @@ button.rx-row:active{background:var(--c-surface,#f4f5f7)}
 .in-empty{text-align:center;color:var(--mute);font-size:15px;padding:70px 20px}
 .in-more{display:block;margin:16px auto 0;padding:11px 22px;border-radius:99px;background:var(--c-surface,#f1f5f9);font-weight:700;font-size:14.5px;color:var(--p)}
 @media (prefers-reduced-motion:reduce){.info{animation:none}}
+
+.in-tabs{display:flex;gap:8px;margin:2px 0 14px}
+.in-tabs button{flex:1;padding:10px 0;border-radius:99px;background:var(--c-bg,#fff);border:1px solid var(--border);font-size:14.5px;font-weight:700;color:var(--sub)}
+.in-tabs button.on{background:var(--c-tonal,#eef0ff);border-color:var(--p);color:var(--p)}
+.in-links{margin-bottom:0}
+.in-link{display:flex;align-items:center;gap:13px;padding:14px 16px;color:var(--txt)}
+.in-link+.in-link{border-top:1px solid var(--c-line,#eef0f3)}
+.in-link:active{background:var(--c-surface,#f4f5f7)}
+.in-li{width:42px;height:42px;border-radius:12px;background:var(--c-surface,#eef0f5);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--p)}
+.in-li svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.in-lt{flex:1;min-width:0}
+.in-lt b{display:block;font-size:15.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.in-lt i{display:block;font-style:normal;font-size:13px;color:var(--mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px}
+.in-ld{font-size:12px;color:var(--mute);flex-shrink:0}
+.in-search{display:flex;align-items:center;gap:10px;padding:0 16px;height:48px;border-radius:99px;background:var(--c-bg,#fff);border:1px solid var(--border);margin:2px 0 14px}
+.in-search svg{width:20px;height:20px;fill:none;stroke:var(--mute);stroke-width:2.2;stroke-linecap:round;flex-shrink:0}
+.in-search input{flex:1;min-width:0;border:0;outline:0;background:none;font:inherit;font-size:16px;color:var(--txt)}
+.in-count{font-size:13px;font-weight:700;color:var(--mute);padding:0 6px 8px}
+.in-hit{display:block;width:100%;text-align:left;padding:13px 16px}
+.in-hit+.in-hit{border-top:1px solid var(--c-line,#eef0f3)}
+.in-hit:active{background:var(--c-surface,#f4f5f7)}
+.in-hn{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;font-weight:700;color:var(--p)}
+.in-hn i{font-style:normal;font-weight:500;color:var(--mute);font-size:12.5px}
+.in-ht{display:block;margin-top:3px;font-size:15px;line-height:1.38;color:var(--txt);overflow-wrap:anywhere}
+.in-ht mark{background:rgba(250,204,21,.45);color:inherit;border-radius:3px;padding:0 1px}
 </style>
 <link rel="stylesheet" href="/theme.css?v=1">
 <link rel="stylesheet" href="/shell.css?v=1" media="(min-width:720px)">
@@ -3195,7 +3220,14 @@ document.addEventListener('drop', e => { if(!chat) return; const fs = [...((e.da
 
 /* ── full-screen viewer: swipe left/right, swipe down to close ── */
 const LB = { ids:[], i:0, open:false };
-function openLightbox(id){
+function openLightbox(id, list){
+  if(list){                                           // opened from Shared media: swipe through that list, no need for the chat behind it
+    const i = list.indexOf(id); if(i < 0) return;
+    LB.ids = list.slice(); LB.open = true; $('lb').hidden = false; lbShow(i);
+    ovOpen(() => lbClose(true));
+    document.addEventListener('keydown', lbKey);
+    return;
+  }
   const all = [...$('msgs').querySelectorAll('.msg.media .mb[data-id], .msg.media .mhid[data-id]')], cur = all.find(el => el.dataset.id === id);
   if(!cur) return;
   const box = cur.closest('.msg'), scope = box.querySelector('.mg') ? all.filter(el => el.closest('.msg') === box) : all;   // a grid swipes through its own items; single photos swipe through the chat as before
@@ -3721,7 +3753,7 @@ $('listMenuBtn').onclick = openListMenu;
 $('chatMenuBtn').onclick = openChatMenu;
 
 /* ───────── chat info: tap the name / photo at the top of a chat ───────── */
-const INFO = { mode:'main', pin:null };
+const INFO = { mode:'main', tab:'media', pin:null, q:'' };
 const IC = {
   user:'<circle cx="12" cy="7" r="4"/><path d="M19 21v-2a4 4 0 00-4-4H9a4 4 0 00-4 4v2"/>',
   pin:'<path d="M12 17v5M9 10.8a2 2 0 01-1.1 1.8l-1.8.9A2 2 0 005 15.2V16a1 1 0 001 1h12a1 1 0 001-1v-.8a2 2 0 00-1.1-1.8l-1.8-.9A2 2 0 0115 10.8V7a1 1 0 011-1 2 2 0 000-4H8a2 2 0 000 4 1 1 0 011 1z"/>',
@@ -3731,23 +3763,51 @@ const IC = {
   eraser:'<path d="M20 20H9l-5-5a2 2 0 010-2.8l9-9a2 2 0 012.8 0l4.2 4.2a2 2 0 010 2.8L11 20"/><path d="M7 11l6 6"/>',
   trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 002 2h6a2 2 0 002-2l1-12M9 7V4h6v3"/>',
   block:'<circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/>',
-  chev:'<path d="M9 5l7 7-7 7"/>'
+  chev:'<path d="M9 5l7 7-7 7"/>',
+  search:'<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>',
+  link:'<path d="M10 13a5 5 0 007.5.5l3-3a5 5 0 00-7-7l-1.7 1.7M14 11a5 5 0 00-7.5-.5l-3 3a5 5 0 007 7l1.7-1.7"/>',
+  share:'<path d="M12 3v12M8 7l4-4 4 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/>',
+  copy:'<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a1 1 0 01-1-1V4a1 1 0 011-1h10a1 1 0 011 1v1"/>'
 };
 const ico = k => `<svg viewBox="0 0 24 24" aria-hidden="true">${IC[k]}</svg>`;
+const byNew = (a, b) => (b.ts || 0) - (a.ts || 0);
+const profileLink = uid => location.origin + '/profile?uid=' + encodeURIComponent(uid);
 function infoMedia(){
-  return [...chat.msgs.values()].filter(m => isMedia(m) && !m.deleted && !m.uploading && !m.failed).sort((a, b) => (b.ts || 0) - (a.ts || 0));
+  return [...chat.msgs.values()].filter(m => isMedia(m) && !m.deleted && !m.uploading && !m.failed).sort(byNew);
+}
+function infoLinks(){                                   // every link written in the chat + shared posts / articles
+  const out = [], host = u => { try{ return new URL(u).hostname.replace(/^www\./, ''); }catch(_){ return u; } };
+  [...chat.msgs.values()].filter(m => !m.deleted).sort(byNew).forEach(m => {
+    if(m.type === 'share' && m.sid) out.push({ url:shareUrl(m), title:m.st || (m.sk === 'article' ? 'Article' : 'Post'), sub:(m.sk === 'article' ? 'Article' : 'Post') + (m.sa ? ' · ' + m.sa : ''), ts:m.ts });
+    else if(m.text && !isMedia(m) && m.type !== 'voice') (m.text.match(/\bhttps?:\/\/[^\s<>"]+/gi) || []).forEach(u => { u = u.replace(/[.,;:!?)\]]+$/, ''); out.push({ url:u, title:host(u), sub:u, ts:m.ts }); });
+  });
+  return out;
 }
 function drawInfo(){
   if(!chat) return;
   const o = chat.other, body = $('infoBody'), title = $('infoTitle');
+  if(INFO.mode === 'search'){
+    title.textContent = '';
+    body.innerHTML = `<div class="in-search">${ico('search')}<input id="inQ" type="search" placeholder="Search in this chat" autocomplete="off" autocapitalize="off" enterkeyhint="search" value="${esc(INFO.q)}"></div><div id="inRes"></div>`;
+    infoResults(); const q = $('inQ'); if(q) setTimeout(() => q.focus(), 60);
+    return;
+  }
   if(INFO.mode === 'media'){
     title.textContent = 'Shared media';
-    const list = infoMedia();
-    body.innerHTML = list.length
-      ? `<div class="in-grid">${list.map(m => { const src = mediaThumb(m);
-          return `<button class="in-tile" data-id="${esc(m.id)}" aria-label="${m.type === 'video' ? 'Video' : 'Photo'}">${src ? `<img src="${esc(src)}" alt="" loading="lazy" decoding="async">` : ''}${m.type === 'video' ? `<span class="in-vid"><svg viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 001.5.86l10.5-6.5a1 1 0 000-1.72L9.5 4.64A1 1 0 008 5.5z"/></svg>${m.duration ? fmtDur(m.duration) : ''}</span>` : ''}</button>`; }).join('')}</div>`
-      : `<div class="in-empty">No photos or videos in this chat yet</div>`;
-    if(chat.hasMore) body.insertAdjacentHTML('beforeend', `<button class="in-more" data-act="older">Load earlier media</button>`);
+    const tabs = `<div class="in-tabs"><button data-act="tab" data-tab="media" class="${INFO.tab === 'media' ? 'on' : ''}">Media</button><button data-act="tab" data-tab="links" class="${INFO.tab === 'links' ? 'on' : ''}">Links</button></div>`;
+    if(INFO.tab === 'links'){
+      const L = infoLinks();
+      body.innerHTML = tabs + (L.length
+        ? `<div class="in-card in-links">${L.map(x => `<a class="in-link" href="${esc(x.url)}" target="_blank" rel="noopener noreferrer nofollow"><span class="in-li">${ico('link')}</span><span class="in-lt"><b>${esc(x.title)}</b><i>${esc(x.sub)}</i></span><span class="in-ld">${x.ts ? esc(fmtDay(x.ts)) : ''}</span></a>`).join('')}</div>`
+        : `<div class="in-empty">No links in this chat yet</div>`);
+    } else {
+      const list = infoMedia();
+      body.innerHTML = tabs + (list.length
+        ? `<div class="in-grid">${list.map(m => { const src = mediaThumb(m);
+            return `<button class="in-tile" data-id="${esc(m.id)}" aria-label="${m.type === 'video' ? 'Video' : 'Photo'}">${src ? `<img src="${esc(src)}" alt="" loading="lazy" decoding="async">` : ''}${m.type === 'video' ? `<span class="in-vid"><svg viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 001.5.86l10.5-6.5a1 1 0 000-1.72L9.5 4.64A1 1 0 008 5.5z"/></svg>${m.duration ? fmtDur(m.duration) : ''}</span>` : ''}</button>`; }).join('')}</div>`
+        : `<div class="in-empty">No photos or videos in this chat yet</div>`);
+    }
+    if(chat.hasMore) body.insertAdjacentHTML('beforeend', `<button class="in-more" data-act="older">Load earlier messages</button>`);
     return;
   }
   title.textContent = '';
@@ -3755,7 +3815,7 @@ function drawInfo(){
   const sub = [o.username ? '@' + o.username : '', o.jobTitle || ''].filter(Boolean).map(esc).join(' • ');
   const n = infoMedia().length;
   const act = (k, ic, label) => `<button class="in-act" data-act="${k}"><span>${ico(ic)}</span><b>${label}</b></button>`;
-  const row = (k, ic, label, val, cls) => `<button class="in-row ${cls || ''}" data-act="${k}"><span class="in-ri">${ico(ic)}</span><span class="in-rl">${label}</span>${val ? `<span class="in-rv">${val}</span>` : ''}${cls === 'danger' ? '' : `<span class="in-rc">${ico('chev')}</span>`}</button>`;
+  const row = (k, ic, label, val, cls) => `<button class="in-row ${cls || ''}" data-act="${k}"><span class="in-ri">${ico(ic)}</span><span class="in-rl">${label}</span>${val ? `<span class="in-rv">${val}</span>` : ''}${cls === 'danger' || cls === 'plain' ? '' : `<span class="in-rc">${ico('chev')}</span>`}</button>`;
   body.innerHTML = `
     <div class="in-hero">
       <div class="av">${avatarHtml(o.name, o.photo)}</div>
@@ -3763,10 +3823,14 @@ function drawInfo(){
       ${sub ? `<div class="in-sub">${sub}</div>` : ''}
       ${o.followerCount > 0 ? `<div class="in-sub">${fmtCount(o.followerCount)} follower${o.followerCount === 1 ? '' : 's'}</div>` : ''}
     </div>
-    <div class="in-acts">${act('profile', 'user', 'Profile')}${act('pin', 'pin', pinned ? 'Unpin' : 'Pin')}${act('theme', 'palette', 'Theme')}${act('more', 'more', 'More')}</div>
+    <div class="in-acts">${act('profile', 'user', 'Profile')}${act('search', 'search', 'Search')}${act('pin', 'pin', pinned ? 'Unpin' : 'Pin')}${act('more', 'more', 'More')}</div>
     <div class="in-card">
-      ${row('media', 'media', 'Shared media', n ? String(n) + (chat.hasMore ? '+' : '') : '')}
+      ${row('media', 'media', 'Shared media & links', n ? String(n) + (chat.hasMore ? '+' : '') : '')}
       ${row('theme', 'palette', 'Chat theme', '')}
+    </div>
+    <div class="in-card">
+      ${row('share', 'share', 'Share profile', '', 'plain')}
+      ${row('copy', 'copy', 'Copy profile link', '', 'plain')}
     </div>
     <div class="in-card">
       ${row('clear', 'eraser', 'Clear chat', '', 'danger')}
@@ -3774,25 +3838,49 @@ function drawInfo(){
       ${chat.blocked ? row('unblock', 'block', 'Unblock ' + esc(o.name), '', 'danger') : row('block', 'block', 'Block ' + esc(o.name), '', 'danger')}
     </div>`;
 }
+/* search inside this chat (loaded messages; "Search older messages" pulls in more) */
+function infoResults(){
+  const box = $('inRes'); if(!box || !chat) return;
+  const q = INFO.q.trim().toLowerCase();
+  if(!q){ box.innerHTML = `<div class="in-empty">Search messages and photo captions</div>`; return; }
+  const textOf = m => isMedia(m) ? (m.cap || '') : (m.type === 'voice' || m.type === 'share') ? '' : (m.text || '');
+  const hits = [...chat.msgs.values()].filter(m => !m.deleted && textOf(m).toLowerCase().includes(q)).sort(byNew).slice(0, 100);
+  const snip = t => {
+    const i = t.toLowerCase().indexOf(q), st = Math.max(0, i - 28);
+    return (st > 0 ? '…' : '') + esc(t.slice(st, i)) + '<mark>' + esc(t.slice(i, i + q.length)) + '</mark>' + esc(t.slice(i + q.length, i + q.length + 90));
+  };
+  box.innerHTML = (hits.length
+    ? `<div class="in-count">${hits.length}${hits.length === 100 ? '+' : ''} result${hits.length === 1 ? '' : 's'}</div><div class="in-card">${hits.map(m => `<button class="in-hit" data-hit="${esc(m.id)}"><span class="in-hn">${esc(m.senderUid === me.uid ? 'You' : chat.other.name)}<i>${m.ts ? esc(fmtDay(m.ts)) : ''}</i></span><span class="in-ht">${snip(textOf(m))}</span></button>`).join('')}</div>`
+    : `<div class="in-empty">No messages found</div>`)
+    + (chat.hasMore ? `<button class="in-more" data-act="older">Search older messages</button>` : '');
+}
 function openInfo(){
   if(!chat || !$('info').hidden) return;
-  INFO.mode = 'main'; INFO.pin = null;
+  INFO.mode = 'main'; INFO.pin = null; INFO.q = ''; INFO.tab = 'media';
   drawInfo(); $('infoBody').scrollTop = 0; $('info').hidden = false;
   ovOpen(() => { $('info').hidden = true; });
 }
 function closeInfo(){ if($('info').hidden) return; $('info').hidden = true; ovPop(); }
-$('infoBack').onclick = () => { if(INFO.mode === 'media'){ INFO.mode = 'main'; drawInfo(); $('infoBody').scrollTop = 0; } else closeInfo(); };
+function infoTo(mode){ INFO.mode = mode; drawInfo(); $('infoBody').scrollTop = 0; }
+$('infoBack').onclick = () => { if(INFO.mode !== 'main'){ if(document.activeElement) document.activeElement.blur(); infoTo('main'); } else closeInfo(); };
+$('infoBody').addEventListener('input', e => { if(e.target.id === 'inQ'){ INFO.q = e.target.value; infoResults(); } });
 $('infoBody').onclick = async e => {
-  const t = e.target.closest('[data-act],[data-id]'); if(!t || !chat) return;
+  const t = e.target.closest('[data-act],[data-id],[data-hit]'); if(!t || !chat) return;
   const uid = chat.other.uid;
-  if(t.dataset.id){ const id = t.dataset.id; closeInfo(); setTimeout(() => jumpTo(id), 350); return; }   // jump to that photo in the conversation
+  if(t.dataset.id){ openLightbox(t.dataset.id, infoMedia().map(m => m.id)); return; }   // view it right here, swipe through the rest
+  if(t.dataset.hit){ const id = t.dataset.hit; closeInfo(); setTimeout(() => jumpTo(id), 350); return; }   // jump to that message in the chat
   switch(t.dataset.act){
     case 'profile': location.href = `/profile?uid=${encodeURIComponent(uid)}`; break;
+    case 'search': INFO.q = ''; infoTo('search'); break;
     case 'pin': { const cur = INFO.pin != null ? INFO.pin : !!(chat.row && chat.row.pinned); INFO.pin = !cur; drawInfo(); setPinned(uid, INFO.pin); break; }
     case 'theme': openThemePicker('chat'); break;
     case 'more': openChatMenu(); break;
-    case 'media': INFO.mode = 'media'; drawInfo(); $('infoBody').scrollTop = 0; break;
-    case 'older': { t.disabled = true; t.textContent = 'Loading…'; await loadOlder(); if(INFO.mode === 'media') drawInfo(); break; }
+    case 'media': INFO.tab = 'media'; infoTo('media'); break;
+    case 'tab': INFO.tab = t.dataset.tab; drawInfo(); break;
+    case 'older': { t.disabled = true; t.textContent = 'Loading…'; await loadOlder(); if(INFO.mode !== 'main') drawInfo(); break; }
+    case 'share': { const url = profileLink(uid); try{ if(navigator.share){ await navigator.share({ title:chat.other.name, url }); break; } }catch(err){ if(err && err.name === 'AbortError') break; }
+      try{ await navigator.clipboard.writeText(url); toast('Profile link copied'); }catch(_){ toast(url); } break; }
+    case 'copy': { const url = profileLink(uid); try{ await navigator.clipboard.writeText(url); toast('Profile link copied'); }catch(_){ toast(url); } break; }
     case 'clear': closeInfo(); setTimeout(clearChat, 350); break;
     case 'delete': closeInfo(); setTimeout(() => deleteChat(uid), 350); break;
     case 'block': { const o = chat.other; closeInfo(); setTimeout(() => blockUser(uid, o.name, o.photo), 350); break; }
