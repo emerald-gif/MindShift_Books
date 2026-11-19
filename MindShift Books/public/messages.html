@@ -844,7 +844,7 @@ button.rx-row:active{background:var(--c-surface,#f4f5f7)}
 .intro-acts{margin-top:20px}
 .req-note{align-self:center;box-sizing:border-box;width:min(330px,calc(100% - 40px));margin:20px 0 0;padding:12px 16px;border-radius:16px;background:var(--c-surface,rgba(15,23,42,.05));font-size:13px;line-height:1.5;color:var(--sub)}
 .empty-chat.hi{margin:22px 0 0;max-width:none;padding:0 20px;background:none;border:0;box-shadow:none;border-radius:0;color:var(--mute);font-size:14.5px;font-weight:500}
-.qr{align-self:center;box-sizing:border-box;width:min(330px,calc(100% - 40px));display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0 0}
+.qr{align-self:center;box-sizing:border-box;width:min(330px,calc(100% - 40px));display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:22px 0 0}
 .qr-b{display:flex;align-items:center;justify-content:center;gap:6px;height:46px;padding:0 10px;font-size:14.5px;white-space:nowrap}
 .qr-b.pri{grid-column:1 / -1;height:50px;font-size:15.5px}
 
@@ -1515,7 +1515,7 @@ function renderMsgs(stick){
     </div>${chat.reqNote && !ms(chat.row && chat.row.seenAt) && ![...chat.msgs.values()].some(m => m.senderUid !== me.uid) ? `<div class="req-note">${esc(chat.other.name)} doesn’t follow you, so your first message goes to their message requests until they accept.</div>` : ''}`;
   if(!items.length) html += chat.clearedAt
     ? `<div class="empty-chat hi">Chat cleared · new messages will show up here</div>`
-    : `<div class="empty-chat hi">No messages yet · say hi to ${esc(chat.other.name)} 👋</div><div class="qr"><button class="qr-b pri" id="sayHi" type="button">👋 Say hi</button><button class="qr-b" type="button" data-qr="Hey, nice to meet you">Nice to meet you</button><button class="qr-b" type="button" data-qr="Quick question for you">Quick question</button></div>`;
+    : `<div class="qr"><button class="qr-b pri" id="sayHi" type="button">👋 Say hi</button><button class="qr-b" type="button" data-qr="Hey, nice to meet you">Nice to meet you</button><button class="qr-b" type="button" data-qr="Quick question for you">Quick question</button></div>`;
   let lastDay = '';
   // photos/videos sent together (same gid, same sender) are drawn as ONE grid bubble, at the spot of the first one
   const gkey = m => m.gid && (isMedia(m) || m.deleted) ? (m.deleted ? 'd|' : 'm|') + m.senderUid + '|' + m.gid : '';
