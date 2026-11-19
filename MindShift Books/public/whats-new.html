@@ -173,11 +173,13 @@ button,a{font:inherit;color:inherit}
     <p>We’ve been building for you. Here’s everything that just landed.</p>
     <label class="pick" for="era">Showing
       <select id="era" aria-label="Choose which update to view">
-        <option value="latest">Latest · 18 Nov 2026</option>
+        <option value="latest">Latest · 19 Nov 2026</option>
+        <option value="nov18">Earlier · 18 Nov 2026</option>
         <option value="oct20">Earlier · 20 Oct 2026</option>
         <option value="oct">Earlier · Oct 2026</option>
       </select></label>
-    <nav class="jump" data-g="latest" aria-label="Jump to a feature"><a href="#chatlinks">Chat links</a><a href="#chatinfo">Chat info</a><a href="#booksfeed">Books for you</a><a href="#booksearch">Book search</a><a href="#guest">Buy as guest</a></nav>
+    <nav class="jump" data-g="latest" aria-label="Jump to a feature"><a href="#students">Student Resources</a><a href="#people">People to follow</a></nav>
+    <nav class="jump" data-g="nov18" aria-label="Jump to a feature" hidden><a href="#chatlinks">Chat links</a><a href="#chatinfo">Chat info</a><a href="#booksfeed">Books for you</a><a href="#booksearch">Book search</a><a href="#guest">Buy as guest</a></nav>
     <nav class="jump" data-g="oct20" aria-label="Jump to a feature" hidden><a href="#links">Link previews</a><a href="#images">Images</a><a href="#sharechat">Share to chat</a></nav>
     <nav class="jump" data-g="oct" aria-label="Jump to a feature" hidden><a href="#messages">Messages</a><a href="#reels">Reels</a><a href="#search">Search</a><a href="#polls">Polls</a></nav>
 
@@ -199,6 +201,28 @@ button,a{font:inherit;color:inherit}
 
   <section class="features">
     <div data-g="latest">
+
+    <article class="sec" id="students">
+      <div class="sh"><div class="ic t-indigo"><svg viewBox="0 0 24 24"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 2 9 2 12 0v-5"/></svg></div><h2>Student Resources</h2></div>
+      <p>A new space for learners. Student Resources has four sections: study guides and learning materials, educational books and eBooks, tips for academic success, and tools to boost your learning. It’s just opening, so more is being added over time.</p>
+      <div class="how"><b>How to find it</b>
+        <ol>
+          <li>Tap the blue Student Resources bar at the top of the store or your feed.</li>
+          <li>Pick a section.</li>
+          <li>Check back often, new things will show up there.</li>
+        </ol>
+      </div>
+      <p>On your feed you can tap the ✕ on the bar to hide it for the rest of the day.</p>
+    </article>
+
+    <article class="sec" id="people">
+      <div class="sh"><div class="ic t-green"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0113 0"/><path d="M17 8v6"/><path d="M14 11h6"/></svg></div><h2>Cleaner People to follow</h2></div>
+      <p>The People to follow cards in your feed are tidier. Photos are smaller so you see more people at once, each card shows how many followers they have, and the Follow button is cleaner. Swipe sideways to browse, tap ✕ to remove someone, or tap See all for the full list.</p>
+    </article>
+
+    </div>
+
+    <div data-g="nov18" hidden>
 
     <article class="sec" id="chatlinks">
       <div class="sh"><div class="ic t-cyan"><svg viewBox="0 0 24 24"><path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1"/></svg></div><h2>Link previews in chats</h2></div>
@@ -351,7 +375,7 @@ button,a{font:inherit;color:inherit}
 
 <script>
   // Which update is on screen decides the button too. "latest" is always the default.
-  var ERAS = { latest:{ t:'Open Messages', h:'/messages' }, oct20:{ t:'Try a link preview', h:'/create-post' }, oct:{ t:'Try Messages now', h:'/messages' } };
+  var ERAS = { latest:{ t:'Open Student Resources', h:'/student-resources' }, nov18:{ t:'Open Messages', h:'/messages' }, oct20:{ t:'Try a link preview', h:'/create-post' }, oct:{ t:'Try Messages now', h:'/messages' } };
   var sel = document.getElementById('era'), cta = document.getElementById('cta');
   function show(k){
     if(!ERAS[k]) k = 'latest';
