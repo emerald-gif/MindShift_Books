@@ -290,7 +290,7 @@ async function loadWishlist(){
     if (!items.length){ renderWishlistEmpty(); return; }
     document.getElementById('wishlistGrid').innerHTML = items.map(p => `
       <div class="book-card">
-        <img class="book-card-cover" src="${p.cover||''}" alt="" onclick="location.href='/books'">
+        <img class="book-card-cover" src="${p.coverSm||p.cover||''}" alt="" decoding="async" loading="lazy" onclick="location.href='/books'">
         <button class="book-card-heart" onclick="removeFromWishlist('${p.id}', this)" aria-label="Remove from wishlist">
           <svg viewBox="0 0 24 24" fill="currentColor" stroke="none">${ICONS.heart}</svg>
         </button>

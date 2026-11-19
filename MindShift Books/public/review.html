@@ -920,7 +920,7 @@ function renderBookDetail(prod) {
 
   root.innerHTML = `
     <div class="book-hero">
-      <img class="book-hero-cover" src="${escapeHtml(prod.cover || '')}" alt="${escapeHtml(prod.title || '')}"/>
+      <img class="book-hero-cover" src="${escapeHtml(prod.coverMd || prod.cover || '')}"${prod.coverSm ? ` srcset="${escapeHtml(prod.coverSm)} 360w, ${escapeHtml(prod.coverMd || prod.coverSm)} 720w" sizes="(min-width:700px) 320px, 70vw"` : ''} alt="${escapeHtml(prod.title || '')}" fetchpriority="high" decoding="async"/>
       <div class="book-hero-info">
         ${prod.genre ? `<div class="book-hero-genre">${escapeHtml(prod.genre)}</div>` : ''}
         <h1>${escapeHtml(prod.title || '')}</h1>

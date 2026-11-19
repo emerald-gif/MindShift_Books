@@ -1439,28 +1439,35 @@ async function loadShelfBooks(){
   try{
     let list = null;
     try{
-      const c = JSON.parse(sessionStorage.getItem('msb_shelf_products') || 'null');
+      const c = JSON.parse(sessionStorage.getItem('msb_shelf_products_v2') || 'null');
       if(c && Date.now() - c.at < 6 * 3600 * 1000) list = c.list;
     }catch{}
     if(!list){
       const r = await fetch('/api/products');
       const j = await r.json();
       list = (j && j.products) || [];
-      try{ sessionStorage.setItem('msb_shelf_products', JSON.stringify({ at: Date.now(), list })); }catch{}
+      try{ sessionStorage.setItem('msb_shelf_products_v2', JSON.stringify({ at: Date.now(), list })); }catch{}
     }
     _shelfAll = (list || []).filter(p => p && p.category === 'ours' && p.priceNGN && p.cover);
+    _shelfAll.forEach(p => { try{ const i = new Image(); i.decoding = 'async'; i.src = p.coverMd || p.coverSm || p.cover; }catch{} });   // warm the covers so swiping the shelf never shows an empty box
     // If the feed already drew the plain banner before the books arrived, swap it for the shelf.
     const el = document.getElementById('bookPromoCard');
     if(el && el.getAttribute('data-fallback') === '1' && _shelfAll.length) el.outerHTML = bookShelfHtml();
     if(typeof refreshDiscoverBooks === 'function') refreshDiscoverBooks();
   }catch(e){ /* the banner fallback stays */ }
 }
+// small WebP cover (15-60 KB) instead of the 1.5 MB original; falls back to the original if a book has none
+function shelfCoverImg(p, alt, sizes){
+  const sm = p.coverSm, md = p.coverMd || p.coverSm;
+  if(!sm) return `<img src="${shelfEsc(p.cover)}" alt="${shelfEsc(alt)}" loading="lazy" decoding="async">`;
+  return `<img src="${shelfEsc(md)}" srcset="${shelfEsc(sm)} 360w, ${shelfEsc(md)} 720w" sizes="${sizes}" alt="${shelfEsc(alt)}" width="360" height="497" loading="lazy" decoding="async">`;
+}
 function bookCardsHtml(books){
   return books.map(p => {
     const id = encodeURIComponent(p.id);
     const was = (p.originalPriceNGN && p.originalPriceNGN > p.priceNGN) ? `<s>${shelfNgn(p.originalPriceNGN)}</s>` : '';
     return `<div class="bs-card">
-      <a class="bs-cover" href="/review?id=${id}" aria-label="${shelfEsc(p.title)}"><img src="${shelfEsc(p.cover)}" alt="${shelfEsc(p.title)}" loading="lazy"></a>
+      <a class="bs-cover" href="/review?id=${id}" aria-label="${shelfEsc(p.title)}">${shelfCoverImg(p, p.title, '132px')}</a>
       <div class="bs-name">${shelfEsc(p.title)}</div>
       <div class="bs-price">${shelfNgn(p.priceNGN)}${was}</div>
       <a class="bs-buy" href="/books?buy=${id}">Buy now</a>
@@ -1519,7 +1526,7 @@ function buildXBookRow(p){
   const id = encodeURIComponent(p.id);
   const was = (p.originalPriceNGN && p.originalPriceNGN > p.priceNGN) ? `<s>${shelfNgn(p.originalPriceNGN)}</s>` : '';
   return `<div class="xbook-row">
-    <a class="xbook-cov" href="/review?id=${id}"><img src="${shelfEsc(p.cover)}" alt="" loading="lazy"></a>
+    <a class="xbook-cov" href="/review?id=${id}">${shelfCoverImg(p, '', '52px')}</a>
     <a class="xbook-info" href="/review?id=${id}">
       <div class="xbook-t">${hl(p.title)}</div>
       <div class="xbook-s">${shelfEsc(p.author || 'MindShift Books')}${p.genre ? ' · ' + shelfEsc(p.genre) : ''}</div>

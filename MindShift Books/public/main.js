@@ -314,7 +314,7 @@ function productCardInner(p) {
     // Recommended read — compact grid card with container
     return `
       <div class="card-cover-wrap">
-        <img src="${escapeHtml(p.cover || '')}" class="ebook-cover" alt="${escapeHtml(p.title || 'ebook')}"/>
+        <img src="${escapeHtml(p.coverMd || p.cover || '')}"${p.coverSm ? ` srcset="${escapeHtml(p.coverSm)} 360w, ${escapeHtml(p.coverMd || p.coverSm)} 720w" sizes="(min-width:700px) 220px, 46vw"` : ''} class="ebook-cover" alt="${escapeHtml(p.title || 'ebook')}" decoding="async" loading="lazy"/>
         ${wishlistToggleButton(p.id, { cardOverlay: true })}
       </div>
       <div class="card-meta-row">
@@ -343,7 +343,7 @@ function productCardInner(p) {
       <h3>What Readers Are Loving</h3>
     </div>
     <div class="card-cover-wrap">
-      <img src="${escapeHtml(p.cover || '')}" class="our-cover" alt="${escapeHtml(p.title || 'ebook')}"/>
+      <img src="${escapeHtml(p.coverMd || p.cover || '')}"${p.coverSm ? ` srcset="${escapeHtml(p.coverSm)} 360w, ${escapeHtml(p.coverMd || p.coverSm)} 720w" sizes="(min-width:700px) 240px, 60vw"` : ''} class="our-cover" alt="${escapeHtml(p.title || 'ebook')}" decoding="async" loading="lazy"/>
     </div>
     <div class="our-title" data-product-id="${escapeHtml(p.id || '')}" data-action="review" style="cursor:pointer;">${escapeHtml(p.title || '')}</div>
     <div class="our-author">MindShift Books</div>

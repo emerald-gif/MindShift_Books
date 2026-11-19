@@ -210,7 +210,7 @@
   function rowHtml(p) {
     var orig = p.originalPriceNGN ? mny(p.originalPriceNGN) : null;
     var pct = (p.originalPriceNGN && p.priceNGN) ? Math.round((1 - p.priceNGN / p.originalPriceNGN) * 100) : null;
-    var cover = esc(p.cover || '');
+    var cover = esc(p.coverSm || p.cover || '');
     var title = esc(p.title || '');
     var inCart = (typeof getCart === 'function' && getCart().indexOf(p.id) !== -1);
     return (
