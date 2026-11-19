@@ -14,7 +14,7 @@
   if (!layout) return;
 
   var RIGHT_RAIL_LAYOUTS = { feed: 1, read: 1, profile: 1 };
-  var WHATS_NEW = { title: "What's new", text: 'Link previews, full-screen images, sharing straight to a chat, and a new dark mode.' };
+  var WHATS_NEW = { title: "What's new", text: 'Link previews in chats, chat info and shared media, books picked for you, and smoother full-screen viewing.' };
   var mqRail = window.matchMedia('(min-width:1024px)');
   var mqRight = window.matchMedia('(min-width:1280px)');
   var path = (location.pathname.replace(/\/+$/, '') || '/').replace(/\.html$/, '');

@@ -173,10 +173,12 @@ button,a{font:inherit;color:inherit}
     <p>We’ve been building for you. Here’s everything that just landed.</p>
     <label class="pick" for="era">Showing
       <select id="era" aria-label="Choose which update to view">
-        <option value="latest">Latest · 20 Oct 2026</option>
+        <option value="latest">Latest · 18 Nov 2026</option>
+        <option value="oct20">Earlier · 20 Oct 2026</option>
         <option value="oct">Earlier · Oct 2026</option>
       </select></label>
-    <nav class="jump" data-g="latest" aria-label="Jump to a feature"><a href="#links">Link previews</a><a href="#images">Images</a><a href="#sharechat">Share to chat</a></nav>
+    <nav class="jump" data-g="latest" aria-label="Jump to a feature"><a href="#chatlinks">Chat links</a><a href="#chatinfo">Chat info</a><a href="#booksfeed">Books for you</a><a href="#booksearch">Book search</a><a href="#guest">Buy as guest</a></nav>
+    <nav class="jump" data-g="oct20" aria-label="Jump to a feature" hidden><a href="#links">Link previews</a><a href="#images">Images</a><a href="#sharechat">Share to chat</a></nav>
     <nav class="jump" data-g="oct" aria-label="Jump to a feature" hidden><a href="#messages">Messages</a><a href="#reels">Reels</a><a href="#search">Search</a><a href="#polls">Polls</a></nav>
 
     <div class="chat" aria-hidden="true">
@@ -197,6 +199,56 @@ button,a{font:inherit;color:inherit}
 
   <section class="features">
     <div data-g="latest">
+
+    <article class="sec" id="chatlinks">
+      <div class="sh"><div class="ic t-cyan"><svg viewBox="0 0 24 24"><path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1"/></svg></div><h2>Link previews in chats</h2></div>
+      <p>Paste a link in a message and a preview card shows above the text box before you send it. In the chat, the link opens as a clean card with the title, image and site.</p>
+      <div class="how"><b>How to use it</b>
+        <ol>
+          <li>Paste a link in a message.</li>
+          <li>Check the preview above the text box. Tap the ✕ if you’d rather send it without one.</li>
+          <li>Send. Links people send you show a card too.</li>
+        </ol>
+      </div>
+    </article>
+
+    <article class="sec" id="chatinfo">
+      <div class="sh"><div class="ic t-indigo"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></svg></div><h2>Chat info, search and shared media</h2></div>
+      <p>Tap a person’s name or photo at the top of a chat to open everything about that conversation.</p>
+      <dl class="pts">
+        <div><dt>Shared media and links</dt><dd>Every photo, video and link you’ve exchanged, in one place. Press and hold a photo to select and delete.</dd></div>
+        <div><dt>Search in this chat</dt><dd>Find a message fast, and pull in older messages when you need them.</dd></div>
+        <div><dt>See who reacted</dt><dd>Tap the reaction under a message to see who reacted with what. Tap your own to take it back.</dd></div>
+      </dl>
+    </article>
+
+    <article class="sec" id="cleanchat">
+      <div class="sh"><div class="ic t-rose"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 01-11.6 7.1L4 20l1-4.6A8 8 0 1121 12z"/></svg></div><h2>Cleaner, smoother chats</h2></div>
+      <p>Messages from the same person now sit together with one time stamp, and “Seen” shows only under your latest message. The chat list is cleaner too, and typing on iPhone no longer leaves gaps or jumps around.</p>
+    </article>
+
+    <article class="sec" id="booksfeed">
+      <div class="sh"><div class="ic t-cyan"><svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 012-2h12v16H6a2 2 0 00-2 2z"/><path d="M4 19V5"/><path d="M9 7h5"/></svg></div><h2>Books for you, right in your feed</h2></div>
+      <p>Swipe a shelf of real books as you scroll, with the cover, price and a Buy now button. The books are picked from the topics you chose, so changing your interests in your profile changes what you see.</p>
+    </article>
+
+    <article class="sec" id="booksearch">
+      <div class="sh"><div class="ic t-indigo"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></div><h2>Search now finds books</h2></div>
+      <p>Search a title or a topic like “money” or “faith” and the matching books appear with a Books tab, ready to buy.</p>
+    </article>
+
+    <article class="sec" id="guest">
+      <div class="sh"><div class="ic t-amber"><svg viewBox="0 0 24 24"><path d="M6 6h15l-1.5 9h-12z"/><path d="M6 6L5 3H2"/><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/></svg></div><h2>Buy a book without an account</h2></div>
+      <p>Share the good news with friends: anyone can buy a book with just a name and an email, and it arrives by email. If they sign up later with the same email, their books are waiting in their library. Signing up now confirms your email with a quick 6-digit code.</p>
+    </article>
+
+    <article class="sec" id="fullscreen">
+      <div class="sh"><div class="ic t-rose"><svg viewBox="0 0 24 24"><path d="M4 9V4h5"/><path d="M20 9V4h-5"/><path d="M4 15v5h5"/><path d="M20 15v5h-5"/></svg></div><h2>Better full-screen viewing</h2></div>
+      <p>Reels and photos now fill the whole screen on iPhone, photos open centred, and your feed stays exactly where you left it when you close them.</p>
+    </article>
+    </div>
+
+    <div data-g="oct20" hidden>
 
     <article class="sec" id="links">
       <div class="sh"><div class="ic t-cyan"><svg viewBox="0 0 24 24"><path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1"/></svg></div><h2>Link previews in posts</h2></div>
@@ -293,13 +345,13 @@ button,a{font:inherit;color:inherit}
 <nav class="cta" aria-label="Next steps">
   <div class="in">
     <a class="alt" href="/" id="later">Later</a>
-    <a class="go" id="cta" href="/create-post">Try a link preview</a>
+    <a class="go" id="cta" href="/messages">Open Messages</a>
   </div>
 </nav>
 
 <script>
   // Which update is on screen decides the button too. "latest" is always the default.
-  var ERAS = { latest:{ t:'Try a link preview', h:'/create-post' }, oct:{ t:'Try Messages now', h:'/messages' } };
+  var ERAS = { latest:{ t:'Open Messages', h:'/messages' }, oct20:{ t:'Try a link preview', h:'/create-post' }, oct:{ t:'Try Messages now', h:'/messages' } };
   var sel = document.getElementById('era'), cta = document.getElementById('cta');
   function show(k){
     if(!ERAS[k]) k = 'latest';
