@@ -3227,9 +3227,16 @@ function edSubSync(){
   $('edSub').querySelectorAll('.ed-sw').forEach(b => b.classList.toggle('on', b.dataset.c === cur));
   const rg = $('edRg'); if(rg) rg.value = (t ? t.s : ED.tsize) * 100;
 }
-function edTool(n){
+/* A crop box you've dragged but not yet "applied" is still a crop the person asked for. It is applied automatically when they press Done,
+   switch to another tool, or rotate — never silently thrown away. ("Cancel" in the crop bar is the only way to drop it.) */
+function edCropPending(){
+  const c = ED.crop; return ED.open && ED.tool === 'crop' && !!c && (c.x > 0.002 || c.y > 0.002 || c.w < 0.998 || c.h < 0.998);
+}
+function edTool(n, o){
   if(!ED.open) return;
-  if(n === 'rotate'){ edRotate(); return; }
+  const leaving = ED.tool === 'crop' && !(o && o.discard);
+  if(n === 'rotate'){ if(leaving && edCropPending()) edApplyCrop(); edRotate(); return; }
+  if(leaving && edCropPending()){ edApplyCrop(); if(n === 'crop') return; }
   if(ED.tool === 'text'){
     const before = ED.texts.length; ED.texts = ED.texts.filter(t => t.t.trim());
     if(ED.texts.length !== before){ edSnap(); }
@@ -3267,6 +3274,7 @@ function edClose(fromBack){
 }
 async function edDone(){
   const it = ED.it; if(!it) return;
+  if(edCropPending()) edApplyCrop();          // pressed Done without "Apply crop": still keep the crop
   if(!ED.dirty){ edClose(false); return; }
   const cv = edBake();
   const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', 0.9));
@@ -3328,7 +3336,7 @@ $('edSub').addEventListener('click', e => {
   const r = e.target.closest('[data-r]');
   if(r){ ED.rk = r.dataset.r; ED.ratio = ED.rk === '' ? null : ED.rk === 'o' ? ED.W.width / ED.W.height : parseFloat(ED.rk); edFitRatio(); edCropUi(); edSubRender(); return; }
   if(e.target.closest('[data-ok]')){ edApplyCrop(); return; }
-  if(e.target.closest('[data-cx]')){ edTool('crop'); return; }
+  if(e.target.closest('[data-cx]')){ edTool('crop', { discard:true }); return; }
   if(e.target.closest('[data-add]')){ edAddText(); return; }
   if(e.target.closest('[data-del]')){ if(ED.sel < 0) return; ED.texts.splice(ED.sel, 1); ED.sel = -1; edSnap(); edTexts(); edSubSync(); return; }
   const sw = e.target.closest('.ed-sw');
