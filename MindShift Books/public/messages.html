@@ -837,6 +837,20 @@ button.rx-row:active{background:var(--c-surface,#f4f5f7)}
 .fab svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 /* the floating button is the one "new message" entry now, so the strip doesn't repeat it */
 #people .pp.add{display:none}
+
+/* new-chat screen: one tidy centred column (no divider line, no stray pill, chips in an even grid) */
+.intro::after{display:none}
+.intro{padding:30px 16px 4px}
+.intro-acts{margin-top:20px}
+.req-note{align-self:center;box-sizing:border-box;width:min(330px,calc(100% - 40px));margin:20px 0 0;padding:12px 16px;border-radius:16px;background:var(--c-surface,rgba(15,23,42,.05));font-size:13px;line-height:1.5;color:var(--sub)}
+.empty-chat.hi{margin:22px 0 0;max-width:none;padding:0 20px;background:none;border:0;box-shadow:none;border-radius:0;color:var(--mute);font-size:14.5px;font-weight:500}
+.qr{align-self:center;box-sizing:border-box;width:min(330px,calc(100% - 40px));display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0 0}
+.qr-b{display:flex;align-items:center;justify-content:center;gap:6px;height:46px;padding:0 10px;font-size:14.5px;white-space:nowrap}
+.qr-b.pri{grid-column:1 / -1;height:50px;font-size:15.5px}
+
+
+.chat-sub{transition:opacity .16s}
+.chat-sub.sw{opacity:0}
 </style>
 <link rel="stylesheet" href="/theme.css?v=1">
 <link rel="stylesheet" href="/shell.css?v=1" media="(min-width:720px)">
@@ -1396,16 +1410,34 @@ function showList(){
 }
 
 /* ───────── who they are + when they were last active (2 reads per chat open) ───────── */
+const HINT = { cid:null, until:0, t:0 };
+function swapSub(txt){                                   // small cross-fade when the line changes (hint → activity)
+  const el = $('chatSub'); if(!el) return;
+  if(el.textContent === txt && !el.classList.contains('ty')) return;
+  if(el.classList.contains('ty') || !el.textContent){ el.textContent = txt; return; }
+  el.classList.add('sw');
+  setTimeout(() => { el.textContent = txt; el.classList.remove('sw'); }, 160);
+}
 function paintOther(){
   if(!chat) return;
   applyChatTheme();
   $('chatName').textContent = chat.other.name;
   const lab = settings.showActivity ? activeLabel(chat.other.lastActive) : { text:'', live:false };   // activity off = I don't see theirs either
   const ty = tyShown();
+  // Like WhatsApp: when a chat opens, the line under the name first says "tap for info" for a few seconds, then changes to their
+  // activity. Once you've opened a chat's info screen once, the hint is retired for good. (No activity to show? the hint stays.)
+  if(HINT.cid !== chat.cid){
+    clearTimeout(HINT.t); HINT.cid = chat.cid; HINT.until = Date.now() + 3200; HINT.t = setTimeout(paintOther, 3300);
+    try{ localStorage.setItem('msb_info_hint_n', String((parseInt(localStorage.getItem('msb_info_hint_n'), 10) || 0) + 1)); }catch(_){}   // count chat opens
+  }
+  // retired for good once they've opened an info screen, or after the hint has been shown in 6 chat opens (they've seen it; stop nagging)
+  const hintDone = (() => { try{ return !!localStorage.getItem('msb_info_hint_done') || (parseInt(localStorage.getItem('msb_info_hint_n'), 10) || 0) > 6; }catch(_){ return false; } })();
+  const hint = !hintDone && (Date.now() < HINT.until || !lab.text);
+  const subTxt = hint ? 'tap for info' : lab.text;
   if(ty){ $('chatSub').innerHTML = (ty === 'recording' ? 'recording audio' : 'typing') + '<span class="ty-d"><i>.</i><i>.</i><i>.</i></span>'; }
-  else $('chatSub').textContent = lab.text;
+  else swapSub(subTxt);
   $('chatSub').classList.toggle('ty', !!ty);
-  $('chatSub').classList.toggle('live', lab.live && !ty);
+  $('chatSub').classList.toggle('live', lab.live && !ty && !hint);
   $('chatAv').innerHTML = avatarHtml(chat.other.name, chat.other.photo) + (lab.live ? '<span class="on-dot"></span>' : '');
   paintStreak();
 }
@@ -4068,6 +4100,8 @@ function infoResults(){
 function openInfo(){
   if(!chat || !$('info').hidden) return;
   INFO.mode = 'main'; INFO.pin = null; INFO.q = ''; INFO.tab = 'media'; INFO.selecting = false; INFO.sel.clear();
+  try{ localStorage.setItem('msb_info_hint_done', '1'); }catch(_){}   // they found it — stop showing "tap for info"
+  clearTimeout(HINT.t); HINT.until = 0; paintOther();
   drawInfo(); $('infoBody').scrollTop = 0; $('info').hidden = false;
   ovOpen(() => { $('info').hidden = true; });
 }
