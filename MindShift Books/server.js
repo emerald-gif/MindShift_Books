@@ -6376,6 +6376,13 @@ const ANNOUNCEMENTS = [
     message: 'Paste a link in a post and it becomes a rich preview card. Tap any image to view it full screen, and share posts straight to a chat.',
     ctaLabel: 'See what\'s new',
     ctaUrl: '/whats-new'
+  },
+  {
+    id: 'update-2026-11-18',
+    title: 'Fresh updates on MindShift Books ✨',
+    message: 'Link previews in your chats, a chat info screen with shared media and search, books picked for you in your feed, and smoother full-screen viewing.',
+    ctaLabel: 'See what\'s new',
+    ctaUrl: '/whats-new'
   }
 ];
 
