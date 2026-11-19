@@ -14,52 +14,187 @@
 <meta property="og:title" content="Student Resources | MindShift Books" />
 <meta property="og:description" content="Everything you need to learn, grow & stay ahead." />
 <meta property="og:url" content="https://mindshiftbooks.shop/student-resources" />
-<meta property="og:image" content="https://mindshiftbooks.shop/student-resources-banner.webp" />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/styles.css?v=2">
+<link rel="stylesheet" href="/design.css?v=2">
 <link rel="stylesheet" href="/theme.css?v=1">
 <style>
   body { padding-top: 0; }
-  main { max-width: 1100px; padding-top: 0; padding-bottom: 60px; }
+  main { max-width: 760px; padding-top: 0; padding-bottom: 80px; }
+
   .sr-topbar {
     position: sticky; top: 0; z-index: 20;
     display: flex; align-items: center; gap: 10px;
-    margin: 0 -16px 14px; padding: 12px 16px;
+    margin: 0 -16px 8px; padding: 12px 16px;
     background: rgba(var(--glass-rgb,248,250,252),0.94);
     -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
   }
-  .sr-title { font-size: 1.15rem; font-weight: 800; color: var(--primary); }
-  .sr-banner { display: block; width: 100%; border-radius: 16px; overflow: hidden;
-    box-shadow: 0 8px 28px rgba(37,99,235,.14); background: #fff; }
-  .sr-banner img { display: block; width: 100%; height: auto; aspect-ratio: 2048 / 768; }
-  /* The banner is a wide 8:3 graphic; on phones allow sideways pan so its
-     text stays readable instead of shrinking to ~1/5 size. */
-  @media (max-width: 600px) {
-    .sr-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 -16px; padding: 0 16px 6px;
-      scrollbar-width: none; }
-    .sr-scroll::-webkit-scrollbar { display: none; }
-    .sr-banner { width: 820px; max-width: none; }
+  .sr-topbar-title { font-size: 1.1rem; font-weight: 800; color: var(--primary); }
+
+  /* ---- Hero ---- */
+  .sr-hero {
+    position: relative; overflow: hidden; border-radius: 22px;
+    padding: 26px 22px 24px; color: #fff;
+    background: linear-gradient(135deg,#1e40af 0%,#2563eb 60%,#3b82f6 100%);
+    box-shadow: 0 10px 30px rgba(37,99,235,.22);
+  }
+  .sr-hero::before, .sr-hero::after {
+    content: ""; position: absolute; border-radius: 50%; background: rgba(255,255,255,.09); pointer-events: none;
+  }
+  .sr-hero::before { width: 180px; height: 180px; right: -50px; top: -60px; }
+  .sr-hero::after  { width: 120px; height: 120px; right: 50px; bottom: -70px; }
+  .sr-hero-ico {
+    width: 46px; height: 46px; border-radius: 14px; background: rgba(255,255,255,.18);
+    display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 14px;
+  }
+  .sr-hero h1 { font-size: 1.75rem; font-weight: 900; letter-spacing: -.03em; line-height: 1.1; margin: 0 0 8px; }
+  .sr-hero p { font-size: .95rem; line-height: 1.5; opacity: .92; max-width: 30ch; margin: 0; }
+  .sr-hero p b { font-weight: 800; }
+
+  /* ---- Category tabs ---- */
+  .sr-tabs {
+    display: flex; gap: 8px; overflow-x: auto; margin: 18px -16px 0; padding: 2px 16px 4px;
+    -ms-overflow-style: none; scrollbar-width: none;
+  }
+  .sr-tabs::-webkit-scrollbar { display: none; }
+  .sr-tab {
+    flex: 0 0 auto; display: inline-flex; align-items: center; gap: 7px;
+    padding: 9px 16px; border-radius: 999px; border: 1.5px solid var(--c-line,#e2e8f0);
+    background: var(--c-bg,#fff); color: var(--c-sub,#475569); font: inherit; font-size: .86rem; font-weight: 600;
+    cursor: pointer; white-space: nowrap; transition: background .15s, color .15s, border-color .15s;
+  }
+  .sr-tab:hover { border-color: var(--c-line2,#cbd5e1); }
+  .sr-tab.is-active { background: #2563eb; border-color: #2563eb; color: #fff; }
+  .sr-tab svg { flex-shrink: 0; }
+
+  /* ---- Section head ---- */
+  .sr-section-head { margin: 22px 0 14px; }
+  .sr-section-head h2 { font-size: 1.2rem; font-weight: 800; letter-spacing: -.025em; color: var(--primary); margin: 0 0 4px; }
+  .sr-section-head p { font-size: .88rem; color: var(--c-sub2,#64748b); margin: 0; line-height: 1.45; }
+
+  /* ---- Resource grid (ready for items; empty for now) ---- */
+  .sr-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  @media (min-width: 640px) { .sr-grid { grid-template-columns: repeat(3, 1fr); } }
+  .sr-card {
+    display: flex; flex-direction: column; gap: 6px; text-decoration: none; color: inherit;
+    background: var(--c-bg,#fff); border: 1px solid var(--c-line,#e2e8f0); border-radius: 16px; padding: 12px;
+  }
+  .sr-card-cover { aspect-ratio: 3/4; border-radius: 10px; background: var(--c-surface,#eef2f7); object-fit: cover; width: 100%; }
+  .sr-card-title { font-size: .92rem; font-weight: 700; color: var(--primary); line-height: 1.3; }
+  .sr-card-meta { font-size: .76rem; color: var(--c-sub2,#64748b); font-weight: 600; }
+
+  /* ---- Empty state ---- */
+  .sr-empty {
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+    padding: 38px 24px 40px; border: 1.5px dashed var(--c-line2,#cbd5e1); border-radius: 20px;
+    background: var(--c-bg,#fff);
+  }
+  .sr-empty-ico {
+    width: 64px; height: 64px; border-radius: 20px; display: flex; align-items: center; justify-content: center;
+    background: rgba(37,99,235,.10); color: #2563eb; margin-bottom: 16px;
+  }
+  .sr-empty h3 { font-size: 1.05rem; font-weight: 800; color: var(--primary); margin: 0 0 6px; }
+  .sr-empty p { font-size: .88rem; color: var(--c-sub2,#64748b); line-height: 1.5; max-width: 32ch; margin: 0 0 18px; }
+  .sr-empty a {
+    display: inline-flex; align-items: center; gap: 6px; padding: 11px 20px; border-radius: 999px;
+    background: #2563eb; color: #fff; text-decoration: none; font-size: .88rem; font-weight: 700;
   }
 </style>
 </head>
 <body>
 <main>
   <div class="sr-topbar">
-    <button type="button" class="icon-btn" onclick="if(history.length>1&&document.referrer.indexOf(location.host)>-1){history.back()}else{location.href='/books'}" aria-label="Back">
+    <button type="button" class="icon-btn" id="srBack" aria-label="Back">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
     </button>
-    <h1 class="sr-title">Student Resources</h1>
+    <span class="sr-topbar-title">Student Resources</span>
   </div>
 
-  <div class="sr-scroll">
-    <div class="sr-banner">
-      <img src="/student-resources-banner-1024.webp"
-           srcset="/student-resources-banner-1024.webp 1024w, /student-resources-banner.webp 2048w"
-           sizes="(max-width: 600px) 820px, 1100px"
-           width="2048" height="768"
-           alt="MindShift Books Student Resources — study guides, educational books and eBooks, tips for academic success, and tools to boost your learning">
-    </div>
+  <section class="sr-hero" aria-labelledby="sr-h1">
+    <div class="sr-hero-ico" aria-hidden="true">🎓</div>
+    <h1 id="sr-h1">Student Resources</h1>
+    <p>Everything you need to <b>learn, grow &amp; stay ahead.</b></p>
+  </section>
+
+  <div class="sr-tabs" id="srTabs" role="tablist" aria-label="Resource categories"></div>
+
+  <div class="sr-section-head">
+    <h2 id="srHeading"></h2>
+    <p id="srSub"></p>
   </div>
+
+  <div id="srContent" aria-live="polite"></div>
 </main>
+
+<script>
+(function () {
+  var ICONS = {
+    guides: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2z"/><path d="M22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z"/></svg>',
+    books:  '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 2 9 2 12 0v-5"/></svg>',
+    tips:   '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.1 8.3 22 9.3 17 14.1 18.2 21 12 17.8 5.8 21 7 14.1 2 9.3 8.9 8.3 12 2"/></svg>',
+    tools:  '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="20" x2="6" y2="13"/><line x1="12" y1="20" x2="12" y2="6"/><line x1="18" y1="20" x2="18" y2="10"/></svg>'
+  };
+
+  // Add real items here later, e.g.
+  // { cat:'guides', title:'WAEC Study Plan', meta:'PDF · Free', href:'/files/…', cover:'/…jpg' }
+  var ITEMS = [];
+
+  var CATS = [
+    { id:'guides', label:'Study Guides',   icon:ICONS.guides, head:'Study Guides & Learning Materials', sub:'Guides and materials to help you study smarter.',   empty:'No study guides yet' },
+    { id:'books',  label:'Books & eBooks', icon:ICONS.books,  head:'Educational Books & eBooks',        sub:'Books picked to help you learn and grow.',        empty:'No educational books yet' },
+    { id:'tips',   label:'Academic Tips',  icon:ICONS.tips,   head:'Tips for Academic Success',         sub:'Practical tips to help you do better in school.', empty:'No tips yet' },
+    { id:'tools',  label:'Learning Tools', icon:ICONS.tools,  head:'Tools to Boost Your Learning',      sub:'Tools to help you focus, plan and learn faster.', empty:'No tools yet' }
+  ];
+
+  var active = 'guides';
+  var tabsEl = document.getElementById('srTabs');
+  var contentEl = document.getElementById('srContent');
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]; }); }
+
+  function renderTabs() {
+    tabsEl.innerHTML = CATS.map(function (c) {
+      return '<button type="button" class="sr-tab' + (c.id === active ? ' is-active' : '') + '" role="tab" aria-selected="' +
+        (c.id === active) + '" data-id="' + c.id + '">' + c.icon + '<span>' + c.label + '</span></button>';
+    }).join('');
+  }
+
+  function renderContent() {
+    var cat = CATS.filter(function (c) { return c.id === active; })[0];
+    document.getElementById('srHeading').textContent = cat.head;
+    document.getElementById('srSub').textContent = cat.sub;
+    var items = ITEMS.filter(function (i) { return i.cat === active; });
+    if (!items.length) {
+      contentEl.innerHTML =
+        '<div class="sr-empty">' +
+          '<div class="sr-empty-ico">' + cat.icon.replace(/width="16" height="16"/, 'width="30" height="30"') + '</div>' +
+          '<h3>' + cat.empty + '</h3>' +
+          '<p>We’re putting these together. Check back soon.</p>' +
+          '<a href="/books">Browse books</a>' +
+        '</div>';
+      return;
+    }
+    contentEl.innerHTML = '<div class="sr-grid">' + items.map(function (i) {
+      return '<a class="sr-card" href="' + esc(i.href) + '">' +
+        (i.cover ? '<img class="sr-card-cover" loading="lazy" src="' + esc(i.cover) + '" alt="">' : '<div class="sr-card-cover"></div>') +
+        '<div class="sr-card-title">' + esc(i.title) + '</div>' +
+        (i.meta ? '<div class="sr-card-meta">' + esc(i.meta) + '</div>' : '') + '</a>';
+    }).join('') + '</div>';
+  }
+
+  tabsEl.addEventListener('click', function (e) {
+    var b = e.target.closest('.sr-tab'); if (!b) return;
+    active = b.getAttribute('data-id'); renderTabs(); renderContent();
+  });
+
+  document.getElementById('srBack').addEventListener('click', function () {
+    if (history.length > 1 && document.referrer.indexOf(location.host) > -1) history.back();
+    else location.href = '/books';
+  });
+
+  renderTabs(); renderContent();
+})();
+</script>
 </body>
 </html>

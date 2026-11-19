@@ -14,6 +14,16 @@
   } catch (e) {}
   if (location.pathname.indexOf('/student-resources') === 0) return;
 
+  // books.html's ResizeObserver only watches the header's content box, so the
+  // padding animation below never triggers it — re-run its padding sync ourselves.
+  function syncMain(ms) {
+    var end = Date.now() + ms;
+    (function tick() {
+      if (typeof window.adjustMainPadding === 'function') window.adjustMainPadding();
+      if (Date.now() < end) requestAnimationFrame(tick);
+    })();
+  }
+
   function init() {
     var h = document.querySelector('body > header');
     if (!h || h.querySelector('.msb-promo')) return;
@@ -55,16 +65,18 @@
     h.classList.add('msb-has-promo');
     // two frames so the browser paints the closed state first, then slides down
     requestAnimationFrame(function () {
-      requestAnimationFrame(function () { h.style.setProperty('--promo-h', BAR_H + 'px'); });
+      requestAnimationFrame(function () { h.style.setProperty('--promo-h', BAR_H + 'px'); syncMain(700); });
     });
 
     bar.querySelector('.msb-promo-x').addEventListener('click', function () {
       try { localStorage.setItem(KEY, String(Date.now())); } catch (e) {}
       h.style.setProperty('--promo-h', '0px');
+      syncMain(700);
       setTimeout(function () {
         if (bar.parentNode) bar.parentNode.removeChild(bar);
         h.classList.remove('msb-has-promo');
         h.style.removeProperty('--promo-h');
+        syncMain(50);
       }, 480);
     });
   }
