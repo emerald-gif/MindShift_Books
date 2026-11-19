@@ -662,6 +662,15 @@ function derivePublicUrl(req) {
   return `${proto}://${host}`;
 }
 
+// Covers go through the on-the-fly image optimizer (server/img-optimizer.js): any cover — including books added later — is
+// resized + compressed the first time it's requested and cached. Nothing to generate by hand.
+function coverVariants(p){
+  if(!p || !p.coverPath) return {};
+  const src = '/' + String(p.coverPath).replace(/^\/+/, '');
+  const u = w => '/_img?src=' + encodeURIComponent(src) + '&w=' + w;
+  return { coverSm: u(360), coverMd: u(720) };
+}
+
 // Return minimal product info to clients (no pdfPath)
 router.get('/api/products', (req, res) => {
   try {
@@ -672,6 +681,7 @@ router.get('/api/products', (req, res) => {
       priceNGN: p.priceNGN || null,
       originalPriceNGN: p.originalPriceNGN || null,
       cover: p.coverPath,
+      ...coverVariants(p),
       reviewImages: p.reviewImages || [],
       previewUrl: previewUrlFor(p),
       hasPdf: !!p.pdfPath,
@@ -702,6 +712,7 @@ router.get('/api/product/:id', (req, res) => {
       priceNGN: p.priceNGN || null,
       originalPriceNGN: p.originalPriceNGN || null,
       cover: p.coverPath,
+      ...coverVariants(p),
       reviewImages: p.reviewImages || [],
       previewUrl: previewUrlFor(p),
       hasPdf: !!p.pdfPath,
