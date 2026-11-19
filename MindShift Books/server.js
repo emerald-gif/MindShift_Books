@@ -6400,6 +6400,13 @@ const ANNOUNCEMENTS = [
     message: 'Link previews in your chats, a chat info screen with shared media and search, books picked for you in your feed, and smoother full-screen viewing.',
     ctaLabel: 'See what\'s new',
     ctaUrl: '/whats-new'
+  },
+  {
+    id: 'update-2026-11-19',
+    title: 'Fresh updates on MindShift Books ✨',
+    message: 'Meet Student Resources, a new space for learners with study guides, books, tips and tools. Plus cleaner People to follow cards in your feed.',
+    ctaLabel: 'See what\'s new',
+    ctaUrl: '/whats-new'
   }
 ];
 
