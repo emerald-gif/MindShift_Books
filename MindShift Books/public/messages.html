@@ -1410,7 +1410,16 @@ function showList(){
 }
 
 /* ───────── who they are + when they were last active (2 reads per chat open) ───────── */
-const HINT = { cid:null, until:0, t:0 };
+let HINT = { cid:null, decided:false, until:0, t:0 };
+function hintDue(cid){                                   // true at most once per chat per day
+  try{
+    const k = 'msb_hint_ts', m = JSON.parse(localStorage.getItem(k) || '{}'), now = Date.now();
+    if(m[cid] && now - m[cid] < 24 * 3600 * 1000) return false;
+    m[cid] = now;
+    const keys = Object.keys(m); if(keys.length > 60) keys.sort((x, y) => m[x] - m[y]).slice(0, keys.length - 60).forEach(x => delete m[x]);
+    localStorage.setItem(k, JSON.stringify(m)); return true;
+  }catch(_){ return false; }
+}
 function swapSub(txt){                                   // small cross-fade when the line changes (hint → activity)
   const el = $('chatSub'); if(!el) return;
   if(el.textContent === txt && !el.classList.contains('ty')) return;
@@ -1424,15 +1433,15 @@ function paintOther(){
   $('chatName').textContent = chat.other.name;
   const lab = settings.showActivity ? activeLabel(chat.other.lastActive) : { text:'', live:false };   // activity off = I don't see theirs either
   const ty = tyShown();
-  // Like WhatsApp: when a chat opens, the line under the name first says "tap for info" for a few seconds, then changes to their
-  // activity. Once you've opened a chat's info screen once, the hint is retired for good. (No activity to show? the hint stays.)
-  if(HINT.cid !== chat.cid){
-    clearTimeout(HINT.t); HINT.cid = chat.cid; HINT.until = Date.now() + 3200; HINT.t = setTimeout(paintOther, 3300);
-    try{ localStorage.setItem('msb_info_hint_n', String((parseInt(localStorage.getItem('msb_info_hint_n'), 10) || 0) + 1)); }catch(_){}   // count chat opens
+  // The line under the name: their activity ("Active now", "Active 5m ago"…). With no activity to show (hidden, never seen, too long ago)
+  // it says "tap for info" instead. Even when there IS activity, "tap for info" pops up for a moment now and then — the first time you open
+  // a chat each day — and then fades to the activity (like WhatsApp), so people keep discovering the info screen without it nagging.
+  if(HINT.cid !== chat.cid){ clearTimeout(HINT.t); HINT = { cid:chat.cid, decided:false, until:0, t:0 }; }
+  if(lab.text && !HINT.decided){
+    HINT.decided = true;
+    if(hintDue(chat.cid)){ HINT.until = Date.now() + 2800; HINT.t = setTimeout(paintOther, 2900); }
   }
-  // retired for good once they've opened an info screen, or after the hint has been shown in 6 chat opens (they've seen it; stop nagging)
-  const hintDone = (() => { try{ return !!localStorage.getItem('msb_info_hint_done') || (parseInt(localStorage.getItem('msb_info_hint_n'), 10) || 0) > 6; }catch(_){ return false; } })();
-  const hint = !hintDone && (Date.now() < HINT.until || !lab.text);
+  const hint = !lab.text || Date.now() < HINT.until;
   const subTxt = hint ? 'tap for info' : lab.text;
   if(ty){ $('chatSub').innerHTML = (ty === 'recording' ? 'recording audio' : 'typing') + '<span class="ty-d"><i>.</i><i>.</i><i>.</i></span>'; }
   else swapSub(subTxt);
@@ -4108,8 +4117,7 @@ function infoResults(){
 function openInfo(){
   if(!chat || !$('info').hidden) return;
   INFO.mode = 'main'; INFO.pin = null; INFO.q = ''; INFO.tab = 'media'; INFO.selecting = false; INFO.sel.clear();
-  try{ localStorage.setItem('msb_info_hint_done', '1'); }catch(_){}   // they found it — stop showing "tap for info"
-  clearTimeout(HINT.t); HINT.until = 0; paintOther();
+
   drawInfo(); $('infoBody').scrollTop = 0; $('info').hidden = false;
   ovOpen(() => { $('info').hidden = true; });
 }
