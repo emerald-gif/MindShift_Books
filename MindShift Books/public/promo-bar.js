@@ -2,13 +2,16 @@
    Slides down on load; the whole bar is a link.
    Add the data-dismissible attribute to the <script> tag to show a ✕ that
    hides it for the rest of that day (used on the feed; the store has no ✕).
+   VERSION: bump it (e.g. 'v2' -> 'v3') whenever you want everyone who already
+   tapped ✕ to see the bar again after you push the file. Same version = their
+   ✕ is remembered for the day as usual.
    To change the message/link later, edit MSG / HREF below.
    Pages with a <body > header> (store, feed): the bar lives INSIDE that header
    so it hides/shows with it on scroll and the page keeps clear of it.
    Pages without one (e.g. Free eBooks): the bar is the first thing in <main>
    and simply scrolls away with the page. */
 (function () {
-  var BAR_H = 36, KEY = 'msb_promo_student_day_v1';
+  var BAR_H = 36, KEY = 'msb_promo_student_day_v1', VERSION = 'v2';
   var cs = document.currentScript;
   var DISMISS = !!(cs && cs.hasAttribute('data-dismissible'));
   var HREF = '/student-resources';
@@ -17,7 +20,7 @@
   if (location.pathname.indexOf('/student-resources') === 0) return;
   if (DISMISS) {
     try {
-      if (localStorage.getItem(KEY) === new Date().toDateString()) return; // dismissed today
+      if (localStorage.getItem(KEY) === VERSION + '|' + new Date().toDateString()) return; // dismissed today, this version
     } catch (e) {}
   }
 
@@ -87,7 +90,7 @@
     });
 
     if (DISMISS) bar.querySelector('.msb-promo-x').addEventListener('click', function () {
-      try { localStorage.setItem(KEY, new Date().toDateString()); } catch (e) {}
+      try { localStorage.setItem(KEY, VERSION + '|' + new Date().toDateString()); } catch (e) {}
       holder.style.setProperty('--promo-h', '0px');
       if (h) syncMain(700);
       setTimeout(function () {
