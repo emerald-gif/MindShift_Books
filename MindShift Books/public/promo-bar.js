@@ -1,17 +1,13 @@
 /* Top announcement bar for the storefront header.
-   Slides down on load, whole bar is a link, ✕ hides it for 7 days.
+   Slides down on load; the whole bar is a link (no dismiss button).
    To change the message/link later, edit MSG / HREF below.
    Lives INSIDE the fixed <header> so it hides/shows with the header on
    scroll and books.html's ResizeObserver keeps <main> clear of it. */
 (function () {
-  var KEY = 'msb_promo_student_v1', DAYS = 7, BAR_H = 36;
+  var BAR_H = 36;
   var HREF = '/student-resources';
   var MSG = 'Student Resources: learn, grow &amp; stay ahead';
 
-  try {
-    var t = +localStorage.getItem(KEY);
-    if (t && Date.now() - t < DAYS * 864e5) return;
-  } catch (e) {}
   if (location.pathname.indexOf('/student-resources') === 0) return;
 
   // books.html's ResizeObserver only watches the header's content box, so the
@@ -36,14 +32,11 @@
       'background:linear-gradient(90deg,#1e40af,#2563eb 55%,#1d4ed8);color:#fff;' +
       'transition:height .45s cubic-bezier(.22,1,.36,1)}' +
       '.msb-promo-link{display:flex;align-items:center;justify-content:center;gap:8px;height:' + BAR_H + 'px;' +
-      'padding:0 42px 0 14px;color:#fff;text-decoration:none;font-size:13px;font-weight:600;' +
+      'padding:0 14px;color:#fff;text-decoration:none;font-size:13px;font-weight:600;' +
       'letter-spacing:.1px;white-space:nowrap;-webkit-tap-highlight-color:transparent}' +
       '.msb-promo-txt{overflow:hidden;text-overflow:ellipsis;min-width:0}' +
       '.msb-promo-arrow{flex-shrink:0;transition:transform .2s ease}' +
       '.msb-promo-link:hover .msb-promo-arrow{transform:translateX(3px)}' +
-      '.msb-promo-x{position:absolute;top:0;right:0;width:40px;height:' + BAR_H + 'px;display:flex;' +
-      'align-items:center;justify-content:center;background:none;border:0;color:#fff;opacity:.8;cursor:pointer}' +
-      '.msb-promo-x:hover{opacity:1}' +
       '@media (prefers-reduced-motion:reduce){header.msb-has-promo,.msb-promo{transition:none}}';
     document.head.appendChild(css);
 
@@ -57,27 +50,13 @@
         '<span class="msb-promo-txt">' + MSG + '</span>' +
         '<svg class="msb-promo-arrow" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>' +
       '</a>' +
-      '<button type="button" class="msb-promo-x" aria-label="Dismiss announcement">' +
-        '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>' +
-      '</button>';
+      '';
 
     h.insertBefore(bar, h.firstChild);
     h.classList.add('msb-has-promo');
     // two frames so the browser paints the closed state first, then slides down
     requestAnimationFrame(function () {
       requestAnimationFrame(function () { h.style.setProperty('--promo-h', BAR_H + 'px'); syncMain(700); });
-    });
-
-    bar.querySelector('.msb-promo-x').addEventListener('click', function () {
-      try { localStorage.setItem(KEY, String(Date.now())); } catch (e) {}
-      h.style.setProperty('--promo-h', '0px');
-      syncMain(700);
-      setTimeout(function () {
-        if (bar.parentNode) bar.parentNode.removeChild(bar);
-        h.classList.remove('msb-has-promo');
-        h.style.removeProperty('--promo-h');
-        syncMain(50);
-      }, 480);
     });
   }
 
