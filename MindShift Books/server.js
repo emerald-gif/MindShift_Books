@@ -270,6 +270,19 @@ app.get('/account', (req, res) => {
   res.redirect(301, '/settings');
 });
 
+// On-the-fly image optimizer: /_img?src=/some.jpg&w=480 → resized + compressed (WebP) + cached. Must sit before express.static.
+try {
+  const _img = require('./server/img-optimizer')({ publicDir: path.join(__dirname, 'public'), cacheDir: path.join(__dirname, 'cache', 'img') });
+  app.get('/_img', _img);                                           // exact size: /_img?src=/tda.jpg&w=480
+  // AUTOMATIC: every plain request for a local .jpg/.png is served compressed (WebP, max 1440px wide) — covers, banners, anything added later.
+  // Anything unexpected falls through to express.static, i.e. the original file. Add ?raw=1 to get the untouched original.
+  app.get(/\.(?:jpe?g|png)$/i, (req, res, next) => {
+    if (req.query.raw !== undefined) return next();
+    req._imgAuto = true; req.query = { src: req.path, w: 1440 };
+    return _img(req, res, next);
+  });
+} catch (e) { console.warn('[img] optimizer not mounted:', e.message); }
+
 // Serve static assets (public folder only — /files is NOT served statically)
 // Explicit Cache-Control here matters: without it, browsers fall back to
 // *heuristic* caching (guessing a TTL from Last-Modified) and can silently
@@ -285,8 +298,12 @@ app.use(express.static(path.join(__dirname, 'public'), {
   // 404ing just because there's no explicit app.get(...) route for that
   // page below. Only kicks in when there's no exact file match first.
   extensions: ['html'],
-  setHeaders: (res) => {
-    res.setHeader('Cache-Control', 'no-cache');
+  setHeaders: (res, filePath) => {
+    // Images (book covers especially) used to be re-checked with the server on EVERY view, which is a wasted round trip per image
+    // and the reason covers felt slow. Images now come straight from the phone's cache; HTML/JS/CSS keep 'no-cache' so deploys show up at once.
+    if (/[\\/]covers[\\/]/.test(filePath)) res.setHeader('Cache-Control', 'public, max-age=604800, stale-while-revalidate=86400');
+    else if (/\.(?:jpe?g|png|webp|gif|svg|ico|woff2?)$/i.test(filePath)) res.setHeader('Cache-Control', 'public, max-age=86400, stale-while-revalidate=604800');
+    else res.setHeader('Cache-Control', 'no-cache');
   }
 }));
 
