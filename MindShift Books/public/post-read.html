@@ -431,8 +431,7 @@ body{padding-bottom:64px} /* room for the fixed comment bar on post-read */
 .c-meta-row{display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap}
 .c-name{font-size:13.5px;font-weight:800;color:var(--txt);cursor:pointer;line-height:1}
 .c-name:hover{color:var(--p)}
-.c-author-badge{display:inline-flex;align-items:center;gap:3px;background:linear-gradient(135deg,#4f46e518,#06b6d418);color:var(--p);font-size:10px;font-weight:800;padding:2px 7px;border-radius:99px;border:1px solid var(--c-line-ind,#bfdbfe);letter-spacing:.1px;flex-shrink:0}
-.c-author-badge svg{width:9px;height:9px;fill:var(--p)}
+.c-author-badge{display:inline-flex;align-items:center;background:rgba(79,70,229,.12);color:var(--p);font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:6px;line-height:1.45;letter-spacing:.2px;flex-shrink:0;white-space:nowrap}
 .c-pin-badge{display:inline-flex;align-items:center;gap:3px;background:var(--c-warn-bg,#fffbeb);color:var(--c-warn-txt,#b45309);font-size:10px;font-weight:800;padding:2px 7px;border-radius:99px;border:1px solid var(--c-line-warn,#fde68a);letter-spacing:.1px;flex-shrink:0}
 .c-text{font-size:14.5px;color:var(--c-sub,#374151);line-height:1.62;word-break:break-word;margin-bottom:8px}
 .c-foot{display:flex;align-items:center;gap:2px;flex-wrap:wrap}
@@ -1939,7 +1938,7 @@ function buildCHTML(c,isReply,isPinned){
   const avIn=`<img data-author-photo src="${c.authorPhoto?cEsc(c.authorPhoto):''}" alt="" style="${c.authorPhoto?'':'display:none'}" onerror="this.style.display='none'"><span class="c-av-init" data-author-photo-fallback${c.authorPhoto?' style="display:none"':''}>${init}</span>`;
   const lc=c.likeCount>0?String(c.likeCount):'';
   const isAuthor=article&&c.authorUid&&c.authorUid===article.authorUid&&!article.isMindshift;
-  const authorBadge=isAuthor?`<span class="c-author-badge"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>Author</span>`:'';
+  const authorBadge=isAuthor?`<span class="c-author-badge">Author</span>`:'';
   const pinBadge=isPinned?`<span class="c-pin-badge">📌 Pinned</span>`:'';
   const heart=`<button class="c-like-btn${liked?' liked':''}" id="clb-${c.id}" onclick="likeComment('${c.id}','${cEsc(c.authorUid||'')}')"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg><span id="clc-${c.id}">${lc}</span></button>`;
   const replyBtn=!isReply?`<button class="c-reply-btn" onclick="showRI('${c.id}')">Reply</button>`:'';

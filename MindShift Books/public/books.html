@@ -82,6 +82,48 @@
       background: var(--c-ink-bg,var(--primary)); border-color: var(--primary); color: #fff;
     }
 
+
+    /* ---- Categories trigger + drawer (replaces the scrolling pill row) ---- */
+    .msb-cat-row { display: flex; align-items: center; gap: 8px; padding: 2px 2px 4px; }
+    .msb-cat-trigger { display: inline-flex; align-items: center; gap: 9px; max-width: 100%; cursor: pointer; }
+    .msb-cat-trigger .msb-cat-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .msb-chev { width: 7px; height: 7px; border: solid currentColor; border-width: 0 2px 2px 0; transform: rotate(45deg) translate(-2px,-2px); flex-shrink: 0; transition: transform .25s ease; }
+    .msb-cat-trigger[aria-expanded="true"] .msb-chev { transform: rotate(225deg) translate(-2px,-2px); }
+    .msb-cat-clear[hidden] { display: none; }
+    .msb-cat-clear { cursor: pointer; }
+
+    .msb-sheet-backdrop { position: fixed; inset: 0; background: rgba(2,6,23,.5); opacity: 0; pointer-events: none;
+      transition: opacity .28s ease; z-index: 2000; -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+    .msb-sheet-backdrop.open { opacity: 1; pointer-events: auto; }
+    .msb-sheet { position: fixed; left: 0; right: 0; bottom: 0; margin: 0 auto; max-width: 560px; max-height: 84vh; z-index: 2001;
+      display: flex; flex-direction: column; background: var(--c-bg,#fff); border-radius: 24px 24px 0 0;
+      box-shadow: 0 -16px 48px rgba(2,6,23,.28); transform: translateY(105%); visibility: hidden;
+      transition: transform .34s cubic-bezier(.22,1,.36,1), visibility 0s linear .34s; padding-bottom: env(safe-area-inset-bottom, 0px); }
+    .msb-sheet.open { transform: translateY(0); visibility: visible; transition: transform .34s cubic-bezier(.22,1,.36,1), visibility 0s; }
+    .msb-sheet.dragging { transition: none; }
+    .msb-sheet-grab { flex-shrink: 0; padding: 10px 0 4px; touch-action: none; cursor: grab; }
+    .msb-sheet-grab::before { content: ""; display: block; width: 42px; height: 4px; margin: 0 auto; border-radius: 2px; background: var(--c-line2,#cbd5e1); }
+    .msb-sheet-head { flex-shrink: 0; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 6px 20px 12px; touch-action: none; }
+    .msb-sheet-title { font-size: 1.2rem; font-weight: 800; letter-spacing: -.025em; color: var(--primary); margin: 0; }
+    .msb-sheet-sub { font-size: .84rem; color: var(--c-sub2,#64748b); margin: 3px 0 0; line-height: 1.4; }
+    .msb-sheet-close { flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%; border: 0; background: var(--c-surface,#eef2f6);
+      color: var(--primary); cursor: pointer; position: relative; }
+    .msb-sheet-close::before, .msb-sheet-close::after { content: ""; position: absolute; left: 50%; top: 50%; width: 14px; height: 2px; margin: -1px 0 0 -7px; background: currentColor; border-radius: 1px; transform: rotate(45deg); }
+    .msb-sheet-close::after { transform: rotate(-45deg); }
+    .msb-sheet-list { overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding: 0 12px 18px; }
+    .msb-opt { display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; padding: 13px 12px; border: 0; background: none;
+      border-radius: 16px; font: inherit; color: inherit; cursor: pointer; transition: background .15s ease; -webkit-tap-highlight-color: transparent; }
+    .msb-opt:active { background: var(--c-surface,#eef2f6); }
+    .msb-opt.is-active { background: rgba(79,70,229,.09); }
+    .msb-opt-text { flex: 1; min-width: 0; }
+    .msb-opt-name { display: block; font-size: .96rem; font-weight: 700; color: var(--primary); line-height: 1.3; }
+    .msb-opt-desc { display: block; margin-top: 2px; font-size: .78rem; color: var(--c-sub2,#64748b); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .msb-radio { position: relative; flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--c-line2,#cbd5e1); transition: background .15s, border-color .15s; }
+    .msb-opt.is-active .msb-radio { background: #4f46e5; border-color: #4f46e5; }
+    .msb-opt.is-active .msb-radio::after { content: ""; position: absolute; left: 6px; top: 2px; width: 5px; height: 10px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+    .msb-opt-sep { height: 1px; margin: 6px 12px; background: var(--c-line,#e2e8f0); opacity: .7; }
+    @media (prefers-reduced-motion: reduce) { .msb-sheet, .msb-sheet-backdrop, .msb-chev { transition: none; } }
+
     /* ---- Refined card look ---- */
     .swiper-card, .our-book-item, .product-card {
       border-radius: 18px;
@@ -218,9 +260,14 @@
   </div>
   <script>document.getElementById('searchTrigger').addEventListener('click', () => window.openSearchOverlay());</script>
 
-  <!-- Category pills — same content taxonomy as onboarding/articles (article-categories.js),
+  <!-- Categories — opens a bottom drawer. Same taxonomy as onboarding/articles (article-categories.js),
        so a reader's picks stay consistent across the whole platform. -->
-  <div class="msb-cat-bar" id="msbCatBar" role="tablist" aria-label="Browse books by category"></div>
+  <div class="msb-cat-row">
+    <button type="button" class="msb-cat-pill msb-cat-trigger" id="msbCatTrigger" aria-haspopup="dialog" aria-expanded="false">
+      <span class="msb-cat-label" id="msbCatLabel">Categories</span><span class="msb-chev" aria-hidden="true"></span>
+    </button>
+    <button type="button" class="msb-cat-pill msb-cat-clear" id="msbCatClear" hidden>Clear</button>
+  </div>
 </header>
 <script src="/article-categories.js"></script>
 <script>
@@ -230,26 +277,105 @@
     RELATIONSHIPS: 'Relationships', HEALTH: 'Health', CAREER: 'Career',
     EDUCATION: 'Education', PURPOSE: 'Purpose', REFLECTIVE: 'Reflective', FICTION: 'Fiction'
   };
+  function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]; }); }
+
   function init() {
-    var bar = document.getElementById('msbCatBar');
-    if (!bar || !window.MSB_CATEGORIES) return;
-    var html = '<button type="button" class="msb-cat-pill is-active" data-cat="ALL" role="tab" aria-selected="true">All</button>';
-    html += window.MSB_CATEGORIES.map(function (c) {
-      var label = SHORT_LABEL[c.code] || c.label;
-      return '<button type="button" class="msb-cat-pill" data-cat="' + c.code + '" role="tab" aria-selected="false">' +
-        label + '</button>';
+    var trigger = document.getElementById('msbCatTrigger');
+    var labelEl = document.getElementById('msbCatLabel');
+    var clearBtn = document.getElementById('msbCatClear');
+    if (!trigger || !window.MSB_CATEGORIES) return;
+    var current = 'ALL';
+
+    // The drawer lives on <body> (not inside the header) so the header's slide-away transform can't clip it
+    var backdrop = document.createElement('div');
+    backdrop.className = 'msb-sheet-backdrop';
+    var sheet = document.createElement('div');
+    sheet.className = 'msb-sheet';
+    sheet.setAttribute('role', 'dialog');
+    sheet.setAttribute('aria-modal', 'true');
+    sheet.setAttribute('aria-labelledby', 'msbSheetTitle');
+
+    var rows = '<button type="button" class="msb-opt is-active" data-cat="ALL" role="radio" aria-checked="true">' +
+      '<span class="msb-opt-text"><span class="msb-opt-name">All books</span><span class="msb-opt-desc">Everything in the store</span></span>' +
+      '<span class="msb-radio"></span></button><div class="msb-opt-sep"></div>';
+    rows += window.MSB_CATEGORIES.map(function (c) {
+      var desc = (c.sub || []).slice(0, 3).join(' · ');
+      return '<button type="button" class="msb-opt" data-cat="' + c.code + '" role="radio" aria-checked="false">' +
+        '<span class="msb-opt-text"><span class="msb-opt-name">' + esc(c.label) + '</span>' +
+        (desc ? '<span class="msb-opt-desc">' + esc(desc) + '</span>' : '') + '</span>' +
+        '<span class="msb-radio"></span></button>';
     }).join('');
-    bar.innerHTML = html;
-    bar.addEventListener('click', function (e) {
-      var btn = e.target.closest('.msb-cat-pill');
-      if (!btn) return;
-      bar.querySelectorAll('.msb-cat-pill').forEach(function (b) {
-        var active = b === btn;
-        b.classList.toggle('is-active', active);
-        b.setAttribute('aria-selected', active ? 'true' : 'false');
+
+    sheet.innerHTML =
+      '<div class="msb-sheet-grab" id="msbSheetGrab"></div>' +
+      '<div class="msb-sheet-head"><div><h2 class="msb-sheet-title" id="msbSheetTitle">Browse by category</h2>' +
+      '<p class="msb-sheet-sub">Pick one to see only those books.</p></div>' +
+      '<button type="button" class="msb-sheet-close" id="msbSheetClose" aria-label="Close"></button></div>' +
+      '<div class="msb-sheet-list" role="radiogroup" aria-label="Categories">' + rows + '</div>';
+    document.body.appendChild(backdrop);
+    document.body.appendChild(sheet);
+
+    function openSheet() {
+      backdrop.classList.add('open'); sheet.classList.add('open');
+      trigger.setAttribute('aria-expanded', 'true');
+      document.documentElement.style.overflow = 'hidden';
+      var act = sheet.querySelector('.msb-opt.is-active'); if (act && act.scrollIntoView) act.scrollIntoView({ block: 'nearest' });
+    }
+    function closeSheet() {
+      backdrop.classList.remove('open'); sheet.classList.remove('open');
+      sheet.style.transform = '';
+      trigger.setAttribute('aria-expanded', 'false');
+      document.documentElement.style.overflow = '';
+    }
+    function select(code) {
+      current = code;
+      sheet.querySelectorAll('.msb-opt').forEach(function (b) {
+        var on = b.dataset.cat === code;
+        b.classList.toggle('is-active', on);
+        b.setAttribute('aria-checked', on ? 'true' : 'false');
       });
-      if (window.applyMsbCategoryFilter) window.applyMsbCategoryFilter(btn.dataset.cat);
+      var active = code !== 'ALL';
+      trigger.classList.toggle('is-active', active);
+      clearBtn.hidden = !active;
+      var cat = window.MSB_CAT_BY_CODE && window.MSB_CAT_BY_CODE[code];
+      labelEl.textContent = active ? (SHORT_LABEL[code] || (cat && cat.label) || 'Categories') : 'Categories';
+      if (window.applyMsbCategoryFilter) window.applyMsbCategoryFilter(code);
+    }
+
+    trigger.addEventListener('click', openSheet);
+    clearBtn.addEventListener('click', function () { select('ALL'); });
+    backdrop.addEventListener('click', closeSheet);
+    document.getElementById('msbSheetClose').addEventListener('click', closeSheet);
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && sheet.classList.contains('open')) closeSheet(); });
+    sheet.querySelector('.msb-sheet-list').addEventListener('click', function (e) {
+      var b = e.target.closest('.msb-opt'); if (!b) return;
+      select(b.dataset.cat);
+      setTimeout(closeSheet, 140); // let the check mark show before it slides away
     });
+
+    // Drag the handle / title down to dismiss
+    var startY = null, dy = 0;
+    function dragStart(e) { startY = e.touches[0].clientY; dy = 0; sheet.classList.add('dragging'); }
+    function dragMove(e) {
+      if (startY === null) return;
+      dy = Math.max(0, e.touches[0].clientY - startY);
+      sheet.style.transform = 'translateY(' + dy + 'px)';
+    }
+    function dragEnd() {
+      if (startY === null) return;
+      sheet.classList.remove('dragging'); startY = null;
+      if (dy > 90) closeSheet(); else sheet.style.transform = '';
+    }
+    ['msbSheetGrab'].forEach(function (id) {
+      var el = document.getElementById(id);
+      el.addEventListener('touchstart', dragStart, { passive: true });
+      el.addEventListener('touchmove', dragMove, { passive: true });
+      el.addEventListener('touchend', dragEnd);
+    });
+    var head = sheet.querySelector('.msb-sheet-head');
+    head.addEventListener('touchstart', dragStart, { passive: true });
+    head.addEventListener('touchmove', dragMove, { passive: true });
+    head.addEventListener('touchend', dragEnd);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
