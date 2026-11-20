@@ -684,6 +684,54 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
 <link rel="stylesheet" href="/design.css?v=2">
 <link rel="stylesheet" href="/theme.css?v=1">
 <link rel="stylesheet" href="/shell.css?v=1" media="(min-width:720px)">
+
+<style id="profile-redesign">
+/* ═══ PROFILE REDESIGN — Instagram + X + Facebook ═══
+   Cover with overlapping avatar, actions beside the avatar (X), counts line under the bio (X/FB),
+   a post-type stats strip (Instagram), sticky tabs. Same page serves your profile and other people's. */
+.cover-banner{height:132px}
+.cover-banner-overlay{background:linear-gradient(to bottom,transparent 55%,rgba(15,10,30,.25))}
+.avatar-row{margin-top:-44px;margin-bottom:10px;align-items:flex-end}
+.avatar{width:88px;height:88px;border-width:4px;font-size:32px}
+.profile-actions{gap:8px;padding-bottom:4px;flex-wrap:nowrap}
+.profile-actions .btn-edit-profile,.profile-actions .btn-follow{height:36px;padding:0 18px;font-size:13.5px;font-weight:700;
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+.profile-actions .btn-msg{width:36px;height:36px;padding:0;display:inline-flex;align-items:center;justify-content:center}
+.profile-actions .btn-msg svg{width:17px;height:17px}
+
+.name-row{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:2px}
+.profile-name{font-size:22px;font-weight:800;letter-spacing:-.02em;margin:0;line-height:1.2}
+.follows-you{font-size:11px;font-weight:700;color:var(--sub);background:var(--c-surface,#f1f5f9);padding:3px 8px;border-radius:6px}
+.follows-you[hidden]{display:none}
+.profile-title{color:var(--sub);font-weight:500;font-size:14px;margin-bottom:8px}
+.profile-bio{font-size:14.5px;line-height:1.5;color:var(--txt);margin:6px 0 10px;white-space:pre-line;overflow-wrap:anywhere}
+.profile-bio.clamped{display:-webkit-box!important;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.bio-more{background:none;border:0;padding:0;margin:-4px 0 10px;font:inherit;font-size:13.5px;font-weight:700;color:var(--p);cursor:pointer}
+.profile-location{font-size:13px;color:var(--sub);margin-bottom:8px}
+.follow-stats{flex:none;justify-content:flex-start;padding:0;min-height:0;align-self:auto;margin:8px 0 14px;gap:2px 18px}
+.follow-stats .fstat:first-child::after{display:none}
+.follow-stats .fstat .stat-num{font-size:15px;font-weight:800}
+.follow-stats .fstat .stat-label{font-size:14px;color:var(--sub)}
+.social-links-row{margin-bottom:12px}
+.founder-badge-wrap{margin:2px 0 14px}
+.setup-banner{margin:2px 0 14px}
+
+.profile-cta-row{margin:0 0 14px;gap:10px}
+.profile-cta-row:empty{display:none;margin:0}
+.profile-cta-row .btn-write{height:40px;padding:0 14px;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;
+  text-decoration:none;white-space:nowrap}
+.profile-cta-row .btn-write svg{width:16px;height:16px}
+.profile-cta-row .btn-write .bars{fill:currentColor;stroke:none}
+#profileInsightBtn{display:none!important}
+
+.profile-card{padding-bottom:0}
+.stats-row{border-top:1px solid var(--border);padding:12px 0 14px}
+.stats-row .stat-num{font-size:17px;font-weight:800}
+.stats-row .stat-label{font-size:11.5px}
+
+.tabs{top:var(--stack-h,56px);scroll-margin-top:var(--stack-h,56px)}
+.tab{padding:13px 4px;font-size:13.5px}
+</style>
 </head>
 <body>
 
@@ -728,40 +776,13 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
 <div class="profile-card" id="profileCard">
   <div class="avatar-row">
     <div class="avatar" id="avatar" onclick="openImageViewer('avatar')"><div class="skel skel-avatar" id="avatarSkel" style="border:3px solid var(--card)"></div></div>
-    <div class="follow-stats">
-      <div class="fstat" onclick="showFollowers('followers')">
-        <div class="stat-num" id="statFollowers"><div class="skel skel-stat" id="statFollowersSkel"></div></div>
-        <div class="stat-label">Followers</div>
-      </div>
-      <div class="fstat" onclick="showFollowers('following')">
-        <div class="stat-num" id="statFollowing"><div class="skel skel-stat" id="statFollowingSkel"></div></div>
-        <div class="stat-label">Following</div>
-      </div>
-    </div>
     <div class="profile-actions" id="profileActions">
       <!-- filled by JS -->
     </div>
   </div>
-  <div id="profileName" class="profile-name"><div class="skel skel-name" id="nameSkel"></div></div>
+  <div class="name-row"><div id="profileName" class="profile-name"><div class="skel skel-name" id="nameSkel"></div></div><span class="follows-you" id="followsYou" hidden>Follows you</span></div>
   <div id="profileJobTitle" class="profile-title" style="display:none"></div>
 
-  <!-- PROFILE SETUP BANNER — owner-only, injected by renderSetupBanner() -->
-  <button type="button" class="setup-banner" id="setupBanner" style="display:none" onclick="location.href='/complete-profile'">
-    <div class="setup-banner-ring">
-      <svg viewBox="0 0 40 40">
-        <defs><linearGradient id="setupRingGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#4f46e5"/><stop offset="100%" stop-color="#06b6d4"/></linearGradient></defs>
-        <circle class="track" cx="20" cy="20" r="16.5"></circle>
-        <circle class="fill" id="setupRingFill" cx="20" cy="20" r="16.5" stroke-dasharray="103.7" stroke-dashoffset="103.7"></circle>
-      </svg>
-      <span id="setupRingLabel">0/4</span>
-      <div class="setup-banner-giftbadge">🎁</div>
-    </div>
-    <div class="setup-banner-txt">
-      <div class="setup-banner-title">Finish setting up your profile</div>
-      <div class="setup-banner-sub" id="setupBannerSub">Complete these steps to get <span data-ngn="2000" data-voucher>₦2,000</span> free + a badge</div>
-    </div>
-    <div class="setup-banner-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
-  </button>
 
   <!-- PUBLISH-YOUR-BOOK TEASER — owner-only "coming soon". Lives in the Books tab now (rendered by renderBooksSection from this template). -->
   <template id="publishBannerTpl"><button type="button" class="publish-banner" id="publishBanner" onclick="location.href='/publish'">
@@ -801,8 +822,35 @@ body.editing-profile .sticky-header-stack, body.follow-screen-open .sticky-heade
     <svg class="loc-chev" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
   </div>
   <div id="profileContact" class="profile-location" style="display:none;gap:14px"></div>
+  <div class="follow-stats">
+      <div class="fstat" onclick="showFollowers('followers')">
+        <div class="stat-num" id="statFollowers"><div class="skel skel-stat" id="statFollowersSkel"></div></div>
+        <div class="stat-label">Followers</div>
+      </div>
+      <div class="fstat" onclick="showFollowers('following')">
+        <div class="stat-num" id="statFollowing"><div class="skel skel-stat" id="statFollowingSkel"></div></div>
+        <div class="stat-label">Following</div>
+      </div>
+    </div>
   <div id="founderBadgeWrap" class="founder-badge-wrap" style="display:none"></div>
   <div id="profileSocialLinks" class="social-links-row" style="display:none"></div>
+  <!-- PROFILE SETUP BANNER — owner-only, injected by renderSetupBanner() -->
+  <button type="button" class="setup-banner" id="setupBanner" style="display:none" onclick="location.href='/complete-profile'">
+    <div class="setup-banner-ring">
+      <svg viewBox="0 0 40 40">
+        <defs><linearGradient id="setupRingGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#4f46e5"/><stop offset="100%" stop-color="#06b6d4"/></linearGradient></defs>
+        <circle class="track" cx="20" cy="20" r="16.5"></circle>
+        <circle class="fill" id="setupRingFill" cx="20" cy="20" r="16.5" stroke-dasharray="103.7" stroke-dashoffset="103.7"></circle>
+      </svg>
+      <span id="setupRingLabel">0/4</span>
+      <div class="setup-banner-giftbadge">🎁</div>
+    </div>
+    <div class="setup-banner-txt">
+      <div class="setup-banner-title">Finish setting up your profile</div>
+      <div class="setup-banner-sub" id="setupBannerSub">Complete these steps to get <span data-ngn="2000" data-voucher>₦2,000</span> free + a badge</div>
+    </div>
+    <div class="setup-banner-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+  </button>
   <!-- CTA buttons row — populated by JS -->
   <div class="profile-cta-row" id="profileCta"></div>
   <!-- Owner-only: full-width bar spanning the CTA row above, straight into Insights -->
@@ -2147,6 +2195,47 @@ document.getElementById('celebrateCta')?.addEventListener('click', () => { locat
 document.getElementById('celebrateBadgeCta')?.addEventListener('click', () => { location.href = '/founding-creator'; });
 
 /* ── RENDER HEADER ── */
+
+/* ── PROFILE REDESIGN HELPERS ── */
+// Long bios collapse to 4 lines with a "more" toggle (Instagram / X)
+function setupBioClamp(){
+  const b = document.getElementById('profileBio'); if(!b) return;
+  const old = document.getElementById('bioMore'); if(old) old.remove();
+  b.classList.remove('clamped');
+  if(b.style.display === 'none') return;
+  b.classList.add('clamped');
+  requestAnimationFrame(()=>{
+    if(b.scrollHeight <= b.clientHeight + 1){ b.classList.remove('clamped'); return; }
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.id = 'bioMore'; btn.className = 'bio-more'; btn.textContent = 'more';
+    btn.onclick = () => { const collapsed = b.classList.toggle('clamped'); btn.textContent = collapsed ? 'more' : 'less'; };
+    b.insertAdjacentElement('afterend', btn);
+  });
+}
+// Tabs stick right under the header (its real height, not a guess); the header title becomes the
+// person's name once the name scrolls out of view (Instagram / X)
+(function(){
+  const stack = document.querySelector('.sticky-header-stack');
+  if(!stack) return;
+  const setH = () => document.documentElement.style.setProperty('--stack-h', stack.offsetHeight + 'px');
+  setH(); window.addEventListener('resize', setH); window.addEventListener('load', setH);
+  if(window.ResizeObserver) new ResizeObserver(setH).observe(stack);
+  const titleSpan = stack.querySelector('header:first-child h1 span');
+  const nameEl = document.getElementById('profileName');
+  if(!titleSpan || !nameEl || !('IntersectionObserver' in window)) return;
+  let io = null;
+  const arm = () => {
+    if(io) io.disconnect();
+    io = new IntersectionObserver(([e]) => {
+      const gone = !e.isIntersecting && e.boundingClientRect.top < stack.offsetHeight;
+      const nm = (typeof profileData !== 'undefined' && profileData && profileData.name) || '';
+      titleSpan.textContent = (gone && nm) ? nm : 'Profile';
+    }, { rootMargin: '-' + stack.offsetHeight + 'px 0px 0px 0px' });
+    io.observe(nameEl);
+  };
+  arm(); window.addEventListener('resize', arm);
+})();
+
 function renderProfileHeader(){
   // Clear the name/avatar placeholders. The five stat placeholders stay until a real number
   // replaces them (setStat), so the counts never sit blank while loading.
@@ -2242,34 +2331,29 @@ function renderProfileHeader(){
       <button class="btn-share" onclick="shareProfile()" aria-label="Share profile" title="Share profile">
         <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
       </button>`;
+  const EDIT_SVG = '<svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+  const BARS_SVG = '<svg viewBox="0 0 24 24" class="bars"><rect x="3" y="10" width="4.5" height="10" rx="1.2"/><rect x="9.75" y="5" width="4.5" height="15" rx="1.2"/><rect x="16.5" y="13" width="4.5" height="7" rx="1.2"/></svg>';
   if(isOwner){
-    // Avatar row: single icon — Settings & Activity (insights + share live inside settings.html)
+    // Beside the avatar (like X / Instagram): Edit profile + Settings & Activity
     actions.innerHTML = `
+      <button class="btn-edit-profile" onclick="openEditSheet()">Edit profile</button>
       <a class="btn-share" href="/settings" aria-label="Settings &amp; Activity" title="Settings &amp; Activity" style="text-decoration:none">
         <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
       </a>`;
-    // CTA row: Create + Edit Profile — full-width, spaced
+    // Under the details (like Facebook): Create + Profile Insight, side by side
     if(cta) cta.innerHTML = `
-      <button class="btn-write" onclick="openCreatePicker()">
-        <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-        Create
-      </button>
-      <button class="btn-edit-profile" onclick="openEditSheet()">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-        Edit Profile
-      </button>`;
-    const insightBtn = document.getElementById('profileInsightBtn');
-    if(insightBtn) insightBtn.style.display = 'flex';
+      <button class="btn-write" onclick="openCreatePicker()">${EDIT_SVG}Create</button>
+      <a class="btn-write" href="/insights">${BARS_SVG}Profile Insight</a>`;
   } else {
-    // Visitor: share icon in avatar row, Follow button in cta row
-    actions.innerHTML = `${shareBtn}`;
-    if(cta && currentUser) cta.innerHTML = `<button class="btn-follow" id="followBtn" onclick="toggleFollow()" style="flex:1">${isFollowing?'Following':'Follow'}</button>
+    // Beside the avatar: Share, Message, Follow (like X)
+    actions.innerHTML = shareBtn + (currentUser ? `
       <button class="btn-msg" onclick="openChatWithProfile()" aria-label="Send a message" title="Message">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
-      </button>`;
-    const insightBtn = document.getElementById('profileInsightBtn');
-    if(insightBtn) insightBtn.style.display = 'none';
+      </button>
+      <button class="btn-follow${isFollowing?' following':''}" id="followBtn" onclick="toggleFollow()">${isFollowing?'Following':'Follow'}</button>` : '');
+    if(cta) cta.innerHTML = '';
   }
+  setupBioClamp();
 }
 
 /* ── STATS ──
@@ -2357,6 +2441,7 @@ async function loadFollowState(){
     const id = `${currentUser.uid}_${profileData.uid}`;
     const s = await resilient(()=>getDoc(doc(db,'follows',id)));
     isFollowing = s.exists();
+    resilient(()=>getDoc(doc(db,'follows',`${profileData.uid}_${currentUser.uid}`))).then(b=>{ const fy=document.getElementById('followsYou'); if(fy) fy.hidden=!b.exists(); }).catch(()=>{});
     const btn = document.getElementById('followBtn');
     if(btn){ btn.textContent = isFollowing?'Following':'Follow'; btn.classList.toggle('following',isFollowing); }
   }catch{}
@@ -2565,7 +2650,13 @@ function renderBooksSection(sec){
   if(isOwner){
     const tpl = document.getElementById('publishBannerTpl');
     sec.innerHTML = '';
-    if(tpl && tpl.content.firstElementChild) sec.appendChild(tpl.content.firstElementChild.cloneNode(true));
+    if(tpl && tpl.content.firstElementChild){
+      const card = tpl.content.firstElementChild.cloneNode(true);
+      // the tab area has no side padding of its own, so give the card its own breathing room
+      card.style.width = 'calc(100% - 32px)';
+      card.style.margin = '16px 16px 0';
+      sec.appendChild(card);
+    }
     return;
   }
   sec.innerHTML = `<div class="empty-state">${icon}<p>${esc(profileData.name||'This author')} hasn't published a book yet.</p></div>`;
