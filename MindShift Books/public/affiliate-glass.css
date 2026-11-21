@@ -1,0 +1,122 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Affiliate ecosystem — iOS 27 "refined Liquid Glass" feel for the web
+   Shared by: affiliate.html, affiliate-apply.html, affiliate-dashboard.html, payout.html
+   Readability first: frosted materials with a clear edge, nested (concentric) corners,
+   and graceful fallbacks for Reduce Transparency / Increase Contrast / no backdrop-filter.
+   Selectors are prefixed with `html` so they win over each page's own inline styles.
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root{
+  --glass-bg: rgba(255,255,255,.62);
+  --glass-bg-strong: rgba(255,255,255,.80);
+  --glass-edge: rgba(255,255,255,.75);
+  --glass-hi: rgba(255,255,255,.65);
+  --glass-line: rgba(15,23,42,.08);
+  --glass-shadow: 0 10px 32px rgba(15,23,42,.12);
+  --glass-blur: saturate(180%) blur(22px);
+  --r-card: 26px;      /* outer cards */
+  --r-inner: 16px;     /* things nested inside a card (card radius minus padding, softened) */
+}
+html[data-theme="dark"]{
+  --glass-bg: rgba(34,40,58,.55);
+  --glass-bg-strong: rgba(24,29,44,.78);
+  --glass-edge: rgba(255,255,255,.14);
+  --glass-hi: rgba(255,255,255,.14);
+  --glass-line: rgba(255,255,255,.10);
+  --glass-shadow: 0 10px 32px rgba(0,0,0,.5);
+}
+
+/* ── Header: frosted bar, content scrolls softly behind it ── */
+html header{
+  background: var(--glass-bg-strong);
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+  border-bottom: .5px solid var(--glass-line);
+}
+
+/* ── Glass capsules: Browse / Back / gear / menu button ── */
+html a.browse, html .gear, html .menu-btn{
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-edge);
+  box-shadow: inset 0 1px 0 var(--glass-hi), 0 4px 14px rgba(15,23,42,.08);
+  transition: transform .18s cubic-bezier(.34,1.4,.64,1), background-color .2s;
+}
+html .menu-btn{ border-radius: 999px; }
+html a.browse:active, html .gear:active, html .menu-btn:active{ transform: scale(.94); }
+html .gear[aria-expanded="true"]{ background: var(--c-ink-bg,#0f172a); border-color: transparent; }
+
+/* ── Appearance popover: glass, with nested corners (24 outer, 16 inner) ── */
+html .menu{
+  background: var(--glass-bg-strong);
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-edge); border-radius: 24px; box-shadow: var(--glass-shadow);
+}
+html .menu button{ border-radius: 16px; }
+
+/* ── Side menu: floating glass panel (dashboard / payout) ── */
+html .sidebar-overlay{ -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+html .sidebar{
+  top: calc(8px + env(safe-area-inset-top, 0px)); bottom: calc(8px + env(safe-area-inset-bottom, 0px)); left: 8px;
+  width: min(296px, calc(100vw - 48px));
+  border-radius: 30px; overflow: hidden;
+  background: var(--glass-bg-strong);
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-edge); box-shadow: var(--glass-shadow);
+  transform: translateX(calc(-100% - 24px));
+  transition: transform .38s cubic-bezier(.22,1,.36,1);
+}
+html .sidebar.open{ transform: translateX(0); }
+html .sidebar-head{ border-bottom: .5px solid var(--glass-line); }
+html .nav-item{ border-radius: 18px; }
+html .nav-item.active{ background: rgba(79,70,229,.13); }
+html .sidebar-foot{ border-top: .5px solid var(--glass-line); }
+html .sidebar-foot a{ background: var(--glass-bg); border-color: var(--glass-edge); box-shadow: inset 0 1px 0 var(--glass-hi); }
+
+/* ── Cards & grouped lists: bigger, matched corners and hairline dividers ── */
+html .card, html .stats-card, html .referred-card, html .empty{
+  border-radius: var(--r-card); border: 1px solid var(--glass-line);
+}
+html .stat-row, html .referred-row{ border-bottom-width: .5px; border-bottom-color: var(--glass-line); }
+html .stat-icon{ border-radius: 12px; }
+html .link-card{ border-radius: 28px; }
+html .link-box{ border-radius: var(--r-inner); }
+html .copy-btn{ border-radius: 999px; transition: transform .18s cubic-bezier(.34,1.4,.64,1); }
+html .copy-btn:active{ transform: scale(.95); }
+html .field input, html .otp-row input{ border-radius: var(--r-inner); }
+html .save-btn, html .cta-btn-full, html .hero-cta{ border-radius: 999px; }
+html .save-btn:active, html .hero-cta:active{ transform: scale(.97); }
+
+/* ── Large titles on app-style pages (they shrink into the header on scroll, see affiliate-glass.js) ── */
+html body[data-large-title] .hero h1{ font-size: 1.95rem; letter-spacing: -.035em; line-height: 1.1; }
+html .brand-name{ transition: opacity .16s ease; }
+html .brand-name.swap{ opacity: 0; }
+
+/* ── Landing page cards ── */
+html .segment-card{ border-radius: 28px; }
+html .seg-badge, html .seg-pin{
+  background: var(--glass-bg-strong);
+  -webkit-backdrop-filter: blur(14px) saturate(160%); backdrop-filter: blur(14px) saturate(160%);
+  border: 1px solid var(--glass-edge); box-shadow: inset 0 1px 0 var(--glass-hi), 0 4px 14px rgba(15,23,42,.12);
+}
+
+/* ── Room for Safari's floating bottom bar so nothing is hidden underneath ── */
+html body[data-large-title] .section{ padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+html .wrap{ padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
+html .site-footer .footer-bottom{ padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px) + 56px); }
+
+/* ── Accessibility: Reduce Transparency, Increase Contrast, and browsers without backdrop-filter ── */
+@media (prefers-reduced-transparency: reduce){
+  :root, html[data-theme="dark"]{
+    --glass-bg: var(--c-bg,#fff); --glass-bg-strong: var(--c-bg,#fff); --glass-blur: none;
+  }
+  html .sidebar-overlay{ -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+@media (prefers-contrast: more){
+  :root{ --glass-bg: var(--c-bg,#fff); --glass-bg-strong: var(--c-bg,#fff); --glass-blur: none; --glass-line: rgba(15,23,42,.38); --glass-edge: rgba(15,23,42,.38); }
+  html[data-theme="dark"]{ --glass-bg: var(--c-bg,#0b1020); --glass-bg-strong: var(--c-bg,#0b1020); --glass-line: rgba(255,255,255,.45); --glass-edge: rgba(255,255,255,.45); }
+}
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))){
+  :root, html[data-theme="dark"]{ --glass-bg: var(--c-bg,#fff); --glass-bg-strong: var(--c-bg,#fff); }
+}
+@media (prefers-reduced-motion: reduce){
+  html .sidebar, html .brand-name, html a.browse, html .gear, html .copy-btn{ transition: none; }
+}
