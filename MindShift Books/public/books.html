@@ -103,7 +103,7 @@
     .msb-sheet.dragging { transition: none; }
     .msb-sheet-grab { flex-shrink: 0; padding: 10px 0 4px; touch-action: none; cursor: grab; }
     .msb-sheet-grab::before { content: ""; display: block; width: 42px; height: 4px; margin: 0 auto; border-radius: 2px; background: var(--c-line2,#cbd5e1); }
-    .msb-sheet-head { flex-shrink: 0; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 6px 20px 12px; touch-action: none; }
+    .msb-sheet-head { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 20px 10px; touch-action: none; }
     .msb-sheet-title { font-size: 1.2rem; font-weight: 800; letter-spacing: -.025em; color: var(--primary); margin: 0; }
     .msb-sheet-sub { font-size: .84rem; color: var(--c-sub2,#64748b); margin: 3px 0 0; line-height: 1.4; }
     .msb-sheet-close { flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%; border: 0; background: var(--c-surface,#eef2f6);
@@ -111,14 +111,15 @@
     .msb-sheet-close::before, .msb-sheet-close::after { content: ""; position: absolute; left: 50%; top: 50%; width: 14px; height: 2px; margin: -1px 0 0 -7px; background: currentColor; border-radius: 1px; transform: rotate(45deg); }
     .msb-sheet-close::after { transform: rotate(-45deg); }
     .msb-sheet-list { overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding: 0 12px 18px; }
-    .msb-opt { display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; padding: 13px 12px; border: 0; background: none;
+    .msb-opt { display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; padding: 15px 14px; border: 0; background: none;
       border-radius: 16px; font: inherit; color: inherit; cursor: pointer; transition: background .15s ease; -webkit-tap-highlight-color: transparent; }
     .msb-opt:active { background: var(--c-surface,#eef2f6); }
     .msb-opt.is-active { background: rgba(79,70,229,.09); }
     .msb-opt-text { flex: 1; min-width: 0; }
-    .msb-opt-name { display: block; font-size: .96rem; font-weight: 700; color: var(--primary); line-height: 1.3; }
+    .msb-opt-name { display: block; font-size: 1rem; font-weight: 600; color: var(--primary); line-height: 1.3; }
+    .msb-opt.is-active .msb-opt-name { font-weight: 800; }
     .msb-opt-desc { display: block; margin-top: 2px; font-size: .78rem; color: var(--c-sub2,#64748b); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .msb-radio { position: relative; flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--c-line2,#cbd5e1); transition: background .15s, border-color .15s; }
+    .msb-radio { position: relative; flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--c-line2,#cbd5e1); transition: background .15s, border-color .15s; }
     .msb-opt.is-active .msb-radio { background: #4f46e5; border-color: #4f46e5; }
     .msb-opt.is-active .msb-radio::after { content: ""; position: absolute; left: 6px; top: 2px; width: 5px; height: 10px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
     .msb-opt-sep { height: 1px; margin: 6px 12px; background: var(--c-line,#e2e8f0); opacity: .7; }
@@ -296,20 +297,17 @@
     sheet.setAttribute('aria-labelledby', 'msbSheetTitle');
 
     var rows = '<button type="button" class="msb-opt is-active" data-cat="ALL" role="radio" aria-checked="true">' +
-      '<span class="msb-opt-text"><span class="msb-opt-name">All books</span><span class="msb-opt-desc">Everything in the store</span></span>' +
+      '<span class="msb-opt-text"><span class="msb-opt-name">All books</span></span>' +
       '<span class="msb-radio"></span></button><div class="msb-opt-sep"></div>';
     rows += window.MSB_CATEGORIES.map(function (c) {
-      var desc = (c.sub || []).slice(0, 3).join(' · ');
       return '<button type="button" class="msb-opt" data-cat="' + c.code + '" role="radio" aria-checked="false">' +
-        '<span class="msb-opt-text"><span class="msb-opt-name">' + esc(c.label) + '</span>' +
-        (desc ? '<span class="msb-opt-desc">' + esc(desc) + '</span>' : '') + '</span>' +
+        '<span class="msb-opt-text"><span class="msb-opt-name">' + esc(SHORT_LABEL[c.code] || c.label) + '</span></span>' +
         '<span class="msb-radio"></span></button>';
     }).join('');
 
     sheet.innerHTML =
       '<div class="msb-sheet-grab" id="msbSheetGrab"></div>' +
-      '<div class="msb-sheet-head"><div><h2 class="msb-sheet-title" id="msbSheetTitle">Browse by category</h2>' +
-      '<p class="msb-sheet-sub">Pick one to see only those books.</p></div>' +
+      '<div class="msb-sheet-head"><div><h2 class="msb-sheet-title" id="msbSheetTitle">Categories</h2></div>' +
       '<button type="button" class="msb-sheet-close" id="msbSheetClose" aria-label="Close"></button></div>' +
       '<div class="msb-sheet-list" role="radiogroup" aria-label="Categories">' + rows + '</div>';
     document.body.appendChild(backdrop);
