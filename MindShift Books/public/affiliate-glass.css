@@ -13,6 +13,7 @@
   --glass-line: rgba(15,23,42,.08);
   --glass-shadow: 0 10px 32px rgba(15,23,42,.12);
   --glass-blur: saturate(180%) blur(22px);
+  --sidebar-bg: rgba(255,255,255,.95);
   --r-card: 26px;      /* outer cards */
   --r-inner: 16px;     /* things nested inside a card (card radius minus padding, softened) */
 }
@@ -23,6 +24,7 @@ html[data-theme="dark"]{
   --glass-hi: rgba(255,255,255,.14);
   --glass-line: rgba(255,255,255,.10);
   --glass-shadow: 0 10px 32px rgba(0,0,0,.5);
+  --sidebar-bg: rgba(18,23,38,.95);
 }
 
 /* ── Header: frosted bar, content scrolls softly behind it ── */
@@ -52,23 +54,30 @@ html .menu{
 }
 html .menu button{ border-radius: 16px; }
 
-/* ── Side menu: floating glass panel (dashboard / payout) ── */
+/* ── Side menu: the normal docked panel (attached to the screen edge), just cleaner ──
+   Nearly solid so the page behind it never shows through as a muddy blur. */
 html .sidebar-overlay{ -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
 html .sidebar{
-  top: calc(8px + env(safe-area-inset-top, 0px)); bottom: calc(8px + env(safe-area-inset-bottom, 0px)); left: 8px;
-  width: min(296px, calc(100vw - 48px));
-  border-radius: 30px; overflow: hidden;
-  background: var(--glass-bg-strong);
-  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-edge); box-shadow: var(--glass-shadow);
-  transform: translateX(calc(-100% - 24px));
-  transition: transform .38s cubic-bezier(.22,1,.36,1);
+  top: 0; bottom: 0; left: 0;
+  width: min(300px, 84vw);
+  padding-top: env(safe-area-inset-top, 0px);
+  border-radius: 0 28px 28px 0;
+  background: var(--sidebar-bg);
+  -webkit-backdrop-filter: blur(24px) saturate(160%); backdrop-filter: blur(24px) saturate(160%);
+  border: 0; border-right: 1px solid var(--glass-line);
+  box-shadow: 8px 0 40px rgba(15,23,42,.16);
+  transform: translateX(-100%);
+  transition: transform .34s cubic-bezier(.22,1,.36,1);
 }
 html .sidebar.open{ transform: translateX(0); }
-html .sidebar-head{ border-bottom: .5px solid var(--glass-line); }
-html .nav-item{ border-radius: 18px; }
-html .nav-item.active{ background: rgba(79,70,229,.13); }
-html .sidebar-foot{ border-top: .5px solid var(--glass-line); }
+html .sidebar-head{ padding: 22px 22px 18px; border-bottom: .5px solid var(--glass-line); }
+html .sidebar-head img{ width: 34px; height: 34px; border-radius: 10px; }
+html .sidebar-head .name{ font-size: 1rem; letter-spacing: -.01em; }
+html .sidebar-nav{ padding: 16px 14px; }
+html .nav-item{ padding: 13px 14px; border-radius: 16px; margin-bottom: 6px; font-size: .95rem; transition: background-color .15s ease, transform .15s ease; }
+html .nav-item:active{ transform: scale(.98); }
+html .nav-item.active{ background: rgba(79,70,229,.12); color: var(--indigo); }
+html .sidebar-foot{ padding: 14px 14px calc(18px + env(safe-area-inset-bottom, 0px)); border-top: .5px solid var(--glass-line); }
 html .sidebar-foot a{ background: var(--glass-bg); border-color: var(--glass-edge); box-shadow: inset 0 1px 0 var(--glass-hi); }
 
 /* ── Cards & grouped lists: bigger, matched corners and hairline dividers ── */
@@ -106,7 +115,7 @@ html .site-footer .footer-bottom{ padding-bottom: calc(20px + env(safe-area-inse
 /* ── Accessibility: Reduce Transparency, Increase Contrast, and browsers without backdrop-filter ── */
 @media (prefers-reduced-transparency: reduce){
   :root, html[data-theme="dark"]{
-    --glass-bg: var(--c-bg,#fff); --glass-bg-strong: var(--c-bg,#fff); --glass-blur: none;
+    --glass-bg: var(--c-bg,#fff); --glass-bg-strong: var(--c-bg,#fff); --glass-blur: none; --sidebar-bg: var(--c-bg,#fff);
   }
   html .sidebar-overlay{ -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
@@ -118,5 +127,5 @@ html .site-footer .footer-bottom{ padding-bottom: calc(20px + env(safe-area-inse
   :root, html[data-theme="dark"]{ --glass-bg: var(--c-bg,#fff); --glass-bg-strong: var(--c-bg,#fff); }
 }
 @media (prefers-reduced-motion: reduce){
-  html .sidebar, html .brand-name, html a.browse, html .gear, html .copy-btn{ transition: none; }
+  html .sidebar, html .nav-item, html .brand-name, html a.browse, html .gear, html .copy-btn{ transition: none; }
 }
