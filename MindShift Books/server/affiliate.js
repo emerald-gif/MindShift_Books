@@ -408,4 +408,65 @@ router.get('/api/affiliate/payouts', requireUser, async (req, res) => {
   }
 });
 
+// GET /api/affiliate/funnel?days=7|30|90 — powers the dashboard's "Sales funnel".
+//  • funnel: all-time clicks -> sign-ups -> buyers (counters on the affiliate doc + distinct buyers on their orders)
+//  • period: sales + commission per day for the chosen window, from orders attributed to this affiliate
+//  • topBooks / recent: what is actually selling, with no buyer details exposed
+// Orders are fetched with a single equality filter and bucketed in JS, so no composite index is needed.
+router.get('/api/affiliate/funnel', requireUser, async (req, res) => {
+  try {
+    if (!db) return res.status(500).json({ error: 'Database unavailable' });
+    const q = await db.collection('affiliates').where('uid', '==', req.uid).limit(1).get();
+    if (q.empty) return res.json({ funnel: null });
+    const doc = q.docs[0]; const code = doc.id; const a = doc.data();
+    const days = [7, 30, 90].includes(Number(req.query.days)) ? Number(req.query.days) : 30;
+
+    const DAY = 86400000, LAGOS = 3600000; // Nigeria is UTC+1 all year
+    const dayKey = ms => new Date(ms + LAGOS).toISOString().slice(0, 10);
+    const buckets = []; const idx = {};
+    for (let i = days - 1; i >= 0; i--) {
+      const k = dayKey(Date.now() - i * DAY);
+      idx[k] = buckets.length; buckets.push({ d: k, sales: 0, earned: 0 });
+    }
+
+    const snap = await db.collection('my_order').where('affiliateCode', '==', code).limit(1000).get().catch(() => null);
+    const buyers = new Set(); const books = {}; const recent = [];
+    let pSales = 0, pEarned = 0;
+    (snap ? snap.docs : []).forEach(d => {
+      const o = d.data();
+      const ms = o.paidAt && o.paidAt.toMillis ? o.paidAt.toMillis() : 0;
+      const com = Number(o.affiliateCommission) || 0;
+      if (o.uid) buyers.add(o.uid);
+      const items = Array.isArray(o.items) ? o.items : [];
+      const k = ms ? dayKey(ms) : null;
+      if (k !== null && idx[k] !== undefined) {
+        buckets[idx[k]].sales += 1; buckets[idx[k]].earned += com;
+        pSales += 1; pEarned += com;
+        items.forEach(it => {
+          const id = it.productId || it.title || 'item';
+          const b = books[id] || (books[id] = { title: it.title || 'Book', coverUrl: it.coverUrl || null, units: 0 });
+          b.units += 1;
+        });
+      }
+      if (ms) recent.push({ ms, titles: items.map(i => i.title).filter(Boolean).slice(0, 3), commission: com });
+    });
+
+    const pct = (num, den) => den > 0 ? Math.min(100, Math.round((num / den) * 1000) / 10) : null;
+    const clicks = a.clicks || 0, signups = a.signups || 0;
+    return res.json({
+      funnel: {
+        clicks, signups, sales: a.sales || 0, buyers: buyers.size, earned: a.earned || 0,
+        clickToSignup: pct(signups, clicks),
+        signupToBuyer: pct(buyers.size, signups)
+      },
+      period: { days, sales: pSales, earned: pEarned, daily: buckets },
+      topBooks: Object.values(books).sort((x, y) => y.units - x.units).slice(0, 5),
+      recent: recent.sort((x, y) => y.ms - x.ms).slice(0, 5).map(r => ({ at: new Date(r.ms).toISOString(), titles: r.titles, commission: r.commission }))
+    });
+  } catch (err) {
+    console.error('/api/affiliate/funnel error', err);
+    return res.status(500).json({ error: 'Could not load your sales funnel. Please try again.' });
+  }
+});
+
 module.exports = router;
