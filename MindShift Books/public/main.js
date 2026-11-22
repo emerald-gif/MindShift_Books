@@ -344,9 +344,9 @@ function productCardInner(p) {
     </div>
     <div class="card-cover-wrap">
       <img src="${escapeHtml(p.coverMd || p.cover || '')}"${p.coverSm ? ` srcset="${escapeHtml(p.coverSm)} 360w, ${escapeHtml(p.coverMd || p.coverSm)} 720w" sizes="(min-width:700px) 240px, 60vw"` : ''} class="our-cover" alt="${escapeHtml(p.title || 'ebook')}" decoding="async" loading="lazy"/>
+      ${wishlistToggleButton(p.id, { cardOverlay: true })}
     </div>
     <div class="our-title" data-product-id="${escapeHtml(p.id || '')}" data-action="review" style="cursor:pointer;">${escapeHtml(p.title || '')}</div>
-    <div class="our-author">MindShift Books</div>
     <div class="card-price-block">
       <div class="card-price">${price}</div>
       ${(orig || pct) ? `
