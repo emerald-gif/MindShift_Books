@@ -418,7 +418,7 @@ function updateSwiperArrows(track) {
       if (!track || !prevBtn || !nextBtn) return;
 
       const stepSize = () => {
-        const card = track.querySelector('.swiper-card');
+        const card = track.querySelector('.swiper-card, .our-book-item');
         if (!card) return track.clientWidth;
         const style = getComputedStyle(track);
         const gap = parseFloat(style.columnGap || style.gap || '12');
