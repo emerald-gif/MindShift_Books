@@ -214,7 +214,40 @@ a.browse:hover svg{transform:translateX(2px);}
 .otp-link{background:none;border:none;padding:0;font-size:0.8rem;font-weight:700;color:var(--indigo);cursor:pointer;}
 .otp-link:disabled{color:var(--c-mute,#94a3b8);cursor:default;}
 .otp-cancel{background:none;border:none;padding:0;font-size:0.8rem;font-weight:700;color:var(--c-mute,#94a3b8);cursor:pointer;}
-  </style>
+  
+  /* ── Sales funnel ── */
+  .fn-card{background:var(--c-bg,#fff);border:1px solid var(--c-line,#e2e8f0);border-radius:26px;padding:20px;margin-bottom:14px;}
+  .fn-tag{font-size:0.7rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--c-mute,#94a3b8);margin-bottom:14px;}
+  .fn-step{margin-bottom:16px;}
+  .fn-step:last-of-type{margin-bottom:0;}
+  .fn-top{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:7px;}
+  .fn-lbl{font-size:0.86rem;font-weight:700;color:var(--c-sub,#475569);}
+  .fn-val{font-size:1.15rem;font-weight:800;letter-spacing:-.02em;color:var(--primary);}
+  .fn-track{height:14px;border-radius:999px;background:var(--c-bg2,#f1f5f9);overflow:hidden;}
+  .fn-bar{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--indigo),#06b6d4);min-width:0;transition:width .7s cubic-bezier(.22,1,.36,1);}
+  .fn-rate{display:inline-block;margin-top:7px;font-size:0.76rem;font-weight:700;color:var(--indigo);background:rgba(79,70,229,.10);padding:3px 10px;border-radius:999px;}
+  .fn-hint{margin-top:16px;padding:12px 14px;border-radius:16px;background:rgba(79,70,229,.08);font-size:0.86rem;line-height:1.5;color:var(--c-sub,#475569);}
+  .fn-seg{display:flex;gap:4px;padding:4px;border-radius:999px;background:var(--c-bg2,#f1f5f9);margin-bottom:18px;}
+  .fn-seg button{flex:1;border:0;background:none;padding:9px 0;border-radius:999px;font:inherit;font-size:0.84rem;font-weight:700;color:var(--c-sub2,#64748b);cursor:pointer;transition:background-color .2s,color .2s,box-shadow .2s;}
+  .fn-seg button.on{background:var(--c-bg,#fff);color:var(--primary);box-shadow:0 1px 4px rgba(15,23,42,.14);}
+  .fn-figs{display:flex;gap:22px;margin-bottom:14px;}
+  .fn-fig b{display:block;font-size:1.45rem;font-weight:800;letter-spacing:-.03em;color:var(--primary);}
+  .fn-fig span{font-size:0.78rem;font-weight:600;color:var(--c-sub2,#64748b);}
+  .fn-chart{width:100%;height:96px;display:block;}
+  .fn-axis{display:flex;justify-content:space-between;margin-top:6px;font-size:0.72rem;font-weight:600;color:var(--c-mute,#94a3b8);}
+  .fn-empty{padding:18px 6px 6px;text-align:center;font-size:0.88rem;line-height:1.5;color:var(--c-sub2,#64748b);}
+  .fn-list{display:flex;flex-direction:column;}
+  .fn-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:.5px solid var(--c-line,#e2e8f0);}
+  .fn-row:last-child{border-bottom:0;padding-bottom:0;}
+  .fn-row:first-child{padding-top:0;}
+  .fn-rank{width:24px;height:24px;border-radius:50%;background:rgba(79,70,229,.10);color:var(--indigo);font-size:0.76rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .fn-cover{width:34px;height:46px;border-radius:6px;object-fit:cover;background:var(--c-bg2,#f1f5f9);flex-shrink:0;}
+  .fn-info{flex:1;min-width:0;}
+  .fn-name{font-size:0.9rem;font-weight:700;color:var(--primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .fn-sub{font-size:0.76rem;color:var(--c-sub2,#64748b);margin-top:2px;}
+  .fn-pill{font-size:0.8rem;font-weight:800;color:var(--indigo);flex-shrink:0;}
+  .fn-plus{font-size:0.9rem;font-weight:800;color:#16a34a;flex-shrink:0;}
+</style>
 <link rel="stylesheet" href="/theme.css?v=1">
   <link rel="stylesheet" href="/affiliate-glass.css">
   <script src="/affiliate-glass.js" defer></script>
@@ -401,6 +434,12 @@ a.browse:hover svg{transform:translateX(2px);}
         </div>
       </div>
 
+      <div class="section" id="funnelSec">
+        <div class="section-eyebrow">${ICON.trend} Performance</div>
+        <h2>Your sales funnel</h2>
+        <div id="funnelWrap"><div class="empty">Loading your numbers…</div></div>
+      </div>
+
       <div class="section">
         <div class="section-eyebrow">${ICON.users} Community</div>
         <h2>Readers you've brought in</h2>
@@ -427,6 +466,8 @@ a.browse:hover svg{transform:translateX(2px);}
       }).join('') + `</div>`;
     }
 
+    loadFunnel(FUNNEL_DAYS);
+
     document.getElementById('copyBtn').addEventListener('click', () => {
       navigator.clipboard.writeText(link).then(() => {
         const btn = document.getElementById('copyBtn');
@@ -434,6 +475,95 @@ a.browse:hover svg{transform:translateX(2px);}
         btn.classList.add('copied');
         setTimeout(() => { btn.innerHTML = `${ICON.copy} Copy`; btn.classList.remove('copied'); }, 1800);
       });
+    });
+  }
+
+  // ── Sales funnel ──
+  let FUNNEL = null, FUNNEL_DAYS = 30;
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function shortDate(iso) {
+    const d = new Date(iso.length === 10 ? iso + 'T12:00:00' : iso);
+    return d.getDate() + ' ' + MONTHS[d.getMonth()];
+  }
+  async function loadFunnel(days) {
+    const wrap = document.getElementById('funnelWrap');
+    if (!wrap) return;
+    try {
+      const token = await window.MSBAuth.getIdToken();
+      const r = await fetch('/api/affiliate/funnel?days=' + days, { headers: { Authorization: `Bearer ${token}` } });
+      const j = await r.json();
+      if (!r.ok || !j.funnel) throw new Error(j.error || 'failed');
+      FUNNEL = j; FUNNEL_DAYS = days;
+      renderFunnel();
+    } catch (e) {
+      const w = document.getElementById('funnelWrap');
+      if (w) w.innerHTML = `<div class="empty">We couldn't load your funnel just now. Please refresh in a moment.</div>`;
+    }
+  }
+  function funnelHint(f) {
+    if (f.clicks === 0) return 'Share your link to start filling this funnel. Every click on it is counted.';
+    if (f.signups === 0) return 'People are clicking your link but not creating an account yet. Tell them what they get: free ebooks and a ₦2,000 voucher on their first book.';
+    if (f.buyers === 0) return `You've brought in ${nf.format(f.signups)} reader${f.signups === 1 ? '' : 's'}. Remind them they can use their voucher on their first book. That is when your earnings start.`;
+    return `${nf.format(f.buyers)} of the readers you brought in have bought a book. Keep sharing. Your best week is the one you post consistently.`;
+  }
+  function renderFunnel() {
+    const wrap = document.getElementById('funnelWrap');
+    if (!wrap || !FUNNEL) return;
+    const f = FUNNEL.funnel, p = FUNNEL.period;
+    const max = Math.max(f.clicks, f.signups, f.buyers, 1);
+    const w = n => n > 0 ? Math.max(5, Math.round((n / max) * 100)) : 0;
+    const rate = v => v === null ? '' : `<span class="fn-rate">${v}%</span>`;
+    const steps = `
+      <div class="fn-card">
+        <div class="fn-tag">All time</div>
+        <div class="fn-step"><div class="fn-top"><span class="fn-lbl">Link clicks</span><span class="fn-val">${nf.format(f.clicks)}</span></div>
+          <div class="fn-track"><div class="fn-bar" style="width:${w(f.clicks)}%"></div></div></div>
+        <div class="fn-step"><div class="fn-top"><span class="fn-lbl">Signed up</span><span class="fn-val">${nf.format(f.signups)}</span></div>
+          <div class="fn-track"><div class="fn-bar" style="width:${w(f.signups)}%"></div></div>${f.clickToSignup === null ? '' : `<span class="fn-rate">${f.clickToSignup}% of clicks</span>`}</div>
+        <div class="fn-step"><div class="fn-top"><span class="fn-lbl">Bought a book</span><span class="fn-val">${nf.format(f.buyers)}</span></div>
+          <div class="fn-track"><div class="fn-bar" style="width:${w(f.buyers)}%"></div></div>${f.signupToBuyer === null ? '' : `<span class="fn-rate">${f.signupToBuyer}% of sign-ups</span>`}</div>
+        <div class="fn-hint">${escapeHtml(funnelHint(f))}</div>
+      </div>`;
+
+    // Daily earnings chart
+    const daily = p.daily; const maxE = Math.max(...daily.map(d => d.earned), 1);
+    const n = daily.length, W = 300, H = 96, gap = n > 45 ? 1 : 3, bw = (W - gap * (n - 1)) / n;
+    const bars = daily.map((d, i) => {
+      const h = d.earned > 0 ? Math.max(4, Math.round((d.earned / maxE) * (H - 6))) : 2;
+      return `<rect x="${(i * (bw + gap)).toFixed(2)}" y="${H - h}" width="${bw.toFixed(2)}" height="${h}" rx="${Math.min(3, bw / 2).toFixed(1)}" fill="${d.earned > 0 ? 'url(#fnGrad)' : 'currentColor'}" opacity="${d.earned > 0 ? 1 : .12}"><title>${shortDate(d.d)}: ₦${nf.format(d.earned)}</title></rect>`;
+    }).join('');
+    const chart = p.sales === 0
+      ? `<div class="fn-empty">No sales in the last ${p.days} days yet. Share your link and your first one will show up here.</div>`
+      : `<svg class="fn-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Earnings per day">
+           <defs><linearGradient id="fnGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4f46e5"/><stop offset="1" stop-color="#06b6d4"/></linearGradient></defs>${bars}</svg>
+         <div class="fn-axis"><span>${shortDate(daily[0].d)}</span><span>${shortDate(daily[daily.length - 1].d)}</span></div>`;
+    const seg = [7, 30, 90].map(d => `<button type="button" data-days="${d}" class="${d === p.days ? 'on' : ''}">${d} days</button>`).join('');
+    const period = `
+      <div class="fn-card">
+        <div class="fn-seg" id="fnSeg">${seg}</div>
+        <div class="fn-figs"><div class="fn-fig"><b>₦${nf.format(p.earned)}</b><span>earned</span></div><div class="fn-fig"><b>${nf.format(p.sales)}</b><span>${p.sales === 1 ? 'sale' : 'sales'}</span></div></div>
+        ${chart}
+      </div>`;
+
+    const top = FUNNEL.topBooks.length ? `
+      <div class="fn-card"><div class="fn-tag">Best sellers, last ${p.days} days</div><div class="fn-list">` +
+      FUNNEL.topBooks.map((b, i) => `
+        <div class="fn-row"><div class="fn-rank">${i + 1}</div>
+          ${b.coverUrl ? `<img class="fn-cover" src="${escapeHtml(b.coverUrl)}" alt="" loading="lazy" onerror="this.style.display='none'">` : ''}
+          <div class="fn-info"><div class="fn-name">${escapeHtml(b.title)}</div></div>
+          <div class="fn-pill">${nf.format(b.units)} sold</div></div>`).join('') + `</div></div>` : '';
+
+    const recent = FUNNEL.recent.length ? `
+      <div class="fn-card"><div class="fn-tag">Recent sales</div><div class="fn-list">` +
+      FUNNEL.recent.map(r => `
+        <div class="fn-row"><div class="fn-info"><div class="fn-name">${escapeHtml(r.titles.join(', ') || 'A book')}</div><div class="fn-sub">${shortDate(r.at)}</div></div>
+          <div class="fn-plus">+₦${nf.format(r.commission)}</div></div>`).join('') + `</div></div>` : '';
+
+    wrap.innerHTML = steps + period + top + recent;
+    document.getElementById('fnSeg').addEventListener('click', e => {
+      const b = e.target.closest('button[data-days]'); if (!b) return;
+      const d = Number(b.dataset.days); if (d === FUNNEL_DAYS) return;
+      loadFunnel(d);
     });
   }
 
