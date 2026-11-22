@@ -385,6 +385,86 @@
     .bk-review-name { font-weight: 700; font-size: 0.93rem; color: var(--primary); }
     .bk-review-meta { display: flex; align-items: center; gap: 8px; font-size: 0.76rem; color: var(--c-mute,#94a3b8); margin-top: 2px; }
     .bk-review-text { margin: 0; color: var(--c-sub,#334155); font-size: 0.93rem; line-height: 1.6; }
+
+    /* ══ Redesigned book hero ══ */
+    .book-detail-wrap { padding-bottom: 8px; }
+    .book-back-link {
+      padding: 7px 14px 7px 10px; border-radius: 999px; margin-bottom: 14px;
+      background: var(--c-surface,#eef2f7); color: var(--c-sub,#475569); font-size: .85rem;
+    }
+    .bk2-hero { display: flex; flex-direction: column; gap: 22px; margin-bottom: 8px; }
+    .bk2-stage {
+      position: relative; display: flex; justify-content: center; align-items: center;
+      padding: 34px 20px 30px; border-radius: 28px; overflow: hidden;
+      background:
+        radial-gradient(120% 90% at 50% 0%, rgba(99,102,241,.22), transparent 62%),
+        radial-gradient(90% 70% at 90% 100%, rgba(6,182,212,.18), transparent 60%),
+        var(--c-surface,#eef2ff);
+    }
+    .bk2-cover {
+      width: min(66%, 270px); height: auto; aspect-ratio: 2/3; object-fit: cover; display: block;
+      border-radius: 10px;
+      box-shadow: 0 2px 4px rgba(15,23,42,.14), 0 18px 28px -10px rgba(15,23,42,.45), 0 38px 60px -24px rgba(79,70,229,.45);
+    }
+    .bk2-stage .wishlist-heart-btn { top: 14px; right: 14px; width: 40px; height: 40px; }
+    .bk2-info { display: flex; flex-direction: column; align-items: flex-start; text-align: left; }
+    .bk2-genre {
+      display: inline-block; font-size: .7rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+      color: var(--c-ind,#4f46e5); background: var(--c-tonal,#eef2ff); padding: 5px 11px; border-radius: 999px; margin-bottom: 12px;
+    }
+    .bk2-title { font-size: 1.7rem; line-height: 1.15; letter-spacing: -.02em; font-weight: 800; margin: 0 0 6px; color: var(--primary); }
+    .bk2-by { font-size: .95rem; color: var(--c-sub2,#64748b); margin-bottom: 18px; }
+    .bk2-by strong { color: var(--primary); font-weight: 700; }
+    .bk2-facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; margin-bottom: 16px; }
+    .bk2-fact {
+      display: flex; flex-direction: column; gap: 2px; padding: 11px 12px; border-radius: 14px;
+      background: var(--c-bg,#fff); border: 1px solid var(--c-line,#e6e9ee);
+    }
+    .bk2-fact span { font-size: .68rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--c-mute,#94a3b8); }
+    .bk2-fact strong { font-size: .88rem; font-weight: 800; color: var(--primary); }
+    .bk2-price-card {
+      width: 100%; padding: 16px 18px; border-radius: 18px; margin-bottom: 16px;
+      background: var(--c-bg,#fff); border: 1px solid var(--c-line,#e6e9ee); box-shadow: 0 10px 28px -16px rgba(15,23,42,.25);
+    }
+    .bk2-price-row { margin-bottom: 0; gap: 10px; }
+    .bk2-price-card .book-hero-price { font-size: 1.9rem; letter-spacing: -.02em; }
+    .bk2-save { margin-top: 6px; font-size: .82rem; font-weight: 600; color: #16a34a; }
+    .bk2-save strong { font-weight: 800; }
+    .bk2-actions { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+    .bk2-actions .btn {
+      width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 15px 18px; font-size: 1rem; border-radius: 16px; text-decoration: none;
+    }
+    .bk2-primary { box-shadow: 0 14px 26px -12px rgba(79,70,229,.7); }
+    .bk2-secondary { border-width: 1.5px !important; }
+
+    /* sticky buy bar (phones only) */
+    .bk2-buybar { display: none; }
+    @media (max-width: 700px) {
+      main { padding-bottom: 84px; }
+      .bk2-buybar {
+        display: flex; align-items: center; justify-content: space-between; gap: 14px;
+        position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
+        padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+        background: rgba(var(--glass-rgb,255,255,255),.9);
+        -webkit-backdrop-filter: saturate(180%) blur(18px); backdrop-filter: saturate(180%) blur(18px);
+        border-top: 1px solid var(--c-line,#e6e9ee); box-shadow: 0 -10px 30px -18px rgba(15,23,42,.35);
+        transform: translateY(110%); transition: transform .28s ease;
+      }
+      .bk2-buybar.is-visible { transform: translateY(0); }
+      .bk2-buybar-price { display: flex; flex-direction: column; line-height: 1.15; }
+      .bk2-buybar-price .book-hero-price { font-size: 1.25rem; margin: 0; }
+      .bk2-buybar-price .book-hero-price-old { font-size: .78rem; }
+      .bk2-buybar-btn { width: auto; flex: 1; max-width: 220px; padding: 13px 18px; border-radius: 14px; }
+    }
+    @media (min-width: 701px) {
+      .bk2-hero { flex-direction: row; align-items: center; gap: 40px; }
+      .bk2-stage { flex: 0 0 min(42%, 400px); padding: 44px 28px; }
+      .bk2-info { flex: 1; min-width: 0; }
+      .bk2-title { font-size: 2.1rem; }
+      .bk2-actions { flex-direction: row; }
+    }
+    @media (prefers-reduced-motion: reduce) { .bk2-buybar { transition: none; } }
   </style>
   <!-- Open Graph / WhatsApp / Twitter -->
   <meta property="og:type" content="website" />
@@ -423,7 +503,6 @@
       <span>MindShift Books</span>
     </h1>
     <div class="header-icon-group">
-      <span class="acct-nav-slot"></span>
       <button type="button" class="icon-btn" id="cartIcon" aria-label="View cart">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
         <span class="cart-badge" id="cartBadge" style="display:none;">0</span>
@@ -919,37 +998,60 @@ function renderBookDetail(prod) {
     : '<p class="bk-muted">No description available yet for this book.</p>';
 
   root.innerHTML = `
-    <div class="book-hero">
-      <img class="book-hero-cover" src="${escapeHtml(prod.coverMd || prod.cover || '')}"${prod.coverSm ? ` srcset="${escapeHtml(prod.coverSm)} 360w, ${escapeHtml(prod.coverMd || prod.coverSm)} 720w" sizes="(min-width:700px) 320px, 70vw"` : ''} alt="${escapeHtml(prod.title || '')}" fetchpriority="high" decoding="async"/>
-      <div class="book-hero-info">
-        ${prod.genre ? `<div class="book-hero-genre">${escapeHtml(prod.genre)}</div>` : ''}
-        <h1>${escapeHtml(prod.title || '')}</h1>
-        <div class="book-hero-author">by <strong>${escapeHtml(prod.author || 'MindShift Books')}</strong></div>
+    <div class="bk2-hero">
+      <div class="bk2-stage">
+        <img class="bk2-cover" src="${escapeHtml(prod.coverMd || prod.cover || '')}"${prod.coverSm ? ` srcset="${escapeHtml(prod.coverSm)} 360w, ${escapeHtml(prod.coverMd || prod.coverSm)} 720w" sizes="(min-width:700px) 320px, 70vw"` : ''} alt="${escapeHtml(prod.title || '')}" fetchpriority="high" decoding="async"/>
+        ${window.wishlistToggleButton ? window.wishlistToggleButton(prod.id || '', { cardOverlay: true }) : ''}
+      </div>
+
+      <div class="bk2-info">
+        ${prod.genre ? `<div class="bk2-genre">${escapeHtml(prod.genre)}</div>` : ''}
+        <h1 class="bk2-title">${escapeHtml(prod.title || '')}</h1>
+        <div class="bk2-by">by <strong>${escapeHtml(prod.author || 'MindShift Books')}</strong></div>
+
+        <div class="bk2-facts">
+          <div class="bk2-fact"><span>Format</span><strong>PDF eBook</strong></div>
+          ${prod.pages ? `<div class="bk2-fact"><span>Pages</span><strong>${escapeHtml(String(prod.pages))}</strong></div>` : `<div class="bk2-fact"><span>Language</span><strong>${escapeHtml(prod.language || 'English')}</strong></div>`}
+          ${prod.category === 'ours' ? `<div class="bk2-fact"><span>Delivery</span><strong>Instant</strong></div>` : `<div class="bk2-fact"><span>Language</span><strong>${escapeHtml(prod.language || 'English')}</strong></div>`}
+        </div>
+
         ${prod.category === 'ours' && priceDisplay ? `
-        <div class="book-hero-price-row">
-          <span class="book-hero-price"${prod.priceNGN ? ` data-ngn="${Number(prod.priceNGN)}"` : ''}>${priceDisplay}</span>
-          ${originalPriceDisplay ? `<span class="book-hero-price-old" data-ngn="${Number(prod.originalPriceNGN)}">${originalPriceDisplay}</span>` : ''}
-          ${discountPct ? `<span class="book-hero-discount-badge">${discountPct}% OFF</span>` : ''}
+        <div class="bk2-price-card">
+          <div class="book-hero-price-row bk2-price-row">
+            <span class="book-hero-price"${prod.priceNGN ? ` data-ngn="${Number(prod.priceNGN)}"` : ''}>${priceDisplay}</span>
+            ${originalPriceDisplay ? `<span class="book-hero-price-old" data-ngn="${Number(prod.originalPriceNGN)}">${originalPriceDisplay}</span>` : ''}
+            ${discountPct ? `<span class="book-hero-discount-badge">${discountPct}% OFF</span>` : ''}
+          </div>
+          ${(prod.originalPriceNGN && prod.priceNGN && prod.originalPriceNGN > prod.priceNGN) ? `<div class="bk2-save">You save <strong data-ngn="${Number(prod.originalPriceNGN) - Number(prod.priceNGN)}">${money(Number(prod.originalPriceNGN) - Number(prod.priceNGN))}</strong> today</div>` : ''}
         </div>` : ''}
-        <div class="book-hero-actions">
-          ${hasPreview ? `
-          <button class="btn preview-btn" onclick="${previewOnclick}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-            Preview Book
-          </button>` : ''}
+
+        <div class="bk2-actions" id="bk2Actions">
           ${prod.category !== 'ours' && prod.externalUrl ? `
-          <a class="btn buy-btn find-on-amazon-btn" href="${escapeHtml(prod.externalUrl)}" target="_blank" rel="noopener noreferrer">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" style="margin-right:5px;vertical-align:-2px;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+          <a class="btn buy-btn find-on-amazon-btn bk2-primary" href="${escapeHtml(prod.externalUrl)}" target="_blank" rel="noopener noreferrer">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
             Find on Amazon
           </a>` : `
-          <button class="btn buy-btn" data-product-id="${escapeHtml(prod.id || '')}" data-action="add-to-cart">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" style="vertical-align:-2px;margin-right:4px;"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+          <button class="btn buy-btn bk2-primary" data-product-id="${escapeHtml(prod.id || '')}" data-action="add-to-cart">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
             Add to Cart
           </button>`}
-          ${window.wishlistToggleButton ? window.wishlistToggleButton(prod.id || '') : ''}
+          ${hasPreview ? `
+          <button class="btn preview-btn bk2-secondary" onclick="${previewOnclick}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            Preview Book
+          </button>` : ''}
         </div>
       </div>
     </div>
+
+    ${prod.category === 'ours' && priceDisplay ? `
+    <div class="bk2-buybar" id="bk2Buybar" aria-hidden="true">
+      <div class="bk2-buybar-price">
+        <span class="book-hero-price" ${prod.priceNGN ? `data-ngn="${Number(prod.priceNGN)}"` : ''}>${priceDisplay}</span>
+        ${originalPriceDisplay ? `<span class="book-hero-price-old" data-ngn="${Number(prod.originalPriceNGN)}">${originalPriceDisplay}</span>` : ''}
+      </div>
+      <button class="btn buy-btn bk2-buybar-btn" data-product-id="${escapeHtml(prod.id || '')}" data-action="add-to-cart" tabindex="-1">Add to Cart</button>
+    </div>` : ''}
 
     <!-- ── About this ebook ── -->
     <section class="bk-section" id="bkAboutSection">
@@ -1020,6 +1122,20 @@ function renderBookDetail(prod) {
       <button type="button" class="bk-more bk-more--center" id="bkAllReviews" style="display:none;"></button>
     </section>
   `;
+
+  // ── Sticky buy bar (phones): appears once the main Add to Cart has scrolled away ──
+  (function () {
+    const bar = document.getElementById('bk2Buybar');
+    const anchor = document.getElementById('bk2Actions');
+    if (!bar || !anchor || !('IntersectionObserver' in window)) return;
+    new IntersectionObserver(([entry]) => {
+      const show = !entry.isIntersecting && entry.boundingClientRect.top < 0;
+      bar.classList.toggle('is-visible', show);
+      bar.setAttribute('aria-hidden', show ? 'false' : 'true');
+      const btn = bar.querySelector('button');
+      if (btn) btn.tabIndex = show ? 0 : -1;
+    }).observe(anchor);
+  })();
 
   // ── About: collapse long descriptions with a Read more toggle ──
   const aboutEl  = document.getElementById('bkAbout');
