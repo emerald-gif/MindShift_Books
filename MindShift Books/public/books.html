@@ -169,6 +169,15 @@
     .our-book-item .our-cover { border-radius: 14px; box-shadow: 0 1px 2px rgba(15,23,42,.12), 0 14px 30px -12px rgba(15,23,42,.5); }
     .our-book-item .our-title { text-align: left; }
     .our-book-item .card-price-block { align-items: flex-start; text-align: left; }
+
+    /* Equal-height cards: reserve 3 title lines, clamp longer titles, and pin the
+       Details/cart row to the bottom so buttons line up across the carousel. */
+    #ourBooksGrid .our-book-item, #ourBooksGrid2 .our-book-item { height: auto; }
+    #ourBooksGrid .our-title, #ourBooksGrid2 .our-title {
+      min-height: calc(3 * 1.3em);
+      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    #ourBooksGrid .our-actions, #ourBooksGrid2 .our-actions { margin-top: auto; padding-top: 10px; }
     .our-book-item .card-price-subrow { justify-content: flex-start; }
 
     /* ---- "View all" link on section headers ---- */
