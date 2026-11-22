@@ -476,32 +476,31 @@ main{max-width:1100px;margin:0 auto}
 .book-promo-btn{padding:12px 32px;background:var(--g);color:#fff;border:none;border-radius:99px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(37,99,235,.32);transition:all .18s}
 .book-promo-btn:active{transform:scale(.97)}
 /* Book shelf in the feed — real books (cover, price, Buy now), not a banner */
-.book-shelf{position:relative;background:var(--c-bg,#fff);border-top:8px solid var(--c-line,#eef2ff);border-bottom:8px solid var(--c-line,#eef2ff);padding:16px 0 18px}
-.bs-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:0 16px 12px}
-.bs-title{font-size:17px;font-weight:800;color:var(--txt)}
-.bs-sub{font-size:12px;color:var(--sub);margin-top:2px}
-.bs-right{display:flex;align-items:center;gap:10px;flex:none}
-.bs-all{font-size:13px;font-weight:700;color:#4f46e5;text-decoration:none}
-.bs-x{width:28px;height:28px;border-radius:50%;border:none;background:var(--c-surface,#f4f4f6);display:flex;align-items:center;justify-content:center;color:var(--sub);cursor:pointer}
-.bs-x svg{width:13px;height:13px}
-.bs-row{display:flex;gap:12px;overflow-x:auto;padding:2px 16px 6px;scroll-padding-left:16px;scroll-padding-right:16px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;scrollbar-width:none;overscroll-behavior-x:contain}
-.bs-row::after{content:'';flex:0 0 4px}  /* keeps the right-hand margin when scrolled to the end (Safari drops end padding in scrollers) */
+.book-shelf{position:relative;background:var(--c-bg,#fff);padding:20px 0 18px;border-bottom:1px solid var(--border)}
+.book-shelf .acard-head{padding:0 16px;align-items:center}
+.book-shelf .acard-author{cursor:default;margin-bottom:0}
+.bs-lead{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding:10px 16px 12px}
+.bs-title{font-size:17px;font-weight:800;color:var(--txt);letter-spacing:-.01em;line-height:1.2}
+.bs-sub{font-size:12.5px;color:var(--sub);margin-top:3px}
+.bs-all{flex:none;display:inline-flex;align-items:center;gap:2px;font-size:13px;font-weight:700;color:#4f46e5;text-decoration:none;padding:4px 0}
+.bs-all svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.bs-row{display:flex;gap:10px;overflow-x:auto;padding:2px 16px 4px;scroll-padding-left:16px;scroll-padding-right:16px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.bs-row::after{content:'';flex:0 0 6px}  /* keeps the right-hand margin when scrolled to the end (Safari drops end padding in scrollers) */
 .bs-row::-webkit-scrollbar{display:none}
-.bs-card{flex:0 0 132px;scroll-snap-align:start;display:flex;flex-direction:column}
-.bs-cover{display:block;width:132px;aspect-ratio:2/3;border-radius:10px;overflow:hidden;background:var(--c-surface,#f1f3f9);box-shadow:0 6px 16px rgba(15,23,42,.14)}
+.bs-card{flex:0 0 112px;scroll-snap-align:start;display:flex;flex-direction:column;text-decoration:none;color:inherit;-webkit-tap-highlight-color:transparent}
+.bs-cover{position:relative;display:block;width:112px;aspect-ratio:2/3;border-radius:12px;overflow:hidden;background:var(--c-surface,#f1f3f9);box-shadow:0 1px 2px rgba(15,23,42,.12),0 12px 20px -10px rgba(15,23,42,.45);transition:transform .18s}
+.bs-card:active .bs-cover{transform:scale(.97)}
 .bs-cover img{width:100%;height:100%;object-fit:cover;display:block}
-.bs-name{font-size:13px;font-weight:700;color:var(--txt);line-height:1.3;margin-top:9px;min-height:34px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.bs-price{font-size:13px;font-weight:800;color:var(--txt);margin-top:4px}
-.bs-price s{font-size:11px;font-weight:500;color:var(--sub);margin-left:4px}
-.bs-buy{margin-top:8px;display:block;text-align:center;padding:8px 0;border-radius:99px;background:var(--g);color:#fff;font-size:12.5px;font-weight:700;text-decoration:none}
-.bs-buy:active{transform:scale(.97)}
-.bs-end{flex:0 0 132px;scroll-snap-align:start;display:flex;flex-direction:column;text-decoration:none}
-.bs-end-box{flex:1;border-radius:10px;background:linear-gradient(160deg,rgba(79,70,229,.14),rgba(6,182,212,.14));border:1px solid rgba(79,70,229,.22);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:14px 10px;gap:8px}
-.bs-end-ico{width:46px;height:46px;border-radius:50%;background:var(--g);display:flex;align-items:center;justify-content:center;color:#fff}
-.bs-end-ico svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.bs-end-t{font-size:14px;font-weight:800;color:var(--txt);line-height:1.25}
-.bs-end-s{font-size:11.5px;color:var(--sub);line-height:1.35}
-.bs-end .bs-buy{background:transparent;color:#4f46e5;border:1.5px solid #4f46e5;padding:6.5px 0}
+.bs-off{position:absolute;top:6px;left:6px;padding:3px 7px;border-radius:99px;background:rgba(15,23,42,.8);color:#fff;font-size:10px;font-weight:800;letter-spacing:.02em;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+.bs-name{font-size:12.5px;font-weight:700;color:var(--txt);line-height:1.3;margin-top:9px;min-height:32px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.bs-price{font-size:12.5px;font-weight:800;color:var(--txt);margin-top:3px}
+.bs-price s{font-size:10.5px;font-weight:500;color:var(--sub);margin-left:4px}
+.bs-end{flex:0 0 112px;scroll-snap-align:start;display:flex;flex-direction:column;text-decoration:none}
+.bs-end-box{width:112px;aspect-ratio:2/3;border-radius:12px;background:linear-gradient(160deg,rgba(79,70,229,.12),rgba(6,182,212,.14));border:1px solid rgba(79,70,229,.2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:12px;text-align:center}
+.bs-end-ico{width:42px;height:42px;border-radius:50%;background:var(--g);display:flex;align-items:center;justify-content:center;color:#fff}
+.bs-end-ico svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.bs-end-t{font-size:13.5px;font-weight:800;color:var(--txt);line-height:1.25}
+.bs-end-s{font-size:11px;color:var(--sub);line-height:1.35}
 
 .xbook-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--c-line,#eef2f7)}
 .xbook-cov{flex:none;width:52px;height:78px;border-radius:7px;overflow:hidden;background:var(--c-surface,#f1f3f9);box-shadow:0 3px 10px rgba(15,23,42,.14)}
@@ -1471,13 +1470,14 @@ function shelfCoverImg(p, alt, sizes){
 function bookCardsHtml(books){
   return books.map(p => {
     const id = encodeURIComponent(p.id);
-    const was = (p.originalPriceNGN && p.originalPriceNGN > p.priceNGN) ? `<s>${shelfNgn(p.originalPriceNGN)}</s>` : '';
-    return `<div class="bs-card">
-      <a class="bs-cover" href="/review?id=${id}" aria-label="${shelfEsc(p.title)}">${shelfCoverImg(p, p.title, '132px')}</a>
-      <div class="bs-name">${shelfEsc(p.title)}</div>
-      <div class="bs-price">${shelfNgn(p.priceNGN)}${was}</div>
-      <a class="bs-buy" href="/books?buy=${id}">Buy now</a>
-    </div>`;
+    const hasOff = p.originalPriceNGN && p.originalPriceNGN > p.priceNGN;
+    const was = hasOff ? `<s>${shelfNgn(p.originalPriceNGN)}</s>` : '';
+    const off = hasOff ? `<span class="bs-off">-${Math.round((1 - p.priceNGN / p.originalPriceNGN) * 100)}%</span>` : '';
+    return `<a class="bs-card" href="/review?id=${id}" aria-label="${shelfEsc(p.title)}">
+      <span class="bs-cover">${shelfCoverImg(p, p.title, '112px')}${off}</span>
+      <span class="bs-name">${shelfEsc(p.title)}</span>
+      <span class="bs-price">${shelfNgn(p.priceNGN)}${was}</span>
+    </a>`;
   }).join('');
 }
 function shelfTopInterest(){
@@ -1494,24 +1494,42 @@ function shelfTopInterest(){
 function bookEndCardHtml(shown){
   const more = Math.max(0, _shelfAll.length - shown);
   const top = _shelfPersonal ? shelfTopInterest() : '';
-  const title = more > 0 ? `+${more} more book${more === 1 ? '' : 's'}` : 'The full bookstore';
-  const sub = top ? `More on ${shelfEsc(top)} and other topics` : 'Browse every title and filter by topic';
-  return `<a class="bs-end" href="/books">
+  const title = more > 0 ? `+${more} more book${more === 1 ? '' : 's'}` : 'Full bookstore';
+  const sub = top ? `More on ${shelfEsc(top)}` : 'Browse by topic';
+  return `<a class="bs-end" href="/books/all">
     <div class="bs-end-box">
-      <div class="bs-end-ico"><svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/><path d="M9 7h5"/></svg></div>
+      <div class="bs-end-ico"><svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></div>
       <div class="bs-end-t">${title}</div>
       <div class="bs-end-s">${sub}</div>
     </div>
-    <span class="bs-buy">Open bookstore</span>
   </a>`;
 }
 function bookShelfHtml(){
   const books = shelfBooksNow();
   return `<div class="book-shelf" id="bookPromoCard">
-    <div class="bs-head">
-      <div><div class="bs-title">Books for you</div><div class="bs-sub">${_shelfPersonal ? 'Picked for your interests' : 'From MindShift Books · read it today'}</div></div>
-      <div class="bs-right"><a class="bs-all" href="/books/all">See all</a>
-        <button class="bs-x" onclick="dismissBookPromoCard()" aria-label="Dismiss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div class="acard-head">
+      <div class="acard-author">
+        <img class="acard-av" src="logo.jpg" alt="MindShift Books" onerror="this.style.background='linear-gradient(135deg,#4f46e5,#06b6d4)'">
+        <span class="acard-author-name">MindShift Books</span>
+        <span class="vbadge"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>
+        <span class="acard-author-dot">·</span>
+        <span class="acard-author-date">Bookstore</span>
+      </div>
+      <div class="acard-menu-wrap" onclick="event.stopPropagation()">
+        <button class="acard-menu-btn" onclick="toggleCardMenu('books',event)" title="More options" aria-label="More options">
+          <svg fill="currentColor" viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+        </button>
+        <div class="acard-menu-drop" id="cmenu-books">
+          <button class="acard-menu-item" onclick="closeOpenCardMenu();dismissBookPromoCard()">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            Hide for today
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="bs-lead">
+      <div><div class="bs-title">Books for you</div><div class="bs-sub">${_shelfPersonal ? 'Picked for your interests' : 'Fresh reads from MindShift Books'}</div></div>
+      <a class="bs-all" href="/books/all">See all <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></a>
     </div>
     <div class="bs-row">${bookCardsHtml(books)}${bookEndCardHtml(books.length)}</div>
   </div>`;
