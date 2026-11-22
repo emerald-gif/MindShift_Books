@@ -635,8 +635,8 @@ document.addEventListener('DOMContentLoaded', loadFreeEbooksSwiper);
 // just edit this list (any id from the 'ours' PRODUCTS entries works).
 const OUR_BOOKS_SWIPER_ORDER = [
   'broke-confused-and-trying',
-  'when-god-feels-silent',
-  'escape-your-environment-or-become-it'
+  'escape-your-environment-or-become-it',
+  'when-god-feels-silent'
 ];
 
 // Second "Our Books" row ("More From Us"), directly below the first —
