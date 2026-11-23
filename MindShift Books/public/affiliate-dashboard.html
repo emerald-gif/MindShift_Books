@@ -158,12 +158,6 @@ a.browse:hover svg{transform:translateX(2px);}
 .bal-go{flex:none;display:inline-flex;align-items:center;gap:2px;font-size:.8rem;font-weight:800;color:#15803d}
 .bal-go svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
 .bal-note{margin-top:12px;padding-top:12px;border-top:1px solid rgba(22,163,74,.18);font-size:.82rem;color:var(--c-sub,#4b5563);line-height:1.45}
-.clicks-row{display:flex;align-items:center;gap:13px;margin:12px 22px 0;padding:12px 16px;background:var(--c-bg,#fff);border:1px solid var(--c-line,#f1f5f9);border-radius:18px}
-.clicks-lbl{flex:1;font-size:.9rem;font-weight:700;color:var(--c-sub,#374151)}
-.clicks-val{font-size:1.2rem;font-weight:900;letter-spacing:-.01em}
-.clicks-row{display:flex;align-items:center;gap:13px;margin:12px 22px 0;padding:14px 16px;border-radius:18px;background:var(--c-bg,#fff);border:1px solid var(--c-line,#f1f5f9)}
-.clicks-lbl{flex:1;font-size:.9rem;font-weight:700;color:var(--c-sub,#374151)}
-.clicks-val{font-size:1.2rem;font-weight:900;letter-spacing:-.01em}
 .earn-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 22px 0}
 .earn-tile{background:var(--c-bg,#fff);border:1px solid var(--c-line,#f1f5f9);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:2px;min-width:0}
 .earn-tile .stat-icon{margin-bottom:12px}
@@ -326,6 +320,10 @@ a.browse:hover svg{transform:translateX(2px);}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>
       Overview
     </button>
+    <a class="nav-item" href="/affiliate/readers">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0113 0"/><path d="M16 4.6a3.5 3.5 0 010 6.8"/><path d="M18 14.2a6.5 6.5 0 013.5 5.8"/></svg>
+      Readers
+    </a>
     <a class="nav-item" href="/affiliate/payout">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 012-2h13a2 2 0 012 2v11a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/><path d="M16 12h4"/></svg>
       Payout
@@ -395,7 +393,6 @@ a.browse:hover svg{transform:translateX(2px);}
       <div class="earn-tile"><div class="sk sk-ico" style="margin-bottom:12px"></div><div class="sk sk-line" style="width:70%;height:20px"></div><div class="sk sk-line" style="width:45%;height:11px;margin:0"></div></div>
       <div class="earn-tile"><div class="sk sk-ico" style="margin-bottom:12px"></div><div class="sk sk-line" style="width:60%;height:20px"></div><div class="sk sk-line" style="width:40%;height:11px;margin:0"></div></div>
     </div>
-    <div class="sk" style="height:68px;border-radius:18px;margin:12px 22px 0"></div>
     <div class="sk" style="height:62px;border-radius:18px;margin:12px 22px 0"></div>
   </div>
 </div>
@@ -445,6 +442,7 @@ a.browse:hover svg{transform:translateX(2px);}
     document.getElementById('navOverview').classList.toggle('active', view === 'overview');
     document.getElementById('navAccount').classList.toggle('active', view === 'account');
     closeSidebar();
+    window.scrollTo(0, 0);
     if (view === 'overview') renderOverviewView();
     else renderAccountView();
   }
@@ -508,49 +506,12 @@ a.browse:hover svg{transform:translateX(2px);}
         </div>
       </div>
 
-      <div class="clicks-row">
-        <div class="stat-icon">${ICON.link}</div>
-        <div class="clicks-lbl">Link clicks</div>
-        <div class="clicks-val">${nf.format(affiliate.clicks || 0)}</div>
-      </div>
-
-      <div class="clicks-row">
-        <div class="stat-icon">${ICON.link}</div>
-        <div class="clicks-lbl">Link clicks</div>
-        <div class="clicks-val">${nf.format(affiliate.clicks || 0)}</div>
-      </div>
-
       <div class="section" id="funnelSec">
         <div class="section-eyebrow">${ICON.trend} Performance</div>
         <h2>Your sales funnel</h2>
         <div id="funnelWrap"><div class="sk-card" style="margin:18px 0 0"><div class="sk sk-line" style="width:40%;height:12px"></div><div class="sk" style="height:12px;border-radius:99px;margin:12px 0"></div><div class="sk" style="height:12px;width:78%;border-radius:99px;margin:12px 0"></div><div class="sk" style="height:12px;width:46%;border-radius:99px;margin:12px 0 4px"></div></div></div>
       </div>
-
-      <div class="section">
-        <div class="section-eyebrow">${ICON.users} Community</div>
-        <h2>Readers you've brought in</h2>
-        <div id="referredWrap"></div>
-      </div>
     `;
-
-    // Referred
-    const refWrap = document.getElementById('referredWrap');
-    if (!REFERRED || REFERRED.length === 0) {
-      refWrap.innerHTML = `<div class="empty">No one yet — share your link above to bring in your first reader.</div>`;
-    } else {
-      refWrap.innerHTML = `<div class="referred-card">` + REFERRED.map(r => {
-        const init = initials(r.name);
-        return `
-        <div class="referred-row">
-          <div class="avatar">${init ? init : ICON.user}</div>
-          <div class="info">
-            <div class="name">${escapeHtml(r.name || 'A new member')}</div>
-            <div class="email">${escapeHtml(r.email || '')}</div>
-          </div>
-        </div>
-      `;
-      }).join('') + `</div>`;
-    }
 
     loadFunnel(FUNNEL_DAYS);
 
@@ -1000,7 +961,7 @@ a.browse:hover svg{transform:translateX(2px);}
   // First paint: if we've loaded this dashboard in this tab before, show it instantly
   // from the saved copy, then refresh it quietly once we're signed in.
   const ME_KEY = 'msb_aff_me';
-  const wantsAccount = new URLSearchParams(window.location.search).get('view') === 'account';
+  const wantedView = new URLSearchParams(window.location.search).get('view') === 'account' ? 'account' : 'overview';
   let cachedMe = null, cachedRaw = ssGet(ME_KEY);
   if (cachedRaw) {
     try {
@@ -1008,7 +969,7 @@ a.browse:hover svg{transform:translateX(2px);}
       if (cachedMe && cachedMe.affiliate) {
         AFFILIATE = cachedMe.affiliate;
         REFERRED = cachedMe.referred || [];
-        setView(wantsAccount ? 'account' : 'overview');
+        setView(wantedView);
       } else { cachedMe = null; }
     } catch (_) { cachedMe = null; }
   }
@@ -1050,7 +1011,7 @@ a.browse:hover svg{transform:translateX(2px);}
       try { if (AFFILIATE.code) localStorage.setItem('msb_own_aff_code', AFFILIATE.code); } catch (_) {}
       // Only redraw if something actually changed (and never under the bank flow).
       if (payload !== cachedRaw && !bankFlowEl) {
-        setView(cachedMe ? currentView : (wantsAccount ? 'account' : 'overview'));
+        setView(cachedMe ? currentView : wantedView);
       }
     } catch (e) {
       if (!cachedMe) main.innerHTML = `<div class="empty">Could not load your dashboard. Please refresh the page.</div>`;

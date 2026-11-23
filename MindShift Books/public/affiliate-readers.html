@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script>(function(){try{var c=localStorage.getItem('msb_theme'),d=c==='dark'||(c!=='light'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches),r=document.documentElement;r.setAttribute('data-theme',d?'dark':'light');r.style.colorScheme=d?'dark':'light'}catch(e){}})()</script>
+<script src="/theme.js" defer></script>
+<link rel="icon" href="/MINDSHIFT.jpg">
+
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1, viewport-fit=cover" />
+  <title>Readers | MindShift Books</title>
+  <meta name="robots" content="noindex, follow" />
+  <link rel="shortcut icon" href="/MINDSHIFTAFFILIATE.jpg" type="image/jpg">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+:root{ --primary:#0f172a; --accent:#06b6d4; --indigo:#4f46e5; }
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Inter',sans-serif}
+body{background:var(--c-bg,#fff);color:var(--primary);}
+svg.ico{width:19px;height:19px;flex-shrink:0;}
+svg.ico-sm{width:14px;height:14px;flex-shrink:0;}
+
+header{
+  position:sticky;top:0;background:var(--c-bg,white);z-index:100;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 20px;border-bottom:1px solid var(--c-line,#f1f5f9);
+}
+header .left{display:flex;align-items:center;gap:12px;}
+.menu-btn{
+  width:36px;height:36px;border-radius:10px;border:1.5px solid var(--c-line,#e2e8f0);background:var(--c-bg,#fff);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;color:var(--primary);
+}
+.menu-btn svg{width:18px;height:18px;}
+header .brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--primary);font-weight:800;font-size:1rem;}
+header .brand img{width:30px;height:30px;border-radius:7px;}
+
+.hdr-actions{display:flex;align-items:center;gap:8px;}
+a.browse{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px 0 16px;border-radius:999px;
+  background:var(--c-bg2,#f1f5f9);border:1px solid var(--c-line,#e2e8f0);color:var(--primary);
+  font-weight:700;font-size:0.82rem;text-decoration:none;white-space:nowrap;transition:background .15s,transform .15s;}
+a.browse:active{transform:scale(.97);}
+a.browse svg{width:14px;height:14px;transition:transform .2s ease;}
+a.browse:hover svg{transform:translateX(2px);}
+.settings{position:relative;}
+.gear{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;
+  background:var(--c-bg2,#f1f5f9);border:1px solid var(--c-line,#e2e8f0);color:var(--primary);transition:transform .15s;}
+.gear:active{transform:scale(.95);}
+.gear svg{width:18px;height:18px;}
+.gear[aria-expanded="true"]{background:var(--c-ink-bg,#0f172a);color:#fff;border-color:transparent;}
+.menu{position:absolute;right:0;top:calc(100% + 10px);min-width:196px;padding:8px;z-index:200;
+  background:var(--c-bg,#fff);border:1px solid var(--c-line,#e2e8f0);border-radius:18px;box-shadow:0 18px 44px rgba(15,23,42,.18);
+  transform-origin:top right;animation:menuIn .16s ease-out;}
+.menu[hidden]{display:none;}
+@keyframes menuIn{from{opacity:0;transform:translateY(-6px) scale(.97);}to{opacity:1;transform:none;}}
+.menu-label{padding:8px 12px 6px;font-size:0.7rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--c-mute,#94a3b8);}
+.menu button{display:flex;align-items:center;gap:12px;width:100%;padding:11px 12px;border:0;background:none;border-radius:12px;
+  font-size:0.92rem;font-weight:600;color:var(--primary);cursor:pointer;text-align:left;}
+.menu button:active{background:var(--c-bg2,#f1f5f9);}
+.menu button svg{width:18px;height:18px;flex-shrink:0;color:var(--c-sub2,#64748b);}
+.menu button.on{background:rgba(79,70,229,.10);font-weight:800;}
+.menu button.on svg{color:var(--indigo);}
+.menu .tick{margin-left:auto;width:6px;height:11px;border:solid var(--indigo);border-width:0 2px 2px 0;transform:rotate(45deg) translate(-1px,-2px);opacity:0;}
+.menu button.on .tick{opacity:1;}
+@media (max-width:400px){
+  header{padding:12px 14px;}
+  header .brand{font-size:0.92rem;gap:8px;}
+  a.browse{padding:0 12px 0 14px;}
+}
+@media (max-width:360px){ a.browse .long{display:none;} }
+
+.wrap{max-width:460px;margin:0 auto;}
+
+/* ── SIDEBAR ── */
+.sidebar-overlay{
+  position:fixed;inset:0;background:rgba(15,23,42,0.45);z-index:199;
+  opacity:0;pointer-events:none;transition:opacity 0.2s;
+}
+.sidebar-overlay.open{opacity:1;pointer-events:auto;}
+.sidebar{
+  position:fixed;top:0;left:0;bottom:0;width:270px;background:var(--c-bg,#fff);z-index:200;
+  transform:translateX(-100%);transition:transform 0.25s ease;
+  display:flex;flex-direction:column;box-shadow:2px 0 24px rgba(0,0,0,0.08);
+}
+.sidebar.open{transform:translateX(0);}
+.sidebar-head{padding:20px 20px 16px;border-bottom:1px solid var(--c-line,#f1f5f9);display:flex;align-items:center;gap:10px;}
+.sidebar-head img{width:28px;height:28px;border-radius:7px;}
+.sidebar-head .name{font-weight:800;font-size:0.94rem;}
+.sidebar-nav{padding:14px 12px;flex:1;}
+.nav-item{
+  display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
+  color:var(--c-sub,#475569);font-weight:700;font-size:0.9rem;cursor:pointer;margin-bottom:4px;
+  border:none;background:none;width:100%;text-align:left;text-decoration:none;
+}
+.nav-item svg{width:19px;height:19px;flex-shrink:0;}
+.nav-item.active{background:var(--c-tonal,#eef2ff);color:var(--indigo);}
+.sidebar-foot{padding:14px 12px 20px;border-top:1px solid var(--c-line,#f1f5f9);}
+.sidebar-foot a{
+  display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 14px;border-radius:999px;
+  background:var(--c-bg2,#f1f5f9);border:1px solid var(--c-line,#e2e8f0);
+  color:var(--primary);font-weight:700;font-size:0.88rem;text-decoration:none;transition:transform .15s ease;
+}
+.sidebar-foot a:active{transform:scale(.98);}
+.sidebar-foot a svg{width:16px;height:16px;transition:transform .2s ease;}
+.sidebar-foot a:hover svg{transform:translateX(-2px);}
+
+/* ── HERO ── */
+.hero{padding:32px 22px 4px;}
+.hero .eyebrow{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:0.76rem;font-weight:800;color:var(--c-ind,#4f46e5);letter-spacing:0.04em;
+  text-transform:uppercase;margin-bottom:10px;
+}
+.hero h1{font-size:1.55rem;font-weight:900;letter-spacing:-0.02em;line-height:1.2;}
+.hero .sub{color:var(--c-sub2,#64748b);font-size:0.88rem;margin-top:8px;line-height:1.5;}
+
+/* ── SECTION ── */
+.section{padding:30px 22px 60px;}
+.section-eyebrow{
+  display:flex;align-items:center;gap:6px;
+  font-size:0.76rem;font-weight:800;color:var(--c-ind,#4f46e5);letter-spacing:0.04em;text-transform:uppercase;margin-bottom:8px;
+}
+.section h2{font-size:1.25rem;font-weight:900;letter-spacing:-0.01em;}
+
+/* ── READERS LIST ── */
+.referred-card{
+  margin-top:18px;border:1px solid var(--c-line,#f1f5f9);border-radius:18px;padding:2px 18px;
+}
+.referred-row{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--c-line,#f1f5f9);}
+.referred-row:last-child{border-bottom:none;}
+.referred-row .avatar{
+  width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--indigo),var(--accent));
+  color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.82rem;flex-shrink:0;
+}
+.referred-row .avatar svg{width:16px;height:16px;}
+.referred-row .info{min-width:0;flex:1;}
+.referred-row .name{font-weight:700;font-size:0.88rem;}
+.referred-row .email{font-size:0.76rem;color:var(--c-mute,#94a3b8);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+.empty{padding:30px 18px;text-align:center;color:var(--c-mute,#94a3b8);font-size:0.86rem;border:1px solid var(--c-line,#f1f5f9);border-radius:18px;margin-top:18px;}
+
+  
+.start-link{display:block;margin-top:14px;text-align:center;padding:15px;border-radius:16px;font-weight:800;font-size:.95rem;color:#fff;text-decoration:none;background:linear-gradient(90deg,var(--indigo),var(--accent))}
+
+/* ── Skeleton loading (replaces the spinner) ── */
+.sk{background:linear-gradient(90deg,var(--c-line,#eef2f7) 25%,var(--c-bg2,#f8fafc) 50%,var(--c-line,#eef2f7) 75%);background-size:200% 100%;animation:skShimmer 1.3s ease-in-out infinite;border-radius:10px}
+@keyframes skShimmer{to{background-position:-200% 0}}
+.sk-line{height:14px;margin-bottom:10px}
+.sk-hero{padding:32px 22px 4px}
+@media (prefers-reduced-motion:reduce){.sk{animation:none}}
+</style>
+<link rel="stylesheet" href="/theme.css?v=1">
+  <link rel="stylesheet" href="/affiliate-glass.css">
+  <script src="/affiliate-glass.js" defer></script>
+</head>
+<body data-large-title>
+
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-head">
+    <img src="/MINDSHIFTAFFILIATE.jpg" alt="MindShift Books logo">
+    <div class="name">MindShift Books</div>
+  </div>
+  <div class="sidebar-nav">
+    <a class="nav-item" href="/affiliate/dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>
+      Overview
+    </a>
+    <a class="nav-item active" href="/affiliate/readers">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0113 0"/><path d="M16 4.6a3.5 3.5 0 010 6.8"/><path d="M18 14.2a6.5 6.5 0 013.5 5.8"/></svg>
+      Readers
+    </a>
+    <a class="nav-item" href="/affiliate/payout">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 012-2h13a2 2 0 012 2v11a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/><path d="M16 12h4"/></svg>
+      Payout
+    </a>
+    <a class="nav-item" href="/affiliate/dashboard?view=account">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0116 0"/></svg>
+      My Account
+    </a>
+  </div>
+  <div class="sidebar-foot">
+    <a href="https://mindshiftbooks.shop/books">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+      Back to store
+    </a>
+  </div>
+</div>
+
+<header>
+  <div class="left">
+    <button class="menu-btn" id="menuBtn" aria-label="Open menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+    <a class="brand" href="https://mindshiftbooks.shop/">
+      <img src="/MINDSHIFTAFFILIATE.jpg" alt="MindShift Books logo">
+      MindShift Books
+    </a>
+  </div>
+  <div class="hdr-actions">
+    <div class="settings">
+      <button type="button" class="gear" id="settingsBtn" aria-haspopup="menu" aria-expanded="false" aria-label="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      </button>
+      <div class="menu" id="settingsMenu" role="menu" aria-label="Appearance" hidden>
+        <div class="menu-label">Appearance</div>
+        <button type="button" role="menuitemradio" aria-checked="false" data-theme-choice="light">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+          Light<span class="tick"></span>
+        </button>
+        <button type="button" role="menuitemradio" aria-checked="false" data-theme-choice="dark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>
+          Dark<span class="tick"></span>
+        </button>
+        <button type="button" role="menuitemradio" aria-checked="false" data-theme-choice="system">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+          System<span class="tick"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div id="mainContent">
+    <div class="sk-hero" aria-busy="true" aria-label="Loading">
+      <div class="sk sk-line" style="width:70px;height:12px"></div>
+      <div class="sk sk-line" style="width:80%;height:26px;margin-top:6px"></div>
+      <div class="sk sk-line" style="width:56%;height:26px"></div>
+      <div class="sk sk-line" style="width:90%;margin-top:10px"></div>
+    </div>
+    <div style="padding:20px 22px 0">
+      <div class="sk" style="height:76px;border-radius:18px"></div>
+      <div class="sk" style="height:76px;border-radius:18px;margin-top:10px"></div>
+      <div class="sk" style="height:76px;border-radius:18px;margin-top:10px"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="/auth.js"></script>
+<script>
+  const main = document.getElementById('mainContent');
+  const nf = new Intl.NumberFormat('en-NG');
+  let AFFILIATE = null, REFERRED = [];
+
+  const ICON = {
+    users: `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20a6.5 6.5 0 0113 0"/><path d="M16 9.3a3 3 0 010 5.4"/><path d="M18.5 20a5.5 5.5 0 00-2.8-4.8"/></svg>`,
+    user: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0116 0"/></svg>`
+  };
+
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function initials(name) {
+    if (!name) return null;
+    const parts = name.trim().split(/\s+/);
+    return ((parts[0][0] || '') + (parts[1] ? parts[1][0] : '')).toUpperCase();
+  }
+
+  // ── Sidebar ──
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  function openSidebar() { sidebar.classList.add('open'); overlay.classList.add('open'); }
+  function closeSidebar() { sidebar.classList.remove('open'); overlay.classList.remove('open'); }
+  document.getElementById('menuBtn').addEventListener('click', openSidebar);
+  overlay.addEventListener('click', closeSidebar);
+
+  // ── Readers page ──
+  function renderReaders() {
+    const list = REFERRED || [];
+    const n = list.length;
+    const body = n === 0
+      ? `<div class="empty">No one yet — share your link to bring in your first reader.</div>
+         <a class="start-link" href="/affiliate/dashboard">Get my link</a>`
+      : `<div class="referred-card">` + list.map(r => {
+          const init = initials(r.name);
+          return `
+          <div class="referred-row">
+            <div class="avatar">${init ? init : ICON.user}</div>
+            <div class="info">
+              <div class="name">${escapeHtml(r.name || 'A new member')}</div>
+              <div class="email">${escapeHtml(r.email || '')}</div>
+            </div>
+          </div>`;
+        }).join('') + `</div>`;
+
+    main.innerHTML = `
+      <div class="hero">
+        <span class="eyebrow">${ICON.users} Readers</span>
+        <h1>Readers you've brought in</h1>
+        <div class="sub">${n === 0 ? 'Everyone who joins through your link will show up here.' : `${nf.format(n)} reader${n === 1 ? '' : 's'} joined through your link.`}</div>
+      </div>
+      <div class="section" style="padding-top:6px;">${body}</div>
+    `;
+  }
+
+  // First paint from the copy saved earlier in this tab (shared with the dashboard),
+  // then refresh quietly once we're signed in.
+  const ME_KEY = 'msb_aff_me';
+  const ssGet = (k) => { try { return sessionStorage.getItem(k); } catch (_) { return null; } };
+  const ssSet = (k, v) => { try { sessionStorage.setItem(k, v); } catch (_) {} };
+  let cachedMe = null;
+  const cachedMeRaw = ssGet(ME_KEY);
+  if (cachedMeRaw) {
+    try {
+      cachedMe = JSON.parse(cachedMeRaw);
+      if (cachedMe && cachedMe.affiliate) {
+        AFFILIATE = cachedMe.affiliate;
+        REFERRED = cachedMe.referred || [];
+        renderReaders();
+      } else { cachedMe = null; }
+    } catch (_) { cachedMe = null; }
+  }
+  function clearAffCache() {
+    try {
+      sessionStorage.removeItem(ME_KEY);
+      sessionStorage.removeItem('msb_aff_payouts');
+      Object.keys(sessionStorage).filter(k => k.indexOf('msb_aff_funnel_') === 0).forEach(k => sessionStorage.removeItem(k));
+    } catch (_) {}
+  }
+
+  window.MSBAuth.onAuthReady(async (user) => {
+    if (!user) {
+      clearAffCache();
+      window.location.href = '/login?returnTo=' + encodeURIComponent('/affiliate/readers');
+      return;
+    }
+    if (cachedMe && cachedMe.uid && cachedMe.uid !== user.uid) {
+      clearAffCache();
+      location.reload();
+      return;
+    }
+    try {
+      const token = await window.MSBAuth.getIdToken();
+      const meRes = await fetch('/api/affiliate/me', { headers: { Authorization: `Bearer ${token}` } });
+      const meData = await meRes.json();
+      if (!meData || !meData.affiliate) {
+        clearAffCache();
+        window.location.href = '/affiliate';
+        return;
+      }
+      const payload = JSON.stringify({ uid: user.uid, affiliate: meData.affiliate, referred: meData.referred || [] });
+      AFFILIATE = meData.affiliate;
+      REFERRED = meData.referred || [];
+      ssSet(ME_KEY, payload);
+      if (!cachedMe || payload !== cachedMeRaw) renderReaders();
+    } catch (e) {
+      if (!cachedMe) main.innerHTML = `<div class="empty" style="margin:24px 22px;">Could not load your readers. Please refresh the page.</div>`;
+    }
+  });
+</script>
+
+<script>
+/* Appearance menu: Light / Dark / System (uses the site-wide theme.js, same choice as Settings) */
+(function(){
+  var btn=document.getElementById('settingsBtn'), menu=document.getElementById('settingsMenu');
+  if(!btn||!menu) return;
+  function cur(){ return (window.MSBTheme && window.MSBTheme.get) ? window.MSBTheme.get() : 'system'; }
+  function sync(){
+    var c=cur();
+    menu.querySelectorAll('[data-theme-choice]').forEach(function(b){
+      var on=b.getAttribute('data-theme-choice')===c; b.classList.toggle('on',on); b.setAttribute('aria-checked',on?'true':'false');
+    });
+  }
+  function open(){ menu.hidden=false; btn.setAttribute('aria-expanded','true'); sync(); }
+  function close(){ menu.hidden=true; btn.setAttribute('aria-expanded','false'); }
+  btn.addEventListener('click',function(e){ e.stopPropagation(); if(menu.hidden) open(); else close(); });
+  menu.addEventListener('click',function(e){
+    var b=e.target.closest('[data-theme-choice]'); if(!b) return;
+    if(window.MSBTheme && window.MSBTheme.set) window.MSBTheme.set(b.getAttribute('data-theme-choice'));
+    sync(); setTimeout(close,140);
+  });
+  document.addEventListener('click',function(e){ if(!menu.hidden && !menu.contains(e.target) && !btn.contains(e.target)) close(); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape' && !menu.hidden){ close(); btn.focus(); } });
+  window.addEventListener('msb-theme',sync);
+})();
+</script>
+</body>
+</html>
