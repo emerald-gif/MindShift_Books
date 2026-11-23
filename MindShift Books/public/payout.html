@@ -164,7 +164,14 @@ a.browse:hover svg{transform:translateX(2px);}
 
 .loader{width:26px;height:26px;border:4px solid rgba(0,0,0,0.06);border-top:4px solid var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;margin:70px auto;}
 @keyframes spin{to{transform:rotate(360deg)}}
-  </style>
+  
+/* ── Skeleton loading (replaces the spinner) ── */
+.sk{background:linear-gradient(90deg,var(--c-line,#eef2f7) 25%,var(--c-bg2,#f8fafc) 50%,var(--c-line,#eef2f7) 75%);background-size:200% 100%;animation:skShimmer 1.3s ease-in-out infinite;border-radius:10px}
+@keyframes skShimmer{to{background-position:-200% 0}}
+.sk-line{height:14px;margin-bottom:10px}
+.sk-hero{padding:32px 22px 4px}
+@media (prefers-reduced-motion:reduce){.sk{animation:none}}
+</style>
 <link rel="stylesheet" href="/theme.css?v=1">
   <link rel="stylesheet" href="/affiliate-glass.css">
   <script src="/affiliate-glass.js" defer></script>
@@ -235,7 +242,24 @@ a.browse:hover svg{transform:translateX(2px);}
 
 <div class="wrap">
   <div id="mainContent">
-    <div class="loader"></div>
+    <div class="sk-hero" aria-busy="true" aria-label="Loading">
+      <div class="sk sk-line" style="width:70px;height:12px"></div>
+      <div class="sk sk-line" style="width:86%;height:26px;margin-top:6px"></div>
+      <div class="sk sk-line" style="width:58%;height:26px"></div>
+      <div class="sk sk-line" style="width:94%;margin-top:10px"></div>
+      <div class="sk sk-line" style="width:72%"></div>
+    </div>
+    <div class="sk" style="height:72px;border-radius:16px;margin:22px 22px 0"></div>
+    <div class="payout-grid">
+      <div class="sk" style="height:66px;border-radius:14px"></div>
+      <div class="sk" style="height:66px;border-radius:14px"></div>
+      <div class="sk" style="height:66px;border-radius:14px;grid-column:1 / -1"></div>
+    </div>
+    <div style="padding:30px 22px 0">
+      <div class="sk sk-line" style="width:80px;height:12px"></div>
+      <div class="sk sk-line" style="width:48%;height:22px"></div>
+      <div class="sk" style="height:150px;border-radius:18px;margin-top:18px"></div>
+    </div>
   </div>
 </div>
 
@@ -336,9 +360,40 @@ a.browse:hover svg{transform:translateX(2px);}
     }
   }
 
+  // First paint from the copy saved earlier in this tab (shared with the dashboard),
+  // then refresh quietly once we're signed in.
+  const ME_KEY = 'msb_aff_me', PAYOUTS_KEY = 'msb_aff_payouts';
+  const ssGet = (k) => { try { return sessionStorage.getItem(k); } catch (_) { return null; } };
+  const ssSet = (k, v) => { try { sessionStorage.setItem(k, v); } catch (_) {} };
+  let cachedMe = null, cachedPayoutsRaw = ssGet(PAYOUTS_KEY);
+  const cachedMeRaw = ssGet(ME_KEY);
+  if (cachedMeRaw) {
+    try {
+      cachedMe = JSON.parse(cachedMeRaw);
+      if (cachedMe && cachedMe.affiliate) {
+        AFFILIATE = cachedMe.affiliate;
+        PAYOUTS = cachedPayoutsRaw ? JSON.parse(cachedPayoutsRaw) : null;
+        renderPayout();
+      } else { cachedMe = null; }
+    } catch (_) { cachedMe = null; }
+  }
+  function clearAffCache() {
+    try {
+      sessionStorage.removeItem(ME_KEY);
+      sessionStorage.removeItem(PAYOUTS_KEY);
+      Object.keys(sessionStorage).filter(k => k.indexOf('msb_aff_funnel_') === 0).forEach(k => sessionStorage.removeItem(k));
+    } catch (_) {}
+  }
+
   window.MSBAuth.onAuthReady(async (user) => {
     if (!user) {
+      clearAffCache();
       window.location.href = '/login?returnTo=' + encodeURIComponent('/affiliate/payout');
+      return;
+    }
+    if (cachedMe && cachedMe.uid && cachedMe.uid !== user.uid) {
+      clearAffCache();
+      location.reload();
       return;
     }
     try {
@@ -350,14 +405,19 @@ a.browse:hover svg{transform:translateX(2px);}
       const meData = await meRes.json();
       const payoutsData = await payoutsRes.json().catch(() => ({ payouts: [] }));
       if (!meData || !meData.affiliate) {
+        clearAffCache();
         window.location.href = '/affiliate';
         return;
       }
+      const mePayload = JSON.stringify({ uid: user.uid, affiliate: meData.affiliate, referred: meData.referred || [] });
+      const payoutsPayload = JSON.stringify(payoutsData.payouts || []);
       AFFILIATE = meData.affiliate;
       PAYOUTS = payoutsData.payouts || [];
-      renderPayout();
+      ssSet(ME_KEY, mePayload);
+      ssSet(PAYOUTS_KEY, payoutsPayload);
+      if (!cachedMe || mePayload !== cachedMeRaw || payoutsPayload !== cachedPayoutsRaw) renderPayout();
     } catch (e) {
-      main.innerHTML = `<div class="empty">Could not load your payout details. Please refresh the page.</div>`;
+      if (!cachedMe) main.innerHTML = `<div class="empty">Could not load your payout details. Please refresh the page.</div>`;
     }
   });
 </script>
