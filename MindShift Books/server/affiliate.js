@@ -438,10 +438,12 @@ router.get('/api/affiliate/funnel', requireUser, async (req, res) => {
       const com = Number(o.affiliateCommission) || 0;
       if (o.uid) buyers.add(o.uid);
       const items = Array.isArray(o.items) ? o.items : [];
+      // Books in this order (older orders pre-date the affiliateBooks field → fall back to item count).
+      const nBooks = Number(o.affiliateBooks) > 0 ? Number(o.affiliateBooks) : (items.length || 1);
       const k = ms ? dayKey(ms) : null;
       if (k !== null && idx[k] !== undefined) {
-        buckets[idx[k]].sales += 1; buckets[idx[k]].earned += com;
-        pSales += 1; pEarned += com;
+        buckets[idx[k]].sales += nBooks; buckets[idx[k]].earned += com;
+        pSales += nBooks; pEarned += com;
         items.forEach(it => {
           const id = it.productId || it.title || 'item';
           const b = books[id] || (books[id] = { title: it.title || 'Book', coverUrl: it.coverUrl || null, units: 0 });
