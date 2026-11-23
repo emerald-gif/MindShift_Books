@@ -168,7 +168,11 @@ a.browse.back:hover svg{transform:translateX(-2px);}
   font-family:inherit;transition:background .15s ease;
 }
 .acct-switch:hover{background:var(--c-tonal2,#e0e7ff);}
-  </style>
+  
+.sk{background:linear-gradient(90deg,var(--c-line,#eef2f7) 25%,var(--c-bg2,#f8fafc) 50%,var(--c-line,#eef2f7) 75%);background-size:200% 100%;animation:skShimmer 1.3s ease-in-out infinite}
+@keyframes skShimmer{to{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){.sk{animation:none}}
+</style>
 <link rel="stylesheet" href="/theme.css?v=1">
   <link rel="stylesheet" href="/affiliate-glass.css">
   <script src="/affiliate-glass.js" defer></script>
@@ -209,7 +213,17 @@ a.browse.back:hover svg{transform:translateX(-2px);}
 </header>
 
 <div class="wrap" id="wrap">
-  <div class="state"><div class="loader"></div>Loading…</div>
+  <div aria-busy="true" aria-label="Loading" style="padding-top:28px">
+    <div class="sk" style="width:90px;height:12px;border-radius:8px"></div>
+    <div class="sk" style="width:84%;height:28px;border-radius:10px;margin-top:14px"></div>
+    <div class="sk" style="width:58%;height:28px;border-radius:10px;margin-top:8px"></div>
+    <div class="sk" style="width:92%;height:14px;border-radius:8px;margin-top:18px"></div>
+    <div class="sk" style="width:70%;height:14px;border-radius:8px;margin-top:8px"></div>
+    <div class="sk" style="height:50px;border-radius:14px;margin-top:28px"></div>
+    <div class="sk" style="height:50px;border-radius:14px;margin-top:14px"></div>
+    <div class="sk" style="height:50px;border-radius:14px;margin-top:14px"></div>
+    <div class="sk" style="height:54px;border-radius:16px;margin-top:22px"></div>
+  </div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>

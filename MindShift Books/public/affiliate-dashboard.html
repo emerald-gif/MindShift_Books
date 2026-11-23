@@ -247,6 +247,46 @@ a.browse:hover svg{transform:translateX(2px);}
   .fn-sub{font-size:0.76rem;color:var(--c-sub2,#64748b);margin-top:2px;}
   .fn-pill{font-size:0.8rem;font-weight:800;color:var(--indigo);flex-shrink:0;}
   .fn-plus{font-size:0.9rem;font-weight:800;color:#16a34a;flex-shrink:0;}
+
+/* ── Update bank details: its own full-screen flow ── */
+.bf{position:fixed;inset:0;z-index:1000;background:var(--c-bg2,#f8fafc);display:flex;flex-direction:column;animation:bfIn .28s cubic-bezier(.22,1,.36,1)}
+@keyframes bfIn{from{transform:translateY(28px);opacity:0}to{transform:none;opacity:1}}
+.bf-top{display:flex;align-items:center;gap:14px;padding:calc(12px + env(safe-area-inset-top,0px)) 16px 10px}
+.bf-back{flex:none;width:42px;height:42px;border-radius:50%;border:none;background:var(--c-bg,#fff);color:var(--primary);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 14px -6px rgba(15,23,42,.35)}
+.bf-back svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.bf-steps{flex:1;display:flex;gap:6px}
+.bf-steps i{flex:1;height:5px;border-radius:99px;background:var(--c-line,#e2e8f0);transition:background .3s}
+.bf-steps i.on{background:linear-gradient(90deg,var(--indigo),var(--accent))}
+.bf-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px 22px calc(32px + env(safe-area-inset-bottom,0px))}
+.bf-inner{max-width:440px;margin:0 auto}
+.bf-ico{width:64px;height:64px;border-radius:20px;background:var(--c-tonal,#eef2ff);color:var(--indigo);display:flex;align-items:center;justify-content:center;margin:20px 0 18px}
+.bf-ico svg{width:30px;height:30px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.bf-ico.ok{background:#dcfce7;color:#16a34a}
+.bf h2{font-size:1.7rem;font-weight:800;letter-spacing:-.02em;color:var(--primary);margin:0 0 8px;line-height:1.15}
+.bf-sub{font-size:.95rem;color:var(--c-sub2,#64748b);line-height:1.55;margin-bottom:26px}
+.bf-sub b{color:var(--primary);word-break:break-all}
+.bf-digits{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:6px}
+.bf-digit{width:100%;min-width:0;aspect-ratio:1/1.2;border-radius:14px;border:1.5px solid var(--c-line,#e2e8f0);background:var(--c-bg,#fff);color:var(--primary);font-family:inherit;font-size:1.55rem;font-weight:800;text-align:center;padding:0;transition:border-color .15s,box-shadow .15s}
+.bf-digit:focus{outline:none;border-color:var(--indigo);box-shadow:0 0 0 4px rgba(79,70,229,.14)}
+.bf-digit.filled{border-color:var(--indigo)}
+.bf-digits.err .bf-digit{border-color:#dc2626;animation:bfShake .36s}
+@keyframes bfShake{20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+.bf .save-btn{padding:16px;font-size:1rem;border-radius:16px;margin-top:18px}
+.bf-actions{display:flex;align-items:center;justify-content:center;margin-top:18px}
+.bf-sum{background:var(--c-bg,#fff);border:1px solid var(--c-line,#e2e8f0);border-radius:18px;padding:6px 18px;margin:6px 0 4px}
+.bf .field label{font-size:.82rem}
+.bf .field input{padding:14px 15px;font-size:1rem;border-radius:14px}
+@media (prefers-reduced-motion:reduce){.bf{animation:none}.bf-digits.err .bf-digit{animation:none}}
+
+/* ── Skeleton loading (replaces the spinner) ── */
+.sk{background:linear-gradient(90deg,var(--c-line,#eef2f7) 25%,var(--c-bg2,#f8fafc) 50%,var(--c-line,#eef2f7) 75%);background-size:200% 100%;animation:skShimmer 1.3s ease-in-out infinite;border-radius:10px}
+@keyframes skShimmer{to{background-position:-200% 0}}
+.sk-line{height:14px;margin-bottom:10px}
+.sk-hero{padding:32px 22px 4px}
+.sk-card{background:var(--c-bg,#fff);border:1px solid var(--c-line,#f1f5f9);border-radius:18px;padding:20px;margin:20px 22px 0}
+.sk-row{display:flex;align-items:center;gap:13px;padding:13px 0}
+.sk-ico{width:40px;height:40px;border-radius:12px;flex:none}
+@media (prefers-reduced-motion:reduce){.sk{animation:none}}
 </style>
 <link rel="stylesheet" href="/theme.css?v=1">
   <link rel="stylesheet" href="/affiliate-glass.css">
@@ -318,7 +358,20 @@ a.browse:hover svg{transform:translateX(2px);}
 
 <div class="wrap">
   <div id="mainContent">
-    <div class="loader"></div>
+    <div class="sk-hero" aria-busy="true" aria-label="Loading">
+      <div class="sk sk-line" style="width:92px;height:12px"></div>
+      <div class="sk sk-line" style="width:88%;height:26px;margin-top:6px"></div>
+      <div class="sk sk-line" style="width:62%;height:26px"></div>
+      <div class="sk sk-line" style="width:94%;margin-top:10px"></div>
+      <div class="sk sk-line" style="width:70%"></div>
+    </div>
+    <div class="sk-card">
+      <div class="sk sk-line" style="width:120px;height:12px"></div>
+      <div class="sk" style="height:48px;border-radius:12px;margin-top:6px"></div>
+    </div>
+    <div class="sk-card">
+      <div class="sk-row"><div class="sk sk-ico"></div><div style="flex:1"><div class="sk sk-line" style="width:38%;height:16px;margin-bottom:8px"></div><div class="sk sk-line" style="width:56%;height:11px;margin:0"></div></div></div><div class="sk-row"><div class="sk sk-ico"></div><div style="flex:1"><div class="sk sk-line" style="width:38%;height:16px;margin-bottom:8px"></div><div class="sk sk-line" style="width:56%;height:11px;margin:0"></div></div></div><div class="sk-row"><div class="sk sk-ico"></div><div style="flex:1"><div class="sk sk-line" style="width:38%;height:16px;margin-bottom:8px"></div><div class="sk sk-line" style="width:56%;height:11px;margin:0"></div></div></div><div class="sk-row"><div class="sk sk-ico"></div><div style="flex:1"><div class="sk sk-line" style="width:38%;height:16px;margin-bottom:8px"></div><div class="sk sk-line" style="width:56%;height:11px;margin:0"></div></div></div>
+    </div>
   </div>
 </div>
 
@@ -437,7 +490,7 @@ a.browse:hover svg{transform:translateX(2px);}
       <div class="section" id="funnelSec">
         <div class="section-eyebrow">${ICON.trend} Performance</div>
         <h2>Your sales funnel</h2>
-        <div id="funnelWrap"><div class="empty">Loading your numbers…</div></div>
+        <div id="funnelWrap"><div class="sk-card" style="margin:18px 0 0"><div class="sk sk-line" style="width:40%;height:12px"></div><div class="sk" style="height:12px;border-radius:99px;margin:12px 0"></div><div class="sk" style="height:12px;width:78%;border-radius:99px;margin:12px 0"></div><div class="sk" style="height:12px;width:46%;border-radius:99px;margin:12px 0 4px"></div></div></div>
       </div>
 
       <div class="section">
@@ -485,17 +538,27 @@ a.browse:hover svg{transform:translateX(2px);}
     const d = new Date(iso.length === 10 ? iso + 'T12:00:00' : iso);
     return d.getDate() + ' ' + MONTHS[d.getMonth()];
   }
+  const ssGet = (k) => { try { return sessionStorage.getItem(k); } catch (_) { return null; } };
+  const ssSet = (k, v) => { try { sessionStorage.setItem(k, v); } catch (_) {} };
   async function loadFunnel(days) {
     const wrap = document.getElementById('funnelWrap');
     if (!wrap) return;
+    // Show the last numbers instantly, then refresh quietly in the background.
+    const cacheKey = 'msb_aff_funnel_' + days;
+    const cached = ssGet(cacheKey);
+    if (cached) {
+      try { FUNNEL = JSON.parse(cached); FUNNEL_DAYS = days; renderFunnel(); } catch (_) {}
+    }
     try {
       const token = await window.MSBAuth.getIdToken();
       const r = await fetch('/api/affiliate/funnel?days=' + days, { headers: { Authorization: `Bearer ${token}` } });
       const j = await r.json();
       if (!r.ok || !j.funnel) throw new Error(j.error || 'failed');
+      const fresh = JSON.stringify(j);
       FUNNEL = j; FUNNEL_DAYS = days;
-      renderFunnel();
+      if (fresh !== cached) { ssSet(cacheKey, fresh); renderFunnel(); }
     } catch (e) {
+      if (cached) return;  // keep showing the cached numbers if the refresh fails
       const w = document.getElementById('funnelWrap');
       if (w) w.innerHTML = `<div class="empty">We couldn't load your funnel just now. Please refresh in a moment.</div>`;
     }
@@ -568,16 +631,13 @@ a.browse:hover svg{transform:translateX(2px);}
   }
 
   // ── My Account view ──
-  // Bank card has three sub-screens within the Account view:
-  //   'view'   — current details (read-only) + "Update bank details" button
-  //   'verify' — OTP entry only; nothing about the new bank details lives here
-  //   'edit'   — the actual editable form, only reachable after verify succeeds
-  let bankScreen = 'view';
+  // The Account view only shows the current bank details. Changing them happens
+  // in a separate full-screen flow (see openBankFlow below): verify code → new
+  // details → done.
 
   function renderAccountView() {
     const affiliate = AFFILIATE;
     const locked = (affiliate.pendingPayout || 0) > 0;
-    if (locked) bankScreen = 'view';
 
     main.innerHTML = `
       <div class="hero">
@@ -601,14 +661,7 @@ a.browse:hover svg{transform:translateX(2px);}
       </div>
     `;
 
-    if (locked) {
-      renderBankView();
-      return;
-    }
-
-    if (bankScreen === 'verify') renderBankVerify();
-    else if (bankScreen === 'edit') renderBankEdit();
-    else renderBankView();
+    renderBankView();
   }
 
   // ── Screen 1: read-only details + entry point ──
@@ -626,7 +679,26 @@ a.browse:hover svg{transform:translateX(2px);}
     document.getElementById('bankUpdateBtn').addEventListener('click', () => requestOtpAndGoToVerify());
   }
 
-  // ── Sends the code, then switches to the verify screen ──
+  // ══ Update bank details — its own full-screen flow ══
+  //   1. Verify: 6-digit code emailed to the affiliate
+  //   2. Details: new bank name / account name / number
+  //   3. Done: confirmation
+  // The save call carries no code; the server checks its own short verified
+  // window, so nothing in this flow can be replayed to skip verification.
+  let bankFlowEl = null, bankFlowTimer = null;
+
+  function bfApi(path, method, body, token) {
+    return fetch(path, {
+      method,
+      headers: Object.assign({ 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }),
+      body: body ? JSON.stringify(body) : undefined
+    }).then(async res => {
+      const data = await res.json().catch(() => ({}));
+      return { ok: res.ok, data };
+    });
+  }
+
+  // Entry point from the Account card: send the code, then open the flow.
   async function requestOtpAndGoToVerify() {
     const btn = document.getElementById('bankUpdateBtn');
     const msg = document.getElementById('bankViewMsg');
@@ -635,200 +707,297 @@ a.browse:hover svg{transform:translateX(2px);}
     btn.textContent = 'Sending code…';
     try {
       const token = await window.MSBAuth.getIdToken();
-      const res = await fetch('/api/affiliate/bank/otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Could not send a verification code.');
-      bankScreen = 'verify';
-      renderBankVerify(data.sentTo);
+      const r = await bfApi('/api/affiliate/bank/otp', 'POST', null, token);
+      if (!r.ok) throw new Error(r.data.error || 'Could not send a verification code.');
+      openBankFlow(r.data.sentTo);
     } catch (err) {
       msg.textContent = err.message;
       msg.className = 'save-msg err';
+    } finally {
       btn.disabled = false;
       btn.textContent = 'Update bank details';
     }
   }
 
-  // ── Screen 2: OTP entry only — nothing about the new bank details here ──
-  function renderBankVerify(sentTo) {
-    document.getElementById('bankCardBody').innerHTML = `
-      <div class="otp-note" id="otpNote">${sentTo ? `We sent a 6-digit code to <b>${escapeHtml(sentTo)}</b>. Enter it below to continue.` : 'Enter the 6-digit code we sent to your email to continue.'}</div>
-      <div class="otp-row">
-        <input id="otpInput" type="text" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="one-time-code">
+  function openBankFlow(sentTo) {
+    if (bankFlowEl) return;
+    bankFlowEl = document.createElement('div');
+    bankFlowEl.className = 'bf';
+    bankFlowEl.setAttribute('role', 'dialog');
+    bankFlowEl.setAttribute('aria-modal', 'true');
+    bankFlowEl.setAttribute('aria-label', 'Update bank details');
+    document.body.appendChild(bankFlowEl);
+    document.body.style.overflow = 'hidden';
+    history.pushState({ bankFlow: true }, '');
+    bfVerify(sentTo);
+  }
+
+  // Close from the UI → pop our history entry; the popstate handler tears down.
+  function closeBankFlow() {
+    if (!bankFlowEl) return;
+    if (history.state && history.state.bankFlow) history.back();
+    else teardownBankFlow();
+  }
+
+  function teardownBankFlow() {
+    if (!bankFlowEl) return;
+    clearInterval(bankFlowTimer);
+    bankFlowEl.remove();
+    bankFlowEl = null;
+    document.body.style.overflow = '';
+    if (document.getElementById('bankCardBody')) renderBankView();
+  }
+
+  window.addEventListener('popstate', () => {
+    if (bankFlowEl && !(history.state && history.state.bankFlow)) teardownBankFlow();
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && bankFlowEl) closeBankFlow(); });
+
+  function bfFrame(step, inner) {
+    bankFlowEl.innerHTML = `
+      <div class="bf-top">
+        <button type="button" class="bf-back" id="bfBack" aria-label="${step === 3 ? 'Close' : 'Back'}">
+          <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div class="bf-steps" aria-hidden="true">
+          <i class="${step >= 1 ? 'on' : ''}"></i><i class="${step >= 2 ? 'on' : ''}"></i><i class="${step >= 3 ? 'on' : ''}"></i>
+        </div>
       </div>
-      <button type="button" class="save-btn" id="otpVerifyBtn" style="margin-top:12px;">Verify code</button>
-      <div class="otp-actions">
-        <button type="button" class="otp-link" id="otpResendBtn" disabled>Resend code (60s)</button>
-        <button type="button" class="otp-cancel" id="otpCancelBtn">Cancel</button>
+      <div class="bf-scroll"><div class="bf-inner">${inner}</div></div>`;
+    document.getElementById('bfBack').addEventListener('click', closeBankFlow);
+  }
+
+  // ── Step 1: verify code ──
+  function bfVerify(sentTo, note) {
+    clearInterval(bankFlowTimer);
+    bfFrame(1, `
+      <div class="bf-ico"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.2 8.2-8 9-4.8-.8-8-4.5-8-9V6l8-3z"/><polyline points="8.5 12 11 14.5 15.5 9.5"/></svg></div>
+      <h2>Verify it's you</h2>
+      <div class="bf-sub">${note ? escapeHtml(note) + ' ' : ''}${sentTo ? `We sent a 6-digit code to <b>${escapeHtml(sentTo)}</b>. Enter it below to continue.` : 'Enter the 6-digit code we sent to your email to continue.'}</div>
+      <div class="bf-digits" id="bfDigits">
+        ${[0,1,2,3,4,5].map(n => `<input class="bf-digit" type="text" inputmode="numeric" maxlength="${n === 0 ? 6 : 1}" ${n === 0 ? 'autocomplete="one-time-code"' : 'autocomplete="off"'} aria-label="Digit ${n + 1}">`).join('')}
       </div>
-      <div class="save-msg" id="otpMsg"></div>
-    `;
+      <div class="save-msg" id="bfMsg"></div>
+      <button type="button" class="save-btn" id="bfVerifyBtn">Verify code</button>
+      <div class="bf-actions"><button type="button" class="otp-link" id="bfResend" disabled>Resend code (60s)</button></div>
+    `);
 
-    const otpInput = document.getElementById('otpInput');
-    const otpMsg = document.getElementById('otpMsg');
-    const verifyBtn = document.getElementById('otpVerifyBtn');
-    const resendBtn = document.getElementById('otpResendBtn');
-    const cancelBtn = document.getElementById('otpCancelBtn');
-    otpInput.focus();
+    const wrap = document.getElementById('bfDigits');
+    const boxes = Array.from(wrap.querySelectorAll('.bf-digit'));
+    const msg = document.getElementById('bfMsg');
+    const verifyBtn = document.getElementById('bfVerifyBtn');
+    const resendBtn = document.getElementById('bfResend');
+    let busy = false;
 
-    let resendCooldown = 60;
-    const cooldownTimer = setInterval(() => {
-      resendCooldown -= 1;
-      if (resendCooldown <= 0) {
-        clearInterval(cooldownTimer);
-        resendBtn.disabled = false;
-        resendBtn.textContent = 'Resend code';
-      } else {
-        resendBtn.textContent = `Resend code (${resendCooldown}s)`;
-      }
-    }, 1000);
+    const getCode = () => boxes.map(b => b.value).join('');
+    const paint = () => boxes.forEach(b => b.classList.toggle('filled', !!b.value));
+    const fill = (digits) => {
+      const d = String(digits).replace(/\D/g, '').slice(0, 6);
+      boxes.forEach((b, i) => { b.value = d[i] || ''; });
+      paint();
+      const next = boxes.find(b => !b.value);
+      (next || boxes[5]).focus();
+      if (d.length === 6) submit();
+    };
 
-    cancelBtn.addEventListener('click', () => {
-      clearInterval(cooldownTimer);
-      bankScreen = 'view';
-      renderBankView();
+    boxes.forEach((b, i) => {
+      b.addEventListener('input', () => {
+        wrap.classList.remove('err');
+        const v = b.value.replace(/\D/g, '');
+        if (v.length > 1) { fill(v); return; }          // SMS/email autofill or paste
+        b.value = v;
+        paint();
+        if (v && i < 5) boxes[i + 1].focus();
+        if (getCode().length === 6) submit();
+      });
+      b.addEventListener('keydown', e => {
+        if (e.key === 'Backspace' && !b.value && i > 0) { boxes[i - 1].value = ''; boxes[i - 1].focus(); paint(); }
+        if (e.key === 'Enter') submit();
+      });
+      b.addEventListener('focus', () => b.select());
     });
+    wrap.addEventListener('paste', e => {
+      const t = (e.clipboardData || window.clipboardData).getData('text');
+      if (t) { e.preventDefault(); fill(t); }
+    });
+    boxes[0].focus();
+
+    let cooldown = 60;
+    const tick = () => {
+      cooldown -= 1;
+      if (cooldown <= 0) { clearInterval(bankFlowTimer); resendBtn.disabled = false; resendBtn.textContent = 'Resend code'; }
+      else resendBtn.textContent = `Resend code (${cooldown}s)`;
+    };
+    bankFlowTimer = setInterval(tick, 1000);
 
     resendBtn.addEventListener('click', async () => {
       if (resendBtn.disabled) return;
       resendBtn.disabled = true;
       try {
         const token = await window.MSBAuth.getIdToken();
-        const res = await fetch('/api/affiliate/bank/otp', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Could not resend the code.');
-        clearInterval(cooldownTimer);
-        renderBankVerify(data.sentTo);
+        const r = await bfApi('/api/affiliate/bank/otp', 'POST', null, token);
+        if (!r.ok) throw new Error(r.data.error || 'Could not resend the code.');
+        bfVerify(r.data.sentTo, 'New code sent.');
       } catch (err) {
-        otpMsg.textContent = err.message;
-        otpMsg.className = 'save-msg err';
+        msg.textContent = err.message;
+        msg.className = 'save-msg err';
         resendBtn.disabled = false;
       }
     });
 
-    verifyBtn.addEventListener('click', async () => {
-      const code = otpInput.value.trim();
-      if (!code) {
-        otpMsg.textContent = 'Enter the code we emailed you.';
-        otpMsg.className = 'save-msg err';
+    async function submit() {
+      if (busy) return;
+      const code = getCode();
+      if (code.length < 6) {
+        msg.textContent = 'Enter all 6 digits of the code we emailed you.';
+        msg.className = 'save-msg err';
         return;
       }
-      otpMsg.className = 'save-msg';
+      busy = true;
+      msg.className = 'save-msg';
       verifyBtn.disabled = true;
       verifyBtn.textContent = 'Verifying…';
       try {
         const token = await window.MSBAuth.getIdToken();
-        const res = await fetch('/api/affiliate/bank/otp/verify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ otp: code })
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Could not verify that code.');
-        clearInterval(cooldownTimer);
-        bankScreen = 'edit';
-        renderBankEdit();
+        const r = await bfApi('/api/affiliate/bank/otp/verify', 'POST', { otp: code }, token);
+        if (!r.ok) throw new Error(r.data.error || 'Could not verify that code.');
+        clearInterval(bankFlowTimer);
+        bfDetails();
       } catch (err) {
-        otpMsg.textContent = err.message;
-        otpMsg.className = 'save-msg err';
-      } finally {
+        msg.textContent = err.message;
+        msg.className = 'save-msg err';
+        wrap.classList.add('err');
+        boxes.forEach(b => { b.value = ''; });
+        paint();
+        boxes[0].focus();
+        busy = false;
         verifyBtn.disabled = false;
         verifyBtn.textContent = 'Verify code';
       }
-    });
+    }
+    verifyBtn.addEventListener('click', submit);
   }
 
-  // ── Screen 3: the actual edit form — only reachable after verify succeeds.
-  // The save call below carries no code at all; the server checks its own
-  // short verified window instead, so there's nothing in this screen a
-  // client could replay to skip verification. ──
-  function renderBankEdit() {
+  // ── Step 2: new bank details ──
+  function bfDetails() {
     const bank = AFFILIATE.bank || {};
-    document.getElementById('bankCardBody').innerHTML = `
-      <div class="otp-note">Code verified. Enter and save your new bank details below.</div>
-      <form id="bankForm">
+    bfFrame(2, `
+      <div class="bf-ico"><svg viewBox="0 0 24 24"><path d="M3 10l9-6 9 6"/><line x1="5" y1="10" x2="5" y2="18"/><line x1="10" y1="10" x2="10" y2="18"/><line x1="14" y1="10" x2="14" y2="18"/><line x1="19" y1="10" x2="19" y2="18"/><line x1="3" y1="21" x2="21" y2="21"/></svg></div>
+      <h2>Your new bank details</h2>
+      <div class="bf-sub">Code verified. Enter the account your Monday payouts should go to.</div>
+      <form id="bfForm" novalidate>
         <div class="field">
-          <label for="accBankName">Bank name</label>
-          <input id="accBankName" type="text" value="${escapeHtml(bank.bankName || '')}" placeholder="e.g. GTBank" required>
+          <label for="bfBankName">Bank name</label>
+          <input id="bfBankName" type="text" value="${escapeHtml(bank.bankName || '')}" placeholder="e.g. GTBank" autocomplete="off" required>
         </div>
         <div class="field">
-          <label for="accAccName">Account name</label>
-          <input id="accAccName" type="text" value="${escapeHtml(bank.accountName || '')}" placeholder="Name on the account" required>
+          <label for="bfAccName">Account name</label>
+          <input id="bfAccName" type="text" value="${escapeHtml(bank.accountName || '')}" placeholder="Name on the account" autocomplete="off" required>
         </div>
         <div class="field">
-          <label for="accAccNum">Account number</label>
-          <input id="accAccNum" type="text" inputmode="numeric" value="${escapeHtml(bank.accountNumber || '')}" placeholder="10 digits" required>
+          <label for="bfAccNum">Account number</label>
+          <input id="bfAccNum" type="text" inputmode="numeric" maxlength="10" value="${escapeHtml(bank.accountNumber || '')}" placeholder="10 digits" autocomplete="off" required>
         </div>
-        <button type="submit" class="save-btn" id="bankSaveBtn">Save bank details</button>
-        <button type="button" class="otp-cancel" id="bankEditCancelBtn" style="margin-top:10px;">Cancel</button>
-        <div class="save-msg" id="bankSaveMsg"></div>
+        <div class="save-msg" id="bfSaveMsg"></div>
+        <button type="submit" class="save-btn" id="bfSaveBtn">Save bank details</button>
       </form>
-    `;
+    `);
 
-    const form = document.getElementById('bankForm');
-    const saveBtn = document.getElementById('bankSaveBtn');
-    const saveMsg = document.getElementById('bankSaveMsg');
-    const cancelBtn = document.getElementById('bankEditCancelBtn');
-
-    cancelBtn.addEventListener('click', () => {
-      bankScreen = 'view';
-      renderBankView();
-    });
+    const form = document.getElementById('bfForm');
+    const saveBtn = document.getElementById('bfSaveBtn');
+    const saveMsg = document.getElementById('bfSaveMsg');
+    document.getElementById('bfBankName').focus();
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
+      const payload = {
+        bankName: document.getElementById('bfBankName').value.trim(),
+        accountName: document.getElementById('bfAccName').value.trim(),
+        accountNumber: document.getElementById('bfAccNum').value.trim()
+      };
       saveMsg.className = 'save-msg';
+      if (!payload.bankName || !payload.accountName || !payload.accountNumber) {
+        saveMsg.textContent = 'Fill in all three fields.'; saveMsg.className = 'save-msg err'; return;
+      }
+      if (!/^\d{10}$/.test(payload.accountNumber)) {
+        saveMsg.textContent = 'Account number should be exactly 10 digits.'; saveMsg.className = 'save-msg err'; return;
+      }
       saveBtn.disabled = true;
       saveBtn.textContent = 'Saving…';
       try {
         const token = await window.MSBAuth.getIdToken();
-        const res = await fetch('/api/affiliate/bank', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({
-            bankName: document.getElementById('accBankName').value.trim(),
-            accountName: document.getElementById('accAccName').value.trim(),
-            accountNumber: document.getElementById('accAccNum').value.trim()
-          })
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          // The verified window can lapse (5 min) — send them back to
-          // request a fresh code rather than showing a dead form.
-          if (data.needsVerification) {
-            bankScreen = 'view';
-            renderBankView();
-            const msg = document.getElementById('bankViewMsg');
-            msg.textContent = data.error;
-            msg.className = 'save-msg err';
+        const r = await bfApi('/api/affiliate/bank', 'PUT', payload, token);
+        if (!r.ok) {
+          // The verified window can lapse (5 min): send a fresh code and go back to step 1.
+          if (r.data.needsVerification) {
+            const o = await bfApi('/api/affiliate/bank/otp', 'POST', null, token);
+            bfVerify(o.ok ? o.data.sentTo : '', r.data.error || 'Your verification expired.');
             return;
           }
-          throw new Error(data.error || 'Could not save your bank details.');
+          throw new Error(r.data.error || 'Could not save your bank details.');
         }
-        AFFILIATE.bank = data.bank;
-        bankScreen = 'view';
-        renderBankView();
-        const msg = document.getElementById('bankViewMsg');
-        msg.textContent = 'Bank details updated.';
-        msg.className = 'save-msg ok';
+        AFFILIATE.bank = r.data.bank;
+        bfDone();
       } catch (err) {
         saveMsg.textContent = err.message;
         saveMsg.className = 'save-msg err';
-      } finally {
         saveBtn.disabled = false;
         saveBtn.textContent = 'Save bank details';
       }
     });
   }
 
+  // ── Step 3: done ──
+  function bfDone() {
+    const bank = AFFILIATE.bank || {};
+    bfFrame(3, `
+      <div class="bf-ico ok"><svg viewBox="0 0 24 24"><polyline points="5 12.5 10 17.5 19 7.5"/></svg></div>
+      <h2>Bank details updated</h2>
+      <div class="bf-sub">Your next Monday payout will go to this account.</div>
+      <div class="bf-sum">
+        <div class="profile-row"><span class="p-k">Bank name</span><span class="p-v">${escapeHtml(bank.bankName || '—')}</span></div>
+        <div class="profile-row"><span class="p-k">Account name</span><span class="p-v">${escapeHtml(bank.accountName || '—')}</span></div>
+        <div class="profile-row"><span class="p-k">Account number</span><span class="p-v">${escapeHtml(bank.accountNumber || '—')}</span></div>
+      </div>
+      <button type="button" class="save-btn" id="bfDoneBtn">Done</button>
+    `);
+    document.getElementById('bfDoneBtn').addEventListener('click', closeBankFlow);
+  }
+
+  // First paint: if we've loaded this dashboard in this tab before, show it instantly
+  // from the saved copy, then refresh it quietly once we're signed in.
+  const ME_KEY = 'msb_aff_me';
+  const wantsAccount = new URLSearchParams(window.location.search).get('view') === 'account';
+  let cachedMe = null, cachedRaw = ssGet(ME_KEY);
+  if (cachedRaw) {
+    try {
+      cachedMe = JSON.parse(cachedRaw);
+      if (cachedMe && cachedMe.affiliate) {
+        AFFILIATE = cachedMe.affiliate;
+        REFERRED = cachedMe.referred || [];
+        setView(wantsAccount ? 'account' : 'overview');
+      } else { cachedMe = null; }
+    } catch (_) { cachedMe = null; }
+  }
+
+  function clearAffCache() {
+    try {
+      sessionStorage.removeItem(ME_KEY);
+      Object.keys(sessionStorage).filter(k => k.indexOf('msb_aff_funnel_') === 0).forEach(k => sessionStorage.removeItem(k));
+    } catch (_) {}
+  }
+
   window.MSBAuth.onAuthReady(async (user) => {
     if (!user) {
+      clearAffCache();
       window.location.href = '/login?returnTo=' + encodeURIComponent('/affiliate/dashboard');
+      return;
+    }
+    // A saved copy that belongs to someone else must never linger on screen.
+    if (cachedMe && cachedMe.uid && cachedMe.uid !== user.uid) {
+      clearAffCache();
+      cachedMe = null; cachedRaw = null;
+      location.reload();
       return;
     }
     try {
@@ -836,15 +1005,20 @@ a.browse:hover svg{transform:translateX(2px);}
       const meRes = await fetch('/api/affiliate/me', { headers: { Authorization: `Bearer ${token}` } });
       const meData = await meRes.json();
       if (!meData || !meData.affiliate) {
+        clearAffCache();
         window.location.href = '/affiliate';
         return;
       }
+      const payload = JSON.stringify({ uid: user.uid, affiliate: meData.affiliate, referred: meData.referred || [] });
       AFFILIATE = meData.affiliate;
       REFERRED = meData.referred || [];
-      const wantsAccount = new URLSearchParams(window.location.search).get('view') === 'account';
-      setView(wantsAccount ? 'account' : 'overview');
+      ssSet(ME_KEY, payload);
+      // Only redraw if something actually changed (and never under the bank flow).
+      if (payload !== cachedRaw && !bankFlowEl) {
+        setView(cachedMe ? currentView : (wantsAccount ? 'account' : 'overview'));
+      }
     } catch (e) {
-      main.innerHTML = `<div class="empty">Could not load your dashboard. Please refresh the page.</div>`;
+      if (!cachedMe) main.innerHTML = `<div class="empty">Could not load your dashboard. Please refresh the page.</div>`;
     }
   });
 </script>
