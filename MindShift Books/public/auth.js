@@ -58,8 +58,28 @@
       if (!raw) return;
       const code = raw.trim().toUpperCase().slice(0, 40);
       if (!code) return;
-      storePendingAffCode(code);
-      const payload = JSON.stringify({ type: 'affiliate_click', path: window.location.pathname, affCode: code });
+      storePendingAffCode(code);   // attribution is always kept; only the *click count* is filtered below
+
+      // Count a click once per browser, per affiliate, per day — reloads and extra
+      // tabs don't add more — and never count the affiliate's own visits.
+      try { if (localStorage.getItem('msb_own_aff_code') === code) return; } catch (e) {}
+      try {
+        const today = new Date().toISOString().slice(0, 10);
+        const clickKey = 'msb_aff_click_' + code;
+        if (localStorage.getItem(clickKey) === today) return;
+        localStorage.setItem(clickKey, today);
+      } catch (e) {}
+      let vid = null;
+      try {
+        vid = localStorage.getItem('msb_vid');
+        if (!vid) {
+          const a = new Uint8Array(12);
+          (window.crypto || window.msCrypto).getRandomValues(a);
+          vid = Array.from(a, b => b.toString(16).padStart(2, '0')).join('');
+          localStorage.setItem('msb_vid', vid);
+        }
+      } catch (e) { vid = null; }
+      const payload = JSON.stringify({ type: 'affiliate_click', path: window.location.pathname, affCode: code, vid: vid || undefined });
       if (navigator.sendBeacon) {
         navigator.sendBeacon('/api/track', new Blob([payload], { type: 'application/json' }));
       } else {

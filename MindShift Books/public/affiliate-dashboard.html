@@ -158,6 +158,12 @@ a.browse:hover svg{transform:translateX(2px);}
 .bal-go{flex:none;display:inline-flex;align-items:center;gap:2px;font-size:.8rem;font-weight:800;color:#15803d}
 .bal-go svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
 .bal-note{margin-top:12px;padding-top:12px;border-top:1px solid rgba(22,163,74,.18);font-size:.82rem;color:var(--c-sub,#4b5563);line-height:1.45}
+.clicks-row{display:flex;align-items:center;gap:13px;margin:12px 22px 0;padding:12px 16px;background:var(--c-bg,#fff);border:1px solid var(--c-line,#f1f5f9);border-radius:18px}
+.clicks-lbl{flex:1;font-size:.9rem;font-weight:700;color:var(--c-sub,#374151)}
+.clicks-val{font-size:1.2rem;font-weight:900;letter-spacing:-.01em}
+.clicks-row{display:flex;align-items:center;gap:13px;margin:12px 22px 0;padding:14px 16px;border-radius:18px;background:var(--c-bg,#fff);border:1px solid var(--c-line,#f1f5f9)}
+.clicks-lbl{flex:1;font-size:.9rem;font-weight:700;color:var(--c-sub,#374151)}
+.clicks-val{font-size:1.2rem;font-weight:900;letter-spacing:-.01em}
 .earn-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 22px 0}
 .earn-tile{background:var(--c-bg,#fff);border:1px solid var(--c-line,#f1f5f9);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:2px;min-width:0}
 .earn-tile .stat-icon{margin-bottom:12px}
@@ -389,6 +395,8 @@ a.browse:hover svg{transform:translateX(2px);}
       <div class="earn-tile"><div class="sk sk-ico" style="margin-bottom:12px"></div><div class="sk sk-line" style="width:70%;height:20px"></div><div class="sk sk-line" style="width:45%;height:11px;margin:0"></div></div>
       <div class="earn-tile"><div class="sk sk-ico" style="margin-bottom:12px"></div><div class="sk sk-line" style="width:60%;height:20px"></div><div class="sk sk-line" style="width:40%;height:11px;margin:0"></div></div>
     </div>
+    <div class="sk" style="height:68px;border-radius:18px;margin:12px 22px 0"></div>
+    <div class="sk" style="height:62px;border-radius:18px;margin:12px 22px 0"></div>
   </div>
 </div>
 
@@ -498,6 +506,18 @@ a.browse:hover svg{transform:translateX(2px);}
           <div class="earn-val">₦${nf.format(affiliate.paidOut || 0)}</div>
           <div class="stat-lbl">Paid out</div>
         </div>
+      </div>
+
+      <div class="clicks-row">
+        <div class="stat-icon">${ICON.link}</div>
+        <div class="clicks-lbl">Link clicks</div>
+        <div class="clicks-val">${nf.format(affiliate.clicks || 0)}</div>
+      </div>
+
+      <div class="clicks-row">
+        <div class="stat-icon">${ICON.link}</div>
+        <div class="clicks-lbl">Link clicks</div>
+        <div class="clicks-val">${nf.format(affiliate.clicks || 0)}</div>
       </div>
 
       <div class="section" id="funnelSec">
@@ -617,7 +637,7 @@ a.browse:hover svg{transform:translateX(2px);}
     const period = `
       <div class="fn-card">
         <div class="fn-seg" id="fnSeg">${seg}</div>
-        <div class="fn-figs"><div class="fn-fig"><b>₦${nf.format(p.earned)}</b><span>earned</span></div><div class="fn-fig"><b>${nf.format(p.sales)}</b><span>${p.sales === 1 ? 'sale' : 'sales'}</span></div></div>
+        <div class="fn-figs"><div class="fn-fig"><b>₦${nf.format(p.earned)}</b><span>earned</span></div><div class="fn-fig"><b>${nf.format(p.sales)}</b><span>${p.sales === 1 ? 'book sold' : 'books sold'}</span></div></div>
         ${chart}
       </div>`;
 
@@ -1026,6 +1046,8 @@ a.browse:hover svg{transform:translateX(2px);}
       AFFILIATE = meData.affiliate;
       REFERRED = meData.referred || [];
       ssSet(ME_KEY, payload);
+      // Lets the storefront skip counting this affiliate's own visits to their link.
+      try { if (AFFILIATE.code) localStorage.setItem('msb_own_aff_code', AFFILIATE.code); } catch (_) {}
       // Only redraw if something actually changed (and never under the bank flow).
       if (payload !== cachedRaw && !bankFlowEl) {
         setView(cachedMe ? currentView : (wantsAccount ? 'account' : 'overview'));
