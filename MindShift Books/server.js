@@ -2314,7 +2314,7 @@ app.post('/api/track', (req, res) => {
   res.status(204).end();
   if (!db) return;
   try {
-    const { type, path: p, productId, ref, affCode, archetype } = req.body || {};
+    const { type, path: p, productId, ref, affCode, archetype, vid: clientVid } = req.body || {};
     if (!TRACK_TYPES.has(type)) return;
     const payload = {
       type,
@@ -2334,9 +2334,24 @@ app.post('/api/track', (req, res) => {
       payload.affCode = code;
       // Best-effort click counter on the affiliate doc itself — doesn't block
       // the response above, and a missing/invalid code just no-ops.
-      db.collection('affiliates').doc(code).update({
-        clicks: admin.firestore.FieldValue.increment(1)
-      }).catch(() => null);
+      // Unique-visitor counting: one click per visitor, per affiliate, per
+      // (Lagos) day. The visitor id is a random id the browser keeps; for older
+      // cached pages that don't send one we fall back to a hash of IP + browser.
+      // An atomic create-if-absent claim decides who counts, so reloads,
+      // extra tabs and concurrent beacons can never add a second click.
+      const vid = (typeof clientVid === 'string' && /^[A-Za-z0-9_-]{8,64}$/.test(clientVid))
+        ? clientVid
+        : crypto.createHash('sha1').update(String(req.ip || '') + '|' + String(req.get('user-agent') || '')).digest('hex').slice(0, 24);
+      const dayKey = new Date(Date.now() + 3600000).toISOString().slice(0, 10);
+      const affRef = db.collection('affiliates').doc(code);
+      affRef.get().then(affSnap => {
+        if (!affSnap.exists) return null;   // unknown code: no counter, no key doc
+        const nowTs = admin.firestore.Timestamp.now();
+        return db.collection('affiliateClickKeys').doc(`${code}_${vid}_${dayKey}`).create({
+          code, createdAt: nowTs,
+          expireAt: admin.firestore.Timestamp.fromMillis(Date.now() + 3 * 86400000)   // optional Firestore TTL field
+        }).then(() => affRef.update({ clicks: admin.firestore.FieldValue.increment(1) }));
+      }).catch(() => null);   // ALREADY_EXISTS = repeat visit today → intentionally not counted
     }
     db.collection('events').add(payload).catch(() => null);
   } catch { /* ignore malformed beacons */ }
@@ -4031,6 +4046,7 @@ async function fulfillOrder({ reference, email, buyerName, uid, productIds, ngnA
   // could tamper with at checkout time.
   let affiliateCode = null;
   let commissionAmount = 0;
+  let affiliateBooks = 0;
   if (db && uid && !alreadyProcessed) {
     try {
       const buyerDoc = await db.collection('users').doc(uid).get();
@@ -4047,6 +4063,8 @@ async function fulfillOrder({ reference, email, buyerName, uid, productIds, ngnA
         if (eligibleNgn > 0) {
           affiliateCode = code;
           commissionAmount = Math.round(eligibleNgn * AFFILIATE_COMMISSION_RATE);
+          // "Sales" means books, not orders: an order with 3 of our books counts as 3.
+          affiliateBooks = metaItems.filter(it => { const pr = PRODUCTS[it.id]; return pr && pr.category === 'ours'; }).length;
         }
       }
     } catch (e) { /* commission lookup is best-effort — never block the order */ }
@@ -4054,6 +4072,7 @@ async function fulfillOrder({ reference, email, buyerName, uid, productIds, ngnA
   if (affiliateCode) {
     record.affiliateCode = affiliateCode;
     record.affiliateCommission = commissionAmount;
+    record.affiliateBooks = affiliateBooks;
   }
 
   if (db && !alreadyProcessed) {
@@ -4081,7 +4100,7 @@ async function fulfillOrder({ reference, email, buyerName, uid, productIds, ngnA
     }
     if (affiliateCode && commissionAmount > 0) {
       db.collection('affiliates').doc(affiliateCode).update({
-        sales: admin.firestore.FieldValue.increment(1),
+        sales: admin.firestore.FieldValue.increment(Math.max(1, affiliateBooks)),
         earned: admin.firestore.FieldValue.increment(commissionAmount)
       }).then(() => _adminReadCache.delete('affiliates:all')) // new sale/earnings — surface it right away, not after the TTL
         .catch(err => console.error('[fulfillOrder] FAILED to credit affiliate commission', { affiliateCode, commissionAmount, reference }, err));
