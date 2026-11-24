@@ -260,6 +260,15 @@ main{max-width:1100px;margin:0 auto}
   border-radius:14px;display:block;cursor:pointer;background:var(--c-surface,#f1f5f9)}
 .pcard-video{position:relative;margin:8px auto 0;border-radius:14px;overflow:hidden;cursor:pointer;
   background:#0f0e17;width:max-content;max-width:100%}
+/* Until the first frame has loaded, show a soft shimmer instead of an empty black box,
+   and hold a sensible size so the card doesn't jump when the video's real size arrives. */
+.pcard-video:not(.vid-ready){width:min(100%,360px);aspect-ratio:16/9;
+  background:linear-gradient(90deg,var(--c-surface,#eceff5) 25%,var(--c-bg2,#f6f7fb) 50%,var(--c-surface,#eceff5) 75%);
+  background-size:200% 100%;animation:vidShimmer 1.3s ease-in-out infinite}
+.pcard-video:not(.vid-ready) video:not([poster]){opacity:0}  /* a poster, when there is one, shows straight away */
+.pcard-video video{transition:opacity .25s}
+@keyframes vidShimmer{to{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){.pcard-video:not(.vid-ready){animation:none}}
 .pcard-video video{display:block;max-width:100%;max-height:460px;width:auto;height:auto}
 .pcard-video-mute{position:absolute;bottom:8px;left:8px;width:30px;height:30px;border-radius:50%;
   background:rgba(15,14,23,.55);border:none;display:flex;align-items:center;justify-content:center;
@@ -2928,6 +2937,17 @@ function markTruncatedPostText(){
   });
 }
 
+/* A feed video counts as ready once its first frame is decodable (or it failed to load —
+   either way, stop showing the placeholder). Media events don't bubble, hence capture. */
+['loadeddata','error'].forEach(ev=>document.addEventListener(ev, e=>{
+  const t = e.target;
+  if(t && t.classList && t.classList.contains('pcard-video-el') && t.parentElement) t.parentElement.classList.add('vid-ready');
+}, true));
+// Videos restored from cache may already have their frame before any listener fires.
+function markReadyFeedVideos(){
+  document.querySelectorAll('.pcard-video-el').forEach(v=>{ if(v.readyState >= 2 && v.parentElement) v.parentElement.classList.add('vid-ready'); });
+}
+
 /* ── FEED VIDEO AUTOPLAY ──
    Each feed video plays (muted, so autoplay is allowed) only while it's
    actually visible — the moment it scrolls mostly out of view it's paused,
@@ -2947,6 +2967,7 @@ function getFeedVideoObserver(){
 function observeFeedVideos(){
   const observer = getFeedVideoObserver();
   document.querySelectorAll('.pcard-video-el').forEach(el=>observer.observe(el));
+  markReadyFeedVideos();
 }
 // Belt-and-braces: if the tab/app goes to background, pause every feed
 // video immediately rather than waiting on the observer to catch up.
@@ -3225,7 +3246,7 @@ function fmtDuration(secs){
 function buildVideoTileHtml(p){
   if(!p.videoUrl) return '';
   return `<div class="pcard-video" onclick="event.stopPropagation();openReels('${p.id}')">
-    <video class="pcard-video-el" data-post-id="${p.id}" src="${p.videoUrl}" poster="${p.thumbnailUrl||''}" muted loop playsinline preload="metadata"></video>
+    <video class="pcard-video-el" data-post-id="${p.id}" src="${String(p.videoUrl).split('#')[0]}#t=0.001"${p.thumbnailUrl ? ` poster="${p.thumbnailUrl}"` : ''} muted loop playsinline preload="metadata"></video>
     <button type="button" class="pcard-video-mute" onclick="event.stopPropagation();toggleFeedVideoMute('${p.id}',event)" title="Unmute">
       ${MUTE_ICON_ON}
     </button>
