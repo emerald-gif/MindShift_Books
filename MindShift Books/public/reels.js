@@ -14,7 +14,7 @@
    • a stall of more than 8s is reported as 'slow' and flags the whole connection as slow;
    • coming back online retries anything that was stuck;
    • retry(true) is the manual "tap to retry".
-   isSlow() lets pages hold back autoplay while the connection is struggling (flag clears after 90s or
+   isSlow() lets pages hold back *preloading* while the connection is struggling (flag clears after 90s or
    when the device comes back online; also honours Save-Data / 2G where the browser reports it). */
 (function(){
   if(window.MSBVideo) return;
@@ -229,7 +229,7 @@ body.msb-reels-open .rp-sheet{z-index:100005!important}
 
   function slideHtml(p){
     return '<section class="rl-slide buffering" data-id="'+esc(p.id)+'"><div class="rl-frame">'+
-      '<video src="'+esc(p.videoUrl)+'" poster="'+esc(p.thumbnailUrl||'')+'" loop playsinline webkit-playsinline preload="metadata"></video>'+
+      '<video src="'+esc(p.videoUrl)+'"'+(p.thumbnailUrl ? ' poster="'+esc(p.thumbnailUrl)+'"' : '')+' loop playsinline webkit-playsinline preload="metadata"></video>'+
       '<div class="rl-spin"></div><div class="rl-slow">Slow connection\u2026</div><div class="rl-err"><div>Couldn\u2019t load this video</div><button type="button" class="rl-retry">Tap to retry</button></div>'+
       '<div class="rl-tap"></div><div class="rl-pause">'+I.play+'</div>'+
       '<div class="rl-rail">'+
@@ -282,13 +282,31 @@ body.msb-reels-open .rp-sheet{z-index:100005!important}
   function play(slide){
     var v = slide.querySelector('video');
     v.muted = muted; v.playbackRate = speed; slide.classList.remove('paused');
+    v.preload = 'auto';                                   // the reel on screen should buffer straight away
     var pr = v.play();
-    if(pr && pr.catch) pr.catch(function(){
+    if(pr && pr.catch) pr.catch(function(err){
+      // Scrolling away while it was still loading cancels the pending play() with an AbortError. That is not a
+      // refusal — and it must never restart a reel the viewer has already left (that was the old sound bleeding through).
+      if(err && err.name === 'AbortError') return;
+      if(slide.getAttribute('data-id') !== activeId) return;
       // Browser refused sound-on autoplay — fall back to muted instead of a dead screen.
       muted = true; v.muted = true; v.play().catch(function(){});
       var mb = document.getElementById('rlMuteBtn'); if(mb) mb.innerHTML = muteIcon();
     });
   }
+  // Only one thing may make sound. Whenever a video starts: while the reels are open, anything that isn't the
+  // reel currently on screen is stopped on the spot (a late retry, a feed video underneath…); otherwise every
+  // other video on the page is paused.
+  document.addEventListener('play', function(e){
+    var t = e.target;
+    if(!t || t.tagName !== 'VIDEO') return;
+    var ov = document.getElementById('msbReels');
+    if(ov && ov.classList.contains('open')){
+      var sl = t.closest ? t.closest('.rl-slide') : null;
+      if(!sl || sl.getAttribute('data-id') !== activeId){ t.pause(); return; }
+    }
+    document.querySelectorAll('video').forEach(function(o){ if(o !== t && !o.paused) o.pause(); });
+  }, true);
   function measureCaption(slide){
     var cap = slide.querySelector('.rl-cap'), more = slide.querySelector('.rl-more');
     if(!cap || !more) return;

@@ -28,7 +28,7 @@
 
 <script src="/share-drawer.js?v=4"></script>
 <script src="/poll.js?v=1"></script>
-<script src="/reels.js?v=9"></script>
+<script src="/reels.js?v=11"></script>
 <script src="/image-viewer.js?v=2"></script>
 <script type="application/ld+json">
 {
@@ -258,11 +258,13 @@ main{max-width:1100px;margin:0 auto}
 .pcard-single{margin-top:8px;display:flex;justify-content:center}
 .pcard-single img{max-width:100%;max-height:340px;width:auto;height:auto;object-fit:contain;
   border-radius:14px;display:block;cursor:pointer;background:var(--c-surface,#f1f5f9)}
+/* Feed videos always sit in a portrait 9:16 frame (never a wide box), centred in the post. The frame has a fixed
+   size from the first paint, so nothing jumps while the video loads. A video that isn't exactly 9:16 is fitted
+   inside the frame, never cropped or stretched. */
 .pcard-video{position:relative;margin:8px auto 0;border-radius:14px;overflow:hidden;cursor:pointer;
-  background:#0f0e17;width:max-content;max-width:100%}
-/* Until the first frame has loaded, show a soft shimmer instead of an empty black box,
-   and hold a sensible size so the card doesn't jump when the video's real size arrives. */
-.pcard-video:not(.vid-ready){width:min(100%,360px);aspect-ratio:16/9;
+  background:#0f0e17;width:min(62%,258px);aspect-ratio:9/16}
+/* Until the first frame has loaded, show a soft shimmer instead of an empty black box. */
+.pcard-video:not(.vid-ready){
   background:linear-gradient(90deg,var(--c-surface,#eceff5) 25%,var(--c-bg2,#f6f7fb) 50%,var(--c-surface,#eceff5) 75%);
   background-size:200% 100%;animation:vidShimmer 1.3s ease-in-out infinite}
 .pcard-video:not(.vid-ready) video:not([poster]){opacity:0}  /* a poster, when there is one, shows straight away */
@@ -286,7 +288,7 @@ main{max-width:1100px;margin:0 auto}
 .pcard-video.vid-tapplay::after{content:'';position:absolute;top:50%;left:50%;width:54px;height:54px;margin:-27px 0 0 -27px;border-radius:50%;
   background:rgba(0,0,0,.5) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M8 5v14l11-7z'/%3E%3C/svg%3E") center/26px no-repeat;pointer-events:none}
 @media (prefers-reduced-motion:reduce){.pcard-video:not(.vid-ready){animation:none}}
-.pcard-video video{display:block;max-width:100%;max-height:460px;width:auto;height:auto}
+.pcard-video video{display:block;width:100%;height:100%;object-fit:contain}
 .pcard-video-mute{position:absolute;bottom:8px;left:8px;width:30px;height:30px;border-radius:50%;
   background:rgba(15,14,23,.55);border:none;display:flex;align-items:center;justify-content:center;
   color:#fff;cursor:pointer;-webkit-tap-highlight-color:transparent}
@@ -2981,7 +2983,7 @@ function syncFeedMuteBtn(vid){
 // is struggling — the tile shows a play badge instead and opens the player when tapped.
 function playFeedVideo(vid){
   const wrap = vid.parentElement;
-  if(window.MSBVideo && MSBVideo.isSlow()){ wrap.classList.add('vid-tapplay'); vid.pause(); return; }
+  if(document.documentElement.classList.contains('msb-reels-open')) return;   // reels are open on top: the feed stays silent
   wrap.classList.remove('vid-tapplay');
   document.querySelectorAll('.pcard-video-el').forEach(o=>{ if(o!==vid && !o.paused) o.pause(); });
   const pr = vid.play();
@@ -3018,8 +3020,27 @@ function guardFeedVideo(el){
     if(msg) msg.textContent = st==='slow' ? 'Slow connection…' : st==='failed' ? 'Couldn’t load this video' : '';
   });
 }
+// Start buffering the videos that are about to scroll into view (not on a slow connection / Save-Data),
+// so they begin playing the moment they arrive instead of starting a download then.
+let _feedPreloadObserver = null;
+function getFeedPreloadObserver(){
+  if(_feedPreloadObserver) return _feedPreloadObserver;
+  _feedPreloadObserver = new IntersectionObserver((entries)=>{
+    entries.forEach(en=>{
+      if(!en.isIntersecting) return;
+      if(window.MSBVideo && MSBVideo.isSlow()) return;
+      // Never compete with a video that is still loading for the viewer's bandwidth.
+      if(document.querySelector('.pcard-video.vid-buffering, .pcard-video.vid-slow')) return;
+      en.target.preload = 'auto';
+      _feedPreloadObserver.unobserve(en.target);
+    });
+  }, { rootMargin: '300px 0px' });
+  return _feedPreloadObserver;
+}
 function observeFeedVideos(){
   const observer = getFeedVideoObserver();
+  const pre = getFeedPreloadObserver();
+  document.querySelectorAll('.pcard-video-el').forEach(el=>pre.observe(el));
   document.querySelectorAll('.pcard-video-el').forEach(el=>{ guardFeedVideo(el); observer.observe(el); });
   markReadyFeedVideos();
 }
