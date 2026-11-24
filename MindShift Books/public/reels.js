@@ -6,72 +6,6 @@
      cfg.getState(id)-> {liked, likes, comments}   optional, for pages without feed cards
      cfg.onActive(id)-> optional, called when a reel becomes the visible one
      cfg.like / comment / link / openPost (id)    cfg.author(item)                                              */
-/* ── MSBVideo: shared video-resilience helper (loaded before the reels code, used by the feed too) ──
-   guard(video, cb) watches one <video> and reports its state through cb:
-     'loading' | 'buffering' | 'slow' | 'failed' | 'ok'
-   • errors are retried automatically (3 tries, backing off 1.5s / 4s / 9s) and a retry resumes where the
-     video had got to;
-   • a stall of more than 8s is reported as 'slow' and flags the whole connection as slow;
-   • coming back online retries anything that was stuck;
-   • retry(true) is the manual "tap to retry".
-   isSlow() lets pages hold back *preloading* while the connection is struggling (flag clears after 90s or
-   when the device comes back online; also honours Save-Data / 2G where the browser reports it). */
-(function(){
-  if(window.MSBVideo) return;
-  var slow = false, slowTimer = null;
-  var conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-  function ping(){ try{ document.dispatchEvent(new Event('msb-net')); }catch(_){} }
-  function markSlow(){ slow = true; clearTimeout(slowTimer); slowTimer = setTimeout(function(){ slow = false; ping(); }, 90000); ping(); }
-  function clearSlow(){ if(!slow) return; slow = false; clearTimeout(slowTimer); ping(); }
-  window.addEventListener('online', clearSlow);
-  window.addEventListener('offline', markSlow);
-  function isSlow(){
-    return slow || navigator.onLine === false || !!(conn && (conn.saveData || /(^|-)2g$/.test(conn.effectiveType || '')));
-  }
-  function guard(v, cb){
-    if(v._msbGuard) return v._msbGuard;
-    var tries = 0, stallT = null, retryT = null, state = '';
-    function set(s){ if(s === state) return; state = s; if(cb) cb(s); }
-    function clearT(){ clearTimeout(stallT); clearTimeout(retryT); }
-    function stallClock(){ clearTimeout(stallT); stallT = setTimeout(function(){ markSlow(); set('slow'); }, 8000); }
-    function retry(manual){
-      if(!v.getAttribute('src')) return;
-      clearT();
-      if(manual) tries = 0;
-      var resumeAt = v.currentTime || 0, resumePlay = manual || !v.paused;
-      set('loading'); stallClock();
-      if(resumeAt > 0.5) v.addEventListener('loadedmetadata', function once(){
-        v.removeEventListener('loadedmetadata', once); try{ v.currentTime = resumeAt; }catch(_){}
-      });
-      if(resumePlay) v.addEventListener('canplay', function once(){
-        v.removeEventListener('canplay', once); var pr = v.play(); if(pr && pr.catch) pr.catch(function(){});
-      });
-      v.load();
-    }
-    function onError(){
-      clearT();
-      if(!v.getAttribute('src')) return;            // the reels player clears src on purpose when a slide closes
-      if(!navigator.onLine || tries >= 3){ set('failed'); markSlow(); return; }
-      var delay = [1500, 4000, 9000][tries++];
-      set('loading');
-      retryT = setTimeout(function(){ retry(false); }, delay);
-    }
-    ['loadstart','waiting','stalled'].forEach(function(ev){
-      v.addEventListener(ev, function(){
-        if(!v.getAttribute('src') || state === 'failed') return;
-        set(state === 'slow' ? 'slow' : 'buffering'); stallClock();
-      });
-    });
-    ['canplay','loadeddata'].forEach(function(ev){ v.addEventListener(ev, function(){ clearT(); tries = 0; set('ok'); }); });
-    v.addEventListener('playing', function(){ clearT(); tries = 0; set('ok'); clearSlow(); });
-    v.addEventListener('error', onError);
-    window.addEventListener('online', function(){ if(state === 'failed' || state === 'slow') retry(true); });
-    if(v.error) onError(); else if(v.readyState >= 2) set('ok');
-    return (v._msbGuard = { retry: retry });
-  }
-  window.MSBVideo = { guard: guard, isSlow: isSlow, markSlow: markSlow, clearSlow: clearSlow };
-})();
-
 (function(){
   if(window.MSBReels) return;
 
@@ -105,11 +39,6 @@ html.msb-reels-open body{background:transparent !important}
 #msbReels .rl-err{position:absolute;top:50%;left:0;right:0;transform:translateY(-50%);text-align:center;font-size:14px;font-weight:600;
   color:rgba(255,255,255,.85);z-index:2;display:none;padding:0 30px;pointer-events:none}
 #msbReels .rl-slide.failed .rl-err{display:block}
-#msbReels .rl-err{flex-direction:column;align-items:center;gap:14px}
-#msbReels .rl-slide.failed .rl-err{display:flex;pointer-events:auto}
-#msbReels .rl-retry{border:0;border-radius:99px;padding:10px 22px;font:inherit;font-weight:700;font-size:14px;color:#0f172a;background:#fff;cursor:pointer}
-#msbReels .rl-slow{position:absolute;top:calc(50% + 40px);left:0;right:0;text-align:center;font-size:13px;font-weight:600;color:rgba(255,255,255,.85);z-index:2;display:none;pointer-events:none}
-#msbReels .rl-slide.slowhint.buffering .rl-slow{display:block}
 #msbReels .rl-burst{position:absolute;width:96px;height:96px;margin:-48px 0 0 -48px;z-index:3;pointer-events:none;
   animation:rlburst .8s ease-out forwards}
 #msbReels .rl-burst svg{width:100%;height:100%;fill:#ef4444;stroke:#ef4444;stroke-width:1;filter:drop-shadow(0 4px 14px rgba(0,0,0,.45))}
@@ -229,8 +158,8 @@ body.msb-reels-open .rp-sheet{z-index:100005!important}
 
   function slideHtml(p){
     return '<section class="rl-slide buffering" data-id="'+esc(p.id)+'"><div class="rl-frame">'+
-      '<video src="'+esc(p.videoUrl)+'"'+(p.thumbnailUrl ? ' poster="'+esc(p.thumbnailUrl)+'"' : '')+' loop playsinline webkit-playsinline preload="metadata"></video>'+
-      '<div class="rl-spin"></div><div class="rl-slow">Slow connection\u2026</div><div class="rl-err"><div>Couldn\u2019t load this video</div><button type="button" class="rl-retry">Tap to retry</button></div>'+
+      '<video src="'+esc(p.videoUrl)+'" poster="'+esc(p.thumbnailUrl||'')+'" loop playsinline webkit-playsinline preload="metadata"></video>'+
+      '<div class="rl-spin"></div><div class="rl-err">Couldn\u2019t load this video</div>'+
       '<div class="rl-tap"></div><div class="rl-pause">'+I.play+'</div>'+
       '<div class="rl-rail">'+
         '<button class="rl-act" data-a="like" aria-label="Like"><div class="rl-ic">'+I.heart+'</div><span data-c="like"></span></button>'+
@@ -282,31 +211,13 @@ body.msb-reels-open .rp-sheet{z-index:100005!important}
   function play(slide){
     var v = slide.querySelector('video');
     v.muted = muted; v.playbackRate = speed; slide.classList.remove('paused');
-    v.preload = 'auto';                                   // the reel on screen should buffer straight away
     var pr = v.play();
-    if(pr && pr.catch) pr.catch(function(err){
-      // Scrolling away while it was still loading cancels the pending play() with an AbortError. That is not a
-      // refusal — and it must never restart a reel the viewer has already left (that was the old sound bleeding through).
-      if(err && err.name === 'AbortError') return;
-      if(slide.getAttribute('data-id') !== activeId) return;
+    if(pr && pr.catch) pr.catch(function(){
       // Browser refused sound-on autoplay — fall back to muted instead of a dead screen.
       muted = true; v.muted = true; v.play().catch(function(){});
       var mb = document.getElementById('rlMuteBtn'); if(mb) mb.innerHTML = muteIcon();
     });
   }
-  // Only one thing may make sound. Whenever a video starts: while the reels are open, anything that isn't the
-  // reel currently on screen is stopped on the spot (a late retry, a feed video underneath…); otherwise every
-  // other video on the page is paused.
-  document.addEventListener('play', function(e){
-    var t = e.target;
-    if(!t || t.tagName !== 'VIDEO') return;
-    var ov = document.getElementById('msbReels');
-    if(ov && ov.classList.contains('open')){
-      var sl = t.closest ? t.closest('.rl-slide') : null;
-      if(!sl || sl.getAttribute('data-id') !== activeId){ t.pause(); return; }
-    }
-    document.querySelectorAll('video').forEach(function(o){ if(o !== t && !o.paused) o.pause(); });
-  }, true);
   function measureCaption(slide){
     var cap = slide.querySelector('.rl-cap'), more = slide.querySelector('.rl-more');
     if(!cap || !more) return;
@@ -346,17 +257,7 @@ body.msb-reels-open .rp-sheet{z-index:100005!important}
     });
     ['waiting','loadstart','seeking'].forEach(function(ev){ v.addEventListener(ev, function(){ slide.classList.add('buffering'); }); });
     ['playing','canplay','seeked','loadeddata'].forEach(function(ev){ v.addEventListener(ev, function(){ slide.classList.remove('buffering'); }); });
-    var guardH = window.MSBVideo ? MSBVideo.guard(v, function(st){
-      slide.classList.toggle('buffering', st === 'loading' || st === 'buffering' || st === 'slow');
-      slide.classList.toggle('slowhint', st === 'slow');
-      slide.classList.toggle('failed', st === 'failed');
-    }) : null;
-    var retryBtn = slide.querySelector('.rl-retry');
-    if(retryBtn) retryBtn.addEventListener('click', function(e){
-      e.stopPropagation();
-      slide.classList.remove('failed'); slide.classList.add('buffering');
-      if(guardH) guardH.retry(true); else v.load();
-    });
+    v.addEventListener('error', function(){ slide.classList.remove('buffering'); slide.classList.add('failed'); });
 
     // Tap = pause/play, double-tap = like (with heart burst)
     var last = 0, timer = null, tap = slide.querySelector('.rl-tap');
@@ -441,7 +342,7 @@ body.msb-reels-open .rp-sheet{z-index:100005!important}
           var idx = Array.prototype.indexOf.call(scroller.children, slide);
           maybeLoadMore(idx);
           if(exhausted && idx === items.length - 1 && !endFlashed){ endFlashed = true; flash('You\u2019ve reached the end'); }
-          var next = slide.nextElementSibling; if(next){ var nv = next.querySelector('video'); if(nv && !(window.MSBVideo && MSBVideo.isSlow())) nv.preload = 'auto'; }
+          var next = slide.nextElementSibling; if(next){ var nv = next.querySelector('video'); if(nv) nv.preload = 'auto'; }
         } else { v.pause(); try{ v.currentTime = 0; }catch(_){} slide.classList.remove('paused'); }
       });
     }, { root: scroller, threshold: 0.7 });
