@@ -104,12 +104,13 @@ app.use(cors({
 //     still land somewhere real.
 const AFFILIATE_HOST = 'affiliate.mindshiftbooks.shop';
 const AFFILIATE_SITE_URL = process.env.AFFILIATE_URL || `https://${AFFILIATE_HOST}`;
-const AFFILIATE_ECOSYSTEM_PATHS = new Set(['/affiliate', '/affiliate/apply', '/affiliate/dashboard', '/affiliate/payout']);
+const AFFILIATE_ECOSYSTEM_PATHS = new Set(['/affiliate', '/affiliate/apply', '/affiliate/dashboard', '/affiliate/payout', '/affiliate/readers']);
 const AFFILIATE_SUBDOMAIN_PAGE_MAP = {
   '/': '/affiliate',
   '/apply': '/affiliate/apply',
   '/dashboard': '/affiliate/dashboard',
-  '/payout': '/affiliate/payout'
+  '/payout': '/affiliate/payout',
+  '/readers': '/affiliate/readers'
 };
 app.use((req, res, next) => {
   const host = (req.hostname || '').toLowerCase();
@@ -4661,6 +4662,10 @@ app.get('/affiliate/dashboard', (req, res) => {
 
 app.get('/affiliate/payout', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'payout.html'));
+});
+
+app.get('/affiliate/readers', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'affiliate-readers.html'));
 });
 
 app.get('/free-ebooks', (req, res) => {
