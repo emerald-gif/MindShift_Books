@@ -179,7 +179,8 @@ header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pv-time{flex-shrink:0;color:#fff;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums}
 .post-comment-bar{position:fixed;left:0;right:0;bottom:0;z-index:150;background:var(--c-bg,#fff);border-top:1px solid var(--border);
   padding:10px max(16px,env(safe-area-inset-left)) max(10px,env(safe-area-inset-bottom)) 16px;
-  display:flex;align-items:flex-end;gap:8px;max-width:720px;margin:0 auto}
+  display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px;max-width:720px;margin:0 auto}
+.post-comment-bar .reply-banner{flex:0 0 100%}
 .post-comment-bar-av{width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;background:var(--c-tonal2,#e0e7ff)}
 .post-comment-bar-input{flex:1;background:var(--c-surface,#f1f5f9);border:none;border-radius:18px;padding:9px 16px;font-size:14px;
   font-family:'Inter',sans-serif;color:var(--txt);outline:none;resize:none;min-height:20px;max-height:100px;
@@ -504,6 +505,12 @@ body{padding-bottom:64px} /* room for the fixed comment bar on post-read */
 .img-viewer-slide{flex:0 0 100%;min-width:0;box-sizing:border-box;scroll-snap-align:start;display:flex;align-items:center;justify-content:center}
 .img-viewer-slide img{max-width:92%;max-height:85vh;object-fit:contain;border-radius:8px}
 .post-single img,.post-carousel-slide img{cursor:pointer}
+
+/* Reply mode: the main composer turns into a reply box ("Replying to …") */
+.reply-banner{display:none;align-items:center;gap:8px;padding:2px 2px 8px;font-size:12.5px;color:var(--sub)}
+.reply-banner.show{display:flex}
+.reply-banner b{color:var(--txt);font-weight:700}
+.reply-banner-x{margin-left:auto;width:22px;height:22px;border:none;border-radius:50%;background:var(--c-surface,#f1f5f9);color:var(--sub);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;line-height:1;padding:0}
 </style>
 <script src="/article-categories.js"></script>
 <meta name="theme-color" content="#ffffff">
@@ -611,6 +618,7 @@ body{padding-bottom:64px} /* room for the fixed comment bar on post-read */
 
 <!-- PERSISTENT COMMENT BAR (posts only — this IS the comment input, always visible) -->
 <div class="post-comment-bar" id="postCommentBar">
+  <div class="reply-banner" id="replyBanner"></div>
   <img class="post-comment-bar-av" id="postCommentBarAv" src="" alt="" onerror="this.style.display='none'">
   <textarea class="post-comment-bar-input" id="mainCI" placeholder="Comment on this post…" rows="1"
     oninput="onCI(this)" onfocus="onCIFocus(this)"></textarea>
@@ -724,7 +732,7 @@ body{padding-bottom:64px} /* room for the fixed comment bar on post-read */
 <script src="/link-card.js"></script>
 <script src="/share-drawer.js?v=4"></script>
 <script src="/poll.js?v=1"></script>
-<script src="/reels.js?v=11"></script>
+<script src="/reels.js?v=12"></script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
@@ -1787,7 +1795,7 @@ window.closeAll=function(){
 /* ══════════════════════════════════════
    COMMENTS SYSTEM
    ══════════════════════════════════════ */
-let cList=[],cReplies={},cLikedSet=new Set(),cOpenReplies=new Set(),cActiveReplyId=null,cCommentCount=0;
+let cList=[],cReplies={},cLikedSet=new Set(),cOpenReplies=new Set(),cActiveReplyId=null,cReplyTarget=null,cCommentCount=0;
 let cPinnedId=null,cPinnedComment=null;   // set by the author in comment-manager.html; surfaced above the list here
 // Per-comment write chain for likes. likedBy.{uid} is a plain field (last
 // write wins) while likeCount is an atomic increment — two independent
@@ -1941,20 +1949,20 @@ function buildCHTML(c,isReply,isPinned){
   const authorBadge=isAuthor?`<span class="c-author-badge">Author</span>`:'';
   const pinBadge=isPinned?`<span class="c-pin-badge">📌 Pinned</span>`:'';
   const heart=`<button class="c-like-btn${liked?' liked':''}" id="clb-${c.id}" onclick="likeComment('${c.id}','${cEsc(c.authorUid||'')}')"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg><span id="clc-${c.id}">${lc}</span></button>`;
-  const replyBtn=!isReply?`<button class="c-reply-btn" onclick="showRI('${c.id}')">Reply</button>`:'';
+  const replyBtn=!isReply?`<button class="c-reply-btn" onclick="startReply('${c.id}')">Reply</button>`:'';
   const vrBtn=(!isReply&&c.replyCount>0)?`<button class="c-view-replies-btn" id="vrb-${c.id}" onclick="toggleReplies('${c.id}')"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg> ${c.replyCount} ${c.replyCount===1?'reply':'replies'}</button>`:'';
   const isOwn=currentUser&&c.authorUid===currentUser.uid;
   const deleteItem=isOwn?`<button class="c-menu-item danger" onclick="deleteComment('${c.id}','${cEsc(c.parentId||'')}')"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path stroke-linecap="round" d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path stroke-linecap="round" d="M10 11v6m4-6v6"/><path stroke-linecap="round" d="M9 6V4h6v2"/></svg>Delete</button>`:'';
   const moreBtn=`<button class="c-more-btn" id="mbtn-${c.id}" onclick="toggleCMenu(event,'${c.id}')" aria-label="More"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></button><div class="c-menu" id="cmenu-${c.id}"><button class="c-menu-item" onclick="shareComment('${c.id}')"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path stroke-linecap="round" d="M8.59 13.51l6.83 3.98m-.01-10.98L8.59 10.49"/></svg>Share comment</button>${deleteItem}</div>`;
   const extra=!isReply
-    ?`<div class="c-replies-wrap" id="rep-${c.id}" style="display:none"></div><div class="c-replies-wrap" id="ri-wrap-${c.id}" style="display:none"><div class="reply-input-row"><textarea class="r-input" id="ri-${c.id}" placeholder="Write a reply…" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px';document.getElementById('rpb-${c.id}').disabled=!window.cHasText(this)"></textarea><button class="r-post-btn" id="rpb-${c.id}" onclick="submitReply('${c.id}')" disabled>Post</button><button class="r-cancel-btn" onclick="hideRI('${c.id}')"><svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button></div></div>`
+    ?`<div class="c-replies-wrap" id="rep-${c.id}" style="display:none"></div>`
     :'';
   return `<div class="comment-item${isReply?' reply':''}" id="ci-${c.id}" data-author-uid="${cEsc(c.authorUid||'')}"><div class="c-av" onclick="cGo('${cEsc(c.authorUid||'')}','${cEsc(c.authorUsername||'')}')">${avIn}</div><div class="c-body"><div class="c-meta-row"><span class="c-name" data-author-name onclick="cGo('${cEsc(c.authorUid||'')}','${cEsc(c.authorUsername||'')}')">${cEsc(c.authorName||'User')}</span>${authorBadge}${pinBadge}</div><div class="c-text">${window.msbLinkMentions?msbLinkMentions(cEsc(c.text||''),c.mentions):cEsc(c.text||'')}</div><div class="c-foot"><span class="c-time">${cTA(c.createdAt)}</span><span class="c-dot">·</span>${heart}${replyBtn}${vrBtn}</div>${extra}</div>${moreBtn}</div>`;
 }
 
-window.onCI=function(el){el.style.height='auto';el.style.height=el.scrollHeight+'px';const b=document.getElementById('mainCPost');if(b)b.disabled=!el.value.trim();};
+window.onCI=function(el){el.style.height='auto';el.style.height=el.scrollHeight+'px';const b=document.getElementById('mainCPost');if(b)b.disabled=!window.cHasText(el);};
 window.onCIFocus=function(el){if(!currentUser){el.blur();openAuth();}};
-window.cancelCI=function(){const i=document.getElementById('mainCI'),b=document.getElementById('mainCPost');if(i){i.value='';i.style.height='auto';i.blur();}if(b)b.disabled=true;};
+window.cancelCI=function(){const i=document.getElementById('mainCI'),b=document.getElementById('mainCPost');if(cReplyTarget){cReplyTarget=null;syncReplyUI();}if(i){i.value='';i.dataset.auto='';i.style.height='auto';i.blur();}if(b)b.disabled=true;};
 // The comment box is the persistent bottom bar itself now — tapping the
 // comment icon just scrolls the comments into view and focuses that bar.
 window.openCommentDrawer=function(){
@@ -1995,6 +2003,7 @@ function cNotifyMentions(mentions,commentId,text,skip){
 
 window.submitComment=async function(){
   if(!currentUser){openAuth();return;}
+  if(cReplyTarget) return window.submitReply(cReplyTarget.id);
   const inp=document.getElementById('mainCI');
   const text=(inp&&inp.value||'').trim();if(!text)return;
   const btn=document.getElementById('mainCPost');
@@ -2016,24 +2025,43 @@ window.submitComment=async function(){
   finally{if(btn){btn.disabled=false;btn.textContent='Post';}}
 };
 
-window.showRI=function(cid){
-  if(cActiveReplyId&&cActiveReplyId!==cid)hideRI(cActiveReplyId);
-  cActiveReplyId=cid;
-  const w=document.getElementById('ri-wrap-'+cid);if(w){w.style.display='block';const i=document.getElementById('ri-'+cid);if(i){cPrefillReply(i,cid);i.focus();}}
+window.startReply=function(cid){
+  if(!currentUser){openAuth();return;}
+  const pc=cList.find(c=>c.id===cid)||(cPinnedComment&&cPinnedComment.id===cid?cPinnedComment:null);
+  cReplyTarget={id:cid,name:(pc&&pc.authorName)||'this comment'};
+  const i=document.getElementById('mainCI');
+  syncReplyUI();
+  if(!i) return;
+  // Switching from one reply target to another: drop the old auto "@handle " but never what the person typed.
+  if(i.dataset.auto&&i.value.trim()===i.dataset.auto.trim()){i.value='';i.dataset.auto='';}
+  const a=document.getElementById('mainCA');if(a)a.classList.add('show');
+  cPrefillReply(i,cid);
+  i.focus();
+  try{const t=document.getElementById('ci-'+cid);if(t)t.scrollIntoView({block:'nearest',behavior:'smooth'});}catch(e){}
 };
-window.hideRI=function(cid){
-  const w=document.getElementById('ri-wrap-'+cid);if(w)w.style.display='none';
-  const i=document.getElementById('ri-'+cid);if(i){i.value='';i.style.height='auto';}
-  const b=document.getElementById('rpb-'+cid);if(b)b.disabled=true;
-  if(cActiveReplyId===cid)cActiveReplyId=null;
+window.showRI=window.startReply;
+window.cancelReply=function(){
+  const i=document.getElementById('mainCI');
+  cReplyTarget=null;syncReplyUI();
+  if(i){if(i.dataset.auto&&i.value.trim()===i.dataset.auto.trim())i.value='';i.dataset.auto='';i.style.height='auto';window.onCI(i);}
 };
+// Reply mode takes over the main composer: a "Replying to …" banner above it, a reply placeholder, and Post sends a reply.
+function syncReplyUI(){
+  const ban=document.getElementById('replyBanner'),i=document.getElementById('mainCI');
+  if(i&&!i.dataset.ph)i.dataset.ph=i.getAttribute('placeholder')||'';
+  if(ban){
+    if(cReplyTarget){ban.innerHTML='<span>Replying to <b>'+cEsc(cReplyTarget.name)+'</b></span><button type="button" class="reply-banner-x" onclick="cancelReply()" aria-label="Cancel reply">\u00d7</button>';ban.classList.add('show');}
+    else{ban.classList.remove('show');ban.innerHTML='';}
+  }
+  if(i)i.setAttribute('placeholder',cReplyTarget?'Write your reply\u2026':(i.dataset.ph||''));
+}
 
 window.submitReply=async function(parentId){
   if(!currentUser){openAuth();return;}
-  const inp=document.getElementById('ri-'+parentId);
+  const inp=document.getElementById('mainCI');
   const text=(inp&&inp.value||'').trim();if(!text)return;
   if(inp&&inp.dataset.auto&&text===inp.dataset.auto.trim())return;
-  const btn=document.getElementById('rpb-'+parentId);
+  const btn=document.getElementById('mainCPost');
   if(btn){btn.disabled=true;btn.textContent='Posting…';}
   const an=myProfile?.name||'Someone', ap=myProfile?.photo||'', au=myProfile?.username||'';
   let mentions=[];try{mentions=await mentionPicker.resolve(text);}catch(e){mentions=[];}
@@ -2057,7 +2085,7 @@ window.submitReply=async function(parentId){
     if(re){if(re.style.display==='none')re.style.display='block';re.insertAdjacentHTML('beforeend',buildCHTML(nr,true));}
     const pc=cList.find(c=>c.id===parentId);
     if(pc){pc.replyCount=(pc.replyCount||0)+1;updVRB(parentId,pc.replyCount);}
-    hideRI(parentId);
+    cancelReply();cancelCI();
     if(pc&&pc.authorUid&&pc.authorUid!==currentUser.uid)notif.notifyComment({type:'comment_reply',recipientUid:pc.authorUid,articleId:artId,articleTitle:article?(article.text||'').slice(0,60):'',commentId:parentId,contentType:'post'});
     if(article&&article.authorUid&&article.authorUid!==currentUser.uid&&!article.isMindshift){
       if(!pc||pc.authorUid!==article.authorUid)notif.notifyComment({type:'new_comment',recipientUid:article.authorUid,articleId:artId,articleTitle:(article.text||'').slice(0,60),contentType:'post'});
@@ -2067,7 +2095,7 @@ window.submitReply=async function(parentId){
     if(article&&article.authorUid&&article.authorUid!==currentUser.uid&&!article.isMindshift&&(!pc||pc.authorUid!==article.authorUid))_skip.push(article.authorUid);
     cNotifyMentions(mentions,ref.id,text,_skip);
   }catch(e){console.error('submitReply:',e);}
-  finally{if(btn){btn.disabled=false;btn.textContent='Post';}}
+  finally{if(btn){btn.textContent='Post';btn.disabled=!(inp&&window.cHasText(inp));}}
 };
 
 function updVRB(cid,count){
@@ -2171,6 +2199,7 @@ window.shareComment=function(cid){
 
 /* ── DELETE COMMENT ── */
 window.deleteComment=async function(cid,parentId){
+  if(cReplyTarget&&cReplyTarget.id===cid)cancelReply();
   closeAllCMenus();
   if(!currentUser)return;
   if(!confirm('Delete this comment?'))return;
