@@ -28,7 +28,7 @@
 
 <script src="/share-drawer.js?v=4"></script>
 <script src="/poll.js?v=1"></script>
-<script src="/reels.js?v=8"></script>
+<script src="/reels.js?v=9"></script>
 <script src="/image-viewer.js?v=2"></script>
 <script type="application/ld+json">
 {
@@ -268,6 +268,23 @@ main{max-width:1100px;margin:0 auto}
 .pcard-video:not(.vid-ready) video:not([poster]){opacity:0}  /* a poster, when there is one, shows straight away */
 .pcard-video video{transition:opacity .25s}
 @keyframes vidShimmer{to{background-position:-200% 0}}
+/* Network state overlay: spinner while buffering, message when slow, Retry when it failed */
+.pcard-video-status{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+  pointer-events:none;color:#fff;text-align:center;padding:12px}
+.pv-spin{width:26px;height:26px;border-radius:50%;border:3px solid rgba(255,255,255,.3);border-top-color:#fff;animation:pvspin .8s linear infinite}
+@keyframes pvspin{to{transform:rotate(360deg)}}
+.pv-msg{font-size:12.5px;font-weight:600;text-shadow:0 1px 6px rgba(0,0,0,.5)}
+.pv-msg:empty{display:none}
+.pv-retry{display:none;border:0;border-radius:99px;padding:8px 18px;font:inherit;font-weight:700;font-size:13px;color:#0f172a;background:#fff;pointer-events:auto;cursor:pointer}
+.pcard-video.vid-buffering .pcard-video-status,.pcard-video.vid-slow .pcard-video-status{display:flex}
+.pcard-video.vid-failed .pcard-video-status{display:flex;background:rgba(15,14,23,.72)}
+.pcard-video.vid-failed .pv-spin{display:none}
+.pcard-video.vid-failed .pv-retry{display:inline-block}
+.pcard-video:not(.vid-ready) .pv-spin{border-color:rgba(15,23,42,.15);border-top-color:#4f46e5}
+.pcard-video:not(.vid-ready) .pv-msg{color:var(--c-sub,#475569);text-shadow:none}
+/* Tap-to-play badge: shown instead of autoplay on a slow connection or when the browser blocks autoplay */
+.pcard-video.vid-tapplay::after{content:'';position:absolute;top:50%;left:50%;width:54px;height:54px;margin:-27px 0 0 -27px;border-radius:50%;
+  background:rgba(0,0,0,.5) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M8 5v14l11-7z'/%3E%3C/svg%3E") center/26px no-repeat;pointer-events:none}
 @media (prefers-reduced-motion:reduce){.pcard-video:not(.vid-ready){animation:none}}
 .pcard-video video{display:block;max-width:100%;max-height:460px;width:auto;height:auto}
 .pcard-video-mute{position:absolute;bottom:8px;left:8px;width:30px;height:30px;border-radius:50%;
@@ -2953,20 +2970,57 @@ function markReadyFeedVideos(){
    actually visible — the moment it scrolls mostly out of view it's paused,
    so nothing keeps running silently in the background as the feed scrolls. */
 let _feedVideoObserver = null;
+function syncFeedMuteBtn(vid){
+  const btn = vid.parentElement && vid.parentElement.querySelector('.pcard-video-mute');
+  if(!btn) return;
+  btn.classList.toggle('unmuted', !vid.muted);
+  btn.innerHTML = vid.muted ? MUTE_ICON_ON : MUTE_ICON_OFF;
+  btn.title = vid.muted ? 'Unmute' : 'Mute';
+}
+// One video at a time (saves data on a weak connection), and no autoplay at all while the connection
+// is struggling — the tile shows a play badge instead and opens the player when tapped.
+function playFeedVideo(vid){
+  const wrap = vid.parentElement;
+  if(window.MSBVideo && MSBVideo.isSlow()){ wrap.classList.add('vid-tapplay'); vid.pause(); return; }
+  wrap.classList.remove('vid-tapplay');
+  document.querySelectorAll('.pcard-video-el').forEach(o=>{ if(o!==vid && !o.paused) o.pause(); });
+  const pr = vid.play();
+  if(pr && pr.catch) pr.catch(()=>{
+    // Sound-on playback refused (browser autoplay rules): carry on muted rather than showing a frozen frame.
+    if(!vid.muted){ vid.muted = true; syncFeedMuteBtn(vid); vid.play().catch(()=>wrap.classList.add('vid-tapplay')); }
+    else wrap.classList.add('vid-tapplay');     // e.g. iOS Low Power Mode blocks autoplay entirely
+  });
+}
 function getFeedVideoObserver(){
   if(_feedVideoObserver) return _feedVideoObserver;
   _feedVideoObserver = new IntersectionObserver((entries)=>{
     entries.forEach(entry=>{
       const vid = entry.target;
-      if(entry.isIntersecting) vid.play().catch(()=>{});
+      if(entry.isIntersecting) playFeedVideo(vid);
       else vid.pause();
     });
   }, { threshold: 0.6 });
   return _feedVideoObserver;
 }
+window.retryFeedVideo = function(btn){
+  const vid = btn.closest('.pcard-video').querySelector('video');
+  if(vid && vid._msbGuard) vid._msbGuard.retry(true);
+};
+// Wire each tile's network-state overlay (spinner / "Slow connection…" / Retry).
+function guardFeedVideo(el){
+  if(!window.MSBVideo || el._msbGuard) return;
+  MSBVideo.guard(el, st=>{
+    const w = el.parentElement; if(!w) return;
+    w.classList.toggle('vid-buffering', st==='loading' || st==='buffering');
+    w.classList.toggle('vid-slow', st==='slow');
+    w.classList.toggle('vid-failed', st==='failed');
+    const msg = w.querySelector('.pv-msg');
+    if(msg) msg.textContent = st==='slow' ? 'Slow connection…' : st==='failed' ? 'Couldn’t load this video' : '';
+  });
+}
 function observeFeedVideos(){
   const observer = getFeedVideoObserver();
-  document.querySelectorAll('.pcard-video-el').forEach(el=>observer.observe(el));
+  document.querySelectorAll('.pcard-video-el').forEach(el=>{ guardFeedVideo(el); observer.observe(el); });
   markReadyFeedVideos();
 }
 // Belt-and-braces: if the tab/app goes to background, pause every feed
@@ -2980,15 +3034,18 @@ document.addEventListener('visibilitychange', ()=>{
 // actually changes across that trip, the IntersectionObserver has nothing
 // new to report and never resumes it. On return, manually re-check what's
 // actually on screen right now and resume/pause to match.
-window.addEventListener('pageshow', ()=>{
+function refreshFeedVideos(){
   document.querySelectorAll('.pcard-video-el').forEach(vid=>{
     const r = vid.getBoundingClientRect();
     if(!r.height){ vid.pause(); return; }
     const visible = Math.max(0, Math.min(r.bottom, innerHeight) - Math.max(r.top, 0)) / r.height;
-    if(visible >= 0.6) vid.play().catch(()=>{});
+    if(visible >= 0.6) playFeedVideo(vid);
     else vid.pause();
   });
-});
+}
+window.addEventListener('pageshow', refreshFeedVideos);
+// When the connection recovers (or is flagged slow) re-check what should be playing.
+document.addEventListener('msb-net', refreshFeedVideos);
 
 /* ── INFINITE SCROLL (articles) ──
    A tiny sentinel div sits at the bottom of the rendered feed. When it
@@ -3251,6 +3308,8 @@ function buildVideoTileHtml(p){
       ${MUTE_ICON_ON}
     </button>
     ${p.duration ? `<span class="pcard-video-dur">${fmtDuration(p.duration)}</span>` : ''}
+    <div class="pcard-video-status" aria-live="polite"><div class="pv-spin"></div><div class="pv-msg"></div>
+      <button type="button" class="pv-retry" onclick="event.stopPropagation();retryFeedVideo(this)">Retry</button></div>
   </div>`;
 }
 const MUTE_ICON_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>';
