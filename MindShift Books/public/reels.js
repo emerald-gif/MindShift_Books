@@ -128,6 +128,35 @@ body.msb-reels-open .rp-sheet{z-index:100005!important}
 #msbReels .rl-tip-row span{font-size:14px;color:rgba(255,255,255,.82);line-height:1.3}
 #msbReels .rl-tip-row b{color:#fff;font-weight:800}
 #msbReels .rl-tip-ok{display:block;width:100%;margin-top:10px;padding:11px;border:none;border-radius:12px;background:#fff;color:#0f172a;font-weight:800;font-size:14px;font-family:inherit;cursor:pointer}
+
+/* comments drawer: the video shrinks to the top and the drawer takes a fixed height at the bottom */
+#msbReels{--rl-cmt-h:min(64dvh,600px)}
+#msbReels .rl-frame{transition:height .34s cubic-bezier(.22,1,.36,1)}
+#msbReels.cmt-open .rl-slide.cmt-on .rl-frame{height:calc(100% - var(--rl-cmt-h) - var(--rl-kb,0px))}
+#msbReels.cmt-open .rl-slide.cmt-on video{object-fit:contain}
+#msbReels .rl-rail,#msbReels .rl-info,#msbReels .rl-scrub{transition:opacity .22s}
+#msbReels.cmt-open .rl-slide.cmt-on .rl-rail,#msbReels.cmt-open .rl-slide.cmt-on .rl-info,#msbReels.cmt-open .rl-slide.cmt-on .rl-scrub{opacity:0;pointer-events:none}
+#msbReels.cmt-open .rl-scroller{overflow-y:hidden;touch-action:none}
+#msbReels .rl-cmt{position:fixed;left:0;right:0;bottom:var(--rl-kb,0px);height:var(--rl-cmt-h);max-width:520px;margin:0 auto;z-index:30;
+  display:flex;flex-direction:column;overflow:hidden;background:var(--c-bg,#fff);color:var(--txt,#0f172a);
+  border-radius:20px 20px 0 0;box-shadow:0 -12px 40px rgba(0,0,0,.5);
+  transform:translateY(105%);visibility:hidden;pointer-events:none;
+  transition:transform .34s cubic-bezier(.22,1,.36,1),visibility 0s .34s;will-change:transform}
+#msbReels.cmt-open .rl-cmt{transform:translateY(0);visibility:visible;pointer-events:auto;transition:transform .34s cubic-bezier(.22,1,.36,1),visibility 0s}
+#msbReels .rl-cmt-head{flex:none;position:relative;padding:8px 14px 11px;text-align:center;touch-action:none;cursor:grab}
+#msbReels .rl-cmt-grab{width:38px;height:4px;border-radius:2px;background:var(--c-line,#d1d5db);margin:0 auto 10px}
+#msbReels .rl-cmt-title{font-size:15px;font-weight:800;letter-spacing:-.01em}
+#msbReels .rl-cmt-title span{font-weight:600;color:var(--mute,#94a3b8);margin-left:4px}
+#msbReels .rl-cmt-x{position:absolute;right:12px;top:14px;width:30px;height:30px;border:none;border-radius:50%;background:var(--c-surface,#f1f5f9);
+  color:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+#msbReels .rl-cmt-x svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
+#msbReels .rl-cmt-body{position:relative;flex:1;min-height:0;border-top:1px solid var(--border,#e5e7eb);-webkit-user-select:text;user-select:text}
+#msbReels .rl-cmt-frame{position:absolute;inset:0;width:100%;height:100%;border:0;background:transparent;opacity:0;transition:opacity .2s}
+#msbReels .rl-cmt-frame.ready{opacity:1}
+#msbReels .rl-cmt-load{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+#msbReels .rl-cmt-load i{width:30px;height:30px;border-radius:50%;border:3px solid var(--c-line,#e5e7eb);border-top-color:#4f46e5;animation:rlspin .8s linear infinite}
+#msbReels .rl-cmt-frame.ready + .rl-cmt-load{display:none}
+@media (prefers-reduced-motion:reduce){#msbReels .rl-frame,#msbReels .rl-cmt{transition:none}}
 `;
   var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
 
@@ -145,6 +174,7 @@ body.msb-reels-open .rp-sheet{z-index:100005!important}
   function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
   function fmt(t){ t = Math.max(0, Math.floor(t||0)); return Math.floor(t/60)+':'+String(t%60).padStart(2,'0'); }
 
+  var cmtOpen = false, cmtPushed = false, cmtSkipPop = false, cmtId = null, cmtCounts = {}, cmtVV = false;
   var scrollerEl = null, loadingMore = false, exhausted = false, endFlashed = false, prevOv = ['',''], savedY = 0, muted = false, speed = 1, observer = null, pushed = false, syncTimer = null, cfg = null, activeId = null, items = [];
   var SPEEDS = [1, 1.5, 2, 0.5];
 
@@ -186,6 +216,7 @@ body.msb-reels-open .rp-sheet{z-index:100005!important}
   function sync(slide){
     if(!slide || !cfg) return;
     var id = slide.getAttribute('data-id'), s = stateOf(id);
+    if(cmtCounts[id] != null) s.comments = cmtCounts[id] > 0 ? cmtCounts[id] : '';
     var lb = slide.querySelector('[data-a="like"]');
     if(lb){ lb.classList.toggle('liked', s.liked); lb.querySelector('[data-c="like"]').textContent = s.likes; }
     var cc = slide.querySelector('[data-c="comment"]'); if(cc) cc.textContent = s.comments;
@@ -262,6 +293,7 @@ body.msb-reels-open .rp-sheet{z-index:100005!important}
     // Tap = pause/play, double-tap = like (with heart burst)
     var last = 0, timer = null, tap = slide.querySelector('.rl-tap');
     tap.addEventListener('click', function(e){
+      if(cmtOpen){ closeComments(); return; }
       var now = Date.now();
       if(now - last < 300){
         clearTimeout(timer); last = 0;
@@ -295,6 +327,89 @@ body.msb-reels-open .rp-sheet{z-index:100005!important}
 
     measureCaption(slide); sync(slide);
   }
+
+  // ── Comments drawer ──
+  // The comments are the post page's own comment section (/post-read?embed=1), so the drawer behaves exactly like
+  // the post: same list, likes, replies, mentions, deleting, sign-in. The video shrinks into the space above it.
+  function cmtEls(){ var ov = document.getElementById('msbReels'); return { ov: ov, dr: ov ? ov.querySelector('.rl-cmt') : null }; }
+  function cmtTitle(id){
+    var el = cmtEls().dr; if(!el) return;
+    var n = cmtCounts[id]; el.querySelector('.rl-cmt-title').innerHTML = 'Comments' + (n > 0 ? '<span>'+n+'</span>' : '');
+  }
+  function ensureDrawer(ov){
+    var dr = ov.querySelector('.rl-cmt'); if(dr) return dr;
+    dr = document.createElement('div'); dr.className = 'rl-cmt'; dr.setAttribute('role', 'dialog'); dr.setAttribute('aria-label', 'Comments');
+    dr.innerHTML =
+      '<div class="rl-cmt-head"><div class="rl-cmt-grab"></div><div class="rl-cmt-title">Comments</div>'+
+        '<button class="rl-cmt-x" data-a="cmt-close" aria-label="Close comments"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>'+
+      '<div class="rl-cmt-body"><iframe class="rl-cmt-frame" title="Comments"></iframe><div class="rl-cmt-load"><i></i></div></div>';
+    ov.appendChild(dr);
+    // drag the handle / title down to close
+    var head = dr.querySelector('.rl-cmt-head'), startY = 0, dy = 0, t0 = 0, dragging = false;
+    head.addEventListener('pointerdown', function(e){
+      if(e.target.closest('.rl-cmt-x')) return;
+      dragging = true; startY = e.clientY; dy = 0; t0 = Date.now(); dr.style.transition = 'none';
+      try{ head.setPointerCapture(e.pointerId); }catch(_){}
+    });
+    head.addEventListener('pointermove', function(e){ if(!dragging) return; dy = Math.max(0, e.clientY - startY); dr.style.transform = 'translateY('+dy+'px)'; });
+    function end(){
+      if(!dragging) return; dragging = false; dr.style.transition = '';
+      var fast = dy / Math.max(1, Date.now() - t0) > 0.6;
+      if(dy > 110 || (fast && dy > 30)){ closeComments(); }
+      dr.style.transform = '';                    // closed → eases the rest of the way down; otherwise springs back open
+    }
+    head.addEventListener('pointerup', end); head.addEventListener('pointercancel', end);
+    return dr;
+  }
+  function openComments(id){
+    var e = cmtEls(), ov = e.ov; if(!ov || cmtOpen) return;
+    var slide = ov.querySelector('.rl-slide[data-id="'+id+'"]'); if(!slide) return;
+    var dr = ensureDrawer(ov), frame = dr.querySelector('iframe');
+    if(frame.getAttribute('data-id') !== id){
+      frame.classList.remove('ready'); frame.setAttribute('data-id', id);
+      frame.onload = function(){ frame.classList.add('ready'); };
+      frame.src = '/post-read?id=' + encodeURIComponent(id) + '&embed=1';
+    }
+    cmtTitle(id);
+    slide.classList.add('cmt-on'); cmtId = id; cmtOpen = true;
+    ov.classList.add('cmt-open');
+    history.pushState({ msbCmt: 1 }, ''); cmtPushed = true;
+    if(window.visualViewport && !cmtVV){
+      cmtVV = true;
+      var onVV = function(){
+        var o = cmtEls().ov; if(!o || !cmtOpen) return;
+        var vv = window.visualViewport, kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+        if(kb > 80){                               // keyboard up: lift the drawer above it and keep the video visible above that
+          o.style.setProperty('--rl-kb', kb + 'px');
+          o.style.setProperty('--rl-cmt-h', Math.min(vv.height - 150, 0.64 * window.innerHeight, 600) + 'px');
+        } else { o.style.removeProperty('--rl-kb'); o.style.removeProperty('--rl-cmt-h'); }
+      };
+      window.visualViewport.addEventListener('resize', onVV); window.visualViewport.addEventListener('scroll', onVV);
+    }
+  }
+  // Slides the drawer back down; the video grows back to full screen as it goes.
+  function hideComments(){
+    var e = cmtEls(), ov = e.ov; if(!cmtOpen) return;
+    cmtOpen = false;
+    if(ov){
+      ov.classList.remove('cmt-open'); ov.style.removeProperty('--rl-kb'); ov.style.removeProperty('--rl-cmt-h');
+      var fr = ov.querySelector('.rl-cmt-frame'); try{ if(fr && fr.contentWindow) fr.contentWindow.blur(); if(document.activeElement && document.activeElement.blur) document.activeElement.blur(); }catch(_){}
+      var id = cmtId; setTimeout(function(){ var o = document.getElementById('msbReels'); var sl = o && o.querySelector('.rl-slide[data-id="'+id+'"]'); if(sl && !cmtOpen) sl.classList.remove('cmt-on'); }, 420);
+    }
+  }
+  function closeComments(){
+    if(!cmtOpen) return;
+    hideComments();
+    if(cmtPushed){ cmtPushed = false; cmtSkipPop = true; history.back(); }
+  }
+  // The embedded comment section reports its count as people add / delete comments.
+  window.addEventListener('message', function(ev){
+    if(ev.origin !== location.origin) return;
+    var d = ev.data; if(!d || d.type !== 'msb-cmt-count' || !d.id) return;
+    cmtCounts[d.id] = d.count;
+    document.querySelectorAll('#pcc-' + d.id).forEach(function(el){ el.textContent = d.count > 0 ? d.count : ''; });
+    if(cmtId === d.id) cmtTitle(d.id);
+  });
 
   function open(startId, config){
     cfg = config;
@@ -355,12 +470,13 @@ body.msb-reels-open .rp-sheet{z-index:100005!important}
       var t = e.target.closest('[data-a]'); if(!t) return;
       var a = t.getAttribute('data-a'), id = slide ? slide.getAttribute('data-id') : null;
       var item = id ? items.find(function(p){ return p.id === id; }) : null;
-      if(a === 'close') close();
+      if(a === 'cmt-close'){ closeComments(); return; }
+      if(a === 'close'){ if(cmtOpen) closeComments(); else close(); }
       else if(a === 'mute') toggleMute();
       else if(a === 'speed'){ speed = SPEEDS[(SPEEDS.indexOf(speed)+1) % SPEEDS.length]; applySpeed(); }
       else if(a === 'more') toggleCaption(slide);
       else if(a === 'like'){ cfg.like(id); setTimeout(function(){ sync(slide); }, 0); setTimeout(function(){ sync(slide); }, 250); }
-      else if(a === 'comment') cfg.comment(id);
+      else if(a === 'comment') openComments(id);
       else if(a === 'repost'){ cfg.repost(id); setTimeout(function(){ sync(slide); }, 600); setTimeout(function(){ sync(slide); }, 2500); }
       else if(a === 'share') openShare(item);
       else if(a === 'follow'){ cfg.toggleFollow(item); setTimeout(function(){ sync(slide); }, 0); setTimeout(function(){ sync(slide); }, 300); }
@@ -465,7 +581,7 @@ body.msb-reels-open .rp-sheet{z-index:100005!important}
     var ov = document.getElementById('msbReels');
     if(!ov || !ov.classList.contains('open')) return;
     if(observer){ observer.disconnect(); observer = null; }
-    clearInterval(syncTimer); syncTimer = null; activeId = null;
+    clearInterval(syncTimer); syncTimer = null; activeId = null; cmtOpen = false; cmtPushed = false; cmtSkipPop = false; cmtId = null;
     ov.querySelectorAll('video').forEach(function(v){ v.pause(); v.removeAttribute('src'); v.load(); });
     ov.classList.remove('open'); document.documentElement.classList.remove('msb-reels-open'); ov.innerHTML = ''; ov.onclick = null;
     if(window.MSBEdge) MSBEdge.off();
@@ -484,12 +600,14 @@ body.msb-reels-open .rp-sheet{z-index:100005!important}
   }
   window.addEventListener('popstate', function(){
     if(window.MSBShare && MSBShare.justClosed()) return;     // that back press only closed the share drawer
+    if(cmtSkipPop){ cmtSkipPop = false; return; }                 // that back press was our own closing the drawer
+    if(cmtOpen){ cmtPushed = false; hideComments(); return; }      // the phone's back gesture closes just the drawer
     pushed = false; teardown();
   });
   document.addEventListener('keydown', function(e){
     var ov = document.getElementById('msbReels'); if(!ov || !ov.classList.contains('open')) return;
     var sc = ov.querySelector('.rl-scroller');
-    if(e.key === 'Escape'){ if(!(window.MSBShare && MSBShare.isOpen())) close(); }
+    if(e.key === 'Escape'){ if(cmtOpen) closeComments(); else if(!(window.MSBShare && MSBShare.isOpen())) close(); }
     else if(e.key === 'ArrowDown'){ sc.scrollBy({top: sc.clientHeight, behavior:'smooth'}); e.preventDefault(); }
     else if(e.key === 'ArrowUp'){ sc.scrollBy({top: -sc.clientHeight, behavior:'smooth'}); e.preventDefault(); }
   });
