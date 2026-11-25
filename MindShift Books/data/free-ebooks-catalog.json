@@ -1,760 +1,1365 @@
 {
- "generatedAt": "manual",
- "books": [
-  {
-   "id": 4507,
-   "title": "As a Man Thinketh",
-   "author": "James Allen",
-   "subjects": [
-    "Conduct of life",
-    "Success"
-   ],
-   "cats": [
-    "MINDSET",
-    "PURPOSE"
-   ],
-   "downloads": 1000
-  },
-  {
-   "id": 59844,
-   "title": "The Science of Getting Rich",
-   "author": "Wallace D. Wattles",
-   "subjects": [
-    "Wealth",
-    "Success"
-   ],
-   "cats": [
-    "MONEY",
-    "MINDSET"
-   ],
-   "downloads": 999
-  },
-  {
-   "id": 34258,
-   "title": "Acres of Diamonds",
-   "author": "Russell H. Conwell",
-   "subjects": [
-    "Success",
-    "Wealth"
-   ],
-   "cats": [
-    "MONEY",
-    "CAREER",
-    "MINDSET"
-   ],
-   "downloads": 998
-  },
-  {
-   "id": 935,
-   "title": "Self-Help",
-   "author": "Samuel Smiles",
-   "subjects": [
-    "Conduct of life"
-   ],
-   "cats": [
-    "MINDSET",
-    "PRODUCTIVITY",
-    "CAREER"
-   ],
-   "downloads": 997
-  },
-  {
-   "id": 148,
-   "title": "The Autobiography of Benjamin Franklin",
-   "author": "Benjamin Franklin",
-   "subjects": [
-    "Success",
-    "Statesmen"
-   ],
-   "cats": [
-    "MONEY",
-    "PRODUCTIVITY",
-    "REFLECTIVE",
-    "HEALTH"
-   ],
-   "downloads": 996
-  },
-  {
-   "id": 2680,
-   "title": "Meditations",
-   "author": "Marcus Aurelius",
-   "subjects": [
-    "Stoics",
-    "Conduct of life"
-   ],
-   "cats": [
-    "PURPOSE",
-    "REFLECTIVE",
-    "MINDSET"
-   ],
-   "downloads": 995
-  },
-  {
-   "id": 132,
-   "title": "The Art of War",
-   "author": "Sun Tzu",
-   "subjects": [
-    "Military art and science"
-   ],
-   "cats": [
-    "CAREER",
-    "PRODUCTIVITY"
-   ],
-   "downloads": 994
-  },
-  {
-   "id": 1232,
-   "title": "The Prince",
-   "author": "Niccolò Machiavelli",
-   "subjects": [
-    "Political science"
-   ],
-   "cats": [
-    "CAREER"
-   ],
-   "downloads": 993
-  },
-  {
-   "id": 205,
-   "title": "Walden",
-   "author": "Henry David Thoreau",
-   "subjects": [
-    "Nature",
-    "Simple living"
-   ],
-   "cats": [
-    "REFLECTIVE",
-    "PURPOSE",
-    "HEALTH"
-   ],
-   "downloads": 992
-  },
-  {
-   "id": 45109,
-   "title": "The Enchiridion",
-   "author": "Epictetus",
-   "subjects": [
-    "Stoics",
-    "Conduct of life"
-   ],
-   "cats": [
-    "PURPOSE",
-    "MINDSET"
-   ],
-   "downloads": 991
-  },
-  {
-   "id": 2274,
-   "title": "How to Live on 24 Hours a Day",
-   "author": "Arnold Bennett",
-   "subjects": [
-    "Time management"
-   ],
-   "cats": [
-    "PRODUCTIVITY"
-   ],
-   "downloads": 990
-  },
-  {
-   "id": 6456,
-   "title": "The Art of Public Speaking",
-   "author": "Dale Carnegie and J. Berg Esenwein",
-   "subjects": [
-    "Public speaking"
-   ],
-   "cats": [
-    "CAREER",
-    "EDUCATION"
-   ],
-   "downloads": 989
-  },
-  {
-   "id": 58585,
-   "title": "The Prophet",
-   "author": "Kahlil Gibran",
-   "subjects": [
-    "Prose poems"
-   ],
-   "cats": [
-    "REFLECTIVE",
-    "PURPOSE",
-    "RELATIONSHIPS"
-   ],
-   "downloads": 988
-  },
-  {
-   "id": 2944,
-   "title": "Essays, First Series",
-   "author": "Ralph Waldo Emerson",
-   "subjects": [
-    "Essays",
-    "Self-reliance"
-   ],
-   "cats": [
-    "MINDSET",
-    "REFLECTIVE",
-    "RELATIONSHIPS"
-   ],
-   "downloads": 987
-  },
-  {
-   "id": 8438,
-   "title": "The Ethics of Aristotle",
-   "author": "Aristotle",
-   "subjects": [
-    "Ethics",
-    "Happiness"
-   ],
-   "cats": [
-    "PURPOSE",
-    "EDUCATION",
-    "RELATIONSHIPS"
-   ],
-   "downloads": 986
-  },
-  {
-   "id": 1497,
-   "title": "The Republic",
-   "author": "Plato",
-   "subjects": [
-    "Political science",
-    "Philosophy"
-   ],
-   "cats": [
-    "EDUCATION",
-    "PURPOSE"
-   ],
-   "downloads": 985
-  },
-  {
-   "id": 3300,
-   "title": "The Wealth of Nations",
-   "author": "Adam Smith",
-   "subjects": [
-    "Economics"
-   ],
-   "cats": [
-    "MONEY",
-    "EDUCATION"
-   ],
-   "downloads": 984
-  },
-  {
-   "id": 2130,
-   "title": "Utopia",
-   "author": "Thomas More",
-   "subjects": [
-    "Utopias"
-   ],
-   "cats": [
-    "FICTION",
-    "PURPOSE"
-   ],
-   "downloads": 983
-  },
-  {
-   "id": 2500,
-   "title": "Siddhartha",
-   "author": "Hermann Hesse",
-   "subjects": [
-    "Spiritual life",
-    "Fiction"
-   ],
-   "cats": [
-    "FICTION",
-    "PURPOSE"
-   ],
-   "downloads": 982
-  },
-  {
-   "id": 46,
-   "title": "A Christmas Carol",
-   "author": "Charles Dickens",
-   "subjects": [
-    "Christmas stories",
-    "Fiction"
-   ],
-   "cats": [
-    "FICTION",
-    "REFLECTIVE"
-   ],
-   "downloads": 981
-  },
-  {
-   "id": 14209,
-   "title": "The Kybalion",
-   "author": "Three Initiates",
-   "subjects": [
-    "Hermetism",
-    "Philosophy"
-   ],
-   "cats": [
-    "PURPOSE",
-    "MINDSET"
-   ],
-   "downloads": 980
-  },
-  {
-   "id": 2376,
-   "title": "Up From Slavery",
-   "author": "Booker T. Washington",
-   "subjects": [
-    "Autobiography",
-    "Success"
-   ],
-   "cats": [
-    "CAREER",
-    "MINDSET",
-    "EDUCATION"
-   ],
-   "downloads": 979
-  },
-  {
-   "id": 2397,
-   "title": "The Story of My Life",
-   "author": "Helen Keller",
-   "subjects": [
-    "Autobiography",
-    "Perseverance"
-   ],
-   "cats": [
-    "MINDSET",
-    "EDUCATION",
-    "PURPOSE"
-   ],
-   "downloads": 978
-  },
-  {
-   "id": 23,
-   "title": "Narrative of the Life of Frederick Douglass",
-   "author": "Frederick Douglass",
-   "subjects": [
-    "Autobiography"
-   ],
-   "cats": [
-    "PURPOSE",
-    "EDUCATION",
-    "MINDSET"
-   ],
-   "downloads": 977
-  },
-  {
-   "id": 5827,
-   "title": "The Problems of Philosophy",
-   "author": "Bertrand Russell",
-   "subjects": [
-    "Philosophy"
-   ],
-   "cats": [
-    "EDUCATION",
-    "PURPOSE"
-   ],
-   "downloads": 976
-  },
-  {
-   "id": 3600,
-   "title": "The Essays of Montaigne",
-   "author": "Michel de Montaigne",
-   "subjects": [
-    "Essays"
-   ],
-   "cats": [
-    "REFLECTIVE",
-    "PURPOSE"
-   ],
-   "downloads": 975
-  },
-  {
-   "id": 1998,
-   "title": "Thus Spake Zarathustra",
-   "author": "Friedrich Nietzsche",
-   "subjects": [
-    "Philosophy"
-   ],
-   "cats": [
-    "PURPOSE",
-    "REFLECTIVE",
-    "MINDSET"
-   ],
-   "downloads": 974
-  },
-  {
-   "id": 4363,
-   "title": "Beyond Good and Evil",
-   "author": "Friedrich Nietzsche",
-   "subjects": [
-    "Philosophy",
-    "Ethics"
-   ],
-   "cats": [
-    "PURPOSE",
-    "MINDSET"
-   ],
-   "downloads": 973
-  },
-  {
-   "id": 3296,
-   "title": "The Confessions of St. Augustine",
-   "author": "Saint Augustine",
-   "subjects": [
-    "Spiritual life"
-   ],
-   "cats": [
-    "PURPOSE",
-    "REFLECTIVE"
-   ],
-   "downloads": 972
-  },
-  {
-   "id": 2554,
-   "title": "Crime and Punishment",
-   "author": "Fyodor Dostoyevsky",
-   "subjects": [
-    "Psychological fiction"
-   ],
-   "cats": [
-    "FICTION",
-    "PURPOSE"
-   ],
-   "downloads": 971
-  },
-  {
-   "id": 1184,
-   "title": "The Count of Monte Cristo",
-   "author": "Alexandre Dumas",
-   "subjects": [
-    "Adventure fiction"
-   ],
-   "cats": [
-    "FICTION",
-    "MINDSET"
-   ],
-   "downloads": 970
-  },
-  {
-   "id": 174,
-   "title": "The Picture of Dorian Gray",
-   "author": "Oscar Wilde",
-   "subjects": [
-    "Moral fiction"
-   ],
-   "cats": [
-    "FICTION",
-    "REFLECTIVE"
-   ],
-   "downloads": 969
-  },
-  {
-   "id": 8581,
-   "title": "The Art of Money Getting",
-   "author": "P. T. Barnum",
-   "subjects": [
-    "Success in business",
-    "Success"
-   ],
-   "cats": [
-    "MONEY",
-    "CAREER",
-    "MINDSET"
-   ],
-   "downloads": 968
-  },
-  {
-   "id": 13142,
-   "title": "Self-Development and the Way to Power",
-   "author": "L. W. Rogers",
-   "subjects": [
-    "Self-help",
-    "Success"
-   ],
-   "cats": [
-    "MINDSET",
-    "PURPOSE"
-   ],
-   "downloads": 967
-  },
-  {
-   "id": 37134,
-   "title": "The Elements of Style",
-   "author": "William Strunk Jr.",
-   "subjects": [
-    "English language",
-    "Style"
-   ],
-   "cats": [
-    "EDUCATION",
-    "PRODUCTIVITY",
-    "CAREER"
-   ],
-   "downloads": 966
-  },
-  {
-   "id": 131,
-   "title": "The Pilgrim's Progress",
-   "author": "John Bunyan",
-   "subjects": [
-    "Allegories",
-    "Christian life"
-   ],
-   "cats": [
-    "FICTION",
-    "PURPOSE"
-   ],
-   "downloads": 965
-  },
-  {
-   "id": 408,
-   "title": "The Souls of Black Folk",
-   "author": "W. E. B. Du Bois",
-   "subjects": [
-    "Essays",
-    "Education"
-   ],
-   "cats": [
-    "EDUCATION",
-    "REFLECTIVE",
-    "PURPOSE"
-   ],
-   "downloads": 964
-  },
-  {
-   "id": 621,
-   "title": "The Varieties of Religious Experience",
-   "author": "William James",
-   "subjects": [
-    "Psychology",
-    "Spiritual life"
-   ],
-   "cats": [
-    "PURPOSE",
-    "MINDSET",
-    "EDUCATION"
-   ],
-   "downloads": 963
-  },
-  {
-   "id": 769,
-   "title": "The Book of Tea",
-   "author": "Kakuzo Okakura",
-   "subjects": [
-    "Tea",
-    "Culture"
-   ],
-   "cats": [
-    "REFLECTIVE",
-    "HEALTH",
-    "PURPOSE"
-   ],
-   "downloads": 962
-  },
-  {
-   "id": 1656,
-   "title": "Apology",
-   "author": "Plato",
-   "subjects": [
-    "Philosophy",
-    "Socrates"
-   ],
-   "cats": [
-    "PURPOSE",
-    "EDUCATION"
-   ],
-   "downloads": 961
-  },
-  {
-   "id": 1600,
-   "title": "Symposium",
-   "author": "Plato",
-   "subjects": [
-    "Love",
-    "Philosophy"
-   ],
-   "cats": [
-    "RELATIONSHIPS",
-    "PURPOSE"
-   ],
-   "downloads": 960
-  },
-  {
-   "id": 1342,
-   "title": "Pride and Prejudice",
-   "author": "Jane Austen",
-   "subjects": [
-    "Love stories",
-    "Fiction"
-   ],
-   "cats": [
-    "FICTION",
-    "RELATIONSHIPS"
-   ],
-   "downloads": 959
-  },
-  {
-   "id": 135,
-   "title": "Les Misérables",
-   "author": "Victor Hugo",
-   "subjects": [
-    "Redemption",
-    "Fiction"
-   ],
-   "cats": [
-    "FICTION",
-    "PURPOSE"
-   ],
-   "downloads": 958
-  },
-  {
-   "id": 71,
-   "title": "On the Duty of Civil Disobedience",
-   "author": "Henry David Thoreau",
-   "subjects": [
-    "Essays",
-    "Ethics"
-   ],
-   "cats": [
-    "REFLECTIVE",
-    "PURPOSE"
-   ],
-   "downloads": 957
-  },
-  {
-   "id": 64317,
-   "title": "The Great Gatsby",
-   "author": "F. Scott Fitzgerald",
-   "subjects": [
-    "Wealth",
-    "Fiction"
-   ],
-   "cats": [
-    "FICTION",
-    "MONEY"
-   ],
-   "downloads": 956
-  },
-  {
-   "id": 5200,
-   "title": "Metamorphosis",
-   "author": "Franz Kafka",
-   "subjects": [
-    "Fiction",
-    "Alienation"
-   ],
-   "cats": [
-    "FICTION",
-    "REFLECTIVE"
-   ],
-   "downloads": 955
-  },
-  {
-   "id": 113,
-   "title": "The Secret Garden",
-   "author": "Frances Hodgson Burnett",
-   "subjects": [
-    "Healing",
-    "Fiction"
-   ],
-   "cats": [
-    "FICTION",
-    "HEALTH",
-    "MINDSET"
-   ],
-   "downloads": 954
-  },
-  {
-   "id": 514,
-   "title": "Little Women",
-   "author": "Louisa May Alcott",
-   "subjects": [
-    "Family",
-    "Fiction"
-   ],
-   "cats": [
-    "FICTION",
-    "RELATIONSHIPS"
-   ],
-   "downloads": 953
-  },
-  {
-   "id": 59,
-   "title": "Discourse on the Method",
-   "author": "René Descartes",
-   "subjects": [
-    "Philosophy",
-    "Reasoning"
-   ],
-   "cats": [
-    "EDUCATION",
-    "MINDSET"
-   ],
-   "downloads": 952
-  },
-  {
-   "id": 34901,
-   "title": "On Liberty",
-   "author": "John Stuart Mill",
-   "subjects": [
-    "Liberty",
-    "Ethics"
-   ],
-   "cats": [
-    "PURPOSE",
-    "EDUCATION"
-   ],
-   "downloads": 951
-  },
-  {
-   "id": 3800,
-   "title": "Ethics",
-   "author": "Baruch Spinoza",
-   "subjects": [
-    "Ethics",
-    "Philosophy"
-   ],
-   "cats": [
-    "PURPOSE",
-    "REFLECTIVE"
-   ],
-   "downloads": 950
-  },
-  {
-   "id": 1653,
-   "title": "The Imitation of Christ",
-   "author": "Thomas à Kempis",
-   "subjects": [
-    "Spiritual life"
-   ],
-   "cats": [
-    "PURPOSE",
-    "REFLECTIVE"
-   ],
-   "downloads": 949
-  },
-  {
-   "id": 1513,
-   "title": "Romeo and Juliet",
-   "author": "William Shakespeare",
-   "subjects": [
-    "Love",
-    "Drama"
-   ],
-   "cats": [
-    "FICTION",
-    "RELATIONSHIPS"
-   ],
-   "downloads": 948
-  },
-  {
-   "id": 1322,
-   "title": "Leaves of Grass",
-   "author": "Walt Whitman",
-   "subjects": [
-    "Poetry"
-   ],
-   "cats": [
-    "REFLECTIVE",
-    "PURPOSE"
-   ],
-   "downloads": 947
-  }
- ]
+  "generatedAt": "manual",
+  "books": [
+    {
+      "id": 4507,
+      "title": "As a Man Thinketh",
+      "author": "James Allen",
+      "subjects": [
+        "Conduct of life",
+        "Success"
+      ],
+      "cats": [
+        "MINDSET",
+        "PURPOSE"
+      ],
+      "downloads": 1000
+    },
+    {
+      "id": 59844,
+      "title": "The Science of Getting Rich",
+      "author": "Wallace D. Wattles",
+      "subjects": [
+        "Wealth",
+        "Success"
+      ],
+      "cats": [
+        "MONEY",
+        "MINDSET"
+      ],
+      "downloads": 999
+    },
+    {
+      "id": 34258,
+      "title": "Acres of Diamonds",
+      "author": "Russell H. Conwell",
+      "subjects": [
+        "Success",
+        "Wealth"
+      ],
+      "cats": [
+        "MONEY",
+        "CAREER",
+        "MINDSET"
+      ],
+      "downloads": 998
+    },
+    {
+      "id": 935,
+      "title": "Self-Help",
+      "author": "Samuel Smiles",
+      "subjects": [
+        "Conduct of life"
+      ],
+      "cats": [
+        "MINDSET",
+        "PRODUCTIVITY",
+        "CAREER"
+      ],
+      "downloads": 997
+    },
+    {
+      "id": 148,
+      "title": "The Autobiography of Benjamin Franklin",
+      "author": "Benjamin Franklin",
+      "subjects": [
+        "Success",
+        "Statesmen"
+      ],
+      "cats": [
+        "MONEY",
+        "PRODUCTIVITY",
+        "REFLECTIVE",
+        "HEALTH"
+      ],
+      "downloads": 996
+    },
+    {
+      "id": 2680,
+      "title": "Meditations",
+      "author": "Marcus Aurelius",
+      "subjects": [
+        "Stoics",
+        "Conduct of life"
+      ],
+      "cats": [
+        "PURPOSE",
+        "REFLECTIVE",
+        "MINDSET"
+      ],
+      "downloads": 995
+    },
+    {
+      "id": 132,
+      "title": "The Art of War",
+      "author": "Sun Tzu",
+      "subjects": [
+        "Military art and science"
+      ],
+      "cats": [
+        "CAREER",
+        "PRODUCTIVITY"
+      ],
+      "downloads": 994
+    },
+    {
+      "id": 1232,
+      "title": "The Prince",
+      "author": "Niccolò Machiavelli",
+      "subjects": [
+        "Political science"
+      ],
+      "cats": [
+        "CAREER"
+      ],
+      "downloads": 993
+    },
+    {
+      "id": 205,
+      "title": "Walden",
+      "author": "Henry David Thoreau",
+      "subjects": [
+        "Nature",
+        "Simple living"
+      ],
+      "cats": [
+        "REFLECTIVE",
+        "PURPOSE",
+        "HEALTH"
+      ],
+      "downloads": 992
+    },
+    {
+      "id": 45109,
+      "title": "The Enchiridion",
+      "author": "Epictetus",
+      "subjects": [
+        "Stoics",
+        "Conduct of life"
+      ],
+      "cats": [
+        "PURPOSE",
+        "MINDSET"
+      ],
+      "downloads": 991
+    },
+    {
+      "id": 2274,
+      "title": "How to Live on 24 Hours a Day",
+      "author": "Arnold Bennett",
+      "subjects": [
+        "Time management"
+      ],
+      "cats": [
+        "PRODUCTIVITY"
+      ],
+      "downloads": 990
+    },
+    {
+      "id": 6456,
+      "title": "The Art of Public Speaking",
+      "author": "Dale Carnegie and J. Berg Esenwein",
+      "subjects": [
+        "Public speaking"
+      ],
+      "cats": [
+        "CAREER",
+        "EDUCATION"
+      ],
+      "downloads": 989
+    },
+    {
+      "id": 58585,
+      "title": "The Prophet",
+      "author": "Kahlil Gibran",
+      "subjects": [
+        "Prose poems"
+      ],
+      "cats": [
+        "REFLECTIVE",
+        "PURPOSE",
+        "RELATIONSHIPS"
+      ],
+      "downloads": 988
+    },
+    {
+      "id": 2944,
+      "title": "Essays, First Series",
+      "author": "Ralph Waldo Emerson",
+      "subjects": [
+        "Essays",
+        "Self-reliance"
+      ],
+      "cats": [
+        "MINDSET",
+        "REFLECTIVE",
+        "RELATIONSHIPS"
+      ],
+      "downloads": 987
+    },
+    {
+      "id": 8438,
+      "title": "The Ethics of Aristotle",
+      "author": "Aristotle",
+      "subjects": [
+        "Ethics",
+        "Happiness"
+      ],
+      "cats": [
+        "PURPOSE",
+        "EDUCATION",
+        "RELATIONSHIPS"
+      ],
+      "downloads": 986
+    },
+    {
+      "id": 1497,
+      "title": "The Republic",
+      "author": "Plato",
+      "subjects": [
+        "Political science",
+        "Philosophy"
+      ],
+      "cats": [
+        "EDUCATION",
+        "PURPOSE"
+      ],
+      "downloads": 985
+    },
+    {
+      "id": 3300,
+      "title": "The Wealth of Nations",
+      "author": "Adam Smith",
+      "subjects": [
+        "Economics"
+      ],
+      "cats": [
+        "MONEY",
+        "EDUCATION"
+      ],
+      "downloads": 984
+    },
+    {
+      "id": 2130,
+      "title": "Utopia",
+      "author": "Thomas More",
+      "subjects": [
+        "Utopias"
+      ],
+      "cats": [
+        "FICTION",
+        "PURPOSE"
+      ],
+      "downloads": 983
+    },
+    {
+      "id": 2500,
+      "title": "Siddhartha",
+      "author": "Hermann Hesse",
+      "subjects": [
+        "Spiritual life",
+        "Fiction"
+      ],
+      "cats": [
+        "FICTION",
+        "PURPOSE"
+      ],
+      "downloads": 982
+    },
+    {
+      "id": 46,
+      "title": "A Christmas Carol",
+      "author": "Charles Dickens",
+      "subjects": [
+        "Christmas stories",
+        "Fiction"
+      ],
+      "cats": [
+        "FICTION",
+        "REFLECTIVE"
+      ],
+      "downloads": 981
+    },
+    {
+      "id": 14209,
+      "title": "The Kybalion",
+      "author": "Three Initiates",
+      "subjects": [
+        "Hermetism",
+        "Philosophy"
+      ],
+      "cats": [
+        "PURPOSE",
+        "MINDSET"
+      ],
+      "downloads": 980
+    },
+    {
+      "id": 2376,
+      "title": "Up From Slavery",
+      "author": "Booker T. Washington",
+      "subjects": [
+        "Autobiography",
+        "Success"
+      ],
+      "cats": [
+        "CAREER",
+        "MINDSET",
+        "EDUCATION"
+      ],
+      "downloads": 979
+    },
+    {
+      "id": 2397,
+      "title": "The Story of My Life",
+      "author": "Helen Keller",
+      "subjects": [
+        "Autobiography",
+        "Perseverance"
+      ],
+      "cats": [
+        "MINDSET",
+        "EDUCATION",
+        "PURPOSE"
+      ],
+      "downloads": 978
+    },
+    {
+      "id": 23,
+      "title": "Narrative of the Life of Frederick Douglass",
+      "author": "Frederick Douglass",
+      "subjects": [
+        "Autobiography"
+      ],
+      "cats": [
+        "PURPOSE",
+        "EDUCATION",
+        "MINDSET"
+      ],
+      "downloads": 977
+    },
+    {
+      "id": 5827,
+      "title": "The Problems of Philosophy",
+      "author": "Bertrand Russell",
+      "subjects": [
+        "Philosophy"
+      ],
+      "cats": [
+        "EDUCATION",
+        "PURPOSE"
+      ],
+      "downloads": 976
+    },
+    {
+      "id": 3600,
+      "title": "The Essays of Montaigne",
+      "author": "Michel de Montaigne",
+      "subjects": [
+        "Essays"
+      ],
+      "cats": [
+        "REFLECTIVE",
+        "PURPOSE"
+      ],
+      "downloads": 975
+    },
+    {
+      "id": 1998,
+      "title": "Thus Spake Zarathustra",
+      "author": "Friedrich Nietzsche",
+      "subjects": [
+        "Philosophy"
+      ],
+      "cats": [
+        "PURPOSE",
+        "REFLECTIVE",
+        "MINDSET"
+      ],
+      "downloads": 974
+    },
+    {
+      "id": 4363,
+      "title": "Beyond Good and Evil",
+      "author": "Friedrich Nietzsche",
+      "subjects": [
+        "Philosophy",
+        "Ethics"
+      ],
+      "cats": [
+        "PURPOSE",
+        "MINDSET"
+      ],
+      "downloads": 973
+    },
+    {
+      "id": 3296,
+      "title": "The Confessions of St. Augustine",
+      "author": "Saint Augustine",
+      "subjects": [
+        "Spiritual life"
+      ],
+      "cats": [
+        "PURPOSE",
+        "REFLECTIVE"
+      ],
+      "downloads": 972
+    },
+    {
+      "id": 2554,
+      "title": "Crime and Punishment",
+      "author": "Fyodor Dostoyevsky",
+      "subjects": [
+        "Psychological fiction"
+      ],
+      "cats": [
+        "FICTION",
+        "PURPOSE"
+      ],
+      "downloads": 971
+    },
+    {
+      "id": 1184,
+      "title": "The Count of Monte Cristo",
+      "author": "Alexandre Dumas",
+      "subjects": [
+        "Adventure fiction"
+      ],
+      "cats": [
+        "FICTION",
+        "MINDSET"
+      ],
+      "downloads": 970
+    },
+    {
+      "id": 174,
+      "title": "The Picture of Dorian Gray",
+      "author": "Oscar Wilde",
+      "subjects": [
+        "Moral fiction"
+      ],
+      "cats": [
+        "FICTION",
+        "REFLECTIVE"
+      ],
+      "downloads": 969
+    },
+    {
+      "id": 8581,
+      "title": "The Art of Money Getting",
+      "author": "P. T. Barnum",
+      "subjects": [
+        "Success in business",
+        "Success"
+      ],
+      "cats": [
+        "MONEY",
+        "CAREER",
+        "MINDSET"
+      ],
+      "downloads": 968
+    },
+    {
+      "id": 13142,
+      "title": "Self-Development and the Way to Power",
+      "author": "L. W. Rogers",
+      "subjects": [
+        "Self-help",
+        "Success"
+      ],
+      "cats": [
+        "MINDSET",
+        "PURPOSE"
+      ],
+      "downloads": 967
+    },
+    {
+      "id": 37134,
+      "title": "The Elements of Style",
+      "author": "William Strunk Jr.",
+      "subjects": [
+        "English language",
+        "Style"
+      ],
+      "cats": [
+        "EDUCATION",
+        "PRODUCTIVITY",
+        "CAREER"
+      ],
+      "downloads": 966
+    },
+    {
+      "id": 131,
+      "title": "The Pilgrim's Progress",
+      "author": "John Bunyan",
+      "subjects": [
+        "Allegories",
+        "Christian life"
+      ],
+      "cats": [
+        "FICTION",
+        "PURPOSE"
+      ],
+      "downloads": 965
+    },
+    {
+      "id": 408,
+      "title": "The Souls of Black Folk",
+      "author": "W. E. B. Du Bois",
+      "subjects": [
+        "Essays",
+        "Education"
+      ],
+      "cats": [
+        "EDUCATION",
+        "REFLECTIVE",
+        "PURPOSE"
+      ],
+      "downloads": 964
+    },
+    {
+      "id": 621,
+      "title": "The Varieties of Religious Experience",
+      "author": "William James",
+      "subjects": [
+        "Psychology",
+        "Spiritual life"
+      ],
+      "cats": [
+        "PURPOSE",
+        "MINDSET",
+        "EDUCATION"
+      ],
+      "downloads": 963
+    },
+    {
+      "id": 769,
+      "title": "The Book of Tea",
+      "author": "Kakuzo Okakura",
+      "subjects": [
+        "Tea",
+        "Culture"
+      ],
+      "cats": [
+        "REFLECTIVE",
+        "HEALTH",
+        "PURPOSE"
+      ],
+      "downloads": 962
+    },
+    {
+      "id": 1656,
+      "title": "Apology",
+      "author": "Plato",
+      "subjects": [
+        "Philosophy",
+        "Socrates"
+      ],
+      "cats": [
+        "PURPOSE",
+        "EDUCATION"
+      ],
+      "downloads": 961
+    },
+    {
+      "id": 1600,
+      "title": "Symposium",
+      "author": "Plato",
+      "subjects": [
+        "Love",
+        "Philosophy"
+      ],
+      "cats": [
+        "RELATIONSHIPS",
+        "PURPOSE"
+      ],
+      "downloads": 960
+    },
+    {
+      "id": 1342,
+      "title": "Pride and Prejudice",
+      "author": "Jane Austen",
+      "subjects": [
+        "Love stories",
+        "Fiction"
+      ],
+      "cats": [
+        "FICTION",
+        "RELATIONSHIPS"
+      ],
+      "downloads": 959
+    },
+    {
+      "id": 135,
+      "title": "Les Misérables",
+      "author": "Victor Hugo",
+      "subjects": [
+        "Redemption",
+        "Fiction"
+      ],
+      "cats": [
+        "FICTION",
+        "PURPOSE"
+      ],
+      "downloads": 958
+    },
+    {
+      "id": 71,
+      "title": "On the Duty of Civil Disobedience",
+      "author": "Henry David Thoreau",
+      "subjects": [
+        "Essays",
+        "Ethics"
+      ],
+      "cats": [
+        "REFLECTIVE",
+        "PURPOSE"
+      ],
+      "downloads": 957
+    },
+    {
+      "id": 64317,
+      "title": "The Great Gatsby",
+      "author": "F. Scott Fitzgerald",
+      "subjects": [
+        "Wealth",
+        "Fiction"
+      ],
+      "cats": [
+        "FICTION",
+        "MONEY"
+      ],
+      "downloads": 956
+    },
+    {
+      "id": 5200,
+      "title": "Metamorphosis",
+      "author": "Franz Kafka",
+      "subjects": [
+        "Fiction",
+        "Alienation"
+      ],
+      "cats": [
+        "FICTION",
+        "REFLECTIVE"
+      ],
+      "downloads": 955
+    },
+    {
+      "id": 113,
+      "title": "The Secret Garden",
+      "author": "Frances Hodgson Burnett",
+      "subjects": [
+        "Healing",
+        "Fiction"
+      ],
+      "cats": [
+        "FICTION",
+        "HEALTH",
+        "MINDSET"
+      ],
+      "downloads": 954
+    },
+    {
+      "id": 514,
+      "title": "Little Women",
+      "author": "Louisa May Alcott",
+      "subjects": [
+        "Family",
+        "Fiction"
+      ],
+      "cats": [
+        "FICTION",
+        "RELATIONSHIPS"
+      ],
+      "downloads": 953
+    },
+    {
+      "id": 59,
+      "title": "Discourse on the Method",
+      "author": "René Descartes",
+      "subjects": [
+        "Philosophy",
+        "Reasoning"
+      ],
+      "cats": [
+        "EDUCATION",
+        "MINDSET"
+      ],
+      "downloads": 952
+    },
+    {
+      "id": 34901,
+      "title": "On Liberty",
+      "author": "John Stuart Mill",
+      "subjects": [
+        "Liberty",
+        "Ethics"
+      ],
+      "cats": [
+        "PURPOSE",
+        "EDUCATION"
+      ],
+      "downloads": 951
+    },
+    {
+      "id": 3800,
+      "title": "Ethics",
+      "author": "Baruch Spinoza",
+      "subjects": [
+        "Ethics",
+        "Philosophy"
+      ],
+      "cats": [
+        "PURPOSE",
+        "REFLECTIVE"
+      ],
+      "downloads": 950
+    },
+    {
+      "id": 1653,
+      "title": "The Imitation of Christ",
+      "author": "Thomas à Kempis",
+      "subjects": [
+        "Spiritual life"
+      ],
+      "cats": [
+        "PURPOSE",
+        "REFLECTIVE"
+      ],
+      "downloads": 949
+    },
+    {
+      "id": 1513,
+      "title": "Romeo and Juliet",
+      "author": "William Shakespeare",
+      "subjects": [
+        "Love",
+        "Drama"
+      ],
+      "cats": [
+        "FICTION",
+        "RELATIONSHIPS"
+      ],
+      "downloads": 948
+    },
+    {
+      "id": 1322,
+      "title": "Leaves of Grass",
+      "author": "Walt Whitman",
+      "subjects": [
+        "Poetry"
+      ],
+      "cats": [
+        "REFLECTIVE",
+        "PURPOSE"
+      ],
+      "downloads": 947
+    },
+    {
+      "id": 216,
+      "title": "The Tao Teh King (Tao Te Ching)",
+      "author": "Laozi",
+      "subjects": [
+        "Taoism",
+        "Philosophy"
+      ],
+      "cats": [
+        "PURPOSE",
+        "REFLECTIVE",
+        "MINDSET"
+      ],
+      "downloads": 946
+    },
+    {
+      "id": 1661,
+      "title": "The Adventures of Sherlock Holmes",
+      "author": "Arthur Conan Doyle",
+      "subjects": [
+        "Detective and mystery stories"
+      ],
+      "cats": [
+        "FICTION",
+        "EDUCATION"
+      ],
+      "downloads": 945
+    },
+    {
+      "id": 84,
+      "title": "Frankenstein",
+      "author": "Mary Wollstonecraft Shelley",
+      "subjects": [
+        "Science fiction",
+        "Gothic fiction"
+      ],
+      "cats": [
+        "FICTION",
+        "REFLECTIVE"
+      ],
+      "downloads": 944
+    },
+    {
+      "id": 11,
+      "title": "Alice's Adventures in Wonderland",
+      "author": "Lewis Carroll",
+      "subjects": [
+        "Fantasy fiction"
+      ],
+      "cats": [
+        "FICTION",
+        "REFLECTIVE"
+      ],
+      "downloads": 943
+    },
+    {
+      "id": 2701,
+      "title": "Moby Dick; Or, The Whale",
+      "author": "Herman Melville",
+      "subjects": [
+        "Whaling",
+        "Adventure fiction"
+      ],
+      "cats": [
+        "FICTION",
+        "PURPOSE"
+      ],
+      "downloads": 942
+    },
+    {
+      "id": 98,
+      "title": "A Tale of Two Cities",
+      "author": "Charles Dickens",
+      "subjects": [
+        "Historical fiction"
+      ],
+      "cats": [
+        "FICTION",
+        "PURPOSE"
+      ],
+      "downloads": 941
+    },
+    {
+      "id": 345,
+      "title": "Dracula",
+      "author": "Bram Stoker",
+      "subjects": [
+        "Gothic fiction"
+      ],
+      "cats": [
+        "FICTION"
+      ],
+      "downloads": 940
+    },
+    {
+      "id": 1260,
+      "title": "Jane Eyre",
+      "author": "Charlotte Bronte",
+      "subjects": [
+        "Governesses",
+        "Love stories"
+      ],
+      "cats": [
+        "FICTION",
+        "RELATIONSHIPS",
+        "MINDSET"
+      ],
+      "downloads": 939
+    },
+    {
+      "id": 74,
+      "title": "The Adventures of Tom Sawyer",
+      "author": "Mark Twain",
+      "subjects": [
+        "Boys",
+        "Adventure fiction"
+      ],
+      "cats": [
+        "FICTION"
+      ],
+      "downloads": 938
+    },
+    {
+      "id": 76,
+      "title": "Adventures of Huckleberry Finn",
+      "author": "Mark Twain",
+      "subjects": [
+        "Adventure fiction"
+      ],
+      "cats": [
+        "FICTION",
+        "PURPOSE"
+      ],
+      "downloads": 937
+    },
+    {
+      "id": 1400,
+      "title": "Great Expectations",
+      "author": "Charles Dickens",
+      "subjects": [
+        "Ambition",
+        "Bildungsromans"
+      ],
+      "cats": [
+        "FICTION",
+        "MONEY",
+        "PURPOSE"
+      ],
+      "downloads": 936
+    },
+    {
+      "id": 2600,
+      "title": "War and Peace",
+      "author": "Leo Tolstoy",
+      "subjects": [
+        "Historical fiction"
+      ],
+      "cats": [
+        "FICTION",
+        "PURPOSE"
+      ],
+      "downloads": 935
+    },
+    {
+      "id": 28054,
+      "title": "The Brothers Karamazov",
+      "author": "Fyodor Dostoyevsky",
+      "subjects": [
+        "Psychological fiction",
+        "Faith"
+      ],
+      "cats": [
+        "FICTION",
+        "PURPOSE"
+      ],
+      "downloads": 934
+    },
+    {
+      "id": 844,
+      "title": "The Importance of Being Earnest",
+      "author": "Oscar Wilde",
+      "subjects": [
+        "Comedies",
+        "Courtship"
+      ],
+      "cats": [
+        "FICTION",
+        "RELATIONSHIPS"
+      ],
+      "downloads": 933
+    },
+    {
+      "id": 1080,
+      "title": "A Modest Proposal",
+      "author": "Jonathan Swift",
+      "subjects": [
+        "Satire",
+        "Poverty"
+      ],
+      "cats": [
+        "REFLECTIVE",
+        "MONEY"
+      ],
+      "downloads": 932
+    },
+    {
+      "id": 43,
+      "title": "The Strange Case of Dr. Jekyll and Mr. Hyde",
+      "author": "Robert Louis Stevenson",
+      "subjects": [
+        "Identity",
+        "Gothic fiction"
+      ],
+      "cats": [
+        "FICTION",
+        "REFLECTIVE"
+      ],
+      "downloads": 931
+    },
+    {
+      "id": 120,
+      "title": "Treasure Island",
+      "author": "Robert Louis Stevenson",
+      "subjects": [
+        "Adventure fiction"
+      ],
+      "cats": [
+        "FICTION"
+      ],
+      "downloads": 930
+    },
+    {
+      "id": 55,
+      "title": "The Wonderful Wizard of Oz",
+      "author": "L. Frank Baum",
+      "subjects": [
+        "Fantasy fiction"
+      ],
+      "cats": [
+        "FICTION",
+        "MINDSET"
+      ],
+      "downloads": 929
+    },
+    {
+      "id": 45,
+      "title": "Anne of Green Gables",
+      "author": "L. M. Montgomery",
+      "subjects": [
+        "Orphans",
+        "Optimism"
+      ],
+      "cats": [
+        "FICTION",
+        "MINDSET"
+      ],
+      "downloads": 928
+    },
+    {
+      "id": 1448,
+      "title": "Heidi",
+      "author": "Johanna Spyri",
+      "subjects": [
+        "Mountain life",
+        "Children's stories"
+      ],
+      "cats": [
+        "FICTION",
+        "HEALTH"
+      ],
+      "downloads": 927
+    },
+    {
+      "id": 215,
+      "title": "The Call of the Wild",
+      "author": "Jack London",
+      "subjects": [
+        "Survival",
+        "Adventure fiction"
+      ],
+      "cats": [
+        "FICTION",
+        "MINDSET"
+      ],
+      "downloads": 926
+    },
+    {
+      "id": 158,
+      "title": "Emma",
+      "author": "Jane Austen",
+      "subjects": [
+        "Courtship",
+        "Love stories"
+      ],
+      "cats": [
+        "FICTION",
+        "RELATIONSHIPS"
+      ],
+      "downloads": 925
+    },
+    {
+      "id": 161,
+      "title": "Sense and Sensibility",
+      "author": "Jane Austen",
+      "subjects": [
+        "Sisters",
+        "Love stories"
+      ],
+      "cats": [
+        "FICTION",
+        "RELATIONSHIPS"
+      ],
+      "downloads": 924
+    },
+    {
+      "id": 768,
+      "title": "Wuthering Heights",
+      "author": "Emily Bronte",
+      "subjects": [
+        "Love stories",
+        "Gothic fiction"
+      ],
+      "cats": [
+        "FICTION",
+        "RELATIONSHIPS"
+      ],
+      "downloads": 923
+    },
+    {
+      "id": 33,
+      "title": "The Scarlet Letter",
+      "author": "Nathaniel Hawthorne",
+      "subjects": [
+        "Guilt",
+        "Puritans"
+      ],
+      "cats": [
+        "FICTION",
+        "REFLECTIVE"
+      ],
+      "downloads": 922
+    },
+    {
+      "id": 996,
+      "title": "Don Quixote",
+      "author": "Miguel de Cervantes Saavedra",
+      "subjects": [
+        "Knights and knighthood",
+        "Satire"
+      ],
+      "cats": [
+        "FICTION",
+        "PURPOSE"
+      ],
+      "downloads": 921
+    },
+    {
+      "id": 829,
+      "title": "Gulliver's Travels",
+      "author": "Jonathan Swift",
+      "subjects": [
+        "Satire",
+        "Voyages, Imaginary"
+      ],
+      "cats": [
+        "FICTION",
+        "REFLECTIVE"
+      ],
+      "downloads": 920
+    },
+    {
+      "id": 521,
+      "title": "The Life and Adventures of Robinson Crusoe",
+      "author": "Daniel Defoe",
+      "subjects": [
+        "Survival",
+        "Castaways"
+      ],
+      "cats": [
+        "FICTION",
+        "MINDSET",
+        "PRODUCTIVITY"
+      ],
+      "downloads": 919
+    },
+    {
+      "id": 35,
+      "title": "The Time Machine",
+      "author": "H. G. Wells",
+      "subjects": [
+        "Science fiction",
+        "Time travel"
+      ],
+      "cats": [
+        "FICTION"
+      ],
+      "downloads": 918
+    },
+    {
+      "id": 36,
+      "title": "The War of the Worlds",
+      "author": "H. G. Wells",
+      "subjects": [
+        "Science fiction"
+      ],
+      "cats": [
+        "FICTION"
+      ],
+      "downloads": 917
+    },
+    {
+      "id": 164,
+      "title": "Twenty Thousand Leagues under the Sea",
+      "author": "Jules Verne",
+      "subjects": [
+        "Science fiction",
+        "Adventure fiction"
+      ],
+      "cats": [
+        "FICTION"
+      ],
+      "downloads": 916
+    },
+    {
+      "id": 730,
+      "title": "Oliver Twist",
+      "author": "Charles Dickens",
+      "subjects": [
+        "Orphans",
+        "Poverty"
+      ],
+      "cats": [
+        "FICTION"
+      ],
+      "downloads": 915
+    },
+    {
+      "id": 600,
+      "title": "Notes from the Underground",
+      "author": "Fyodor Dostoyevsky",
+      "subjects": [
+        "Psychological fiction",
+        "Philosophy"
+      ],
+      "cats": [
+        "FICTION",
+        "REFLECTIVE"
+      ],
+      "downloads": 914
+    },
+    {
+      "id": 1399,
+      "title": "Anna Karenina",
+      "author": "Leo Tolstoy",
+      "subjects": [
+        "Love stories",
+        "Marriage"
+      ],
+      "cats": [
+        "FICTION",
+        "RELATIONSHIPS"
+      ],
+      "downloads": 913
+    },
+    {
+      "id": 160,
+      "title": "The Awakening, and Selected Short Stories",
+      "author": "Kate Chopin",
+      "subjects": [
+        "Self-realization",
+        "Women"
+      ],
+      "cats": [
+        "FICTION",
+        "PURPOSE"
+      ],
+      "downloads": 912
+    },
+    {
+      "id": 1952,
+      "title": "The Yellow Wallpaper",
+      "author": "Charlotte Perkins Gilman",
+      "subjects": [
+        "Women",
+        "Psychological fiction"
+      ],
+      "cats": [
+        "FICTION",
+        "HEALTH",
+        "REFLECTIVE"
+      ],
+      "downloads": 911
+    },
+    {
+      "id": 61,
+      "title": "The Communist Manifesto",
+      "author": "Karl Marx and Friedrich Engels",
+      "subjects": [
+        "Economics",
+        "Political science"
+      ],
+      "cats": [
+        "MONEY",
+        "EDUCATION"
+      ],
+      "downloads": 910
+    },
+    {
+      "id": 147,
+      "title": "Common Sense",
+      "author": "Thomas Paine",
+      "subjects": [
+        "Political science",
+        "Revolution"
+      ],
+      "cats": [
+        "EDUCATION",
+        "PURPOSE"
+      ],
+      "downloads": 909
+    },
+    {
+      "id": 1404,
+      "title": "The Federalist Papers",
+      "author": "Alexander Hamilton, John Jay and James Madison",
+      "subjects": [
+        "Constitutional law",
+        "Political science"
+      ],
+      "cats": [
+        "EDUCATION",
+        "CAREER"
+      ],
+      "downloads": 908
+    },
+    {
+      "id": 19942,
+      "title": "Candide",
+      "author": "Voltaire",
+      "subjects": [
+        "Satire",
+        "Philosophy"
+      ],
+      "cats": [
+        "FICTION",
+        "REFLECTIVE"
+      ],
+      "downloads": 907
+    },
+    {
+      "id": 21,
+      "title": "Aesop's Fables",
+      "author": "Aesop",
+      "subjects": [
+        "Fables",
+        "Moral stories"
+      ],
+      "cats": [
+        "FICTION",
+        "MINDSET",
+        "EDUCATION"
+      ],
+      "downloads": 906
+    },
+    {
+      "id": 236,
+      "title": "The Jungle Book",
+      "author": "Rudyard Kipling",
+      "subjects": [
+        "Animals",
+        "Adventure fiction"
+      ],
+      "cats": [
+        "FICTION"
+      ],
+      "downloads": 905
+    },
+    {
+      "id": 289,
+      "title": "The Wind in the Willows",
+      "author": "Kenneth Grahame",
+      "subjects": [
+        "Friendship",
+        "Animals"
+      ],
+      "cats": [
+        "FICTION",
+        "RELATIONSHIPS"
+      ],
+      "downloads": 904
+    },
+    {
+      "id": 2814,
+      "title": "Dubliners",
+      "author": "James Joyce",
+      "subjects": [
+        "Short stories",
+        "Ireland"
+      ],
+      "cats": [
+        "FICTION",
+        "REFLECTIVE"
+      ],
+      "downloads": 903
+    }
+  ]
 }
