@@ -375,13 +375,69 @@ window.repostCardById = function(id){
     }
   });
 };
+/* ── COUNTS: same method as the feed ──
+   Numbers come back in ONE batched request per collection from /api/counts (the server shares each counter
+   for ~45s); if that is unavailable the documents are read directly, with retries. The last known numbers
+   are remembered on this device (the same store the feed uses) and painted the moment the cards exist, so a
+   card is never left blank while a read is slow or fails. */
+const COUNTS_KEY = 'msb_counts_v1';
+let _countsCache = null, _countsTimer = null;
+function _loadCounts(){
+  if(_countsCache) return _countsCache;
+  try{ _countsCache = JSON.parse(localStorage.getItem(COUNTS_KEY)) || {}; }catch(e){ _countsCache = {}; }
+  return _countsCache;
+}
+function setCountCache(prefix, id, n){
+  const c = _loadCounts(); c[prefix+':'+id] = n;
+  clearTimeout(_countsTimer);
+  _countsTimer = setTimeout(()=>{
+    try{
+      const keys = Object.keys(c);
+      if(keys.length > 900) keys.slice(0, keys.length-700).forEach(k=>delete c[k]);
+      localStorage.setItem(COUNTS_KEY, JSON.stringify(c));
+    }catch(e){}
+  }, 800);
+}
+function paintCachedCounts(prefix, ids){
+  const c = _loadCounts();
+  ids.forEach(id=>{
+    const n = c[prefix+':'+id];
+    if(!(n > 0)) return;
+    document.querySelectorAll('#'+prefix+'-'+id).forEach(el=>{ if(!el.textContent) el.textContent = n; });
+  });
+}
+// → one entry per id: a snapshot-like {exists(), data()}, or null if that read failed.
+async function getCountDocs(coll, ids){
+  try{
+    const byId = new Map();
+    for(let i=0; i<ids.length; i+=100){
+      const chunk = ids.slice(i, i+100);
+      const ctl = window.AbortController ? new AbortController() : null;
+      const tm = setTimeout(()=>{ if(ctl) ctl.abort(); }, 5000);
+      let res;
+      try{ res = await fetch('/api/counts?c='+encodeURIComponent(coll)+'&ids='+chunk.map(encodeURIComponent).join(','), { signal: ctl ? ctl.signal : undefined }); }
+      finally{ clearTimeout(tm); }
+      if(!res.ok) throw new Error('http '+res.status);
+      const j = await res.json();
+      if(!j || !j.ok || !j.counts) throw new Error('bad payload');
+      for(const id in j.counts) byId.set(id, j.counts[id]);
+    }
+    return ids.map(id => { const o = byId.get(id); return { exists: () => !!o, data: () => o || {} }; });
+  }catch(e){ /* server unavailable — read the documents directly */ }
+  return Promise.all(ids.map(id => rgetDoc(doc(db,coll,id),{timeoutMs:6000}).catch(()=>null)));
+}
+
 async function fetchRepostCounts(ids){
   if(!ids.length) return;
+  paintCachedCounts('rc', ids);
   try{
-    const res = await Promise.all(ids.map(id => getDoc(doc(db,'repostCounts',id)).catch(() => null)));
+    const res = await getCountDocs('repostCounts', ids);
     res.forEach((snap, i) => {
-      const id = ids[i], c = snap && snap.exists() ? (snap.data().count || 0) : 0;
+      const id = ids[i];
+      if(!snap) return;
+      const c = snap.exists() ? (snap.data().count || 0) : 0;
       repostCountCache[id] = c;
+      setCountCache('rc', id, c);
       const el = document.getElementById(`rc-${id}`); if(el) el.textContent = c > 0 ? c : '';
     });
   }catch(e){}
@@ -777,12 +833,15 @@ async function loadSavedSet(){
 }
 async function fetchLikeCounts(ids){
   if(!ids.length) return;
+  paintCachedCounts('lc', ids);
   try{
-    const results = await Promise.all(ids.map(id => getDoc(doc(db,'articleLikes',id)).catch(()=>null)));
+    const results = await getCountDocs('articleLikes', ids);
     results.forEach((snap,i)=>{
       const id = ids[i];
-      const c = snap&&snap.exists() ? (snap.data().count||0) : 0;
+      if(!snap) return;
+      const c = snap.exists() ? (snap.data().count||0) : 0;
       likeCountCache[id] = c;
+      setCountCache('lc', id, c);
       const el = document.getElementById(`lc-${id}`);
       if(el) el.textContent = c > 0 ? c : (likedSet.has(id) ? 1 : '');
     });
@@ -791,12 +850,15 @@ async function fetchLikeCounts(ids){
 let commentCountCache = {};
 async function fetchPostCommentCounts(ids){
   if(!ids.length) return;
+  paintCachedCounts('pcc', ids);
   try{
-    const results = await Promise.all(ids.map(id => getDoc(doc(db,'postMeta',id)).catch(()=>null)));
+    const results = await getCountDocs('postMeta', ids);
     results.forEach((snap,i)=>{
       const id = ids[i];
-      const c = snap&&snap.exists() ? (snap.data().commentCount||0) : 0;
+      if(!snap) return;
+      const c = snap.exists() ? (snap.data().commentCount||0) : 0;
       commentCountCache[id] = c;
+      setCountCache('pcc', id, c);
       const el = document.getElementById(`pcc-${id}`);
       if(el) el.textContent = c > 0 ? c : '';
     });

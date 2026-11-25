@@ -3093,7 +3093,7 @@ function renderArticles(){
             <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
             <span id="lc-${s.id}"></span>
           </button>
-          <button class="pcard-comment" onclick="event.stopPropagation();location.href='/article-read?id=${s.id}&comment=1'" title="Comment"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg></button>
+          <button class="pcard-comment" onclick="event.stopPropagation();location.href='/article-read?id=${s.id}&comment=1'" title="Comment"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg><span id="acc-${s.id}"></span></button>
           <button class="acard-repost" id="rb-${s.id}" onclick="event.stopPropagation();repostCardById('${s.id}')" title="Repost"><svg viewBox="0 0 24 24"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg><span id="rc-${s.id}"></span></button>
           <button class="acard-share" onclick="event.stopPropagation();shareCardItem('${s.id}')" title="Share" aria-label="Share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
           <button class="acard-save ${savedSet.has(s.id)?'saved':''}" id="sv-${s.id}" onclick="event.stopPropagation();handleSave('${s.id}')" title="Save article">
@@ -3122,6 +3122,7 @@ function renderArticles(){
   fetchLikeCounts(filtered.map(s=>({ id:s.id, hideLikeCount: !!s.hideLikeCount, isOwnerViewing: isOwner })));
   fetchRepostCounts(filtered);
   fetchPostCommentCounts(filtered.filter(s=>s.type==='post' && !s.commentsOff).map(s=>s.id));
+  fetchArticleCommentCounts(filtered.filter(s=>s.type!=='post' && !s.commentsOff).map(s=>s.id));
   fetchViewCounts(filtered.map(s=>({ id:s.id, type:s.type })));
   filtered.forEach(s=>{
     const btn = document.getElementById(`lb-${s.id}`);
@@ -3167,18 +3168,70 @@ async function loadLikedSet(){
 // items: array of ids (string) OR {id, hideLikeCount, isOwnerViewing} objects.
 // hideLikeCount hides the number from everyone except the owner viewing their
 // own profile — same rule enforced everywhere else this count is shown.
+/* ── COUNTS: same method as the feed ──
+   Numbers come back in ONE batched request per collection from /api/counts (the server shares each counter
+   for ~45s); if that is unavailable the documents are read directly, with retries. The last known numbers
+   are remembered on this device (the same store the feed uses) and painted the moment the cards exist, so a
+   card is never left blank while a read is slow or fails. */
+const COUNTS_KEY = 'msb_counts_v1';
+let _countsCache = null, _countsTimer = null;
+function _loadCounts(){
+  if(_countsCache) return _countsCache;
+  try{ _countsCache = JSON.parse(localStorage.getItem(COUNTS_KEY)) || {}; }catch(e){ _countsCache = {}; }
+  return _countsCache;
+}
+function setCountCache(prefix, id, n){
+  const c = _loadCounts(); c[prefix+':'+id] = n;
+  clearTimeout(_countsTimer);
+  _countsTimer = setTimeout(()=>{
+    try{
+      const keys = Object.keys(c);
+      if(keys.length > 900) keys.slice(0, keys.length-700).forEach(k=>delete c[k]);
+      localStorage.setItem(COUNTS_KEY, JSON.stringify(c));
+    }catch(e){}
+  }, 800);
+}
+function paintCachedCounts(prefix, ids){
+  const c = _loadCounts();
+  ids.forEach(id=>{
+    const n = c[prefix+':'+id];
+    if(!(n > 0)) return;
+    document.querySelectorAll('#'+prefix+'-'+id).forEach(el=>{ if(!el.textContent) el.textContent = n; });
+  });
+}
+// → one entry per id: a snapshot-like {exists(), data()}, or null if that read failed.
+async function getCountDocs(coll, ids){
+  try{
+    const byId = new Map();
+    for(let i=0; i<ids.length; i+=100){
+      const chunk = ids.slice(i, i+100);
+      const ctl = window.AbortController ? new AbortController() : null;
+      const tm = setTimeout(()=>{ if(ctl) ctl.abort(); }, 5000);
+      let res;
+      try{ res = await fetch('/api/counts?c='+encodeURIComponent(coll)+'&ids='+chunk.map(encodeURIComponent).join(','), { signal: ctl ? ctl.signal : undefined }); }
+      finally{ clearTimeout(tm); }
+      if(!res.ok) throw new Error('http '+res.status);
+      const j = await res.json();
+      if(!j || !j.ok || !j.counts) throw new Error('bad payload');
+      for(const id in j.counts) byId.set(id, j.counts[id]);
+    }
+    return ids.map(id => { const o = byId.get(id); return { exists: () => !!o, data: () => o || {} }; });
+  }catch(e){ /* server unavailable — read the documents directly */ }
+  return Promise.all(ids.map(id => resilient(()=>getDoc(doc(db,coll,id)),{tries:2,timeoutMs:6000}).catch(()=>null)));
+}
+
 async function fetchLikeCounts(items){
   if(!items.length) return;
   const ids = items.map(it => typeof it==='string' ? it : it.id);
+  paintCachedCounts('lc', ids.filter((id,i)=>{ const it = items[i]; return !(typeof it==='object' && it.hideLikeCount && !it.isOwnerViewing); }));
   try{
-    const results = await Promise.all(
-      ids.map(id => getDoc(doc(db,'articleLikes',id)).catch(()=>null))
-    );
+    const results = await getCountDocs('articleLikes', ids);
     results.forEach((snap,i)=>{
-      const it = items[i];
-      const id = ids[i];
-      const c = snap&&snap.exists() ? (snap.data().count||0) : 0;
+      const it = items[i], id = ids[i];
+      if(!snap) return;                       // read failed — leave whatever is showing
+      const c = snap.exists() ? (snap.data().count||0) : 0;
       likeCountCache[id] = c;
+      setCountCache('lc', id, c);
       const el = document.getElementById(`lc-${id}`);
       if(!el) return;
       const hide = typeof it==='object' && it.hideLikeCount && !it.isOwnerViewing;
@@ -3187,18 +3240,18 @@ async function fetchLikeCounts(items){
   }catch(e){}
 }
 
-// Same pattern as fetchLikeCounts — one parallel batch, no per-card listener.
 async function fetchRepostCounts(items){
   if(!items.length) return;
   const ids = items.map(it => typeof it==='string' ? it : it.id);
+  paintCachedCounts('rc', ids);
   try{
-    const results = await Promise.all(
-      ids.map(id => getDoc(doc(db,'repostCounts',id)).catch(()=>null))
-    );
+    const results = await getCountDocs('repostCounts', ids);
     results.forEach((snap,i)=>{
       const id = ids[i];
-      const c = snap&&snap.exists() ? (snap.data().count||0) : 0;
+      if(!snap) return;
+      const c = snap.exists() ? (snap.data().count||0) : 0;
       repostCountCache[id] = c;
+      setCountCache('rc', id, c);
       const el = document.getElementById(`rc-${id}`);
       if(el) el.textContent = c > 0 ? c : '';
     });
@@ -3573,32 +3626,36 @@ window.handleSave = function(id){
   })();
 };
 
-/* ── ARTICLE COMMENT COUNTS for reposted articles (articleMeta/{id}.commentCount) ── */
-async function fetchArticleCommentCountsForReposts(ids){
+/* ── ARTICLE COMMENT COUNTS (articleMeta/{id}.commentCount) — own articles and reposted ones ── */
+async function fetchArticleCommentCounts(ids){
   if(!ids.length) return;
+  paintCachedCounts('acc', ids);
   try{
-    const results = await Promise.all(ids.map(id => getDoc(doc(db,'articleMeta',id)).catch(()=>null)));
+    const results = await getCountDocs('articleMeta', ids);
     results.forEach((snap,i)=>{
       const id = ids[i];
-      const c = snap&&snap.exists() ? (snap.data().commentCount||0) : 0;
+      if(!snap) return;
+      const c = snap.exists() ? (snap.data().commentCount||0) : 0;
+      setCountCache('acc', id, c);
       document.querySelectorAll(`#acc-${id}`).forEach(el=>{ el.textContent = c > 0 ? c : ''; });
     });
   }catch(e){}
 }
+const fetchArticleCommentCountsForReposts = fetchArticleCommentCounts;
 
 /* ── POST COMMENT COUNTS (postMeta/{id}.commentCount) ── */
 async function fetchPostCommentCounts(ids){
   if(!ids.length) return;
+  paintCachedCounts('pcc', ids);
   try{
-    const results = await Promise.all(
-      ids.map(id => getDoc(doc(db,'postMeta',id)).catch(()=>null))
-    );
+    const results = await getCountDocs('postMeta', ids);
     results.forEach((snap,i)=>{
       const id = ids[i];
-      const c = snap&&snap.exists() ? (snap.data().commentCount||0) : 0;
+      if(!snap) return;
+      const c = snap.exists() ? (snap.data().commentCount||0) : 0;
       commentCountCache[id] = c;
-      const el = document.getElementById(`pcc-${id}`);
-      if(el) el.textContent = c > 0 ? c : '';
+      setCountCache('pcc', id, c);
+      document.querySelectorAll(`#pcc-${id}`).forEach(el=>{ el.textContent = c > 0 ? c : ''; });
     });
   }catch(e){}
 }
