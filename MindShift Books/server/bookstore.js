@@ -948,7 +948,7 @@ router.get('/api/free-ebooks/:id', (req, res) => {
 // gutenberg.org, by fetching Gutenberg's file server-side and caching it to
 // local disk on first request. Every request after that is served straight
 // off our own disk — fast, and doesn't hammer Gutenberg's free servers.
-// Download is intentionally not exposed yet — this is read-only.
+// Downloads: /download/:id serves the same book as an .epub (or .txt fallback).
 const GUTENBERG_CACHE_DIR = path.join(PROJECT_ROOT, 'cache', 'gutenberg-reads');
 
 function ensureCacheDir() {
@@ -990,6 +990,9 @@ ${extraHeadHtml || ''}
   .msb-reader-header .back svg{width:19px;height:19px;}
   .msb-reader-header .logo{width:22px;height:22px;border-radius:5px;flex-shrink:0;background:#fff;}
   .msb-reader-header .title{font-weight:700;font-size:0.86rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;}
+  .msb-reader-header .dl{color:#fff;text-decoration:none;display:flex;align-items:center;gap:6px;flex-shrink:0;background:rgba(255,255,255,.18);border-radius:999px;padding:7px 12px;font-weight:700;font-size:0.78rem;}
+  .msb-reader-header .dl svg{width:16px;height:16px;}
+  .msb-reader-header .dl.busy{opacity:.6;pointer-events:none;}
   .msb-reader-content{
     max-width:720px;margin:0 auto;box-sizing:border-box;
     padding:26px 22px 60px;font-size:17px;line-height:1.75;
@@ -1004,6 +1007,7 @@ ${extraHeadHtml || ''}
   </a>
   <img class="logo" src="https://mindshiftbooks.shop/MINDSHIFT.jpg" alt="">
   <div class="title">${safeTitle}</div>
+  ${bookId ? `<a class="dl" href="/download/${bookId}" download aria-label="Download this eBook" title="Download eBook"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>Download</a>` : ''}
 </div>
 <div class="msb-reader-content">${bodyInner}</div>
 </body>
@@ -1044,15 +1048,228 @@ function wrapPlainTextAsHtml(rawText, title, bookId) {
 }
 
 
+// ---------------- FREE EBOOKS — download (/download/:id) ----------------
+// Gives the reader the book as a file. Prefers EPUB (works in every e-reader
+// app, Kindle via Send-to-Kindle, Apple Books...) and falls back to plain
+// text. Like /read/:id, the file is fetched from gutenberg.org server-side
+// once, cached on our disk, and every later download comes from us.
+const GUTENBERG_DL_DIR = path.join(PROJECT_ROOT, 'cache', 'gutenberg-downloads');
+
+
+// ---- Download branding ----------------------------------------------------
+// Every downloaded file carries MindShift Books branding: a branded title page
+// at the start and a "more from us" page at the end. Branding is applied once,
+// before the file is cached, so later downloads cost nothing extra. If
+// anything goes wrong the plain file is served instead — a download never
+// fails because of branding.
+const SITE_URL = 'https://mindshiftbooks.shop';
+let brandLogoBuf = null; // small JPEG of the logo, built once and kept in memory
+async function getBrandLogo() {
+  if (brandLogoBuf !== null) return brandLogoBuf || null;
+  try {
+    const sharp = require('sharp');
+    brandLogoBuf = await sharp(path.join(PROJECT_ROOT, 'public', 'MINDSHIFT.jpg'))
+      .resize(260, 260, { fit: 'cover' }).jpeg({ quality: 82 }).toBuffer();
+  } catch (e) {
+    console.warn('[download] logo not available, branding without it:', e && e.message ? e.message : e);
+    brandLogoBuf = false;
+  }
+  return brandLogoBuf || null;
+}
+
+function xmlEsc(v) {
+  return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+const BRAND_CSS = `body{font-family:Georgia,serif;margin:0;padding:0;text-align:center;color:#1c1c1c;}
+.msb-wrap{padding:8% 7% 6%;}
+.msb-logo{width:96px;height:96px;border-radius:20px;margin:0 auto 14px;display:block;}
+.msb-brand{font-family:Helvetica,Arial,sans-serif;font-weight:800;font-size:1.05em;letter-spacing:.14em;color:#4f46e5;margin:0 0 6px;}
+.msb-pill{display:inline-block;font-family:Helvetica,Arial,sans-serif;font-size:.7em;font-weight:700;letter-spacing:.08em;color:#fff;background:#4f46e5;padding:4px 14px;border-radius:999px;margin:0 0 30px;}
+.msb-title{font-size:1.7em;line-height:1.25;margin:0 0 8px;color:#111;}
+.msb-author{font-size:1.05em;color:#555;margin:0 0 34px;}
+.msb-rule{border:0;border-top:2px solid #4f46e5;width:56px;margin:0 auto 26px;}
+.msb-text{font-size:.95em;line-height:1.6;color:#444;margin:0 0 14px;}
+.msb-link{font-family:Helvetica,Arial,sans-serif;font-weight:700;color:#4f46e5;text-decoration:none;}
+.msb-small{font-size:.75em;color:#888;margin-top:30px;}`;
+
+function brandFrontXhtml(title, author, hasLogo) {
+  return `<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head><meta charset="utf-8"/><title>${xmlEsc(title)}</title><link rel="stylesheet" type="text/css" href="msb-brand.css"/></head>
+<body><div class="msb-wrap">
+${hasLogo ? '<img class="msb-logo" src="msb-logo.jpg" alt="MindShift Books"/>' : ''}
+<p class="msb-brand">MINDSHIFT BOOKS</p>
+<p class="msb-pill">FREE EBOOK</p>
+<h1 class="msb-title">${xmlEsc(title)}</h1>
+${author ? `<p class="msb-author">by ${xmlEsc(author)}</p>` : ''}
+<hr class="msb-rule"/>
+<p class="msb-text">A free read from MindShift Books &#8212; books on mindset, money, productivity &amp; purpose.</p>
+<p class="msb-text"><a class="msb-link" href="${SITE_URL}">mindshiftbooks.shop</a></p>
+<p class="msb-small">Public-domain title via Project Gutenberg.</p>
+</div></body></html>`;
+}
+
+function brandEndXhtml(hasLogo) {
+  return `<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head><meta charset="utf-8"/><title>More from MindShift Books</title><link rel="stylesheet" type="text/css" href="msb-brand.css"/></head>
+<body><div class="msb-wrap">
+${hasLogo ? '<img class="msb-logo" src="msb-logo.jpg" alt="MindShift Books"/>' : ''}
+<p class="msb-brand">MINDSHIFT BOOKS</p>
+<hr class="msb-rule"/>
+<p class="msb-text">Enjoyed this read? There&#8217;s more waiting for you.</p>
+<p class="msb-text"><a class="msb-link" href="${SITE_URL}/free-ebooks">More free eBooks</a></p>
+<p class="msb-text"><a class="msb-link" href="${SITE_URL}/books">Explore our books</a></p>
+<p class="msb-text"><a class="msb-link" href="${SITE_URL}">mindshiftbooks.shop</a></p>
+</div></body></html>`;
+}
+
+// Adds the branded pages to an EPUB (a zip). Returns the new Buffer, or the
+// original Buffer untouched if the file can't be branded for any reason.
+async function brandEpub(buf, meta) {
+  try {
+    const JSZip = require('jszip');
+    const zip = await JSZip.loadAsync(buf);
+    const container = zip.file('META-INF/container.xml');
+    if (!container) return buf;
+    const cx = await container.async('string');
+    const m = cx.match(/full-path\s*=\s*"([^"]+)"/);
+    if (!m) return buf;
+    const opfPath = m[1];
+    const opfFile = zip.file(opfPath);
+    if (!opfFile) return buf;
+    let opf = await opfFile.async('string');
+    if (!/<\/manifest>/.test(opf) || !/<spine[^>]*>/.test(opf) || !/<\/spine>/.test(opf)) return buf;
+    if (opf.indexOf('msb-front') !== -1) return buf; // already branded
+
+    const dir = opfPath.indexOf('/') === -1 ? '' : opfPath.slice(0, opfPath.lastIndexOf('/') + 1);
+    const logo = await getBrandLogo();
+
+    zip.file(dir + 'msb-brand.css', BRAND_CSS);
+    zip.file(dir + 'msb-front.xhtml', brandFrontXhtml(meta.title, meta.author, !!logo));
+    zip.file(dir + 'msb-end.xhtml', brandEndXhtml(!!logo));
+    if (logo) zip.file(dir + 'msb-logo.jpg', logo);
+
+    const items = [
+      '<item id="msb-css" href="msb-brand.css" media-type="text/css"/>',
+      '<item id="msb-front" href="msb-front.xhtml" media-type="application/xhtml+xml"/>',
+      '<item id="msb-end" href="msb-end.xhtml" media-type="application/xhtml+xml"/>'
+    ];
+    if (logo) items.push('<item id="msb-logo" href="msb-logo.jpg" media-type="image/jpeg"/>');
+    opf = opf.replace('</manifest>', items.join('\n') + '\n</manifest>');
+
+    // Title page goes first — unless the book's first page is its cover, in
+    // which case it goes right after the cover so the cover still opens first.
+    const firstRef = opf.match(/<spine[^>]*>\s*(<itemref[^>]*>)/);
+    const afterCover = firstRef && /cover/i.test(firstRef[1]);
+    if (afterCover) {
+      opf = opf.replace(firstRef[1], firstRef[1] + '\n<itemref idref="msb-front"/>');
+    } else {
+      opf = opf.replace(/(<spine[^>]*>)/, '$1\n<itemref idref="msb-front"/>');
+    }
+    opf = opf.replace('</spine>', '<itemref idref="msb-end"/>\n</spine>');
+    zip.file(opfPath, opf);
+
+    // EPUB rule: "mimetype" must stay the first entry and stay uncompressed.
+    zip.file('mimetype', 'application/epub+zip', { compression: 'STORE' });
+    return await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE', mimeType: 'application/epub+zip' });
+  } catch (e) {
+    console.warn('[download] could not brand epub, serving it plain:', e && e.message ? e.message : e);
+    return buf;
+  }
+}
+
+function brandText(buf, meta) {
+  const line = '='.repeat(56);
+  const head = `${line}\n  MINDSHIFT BOOKS  -  FREE EBOOK\n\n  ${meta.title}${meta.author ? `\n  by ${meta.author}` : ''}\n\n  More free reads: ${SITE_URL}/free-ebooks\n${line}\n\n\n`;
+  const foot = `\n\n\n${line}\n  Enjoyed this read? There's more at ${SITE_URL}\n  MindShift Books - mindset, money, productivity & purpose\n${line}\n`;
+  return Buffer.concat([Buffer.from(head, 'utf8'), buf, Buffer.from(foot, 'utf8')]);
+}
+
+function downloadFileName(title, id, ext) {
+  const base = String(title || `book-${id}`)
+    .normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 80) || `book_${id}`;
+  return `${base}_MindShift_Books.${ext}`;
+}
+
+function sendDownload(res, filePathOrBuf, name, type) {
+  res.set({
+    'Content-Type': type,
+    'Content-Disposition': `attachment; filename="${name}"; filename*=UTF-8''${encodeURIComponent(name)}`,
+    'Cache-Control': 'public, max-age=86400',
+    'X-Content-Type-Options': 'nosniff'
+  });
+  if (Buffer.isBuffer(filePathOrBuf)) return res.send(filePathOrBuf);
+  return fs.createReadStream(filePathOrBuf).pipe(res);
+}
+
+router.get('/download/:id', async (req, res) => {
+  const id = req.params.id.replace(/[^0-9]/g, '');
+  if (!id) return res.status(400).send('Invalid book id.');
+  const known = freeCatalog.find(b => b.id === Number(id));
+  const epubPath = path.join(GUTENBERG_DL_DIR, `${id}.msb.epub`); // .msb = branded copy
+  const txtPath = path.join(GUTENBERG_DL_DIR, `${id}.msb.txt`);
+  const meta = { title: (known && known.title) || `Book #${id}`, author: known && known.author };
+  const fail = () => res.status(502).send(`<!DOCTYPE html><meta name="viewport" content="width=device-width,initial-scale=1"><body style="font-family:system-ui;padding:32px;text-align:center"><h3>Couldn\u2019t download this book right now</h3><p>Please try again in a moment.</p><p><a href="/free-ebooks">\u2190 Back to Free eBooks</a></p></body>`);
+
+  try {
+    if (fs.existsSync(epubPath)) return sendDownload(res, epubPath, downloadFileName(known && known.title, id, 'epub'), 'application/epub+zip');
+    if (fs.existsSync(txtPath)) return sendDownload(res, txtPath, downloadFileName(known && known.title, id, 'txt'), 'text/plain; charset=utf-8');
+
+    try { fs.mkdirSync(GUTENBERG_DL_DIR, { recursive: true }); } catch (e) { /* already exists */ }
+
+    const epubUrls = [
+      `https://www.gutenberg.org/ebooks/${id}.epub3.images`,
+      `https://www.gutenberg.org/ebooks/${id}.epub.images`,
+      `https://www.gutenberg.org/cache/epub/${id}/pg${id}-images-3.epub`,
+      `https://www.gutenberg.org/cache/epub/${id}/pg${id}.epub`,
+      `https://www.gutenberg.org/ebooks/${id}.epub.noimages`,
+      `https://gutenberg.pglaf.org/cache/epub/${id}/pg${id}.epub`
+    ];
+    for (const url of epubUrls) {
+      const buf = await fetchWithTimeout(url, 30000, true);
+      // a real EPUB is a zip file ("PK" header)
+      if (buf && buf.length > 1000 && buf[0] === 0x50 && buf[1] === 0x4b) {
+        const branded = await brandEpub(buf, meta);
+        fs.writeFile(epubPath, branded, (err) => { if (err) console.error('[download] cache write failed:', err.message); });
+        return sendDownload(res, branded, downloadFileName(known && known.title, id, 'epub'), 'application/epub+zip');
+      }
+    }
+
+    // No EPUB available — fall back to the plain-text edition.
+    const txtUrls = [
+      `https://www.gutenberg.org/ebooks/${id}.txt.utf-8`,
+      `https://www.gutenberg.org/cache/epub/${id}/pg${id}.txt`,
+      `https://gutenberg.pglaf.org/cache/epub/${id}/pg${id}.txt`
+    ];
+    for (const url of txtUrls) {
+      const buf = await fetchWithTimeout(url, 30000, true);
+      if (buf && buf.length > 500) {
+        const branded = brandText(buf, meta);
+        fs.writeFile(txtPath, branded, (err) => { if (err) console.error('[download] cache write failed:', err.message); });
+        return sendDownload(res, branded, downloadFileName(known && known.title, id, 'txt'), 'text/plain; charset=utf-8');
+      }
+    }
+    console.error(`[download] could not fetch book ${id} from Gutenberg`);
+    return fail();
+  } catch (e) {
+    console.error('[download] failed for book', id, e && e.message ? e.message : e);
+    return fail();
+  }
+});
+
+
 router.get('/read/:id', async (req, res) => {
   const id = req.params.id.replace(/[^0-9]/g, '');
   if (!id) return res.status(400).send('Invalid book id.');
-  // v6 = adds a favicon link — the reader shell had no <link rel="icon">
+  // v7 = adds the Download button to the reader header (v6 = adds a favicon link — the reader shell had no <link rel="icon">
   // at all, so browser tabs fell back to the default globe icon instead of
-  // our logo. Bumping this suffix is how old cached pages get replaced —
+  // our logo). Bumping this suffix is how old cached pages get replaced —
   // no purge job needed, they just become orphaned and the next request
-  // writes a fresh v6 file instead.
-  const cachePath = path.join(GUTENBERG_CACHE_DIR, `${id}.v6.html`);
+  // writes a fresh v7 file instead.
+  const cachePath = path.join(GUTENBERG_CACHE_DIR, `${id}.v7.html`);
 
   try {
     if (fs.existsSync(cachePath)) {
