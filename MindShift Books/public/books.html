@@ -22,7 +22,7 @@
   <!-- Fonts & icons -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="styles.css?v=3">
+  <link rel="stylesheet" href="styles.css?v=4">
 
 
   
@@ -502,21 +502,28 @@
         return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
       });
     }
-    function cardHtml(b) {
-      var cover = b.cover || 'data:image/svg+xml,' + encodeURIComponent(
-        '<svg xmlns="http://www.w3.org/2000/svg" width="140" height="200"><rect width="140" height="200" rx="8" fill="#e2e8f0"/><text x="70" y="104" font-family="sans-serif" font-size="12" fill="#94a3b8" text-anchor="middle">No Cover</text></svg>'
-      );
-      return '<div class="swiper-card fe-card">' +
-        '<div class="card-cover-wrap"><img src="' + esc(cover) + '" class="ebook-cover" alt="' + esc(b.title) + '" loading="lazy"/></div>' +
-        '<div class="title">' + esc(b.title) + '</div>' +
-        '<div class="card-author">' + esc(b.author || '') + '</div>' +
-        '<div class="card-actions button-group" style="width:100%;margin-top:auto;">' +
-        '<button class="btn free-ebook-read-btn" data-fe-detail="' + esc(b.id) + '" style="width:100%;">Read Free</button>' +
-        '</div></div>';
+
+    // "Top Free" layout (Apple-Books style): columns of 3 ranked rows —
+    // small cover, rank number, title, author. Columns swipe sideways.
+    function topFreeHtml(items) {
+      var list = (items || []).slice(0, 15), cols = '';
+      for (var i = 0; i < list.length; i += 3) {
+        var rows = '';
+        list.slice(i, i + 3).forEach(function (b, k) {
+          rows += '<div class="fe-top-row" role="button" tabindex="0" data-fe-detail="' + esc(b.id) + '" data-fe-title="' + esc(b.title) + '">' +
+            '<img class="fe-top-cover" src="' + esc(b.cover || '') + '" alt="" loading="lazy" onerror="this.onerror=null;this.src=\'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==\'">' +
+            '<span class="fe-top-rank">' + (i + k + 1) + '</span>' +
+            '<div class="fe-top-info"><div class="fe-top-title">' + esc(b.title) + '</div>' +
+            '<div class="fe-top-author">' + esc(b.author || '') + '</div>' +
+            '<div class="fe-top-meta"><span class="fe-top-free">FREE</span>' + (b.tag ? '<span class="fe-top-tag">' + esc(b.tag) + '</span>' : '') + '</div></div></div>';
+        });
+        cols += '<div class="fe-top-col">' + rows + '</div>';
+      }
+      return cols;
     }
     function render(items) {
       if (!items || !items.length) { if (section) section.style.display = 'none'; return; }
-      track.innerHTML = items.slice(0, 12).map(cardHtml).join('');
+      track.innerHTML = topFreeHtml(items);
       if (window.updateSwiperArrows) window.updateSwiperArrows(track);
     }
 
@@ -704,7 +711,7 @@
       </a>
       <a href="#" id="feModalDownloadBtn" class="btn fe-dl-btn" download>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-        Download
+        <span class="fe-dl-label">Download</span>
       </a>
     </div>
     <div class="fe-note" id="feModalNote">Read it here on MindShift Books, or download it to keep (EPUB). Public-domain title via Project Gutenberg.</div>
@@ -958,7 +965,7 @@ adjustMainPadding();
      this ordering doesn't depend on main.js running first either. -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="/currency.js?v=5"></script>
-<script src="/main.js?v=6"></script>
+<script src="/main.js?v=8"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="/auth.js"></script>
 

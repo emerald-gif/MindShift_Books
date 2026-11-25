@@ -276,7 +276,7 @@
       </a>
       <a href="#" id="feModalDownloadBtn" class="btn fe-dl-btn" download>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-        Download
+        <span class="fe-dl-label">Download</span>
       </a>
     </div>
     <div class="fe-note" id="feModalNote">Read it here on MindShift Books, or download it to keep (EPUB). Public-domain title via Project Gutenberg.</div>
@@ -464,15 +464,48 @@
     }, 4500);
   }
 
+  // Shelf variety: every shelf used to be "most popular first", and popular
+  // books sit in several categories — so the same books showed up in the same
+  // order on every shelf. Now each shelf is shuffled (with a seed fixed for
+  // this page load, so shelves don't jump around on re-render) and prefers
+  // books that aren't already on a shelf above it. New seed on every visit.
+  var homeSeed = Math.floor(Math.random() * 2147483647);
+  function rng(seed) {
+    return function () {
+      seed = (seed + 0x6D2B79F5) | 0;
+      var t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function shuffled(arr, salt) {
+    var r = rng(homeSeed + salt * 7919), a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(r() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
   function renderHome() {
     homeEl.style.display = '';
     listView.style.display = 'none';
     renderBanner();
-    var html = shelfHtml('Trending Now', BOOKS.slice().sort(byPopularity).slice(0, 12), null);
-    CATS.forEach(function (c) {
+    var used = {};
+    function mark(list) { list.forEach(function (b) { used[b.id] = true; }); }
+    // Trending: a fresh mix from the most popular books
+    var trending = shuffled(BOOKS.slice().sort(byPopularity).slice(0, 24), 1).slice(0, 12);
+    mark(trending);
+    var html = shelfHtml('Trending Now', trending, null);
+    CATS.forEach(function (c, ci) {
       if (!c.code) return;
-      var list = BOOKS.filter(function (b) { return inCat(b, c.code); }).sort(byPopularity);
-      if (list.length >= 2) html += shelfHtml(c.long, list.slice(0, 12), c.slug);
+      var list = BOOKS.filter(function (b) { return inCat(b, c.code); });
+      if (list.length < 2) return;
+      var mixed = shuffled(list, ci + 10);
+      var fresh = mixed.filter(function (b) { return !used[b.id]; });
+      var seen = mixed.filter(function (b) { return used[b.id]; });
+      var pick = fresh.concat(seen).slice(0, 12);
+      mark(pick);
+      html += shelfHtml(c.long, pick, c.slug);
     });
     shelvesEl.innerHTML = html;
   }
@@ -731,7 +764,7 @@
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="/currency.js?v=5"></script>
-<script src="/main.js?v=6"></script>
+<script src="/main.js?v=7"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="/auth.js"></script>
 

@@ -442,20 +442,24 @@ function updateSwiperArrows(track) {
 // startIndex 0" already surfaces the most-read public-domain books first).
 // Cards link straight to /read/:id (our own on-domain reader) since there's
 // no detail drawer on this page — that lives on /free-ebooks.
-function freeEbookCardInner(b) {
-  const cover = b.cover || `data:image/svg+xml,${encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="140" height="200"><rect width="140" height="200" rx="8" fill="#e2e8f0"/><text x="70" y="104" font-family="sans-serif" font-size="12" fill="#94a3b8" text-anchor="middle">No Cover</text></svg>`
-  )}`;
-  return `
-    <div class="card-cover-wrap">
-      <img src="${escapeHtml(cover)}" class="ebook-cover" alt="${escapeHtml(b.title)}" loading="lazy"/>
-    </div>
-    <div class="title">${escapeHtml(b.title)}</div>
-    <div class="card-author">${escapeHtml(b.author || '')}</div>
-    <div class="card-actions button-group" style="width:100%;margin-top:auto;">
-      <button class="btn free-ebook-read-btn" data-fe-detail="${escapeHtml(b.id)}" data-fe-title="${escapeHtml(b.title)}" style="width:100%;">Read Free</button>
-    </div>
-  `;
+
+// "Top Free" layout (Apple-Books style): columns of 3 ranked rows —
+// small cover, rank number, title, author. Columns swipe sideways.
+function topFreeHtml(items) {
+  var list = (items || []).slice(0, 15), cols = '';
+  for (var i = 0; i < list.length; i += 3) {
+    var rows = '';
+    list.slice(i, i + 3).forEach(function (b, k) {
+      rows += '<div class="fe-top-row" role="button" tabindex="0" data-fe-detail="' + escapeHtml(b.id) + '" data-fe-title="' + escapeHtml(b.title) + '">' +
+        '<img class="fe-top-cover" src="' + escapeHtml(b.cover || '') + '" alt="" loading="lazy" onerror="this.onerror=null;this.src=\'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==\'">' +
+        '<span class="fe-top-rank">' + (i + k + 1) + '</span>' +
+        '<div class="fe-top-info"><div class="fe-top-title">' + escapeHtml(b.title) + '</div>' +
+        '<div class="fe-top-author">' + escapeHtml(b.author || '') + '</div>' +
+        '<div class="fe-top-meta"><span class="fe-top-free">FREE</span>' + (b.tag ? '<span class="fe-top-tag">' + escapeHtml(b.tag) + '</span>' : '') + '</div></div></div>';
+    });
+    cols += '<div class="fe-top-col">' + rows + '</div>';
+  }
+  return cols;
 }
 
 async function loadFreeEbooksSwiper() {
@@ -493,18 +497,12 @@ async function loadFreeEbooksSwiper() {
     } catch (e) {
       data = await fetchJson('/api/free-ebooks?category=all&startIndex=0', 5000);
     }
-    const items = (data.items || []).slice(0, 12);
+    const items = (data.items || []).slice(0, 15);
     if (!items.length) {
       if (section) section.style.display = 'none';
       return;
     }
-    track.innerHTML = '';
-    items.forEach(b => {
-      const card = document.createElement('div');
-      card.className = 'swiper-card fe-card';
-      card.innerHTML = freeEbookCardInner(b);
-      track.appendChild(card);
-    });
+    track.innerHTML = topFreeHtml(items);
     if (typeof updateSwiperArrows === 'function') updateSwiperArrows(track);
   } catch (e) {
     console.error('Failed to load free eBooks swiper', e);
@@ -630,6 +628,48 @@ document.addEventListener('DOMContentLoaded', loadFreeEbooksSwiper);
     if (ev.target === modal) { closeDetail(); return; }
   });
   if (modalClose) modalClose.addEventListener('click', closeDetail);
+
+  // Download button: shows "Preparing…" while the server gets/brands the book
+  // (first download of a title takes a few seconds), then saves the file.
+  // Shows a retry message instead of failing silently.
+  if (modalDlBtn) {
+    const dlLabel = modalDlBtn.querySelector('.fe-dl-label');
+    const setLabel = (t) => { if (dlLabel) dlLabel.textContent = t; };
+    modalDlBtn.addEventListener('click', async (ev) => {
+      ev.preventDefault();
+      const url = modalDlBtn.getAttribute('href');
+      if (!url || url === '#' || modalDlBtn.dataset.busy) return;
+      modalDlBtn.dataset.busy = '1';
+      modalDlBtn.style.opacity = '0.7';
+      setLabel('Preparing…');
+      try {
+        const ctrl = ('AbortController' in window) ? new AbortController() : null;
+        const timer = setTimeout(() => { if (ctrl) ctrl.abort(); }, 60000);
+        const resp = await fetch(url, ctrl ? { signal: ctrl.signal } : {});
+        clearTimeout(timer);
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        const blob = await resp.blob();
+        let name = 'MindShift_Books_eBook.epub';
+        const cd = resp.headers.get('Content-Disposition') || '';
+        const m = cd.match(/filename="([^"]+)"/);
+        if (m) name = m[1];
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 15000);
+        setLabel('Downloaded ✓');
+        setTimeout(() => setLabel('Download'), 2500);
+      } catch (e) {
+        setLabel('Couldn’t download — tap to retry');
+        setTimeout(() => setLabel('Download'), 3500);
+      } finally {
+        delete modalDlBtn.dataset.busy;
+        modalDlBtn.style.opacity = '';
+      }
+    });
+  }
 })();
 
 // Render product grids from PRODUCTS (from server), split into "Our Books" and "Featured" sections
