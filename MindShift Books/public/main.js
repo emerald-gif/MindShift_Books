@@ -530,6 +530,7 @@ document.addEventListener('DOMContentLoaded', loadFreeEbooksSwiper);
   const modalActions = document.getElementById('feModalActions');
   const modalNote = document.getElementById('feModalNote');
   const modalReadBtn = document.getElementById('feModalReadBtn');
+  const modalDlBtn = document.getElementById('feModalDownloadBtn');
   const authPrompt = document.getElementById('feAuthPrompt');
   const authTitle = document.getElementById('feAuthTitle');
   const authSignupBtn = document.getElementById('feAuthSignupBtn');
@@ -587,6 +588,7 @@ document.addEventListener('DOMContentLoaded', loadFreeEbooksSwiper);
     modalDesc.classList.add('loading');
     modalCover.src = placeholderCover('');
     modalReadBtn.href = '#';
+    if (modalDlBtn) modalDlBtn.href = '#';
 
     try {
       // Books loaded live in the browser (free-ebooks page) are already
@@ -609,6 +611,7 @@ document.addEventListener('DOMContentLoaded', loadFreeEbooksSwiper);
       modalDesc.textContent = stripHtml(b.description) || 'No description available for this title.';
       modalDesc.classList.remove('loading');
       modalReadBtn.href = b.readLink || '#';
+      if (modalDlBtn) modalDlBtn.href = '/download/' + encodeURIComponent(b.id);
     } catch (e) {
       modalDesc.textContent = 'Could not load this book right now. Please try again.';
       modalDesc.classList.remove('loading');

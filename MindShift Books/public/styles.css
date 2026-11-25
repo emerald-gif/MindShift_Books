@@ -268,6 +268,8 @@ footer .brand{font-weight:700;font-size:1.1rem;color:#fbbf24}
 .fe-modal-actions { margin-top: 22px; display: flex; gap: 10px; }
 .fe-modal-actions .btn { flex: 1; }
 .fe-read-btn { background: linear-gradient(90deg,#4f46e5,#06b6d4); color: #fff; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.fe-dl-btn { background: var(--c-bg,#fff); color: var(--c-ind,#4f46e5); text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 1.5px solid var(--c-ind,#4f46e5); }
+.fe-dl-btn:hover { background: var(--c-surface,#f1f5f9); }
 .fe-note { margin-top: 14px; font-size: 0.74rem; color: var(--c-mute,#94a3b8); line-height: 1.5; }
 
 /* Sign-in-required state — swaps in for the whole sheet content when a
