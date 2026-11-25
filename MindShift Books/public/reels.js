@@ -45,7 +45,7 @@ html.msb-reels-open body{background:transparent !important}
 @keyframes rlburst{0%{transform:scale(.3);opacity:0}25%{transform:scale(1.15);opacity:1}55%{transform:scale(1);opacity:1}100%{transform:scale(1.1) translateY(-30px);opacity:0}}
 
 /* top bar */
-#msbReels .rl-top{position:fixed;top:0;left:0;right:0;z-index:6;pointer-events:none;
+#msbReels .rl-top{position:absolute;top:0;left:0;right:0;z-index:6;pointer-events:none;
   background:linear-gradient(to bottom,rgba(0,0,0,.55),transparent);height:96px}
 #msbReels .rl-top-in{max-width:520px;margin:0 auto;padding:max(12px,env(safe-area-inset-top)) 12px 0;display:flex;align-items:center;gap:10px}
 #msbReels .rl-chip{pointer-events:auto;min-width:42px;height:42px;border-radius:21px;padding:0 12px;border:none;color:#fff;cursor:pointer;
@@ -132,12 +132,12 @@ body.msb-reels-open .rp-sheet{z-index:100005!important}
 /* comments drawer: the video shrinks to the top and the drawer takes a fixed height at the bottom */
 #msbReels{--rl-cmt-h:min(64dvh,600px)}
 #msbReels .rl-frame{transition:height .34s cubic-bezier(.22,1,.36,1)}
-#msbReels.cmt-open .rl-slide.cmt-on .rl-frame{height:calc(100% - var(--rl-cmt-h) - var(--rl-kb,0px))}
+#msbReels.cmt-open .rl-slide.cmt-on .rl-frame{height:calc(var(--rl-vh,100dvh) - var(--rl-cmt-h))}
 #msbReels.cmt-open .rl-slide.cmt-on video{object-fit:contain}
 #msbReels .rl-rail,#msbReels .rl-info,#msbReels .rl-scrub{transition:opacity .22s}
 #msbReels.cmt-open .rl-slide.cmt-on .rl-rail,#msbReels.cmt-open .rl-slide.cmt-on .rl-info,#msbReels.cmt-open .rl-slide.cmt-on .rl-scrub{opacity:0;pointer-events:none}
 #msbReels.cmt-open .rl-scroller{overflow-y:hidden;touch-action:none}
-#msbReels .rl-cmt{position:fixed;left:0;right:0;bottom:var(--rl-kb,0px);height:var(--rl-cmt-h);max-width:520px;margin:0 auto;z-index:30;
+#msbReels .rl-cmt{position:absolute;left:0;right:0;bottom:var(--rl-drb,160px);height:var(--rl-cmt-h);max-width:520px;margin:0 auto;z-index:30;
   display:flex;flex-direction:column;overflow:hidden;background:var(--c-bg,#fff);color:var(--txt,#0f172a);
   border-radius:20px 20px 0 0;box-shadow:0 -12px 40px rgba(0,0,0,.5);
   transform:translateY(105%);visibility:hidden;pointer-events:none;
@@ -376,23 +376,32 @@ body.msb-reels-open .rp-sheet{z-index:100005!important}
     history.pushState({ msbCmt: 1 }, ''); cmtPushed = true;
     if(window.visualViewport && !cmtVV){
       cmtVV = true;
+      // When the keyboard opens, iOS pans the page to reveal the box, which used to fling the drawer around.
+      // Instead the whole player is fitted to the visible area (above the keyboard): the drawer sits right on top
+      // of the keyboard and the video keeps whatever room is left above it.
       var onVV = function(){
         var o = cmtEls().ov; if(!o || !cmtOpen) return;
         var vv = window.visualViewport, kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
-        if(kb > 80){                               // keyboard up: lift the drawer above it and keep the video visible above that
-          o.style.setProperty('--rl-kb', kb + 'px');
-          o.style.setProperty('--rl-cmt-h', Math.min(vv.height - 150, 0.64 * window.innerHeight, 600) + 'px');
-        } else { o.style.removeProperty('--rl-kb'); o.style.removeProperty('--rl-cmt-h'); }
+        if(kb > 80){
+          o.style.top = vv.offsetTop + 'px'; o.style.height = vv.height + 'px'; o.style.bottom = 'auto';
+          o.style.setProperty('--rl-drb', '0px'); o.style.setProperty('--rl-vh', vv.height + 'px');
+          o.style.setProperty('--rl-cmt-h', Math.max(200, Math.min(vv.height - 140, 0.64 * window.innerHeight, 600)) + 'px');
+          if(window.scrollY) window.scrollTo(0, 0);
+        } else resetKb(o);
       };
       window.visualViewport.addEventListener('resize', onVV); window.visualViewport.addEventListener('scroll', onVV);
     }
+  }
+  function resetKb(o){
+    o.style.top = ''; o.style.height = ''; o.style.bottom = '';
+    ['--rl-drb','--rl-vh','--rl-cmt-h','--rl-kb'].forEach(function(k){ o.style.removeProperty(k); });
   }
   // Slides the drawer back down; the video grows back to full screen as it goes.
   function hideComments(){
     var e = cmtEls(), ov = e.ov; if(!cmtOpen) return;
     cmtOpen = false;
     if(ov){
-      ov.classList.remove('cmt-open'); ov.style.removeProperty('--rl-kb'); ov.style.removeProperty('--rl-cmt-h');
+      ov.classList.remove('cmt-open'); resetKb(ov);
       var fr = ov.querySelector('.rl-cmt-frame'); try{ if(fr && fr.contentWindow) fr.contentWindow.blur(); if(document.activeElement && document.activeElement.blur) document.activeElement.blur(); }catch(_){}
       var id = cmtId; setTimeout(function(){ var o = document.getElementById('msbReels'); var sl = o && o.querySelector('.rl-slide[data-id="'+id+'"]'); if(sl && !cmtOpen) sl.classList.remove('cmt-on'); }, 420);
     }

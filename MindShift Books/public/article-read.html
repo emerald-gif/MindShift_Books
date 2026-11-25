@@ -515,6 +515,42 @@ header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .reply-banner.show{display:flex}
 .reply-banner b{color:var(--txt);font-weight:700}
 .reply-banner-x{margin-left:auto;width:22px;height:22px;border:none;border-radius:50%;background:var(--c-surface,#f1f5f9);color:var(--sub);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;line-height:1;padding:0}
+
+/* ══ Comments: polish (shared by the post page, the article page and the reels drawer) ══ */
+.comment-item{gap:12px;padding:15px 0;isolation:isolate}
+.comment-item::after{content:'';position:absolute;inset:6px -8px;border-radius:14px;background:var(--c-tonal,#eef0fe);opacity:0;pointer-events:none;z-index:-1;transition:opacity 1.3s ease}
+.comment-item.c-new::after{opacity:1;transition:none}
+.comment-item.c-new{animation:cNew .42s cubic-bezier(.22,1,.36,1)}
+@keyframes cNew{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.c-name{font-size:14px}
+.c-text{font-size:15px;line-height:1.55;margin-bottom:6px}
+.c-foot{gap:4px;margin-left:-9px}
+.c-time{font-size:12px;padding:4px 4px 4px 9px}
+.c-like-btn,.c-reply-btn{min-height:30px;padding:4px 10px;-webkit-tap-highlight-color:transparent}
+.c-like-btn:active,.c-reply-btn:active{transform:scale(.9)}
+.c-like-btn.liked svg{animation:cPop .34s ease}
+@keyframes cPop{45%{transform:scale(1.4)}}
+.c-view-replies-btn{background:none!important;color:var(--mute)!important;padding:4px 10px 4px 9px;gap:9px}
+.c-view-replies-btn::before{content:'';width:22px;height:1.5px;border-radius:1px;background:var(--c-line,#d4d8e1);flex:none}
+.c-view-replies-btn:hover{color:var(--p)!important}
+.c-replies-wrap{margin-left:18px;padding-left:14px}
+.comment-item.reply{padding:9px 0}
+.comments-list-empty{padding:34px 20px 26px}
+.comments-list-empty-ico{font-size:34px;opacity:.9;margin-bottom:6px}
+.comments-list-empty-ttl{font-size:15px;font-weight:800;color:var(--txt);margin-bottom:2px}
+.comments-list-empty-txt{font-size:13px;font-weight:500}
+.c-empty-cta{margin-top:14px;border:none;border-radius:99px;padding:9px 20px;background:var(--g);color:#fff;font-weight:800;font-size:13px;cursor:pointer;font-family:inherit}
+.c-empty-cta:active{transform:scale(.96)}
+/* loading skeleton (instead of flashing "Be the first to comment" while comments load) */
+.c-skel-row{display:flex;gap:12px;padding:15px 0}
+.c-skel-row i,.c-skel-row b{display:block;border-radius:8px;background:linear-gradient(90deg,var(--c-surface,#eef1f6) 25%,var(--c-bg2,#f7f8fb) 50%,var(--c-surface,#eef1f6) 75%);background-size:200% 100%;animation:cSk 1.3s ease-in-out infinite}
+.c-skel-row .sk-av{width:36px;height:36px;border-radius:50%;flex:none}
+.c-skel-row .sk-col{flex:1}
+.c-skel-row .sk-l1{height:11px;width:34%;margin-bottom:9px}
+.c-skel-row .sk-l2{height:11px;width:92%;margin-bottom:7px}
+.c-skel-row .sk-l3{height:11px;width:60%}
+@keyframes cSk{to{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){.c-skel-row i,.comment-item.c-new,.c-like-btn.liked svg{animation:none}}
 </style>
 <script src="/article-categories.js"></script>
 <meta name="theme-color" content="#ffffff">
@@ -715,7 +751,7 @@ header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     </button>
   </div>
   <div class="comment-sheet-list" id="commentsList">
-    <div class="comments-list-empty"><div class="comments-list-empty-ico">&#128172;</div><div class="comments-list-empty-txt">Be the first to comment</div></div>
+    <div class="c-skel" aria-hidden="true"><div class="c-skel-row"><i class="sk-av"></i><div class="sk-col"><i class="sk-l1"></i><i class="sk-l2"></i><i class="sk-l3"></i></div></div><div class="c-skel-row"><i class="sk-av"></i><div class="sk-col"><i class="sk-l1"></i><i class="sk-l2"></i><i class="sk-l3"></i></div></div><div class="c-skel-row"><i class="sk-av"></i><div class="sk-col"><i class="sk-l1"></i><i class="sk-l2"></i><i class="sk-l3"></i></div></div></div>
   </div>
   <div class="comment-sheet-input-wrap" id="commentSheetInput"></div>
 </div>
@@ -1656,7 +1692,7 @@ function buildCommentsUI(comments){
   const pinnedHTML = cPinnedComment ? `<div class="c-pinned-card">${buildCHTML(cPinnedComment,false,true)}</div>` : '';
   const listHTML=comments.length
     ?comments.map(c=>buildCHTML(c,false)).join('')
-    :(cPinnedComment?'':`<div class="comments-list-empty"><div class="comments-list-empty-ico">&#128172;</div><div class="comments-list-empty-txt">Be the first to comment</div></div>`);
+    :(cPinnedComment?'':`<div class="comments-list-empty"><div class="comments-list-empty-ico">&#128172;</div><div class="comments-list-empty-ttl">No comments yet</div><div class="comments-list-empty-txt">Start the conversation.</div><button type="button" class="c-empty-cta" onclick="focusComposer()">Write a comment</button></div>`);
   listEl.innerHTML=pinnedHTML+listHTML;
   renderCMore();
   window.MSBAuthorLive && window.MSBAuthorLive.refresh(db, { doc, getDoc }, listEl);
@@ -1712,6 +1748,10 @@ function buildCHTML(c,isReply,isPinned){
   return `<div class="comment-item${isReply?' reply':''}" id="ci-${c.id}" data-author-uid="${cEsc(c.authorUid||'')}"><div class="c-av" onclick="cGo('${cEsc(c.authorUid||'')}','${cEsc(c.authorUsername||'')}')">${avIn}</div><div class="c-body"><div class="c-meta-row"><span class="c-name" data-author-name onclick="cGo('${cEsc(c.authorUid||'')}','${cEsc(c.authorUsername||'')}')">${cEsc(c.authorName||'User')}</span>${authorBadge}${pinBadge}</div><div class="c-text">${window.msbLinkMentions?msbLinkMentions(cEsc(c.text||''),c.mentions):cEsc(c.text||'')}</div><div class="c-foot"><span class="c-time">${cTA(c.createdAt)}</span><span class="c-dot">·</span>${heart}${replyBtn}${vrBtn}</div>${extra}</div>${moreBtn}</div>`;
 }
 
+
+window.focusComposer=function(){if(!currentUser){openAuth();return;}const i=document.getElementById('mainCI');if(i)i.focus();};
+// A just-posted comment/reply: bring it into view and give it a brief highlight.
+window.cShowNew=function(id){const el=document.getElementById('ci-'+id);if(!el)return;el.classList.add('c-new');try{el.scrollIntoView({block:'center',behavior:'smooth'});}catch(e){}setTimeout(()=>el.classList.remove('c-new'),2400);};
 window.onCI=function(el){el.style.height='auto';el.style.height=el.scrollHeight+'px';const b=document.getElementById('mainCPost');if(b)b.disabled=!window.cHasText(el);};
 window.cancelCI=function(){const i=document.getElementById('mainCI'),a=document.getElementById('mainCA'),b=document.getElementById('mainCPost');if(cReplyTarget){cReplyTarget=null;syncReplyUI();}if(i){i.value='';i.dataset.auto='';i.style.height='auto';}if(a)a.classList.remove('show');if(b)b.disabled=true;};
 window.openCommentDrawer=function(){
@@ -1767,7 +1807,7 @@ window.submitComment=async function(){
     const nc={id:ref.id,articleId:artId,parentId:null,authorUid:currentUser.uid,authorName:an,authorPhoto:ap,authorUsername:au,text,mentions,likeCount:0,replyCount:0,createdAt:{toDate:()=>new Date()}};
     cList.push(nc);
     const le=document.getElementById('commentsList');
-    if(le){const em=le.querySelector('.comments-list-empty');if(em)le.innerHTML='';le.insertAdjacentHTML('beforeend',buildCHTML(nc,false));}
+    if(le){const em=le.querySelector('.comments-list-empty');if(em)le.innerHTML='';le.insertAdjacentHTML('beforeend',buildCHTML(nc,false));cShowNew(nc.id);}
     cancelCI();
     if(article&&article.authorUid&&article.authorUid!==currentUser.uid&&!article.isMindshift)notif.notifyComment({type:'new_comment',recipientUid:article.authorUid,articleId:artId,articleTitle:article.title,contentType:'article'});
     cNotifyMentions(mentions,ref.id,text,(article&&article.authorUid&&article.authorUid!==currentUser.uid&&!article.isMindshift)?[article.authorUid]:[]);
@@ -1832,7 +1872,7 @@ window.submitReply=async function(parentId){
     if(!cReplies[parentId])cReplies[parentId]=[];
     cReplies[parentId].push(nr);
     const re=document.getElementById('rep-'+parentId);
-    if(re){if(re.style.display==='none')re.style.display='block';re.insertAdjacentHTML('beforeend',buildCHTML(nr,true));}
+    if(re){if(re.style.display==='none')re.style.display='block';re.insertAdjacentHTML('beforeend',buildCHTML(nr,true));cShowNew(nr.id);}
     const pc=cList.find(c=>c.id===parentId);
     if(pc){pc.replyCount=(pc.replyCount||0)+1;updVRB(parentId,pc.replyCount);}
     cancelReply();cancelCI();

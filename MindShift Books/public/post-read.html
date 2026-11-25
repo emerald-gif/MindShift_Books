@@ -535,6 +535,53 @@ html.embed .comments-inline-title{display:none}
 html.embed .comments-inline{margin-top:0;padding-top:6px;border-top:0}
 html.embed .art-wrap{padding-top:4px}
 html.embed body{padding-bottom:calc(64px + env(safe-area-inset-bottom,0px))}
+
+/* ══ Comments: polish (shared by the post page, the article page and the reels drawer) ══ */
+.comment-item{gap:12px;padding:15px 0;isolation:isolate}
+.comment-item::after{content:'';position:absolute;inset:6px -8px;border-radius:14px;background:var(--c-tonal,#eef0fe);opacity:0;pointer-events:none;z-index:-1;transition:opacity 1.3s ease}
+.comment-item.c-new::after{opacity:1;transition:none}
+.comment-item.c-new{animation:cNew .42s cubic-bezier(.22,1,.36,1)}
+@keyframes cNew{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.c-name{font-size:14px}
+.c-text{font-size:15px;line-height:1.55;margin-bottom:6px}
+.c-foot{gap:4px;margin-left:-9px}
+.c-time{font-size:12px;padding:4px 4px 4px 9px}
+.c-like-btn,.c-reply-btn{min-height:30px;padding:4px 10px;-webkit-tap-highlight-color:transparent}
+.c-like-btn:active,.c-reply-btn:active{transform:scale(.9)}
+.c-like-btn.liked svg{animation:cPop .34s ease}
+@keyframes cPop{45%{transform:scale(1.4)}}
+.c-view-replies-btn{background:none!important;color:var(--mute)!important;padding:4px 10px 4px 9px;gap:9px}
+.c-view-replies-btn::before{content:'';width:22px;height:1.5px;border-radius:1px;background:var(--c-line,#d4d8e1);flex:none}
+.c-view-replies-btn:hover{color:var(--p)!important}
+.c-replies-wrap{margin-left:18px;padding-left:14px}
+.comment-item.reply{padding:9px 0}
+.comments-list-empty{padding:34px 20px 26px}
+.comments-list-empty-ico{font-size:34px;opacity:.9;margin-bottom:6px}
+.comments-list-empty-ttl{font-size:15px;font-weight:800;color:var(--txt);margin-bottom:2px}
+.comments-list-empty-txt{font-size:13px;font-weight:500}
+.c-empty-cta{margin-top:14px;border:none;border-radius:99px;padding:9px 20px;background:var(--g);color:#fff;font-weight:800;font-size:13px;cursor:pointer;font-family:inherit}
+.c-empty-cta:active{transform:scale(.96)}
+/* loading skeleton (instead of flashing "Be the first to comment" while comments load) */
+.c-skel-row{display:flex;gap:12px;padding:15px 0}
+.c-skel-row i,.c-skel-row b{display:block;border-radius:8px;background:linear-gradient(90deg,var(--c-surface,#eef1f6) 25%,var(--c-bg2,#f7f8fb) 50%,var(--c-surface,#eef1f6) 75%);background-size:200% 100%;animation:cSk 1.3s ease-in-out infinite}
+.c-skel-row .sk-av{width:36px;height:36px;border-radius:50%;flex:none}
+.c-skel-row .sk-col{flex:1}
+.c-skel-row .sk-l1{height:11px;width:34%;margin-bottom:9px}
+.c-skel-row .sk-l2{height:11px;width:92%;margin-bottom:7px}
+.c-skel-row .sk-l3{height:11px;width:60%}
+@keyframes cSk{to{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){.c-skel-row i,.comment-item.c-new,.c-like-btn.liked svg{animation:none}}
+
+/* composer bar: calmer "Post" (Instagram-style text button), focus ring, quick emoji row */
+.post-comment-bar-input{border:1.5px solid transparent;transition:border-color .15s,background .15s}
+.post-comment-bar-input:focus{border-color:var(--p);background:var(--c-bg,#fff)}
+.post-comment-bar .c-post-btn{background:none;color:var(--p);padding:8px 8px;font-size:14px;font-weight:800;border-radius:10px}
+.post-comment-bar .c-post-btn:disabled{background:none;color:var(--mute);opacity:.55}
+.post-comment-bar .c-quick{flex:0 0 100%;display:none;justify-content:space-between;padding:0 2px 6px}
+.post-comment-bar.focused .c-quick{display:flex}
+.c-quick button{border:none;background:none;font-size:22px;line-height:1;padding:3px 6px;border-radius:10px;cursor:pointer;transition:transform .12s;-webkit-tap-highlight-color:transparent}
+.c-quick button:active{transform:scale(1.3)}
+html.embed{overscroll-behavior:contain}
 </style>
 <script src="/article-categories.js"></script>
 <meta name="theme-color" content="#ffffff">
@@ -643,6 +690,9 @@ html.embed body{padding-bottom:calc(64px + env(safe-area-inset-bottom,0px))}
 <!-- PERSISTENT COMMENT BAR (posts only — this IS the comment input, always visible) -->
 <div class="post-comment-bar" id="postCommentBar">
   <div class="reply-banner" id="replyBanner"></div>
+  <div class="c-quick" id="cQuick" onpointerdown="event.preventDefault()" role="group" aria-label="Quick reactions">
+    <button type="button" onclick="cEmoji('❤️')">❤️</button><button type="button" onclick="cEmoji('🔥')">🔥</button><button type="button" onclick="cEmoji('👏')">👏</button><button type="button" onclick="cEmoji('🙌')">🙌</button><button type="button" onclick="cEmoji('😍')">😍</button><button type="button" onclick="cEmoji('😂')">😂</button><button type="button" onclick="cEmoji('😮')">😮</button>
+  </div>
   <img class="post-comment-bar-av" id="postCommentBarAv" src="" alt="" onerror="this.style.display='none'">
   <textarea class="post-comment-bar-input" id="mainCI" placeholder="Comment on this post…" rows="1"
     oninput="onCI(this)" onfocus="onCIFocus(this)"></textarea>
@@ -756,7 +806,7 @@ html.embed body{padding-bottom:calc(64px + env(safe-area-inset-bottom,0px))}
 <script src="/link-card.js"></script>
 <script src="/share-drawer.js?v=4"></script>
 <script src="/poll.js?v=1"></script>
-<script src="/reels.js?v=13"></script>
+<script src="/reels.js?v=14"></script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
@@ -1219,7 +1269,7 @@ async function renderArticle(){
       <div class="comments-inline" id="commentsInline">
         <div class="comments-inline-title">Comments <span id="commentSheetCount" style="font-size:13px;font-weight:600;color:var(--mute)"></span></div>
         <div class="comments-inline-list" id="commentsList">
-          <div class="comments-list-empty"><div class="comments-list-empty-ico">&#128172;</div><div class="comments-list-empty-txt">Be the first to comment</div></div>
+          <div class="c-skel" aria-hidden="true"><div class="c-skel-row"><i class="sk-av"></i><div class="sk-col"><i class="sk-l1"></i><i class="sk-l2"></i><i class="sk-l3"></i></div></div><div class="c-skel-row"><i class="sk-av"></i><div class="sk-col"><i class="sk-l1"></i><i class="sk-l2"></i><i class="sk-l3"></i></div></div><div class="c-skel-row"><i class="sk-av"></i><div class="sk-col"><i class="sk-l1"></i><i class="sk-l2"></i><i class="sk-l3"></i></div></div></div>
         </div>
         <div id="commentSheetInput"></div>
       </div>`}
@@ -1930,7 +1980,7 @@ function buildCommentsUI(comments){
   const pinnedHTML = cPinnedComment ? `<div class="c-pinned-card">${buildCHTML(cPinnedComment,false,true)}</div>` : '';
   const listHTML=comments.length
     ?comments.map(c=>buildCHTML(c,false)).join('')
-    :(cPinnedComment?'':`<div class="comments-list-empty"><div class="comments-list-empty-ico">&#128172;</div><div class="comments-list-empty-txt">Be the first to comment</div></div>`);
+    :(cPinnedComment?'':`<div class="comments-list-empty"><div class="comments-list-empty-ico">&#128172;</div><div class="comments-list-empty-ttl">No comments yet</div><div class="comments-list-empty-txt">Start the conversation.</div><button type="button" class="c-empty-cta" onclick="focusComposer()">Write a comment</button></div>`);
   listEl.innerHTML=pinnedHTML+listHTML;
   renderCMore();
   window.MSBAuthorLive && window.MSBAuthorLive.refresh(db, { doc, getDoc }, listEl);
@@ -1986,6 +2036,12 @@ function buildCHTML(c,isReply,isPinned){
   return `<div class="comment-item${isReply?' reply':''}" id="ci-${c.id}" data-author-uid="${cEsc(c.authorUid||'')}"><div class="c-av" onclick="cGo('${cEsc(c.authorUid||'')}','${cEsc(c.authorUsername||'')}')">${avIn}</div><div class="c-body"><div class="c-meta-row"><span class="c-name" data-author-name onclick="cGo('${cEsc(c.authorUid||'')}','${cEsc(c.authorUsername||'')}')">${cEsc(c.authorName||'User')}</span>${authorBadge}${pinBadge}</div><div class="c-text">${window.msbLinkMentions?msbLinkMentions(cEsc(c.text||''),c.mentions):cEsc(c.text||'')}</div><div class="c-foot"><span class="c-time">${cTA(c.createdAt)}</span><span class="c-dot">·</span>${heart}${replyBtn}${vrBtn}</div>${extra}</div>${moreBtn}</div>`;
 }
 
+
+window.cEmoji=function(e){const i=document.getElementById('mainCI');if(!i)return;const s=i.selectionStart==null?i.value.length:i.selectionStart,t=i.selectionEnd==null?s:i.selectionEnd;i.value=i.value.slice(0,s)+e+i.value.slice(t);const p=s+e.length;try{i.setSelectionRange(p,p);}catch(x){}window.onCI(i);i.focus();};
+(function(){const bar=document.getElementById('postCommentBar');if(!bar)return;bar.addEventListener('focusin',()=>{if(currentUser)bar.classList.add('focused');});bar.addEventListener('focusout',e=>{if(!bar.contains(e.relatedTarget))bar.classList.remove('focused');});})();
+window.focusComposer=function(){if(!currentUser){openAuth();return;}const i=document.getElementById('mainCI');if(i)i.focus();};
+// A just-posted comment/reply: bring it into view and give it a brief highlight.
+window.cShowNew=function(id){const el=document.getElementById('ci-'+id);if(!el)return;el.classList.add('c-new');try{el.scrollIntoView({block:'center',behavior:'smooth'});}catch(e){}setTimeout(()=>el.classList.remove('c-new'),2400);};
 window.onCI=function(el){el.style.height='auto';el.style.height=el.scrollHeight+'px';const b=document.getElementById('mainCPost');if(b)b.disabled=!window.cHasText(el);};
 window.onCIFocus=function(el){if(!currentUser){el.blur();openAuth();}};
 window.cancelCI=function(){const i=document.getElementById('mainCI'),b=document.getElementById('mainCPost');if(cReplyTarget){cReplyTarget=null;syncReplyUI();}if(i){i.value='';i.dataset.auto='';i.style.height='auto';i.blur();}if(b)b.disabled=true;};
@@ -2043,7 +2099,7 @@ window.submitComment=async function(){
     const nc={id:ref.id,postId:artId,parentId:null,authorUid:currentUser.uid,authorName:an,authorPhoto:ap,authorUsername:au,text,mentions,likeCount:0,replyCount:0,createdAt:{toDate:()=>new Date()}};
     cList.push(nc);
     const le=document.getElementById('commentsList');
-    if(le){const em=le.querySelector('.comments-list-empty');if(em)le.innerHTML='';le.insertAdjacentHTML('beforeend',buildCHTML(nc,false));}
+    if(le){const em=le.querySelector('.comments-list-empty');if(em)le.innerHTML='';le.insertAdjacentHTML('beforeend',buildCHTML(nc,false));cShowNew(nc.id);}
     cancelCI();
     if(article&&article.authorUid&&article.authorUid!==currentUser.uid&&!article.isMindshift)notif.notifyComment({type:'new_comment',recipientUid:article.authorUid,articleId:artId,articleTitle:(article.text||'').slice(0,60),contentType:'post'});
     cNotifyMentions(mentions,ref.id,text,(article&&article.authorUid&&article.authorUid!==currentUser.uid&&!article.isMindshift)?[article.authorUid]:[]);
@@ -2108,7 +2164,7 @@ window.submitReply=async function(parentId){
     if(!cReplies[parentId])cReplies[parentId]=[];
     cReplies[parentId].push(nr);
     const re=document.getElementById('rep-'+parentId);
-    if(re){if(re.style.display==='none')re.style.display='block';re.insertAdjacentHTML('beforeend',buildCHTML(nr,true));}
+    if(re){if(re.style.display==='none')re.style.display='block';re.insertAdjacentHTML('beforeend',buildCHTML(nr,true));cShowNew(nr.id);}
     const pc=cList.find(c=>c.id===parentId);
     if(pc){pc.replyCount=(pc.replyCount||0)+1;updVRB(parentId,pc.replyCount);}
     cancelReply();cancelCI();
