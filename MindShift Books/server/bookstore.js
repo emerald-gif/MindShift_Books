@@ -1007,8 +1007,36 @@ ${extraHeadHtml || ''}
   </a>
   <img class="logo" src="https://mindshiftbooks.shop/MINDSHIFT.jpg" alt="">
   <div class="title">${safeTitle}</div>
-  ${bookId ? `<a class="dl" href="/download/${bookId}" download aria-label="Download this eBook" title="Download eBook"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>Download</a>` : ''}
+  ${bookId ? `<a class="dl" id="msbDl" href="https://mindshiftbooks.shop/download/${bookId}" download aria-label="Download this eBook" title="Download eBook"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg><span id="msbDlLabel">Download</span></a>` : ''}
 </div>
+${bookId ? `<script>
+(function(){
+  var a=document.getElementById('msbDl'),l=document.getElementById('msbDlLabel');
+  if(!a||!l)return;
+  function set(t){l.textContent=t;}
+  a.addEventListener('click',function(ev){
+    ev.preventDefault();
+    if(a.getAttribute('data-busy'))return;
+    a.setAttribute('data-busy','1');a.style.opacity='.7';set('Preparing…');
+    var url=window.location.origin+'/download/${bookId}';
+    var ctrl=('AbortController' in window)?new AbortController():null;
+    var t=setTimeout(function(){if(ctrl)ctrl.abort();},60000);
+    fetch(url,ctrl?{signal:ctrl.signal}:{}).then(function(r){
+      clearTimeout(t);
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      var cd=r.headers.get('Content-Disposition')||'',m=cd.match(/filename="([^"]+)"/);
+      return r.blob().then(function(b){return {b:b,n:m?m[1]:'MindShift_Books_eBook.epub'};});
+    }).then(function(x){
+      var d=document.createElement('a');d.href=URL.createObjectURL(x.b);d.download=x.n;
+      document.body.appendChild(d);d.click();
+      setTimeout(function(){URL.revokeObjectURL(d.href);d.remove();},15000);
+      set('Downloaded ✓');setTimeout(function(){set('Download');},2500);
+    }).catch(function(){
+      set('Try again');setTimeout(function(){set('Download');},3500);
+    }).then(function(){a.removeAttribute('data-busy');a.style.opacity='';});
+  });
+})();
+</script>` : ''}
 <div class="msb-reader-content">${bodyInner}</div>
 </body>
 </html>`;
@@ -1220,16 +1248,20 @@ router.get('/download/:id', async (req, res) => {
 
     try { fs.mkdirSync(GUTENBERG_DL_DIR, { recursive: true }); } catch (e) { /* already exists */ }
 
+    // The pglaf mirror is the one that reliably answers from Render (the reader
+    // already relies on it), so it goes first; gutenberg.org itself is the backup.
     const epubUrls = [
+      `https://gutenberg.pglaf.org/cache/epub/${id}/pg${id}-images-3.epub`,
+      `https://gutenberg.pglaf.org/cache/epub/${id}/pg${id}-images.epub`,
+      `https://gutenberg.pglaf.org/cache/epub/${id}/pg${id}.epub`,
+      `https://www.gutenberg.org/cache/epub/${id}/pg${id}-images-3.epub`,
       `https://www.gutenberg.org/ebooks/${id}.epub3.images`,
       `https://www.gutenberg.org/ebooks/${id}.epub.images`,
-      `https://www.gutenberg.org/cache/epub/${id}/pg${id}-images-3.epub`,
       `https://www.gutenberg.org/cache/epub/${id}/pg${id}.epub`,
-      `https://www.gutenberg.org/ebooks/${id}.epub.noimages`,
-      `https://gutenberg.pglaf.org/cache/epub/${id}/pg${id}.epub`
+      `https://www.gutenberg.org/ebooks/${id}.epub.noimages`
     ];
     for (const url of epubUrls) {
-      const buf = await fetchWithTimeout(url, 30000, true);
+      const buf = await fetchWithTimeout(url, 15000, true);
       // a real EPUB is a zip file ("PK" header)
       if (buf && buf.length > 1000 && buf[0] === 0x50 && buf[1] === 0x4b) {
         const branded = await brandEpub(buf, meta);
@@ -1240,12 +1272,12 @@ router.get('/download/:id', async (req, res) => {
 
     // No EPUB available — fall back to the plain-text edition.
     const txtUrls = [
-      `https://www.gutenberg.org/ebooks/${id}.txt.utf-8`,
+      `https://gutenberg.pglaf.org/cache/epub/${id}/pg${id}.txt`,
       `https://www.gutenberg.org/cache/epub/${id}/pg${id}.txt`,
-      `https://gutenberg.pglaf.org/cache/epub/${id}/pg${id}.txt`
+      `https://www.gutenberg.org/ebooks/${id}.txt.utf-8`
     ];
     for (const url of txtUrls) {
-      const buf = await fetchWithTimeout(url, 30000, true);
+      const buf = await fetchWithTimeout(url, 15000, true);
       if (buf && buf.length > 500) {
         const branded = brandText(buf, meta);
         fs.writeFile(txtPath, branded, (err) => { if (err) console.error('[download] cache write failed:', err.message); });
@@ -1264,12 +1296,12 @@ router.get('/download/:id', async (req, res) => {
 router.get('/read/:id', async (req, res) => {
   const id = req.params.id.replace(/[^0-9]/g, '');
   if (!id) return res.status(400).send('Invalid book id.');
-  // v7 = adds the Download button to the reader header (v6 = adds a favicon link — the reader shell had no <link rel="icon">
+  // v9 = Download button shows progress/errors via fetch. v8 = Download link made absolute (the page's <base> tag broke the relative one). v7 = adds the Download button to the reader header (v6 = adds a favicon link — the reader shell had no <link rel="icon">
   // at all, so browser tabs fell back to the default globe icon instead of
   // our logo). Bumping this suffix is how old cached pages get replaced —
   // no purge job needed, they just become orphaned and the next request
   // writes a fresh v7 file instead.
-  const cachePath = path.join(GUTENBERG_CACHE_DIR, `${id}.v7.html`);
+  const cachePath = path.join(GUTENBERG_CACHE_DIR, `${id}.v9.html`);
 
   try {
     if (fs.existsSync(cachePath)) {
