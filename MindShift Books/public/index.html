@@ -94,12 +94,74 @@ footer{padding:4px 0 calc(28px + env(safe-area-inset-bottom));text-align:center;
 .fl{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 20px;margin-bottom:12px;font-weight:600}
 .rv{opacity:0;transform:translateY(18px);transition:opacity .6s,transform .6s}.rv.in{opacity:1;transform:none}
 @media(prefers-reduced-motion:reduce){.rv{opacity:1;transform:none;transition:none}html{scroll-behavior:auto}}
+
+/* ── mobile fit ── */
+html{overflow-x:clip;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{width:100%;max-width:100%;overflow-x:clip}
+nav{width:100%}
+.hero.wrap{padding-left:20px;padding-right:20px}
+.stack{width:100%;padding:0 6px}
+.ph img{aspect-ratio:auto}
+@media(max-width:600px){
+  .wrap{padding-left:16px;padding-right:16px}
+  .hero.wrap{padding:40px 16px 8px}
+  .nav-in{height:56px;gap:10px}
+  .logo{font-size:1.1rem;gap:7px;min-width:0}.logo img{width:28px;height:28px;border-radius:8px}
+  .nr{gap:10px;flex:none}.si{font-size:.85rem}
+  .nr .btn{padding:9px 16px;font-size:.85rem}
+  h1{font-size:clamp(2rem,9.4vw,2.6rem);margin:14px auto 14px}
+  .lead{font-size:1rem;margin-bottom:22px}
+  .cap{max-width:100%;padding:5px}.cap input{padding:0 12px;font-size:16px}.cap .btn{padding:12px 18px}
+  .show{padding:26px 0 4px}
+  .stack{max-width:none;padding:0 2px}
+  .ph{border-radius:18px;padding:4px;box-shadow:0 22px 36px -22px rgba(79,70,229,.55)}
+  .ph img{border-radius:14px}
+  .ph.l,.ph.r{width:34%;margin-top:26px}
+  .ph.l{transform:rotate(-4deg)}.ph.r{transform:rotate(4deg)}
+  .ph.c{width:44%;margin:0 -4%}
+  section{padding:44px 0 4px}
+  .final{border-radius:26px;margin:40px 0 24px}
+  .fine{font-size:.78rem}
+}
+@media(max-width:360px){.nav-in .logo{font-size:1rem}.nr .btn{padding:8px 13px}}
+
+/* ── header: full brand name, never squeezed ── */
+.logo{white-space:nowrap;flex:0 1 auto;min-width:0}
+.logo span{white-space:nowrap}
+.logo img{flex:none}
+.nr{flex:none;white-space:nowrap}
+.nav-in{gap:12px}
+@media(max-width:600px){
+  .logo{font-size:1rem;gap:7px}
+  .logo img{width:26px;height:26px}
+  .nr{gap:10px}.si{font-size:.82rem}
+  .nr .btn{padding:8px 14px;font-size:.82rem}
+}
+@media(max-width:350px){.logo img{display:none}.logo{font-size:.94rem}.nr .btn{padding:8px 12px}}
+
+/* ── footer (matches bookstore) ── */
+footer.site-footer{background:#0f172a;color:#cbd5e1;text-align:left;font-size:.9rem;padding:48px 0 calc(24px + env(safe-area-inset-bottom));margin-top:40px}
+.site-footer .footer-top{display:grid;grid-template-columns:1fr;gap:32px}
+@media(min-width:800px){.site-footer .footer-top{grid-template-columns:1.4fr 1fr 1fr;gap:48px}}
+.footer-logo-row{display:flex;align-items:center;gap:10px;font-family:var(--serif);font-weight:700;font-size:1.15rem;color:#fff;margin-bottom:12px}
+.footer-logo-row img{width:32px;height:32px;border-radius:8px}
+.footer-tagline{color:#fff;font-weight:700;margin-bottom:8px}
+.footer-blurb{color:#94a3b8;max-width:360px;line-height:1.6}
+.footer-heading{color:#fff;font-weight:800;font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:14px}
+.footer-links{list-style:none;padding:0;display:grid;gap:10px}
+.footer-links a{color:#cbd5e1;font-weight:500}.footer-links a:hover{color:#fff}
+.footer-contact-link{display:inline-flex;align-items:center;gap:8px;word-break:break-word}
+.footer-social{display:flex;gap:10px}
+.social-btn{width:38px;height:38px;border-radius:50%;display:inline-grid;place-items:center;background:rgba(255,255,255,.08);color:#fff;transition:background .2s}
+.social-btn:hover{background:var(--ind)}
+.footer-bottom{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px 20px;margin-top:36px;padding-top:20px;border-top:1px solid rgba(255,255,255,.12);color:#94a3b8;font-size:.82rem}
+.footer-secure{display:inline-flex;align-items:center;gap:6px}
 </style>
 </head>
 <body>
 
 <nav><div class="wrap nav-in">
-  <a href="/" class="logo"><img src="/MINDSHIFT.jpg" alt="MindShift Books logo">MindShift</a>
+  <a href="/" class="logo"><img src="/MINDSHIFT.jpg" alt="MindShift Books logo"><span>MindShift Books</span></a>
   <div class="nl"><a href="/home">Articles</a><a href="/books">Bookstore</a><a href="/free-ebooks">Free eBooks</a><a href="/affiliate">Earn</a></div>
   <div class="nr"><a href="/login" class="si">Sign in</a><a href="/signup" class="btn k">Start free</a></div>
 </div></nav>
@@ -178,10 +240,62 @@ footer{padding:4px 0 calc(28px + env(safe-area-inset-bottom));text-align:center;
   </div>
 </div>
 
-<footer><div class="wrap">
-  <div class="fl"><a href="/home">Articles</a><a href="/books">Bookstore</a><a href="/free-ebooks">Free eBooks</a><a href="/affiliate">Affiliate</a><a href="/whats-new">What's new</a><a href="/support">Support</a><a href="/legal">Legal</a></div>
-  © MindShift Books
-</div></footer>
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-top">
+      <div class="footer-col footer-brand">
+        <div class="footer-logo-row">
+          <img src="/MINDSHIFT.jpg" alt="MindShift Books logo">
+          <span>MindShift Books</span>
+        </div>
+        <p class="footer-tagline">Shift your thinking, change your life.</p>
+        <p class="footer-blurb">Articles, free eBooks and curated books on psychology, money and personal growth, plus a community where you can publish and earn.</p>
+      </div>
+
+      <div class="footer-col">
+        <div class="footer-heading">Quick Links</div>
+        <ul class="footer-links">
+          <li><a href="/home">Articles</a></li>
+          <li><a href="/books">Bookstore</a></li>
+          <li><a href="/free-ebooks">Free eBooks</a></li>
+          <li><a href="/affiliate">Become an Affiliate</a></li>
+          <li><a href="/whats-new">What&rsquo;s new</a></li>
+          <li><a href="/support">Support</a></li>
+          <li><a href="/legal">Terms &amp; Privacy</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <div class="footer-heading">Get In Touch</div>
+        <ul class="footer-links">
+          <li>
+            <a href="mailto:contact@mindshiftbooks.shop" class="footer-contact-link">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+              contact@mindshiftbooks.shop
+            </a>
+          </li>
+        </ul>
+        <div class="footer-heading" style="margin-top:18px;">Follow Us</div>
+        <div class="footer-social">
+          <a href="https://www.youtube.com/@MindShift_Books" target="_blank" rel="noopener" class="social-btn" aria-label="MindShift Books on YouTube">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M23.498 6.186a2.994 2.994 0 0 0-2.112-2.112C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.386.529A2.994 2.994 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a2.994 2.994 0 0 0 2.112 2.112c1.881.529 9.386.529 9.386.529s7.505 0 9.386-.529a2.994 2.994 0 0 0 2.112-2.112C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"></path></svg>
+          </a>
+          <a href="https://x.com/Mindshift_books" target="_blank" rel="noopener" class="social-btn" aria-label="MindShift Books on X">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z"></path></svg>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <div>&copy; 2026 MindShift Books. All rights reserved.</div>
+      <div class="footer-secure">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+        Secure checkout powered by Paystack
+      </div>
+    </div>
+  </div>
+</footer>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
