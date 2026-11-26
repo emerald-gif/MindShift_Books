@@ -4278,6 +4278,56 @@ app.post('/api/verify', payLimiter, async (req, res) => {
 });
 
 
+// ---------- Purchase receipt ("Thank you for your purchase") ----------
+// /receipt?ref=<payment reference> shows the order after checkout. The reference is
+// the only key, so the buyer's email is masked unless the viewer is signed in as the buyer.
+app.get('/receipt', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'receipt.html'));
+});
+
+app.get('/api/receipt/:reference', payLimiter, async (req, res) => {
+  try {
+    const reference = String(req.params.reference || '');
+    if (!/^[a-zA-Z0-9_\-]{6,100}$/.test(reference)) return res.status(400).json({ error: 'Invalid reference' });
+    if (!db) return res.status(503).json({ error: 'Receipts are unavailable right now' });
+
+    const snap = await db.collection('my_order').where('reference', '==', reference).limit(1).get();
+    if (snap.empty) return res.status(404).json({ error: 'Receipt not found' });
+    const o = snap.docs[0].data();
+
+    // Full email only for the buyer themselves (matching account); everyone else sees it masked.
+    let isBuyer = false;
+    const authHeader = String(req.headers.authorization || '');
+    if (authHeader.startsWith('Bearer ')) {
+      try {
+        const dec = await admin.auth().verifyIdToken(authHeader.slice(7));
+        const viewerEmail = String(dec.email || '').trim().toLowerCase();
+        isBuyer = (o.uid && o.uid === dec.uid) || (viewerEmail && viewerEmail === String(o.email || '').toLowerCase());
+      } catch (e) { /* treat as not the buyer */ }
+    }
+    const email = String(o.email || '');
+    const [local, domain] = email.split('@');
+    const masked = domain ? `${local.slice(0, 2)}${'•'.repeat(Math.max(2, Math.min(6, local.length - 2)))}@${domain}` : '';
+
+    let paidAt = null;
+    try { paidAt = o.paidAt && o.paidAt.toDate ? o.paidAt.toDate().toISOString() : (o.paidAt ? new Date(o.paidAt).toISOString() : null); } catch (e) { paidAt = null; }
+
+    return res.json({
+      reference: o.reference,
+      buyerName: o.buyerName || null,
+      email: isBuyer ? email : masked,
+      emailMasked: !isBuyer,
+      paidAt,
+      ngnAmount: Number(o.ngn_amount) || 0,
+      voucherAmount: o.voucherApplied ? (Number(o.voucherAmount) || 0) : 0,
+      items: (o.items || []).map(it => ({ productId: it.productId, title: it.title, coverUrl: it.coverUrl || null, downloadUrl: it.pdfUrl || null }))
+    });
+  } catch (err) {
+    console.error('/api/receipt error', err);
+    return res.status(500).json({ error: 'Could not load this receipt' });
+  }
+});
+
 app.get('/challenge', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'challenge.html'));
 });
