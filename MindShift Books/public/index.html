@@ -89,6 +89,33 @@ h1 em{font-style:italic;background:linear-gradient(transparent 62%,var(--hl) 62%
 .lbtns{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin:22px auto 0}
 @media(max-width:600px){.lc{border-radius:26px;padding:18px 18px}.lc .lb{padding:14px 18px 20px}.lc h4{font-size:1.3rem}}
 @media(prefers-reduced-motion:reduce){.lc{animation:none}}
+/* live feed inside the Feed tab */
+#live .lc{--lcbg:var(--card);background:var(--card);box-shadow:0 8px 18px -12px rgba(0,0,0,.3);border-radius:22px;padding:16px 18px}
+#live .lc.la{padding:0}#live .lc .lb{padding:14px 18px 18px}
+#live .lc h4{font-size:1.25rem}
+.lvvis{display:block!important;padding:16px;align-items:stretch}
+.feedpane{align-items:start!important}
+@media(min-width:820px){.feedpane>div:first-child{position:sticky;top:92px}}
+.lvvis #live{width:100%}
+.lvvis .lpills{max-width:none;margin:0 0 14px}
+.lvvis .lfeed{max-width:none;gap:12px}
+.lvvis .lbtns{margin:16px 0 2px}
+#live[hidden],#lvStatic[hidden]{display:none!important}
+.live{display:flex;align-items:center;gap:7px;font-size:.72rem;font-weight:700;color:var(--sub);letter-spacing:.02em;margin:0 2px 10px}
+.live i{width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 0 rgba(34,197,94,.5);animation:lvp 1.8s infinite}
+@keyframes lvp{70%{box-shadow:0 0 0 7px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
+@media(prefers-reduced-motion:reduce){.live i{animation:none}}
+.sk{display:grid;gap:12px;min-height:110px;animation:none}
+.sk i{display:block;height:12px;border-radius:8px;background:linear-gradient(90deg,var(--line),var(--soft),var(--line));background-size:200% 100%;animation:skm 1.4s linear infinite}
+.sk i:first-child{width:42%;height:34px;border-radius:17px}.sk i:last-child{width:72%}
+@keyframes skm{to{background-position:-200% 0}}
+.lvvis[hidden]{display:none!important}
+.pane.solo{grid-template-columns:1fr!important}
+@media(prefers-reduced-motion:reduce){.sk i{animation:none}}
+/* live free eBooks */
+#freeRows{transition:opacity .35s ease}#freeRows.out{opacity:0}
+.list .li{cursor:pointer}
+@media(prefers-reduced-motion:reduce){#freeRows{transition:none}}
 /* proof strip */
 .show{padding:34px 0 8px;text-align:center}
 .show .eyebrow{display:block;margin-bottom:22px}
@@ -294,11 +321,12 @@ footer.site-footer{background:#0f172a;color:#cbd5e1;text-align:left;font-size:.9
     <p>Timeless classics and growth reads you can read online, download to keep and save to your wishlist. Pick one and begin.</p>
     <a href="/free-ebooks" class="btn k">Browse free eBooks →</a>
   </div>
-  <div class="list rv">
+  <div class="list rv"><div id="freeRows">
     <div class="li" data-t="As a Man Thinketh"><b>1</b><img class="cv" src="https://www.gutenberg.org/cache/epub/4507/pg4507.cover.medium.jpg" alt="As a Man Thinketh" loading="lazy" referrerpolicy="no-referrer"><div><h4>As a Man Thinketh</h4><small>James Allen</small><div class="tg"><em>FREE</em><i>Mindset</i></div></div><i class="ic ic-heart"></i></div>
     <div class="li" data-t="The Science of Getting Rich"><b>2</b><span class="cv cf">The Science of Getting Rich</span><div><h4>The Science of Getting Rich</h4><small>Wallace D. Wattles</small><div class="tg"><em>FREE</em><i>Money</i></div></div><i class="ic ic-heart"></i></div>
     <div class="li" data-t="Acres of Diamonds"><b>3</b><span class="cv cf">Acres of Diamonds</span><div><h4>Acres of Diamonds</h4><small>Russell H. Conwell</small><div class="tg"><em>FREE</em><i>Money</i></div></div><i class="ic ic-heart"></i></div>
     <div class="li" data-t="The Story of My Life"><b>4</b><span class="cv cf">The Story of My Life</span><div><h4>The Story of My Life</h4><small>Helen Keller</small><div class="tg"><em>FREE</em><i>Biography</i></div></div><i class="ic ic-heart"></i></div>
+  </div>
   </div>
 </div></section>
 
@@ -333,11 +361,15 @@ footer.site-footer{background:#0f172a;color:#cbd5e1;text-align:left;font-size:.9
     <button class="tab" role="tab" aria-selected="false" data-t="4">Earn</button>
   </div>
 
-  <div class="pane on"><div><h3>A feed of ideas worth your time</h3><p>Follow writers and read articles on mindset, money, productivity, relationships, wellness and career. Share your own posts, run polls and react in one tap.</p><ul class="ck"><li>For You, Following and Explore tabs</li><li>Publish posts, articles and polls</li><li>Search finds writers, posts and books</li></ul><a href="/signup" class="btn pr">Join the community</a></div>
-    <div class="vis"><div class="mock">
-      <div class="card"><div class="ph-r"><i class="av" style="background:linear-gradient(135deg,#4f46e5,#06b6d4)"></i><b>Olamide Adeboye</b><small>1d ago</small></div><p>Your mind has too many tabs open. Close one. Finish one. Then move to the next.</p><div class="acts"><span><i class="ic ic-heart"></i>4</span><span><i class="ic ic-chat"></i>1</span><span><i class="ic ic-repost"></i></span><span><i class="ic ic-share"></i></span></div></div>
-      <div class="card"><b>What should we read next?</b><div class="opt"><i style="width:62%"></i><span>Atomic Habits</span><em>62%</em></div><div class="opt"><i style="width:38%"></i><span>Deep Work</span><em>38%</em></div></div>
-    </div></div></div>
+  <div class="pane on feedpane"><div><h3>A feed of ideas worth your time</h3><p>Follow writers and read articles on mindset, money, productivity, relationships, wellness and career. Share your own posts, run polls and react in one tap.</p><ul class="ck"><li>For You, Following and Explore tabs</li><li>Publish posts, articles and polls</li><li>Search finds writers, posts and books</li></ul><a href="/signup" class="btn pr">Join the community</a></div>
+    <div class="vis lvvis" id="lvVis"><div class="lfeed" id="lvStatic" aria-hidden="true"><div class="lc sk"><i></i><i></i><i></i></div><div class="lc sk"><i></i><i></i><i></i></div></div>
+    <div id="live" hidden>
+      <div class="live"><i></i>Live from the community</div>
+      <div class="lpills" id="livePills" role="group" aria-label="Filter the feed"></div>
+      <div class="lfeed" id="liveFeed"></div>
+      <div class="lbtns"><button type="button" class="btn o" id="liveMore" hidden>Show more</button></div>
+    </div>
+    </div></div>
 
   <div class="pane"><div><h3>Videos, reel-style</h3><p>Tap any video and it opens full screen. Keep swiping up and the next one plays. Open the comments and the video shrinks to the top so you never lose your place.</p><ul class="ck"><li>Swipe up for the next video</li><li>Like, comment and reply</li><li>Photos open full screen too</li></ul><a href="/signup" class="btn pr">Start watching</a></div>
     <div class="vis"><div class="reel"><span class="rl"><b><i class="ic ic-heart"></i></b>2.4K<b><i class="ic ic-chat"></i></b>86<b><i class="ic ic-share"></i></b></span><span class="rc">Creator name<br><small>Swipe up for the next video ↑</small></span></div></div></div>
@@ -362,14 +394,6 @@ footer.site-footer{background:#0f172a;color:#cbd5e1;text-align:left;font-size:.9
       <div class="card dash"><small>Available balance (sample)</small><b class="big2">15%</b><div class="kv"><span>Total earned</span><span>Paid out</span></div><div class="bar"><i></i></div></div>
       <div class="card"><b>Complete these steps to get ₦2,000 free + a badge</b><div class="bar"><i style="width:60%"></i></div></div>
     </div></div></div>
-</div></section>
-
-<div id="liveSentinel"></div>
-<section id="live" hidden><div class="wrap">
-  <div class="sh rv"><h2>Fresh from the community</h2><p>Real posts and articles from MindShift writers, live right now.</p></div>
-  <div class="lpills" id="livePills" role="group" aria-label="Filter the feed"></div>
-  <div class="lfeed" id="liveFeed"></div>
-  <div class="lbtns"><button type="button" class="btn o" id="liveMore" hidden>Show more</button><a href="/signup" class="btn pr">Join free to see more</a></div>
 </div></section>
 
 <section><div class="wrap">
@@ -486,34 +510,54 @@ footer.site-footer{background:#0f172a;color:#cbd5e1;text-align:left;font-size:.9
 })();
 </script>
 <script>
+/* Free eBooks: live from the platform (same endpoint the app home uses), rotating 4 at a time.
+   If the platform can't be reached the 4 sample rows stay, with covers from Gutendex. */
 (function(){
-  var rows=document.querySelectorAll('.list .li');
+  var rowsEl=document.getElementById('freeRows'); if(!rowsEl) return;
+  var list=rowsEl.parentNode, PER=4, ROTATE=7000, started=false;
+  function el(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
+  function https(u){return typeof u==='string'&&/^https:\/\//.test(u)}
   function norm(x){return (x||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}
-  function setCover(li,url){
-    var cv=li.querySelector('.cv'),img=new Image();
-    img.referrerPolicy='no-referrer';
-    img.onload=function(){
-      if(cv.tagName==='IMG'){cv.src=url;return}
-      img.className='cv';img.alt=li.getAttribute('data-t');cv.replaceWith(img);
-    };
-    img.src=url;
-  }
-  function fallback(img){
-    var li=img.closest('.li'),sp=document.createElement('span');
-    sp.className='cv cf';sp.textContent=li.getAttribute('data-t');img.replaceWith(sp);
-  }
-  document.querySelectorAll('.list img.cv').forEach(function(im){im.addEventListener('error',function(){fallback(im)})});
-  rows.forEach(function(li){
-    if(li.querySelector('img.cv'))return;
-    var t=li.getAttribute('data-t');
-    fetch('https://gutendex.com/books?languages=en&search='+encodeURIComponent(t))
-      .then(function(r){return r.json()})
+  function cover(b){
+    if(https(b.cover)){var im=el('img','cv');im.alt=b.title;im.loading='lazy';im.referrerPolicy='no-referrer';im.src=b.cover;
+      im.onerror=function(){im.replaceWith(el('span','cv cf',b.title))};return im}
+    return el('span','cv cf',b.title)}
+  function row(b,n){
+    var li=el('div','li');li.appendChild(el('b',null,String(n)));li.appendChild(cover(b));
+    var d=el('div');d.appendChild(el('h4',null,b.title));d.appendChild(el('small',null,b.author||''));
+    var tg=el('div','tg');tg.appendChild(el('em',null,'FREE'));if(b.tag)tg.appendChild(el('i',null,b.tag));d.appendChild(tg);
+    li.appendChild(d);li.appendChild(el('i','ic ic-heart'));
+    li.onclick=function(){location.href='/free-ebooks'};return li}
+  function show(page){rowsEl.replaceChildren();page.forEach(function(b,i){rowsEl.appendChild(row(b,i+1))})}
+  function fetchJson(url,ms){
+    var ctl=window.AbortController?new AbortController():null,t=setTimeout(function(){ctl&&ctl.abort()},ms);
+    return fetch(url,ctl?{signal:ctl.signal}:{}).then(function(r){clearTimeout(t);if(!r.ok)throw 0;return r.json()})}
+  function rotate(pages){
+    var i=0;
+    setInterval(function(){
+      if(document.hidden||!list.offsetParent)return;
+      if(window.matchMedia('(prefers-reduced-motion:reduce)').matches){i=(i+1)%pages.length;show(pages[i]);return}
+      rowsEl.classList.add('out');
+      setTimeout(function(){i=(i+1)%pages.length;show(pages[i]);rowsEl.classList.remove('out')},350)
+    },ROTATE)}
+  function staticCovers(){
+    rowsEl.querySelectorAll('.li').forEach(function(li){
+      var cv=li.querySelector('.cv'),t=li.getAttribute('data-t');
+      if(cv&&cv.tagName==='IMG'){cv.addEventListener('error',function(){cv.replaceWith(el('span','cv cf',t))});return}
+      fetch('https://gutendex.com/books?languages=en&search='+encodeURIComponent(t)).then(function(r){return r.json()}).then(function(d){
+        var hit=(d.results||[]).filter(function(b){return norm(b.title).indexOf(norm(t))===0})[0],u=hit&&hit.formats&&hit.formats['image/jpeg'];
+        if(!u)return;var im=new Image();im.referrerPolicy='no-referrer';im.onload=function(){im.className='cv';im.alt=t;cv.replaceWith(im)};im.src=u}).catch(function(){})})}
+  function load(){
+    if(started)return;started=true;
+    var start=(Math.floor(Date.now()/3600000)%11)*20;
+    fetchJson('/api/free-ebooks?category=all&startIndex='+start,1500).catch(function(){return fetchJson('/api/free-ebooks?category=all&startIndex=0',5000)})
       .then(function(d){
-        var hit=(d.results||[]).filter(function(b){return norm(b.title).indexOf(norm(t))===0})[0];
-        var u=hit&&hit.formats&&hit.formats['image/jpeg'];
-        if(u)setCover(li,u);
-      }).catch(function(){});
-  });
+        var seen={},items=(d.items||[]).filter(function(b){if(!b||!b.title||seen[b.id||b.title])return false;seen[b.id||b.title]=1;return true}).slice(0,16);
+        var pages=[];for(var i=0;i+PER<=items.length;i+=PER)pages.push(items.slice(i,i+PER));
+        if(!pages.length)throw 0;
+        show(pages[0]);if(pages.length>1)rotate(pages)})
+      .catch(staticCovers)}
+  if('IntersectionObserver' in window){var io=new IntersectionObserver(function(en){if(en[0].isIntersecting){io.disconnect();load()}},{rootMargin:'300px'});io.observe(list)}else load();
 })();
 </script>
 <script>
@@ -523,7 +567,7 @@ footer.site-footer{background:#0f172a;color:#cbd5e1;text-align:left;font-size:.9
   var sec=document.getElementById('live'); if(!sec) return;
   var KEY='AIzaSyDTn70s1_uIiSOR6lPLY_nKh8Ff1FViFCs',ROOT='https://firestore.googleapis.com/v1/projects/mindshiftbooks-c4451/databases/default/documents';
   var feed=document.getElementById('liveFeed'),pills=document.getElementById('livePills'),more=document.getElementById('liveMore');
-  var CACHE='msb_live_feed_v2',STEP=6,posts=[],arts=[],filter='all',shown=0,list=[],counts={lk:{},rp:{}};
+  var CACHE='msb_live_feed_v2',STEP=4,posts=[],arts=[],filter='all',shown=0,list=[],counts={lk:{},rp:{}};
   function dv(v){if(!v)return null;
     if('stringValue' in v)return v.stringValue;if('integerValue' in v)return Number(v.integerValue);
     if('doubleValue' in v)return v.doubleValue;if('booleanValue' in v)return v.booleanValue;
@@ -586,18 +630,19 @@ footer.site-footer{background:#0f172a;color:#cbd5e1;text-align:left;font-size:.9
     pills.replaceChildren();
     defs.forEach(function(d){var b=el('button','lpill'+(d[0]===filter?' on':''),d[1]);b.type='button';b.setAttribute('aria-pressed',d[0]===filter);
       b.onclick=function(){filter=d[0];pills.querySelectorAll('.lpill').forEach(function(x){var on=x===b;x.classList.toggle('on',on);x.setAttribute('aria-pressed',on)});render(true)};pills.appendChild(b)})}
+  function fail(){var v=document.getElementById('lvVis');if(!v)return;v.hidden=true;var pn=v.closest('.pane');if(pn)pn.classList.add('solo')}
   function start(p,a){
     posts=shuffle(uniq(p.filter(function(x){var t=(x.text||'').trim();return !x.videoUrl&&((t.length>=12&&t.length<=1500&&!/^https?:\/\/\S+$/.test(t))||(Array.isArray(x.images)&&https(x.images[0])&&t.length>=3))})));
     arts=shuffle(uniq(a.filter(function(x){return x.title&&(https(x.cover)||x.brief)})));
-    if(posts.length+arts.length<3)return;
-    sec.hidden=false;pillsUI();render(true)}
+    if(posts.length+arts.length<3){fail();return}
+    var st=document.getElementById('lvStatic');if(st)st.hidden=true;sec.hidden=false;pillsUI();render(true)}
   more.onclick=function(){render(false)};
   function load(){
     try{var c=JSON.parse(sessionStorage.getItem(CACHE)||'null');if(c&&Date.now()-c.t<600000){start(c.p,c.a);return}}catch(e){}
     Promise.all([run('posts',30).catch(function(){return[]}),run('articles',20).catch(function(){return[]})]).then(function(r){
       try{sessionStorage.setItem(CACHE,JSON.stringify({t:Date.now(),p:r[0],a:r[1]}))}catch(e){}
       start(r[0],r[1])})}
-  var sn=document.getElementById('liveSentinel');
+  var sn=document.getElementById('lvVis');
   if('IntersectionObserver' in window&&sn){var io=new IntersectionObserver(function(en){if(en[0].isIntersecting){io.disconnect();load()}},{rootMargin:'500px'});io.observe(sn)}else load();
 })();
 </script>
