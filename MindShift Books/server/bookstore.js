@@ -1233,64 +1233,101 @@ function sendDownload(res, filePathOrBuf, name, type) {
   return fs.createReadStream(filePathOrBuf).pipe(res);
 }
 
+// Resolves with the first response that passes isValid; null if none do.
+// Every URL is tried AT THE SAME TIME — a dead or slow source no longer holds
+// up the working one (before, they were tried one after another).
+function firstValid(urls, timeoutMs, isValid) {
+  return new Promise((resolve) => {
+    let pending = urls.length, done = false;
+    urls.forEach((url) => {
+      fetchWithTimeout(url, timeoutMs, true).then((buf) => {
+        if (!done && buf && isValid(buf)) { done = true; resolve(buf); }
+      }).catch(() => {}).then(() => { if (--pending === 0 && !done) resolve(null); });
+    });
+  });
+}
+const isEpubBuf = (b) => b.length > 1000 && b[0] === 0x50 && b[1] === 0x4b; // zip header "PK"
+
+// Gets one book's branded download ready — from disk if it's already there,
+// otherwise fetched, branded and saved. Concurrent requests for the same book
+// (a visitor tapping twice, or the background warm-up) share one job.
+const dlInflight = new Map();
+async function getBookFile(id) {
+  const known = freeCatalog.find(b => b.id === Number(id));
+  const meta = { title: (known && known.title) || `Book #${id}`, author: known && known.author };
+  const epubPath = path.join(GUTENBERG_DL_DIR, `${id}.msb.epub`); // .msb = branded copy
+  const txtPath = path.join(GUTENBERG_DL_DIR, `${id}.msb.txt`);
+  const epubName = downloadFileName(known && known.title, id, 'epub');
+  const txtName = downloadFileName(known && known.title, id, 'txt');
+
+  if (fs.existsSync(epubPath)) return { cached: true, data: epubPath, name: epubName, type: 'application/epub+zip' };
+  if (fs.existsSync(txtPath)) return { cached: true, data: txtPath, name: txtName, type: 'text/plain; charset=utf-8' };
+  if (dlInflight.has(id)) return dlInflight.get(id);
+
+  const job = (async () => {
+    try { fs.mkdirSync(GUTENBERG_DL_DIR, { recursive: true }); } catch (e) { /* already exists */ }
+    const mirror = `https://gutenberg.pglaf.org/cache/epub/${id}/pg${id}`;
+    const main = `https://www.gutenberg.org/cache/epub/${id}/pg${id}`;
+
+    // 1) Full EPUB (with cover/images) — every source raced together.
+    let buf = await firstValid([
+      `${mirror}-images-3.epub`, `${mirror}-images.epub`,
+      `${main}-images-3.epub`, `https://www.gutenberg.org/ebooks/${id}.epub3.images`
+    ], 20000, isEpubBuf);
+    // 2) Lighter EPUB without images.
+    if (!buf) buf = await firstValid([`${mirror}.epub`, `${main}.epub`, `https://www.gutenberg.org/ebooks/${id}.epub.noimages`], 15000, isEpubBuf);
+    if (buf) {
+      const branded = await brandEpub(buf, meta);
+      await fs.promises.writeFile(epubPath, branded).catch((err) => console.error('[download] cache write failed:', err.message));
+      return { cached: false, data: branded, name: epubName, type: 'application/epub+zip' };
+    }
+
+    // 3) No EPUB anywhere — plain-text edition.
+    const txt = await firstValid([`${mirror}.txt`, `${main}.txt`, `https://www.gutenberg.org/ebooks/${id}.txt.utf-8`], 15000, (b) => b.length > 500);
+    if (txt) {
+      const branded = brandText(txt, meta);
+      await fs.promises.writeFile(txtPath, branded).catch((err) => console.error('[download] cache write failed:', err.message));
+      return { cached: false, data: branded, name: txtName, type: 'text/plain; charset=utf-8' };
+    }
+    return null;
+  })().finally(() => dlInflight.delete(id));
+  dlInflight.set(id, job);
+  return job;
+}
+
+// HEAD (sent quietly when a book's drawer opens) prepares the file on the
+// server without sending any of it — Express runs this same handler for HEAD
+// and drops the body — so by the time the visitor taps Download it's ready.
 router.get('/download/:id', async (req, res) => {
   const id = req.params.id.replace(/[^0-9]/g, '');
   if (!id) return res.status(400).send('Invalid book id.');
-  const known = freeCatalog.find(b => b.id === Number(id));
-  const epubPath = path.join(GUTENBERG_DL_DIR, `${id}.msb.epub`); // .msb = branded copy
-  const txtPath = path.join(GUTENBERG_DL_DIR, `${id}.msb.txt`);
-  const meta = { title: (known && known.title) || `Book #${id}`, author: known && known.author };
   const fail = () => res.status(502).send(`<!DOCTYPE html><meta name="viewport" content="width=device-width,initial-scale=1"><body style="font-family:system-ui;padding:32px;text-align:center"><h3>Couldn\u2019t download this book right now</h3><p>Please try again in a moment.</p><p><a href="/free-ebooks">\u2190 Back to Free eBooks</a></p></body>`);
-
   try {
-    if (fs.existsSync(epubPath)) return sendDownload(res, epubPath, downloadFileName(known && known.title, id, 'epub'), 'application/epub+zip');
-    if (fs.existsSync(txtPath)) return sendDownload(res, txtPath, downloadFileName(known && known.title, id, 'txt'), 'text/plain; charset=utf-8');
-
-    try { fs.mkdirSync(GUTENBERG_DL_DIR, { recursive: true }); } catch (e) { /* already exists */ }
-
-    // The pglaf mirror is the one that reliably answers from Render (the reader
-    // already relies on it), so it goes first; gutenberg.org itself is the backup.
-    const epubUrls = [
-      `https://gutenberg.pglaf.org/cache/epub/${id}/pg${id}-images-3.epub`,
-      `https://gutenberg.pglaf.org/cache/epub/${id}/pg${id}-images.epub`,
-      `https://gutenberg.pglaf.org/cache/epub/${id}/pg${id}.epub`,
-      `https://www.gutenberg.org/cache/epub/${id}/pg${id}-images-3.epub`,
-      `https://www.gutenberg.org/ebooks/${id}.epub3.images`,
-      `https://www.gutenberg.org/ebooks/${id}.epub.images`,
-      `https://www.gutenberg.org/cache/epub/${id}/pg${id}.epub`,
-      `https://www.gutenberg.org/ebooks/${id}.epub.noimages`
-    ];
-    for (const url of epubUrls) {
-      const buf = await fetchWithTimeout(url, 15000, true);
-      // a real EPUB is a zip file ("PK" header)
-      if (buf && buf.length > 1000 && buf[0] === 0x50 && buf[1] === 0x4b) {
-        const branded = await brandEpub(buf, meta);
-        fs.writeFile(epubPath, branded, (err) => { if (err) console.error('[download] cache write failed:', err.message); });
-        return sendDownload(res, branded, downloadFileName(known && known.title, id, 'epub'), 'application/epub+zip');
-      }
-    }
-
-    // No EPUB available — fall back to the plain-text edition.
-    const txtUrls = [
-      `https://gutenberg.pglaf.org/cache/epub/${id}/pg${id}.txt`,
-      `https://www.gutenberg.org/cache/epub/${id}/pg${id}.txt`,
-      `https://www.gutenberg.org/ebooks/${id}.txt.utf-8`
-    ];
-    for (const url of txtUrls) {
-      const buf = await fetchWithTimeout(url, 15000, true);
-      if (buf && buf.length > 500) {
-        const branded = brandText(buf, meta);
-        fs.writeFile(txtPath, branded, (err) => { if (err) console.error('[download] cache write failed:', err.message); });
-        return sendDownload(res, branded, downloadFileName(known && known.title, id, 'txt'), 'text/plain; charset=utf-8');
-      }
-    }
-    console.error(`[download] could not fetch book ${id} from Gutenberg`);
-    return fail();
+    const r = await getBookFile(id);
+    if (!r) { console.error(`[download] could not fetch book ${id} from Gutenberg`); return fail(); }
+    return sendDownload(res, r.data, r.name, r.type);
   } catch (e) {
     console.error('[download] failed for book', id, e && e.message ? e.message : e);
     return fail();
   }
 });
+
+// Background warm-up: a minute after boot, quietly prepare every catalog book
+// (most popular first, one every couple of seconds) so downloads are instant
+// from the first tap. Render's disk can reset on redeploy, so this re-runs on
+// each boot; books already on disk are skipped immediately.
+async function warmupDownloads() {
+  await new Promise(r => setTimeout(r, 60 * 1000));
+  const ids = freeCatalog.slice().sort((a, b) => (b.downloads || 0) - (a.downloads || 0)).map(b => b.id);
+  let prepared = 0;
+  for (const id of ids) {
+    try {
+      const r = await getBookFile(String(id));
+      if (r && !r.cached) { prepared++; await new Promise(res => setTimeout(res, 2000)); }
+    } catch (e) { /* keep going */ }
+  }
+  console.log(`[download] warm-up done: ${prepared} new book(s) prepared, ${ids.length} in catalog`);
+}
 
 
 router.get('/read/:id', async (req, res) => {
@@ -1461,6 +1498,7 @@ module.exports = router;
 module.exports.PRODUCTS = PRODUCTS;
 module.exports.mintDownloadToken = mintDownloadToken;
 module.exports.validateDownloadToken = validateDownloadToken;
+module.exports.warmupDownloads = warmupDownloads;
 
 // Kept so server.js's existing call still works. Nothing to warm any more —
 // the catalog is loaded from disk at boot and served from memory.
