@@ -3719,7 +3719,9 @@ app.post('/api/wishlist/toggle', requireUser, async (req, res) => {
     if (!db) return res.status(500).json({ error: 'Database unavailable' });
     const productId = req.body && req.body.productId;
     if (!productId || typeof productId !== 'string') return res.status(400).json({ error: 'productId required' });
-    if (!PRODUCTS[productId]) return res.status(404).json({ error: 'Unknown product' });
+    // Store books are keyed by product id; free eBooks are saved as "fe:<Gutenberg id>".
+    const isFreeEbook = /^fe:\d{1,8}$/.test(productId);
+    if (!isFreeEbook && !PRODUCTS[productId]) return res.status(404).json({ error: 'Unknown product' });
 
     const userRef = db.collection('users').doc(req.uid);
     const snap = await userRef.get();
@@ -6429,6 +6431,13 @@ const ANNOUNCEMENTS = [
     id: 'update-2026-11-19',
     title: 'Fresh updates on MindShift Books ✨',
     message: 'Meet Student Resources, a new space for learners with study guides, books, tips and tools. Plus cleaner People to follow cards in your feed.',
+    ctaLabel: 'See what\'s new',
+    ctaUrl: '/whats-new'
+  },
+  {
+    id: 'update-2026-11-26',
+    title: 'Fresh updates on MindShift Books ✨',
+    message: 'Download free eBooks and save them to your wishlist, with more books in a new Top Free list. You can also comment on videos without leaving them, and enjoy a clearer affiliate dashboard.',
     ctaLabel: 'See what\'s new',
     ctaUrl: '/whats-new'
   }
