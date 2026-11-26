@@ -437,6 +437,20 @@ function updateSwiperArrows(track) {
   });
 })();
 
+// Keeps the free-eBook wishlist hearts (saved as "fe:<id>") in step with the
+// account's wishlist — runs after render and whenever the wishlist changes.
+function syncFeHearts() {
+  document.querySelectorAll('.fe-top-heart').forEach(btn => {
+    const on = isInWishlist(btn.getAttribute('data-product-id'));
+    btn.classList.toggle('active', on);
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    btn.setAttribute('aria-label', on ? 'Remove from wishlist' : 'Add to wishlist');
+  });
+}
+window.syncFeHearts = syncFeHearts;
+window.addEventListener('msb-wishlist-changed', syncFeHearts);
+document.addEventListener('DOMContentLoaded', syncFeHearts);
+
 // ── "Free eBooks" swiper on the homepage — pulls the current top/trending
 // titles (Gutendex's default ordering is by download_count, so "all,
 // startIndex 0" already surfaces the most-read public-domain books first).
@@ -455,7 +469,8 @@ function topFreeHtml(items) {
         '<span class="fe-top-rank">' + (i + k + 1) + '</span>' +
         '<div class="fe-top-info"><div class="fe-top-title">' + escapeHtml(b.title) + '</div>' +
         '<div class="fe-top-author">' + escapeHtml(b.author || '') + '</div>' +
-        '<div class="fe-top-meta"><span class="fe-top-free">FREE</span>' + (b.tag ? '<span class="fe-top-tag">' + escapeHtml(b.tag) + '</span>' : '') + '</div></div></div>';
+        '<div class="fe-top-meta"><span class="fe-top-free">FREE</span>' + (b.tag ? '<span class="fe-top-tag">' + escapeHtml(b.tag) + '</span>' : '') + '</div></div>' +
+        '<button type="button" class="fe-top-heart" data-action="toggle-wishlist" data-product-id="fe:' + escapeHtml(b.id) + '" aria-pressed="false" aria-label="Add to wishlist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg></button></div>';
     });
     cols += '<div class="fe-top-col">' + rows + '</div>';
   }
@@ -503,6 +518,7 @@ async function loadFreeEbooksSwiper() {
       return;
     }
     track.innerHTML = topFreeHtml(items);
+    syncFeHearts();
     if (typeof updateSwiperArrows === 'function') updateSwiperArrows(track);
   } catch (e) {
     console.error('Failed to load free eBooks swiper', e);
@@ -622,6 +638,7 @@ document.addEventListener('DOMContentLoaded', loadFreeEbooksSwiper);
   }
 
   document.addEventListener('click', (ev) => {
+    if (ev.target.closest('[data-action="toggle-wishlist"]')) return; // heart tap, not a row tap
     const btn = ev.target.closest('[data-fe-detail]');
     if (btn) { openDetail(btn.getAttribute('data-fe-detail'), btn.getAttribute('data-fe-title')); return; }
     if (ev.target.closest('#feModalClose')) { closeDetail(); return; }

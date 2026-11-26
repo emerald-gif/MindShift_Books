@@ -22,7 +22,7 @@
   <!-- Fonts & icons -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="styles.css?v=4">
+  <link rel="stylesheet" href="styles.css?v=5">
 
 
   
@@ -515,7 +515,8 @@
             '<span class="fe-top-rank">' + (i + k + 1) + '</span>' +
             '<div class="fe-top-info"><div class="fe-top-title">' + esc(b.title) + '</div>' +
             '<div class="fe-top-author">' + esc(b.author || '') + '</div>' +
-            '<div class="fe-top-meta"><span class="fe-top-free">FREE</span>' + (b.tag ? '<span class="fe-top-tag">' + esc(b.tag) + '</span>' : '') + '</div></div></div>';
+            '<div class="fe-top-meta"><span class="fe-top-free">FREE</span>' + (b.tag ? '<span class="fe-top-tag">' + esc(b.tag) + '</span>' : '') + '</div></div>' +
+        '<button type="button" class="fe-top-heart" data-action="toggle-wishlist" data-product-id="fe:' + esc(b.id) + '" aria-pressed="false" aria-label="Add to wishlist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg></button></div>';
         });
         cols += '<div class="fe-top-col">' + rows + '</div>';
       }
@@ -524,6 +525,7 @@
     function render(items) {
       if (!items || !items.length) { if (section) section.style.display = 'none'; return; }
       track.innerHTML = topFreeHtml(items);
+      if (window.syncFeHearts) window.syncFeHearts();
       if (window.updateSwiperArrows) window.updateSwiperArrows(track);
     }
 
@@ -587,6 +589,7 @@
     // main.js defines updateSwiperArrows — it may not exist yet the moment
     // this fetch resolves, so re-sync arrow state once everything's loaded.
     window.addEventListener('load', function () {
+      if (window.syncFeHearts) window.syncFeHearts();
       if (window.updateSwiperArrows) window.updateSwiperArrows(track);
     });
   })();
@@ -965,7 +968,7 @@ adjustMainPadding();
      this ordering doesn't depend on main.js running first either. -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="/currency.js?v=5"></script>
-<script src="/main.js?v=8"></script>
+<script src="/main.js?v=9"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="/auth.js"></script>
 

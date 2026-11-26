@@ -1336,3 +1336,11 @@ body.src-lock { overflow: hidden; }
   padding:2px 8px; border-radius:20px; border:1px solid var(--c-line-ok,#a7f3d0); letter-spacing:.02em;
 }
 .fe-top-tag{ font-size:0.7rem; font-weight:600; color:var(--c-mute,#94a3b8); }
+.fe-top-heart{
+  flex-shrink:0; width:38px; height:38px; border-radius:50%; border:none; padding:0; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; background:transparent;
+  color:var(--c-mute,#94a3b8); -webkit-tap-highlight-color:transparent; transition:transform .15s ease,color .15s ease;
+}
+.fe-top-heart:active{ transform:scale(.88); }
+.fe-top-heart.active{ color:#ef4444; }
+.fe-top-heart.active svg{ fill:currentColor; }

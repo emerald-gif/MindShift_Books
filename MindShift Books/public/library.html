@@ -284,11 +284,36 @@ async function loadWishlist(){
     ]);
     const catalog = {};
     (prod.products||[]).forEach(p => catalog[p.id] = p);
-    const items = (wl.ids||[]).map(id => catalog[id]).filter(Boolean);
+    // Free eBooks are saved as "fe:<Gutenberg id>" — look them up in the free catalog.
+    const feMap = {};
+    if ((wl.ids||[]).some(id => typeof id === 'string' && id.indexOf('fe:') === 0)){
+      try{
+        const all = await fetchJson('/api/free-ebooks-all');
+        (all.books||[]).forEach(b => feMap['fe:' + b.id] = b);
+      }catch(e){ /* free books just won't show this time */ }
+    }
+    const items = (wl.ids||[]).map(id => catalog[id] ? { kind:'store', p:catalog[id] } : (feMap[id] ? { kind:'free', b:feMap[id], key:id } : null)).filter(Boolean);
 
     loaded.wishlist = true; failed.wishlist = false;
     if (!items.length){ renderWishlistEmpty(); return; }
-    document.getElementById('wishlistGrid').innerHTML = items.map(p => `
+    document.getElementById('wishlistGrid').innerHTML = items.map(it => {
+      if (it.kind === 'free'){
+        const b = it.b;
+        return `
+      <div class="book-card">
+        <img class="book-card-cover" src="${esc(b.cover||'')}" alt="" decoding="async" loading="lazy" onclick="location.href='/read/${Number(b.id)}'">
+        <button class="book-card-heart" onclick="removeFromWishlist('${it.key}', this)" aria-label="Remove from wishlist">
+          <svg viewBox="0 0 24 24" fill="currentColor" stroke="none">${ICONS.heart}</svg>
+        </button>
+        <div class="book-card-body">
+          <div class="book-card-title">${esc(b.title||'Untitled')}</div>
+          <div class="book-card-price">Free eBook</div>
+          <div class="book-card-row"><a class="book-card-btn" href="/read/${Number(b.id)}">Read free</a></div>
+        </div>
+      </div>`;
+      }
+      const p = it.p;
+      return `
       <div class="book-card">
         <img class="book-card-cover" src="${p.coverSm||p.cover||''}" alt="" decoding="async" loading="lazy" onclick="location.href='/books'">
         <button class="book-card-heart" onclick="removeFromWishlist('${p.id}', this)" aria-label="Remove from wishlist">
@@ -299,7 +324,8 @@ async function loadWishlist(){
           <div class="book-card-price"${p.priceNGN ? ` data-ngn="${Number(p.priceNGN)}"` : ''}>${p.priceNGN ? '₦'+Number(p.priceNGN).toLocaleString() : ''}</div>
           <div class="book-card-row"><a class="book-card-btn" href="/books">View in store</a></div>
         </div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
   }catch(e){
     console.error('loadWishlist failed:', e);
     failed.wishlist = true; loaded.wishlist = false;
