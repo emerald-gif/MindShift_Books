@@ -231,7 +231,13 @@ const seoForget = (kind, id) => { try { return app.locals.seoInvalidate && app.l
 // here rather than an implicit consequence of what's named index.html on
 // disk. Registered before express.static for the same shadowing reason as
 // the /my-order and /account redirects right below.
+// UPDATE: "/" is now the marketing landing page (public/index.html) that explains
+// the platform and invites people to sign up / log in. Signed-in visitors are sent
+// on to /home by a small script on that page. The article feed lives at /home.
 app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+app.get('/home', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'articles.html'));
 });
 app.get('/books', (req, res) => {
