@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en" class="pending">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MindShift Books — The home for reading, writing & growth</title>
+<meta name="description" content="Articles on mindset, money and purpose, free eBooks, a bookstore priced in naira, and a creator & affiliate community. Join MindShift Books free.">
+<meta property="og:title" content="MindShift Books — The home for reading, writing & growth">
+<meta property="og:description" content="Articles, free eBooks, a bookstore and a community that grows with you. Free to join.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://mindshiftbooks.shop/MINDSHIFT.jpg">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" href="/MINDSHIFT.jpg">
+<style>
+:root{--ind:#4f46e5;--cy:#06b6d4;--or:#4f46e5;--hl:#c7d2fe;--ink:#0f172a;--sub:#5b6478;--bg:#fff;--card:#fff;--line:#e6e9f5;--soft:#f3f5ff;--g:linear-gradient(100deg,#4f46e5,#06b6d4);--serif:Georgia,"Times New Roman",serif}
+@media(prefers-color-scheme:dark){:root{--ink:#f1f5f9;--sub:#a5b0c4;--bg:#0b0d14;--card:#12151f;--line:#232842;--soft:#171a30;--hl:#3b3f9c}}
+*{box-sizing:border-box;margin:0}
+html{scroll-behavior:smooth}html.pending body{opacity:0}
+body{font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased;transition:opacity .3s;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+.serif{font-family:var(--serif)}
+/* nav (Substack-simple) */
+nav{position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--bg) 90%,transparent);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top)}
+.nav-in{display:flex;align-items:center;justify-content:space-between;height:60px}
+.logo{display:flex;align-items:center;gap:9px;font-family:var(--serif);font-weight:700;font-size:1.2rem;letter-spacing:-.01em}.logo img{width:32px;height:32px;border-radius:9px}
+.nl{display:none;gap:26px;font-size:.9rem;font-weight:600;color:var(--sub)}.nl a:hover{color:var(--ink)}@media(min-width:800px){.nl{display:flex}}
+.nr{display:flex;gap:14px;align-items:center}.si{font-weight:700;font-size:.9rem}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:999px;font-weight:700;font-size:.92rem;padding:11px 20px;border:1.5px solid transparent;cursor:pointer;font-family:inherit;transition:transform .15s,box-shadow .2s}
+.btn:active{transform:scale(.97)}
+.k,.pr{background:var(--g);color:#fff;box-shadow:0 10px 24px -10px var(--ind)}.o{border-color:var(--line);color:var(--ink);background:var(--card)}
+.lg{padding:15px 26px;font-size:1rem}
+/* hero */
+.hero{text-align:center;padding:64px 0 10px;background:radial-gradient(60% 55% at 50% 0,rgba(79,70,229,.10),transparent)}
+.eyebrow{font-weight:800;font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--or)}
+h1{font-family:var(--serif);font-size:clamp(2.4rem,8.4vw,4.9rem);line-height:1.05;font-weight:700;letter-spacing:-.03em;margin:16px auto 18px;max-width:860px}
+h1 em{font-style:italic;background:linear-gradient(transparent 62%,var(--hl) 62%);padding:0 .08em}
+.lead{color:var(--sub);font-size:clamp(1.02rem,2.6vw,1.22rem);max-width:560px;margin:0 auto 26px}
+/* shopify-style email capture */
+.cap{display:flex;gap:8px;max-width:470px;margin:0 auto;background:var(--card);border:1.5px solid var(--line);border-radius:999px;padding:6px;box-shadow:0 16px 36px -22px rgba(30,20,80,.45)}
+.cap:focus-within{border-color:var(--ind)}
+.cap input{flex:1;min-width:0;border:0;outline:0;background:transparent;font:inherit;font-size:1rem;padding:0 16px;color:var(--ink)}
+.cap .btn{padding:13px 20px;flex:none}
+.fine{font-size:.82rem;color:var(--sub);margin-top:14px}.fine a{font-weight:700;color:var(--ink);text-decoration:underline}
+/* proof strip */
+.show{padding:34px 0 8px;text-align:center}
+.show .eyebrow{display:block;margin-bottom:22px}
+.stack{display:flex;justify-content:center;align-items:flex-start;max-width:640px;margin:0 auto}
+.ph{margin:0;background:#0f172a;border-radius:26px;padding:6px;box-shadow:0 34px 60px -26px rgba(79,70,229,.55);position:relative}
+.ph img{width:100%;height:auto;display:block;border-radius:20px}
+.ph.l,.ph.r{width:34%;margin-top:36px;z-index:1}.ph.l{transform:rotate(-6deg)}.ph.r{transform:rotate(6deg)}
+.ph.c{width:42%;margin:0 -5%;z-index:2}
+.cap-l{font-size:.82rem;color:var(--sub);font-weight:600;margin-top:20px}
+/* sections */
+section{padding:60px 0 6px}
+.sh{max-width:660px;margin:0 auto 30px;text-align:center}
+.sh h2{font-family:var(--serif);font-size:clamp(1.9rem,6vw,3.1rem);line-height:1.1;letter-spacing:-.025em;font-weight:700}
+.sh p{color:var(--sub);margin-top:12px}
+/* substack-style reading list */
+.two{display:grid;gap:22px;grid-template-columns:1fr;align-items:start}@media(min-width:860px){.two{grid-template-columns:1fr 1fr;gap:44px;align-items:center}}
+.list{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:6px 18px}
+.li{display:flex;align-items:center;gap:14px;padding:15px 0;border-bottom:1px solid var(--line)}.li:last-child{border:0}
+.li b{font-family:var(--serif);font-size:1.5rem;color:var(--or);width:22px}
+.li h4{font-family:var(--serif);font-size:1.08rem;line-height:1.25}.li small{color:var(--sub);font-size:.82rem}
+.li em{margin-left:auto;font-style:normal;font-size:.68rem;font-weight:800;color:#059669;background:#e8f8f0;border-radius:999px;padding:3px 9px}
+.txt h3{font-family:var(--serif);font-size:clamp(1.6rem,4.6vw,2.3rem);line-height:1.12;letter-spacing:-.02em;margin-bottom:12px}
+.txt p{color:var(--sub);margin-bottom:18px}
+/* shopify-style tabs */
+.tabs{display:flex;gap:8px;overflow-x:auto;justify-content:center;margin-bottom:22px;scrollbar-width:none;padding:2px}.tabs::-webkit-scrollbar{display:none}
+.tab{flex:none;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-weight:700;font-size:.92rem;padding:10px 20px;border-radius:999px;cursor:pointer}
+.tab[aria-selected=true]{background:var(--g);color:#fff;border-color:transparent}
+.pane{display:none;background:var(--card);border:1px solid var(--line);border-radius:30px;padding:clamp(20px,4vw,38px);grid-template-columns:1fr;gap:24px;align-items:center}
+.pane.on{display:grid}@media(min-width:820px){.pane.on{grid-template-columns:1fr 1fr}}
+.pane h3{font-family:var(--serif);font-size:clamp(1.5rem,4.4vw,2.2rem);line-height:1.12;letter-spacing:-.02em;margin-bottom:10px}
+.pane p{color:var(--sub);margin-bottom:14px}
+.ck{list-style:none;padding:0;display:grid;gap:9px;margin:0 0 20px;font-weight:600;font-size:.94rem}.ck li:before{content:"✓";color:#fff;background:var(--ind);border-radius:50%;width:20px;height:20px;display:inline-grid;place-items:center;font-size:.7rem;margin-right:10px}
+.vis{background:var(--soft);border-radius:24px;min-height:230px;display:flex;align-items:center;justify-content:center;padding:22px;overflow:hidden}
+.fan{display:flex;height:190px;align-items:center}.fan img{width:112px;height:156px;object-fit:cover;border-radius:10px;box-shadow:0 14px 28px -8px rgba(0,0,0,.4);margin:0 -16px}
+.fan img:nth-child(1){transform:rotate(-8deg)}.fan img:nth-child(2){transform:translateY(-8px);z-index:1}.fan img:nth-child(3){transform:rotate(8deg)}
+.mock{width:100%;max-width:300px;display:grid;gap:10px}
+.row{display:flex;align-items:center;gap:11px;background:var(--card);border-radius:16px;padding:12px;box-shadow:0 8px 18px -12px rgba(0,0,0,.3)}
+.av{width:36px;height:36px;border-radius:50%;flex:none}.ln{flex:1;display:grid;gap:6px}.ln i{display:block;height:8px;border-radius:6px;background:var(--line)}.ln i:first-child{width:80%;background:color-mix(in srgb,var(--ink) 24%,transparent)}.ln i:last-child{width:50%}
+.big{font-family:var(--serif);font-size:5.5rem;line-height:1;letter-spacing:-.05em;font-weight:700;color:var(--ind)}
+/* faq (Shopify) */
+.faq{max-width:760px;margin:0 auto}
+details{border-bottom:1px solid var(--line);padding:18px 2px}summary{cursor:pointer;font-family:var(--serif);font-weight:700;font-size:1.15rem;list-style:none;display:flex;justify-content:space-between;gap:14px}
+summary::-webkit-details-marker{display:none}summary:after{content:"+";font-family:Inter,sans-serif;font-weight:400;font-size:1.5rem;line-height:1;color:var(--sub)}details[open] summary:after{content:"–"}
+details p{color:var(--sub);margin-top:10px;max-width:640px}
+/* final */
+.final{background:linear-gradient(135deg,#4f46e5,#0891b2);color:#fff;border-radius:34px;text-align:center;padding:clamp(40px,8vw,80px) 22px;margin:54px 0 30px}
+.final h2{font-family:var(--serif);font-size:clamp(2rem,7vw,3.6rem);line-height:1.06;letter-spacing:-.03em;margin-bottom:12px}
+.final p{opacity:.75;margin-bottom:24px}.final .cap{background:#fff;border-color:#fff}.final .cap input{color:#0f172a}.final .pr{background:#0f172a;box-shadow:none}.final .fine{color:#dbe4ff}.final .fine a{color:#fff}
+footer{padding:4px 0 calc(28px + env(safe-area-inset-bottom));text-align:center;color:var(--sub);font-size:.84rem}
+.fl{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 20px;margin-bottom:12px;font-weight:600}
+.rv{opacity:0;transform:translateY(18px);transition:opacity .6s,transform .6s}.rv.in{opacity:1;transform:none}
+@media(prefers-reduced-motion:reduce){.rv{opacity:1;transform:none;transition:none}html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+<nav><div class="wrap nav-in">
+  <a href="/" class="logo"><img src="/MINDSHIFT.jpg" alt="MindShift Books logo">MindShift</a>
+  <div class="nl"><a href="/home">Articles</a><a href="/books">Bookstore</a><a href="/free-ebooks">Free eBooks</a><a href="/affiliate">Earn</a></div>
+  <div class="nr"><a href="/login" class="si">Sign in</a><a href="/signup" class="btn k">Start free</a></div>
+</div></nav>
+
+<header class="hero wrap">
+  <span class="eyebrow">Read · Write · Grow</span>
+  <h1>The home for <em>great reading</em> and growth.</h1>
+  <p class="lead">Articles, free eBooks and a bookstore priced in naira, plus a community where you can publish your ideas and earn from them.</p>
+  <form class="cap" action="/signup" method="get">
+    <input type="email" name="email" placeholder="Enter your email address" autocomplete="email" aria-label="Email address">
+    <button class="btn pr" type="submit">Start free</button>
+  </form>
+  <p class="fine">Free to join · No card needed · Already a member? <a href="/login">Sign in</a></p>
+</header>
+
+<div class="wrap show rv">
+  <span class="eyebrow">A look inside</span>
+  <div class="stack">
+    <figure class="ph l"><img src="/ui-books.jpg" alt="The MindShift bookstore" loading="lazy"></figure>
+    <figure class="ph c"><img src="/ui-feed.jpg" alt="The MindShift community feed" loading="lazy"></figure>
+    <figure class="ph r"><img src="/ui-profile.jpg" alt="A MindShift creator profile" loading="lazy"></figure>
+  </div>
+  <p class="cap-l">The bookstore · The community feed · Creator profiles</p>
+</div>
+
+
+<section><div class="wrap two">
+  <div class="txt rv">
+    <h3>Start reading today. Free.</h3>
+    <p>Timeless classics and growth reads you can read online, download to keep and save to your wishlist. Pick one and begin.</p>
+    <a href="/free-ebooks" class="btn k">Browse free eBooks →</a>
+  </div>
+  <div class="list rv">
+    <div class="li"><b>1</b><div><h4>As a Man Thinketh</h4><small>James Allen</small></div><em>FREE</em></div>
+    <div class="li"><b>2</b><div><h4>The Science of Getting Rich</h4><small>Wallace D. Wattles</small></div><em>FREE</em></div>
+    <div class="li"><b>3</b><div><h4>Acres of Diamonds</h4><small>Russell H. Conwell</small></div><em>FREE</em></div>
+    <div class="li"><b>4</b><div><h4>The Story of My Life</h4><small>Helen Keller</small></div><em>FREE</em></div>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="sh rv"><h2>Everything in one place</h2><p>One free account opens it all.</p></div>
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="true" data-t="0">Read</button>
+    <button class="tab" role="tab" aria-selected="false" data-t="1">Shop</button>
+    <button class="tab" role="tab" aria-selected="false" data-t="2">Write</button>
+    <button class="tab" role="tab" aria-selected="false" data-t="3">Earn</button>
+  </div>
+  <div class="pane on"><div><h3>Ideas worth your time</h3><p>Follow writers and read articles on mindset, money, productivity, relationships, wellness and career.</p><ul class="ck"><li>A feed of articles and posts from the community</li><li>Save favourites to your library</li><li>Follow the authors you love</li></ul><a href="/home" class="btn pr">Explore the feed</a></div>
+    <div class="vis"><div class="mock"><div class="row"><span class="av" style="background:linear-gradient(135deg,#4f46e5,#06b6d4)"></span><span class="ln"><i></i><i></i></span></div><div class="row"><span class="av" style="background:linear-gradient(135deg,#06b6d4,#a5b4fc)"></span><span class="ln"><i></i><i></i></span></div><div class="row"><span class="av" style="background:linear-gradient(135deg,#ec4899,#8b5cf6)"></span><span class="ln"><i></i><i></i></span></div></div></div></div>
+  <div class="pane"><div><h3>Books for real life</h3><p>Self-growth books written to be used, priced in naira and delivered straight to your library.</p><ul class="ck"><li>Pay in naira</li><li>Your books live in your library</li><li>Save favourites to your wishlist</li></ul><a href="/books" class="btn pr">Shop the bookstore</a></div>
+    <div class="vis"><div class="fan"><img src="/_img?src=/tda.jpg&w=260" alt="The Discipline Advantage" loading="lazy"><img src="/_img?src=/gcwa.jpg&w=260" alt="Getting Client Without Ads" loading="lazy"><img src="/_img?src=/mmg.jpg&w=260" alt="The Money Mindset Gap" loading="lazy"></div></div></div>
+  <div class="pane"><div><h3>Share what you know</h3><p>Publish your own posts and articles, build a profile and grow a following of readers.</p><ul class="ck"><li>Write and publish in minutes</li><li>Build your own author profile</li><li>Get discovered by the community</li></ul><a href="/signup" class="btn pr">Become a creator</a></div>
+    <div class="vis"><div class="mock"><div class="row"><span class="av" style="background:linear-gradient(135deg,#a5b4fc,#06b6d4)"></span><span class="ln"><i></i><i></i></span></div><div class="row" style="opacity:.6"><span class="av" style="background:var(--line)"></span><span class="ln"><i></i><i></i></span></div></div></div></div>
+  <div class="pane"><div><h3>Earn when you recommend</h3><p>Share books you love with your own link. Free to join, and no purchase needed.</p><ul class="ck"><li>15% commission on every book sale</li><li>Your own tracking link</li><li>Free to join</li></ul><a href="/affiliate" class="btn pr">Start earning</a></div>
+    <div class="vis"><span class="big">15%</span></div></div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="sh rv"><h2>Questions? Answered.</h2></div>
+  <div class="faq rv">
+    <details><summary>Is MindShift Books free to join?</summary><p>Yes. Creating an account is free and needs no card. You only pay if you choose to buy a book from the bookstore.</p></details>
+    <details><summary>Can I download the free eBooks?</summary><p>Yes. Open any free eBook to read it online or download it to keep, and save your favourites to your wishlist.</p></details>
+    <details><summary>How does the affiliate program work?</summary><p>You get your own link to share. You earn 15% commission on every book sale made through it. It's free to join and you don't need to buy anything.</p></details>
+    <details><summary>Can I publish my own writing?</summary><p>Yes. Create an account, then head to Write to publish posts and articles and build your profile.</p></details>
+    <details><summary>What currency are books priced in?</summary><p>Books in the bookstore are priced in naira (₦).</p></details>
+  </div>
+</div></section>
+
+<div class="wrap">
+  <div class="final rv">
+    <h2>Your next big shift starts here.</h2>
+    <p>Join free today. It takes a moment.</p>
+    <form class="cap" action="/signup" method="get"><input type="email" name="email" placeholder="Enter your email address" autocomplete="email" aria-label="Email address"><button class="btn pr" type="submit">Start free</button></form>
+    <p class="fine">Already a member? <a href="/login">Sign in</a></p>
+  </div>
+</div>
+
+<footer><div class="wrap">
+  <div class="fl"><a href="/home">Articles</a><a href="/books">Bookstore</a><a href="/free-ebooks">Free eBooks</a><a href="/affiliate">Affiliate</a><a href="/whats-new">What's new</a><a href="/support">Support</a><a href="/legal">Legal</a></div>
+  © MindShift Books
+</div></footer>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="/auth.js"></script>
+<script>
+// Signed-in visitors go straight to their feed at /home; the page stays hidden briefly
+// while we check, so they never see a flash of the landing page.
+(function () {
+  var show = function () { document.documentElement.classList.remove('pending'); };
+  setTimeout(show, 2500);
+  try {
+    if (window.MSBAuth && MSBAuth.onAuthReady) MSBAuth.onAuthReady(function (u) { if (u) location.replace('/home'); else show(); });
+    else show();
+  } catch (e) { show(); }
+  // feature tabs
+  var tabs = document.querySelectorAll('.tab'), panes = document.querySelectorAll('.pane');
+  tabs.forEach(function (t) {
+    t.addEventListener('click', function () {
+      var i = +t.getAttribute('data-t');
+      tabs.forEach(function (x, k) { x.setAttribute('aria-selected', k === i ? 'true' : 'false'); });
+      panes.forEach(function (p, k) { p.classList.toggle('on', k === i); });
+    });
+  });
+  // scroll-reveal
+  var els = document.querySelectorAll('.rv');
+  if (!('IntersectionObserver' in window)) { els.forEach(function (e) { e.classList.add('in'); }); return; }
+  var io = new IntersectionObserver(function (es) { es.forEach(function (x) { if (x.isIntersecting) { x.target.classList.add('in'); io.unobserve(x.target); } }); }, { threshold: .1 });
+  els.forEach(function (e) { io.observe(e); });
+})();
+</script>
+</body>
+</html>
