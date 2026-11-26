@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>MindShift Books — The home for reading, writing & growth</title>
+<title>MindShift Books — Read, write, shop, connect & earn</title>
 <meta name="description" content="Articles on mindset, money and purpose, free eBooks, a bookstore priced in naira, and a creator & affiliate community. Join MindShift Books free.">
 <meta property="og:title" content="MindShift Books — The home for reading, writing & growth">
 <meta property="og:description" content="Articles, free eBooks, a bookstore and a community that grows with you. Free to join.">
@@ -42,6 +42,27 @@ h1 em{font-style:italic;background:linear-gradient(transparent 62%,var(--hl) 62%
 .cap input{flex:1;min-width:0;border:0;outline:0;background:transparent;font:inherit;font-size:1rem;padding:0 16px;color:var(--ink)}
 .cap .btn{padding:13px 20px;flex:none}
 .fine{font-size:.82rem;color:var(--sub);margin-top:14px}.fine a{font-weight:700;color:var(--ink);text-decoration:underline}
+/* platform icons (CSS masks: one definition each, no inline SVG in the markup) */
+.ic{display:inline-block;flex:none;width:1.15em;height:1.15em;background:currentColor;vertical-align:-.2em;-webkit-mask:var(--i) center/contain no-repeat;mask:var(--i) center/contain no-repeat}
+.ic-art{--i:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%222.1%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z%22/%3E%3C/svg%3E")}
+.ic-reel{--i:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%222.1%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpolygon points=%226 3 20 12 6 21 6 3%22/%3E%3C/svg%3E")}
+.ic-chat{--i:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%222.1%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z%22/%3E%3C/svg%3E")}
+.ic-book{--i:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%222.1%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M4 19.5A2.5 2.5 0 016.5 17H20%22/%3E%3Cpath d=%22M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z%22/%3E%3C/svg%3E")}
+.ic-dl{--i:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%222.1%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M12 4v11M7 11l5 5 5-5M5 20h14%22/%3E%3C/svg%3E")}
+.ic-gift{--i:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%222.1%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpolyline points=%2220 12 20 22 4 22 4 12%22/%3E%3Crect x=%222%22 y=%227%22 width=%2220%22 height=%225%22/%3E%3Cline x1=%2212%22 y1=%2222%22 x2=%2212%22 y2=%227%22/%3E%3Cpath d=%22M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z%22/%3E%3Cpath d=%22M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z%22/%3E%3C/svg%3E")}
+.ic-read{--i:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%222.1%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z%22/%3E%3Cpath d=%22M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z%22/%3E%3C/svg%3E")}
+.ic-bm{--i:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%222.1%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z%22/%3E%3C/svg%3E")}
+.ic-pen{--i:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%222.1%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M12 20h9%22/%3E%3Cpath d=%22M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4L16.5 3.5z%22/%3E%3C/svg%3E")}
+.ic-mic{--i:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%222.1%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Crect x=%229%22 y=%223%22 width=%226%22 height=%2211%22 rx=%223%22/%3E%3Cpath d=%22M5 11a7 7 0 0014 0M12 18v3%22/%3E%3C/svg%3E")}
+.ic-heart{--i:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%222.1%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z%22/%3E%3C/svg%3E")}
+.ic-repost{--i:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%222.1%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpolyline points=%2217 1 21 5 17 9%22/%3E%3Cpath d=%22M3 11V9a4 4 0 014-4h14%22/%3E%3Cpolyline points=%227 23 3 19 7 15%22/%3E%3Cpath d=%22M21 13v2a4 4 0 01-4 4H3%22/%3E%3C/svg%3E")}
+.ic-share{--i:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%222.1%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Ccircle cx=%2218%22 cy=%225%22 r=%223%22/%3E%3Ccircle cx=%226%22 cy=%2212%22 r=%223%22/%3E%3Ccircle cx=%2218%22 cy=%2219%22 r=%223%22/%3E%3Cline x1=%228.59%22 y1=%2213.51%22 x2=%2215.42%22 y2=%2217.49%22/%3E%3Cline x1=%2215.41%22 y1=%226.51%22 x2=%228.59%22 y2=%2210.49%22/%3E%3C/svg%3E")}
+.chips span{display:inline-flex;align-items:center;gap:6px}.chips .ic{color:var(--ind)}
+.feat b{display:block;line-height:1}.feat .ic{width:1.5rem;height:1.5rem;color:var(--ind)}
+.stu .ic{width:1.5rem;height:1.5rem;color:var(--ind)}
+.acts span{display:inline-flex;align-items:center;gap:5px}
+.rl b{display:block;line-height:1}.rl .ic{width:1.35rem;height:1.35rem}
+.sbar .ic{width:1.2em;height:1.2em;margin-right:2px}
 /* proof strip */
 .show{padding:34px 0 8px;text-align:center}
 .show .eyebrow{display:block;margin-bottom:22px}
@@ -156,6 +177,41 @@ footer.site-footer{background:#0f172a;color:#cbd5e1;text-align:left;font-size:.9
 .social-btn:hover{background:var(--ind)}
 .footer-bottom{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px 20px;margin-top:36px;padding-top:20px;border-top:1px solid rgba(255,255,255,.12);color:#94a3b8;font-size:.82rem}
 .footer-secure{display:inline-flex;align-items:center;gap:6px}
+
+/* ── platform sections ── */
+.chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:22px auto 0;max-width:560px}
+.chips span{font-size:.8rem;font-weight:700;background:var(--soft);border:1px solid var(--line);border-radius:999px;padding:6px 12px}
+.feat{display:grid;gap:12px;grid-template-columns:repeat(2,1fr)}@media(min-width:800px){.feat{grid-template-columns:repeat(3,1fr);gap:16px}}
+.feat div,.steps div{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px}
+.feat b{font-size:1.5rem}.feat h4,.steps h4{font-family:var(--serif);font-size:1.05rem;margin:8px 0 4px}.feat p,.steps p{color:var(--sub);font-size:.86rem}
+.steps{display:grid;gap:14px;max-width:900px;margin:0 auto}@media(min-width:800px){.steps{grid-template-columns:repeat(3,1fr)}}
+.steps i{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--g);color:#fff;font-style:normal;font-weight:800}
+.tabs{justify-content:flex-start}.tab:first-child{margin-left:auto}.tab:last-child{margin-right:auto}
+.vis{align-items:center}
+.card{background:var(--card);border-radius:16px;padding:14px;box-shadow:0 8px 18px -12px rgba(0,0,0,.3);text-align:left;font-size:.88rem}
+.card p{margin:8px 0}.ph-r{display:flex;align-items:center;gap:8px}.ph-r small{color:var(--sub)}
+.acts{display:flex;gap:16px;color:var(--sub);font-size:.82rem}
+.opt{position:relative;display:flex;justify-content:space-between;margin-top:8px;padding:8px 10px;border-radius:10px;background:var(--soft);overflow:hidden;font-weight:600}
+.opt i{position:absolute;inset:0 auto 0 0;background:var(--hl);opacity:.7}.opt span,.opt em{position:relative;font-style:normal}
+.reel{position:relative;width:170px;height:290px;border-radius:22px;background:linear-gradient(160deg,#312e81,#0891b2 70%,#0f172a);color:#fff}
+.rl{position:absolute;right:10px;bottom:70px;display:grid;gap:2px;text-align:center;font-size:.72rem;font-weight:700}.rl b{font-size:1.2rem;margin-top:8px}
+.rc{position:absolute;left:12px;bottom:14px;font-weight:700;font-size:.82rem}.rc small{font-weight:500;opacity:.8;font-size:.7rem}
+.chat{display:flex;flex-direction:column;gap:8px;font-size:.88rem}
+.b{max-width:80%;padding:9px 13px;border-radius:16px;position:relative}
+.b.in{background:var(--card);align-self:flex-start;border-bottom-left-radius:4px}.b.out{background:var(--g);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.wave{display:inline-block;width:70px;height:8px;border-radius:6px;background:rgba(255,255,255,.55);vertical-align:middle}
+.lp{margin-top:8px;border-radius:10px;overflow:hidden;background:var(--soft)}.lp i{display:block;height:44px;background:linear-gradient(135deg,#a5b4fc,#06b6d4)}.lp small{display:block;padding:5px 8px;color:var(--sub)}
+.rx{position:absolute;right:8px;bottom:-12px;background:var(--card);border-radius:999px;padding:1px 6px;font-size:.8rem;box-shadow:0 2px 6px rgba(0,0,0,.2)}
+.seen{align-self:flex-end;color:var(--sub);font-size:.72rem;margin-top:6px}
+.shelf{display:flex;gap:12px;overflow-x:auto;width:100%;padding:4px;scrollbar-width:none}.shelf::-webkit-scrollbar{display:none}
+.bk{flex:none;width:112px;text-align:left}.bk img{width:112px;height:156px;object-fit:cover;border-radius:10px;box-shadow:0 14px 28px -10px rgba(0,0,0,.4);margin-bottom:8px}
+.bk b{display:block;font-size:1rem}.bk s{color:var(--sub);font-size:.74rem;margin-right:4px}.bk em{font-style:normal;font-size:.62rem;font-weight:800;color:#dc2626;background:#fee2e2;border-radius:999px;padding:2px 6px}
+.dash small{color:var(--sub)}.big2{display:block;font-family:var(--serif);font-size:2.4rem;color:var(--ind);line-height:1.1}
+.kv{display:flex;justify-content:space-between;color:var(--sub);font-size:.76rem;margin:6px 0}
+.bar{height:8px;border-radius:6px;background:var(--line);margin-top:10px;overflow:hidden}.bar i{display:block;height:100%;width:40%;background:var(--g)}
+.sbar{display:flex;justify-content:center;gap:10px;background:linear-gradient(90deg,#1d4ed8,#3b5bdb);color:#fff;border-radius:14px;padding:13px 16px;font-weight:700;font-size:.92rem;text-align:center}
+.stu{display:grid;gap:10px;grid-template-columns:repeat(2,1fr);margin-top:12px}@media(min-width:800px){.stu{grid-template-columns:repeat(4,1fr)}}
+.stu div{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;font-size:1.5rem;display:grid;gap:6px}.stu b{font-size:.88rem;font-family:var(--serif)}
 </style>
 </head>
 <body>
@@ -169,12 +225,13 @@ footer.site-footer{background:#0f172a;color:#cbd5e1;text-align:left;font-size:.9
 <header class="hero wrap">
   <span class="eyebrow">Read · Write · Grow</span>
   <h1>The home for <em>great reading</em> and growth.</h1>
-  <p class="lead">Articles, free eBooks and a bookstore priced in naira, plus a community where you can publish your ideas and earn from them.</p>
+  <p class="lead">MindShift Books is one free home for articles, videos, chat, free eBooks and a bookstore priced in naira, plus a community where you can publish your ideas and earn from them.</p>
   <form class="cap" action="/signup" method="get">
     <input type="email" name="email" placeholder="Enter your email address" autocomplete="email" aria-label="Email address">
     <button class="btn pr" type="submit">Start free</button>
   </form>
   <p class="fine">Free to join · No card needed · Already a member? <a href="/login">Sign in</a></p>
+  <div class="chips"><span><i class="ic ic-art"></i>Articles</span><span><i class="ic ic-reel"></i>Reels</span><span><i class="ic ic-chat"></i>Chat</span><span><i class="ic ic-book"></i>Bookstore</span><span><i class="ic ic-dl"></i>Free eBooks</span><span><i class="ic ic-gift"></i>Earn</span><span><i class="ic ic-read"></i>Students</span></div>
 </header>
 
 <div class="wrap show rv">
@@ -203,21 +260,70 @@ footer.site-footer{background:#0f172a;color:#cbd5e1;text-align:left;font-size:.9
 </div></section>
 
 <section><div class="wrap">
-  <div class="sh rv"><h2>Everything in one place</h2><p>One free account opens it all.</p></div>
-  <div class="tabs" role="tablist">
-    <button class="tab" role="tab" aria-selected="true" data-t="0">Read</button>
-    <button class="tab" role="tab" aria-selected="false" data-t="1">Shop</button>
-    <button class="tab" role="tab" aria-selected="false" data-t="2">Write</button>
-    <button class="tab" role="tab" aria-selected="false" data-t="3">Earn</button>
+  <div class="sh rv"><h2>So, what is MindShift Books?</h2><p>A reading and growth platform: read ideas, watch and chat with people, buy books in naira, and publish or earn, all from one free account.</p></div>
+  <div class="feat rv">
+    <div><b><i class="ic ic-art"></i></b><h4>Articles &amp; feed</h4><p>Posts, articles and polls from writers you follow.</p></div>
+    <div><b><i class="ic ic-reel"></i></b><h4>Reels</h4><p>Swipe up through short videos and comment without leaving them.</p></div>
+    <div><b><i class="ic ic-chat"></i></b><h4>Messages</h4><p>Chat with writers and readers. Voice notes, photos, reactions.</p></div>
+    <div><b><i class="ic ic-book"></i></b><h4>Bookstore</h4><p>Self-growth books priced in naira, delivered by email.</p></div>
+    <div><b><i class="ic ic-dl"></i></b><h4>Free eBooks</h4><p>Almost 100 classics to read online or download.</p></div>
+    <div><b><i class="ic ic-gift"></i></b><h4>Earn</h4><p>Recommend books with your link and earn 15% on sales.</p></div>
   </div>
-  <div class="pane on"><div><h3>Ideas worth your time</h3><p>Follow writers and read articles on mindset, money, productivity, relationships, wellness and career.</p><ul class="ck"><li>A feed of articles and posts from the community</li><li>Save favourites to your library</li><li>Follow the authors you love</li></ul><a href="/home" class="btn pr">Explore the feed</a></div>
-    <div class="vis"><div class="mock"><div class="row"><span class="av" style="background:linear-gradient(135deg,#4f46e5,#06b6d4)"></span><span class="ln"><i></i><i></i></span></div><div class="row"><span class="av" style="background:linear-gradient(135deg,#06b6d4,#a5b4fc)"></span><span class="ln"><i></i><i></i></span></div><div class="row"><span class="av" style="background:linear-gradient(135deg,#ec4899,#8b5cf6)"></span><span class="ln"><i></i><i></i></span></div></div></div></div>
-  <div class="pane"><div><h3>Books for real life</h3><p>Self-growth books written to be used, priced in naira and delivered straight to your library.</p><ul class="ck"><li>Pay in naira</li><li>Your books live in your library</li><li>Save favourites to your wishlist</li></ul><a href="/books" class="btn pr">Shop the bookstore</a></div>
-    <div class="vis"><div class="fan"><img src="/_img?src=/tda.jpg&w=260" alt="The Discipline Advantage" loading="lazy"><img src="/_img?src=/gcwa.jpg&w=260" alt="Getting Client Without Ads" loading="lazy"><img src="/_img?src=/mmg.jpg&w=260" alt="The Money Mindset Gap" loading="lazy"></div></div></div>
-  <div class="pane"><div><h3>Share what you know</h3><p>Publish your own posts and articles, build a profile and grow a following of readers.</p><ul class="ck"><li>Write and publish in minutes</li><li>Build your own author profile</li><li>Get discovered by the community</li></ul><a href="/signup" class="btn pr">Become a creator</a></div>
-    <div class="vis"><div class="mock"><div class="row"><span class="av" style="background:linear-gradient(135deg,#a5b4fc,#06b6d4)"></span><span class="ln"><i></i><i></i></span></div><div class="row" style="opacity:.6"><span class="av" style="background:var(--line)"></span><span class="ln"><i></i><i></i></span></div></div></div></div>
-  <div class="pane"><div><h3>Earn when you recommend</h3><p>Share books you love with your own link. Free to join, and no purchase needed.</p><ul class="ck"><li>15% commission on every book sale</li><li>Your own tracking link</li><li>Free to join</li></ul><a href="/affiliate" class="btn pr">Start earning</a></div>
-    <div class="vis"><span class="big">15%</span></div></div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="sh rv"><h2>Start in three steps</h2></div>
+  <div class="steps rv">
+    <div><i>1</i><h4>Create a free account</h4><p>Just your email. Confirm it with a quick 6-digit code.</p></div>
+    <div><i>2</i><h4>Pick your topics</h4><p>Choose what draws you in and your For You feed and book picks start from there.</p></div>
+    <div><i>3</i><h4>Read, shop, post, earn</h4><p>Follow people, grab a free eBook, share an idea or start earning.</p></div>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="sh rv"><h2>See it in action</h2><p>This is what you get when you join.</p></div>
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="true" data-t="0">Feed</button>
+    <button class="tab" role="tab" aria-selected="false" data-t="1">Reels</button>
+    <button class="tab" role="tab" aria-selected="false" data-t="2">Chat</button>
+    <button class="tab" role="tab" aria-selected="false" data-t="3">Books</button>
+    <button class="tab" role="tab" aria-selected="false" data-t="4">Earn</button>
+  </div>
+
+  <div class="pane on"><div><h3>A feed of ideas worth your time</h3><p>Follow writers and read articles on mindset, money, productivity, relationships, wellness and career. Share your own posts, run polls and react in one tap.</p><ul class="ck"><li>For You, Following and Explore tabs</li><li>Publish posts, articles and polls</li><li>Search finds writers, posts and books</li></ul><a href="/signup" class="btn pr">Join the community</a></div>
+    <div class="vis"><div class="mock">
+      <div class="card"><div class="ph-r"><i class="av" style="background:linear-gradient(135deg,#4f46e5,#06b6d4)"></i><b>Olamide Adeboye</b><small>1d ago</small></div><p>Your mind has too many tabs open. Close one. Finish one. Then move to the next.</p><div class="acts"><span><i class="ic ic-heart"></i>4</span><span><i class="ic ic-chat"></i>1</span><span><i class="ic ic-repost"></i></span><span><i class="ic ic-share"></i></span></div></div>
+      <div class="card"><b>What should we read next?</b><div class="opt"><i style="width:62%"></i><span>Atomic Habits</span><em>62%</em></div><div class="opt"><i style="width:38%"></i><span>Deep Work</span><em>38%</em></div></div>
+    </div></div></div>
+
+  <div class="pane"><div><h3>Videos, reel-style</h3><p>Tap any video and it opens full screen. Keep swiping up and the next one plays. Open the comments and the video shrinks to the top so you never lose your place.</p><ul class="ck"><li>Swipe up for the next video</li><li>Like, comment and reply</li><li>Photos open full screen too</li></ul><a href="/signup" class="btn pr">Start watching</a></div>
+    <div class="vis"><div class="reel"><span class="rl"><b><i class="ic ic-heart"></i></b>2.4K<b><i class="ic ic-chat"></i></b>86<b><i class="ic ic-share"></i></b></span><span class="rc">Creator name<br><small>Swipe up for the next video ↑</small></span></div></div></div>
+
+  <div class="pane"><div><h3>Chat with anyone on MindShift</h3><p>Message writers, creators and other readers directly. Share posts and articles to a chat and see link previews before you send.</p><ul class="ck"><li>Voice notes, photos and videos</li><li>Reactions and replies</li><li>Search and shared media in every chat</li></ul><a href="/signup" class="btn pr">Say hello</a></div>
+    <div class="vis"><div class="mock chat">
+      <div class="b in">Did you finish chapter 3?</div>
+      <div class="b out"><i class="ic ic-mic"></i> <span class="wave"></span> 0:12</div>
+      <div class="b in">Here’s my favourite page<div class="lp"><i></i><small>mindshiftbooks.shop</small></div><span class="rx">❤️</span></div>
+      <small class="seen">Seen</small>
+    </div></div></div>
+
+  <div class="pane"><div><h3>Books for real life</h3><p>Self-growth books written to be used, priced in naira. Swipe the shelves, save favourites to your wishlist and read your purchases from your library. No account yet? You can buy as a guest with just a name and email.</p><ul class="ck"><li>Pay in naira, get the book by email</li><li>Books picked from your topics</li><li>Buy as a guest, books wait in your library</li></ul><a href="/books" class="btn pr">Shop the bookstore</a></div>
+    <div class="vis"><div class="shelf">
+      <div class="bk"><img src="/_img?src=/tda.jpg&w=260" alt="The Discipline Advantage" loading="lazy"><b>₦4,000</b><s>₦12,000</s><em>67% OFF</em></div>
+      <div class="bk"><img src="/_img?src=/gcwa.jpg&w=260" alt="Getting Client Without Ads" loading="lazy"><b>₦5,000</b><s>₦15,000</s><em>67% OFF</em></div>
+      <div class="bk"><img src="/_img?src=/mmg.jpg&w=260" alt="The Money Mindset Gap" loading="lazy"><b>New</b></div>
+    </div></div></div>
+
+  <div class="pane"><div><h3>Earn as you share</h3><p>Share books you love with your own link and earn 15% commission on every book sale. Finish your profile and you get ₦2,000 free plus a badge. Free to join, no purchase needed.</p><ul class="ck"><li>Your own tracking link</li><li>Balance, earnings and payouts in one dashboard</li><li>See the readers you have brought in</li></ul><a href="/affiliate" class="btn pr">Start earning</a></div>
+    <div class="vis"><div class="mock">
+      <div class="card dash"><small>Available balance (sample)</small><b class="big2">15%</b><div class="kv"><span>Total earned</span><span>Paid out</span></div><div class="bar"><i></i></div></div>
+      <div class="card"><b>Complete these steps to get ₦2,000 free + a badge</b><div class="bar"><i style="width:60%"></i></div></div>
+    </div></div></div>
+</div></section>
+
+<section><div class="wrap">
+  <a href="/student-resources" class="sbar rv"><i class="ic ic-read"></i> Student Resources: learn, grow &amp; stay ahead <span>→</span></a>
+  <div class="stu rv"><div><i class="ic ic-art"></i><b>Study guides</b></div><div><i class="ic ic-book"></i><b>Books &amp; eBooks</b></div><div><i class="ic ic-bm"></i><b>Academic tips</b></div><div><i class="ic ic-pen"></i><b>Learning tools</b></div></div>
 </div></section>
 
 <section><div class="wrap">
@@ -227,6 +333,8 @@ footer.site-footer{background:#0f172a;color:#cbd5e1;text-align:left;font-size:.9
     <details><summary>Can I download the free eBooks?</summary><p>Yes. Open any free eBook to read it online or download it to keep, and save your favourites to your wishlist.</p></details>
     <details><summary>How does the affiliate program work?</summary><p>You get your own link to share. You earn 15% commission on every book sale made through it. It's free to join and you don't need to buy anything.</p></details>
     <details><summary>Can I publish my own writing?</summary><p>Yes. Create an account, then head to Write to publish posts and articles and build your profile.</p></details>
+    <details><summary>Can I buy a book without an account?</summary><p>Yes. Buy as a guest with just a name and an email and the book arrives by email. If you sign up later with the same email, your books are waiting in your library.</p></details>
+    <details><summary>Is there anything for students?</summary><p>Student Resources has study guides, educational books and eBooks, tips for academic success and tools to boost your learning.</p></details>
     <details><summary>What currency are books priced in?</summary><p>Books in the bookstore are priced in naira (₦).</p></details>
   </div>
 </div></section>
