@@ -626,6 +626,8 @@ document.addEventListener('DOMContentLoaded', loadFreeEbooksSwiper);
       modalDesc.classList.remove('loading');
       modalReadBtn.href = b.readLink || '#';
       if (modalDlBtn) modalDlBtn.href = '/download/' + encodeURIComponent(b.id);
+      // Quietly get the file ready on the server now (HEAD sends no data), so Download is instant.
+      if (modalDlBtn) fetch(modalDlBtn.getAttribute('href'), { method: 'HEAD' }).catch(() => {});
     } catch (e) {
       modalDesc.textContent = 'Could not load this book right now. Please try again.';
       modalDesc.classList.remove('loading');
