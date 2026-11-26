@@ -6520,4 +6520,6 @@ app.listen(PORT, () => {
   // does and why (otherwise the first visitor to any category besides
   // "All" eats a slow live Gutendex round-trip).
   bookstoreRouter.warmupFreeEbooksCache();
+  // ...and get every free eBook's download ready in the background (see warmupDownloads).
+  if (bookstoreRouter.warmupDownloads) bookstoreRouter.warmupDownloads().catch(() => {});
 });
