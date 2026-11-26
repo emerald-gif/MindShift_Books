@@ -63,6 +63,20 @@ h1 em{font-style:italic;background:linear-gradient(transparent 62%,var(--hl) 62%
 .acts span{display:inline-flex;align-items:center;gap:5px}
 .rl b{display:block;line-height:1}.rl .ic{width:1.35rem;height:1.35rem}
 .sbar .ic{width:1.2em;height:1.2em;margin-right:2px}
+/* live community feed */
+.live{display:flex;align-items:center;gap:7px;font-size:.72rem;font-weight:700;color:var(--sub);letter-spacing:.02em}
+.live i{width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 0 rgba(34,197,94,.5);animation:lvp 1.8s infinite}
+@keyframes lvp{70%{box-shadow:0 0 0 7px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
+.lv{transition:opacity .35s ease}.lv.out{opacity:0}
+#lvPost.on{min-height:150px}#lvArt.on{min-height:150px}#lvArt.on.hc{min-height:232px}
+.lv .lt{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
+.lv .av{display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:.85rem;object-fit:cover;background:linear-gradient(135deg,#4f46e5,#06b6d4)}
+.lv .ph-r b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lv .ph-r small{margin-left:auto;white-space:nowrap}
+.lv .ac{display:block;width:100%;height:104px;object-fit:cover;border-radius:10px;margin-bottom:10px;background:#e2e8f0}
+.lv .at{display:block;font-size:.95rem;line-height:1.3;margin-top:2px}
+.lv .tg2{display:inline-block;font-size:.66rem;font-weight:800;letter-spacing:.03em;color:var(--ind);background:#eef2ff;border-radius:999px;padding:2px 8px;margin-bottom:6px}
+.lv.art{cursor:pointer}
+@media(prefers-reduced-motion:reduce){.lv{transition:none}.live i{animation:none}}
 /* proof strip */
 .show{padding:34px 0 8px;text-align:center}
 .show .eyebrow{display:block;margin-bottom:22px}
@@ -95,10 +109,16 @@ section{padding:60px 0 6px}
 /* substack-style reading list */
 .two{display:grid;gap:22px;grid-template-columns:1fr;align-items:start}@media(min-width:860px){.two{grid-template-columns:1fr 1fr;gap:44px;align-items:center}}
 .list{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:6px 18px}
-.li{display:flex;align-items:center;gap:14px;padding:15px 0;border-bottom:1px solid var(--line)}.li:last-child{border:0}
-.li b{font-family:var(--serif);font-size:1.5rem;color:var(--or);width:22px}
-.li h4{font-family:var(--serif);font-size:1.08rem;line-height:1.25}.li small{color:var(--sub);font-size:.82rem}
-.li em{margin-left:auto;font-style:normal;font-size:.68rem;font-weight:800;color:#059669;background:#e8f8f0;border-radius:999px;padding:3px 9px}
+.li{display:flex;align-items:center;gap:14px;padding:16px 0;border-bottom:1px solid var(--line)}.li:last-child{border:0}
+.li .cv{width:62px;flex:none;aspect-ratio:2/3;border-radius:8px;object-fit:cover;box-shadow:0 4px 12px rgba(15,23,42,.14);background:linear-gradient(160deg,#4f46e5,#06b6d4)}
+.li .cf{display:flex;align-items:center;justify-content:center;text-align:center;padding:6px;box-sizing:border-box;color:#fff;font-weight:800;font-size:.62rem;line-height:1.2;overflow:hidden}
+.li b{font-family:var(--serif);font-size:1.45rem;font-weight:500;color:var(--ink);width:20px;text-align:center;flex:none}
+.li>div{min-width:0;flex:1}
+.li h4{font-family:inherit;font-weight:800;font-size:1rem;line-height:1.25;color:var(--ink)}.li small{display:block;color:var(--sub);font-size:.84rem;font-weight:500;margin:2px 0 8px}
+.li .tg{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.li em{font-style:normal;font-size:.7rem;font-weight:800;letter-spacing:.02em;color:#059669;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:999px;padding:2px 9px}
+.li .tg i{font-style:normal;font-size:.7rem;font-weight:700;color:var(--sub);background:#f1f5f9;border:1px solid var(--line);border-radius:999px;padding:2px 9px}
+.li .ic-heart{width:22px;height:22px;flex:none;color:#94a3b8}
 .txt h3{font-family:var(--serif);font-size:clamp(1.6rem,4.6vw,2.3rem);line-height:1.12;letter-spacing:-.02em;margin-bottom:12px}
 .txt p{color:var(--sub);margin-bottom:18px}
 /* shopify-style tabs */
@@ -263,10 +283,10 @@ footer.site-footer{background:#0f172a;color:#cbd5e1;text-align:left;font-size:.9
     <a href="/free-ebooks" class="btn k">Browse free eBooks →</a>
   </div>
   <div class="list rv">
-    <div class="li"><b>1</b><div><h4>As a Man Thinketh</h4><small>James Allen</small></div><em>FREE</em></div>
-    <div class="li"><b>2</b><div><h4>The Science of Getting Rich</h4><small>Wallace D. Wattles</small></div><em>FREE</em></div>
-    <div class="li"><b>3</b><div><h4>Acres of Diamonds</h4><small>Russell H. Conwell</small></div><em>FREE</em></div>
-    <div class="li"><b>4</b><div><h4>The Story of My Life</h4><small>Helen Keller</small></div><em>FREE</em></div>
+    <div class="li" data-t="As a Man Thinketh"><b>1</b><img class="cv" src="https://www.gutenberg.org/cache/epub/4507/pg4507.cover.medium.jpg" alt="As a Man Thinketh" loading="lazy" referrerpolicy="no-referrer"><div><h4>As a Man Thinketh</h4><small>James Allen</small><div class="tg"><em>FREE</em><i>Mindset</i></div></div><i class="ic ic-heart"></i></div>
+    <div class="li" data-t="The Science of Getting Rich"><b>2</b><span class="cv cf">The Science of Getting Rich</span><div><h4>The Science of Getting Rich</h4><small>Wallace D. Wattles</small><div class="tg"><em>FREE</em><i>Money</i></div></div><i class="ic ic-heart"></i></div>
+    <div class="li" data-t="Acres of Diamonds"><b>3</b><span class="cv cf">Acres of Diamonds</span><div><h4>Acres of Diamonds</h4><small>Russell H. Conwell</small><div class="tg"><em>FREE</em><i>Money</i></div></div><i class="ic ic-heart"></i></div>
+    <div class="li" data-t="The Story of My Life"><b>4</b><span class="cv cf">The Story of My Life</span><div><h4>The Story of My Life</h4><small>Helen Keller</small><div class="tg"><em>FREE</em><i>Biography</i></div></div><i class="ic ic-heart"></i></div>
   </div>
 </div></section>
 
@@ -302,9 +322,10 @@ footer.site-footer{background:#0f172a;color:#cbd5e1;text-align:left;font-size:.9
   </div>
 
   <div class="pane on"><div><h3>A feed of ideas worth your time</h3><p>Follow writers and read articles on mindset, money, productivity, relationships, wellness and career. Share your own posts, run polls and react in one tap.</p><ul class="ck"><li>For You, Following and Explore tabs</li><li>Publish posts, articles and polls</li><li>Search finds writers, posts and books</li></ul><a href="/signup" class="btn pr">Join the community</a></div>
-    <div class="vis"><div class="mock">
-      <div class="card"><div class="ph-r"><i class="av" style="background:linear-gradient(135deg,#4f46e5,#06b6d4)"></i><b>Olamide Adeboye</b><small>1d ago</small></div><p>Your mind has too many tabs open. Close one. Finish one. Then move to the next.</p><div class="acts"><span><i class="ic ic-heart"></i>4</span><span><i class="ic ic-chat"></i>1</span><span><i class="ic ic-repost"></i></span><span><i class="ic ic-share"></i></span></div></div>
-      <div class="card"><b>What should we read next?</b><div class="opt"><i style="width:62%"></i><span>Atomic Habits</span><em>62%</em></div><div class="opt"><i style="width:38%"></i><span>Deep Work</span><em>38%</em></div></div>
+    <div class="vis"><div class="mock" id="lvMock">
+      <div class="live" id="lvTag" hidden><i></i>Live from the community</div>
+      <div class="card lv" id="lvPost"><div class="ph-r"><i class="av" style="background:linear-gradient(135deg,#4f46e5,#06b6d4)"></i><b>Olamide Adeboye</b><small>1d ago</small></div><p>Your mind has too many tabs open. Close one. Finish one. Then move to the next.</p><div class="acts"><span><i class="ic ic-heart"></i>4</span><span><i class="ic ic-chat"></i>1</span><span><i class="ic ic-repost"></i></span><span><i class="ic ic-share"></i></span></div></div>
+      <div class="card lv" id="lvArt"><b>What should we read next?</b><div class="opt"><i style="width:62%"></i><span>Atomic Habits</span><em>62%</em></div><div class="opt"><i style="width:38%"></i><span>Deep Work</span><em>38%</em></div></div>
     </div></div></div>
 
   <div class="pane"><div><h3>Videos, reel-style</h3><p>Tap any video and it opens full screen. Keep swiping up and the next one plays. Open the comments and the video shrinks to the top so you never lose your place.</p><ul class="ck"><li>Swipe up for the next video</li><li>Like, comment and reply</li><li>Photos open full screen too</li></ul><a href="/signup" class="btn pr">Start watching</a></div>
@@ -443,6 +464,109 @@ footer.site-footer{background:#0f172a;color:#cbd5e1;text-align:left;font-size:.9
   if (!('IntersectionObserver' in window)) { els.forEach(function (e) { e.classList.add('in'); }); return; }
   var io = new IntersectionObserver(function (es) { es.forEach(function (x) { if (x.isIntersecting) { x.target.classList.add('in'); io.unobserve(x.target); } }); }, { threshold: .1 });
   els.forEach(function (e) { io.observe(e); });
+})();
+</script>
+<script>
+(function(){
+  var rows=document.querySelectorAll('.list .li');
+  function norm(x){return (x||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}
+  function setCover(li,url){
+    var cv=li.querySelector('.cv'),img=new Image();
+    img.referrerPolicy='no-referrer';
+    img.onload=function(){
+      if(cv.tagName==='IMG'){cv.src=url;return}
+      img.className='cv';img.alt=li.getAttribute('data-t');cv.replaceWith(img);
+    };
+    img.src=url;
+  }
+  function fallback(img){
+    var li=img.closest('.li'),sp=document.createElement('span');
+    sp.className='cv cf';sp.textContent=li.getAttribute('data-t');img.replaceWith(sp);
+  }
+  document.querySelectorAll('.list img.cv').forEach(function(im){im.addEventListener('error',function(){fallback(im)})});
+  rows.forEach(function(li){
+    if(li.querySelector('img.cv'))return;
+    var t=li.getAttribute('data-t');
+    fetch('https://gutendex.com/books?languages=en&search='+encodeURIComponent(t))
+      .then(function(r){return r.json()})
+      .then(function(d){
+        var hit=(d.results||[]).filter(function(b){return norm(b.title).indexOf(norm(t))===0})[0];
+        var u=hit&&hit.formats&&hit.formats['image/jpeg'];
+        if(u)setCover(li,u);
+      }).catch(function(){});
+  });
+})();
+</script>
+<script>
+/* Live community feed: real posts and articles from different MindShift users, rotating.
+   Uses the same public Firestore queries the logged-out feed uses. Any failure leaves the static sample cards in place. */
+(function(){
+  var mock=document.getElementById('lvMock'); if(!mock) return;
+  var URL_='https://firestore.googleapis.com/v1/projects/mindshiftbooks-c4451/databases/default/documents:runQuery?key=AIzaSyDTn70s1_uIiSOR6lPLY_nKh8Ff1FViFCs';
+  var cardP=document.getElementById('lvPost'),cardA=document.getElementById('lvArt'),tag=document.getElementById('lvTag');
+  var ROTATE=6500,CACHE='msb_live_feed_v1',started=false;
+  function dv(v){ if(!v) return null;
+    if('stringValue' in v) return v.stringValue; if('integerValue' in v) return Number(v.integerValue);
+    if('doubleValue' in v) return v.doubleValue; if('booleanValue' in v) return v.booleanValue;
+    if('timestampValue' in v) return Date.parse(v.timestampValue);
+    if('arrayValue' in v) return (v.arrayValue.values||[]).map(dv);
+    if('mapValue' in v){var o={},f=v.mapValue.fields||{};for(var k in f)o[k]=dv(f[k]);return o}
+    return null; }
+  function run(coll,limit){
+    var sq={from:[{collectionId:coll}],orderBy:[{field:{fieldPath:'publishedAt'},direction:'DESCENDING'}],limit:limit,
+      where:{fieldFilter:{field:{fieldPath:'status'},op:'EQUAL',value:{stringValue:'published'}}}};
+    var ctl=window.AbortController?new AbortController():null, t=setTimeout(function(){ctl&&ctl.abort()},7000);
+    return fetch(URL_,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({structuredQuery:sq}),signal:ctl?ctl.signal:undefined})
+      .then(function(r){clearTimeout(t);if(!r.ok)throw 0;return r.json()})
+      .then(function(rows){var out=[];(rows||[]).forEach(function(r){if(!r.document)return;var f=r.document.fields||{},o={};for(var k in f)o[k]=dv(f[k]);o.id=r.document.name.split('/').pop();out.push(o)});return out});
+  }
+  function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a}
+  function uniq(list){var seen={};return list.filter(function(x){var k=x.authorUid||x.authorName;if(!k||seen[k])return false;seen[k]=1;return true})}
+  function clip(t,n){t=(t||'').replace(/\s+/g,' ').trim();if(t.length<=n)return t;t=t.slice(0,n);return t.slice(0,t.lastIndexOf(' ')>n*0.6?t.lastIndexOf(' '):n).replace(/[\s,.;:!?-]+$/,'')+'…'}
+  function ago(ms){if(!ms)return '';var m=Math.max(1,Math.round((Date.now()-ms)/60000));if(m<60)return m+'m ago';var h=Math.round(m/60);if(h<24)return h+'h ago';var d=Math.round(h/24);if(d<30)return d+'d ago';return new Date(ms).toLocaleDateString(undefined,{month:'short',day:'numeric'})}
+  function el(tag,cls,txt){var e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
+  function avatar(name,photo){
+    var a;
+    if(photo&&/^https:\/\//.test(photo)){a=el('img','av');a.alt='';a.referrerPolicy='no-referrer';a.src=photo;
+      a.onerror=function(){var f=el('i','av',(name||'M').trim().charAt(0).toUpperCase());a.replaceWith(f)};}
+    else a=el('i','av',(name||'M').trim().charAt(0).toUpperCase());
+    return a;}
+  function head(x,extra){var h=el('div','ph-r');h.appendChild(avatar(x.authorName,x.authorPhoto));h.appendChild(el('b',null,x.authorName||'MindShift Books'));h.appendChild(el('small',null,extra||ago(x.publishedAt)));return h}
+  function acts(){var d=el('div','acts');['heart','chat','repost','share'].forEach(function(n){var s=el('span');var i=el('i','ic ic-'+n);s.appendChild(i);d.appendChild(s)});return d}
+  function fillPost(c,x){c.className='card lv on';c.onclick=null;c.replaceChildren(head(x),el('p','lt',clip(x.text,170)),acts())}
+  function fillArt(c,x){
+    c.className='card lv on art'+(x.cover&&/^https:\/\//.test(x.cover)?' hc':'');c.replaceChildren();
+    if(x.cover&&/^https:\/\//.test(x.cover)){var im=el('img','ac');im.alt='';im.loading='lazy';im.referrerPolicy='no-referrer';im.src=x.cover;im.onerror=function(){im.remove()};c.appendChild(im)}
+    c.appendChild(el('span','tg2',x.cat||'Article'));
+    c.appendChild(el('b','at',clip(x.title,90)));
+    if(x.brief)c.appendChild(el('p','lt',clip(x.brief,110)));
+    c.appendChild(head(x,x.readTime?String(x.readTime):ago(x.publishedAt)));
+    c.onclick=function(){location.href='/article-read?id='+encodeURIComponent(x.id)};
+  }
+  function swap(c,fill,x){ if(window.matchMedia('(prefers-reduced-motion:reduce)').matches){fill(c,x);return}
+    c.classList.add('out');setTimeout(function(){fill(c,x);requestAnimationFrame(function(){c.classList.remove('out')})},350)}
+  function visible(){return !document.hidden&&mock.offsetParent!==null}
+  function start(posts,arts){
+    posts=shuffle(uniq(posts.filter(function(x){var t=(x.text||'').trim();return t.length>=25&&t.length<=900&&!/^https?:\/\/\S+$/.test(t)})));
+    arts=shuffle(uniq(arts.filter(function(x){return x.title&&(x.brief||x.cover)})));
+    if(!posts.length&&!arts.length)return;
+    var pi=0,ai=0; tag.hidden=false;
+    if(posts.length){fillPost(cardP,posts[0]);pi=1}
+    if(arts.length){fillArt(cardA,arts[0]);ai=1}
+    if(posts.length>1)setInterval(function(){if(visible()){swap(cardP,fillPost,posts[pi%posts.length]);pi++}},ROTATE);
+    if(arts.length>1)setTimeout(function(){setInterval(function(){if(visible()){swap(cardA,fillArt,arts[ai%arts.length]);ai++}},ROTATE)},ROTATE/2);
+  }
+  function load(){
+    if(started)return;started=true;
+    try{var c=JSON.parse(sessionStorage.getItem(CACHE)||'null');if(c&&Date.now()-c.t<600000&&(c.p.length||c.a.length)){start(c.p,c.a);return}}catch(e){}
+    Promise.all([run('posts',20).catch(function(){return[]}),run('articles',12).catch(function(){return[]})]).then(function(r){
+      try{sessionStorage.setItem(CACHE,JSON.stringify({t:Date.now(),p:r[0],a:r[1]}))}catch(e){}
+      start(r[0],r[1]);
+    });
+  }
+  /* only touch the database when the section is about to be seen */
+  if('IntersectionObserver' in window){var io=new IntersectionObserver(function(en){if(en[0].isIntersecting){io.disconnect();load()}},{rootMargin:'300px'});io.observe(mock)}
+  else load();
 })();
 </script>
 </body>
