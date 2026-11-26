@@ -1466,7 +1466,7 @@ async function proceedCartToPayment(guestInfo) {
       closeCartOverlay();
       showToast('Your voucher covered it all! 🎉 Your book will be emailed to you shortly.', 'success', 6000);
       fetchVoucherStatus(); // it's used now — refreshes the banner/toggle for next time
-      window.location.href = '/books?paid=1';
+      window.location.href = data.reference ? '/receipt?ref=' + encodeURIComponent(data.reference) : '/books?paid=1';
       return;
     }
 
@@ -1547,7 +1547,7 @@ async function verifyCartPayment(reference, purchaserEmail) {
       closeCartOverlay();
       showToast('Payment successful! 🎉 Your book will be emailed to you shortly.', 'success', 6000);
       fetchVoucherStatus(); // refreshes the banner/toggle in case this order used the voucher
-      window.location.href = '/books?paid=1';
+      window.location.href = '/receipt?ref=' + encodeURIComponent(reference);
     } else {
       console.warn('verify failed', data);
       showToast('Verification failed. Please contact support.', 'error');
@@ -1652,7 +1652,8 @@ if (document.readyState === 'loading') {
 
     if (res.ok && data.status === 'success') {
       saveCart([]);
-      showToast('Payment confirmed! 🎉 Your book will be emailed to you shortly.', 'success', 8000);
+      window.location.replace('/receipt?ref=' + encodeURIComponent(reference)); // thank-you + receipt page
+      return;
     } else {
       showToast('Payment received but confirmation had an issue. Please check your email or visit My Orders.', 'error', 10000);
     }
