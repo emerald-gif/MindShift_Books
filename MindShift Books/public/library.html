@@ -49,6 +49,15 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 /* ── SKELETON ── */
 .skel{background:linear-gradient(90deg,var(--c-surface,#f0f0f0) 25%,var(--c-surface,#e0e0e0) 50%,var(--c-surface,#f0f0f0) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:8px}
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+/* ── FILTER CHIPS (Saved + Wishlist) ── */
+.lib-chips{display:flex;gap:8px;overflow-x:auto;padding:0 0 14px;margin:0 -2px;scrollbar-width:none}
+.lib-chips::-webkit-scrollbar{display:none}
+.lib-chips[hidden]{display:none}
+.lib-chip{flex:none;border:1.5px solid var(--border);background:var(--card,var(--bg));color:var(--sub,var(--mute));border-radius:99px;
+  padding:8px 14px;font-size:12.5px;font-weight:800;font-family:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.lib-chip small{margin-left:6px;font-size:11px;font-weight:800;opacity:.7}
+.lib-chip.on{background:var(--g);color:#fff;border-color:transparent}
+.lib-filter-empty{grid-column:1/-1;text-align:center;padding:34px 10px;font-size:13px;font-weight:700;color:var(--mute)}
 .skel-row{height:80px;border-radius:16px;margin-bottom:10px}
 .skel-book{border-radius:16px;aspect-ratio:3/4}
 
@@ -113,6 +122,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 
 <!-- SAVED -->
 <div class="lib-section" id="secSaved">
+  <div class="lib-chips" id="savedChips" hidden aria-label="Filter saved items"></div>
   <div id="savedList">
     <div class="skel skel-row"></div>
     <div class="skel skel-row"></div>
@@ -122,6 +132,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 
 <!-- WISHLIST -->
 <div class="lib-section" id="secWishlist">
+  <div class="lib-chips" id="wishlistChips" hidden aria-label="Filter wishlist"></div>
   <div class="book-grid" id="wishlistGrid">
     <div class="skel skel-book"></div>
     <div class="skel skel-book"></div>
@@ -203,6 +214,43 @@ window.switchTab = function(tab){
 };
 function cap(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
 
+/* ── FILTERS: what's in each tab decides the chips ──
+   Saved    = articles + posts.   Wishlist = store books + free eBooks. */
+const FILTERS = {
+  saved:    { list:'savedList',    item:'.saved-row', chips:'savedChips',
+              kinds:[['article','Articles'],['post','Posts']],
+              none:{ article:'No saved articles yet', post:'No saved posts yet' } },
+  wishlist: { list:'wishlistGrid', item:'.book-card', chips:'wishlistChips',
+              kinds:[['store','Books'],['free','Free eBooks']],
+              none:{ store:'No books in your wishlist yet', free:'No free eBooks saved yet' } }
+};
+const activeFilter = { saved:'all', wishlist:'all' };
+function setupFilters(tab){
+  const d = FILTERS[tab], chipsEl = document.getElementById(d.chips);
+  const items = Array.from(document.querySelectorAll(`#${d.list} ${d.item}`));
+  if (!items.length){ chipsEl.hidden = true; chipsEl.innerHTML = ''; return; }
+  const counts = {};
+  items.forEach(i => { const k = i.dataset.kind; counts[k] = (counts[k]||0) + 1; });
+  const chip = (key, label, n) => `<button type="button" class="lib-chip${activeFilter[tab]===key?' on':''}" data-filter="${key}">${label}<small>${n}</small></button>`;
+  chipsEl.innerHTML = chip('all','All',items.length) + d.kinds.map(([k,l]) => chip(k,l,counts[k]||0)).join('');
+  chipsEl.hidden = false;
+  applyFilter(tab);
+}
+function applyFilter(tab){
+  const d = FILTERS[tab], f = activeFilter[tab], listEl = document.getElementById(d.list);
+  const items = Array.from(listEl.querySelectorAll(d.item));
+  let visible = 0;
+  items.forEach(i => { const show = f === 'all' || i.dataset.kind === f; i.style.display = show ? '' : 'none'; if (show) visible++; });
+  const old = listEl.querySelector('.lib-filter-empty'); if (old) old.remove();
+  if (!visible && items.length) listEl.insertAdjacentHTML('beforeend', `<div class="lib-filter-empty">${d.none[f]}</div>`);
+}
+[['savedChips','saved'],['wishlistChips','wishlist']].forEach(([id,tab]) => {
+  document.getElementById(id).addEventListener('click', e => {
+    const b = e.target.closest('[data-filter]'); if (!b) return;
+    activeFilter[tab] = b.dataset.filter; setupFilters(tab);
+  });
+});
+
 /* ── SAVED TAB ── */
 async function loadSaved(){
   if (loading.saved) return;
@@ -238,7 +286,7 @@ async function loadSaved(){
       const title = it.type==='post' ? (it.data.text||'Untitled post') : (it.data.title||'Untitled');
       const href = it.type==='post' ? `/post-read?id=${it.id}` : `/article-read?id=${it.id}`;
       return `
-        <div class="saved-row" onclick="location.href='${href}'">
+        <div class="saved-row" data-kind="${it.type}" onclick="location.href='${href}'">
           <div class="saved-row-img">${img?`<img src="${img}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:10px">`:`<svg viewBox="0 0 24 24">${ICONS.doc}</svg>`}</div>
           <div class="saved-row-body">
             <div class="saved-row-type">${it.type}</div>
@@ -259,13 +307,14 @@ async function loadSaved(){
     // Was renderSavedEmpty() — telling someone their saved items are gone
     // because of a network blip. Show an error with a retry instead.
     document.getElementById('savedList').innerHTML = errorHtml('saved');
-  } finally { loading.saved = false; }
+  } finally { loading.saved = false; setupFilters('saved'); }
 }
 window.unsaveItem = async function(id, btn){
   const row = btn.closest('.saved-row');
   if (row) row.remove();
   try{ await setDoc(doc(db,'userSaves',currentUser.uid),{[id]:false},{merge:true}); }catch(e){}
   if (!document.querySelector('#savedList .saved-row')) renderSavedEmpty();
+  setupFilters('saved');
 };
 function renderSavedEmpty(){
   document.getElementById('savedList').innerHTML = emptyHtml(ICONS.bookmark,
@@ -300,7 +349,7 @@ async function loadWishlist(){
       if (it.kind === 'free'){
         const b = it.b;
         return `
-      <div class="book-card">
+      <div class="book-card" data-kind="free">
         <img class="book-card-cover" src="${esc(b.cover||'')}" alt="" decoding="async" loading="lazy" onclick="location.href='/read/${Number(b.id)}'">
         <button class="book-card-heart" onclick="removeFromWishlist('${it.key}', this)" aria-label="Remove from wishlist">
           <svg viewBox="0 0 24 24" fill="currentColor" stroke="none">${ICONS.heart}</svg>
@@ -314,7 +363,7 @@ async function loadWishlist(){
       }
       const p = it.p;
       return `
-      <div class="book-card">
+      <div class="book-card" data-kind="store">
         <img class="book-card-cover" src="${p.coverSm||p.cover||''}" alt="" decoding="async" loading="lazy" onclick="location.href='/books'">
         <button class="book-card-heart" onclick="removeFromWishlist('${p.id}', this)" aria-label="Remove from wishlist">
           <svg viewBox="0 0 24 24" fill="currentColor" stroke="none">${ICONS.heart}</svg>
@@ -330,7 +379,7 @@ async function loadWishlist(){
     console.error('loadWishlist failed:', e);
     failed.wishlist = true; loaded.wishlist = false;
     document.getElementById('wishlistGrid').innerHTML = errorHtml('wishlist');
-  } finally { loading.wishlist = false; }
+  } finally { loading.wishlist = false; setupFilters('wishlist'); }
 }
 window.removeFromWishlist = async function(productId, btn){
   const card = btn.closest('.book-card');
@@ -344,6 +393,7 @@ window.removeFromWishlist = async function(productId, btn){
     });
   }catch(e){}
   if (!document.querySelector('#wishlistGrid .book-card')) renderWishlistEmpty();
+  setupFilters('wishlist');
 };
 function renderWishlistEmpty(){
   document.getElementById('wishlistGrid').outerHTML = `<div id="wishlistGrid">${emptyHtml(ICONS.heart,

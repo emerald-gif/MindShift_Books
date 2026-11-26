@@ -440,11 +440,13 @@ function updateSwiperArrows(track) {
 // Keeps the free-eBook wishlist hearts (saved as "fe:<id>") in step with the
 // account's wishlist — runs after render and whenever the wishlist changes.
 function syncFeHearts() {
-  document.querySelectorAll('.fe-top-heart').forEach(btn => {
+  document.querySelectorAll('.fe-top-heart, .fe-row-heart, .fe-card-heart, .fe-wish-btn').forEach(btn => {
     const on = isInWishlist(btn.getAttribute('data-product-id'));
     btn.classList.toggle('active', on);
     btn.setAttribute('aria-pressed', on ? 'true' : 'false');
     btn.setAttribute('aria-label', on ? 'Remove from wishlist' : 'Add to wishlist');
+    const lbl = btn.querySelector('.fe-wish-label');
+    if (lbl) lbl.textContent = on ? 'In your Wishlist' : 'Save to Wishlist';
   });
 }
 window.syncFeHearts = syncFeHearts;
@@ -544,6 +546,7 @@ document.addEventListener('DOMContentLoaded', loadFreeEbooksSwiper);
   const modalActions = document.getElementById('feModalActions');
   const modalNote = document.getElementById('feModalNote');
   const modalReadBtn = document.getElementById('feModalReadBtn');
+  const modalWishBtn = document.getElementById('feModalWishBtn');
   const modalDlBtn = document.getElementById('feModalDownloadBtn');
   const authPrompt = document.getElementById('feAuthPrompt');
   const authTitle = document.getElementById('feAuthTitle');
@@ -603,6 +606,7 @@ document.addEventListener('DOMContentLoaded', loadFreeEbooksSwiper);
     modalCover.src = placeholderCover('');
     modalReadBtn.href = '#';
     if (modalDlBtn) modalDlBtn.href = '#';
+    if (modalWishBtn) { modalWishBtn.setAttribute('data-product-id', ''); syncFeHearts(); }
 
     try {
       // Books loaded live in the browser (free-ebooks page) are already
@@ -626,6 +630,7 @@ document.addEventListener('DOMContentLoaded', loadFreeEbooksSwiper);
       modalDesc.classList.remove('loading');
       modalReadBtn.href = b.readLink || '#';
       if (modalDlBtn) modalDlBtn.href = '/download/' + encodeURIComponent(b.id);
+      if (modalWishBtn) { modalWishBtn.setAttribute('data-product-id', 'fe:' + b.id); syncFeHearts(); }
       // Quietly get the file ready on the server now (HEAD sends no data), so Download is instant.
       if (modalDlBtn) fetch(modalDlBtn.getAttribute('href'), { method: 'HEAD' }).catch(() => {});
     } catch (e) {

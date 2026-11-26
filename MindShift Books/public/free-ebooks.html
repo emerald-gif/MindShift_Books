@@ -13,7 +13,7 @@
   <link rel="shortcut icon" href="/MINDSHIFT.jpg" type="image/jpg">
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css?v=3">
+  <link rel="stylesheet" href="/styles.css?v=6">
   <link rel="canonical" href="https://mindshiftbooks.shop/free-ebooks" />
 
   <style>
@@ -98,6 +98,21 @@
       flex: 1; background: linear-gradient(90deg,#4f46e5,#06b6d4); color: #fff; border: none;
       font-weight: 700; font-size: 0.85rem; padding: 10px 10px; border-radius: 10px; cursor: pointer; font-family: inherit;
     }
+
+    .fe-row-heart {
+      flex: 0 0 42px; width: 42px; height: 40px; border-radius: 10px; padding: 0; cursor: pointer;
+      border: 2px solid rgba(15,23,42,0.06); background: var(--c-bg,#fff); color: var(--c-mute,#94a3b8);
+      display: flex; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent;
+    }
+    .fe-row-heart.active, .fe-card-heart.active { color: #ef4444; }
+    .fe-row-heart.active svg, .fe-card-heart.active svg { fill: currentColor; }
+    .fe-card { position: relative; }
+    .fe-card-heart {
+      position: absolute; top: 6px; right: 6px; width: 30px; height: 30px; border-radius: 50%; padding: 0; border: none; cursor: pointer;
+      background: rgba(15,23,42,0.55); color: #fff; display: flex; align-items: center; justify-content: center;
+      -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); -webkit-tap-highlight-color: transparent;
+    }
+    .fe-card-heart svg { width: 16px; height: 16px; }
 
     .fe-skeleton-row { display: flex; gap: 14px; padding: 18px 0; border-bottom: 1px solid rgba(15,23,42,0.06); }
     .fe-skeleton-row:first-child { padding-top: 4px; }
@@ -278,6 +293,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
         <span class="fe-dl-label">Download</span>
       </a>
+      <button type="button" id="feModalWishBtn" class="btn fe-wish-btn" data-action="toggle-wishlist" data-product-id="" aria-pressed="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+        <span class="fe-wish-label">Save to Wishlist</span>
+      </button>
     </div>
     <div class="fe-note" id="feModalNote">Read it here on MindShift Books, or download it to keep (EPUB). Public-domain title via Project Gutenberg.</div>
 
@@ -354,6 +373,11 @@
     img.replaceWith(d);
   }, true);
 
+  // Wishlist heart — free eBooks are saved as "fe:<id>"; main.js does the toggling and keeps the fill in sync.
+  function heartBtn(b, cls) {
+    return '<button type="button" class="' + cls + '" data-action="toggle-wishlist" data-product-id="fe:' + esc(b.id) + '" aria-pressed="false" aria-label="Add to wishlist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg></button>';
+  }
+
   function byPopularity(a, b) { return (b.downloadCount || 0) - (a.downloadCount || 0); }
   function inCat(b, code) { return (b.cats || []).indexOf(code) !== -1; }
 
@@ -370,11 +394,12 @@
         '<div class="fe-row-actions">' +
           '<button type="button" class="fe-row-details" ' + attrs(b) + '>Details</button>' +
           '<button type="button" class="fe-row-read" ' + attrs(b) + '>Read Free</button>' +
+          heartBtn(b, 'fe-row-heart') +
         '</div></div></div>';
   }
 
   function cardHtml(b) {
-    return '<div class="fe-card" ' + attrs(b) + '>' + coverImg(b, 'fe-card-cover') +
+    return '<div class="fe-card" ' + attrs(b) + '>' + coverImg(b, 'fe-card-cover') + heartBtn(b, 'fe-card-heart') +
       '<div class="fe-card-title" ' + attrs(b) + '>' + esc(b.title) + '</div>' +
       '<div class="fe-card-author">' + esc(b.author || '') + '</div></div>';
   }
@@ -508,6 +533,7 @@
       html += shelfHtml(c.long, pick, c.slug);
     });
     shelvesEl.innerHTML = html;
+    if (window.syncFeHearts) window.syncFeHearts();
   }
 
   // ---------- list (category / search) ----------
@@ -539,6 +565,7 @@
     emptyEl.style.display = list.length ? 'none' : '';
     moreBtn.style.display = shown < list.length ? '' : 'none';
     var cat = CATS.filter(function (c) { return c.slug === activeCat; })[0];
+    if (window.syncFeHearts) window.syncFeHearts();
     $('feListHeading').textContent = query ? ('Results for \u201c' + query + '\u201d') : ((cat && cat.long) || 'All');
   }
 
@@ -764,7 +791,7 @@
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="/currency.js?v=5"></script>
-<script src="/main.js?v=7"></script>
+<script src="/main.js?v=11"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="/auth.js"></script>
 

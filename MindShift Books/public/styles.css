@@ -265,7 +265,7 @@ footer .brand{font-weight:700;font-size:1.1rem;color:#fbbf24}
 }
 .fe-modal-desc { margin-top: 18px; font-size: 0.88rem; line-height: 1.65; color: var(--c-sub,#334155); white-space: pre-line; }
 .fe-modal-desc.loading { color: var(--c-mute,#94a3b8); }
-.fe-modal-actions { margin-top: 22px; display: flex; gap: 10px; }
+.fe-modal-actions { margin-top: 22px; display: flex; gap: 10px; flex-wrap: wrap; }
 .fe-modal-actions .btn { flex: 1; }
 .fe-read-btn { background: linear-gradient(90deg,#4f46e5,#06b6d4); color: #fff; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
 .fe-dl-btn { background: var(--c-bg,#fff); color: var(--c-ind,#4f46e5); text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 1.5px solid var(--c-ind,#4f46e5); }
@@ -1344,3 +1344,12 @@ body.src-lock { overflow: hidden; }
 .fe-top-heart:active{ transform:scale(.88); }
 .fe-top-heart.active{ color:#ef4444; }
 .fe-top-heart.active svg{ fill:currentColor; }
+.fe-modal-actions .fe-wish-btn{
+  flex:1 1 100%; background:var(--c-bg,#fff); color:var(--primary); border:1.5px solid var(--c-line,#e2e8f0);
+  display:inline-flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; font-family:inherit;
+}
+.fe-wish-btn.active{ color:#ef4444; border-color:#fecaca; }
+.fe-wish-btn.active svg{ fill:currentColor; }
+/* wishlist sign-in / confirm popups must sit above the book drawer (z-index 9999) */
+.wishlist-drawer-backdrop{ z-index:10000 !important; }
+.wishlist-drawer{ z-index:10001 !important; }
