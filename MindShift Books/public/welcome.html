@@ -216,7 +216,7 @@ h1{
 <script src="/auth.js"></script>
 <script>
   const params = new URLSearchParams(location.search);
-  const returnTo = params.get('returnTo') || '/';
+  const returnTo = params.get('returnTo') || '/home';
   let claimedUsername = (params.get('u') || '').trim().toLowerCase();
   document.getElementById('browseBtn').href = returnTo;
 

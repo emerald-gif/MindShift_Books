@@ -113,7 +113,7 @@
       '</div>' +
       '<div class="sb-scroll">' +
         '<ul class="sb-group">' +
-          item(null, ICONS.file, 'Home', "window.location.href='/'") +
+          item(null, ICONS.file, 'Home', "window.location.href='/home'") +
           item(null, ICONS.book, 'Bookstore', "window.location.href='/books'") +
           item(null, ICONS.plusCircle, 'Create', 'msOpenCreate()') +
         '</ul>' +

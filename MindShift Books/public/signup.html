@@ -213,7 +213,7 @@ body{font-family:'Inter',sans-serif;color:var(--primary);min-height:100vh;overfl
 
   <div class="form-panel">
     <div class="authcard">
-      <a class="back" href="/">← Back to feed</a>
+      <a class="back" href="/">← Back to MindShift Books</a>
       <h2>Create your shelf.</h2>
       <div class="sub">Read, write, follow authors, and keep every book in one place.</div>
 
@@ -278,7 +278,9 @@ body{font-family:'Inter',sans-serif;color:var(--primary);min-height:100vh;overfl
 <script src="/auth.js"></script>
 <script>
   const params = new URLSearchParams(location.search);
-  const returnTo = params.get('returnTo') || '/';
+  // The landing page's "enter your email" box sends people here with ?email= — pre-fill it.
+  (function(){ var e = params.get('email'), el = document.getElementById('email'); if (e && el && !el.value) el.value = e; })();
+  const returnTo = params.get('returnTo') || '/home';
   // Guest follow-up emails link here with ?email= so they sign up with the same address.
   (function(){ var pe=params.get('email'); var el=document.getElementById('email'); if(pe&&el&&!el.value) el.value=pe; })();
   document.getElementById('toLoginLink').href = '/login?returnTo=' + encodeURIComponent(returnTo);

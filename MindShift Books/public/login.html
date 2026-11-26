@@ -203,7 +203,7 @@ body{font-family:'Inter',sans-serif;color:var(--primary);min-height:100vh;overfl
 
   <div class="form-panel">
     <div class="authcard">
-      <a class="back" href="/">← Back to feed</a>
+      <a class="back" href="/">← Back to MindShift Books</a>
       <h2>Welcome back.</h2>
       <div class="sub">Sign in to read, write, follow authors, and pick up your orders.</div>
 
@@ -254,7 +254,7 @@ body{font-family:'Inter',sans-serif;color:var(--primary);min-height:100vh;overfl
 <script src="/auth.js"></script>
 <script>
   const params = new URLSearchParams(location.search);
-  const returnTo = params.get('returnTo') || '/';
+  const returnTo = params.get('returnTo') || '/home';
   document.getElementById('toSignupLink').href = '/signup?returnTo=' + encodeURIComponent(returnTo);
 
   const form = document.getElementById('loginForm');

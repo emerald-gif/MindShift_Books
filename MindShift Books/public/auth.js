@@ -290,7 +290,7 @@
 
   function getReturnTo() {
     const params = new URLSearchParams(window.location.search);
-    return params.get('returnTo') || '/';
+    return params.get('returnTo') || '/home';
   }
 
   function redirectAfterAuth() {
