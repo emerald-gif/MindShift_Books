@@ -72,6 +72,11 @@ html.msb-reels-open body{background:transparent !important}
 #msbReels .rl-info{position:absolute;left:0;right:76px;bottom:0;z-index:3;
   padding:90px 16px calc(max(18px,env(safe-area-inset-bottom)) + 44px);
   background:linear-gradient(to top,rgba(0,0,0,.78) 25%,transparent)}
+/* "Swipe up for the next video" — shown under the creator until the viewer has swiped (a few times, ever) */
+#msbReels .rl-swipe{display:none;flex-direction:column;align-items:flex-start;gap:3px;margin-top:10px;font-size:14px;font-weight:600;color:rgba(255,255,255,.8);text-shadow:0 1px 3px rgba(0,0,0,.55);pointer-events:none}
+#msbReels.hint-on .rl-slide.has-next .rl-swipe{display:flex}
+#msbReels .rl-swipe svg{width:18px;height:18px;fill:none;stroke:#fff;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;animation:rlup 1.5s ease-in-out infinite}
+@keyframes rlup{0%,100%{transform:translateY(3px);opacity:.45}50%{transform:translateY(-4px);opacity:1}}
 #msbReels .rl-info.expanded{background:linear-gradient(to top,rgba(0,0,0,.9) 65%,transparent)}
 #msbReels .rl-author{display:inline-flex;align-items:center;gap:10px;font-weight:800;font-size:15px;cursor:pointer;max-width:100%}
 #msbReels .rl-author img{width:38px;height:38px;border-radius:50%;object-fit:cover;background:#4f46e5;border:2px solid rgba(255,255,255,.85);flex:none}
@@ -202,6 +207,7 @@ body.msb-reels-open .rp-sheet{z-index:100005!important}
         '<div class="rl-arow"><div class="rl-author" data-a="author"><img src="'+esc(p.avatar||'logo.jpg')+'" alt="" onerror="this.style.background=\'linear-gradient(135deg,#4f46e5,#06b6d4)\'"><span>'+esc(p.author||'MindShift Books User')+'</span></div>'+
         (cfg && cfg.followState ? '<button class="rl-follow" data-a="follow" style="display:none"></button>' : '')+'</div>'+
         (p.text ? '<div class="rl-cap">'+esc(p.text)+'</div><button class="rl-more" data-a="more">more</button>' : '')+
+        '<div class="rl-swipe"><span>Swipe up for the next video</span><svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="18 15 12 9 6 15"/></svg></div>'+
       '</div>'+
       '<div class="rl-scrub" data-scrub><div class="rl-track"><div class="rl-fill"></div><div class="rl-knob"></div></div><div class="rl-time">0:00 / 0:00</div></div>'+
     '</div></section>';
@@ -456,11 +462,22 @@ body.msb-reels-open .rp-sheet{z-index:100005!important}
     var startIdx = Math.max(0, items.findIndex(function(p){ return p.id === startId; }));
     scroller.scrollTop = startIdx * scroller.clientHeight;
 
+    // Swipe hint: on until the viewer swipes once this time; after 3 swipes (ever) it stops showing.
+    var hintOn = true, firstSlide = true;
+    try{ hintOn = (parseInt(localStorage.getItem('msb_reels_swipes'), 10) || 0) < 3; }catch(_){}
+    ov.classList.toggle('hint-on', hintOn);
+    function noteSwipe(){
+      if(!hintOn) return; hintOn = false; ov.classList.remove('hint-on');
+      try{ localStorage.setItem('msb_reels_swipes', String((parseInt(localStorage.getItem('msb_reels_swipes'), 10) || 0) + 1)); }catch(_){}
+    }
+
     if(observer) observer.disconnect();
     observer = new IntersectionObserver(function(entries){
       entries.forEach(function(en){
         var slide = en.target, v = slide.querySelector('video');
         if(en.isIntersecting){
+          if(!firstSlide) noteSwipe(); firstSlide = false;     // landing on a different video = a swipe
+          if(slide.nextElementSibling) slide.classList.add('has-next');
           activeId = slide.getAttribute('data-id'); play(slide); sync(slide);
           if(cfg.onActive) cfg.onActive(activeId);
           var idx = Array.prototype.indexOf.call(scroller.children, slide);

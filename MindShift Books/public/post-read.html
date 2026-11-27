@@ -471,6 +471,12 @@ body{padding-bottom:64px} /* room for the fixed comment bar on post-read */
 .c-more-btn svg{width:14px;height:14px;pointer-events:none}
 .c-menu{position:absolute;top:26px;right:0;background:var(--c-bg,#fff);border-radius:14px;border:1.5px solid var(--border);box-shadow:0 6px 28px rgba(37,99,235,.13),0 2px 8px rgba(0,0,0,.07);padding:6px;z-index:400;min-width:150px;opacity:0;transform:translateY(-6px) scale(.96);pointer-events:none;transition:all .18s cubic-bezier(.32,0,.15,1);transform-origin:top right}
 .c-menu.open{opacity:1;transform:translateY(0) scale(1);pointer-events:all}
+
+/* ── Substack-style reading finish: editorial type + quieter byline ── */
+.author-logo{width:42px;height:42px;border:0}
+.author-name{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+.author-meta{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.post-text{font-family:"Source Serif 4",Charter,"Iowan Old Style","Palatino Linotype",Georgia,serif;font-size:20px;line-height:1.65;margin:20px 0}
 .c-menu-item{display:flex;align-items:center;gap:9px;width:100%;padding:9px 12px;border-radius:9px;font-size:13px;font-weight:600;color:var(--txt);background:none;border:none;cursor:pointer;font-family:inherit;transition:background .13s,color .13s;text-align:left;white-space:nowrap}
 .c-menu-item:hover{background:var(--c-cyan-bg,#ecfeff);color:var(--p)}
 .c-menu-item svg{width:14px;height:14px;flex-shrink:0;opacity:.7}
@@ -806,7 +812,7 @@ html.embed{overscroll-behavior:contain}
 <script src="/link-card.js"></script>
 <script src="/share-drawer.js?v=4"></script>
 <script src="/poll.js?v=1"></script>
-<script src="/reels.js?v=14"></script>
+<script src="/reels.js?v=15"></script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
