@@ -4015,7 +4015,14 @@ async function fulfillOrder({ reference, email, buyerName, uid, productIds, ngnA
     usd_total: usdTotal || 0,
     ngn_amount: ngnAmountPaid,
     fx_rate: fxRate || null,
-    items: items.map(it => ({ productId: it.productId, title: it.title, pdfUrl: it.pdfUrl, coverUrl: it.coverUrl })),
+    // priceNGN = what this book cost at checkout (metadata.items carries the exact per-item ngn charged).
+    items: items.map(it => {
+      const m = (Array.isArray(metadataItems) ? metadataItems : []).find(x => x && x.id === it.productId);
+      const row = { productId: it.productId, title: it.title, pdfUrl: it.pdfUrl, coverUrl: it.coverUrl };
+      if (m && Number.isFinite(Number(m.ngn))) row.priceNGN = Number(m.ngn);
+      return row;
+    }),
+    paymentMethod: paymentMethodDisplay || null,
     paidAt: admin.firestore ? admin.firestore.Timestamp.now() : new Date()
   };
   if (voucherApplied) {
@@ -4320,7 +4327,8 @@ app.get('/api/receipt/:reference', payLimiter, async (req, res) => {
       paidAt,
       ngnAmount: Number(o.ngn_amount) || 0,
       voucherAmount: o.voucherApplied ? (Number(o.voucherAmount) || 0) : 0,
-      items: (o.items || []).map(it => ({ productId: it.productId, title: it.title, coverUrl: it.coverUrl || null, downloadUrl: it.pdfUrl || null }))
+      paymentMethod: o.paymentMethod || null,
+      items: (o.items || []).map(it => ({ productId: it.productId, title: it.title, coverUrl: it.coverUrl || null, downloadUrl: it.pdfUrl || null, priceNGN: Number.isFinite(Number(it.priceNGN)) ? Number(it.priceNGN) : null }))
     });
   } catch (err) {
     console.error('/api/receipt error', err);
