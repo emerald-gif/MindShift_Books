@@ -454,3 +454,16 @@
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount);
   } catch (e) { /* a seasonal touch must never break a page */ }
 })();
+
+/* Messages row: every page that has this menu now gets "Messages" (with its unread badge) automatically.
+   It used to be added page by page, so pages like the bookstore and Free eBooks were missing it.
+   messages-nav.js waits for the page's own Firebase app and the menu, and does nothing if either never shows up. */
+(function () {
+  try {
+    if (document.querySelector('script[src*="messages-nav.js"]')) return;
+    var s = document.createElement('script');
+    s.type = 'module';
+    s.src = '/messages-nav.js?v=1';
+    (document.head || document.documentElement).appendChild(s);
+  } catch (e) { /* the menu must never break a page */ }
+})();

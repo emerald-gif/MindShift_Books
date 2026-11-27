@@ -29,9 +29,9 @@
   if (window.openShareImageCard) return; // already loaded on this page
 
   var CSS =
-    '.shareimg-overlay{position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:2400;opacity:0;pointer-events:none;transition:opacity .25s}' +
+    '.shareimg-overlay{position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:100012;opacity:0;pointer-events:none;transition:opacity .25s}' +
     '.shareimg-overlay.on{opacity:1;pointer-events:all}' +
-    '.shareimg-sheet{position:fixed;left:0;right:0;bottom:0;z-index:2401;background:#fff;border-radius:22px 22px 0 0;padding:14px 18px max(env(safe-area-inset-bottom,0px),18px);transform:translateY(100%);transition:transform .32s cubic-bezier(.32,0,.15,1);max-height:92vh;overflow-y:auto;box-sizing:border-box}' +
+    '.shareimg-sheet{position:fixed;left:0;right:0;bottom:0;z-index:100013;background:#fff;border-radius:22px 22px 0 0;padding:14px 18px max(env(safe-area-inset-bottom,0px),18px);transform:translateY(100%);transition:transform .32s cubic-bezier(.32,0,.15,1);max-height:92vh;overflow-y:auto;box-sizing:border-box}' +
     '.shareimg-sheet.on{transform:none}' +
     '.shareimg-bar{width:36px;height:4px;background:#e5e7eb;border-radius:99px;margin:0 auto 14px}' +
     '.shareimg-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}' +
