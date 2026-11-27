@@ -32,30 +32,6 @@
   </url>
 
   <url>
-    <loc>https://mindshiftbooks.shop/gcwa-preview</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-
-  <url>
-    <loc>https://mindshiftbooks.shop/escape-preview</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-
-  <url>
-    <loc>https://mindshiftbooks.shop/mmg-preview</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-
-  <url>
-    <loc>https://mindshiftbooks.shop/bct-preview</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-
-  <url>
     <loc>https://mindshiftbooks.shop/support</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -67,4 +43,19 @@
     <priority>0.4</priority>
   </url>
 
+  <url>
+    <loc>https://mindshiftbooks.shop/free-ebooks</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://mindshiftbooks.shop/books</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://mindshiftbooks.shop/affiliate</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
 </urlset>

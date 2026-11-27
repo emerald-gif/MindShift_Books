@@ -106,8 +106,14 @@ body.msb-imgv-open .save-drawer-backdrop{z-index:100006!important}
     if(!n || !track.clientWidth) return;
     countEl.textContent = (Math.round(track.scrollLeft / track.clientWidth) + 1) + '/' + n;
   }
-  function txt(prefix){ var e = document.getElementById(prefix + curId); return e ? e.textContent : ''; }
+  // Pages whose engagement buttons don't use the feed card ids (post/article pages) can supply
+  // msbImgEngage.text(prefix, id) / msbImgEngage.has(prefix, cls, id); returning null falls back to the card lookup.
+  function txt(prefix){
+    var X = E(); if(X && X.text){ var v = X.text(prefix, curId); if(v != null) return v; }
+    var e = document.getElementById(prefix + curId); return e ? e.textContent : '';
+  }
   function has(prefix, cls, fallback){
+    var X = E(); if(X && X.has){ var v = X.has(prefix, cls, curId); if(v != null) return !!v; }
     var e = document.getElementById(prefix + curId);
     return e ? e.classList.contains(cls) : !!(fallback && fallback(curId));
   }

@@ -796,6 +796,7 @@ header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 </script>
 <script src="/share-drawer.js?v=4"></script>
 <script src="/mentions.js"></script>
+<script src="/image-viewer.js?v=3"></script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js';
@@ -2483,8 +2484,27 @@ const RATING_EMOJIS = ['🤔','😣','😕','👍','🔥','🤯'];
 /* ── INJECT RATING CARD ── */
 /* ── IMAGE VIEWER (tap the cover photo to view full-size) ── */
 let imgViewerCount = 0;
+/* Photos open in the same full-screen viewer as the feed, with like / comment / repost / save / share on it. */
+window.msbImgEngage = {
+  like:    () => window.doLike(),
+  comment: () => { if(window.MSBImageViewer) MSBImageViewer.close(); window.openCommentDrawer(); },
+  repost:  () => window.doRepost(),
+  save:    () => window.doSave(),
+  share:   () => { if(window.MSBImageViewer) MSBImageViewer.close(); window.openShare(); },
+  info:    () => (article ? { author: article.author, avatar: article.avatar, text: article.title } : null),
+  isLiked: () => isLiked,
+  isSaved: () => isSaved,
+  text: (prefix) => { const m = { 'lc-':'actLikeTxt', 'pcc-':'actCommentTxt', 'rc-':'actRepostTxt' }[prefix]; const e = m && document.getElementById(m); return e ? e.textContent : null; },
+  has:  (prefix) => {
+    if(prefix === 'lb-') return isLiked;
+    if(prefix === 'sv-') return isSaved;
+    if(prefix === 'rb-'){ const b = document.getElementById('actRepost'); return !!(b && b.classList.contains('reposted')); }
+    return null;
+  }
+};
 window.openImageViewer = function(list, startIndex){
   if(!list || !list.length) return;
+  if(window.MSBImageViewer){ MSBImageViewer.open(list, startIndex || 0, (article && article.id) || new URLSearchParams(location.search).get('id')); return; }
   imgViewerCount = list.length;
   const track = document.getElementById('imgViewerTrack');
   track.innerHTML = list.map(src=>`<div class="img-viewer-slide"><img src="${src}" alt="" onclick="event.stopPropagation()"></div>`).join('');
