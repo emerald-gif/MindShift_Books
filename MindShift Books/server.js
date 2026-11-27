@@ -237,6 +237,10 @@ const seoForget = (kind, id) => { try { return app.locals.seoInvalidate && app.l
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+// Old sample links like /gcwa-preview have no page (the files are /gcwa-preview.pdf): send them to the PDF instead of a 404.
+['tda', 'gcwa', 'escape', 'mmg', 'bct', 'wgfs'].forEach((slug) => {
+  app.get(`/${slug}-preview`, (req, res) => res.redirect(301, `/${slug}-preview.pdf`));
+});
 app.get('/home', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'articles.html'));
 });
