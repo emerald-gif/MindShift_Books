@@ -622,6 +622,7 @@ async function loadOrders(){
             <span class="pill">₦${order.ngn_amount||0}</span>
           </div>
           ${itemsHtml}
+          <a class="download" style="display:inline-block;margin-top:8px" href="/receipt?ref=${encodeURIComponent(order.reference)}">View receipt</a>
         </div>`;
     }).join('');
   }catch(err){

@@ -390,7 +390,7 @@ header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .c-view-replies-btn.open svg{transform:rotate(180deg)}
 
 /* 3-dot menu */
-.c-more-btn{position:absolute;top:2px;right:0;width:26px;height:26px;border-radius:50%;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--mute);opacity:0;transition:opacity .15s,background .15s;flex-shrink:0;padding:0}
+.c-more-btn{position:absolute;top:2px;right:0;width:26px;height:26px;border-radius:50%;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--mute);opacity:1;transition:opacity .15s,background .15s;flex-shrink:0;padding:0}
 .comment-item:hover .c-more-btn,.c-more-btn:focus,.c-more-btn.open{opacity:1}
 .c-more-btn:hover{background:var(--c-surface,#f3f4f6);color:var(--txt)}
 .c-more-btn svg{width:14px;height:14px;pointer-events:none}
@@ -551,10 +551,6 @@ header h1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .c-skel-row .sk-l3{height:11px;width:60%}
 @keyframes cSk{to{background-position:-200% 0}}
 @media (prefers-reduced-motion:reduce){.c-skel-row i,.comment-item.c-new,.c-like-btn.liked svg{animation:none}}
-
-.c-retry-row{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:12.5px;color:var(--mute)}
-.c-retry-btn{border:none;border-radius:99px;padding:5px 13px;background:var(--c-tonal,#eef0fe);color:var(--p);font-weight:800;font-size:12px;cursor:pointer;font-family:inherit}
-.c-retry-btn:active{transform:scale(.95)}
 </style>
 <script src="/article-categories.js"></script>
 <meta name="theme-color" content="#ffffff">
@@ -1829,8 +1825,8 @@ window.startReply=function(cid){
   // Switching from one reply target to another: drop the old auto "@handle " but never what the person typed.
   if(i.dataset.auto&&i.value.trim()===i.dataset.auto.trim()){i.value='';i.dataset.auto='';}
   const a=document.getElementById('mainCA');if(a)a.classList.add('show');
-  try{cPrefillReply(i,cid);}catch(err){console.warn('reply pre-fill:',err);}
-  try{i.focus();}catch(err){}
+  cPrefillReply(i,cid);
+  i.focus();
   try{const t=document.getElementById('ci-'+cid);if(t)t.scrollIntoView({block:'nearest',behavior:'smooth'});}catch(e){}
 };
 window.showRI=window.startReply;
@@ -1902,25 +1898,21 @@ function updVRB(cid,count){
   btn.innerHTML=`<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg> ${count} ${count===1?'reply':'replies'}`;
 }
 
-const cReplyLoading=new Set();
 window.toggleReplies=async function(cid){
   const re=document.getElementById('rep-'+cid);if(!re)return;
   const vrb=document.getElementById('vrb-'+cid);
-  if(cReplyLoading.has(cid))return;               // a second tap while it is still loading must not close it
   if(cOpenReplies.has(cid)){cOpenReplies.delete(cid);re.style.display='none';vrb&&vrb.classList.remove('open');return;}
   cOpenReplies.add(cid);re.style.display='block';vrb&&vrb.classList.add('open');
   if(cReplies[cid]){re.innerHTML=cReplies[cid].map(r=>buildCHTML(r,true)).join('');window.MSBAuthorLive && window.MSBAuthorLive.refresh(db, { doc, getDoc }, re);return;}
   re.innerHTML='<div style="padding:8px 0;font-size:12px;color:var(--mute)">Loading…</div>';
-  cReplyLoading.add(cid);
   try{
     const isOwner=!!(currentUser && article && article.authorUid===currentUser.uid);
-    // Equality filters only, no orderBy: this needs no composite index (a missing one used to fail the load
-    // outright and is not retried), so the replies are sorted here instead.
     const repParts=[collection(db,'comments'),where('articleId','==',artId),where('parentId','==',cid)];
     if(!isOwner) repParts.push(where('hidden','==',false));
-    const snap=await resilient(()=>getDocs(query(...repParts)),{tries:3,timeoutMs:7000});
-    const ms=t=>t&&t.toMillis?t.toMillis():(t&&t.seconds?t.seconds*1000:Number.MAX_SAFE_INTEGER);   // a just-posted reply has no server time yet → newest
-    const replies=snap.docs.map(d=>({id:d.id,...d.data()})).filter(cVisible).sort((a,b)=>ms(a.createdAt)-ms(b.createdAt));
+    repParts.push(orderBy('createdAt','asc'));
+    const q=query(...repParts);
+    const snap=await resilient(()=>getDocs(q),{tries:2});
+    const replies=snap.docs.map(d=>({id:d.id,...d.data()})).filter(cVisible);
     if(currentUser){
       replies.forEach(r=>{
         if(r.likedBy && r.likedBy[currentUser.uid] === true) cLikedSet.add(r.id);
@@ -1929,11 +1921,7 @@ window.toggleReplies=async function(cid){
     cReplies[cid]=replies;
     re.innerHTML=replies.length?replies.map(r=>buildCHTML(r,true)).join(''):'<div style="padding:8px 0;font-size:12px;color:var(--mute)">No replies yet.</div>';
     window.MSBAuthorLive && window.MSBAuthorLive.refresh(db, { doc, getDoc }, re);
-  }catch(e){
-    console.error('toggleReplies:',e&&e.code,e&&e.message);
-    cOpenReplies.delete(cid);vrb&&vrb.classList.remove('open');
-    re.innerHTML='<div class="c-retry-row"><span>Couldn\u2019t load replies.</span><button type="button" class="c-retry-btn" onclick="toggleReplies(\''+cid+'\')">Try again</button></div>';
-  }finally{cReplyLoading.delete(cid);}
+  }catch(e){cOpenReplies.delete(cid);re.innerHTML='<div style="padding:8px 0;font-size:12px;color:var(--red)">Could not load — tap replies to try again.</div>';}
 };
 
 window.likeComment=async function(cid,authorUid){

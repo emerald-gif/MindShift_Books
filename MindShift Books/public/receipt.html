@@ -63,7 +63,10 @@ h2{font-size:1.15rem;margin:30px 0 12px}
     <div class="card">
       <div class="kv"><small>Email</small><b id="em"></b></div>
       <div class="kv"><small>Date</small><b id="dt"></b></div>
-      <div class="kv"><small>Total Amount</small><b class="amt" id="amt"></b><div class="disc" id="disc" hidden></div></div>
+      <div class="kv" id="pmRow" hidden><small>Payment method</small><b id="pm"></b></div>
+      <div class="kv" id="subRow" hidden><small>Subtotal</small><b id="sub"></b></div>
+      <div class="kv" id="vRow" hidden><small>Voucher applied</small><b id="vch" style="color:var(--ok)"></b></div>
+      <div class="kv"><small>Total Amount</small><b class="amt" id="amt"></b></div>
     </div>
     <h2 id="oh">Your order</h2>
     <div id="items"></div>
@@ -90,13 +93,18 @@ h2{font-size:1.15rem;margin:30px 0 12px}
     $('em').textContent = d.email || '';
     $('dt').textContent = d.paidAt ? new Date(d.paidAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }).replace(', ', ' ').replace(/(\d{4}) /, '$1; ') : '';
     $('amt').textContent = '\u20A6' + Number(d.ngnAmount || 0).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    if (d.voucherAmount > 0) { $('disc').hidden = false; $('disc').textContent = 'Voucher applied: \u2212\u20A6' + Number(d.voucherAmount).toLocaleString('en-NG'); }
+    var money = function (n) { return '\u20A6' + Number(n).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+    if (d.paymentMethod) { $('pmRow').hidden = false; $('pm').textContent = d.paymentMethod; }
+    if (d.voucherAmount > 0) {
+      $('vRow').hidden = false; $('vch').textContent = '\u2212' + money(d.voucherAmount);
+      $('subRow').hidden = false; $('sub').textContent = money(Number(d.ngnAmount || 0) + Number(d.voucherAmount));
+    }
     var n = (d.items || []).length;
     $('oh').textContent = 'Your order (' + n + ')';
     $('items').innerHTML = (d.items || []).map(function (it) {
       var img = it.coverUrl ? '<img src="/_img?src=' + encodeURIComponent(it.coverUrl.replace(/^https?:\/\/[^/]+/, '')) + '&w=160" alt="" loading="lazy">' : '<span class="ph"></span>';
       var dl = it.downloadUrl ? '<a class="btn p noprint" href="' + esc(it.downloadUrl) + '" download>Download</a>' : '';
-      return '<div class="item">' + img + '<div><b>' + esc(it.title) + '</b><small>eBook \u00B7 PDF</small></div>' + dl + '</div>';
+      return '<div class="item">' + img + '<div><b>' + esc(it.title) + '</b><small>eBook \u00B7 PDF' + (it.priceNGN != null ? ' \u00B7 ' + money(it.priceNGN) : '') + '</small></div>' + dl + '</div>';
     }).join('');
     $('loading').hidden = true; $('rc').hidden = false;
   }
